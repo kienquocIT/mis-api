@@ -45,6 +45,8 @@ class Tenant(BaseModel):
 
     user_request_created = JSONField(default={}, verbose_name='This is information of user request created.')
 
+    company_total = models.IntegerField(default=0)
+
     class Meta:
         verbose_name = 'Tenant'
         verbose_name_plural = 'Tenant'
@@ -67,13 +69,15 @@ class Tenant(BaseModel):
         return _original_fields_old
 
     def save(self, *args, **kwargs):
-        # get old code and new code
-        old_code = self.get_old_value(field_name_list=['code'])['code']
+        old_code = None
+        if kwargs.get('force_update', False):
+            # get old code and new code
+            old_code = self.get_old_value(field_name_list=['code'])['code']
 
         super(Tenant, self).save(*args, **kwargs)
 
         # update username_auth for user when change tenant code
-        if old_code != self.code:
+        if old_code is not None and old_code != self.code:
             for user in get_user_model().objects.filter(tenant_current_id=self.id):
                 user.update_username_field_data()
                 user.save()  # auto convert username auth when save user object.
@@ -88,8 +92,8 @@ class Company(BaseModel):
     # }
     license_usage = models.JSONField(default=dict)
 
-    # User count | receive from client, increase or decrease
-    user_count = models.IntegerField(default=0)
+    # Total | receive from client, increase or decrease
+    total_user = models.IntegerField(default=0)
 
     class Meta:
         verbose_name = 'Company'
@@ -97,6 +101,15 @@ class Company(BaseModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        super(Company, self).save(*args, **kwargs)
+        # update total company of tenant
+        if self.tenant:
+            self.tenant.company_total = self.__class__.objects.filter(tenant=self.tenant).count()
+            self.tenant.save()
+        else:
+            print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
 
 class Space(BaseModel):

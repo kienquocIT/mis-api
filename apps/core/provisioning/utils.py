@@ -27,67 +27,61 @@ class TenantController:
     """
 
     def __init__(self):
-        ...
+        self.tenant_obj = None
+        self.company_obj = None
+        self.space_obj = None
+        self.employee_obj = None
+        self.user_obj = None
 
     def setup_new(
             self, tenant_code,
             tenant_data: dict,
-            employee_data: dict,
             user_data: dict,
+            create_company: bool,
+            create_employee: bool,
     ) -> serializers.ValidationError or bool:
         try:
             with transaction.atomic():
-                tenant_obj = self.get_tenant_by_code(tenant_code)
-                if not tenant_obj:
-                    tenant_obj = self.create_tenant(
+                self.tenant_obj = self.get_tenant_by_code(tenant_code)
+                if not self.tenant_obj:
+                    self.tenant_obj = self.create_tenant(
                         **tenant_data,
                         code=tenant_code,
                     )
-                    company_obj = self.create_company(
-                        title=tenant_obj.title,
-                        code=f'{tenant_obj.code}01',
-                        tenant=tenant_obj.id,
-                    )
-                    space_obj = self.create_space(
-                        title='Global',
-                        code=f'{tenant_code.upper()} Global',
-                        tenant=tenant_obj.id,
-                        company=company_obj.id,
-                        is_system=True,
-                    )
-                    employee_obj = self.create_employee(
-                        **employee_data,
-                        tenant=tenant_obj.id,
-                        company=company_obj.id,
-                        space=space_obj.id,
-                        user=None,
-                    )
-                    user_obj = self.create_user(
-                        **user_data,
-                        username_auth=get_user_model().convert_username_field_data(user_data['username'], tenant_obj),
-                        first_name=employee_obj.first_name,
-                        last_name=employee_obj.last_name,
-                        phone=employee_obj.phone,
-                        email=employee_obj.email,
-                        is_admin_tenant=True,
-                        tenant_current=tenant_obj.id,
-                        company_current=company_obj.id,
-                        employee_current=employee_obj.id,
-                        space_current=space_obj.id,
-                    )
-                    self.update_tenant(
-                        tenant_obj,
-                        admin_info={
-                            'fullname': f'{user_obj.first_name} {user_obj.last_name}',
-                            'phone_number': str(user_obj.phone),
-                            'username': str(user_obj.username),
-                            'email': str(user_obj.email),
-                        },
-                        admin_created=True,
-                        admin=user_obj
-                    )
-                    self.update_employee(employee_obj, user=user_obj)
-                    self.create_space_employee(employee_obj, space_obj, **{})
+
+                    # create Company
+                    self.company_obj, self.space_obj = None, None
+                    if create_company is True:
+                        self.company_obj = self.create_company(
+                            title=self.tenant_obj.title,
+                            code=f'{self.tenant_obj.code}01',
+                            tenant=self.tenant_obj.id,
+                        )
+                        self.space_obj = self.create_space(
+                            title='Global',
+                            code=f'{tenant_code.upper()} Global',
+                            tenant=self.tenant_obj.id,
+                            company=self.company_obj.id,
+                            is_system=True,
+                        )
+
+                    # create employee & create User
+                    if self.tenant_obj and user_data:
+                        self.setup_user(user_data)
+                        if create_employee and self.company_obj:
+                            self.employee_obj = self.create_employee(
+                                first_name=self.user_obj.first_name,
+                                last_name=self.user_obj.last_name,
+                                phone=self.user_obj.phone,
+                                email=self.user_obj.email,
+                                tenant=self.tenant_obj.id,
+                                company=self.company_obj.id,
+                                user=self.user_obj.id
+                            )
+                            self.update_employee(self.employee_obj, user=self.user_obj)
+                            self.update_user(self.user_obj, employee_current=self.employee_obj)
+                            if self.space_obj:
+                                self.create_space_employee(self.employee_obj, self.space_obj, **{})
                     return True
                 raise serializers.ValidationError({
                     'detail': ProvisioningMsg.TENANT_READY.format(tenant_code),
@@ -98,6 +92,37 @@ class TenantController:
         except Exception as err:
             raise serializers.ValidationError({'detail': f'Setup new tenant failure with code: [{str(err)}]'})
         return False
+
+    def setup_user(self, user_data):
+        self.user_obj = self.create_user(
+            username_auth=get_user_model().convert_username_field_data(
+                user_data['username'], self.tenant_obj
+            ),
+            username=user_data['username'],
+            password=user_data['password'],
+            first_name=user_data['first_name'],
+            last_name=user_data['last_name'],
+            phone=user_data['phone'],
+            email=user_data['email'],
+            is_admin_tenant=True,
+            tenant_current=self.tenant_obj.id,
+            company_current=self.company_obj.id if self.company_obj else None,
+            space_current=self.space_obj.id if self.space_obj else None,
+            employee_current=None,
+        )
+        if self.user_obj.is_admin_tenant:
+            self.update_tenant(
+                self.tenant_obj,
+                admin_info={
+                    'fullname': f'{self.user_obj.first_name} {self.user_obj.last_name}',
+                    'phone_number': str(self.user_obj.phone),
+                    'username': str(self.user_obj.username),
+                    'email': str(self.user_obj.email),
+                },
+                admin_created=True,
+                admin=self.user_obj
+            )
+        return True
 
     @classmethod
     def get_tenant_by_code(cls, tenant_code):
@@ -124,6 +149,7 @@ class TenantController:
         # update flag admin_created, admin obj
         # admin_created, admin
         try:
+            obj.refresh_from_db()
             for key, value in kwargs.items():
                 setattr(obj, key, value)
             obj.save()
@@ -183,6 +209,7 @@ class TenantController:
     def update_employee(cls, obj, **kwargs):
         # map user with employee
         try:
+            obj.refresh_from_db()
             for key, value in kwargs.items():
                 setattr(obj, key, value)
             obj.save()
@@ -211,6 +238,20 @@ class TenantController:
                 'step': 'In step setup user',
                 'detail': str(err),
             })
+
+    @classmethod
+    def update_user(cls, obj, **kwargs):
+        try:
+            obj.refresh_from_db()
+            for key, value in kwargs.items():
+                setattr(obj, key, value)
+            obj.save()
+        except Exception as err:
+            raise serializers.ValidationError({
+                'step': 'In step update user',
+                'detail': str(err),
+            })
+        return obj
 
     @classmethod
     def create_space_employee(cls, emp_obj, space_obj, **kwargs):

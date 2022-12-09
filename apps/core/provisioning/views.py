@@ -1,32 +1,23 @@
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from apps.core.provisioning.serializers import ProvisioningCreateNewTenant
+from apps.core.provisioning.serializers import ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer
 from apps.core.provisioning.utils import TenantController
-from apps.shared import ResponseController
+from apps.core.tenant.models import Tenant
+from apps.shared import ResponseController, ProvisioningMsg
 
 
 class NewTenant(APIView):
     permission_classes = [AllowAny]
 
-    @staticmethod
-    def get_client_ip(request):
-        """No longer supported , replace with middleware check"""
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
-    @staticmethod
-    def is_allowed_ip(ip_client):
-        """No longer supported , replace with middleware check"""
-        if ip_client in settings.ALLOWED_IP_PROVISIONING:
-            return True
-        return False
+    @swagger_auto_schema(operation_summary='Tenant List')
+    def get(self, request, *args, **kwargs):
+        tenants = Tenant.objects.all()
+        ser = TenantListSerializer(tenants, many=True)
+        return ResponseController.success_200(data=ser.data, key_data='result')
 
     @swagger_auto_schema(
         operation_summary='Allow Provisioning Server call "Create New Tenant".',
@@ -49,6 +40,8 @@ class NewTenant(APIView):
                     "email": "string",
                     "phone": "string"
                 },
+                'auto_create_company': True,
+                'company_quality_max': 5,
             },
             'employee_data': {
                 'first_name': 'Nguyen Van',
@@ -60,18 +53,53 @@ class NewTenant(APIView):
                 'username': 'mis',
                 'password': '111111',
             },
+            'create_admin': True,
         }
 
         ser = ProvisioningCreateNewTenant(data=request.data)
         ser.is_valid(raise_exception=True)
 
         tenant_code = ser.validated_data['tenant_data'].pop('code')
-        is_success = TenantController().setup_new(
+        auto_create_company = ser.validated_data['tenant_data']['auto_create_company']
+        user_data = ser.validated_data['user_data'] if ser.validated_data['create_admin'] else None
+        create_employee = ser.validated_data['create_employee']
+
+        tenant_controller = TenantController()
+        is_success = tenant_controller.setup_new(
             tenant_code=tenant_code,
             tenant_data=ser.validated_data['tenant_data'],
-            employee_data=ser.validated_data['employee_data'],
-            user_data=ser.validated_data['user_data'],
+            user_data=user_data,
+            create_company=auto_create_company,
+            create_employee=create_employee,
         )
         if is_success is True:
-            return ResponseController.success_200({'data': 'successful'}, key_data='result')
+            return ResponseController.success_200(
+                TenantListSerializer(tenant_controller.tenant_obj).data,
+                key_data='result',
+            )
         return ResponseController.bad_request_400(msg='Setup new tenant was raised undefined error.')
+
+
+class TenantNewAdmin(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(operation_summary='Create New Tenant Admin', request_body=ProvisioningUserData)
+    def post(self, request, *args, **kwargs):
+        pk = kwargs.get('pk', None)
+        if pk:
+            tenant_obj = Tenant.objects.filter(pk=pk).first()
+            if tenant_obj:
+                if tenant_obj.admin_created is True or tenant_obj.admin:
+                    raise serializers.ValidationError({
+                        'tenant': ProvisioningMsg.TENANT_ADMIN_READY
+                    })
+                ser = ProvisioningUserData(data=request.data)
+                ser.is_valid(raise_exception=True)
+                tenant_controller = TenantController()
+                tenant_controller.tenant_obj = tenant_obj
+                tenant_controller.setup_user(dict(ser.validated_data))
+                return ResponseController.success_200(
+                    TenantListSerializer(tenant_controller.tenant_obj).data,
+                    key_data='result',
+                )
+        return ResponseController.notfound_404()
