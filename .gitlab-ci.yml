@@ -1,0 +1,39 @@
+# docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
+
+variables:
+  MYSQL_DATABASE: $MYSQL_DB
+  MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
+  MYSQL_USER: $MYSQL_USER
+  MYSQL_PASSWORD: $MYSQL_PASS
+
+default:
+  image: centos:7
+  #services:
+  #  - mysql:8.0
+
+  #cache:
+  #  paths:
+  #    - ~/.cache/pip/
+  before_script:
+    - yum update -y
+    - yum install -y python3-devel  python-devel python gcc python3-pip mysql-devel wget
+    - wget https://kojipkgs.fedoraproject.org//packages/sqlite/3.8.11/1.fc21/x86_64/sqlite-devel-3.8.11-1.fc21.x86_64.rpm
+    - wget https://kojipkgs.fedoraproject.org//packages/sqlite/3.8.11/1.fc21/x86_64/sqlite-3.8.11-1.fc21.x86_64.rpm
+    - yum install -y sqlite-3.8.11-1.fc21.x86_64.rpm sqlite-devel-3.8.11-1.fc21.x86_64.rpm
+    - pip3 --version
+    - pip3 install pip==20.0.2
+    - pip3 install -r req.txt
+    - python3 manage.py makemigrations
+    - python3 manage.py migrate
+
+
+stages:
+ - test
+
+
+cmis-tests:
+  stage: test
+  script:
+    - python3 manage.py test
+  after_script:
+    - exit

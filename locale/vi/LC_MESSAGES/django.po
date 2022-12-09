@@ -1,0 +1,83 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-12-08 16:49+0700\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\apps\shared\translations\api.py:5
+msgid "This field is required"
+msgstr "Trường này là bắt buộc"
+
+#: .\apps\shared\translations\auth.py:5
+msgid "Username and password are incorrect."
+msgstr "Tên đăng nhập hoặc mật khẩu không chính xác."
+
+#: .\apps\shared\translations\auth.py:6
+msgid "A user with that username already exists."
+msgstr "Tên người dùng đã tồn tại."
+
+#: .\apps\shared\translations\auth.py:7
+msgid "Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only."
+msgstr "Yêu cầu có dữ liệu, tối đa 150 ký tự chỉ bao gồm chữ cái, số."
+
+#: .\apps\shared\translations\auth.py:9
+msgid "The feature require employee information in your account."
+msgstr "Chức năng yêu cầu người dùng có liên kết với nhân viên để thao tác."
+
+#: .\apps\shared\translations\auth.py:11
+msgid "The tenant \"{}\" not found."
+msgstr "Không tìm thấy tenant có mã \"{}\"."
+
+#: .\apps\shared\translations\auth.py:12
+msgid "The tenant \"{}\" was found return more than one records."
+msgstr "Không thể xác minh vì đã tìm thấy nhiều hơn một tenant có mã \"{}\"."
+
+#: .\apps\shared\translations\http.py:5
+msgid "The information was successfully deleted."
+msgstr "Thông tin được xóa thành công."
+
+#: .\apps\shared\translations\http.py:6
+msgid "Some data is incorrect."
+msgstr "Một số dữ liệu không chính xác."
+
+#: .\apps\shared\translations\http.py:7
+msgid "Login was expired. Please login and try again."
+msgstr "Đăng nhập hết hạn. Vui lòng đăng nhập và thử lại."
+
+#: .\apps\shared\translations\http.py:8
+msgid "Don't have permission."
+msgstr "Không được cấp quyền."
+
+#: .\apps\shared\translations\http.py:9
+msgid "Not found"
+msgstr "Không Tìm Thấy."
+
+#: .\apps\shared\translations\provisioning.py:5
+msgid "Tenant code \"{}\" was ready, process canceling..."
+msgstr "Mã tenant \"{}\" đã tồn tại. Quy trình tạo tenant đang được hủy."
+
+#: .\apps\shared\translations\server.py:5
+msgid "Undefined error raises."
+msgstr "Một số lỗi không xác định."
+
+#: .\apps\shared\translations\server.py:6
+msgid "Internal Server Error"
+msgstr "Lỗi Máy Chủ"
+
+#: .\apps\shared\translations\server.py:7
+msgid "key_data == '' must be require data is dictionary."
+msgstr ""
