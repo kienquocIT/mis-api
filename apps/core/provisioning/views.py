@@ -4,7 +4,8 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from apps.core.provisioning.serializers import ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer
+from apps.core.provisioning.serializers import ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer, \
+    TenantListViewSerializer
 from apps.core.provisioning.utils import TenantController
 from apps.core.tenant.models import Tenant
 from apps.shared import ResponseController, ProvisioningMsg
@@ -16,7 +17,7 @@ class NewTenant(APIView):
     @swagger_auto_schema(operation_summary='Tenant List')
     def get(self, request, *args, **kwargs):
         tenants = Tenant.objects.all()
-        ser = TenantListSerializer(tenants, many=True)
+        ser = TenantListViewSerializer(tenants, many=True)
         return ResponseController.success_200(data=ser.data, key_data='result')
 
     @swagger_auto_schema(

@@ -109,3 +109,9 @@ class TenantListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tenant
         fields = '__all__'
+
+
+class TenantListViewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tenant
+        fields = ('title', 'code')

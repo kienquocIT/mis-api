@@ -153,6 +153,7 @@ class User(AuthUser):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'username': self.username,
+            'email': self.email,
             'last_login': FORMATTING.parse_datetime(self.last_login),
             'is_admin_tenant': self.is_admin_tenant,
             'tenant_current': self.tenant_current.get_detail() if self.tenant_current else {},

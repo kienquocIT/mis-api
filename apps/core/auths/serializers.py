@@ -73,6 +73,7 @@ class AuthLoginSerializer(Serializer):  # noqa
             if user_obj:
                 if user_obj.check_password(attrs['password']):
                     return user_obj
+                raise User.DoesNotExist()
         except User.DoesNotExist:
             raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
         except Exception:
