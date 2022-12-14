@@ -5,7 +5,7 @@ from rest_framework.exceptions import ErrorDetail
 
 from apps.shared import ProvisioningMsg
 
-from apps.core.tenant.models import Tenant
+from apps.core.tenant.models import Tenant, SubscriptionPlan, TenantPlan
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
@@ -34,20 +34,30 @@ class TenantController:
         self.user_obj = None
 
     def setup_new(
-            self, tenant_code,
+            self,
+            tenant_code,
             tenant_data: dict,
             user_data: dict,
             create_company: bool,
             create_employee: bool,
+            plan_data,
     ) -> serializers.ValidationError or bool:
         try:
             with transaction.atomic():
+                plan_obj_list = self.check_and_create_plan(plan_data)
                 self.tenant_obj = self.get_tenant_by_code(tenant_code)
                 if not self.tenant_obj:
                     self.tenant_obj = self.create_tenant(
                         **tenant_data,
                         code=tenant_code,
                     )
+
+                    # create TenantPlan
+                    if plan_obj_list and self.tenant_obj:
+                        self.create_tenant_plan(
+                            plan_obj_list=plan_obj_list,
+                            tenant_obj=self.tenant_obj
+                        )
 
                     # create Company
                     self.company_obj, self.space_obj = None, None
@@ -82,6 +92,7 @@ class TenantController:
                             self.update_user(self.user_obj, employee_current=self.employee_obj)
                             if self.space_obj:
                                 self.create_space_employee(self.employee_obj, self.space_obj, **{})
+
                     return True
                 raise serializers.ValidationError({
                     'detail': ProvisioningMsg.TENANT_READY.format(tenant_code),
@@ -271,3 +282,46 @@ class TenantController:
                 'step': 'In step put employee to space',
                 'detail': str(err),
             })
+
+    @classmethod
+    def check_and_create_plan(cls, plan_data):
+        result = []
+        for plan in plan_data:
+            plan_code = plan.get('code', None)
+            plan_title = plan.get('title', None)
+            plan_obj = SubscriptionPlan.objects.filter(code=plan_code).first()
+            if not plan_obj:
+                plan_obj = SubscriptionPlan.objects.create(**{
+                    'title': plan_title,
+                    'code': plan_code
+                })
+                if plan_obj:
+                    result.append(plan_obj)
+            else:
+                result.append(plan_obj)
+        return result
+
+    @classmethod
+    def create_tenant_plan(cls, plan_obj_list, tenant_obj):
+        if plan_obj_list and tenant_obj:
+            tenant_plan_json = {}
+            bulk_info = []
+            if tenant_obj.plan:
+                tenant_plan_json = tenant_obj.plan
+            if tenant_plan_json:
+                for plan_obj in plan_obj_list:
+                    if plan_obj.code in tenant_plan_json:
+                        is_limited = tenant_plan_json[plan_obj.code].get('license_limited', None)
+                        license_quantity = tenant_plan_json[plan_obj.code].get('license_quantity', None)
+                        if is_limited and license_quantity:
+                            bulk_info.append(TenantPlan(
+                                **{
+                                    'tenant': tenant_obj,
+                                    'plan': plan_obj,
+                                    'is_limited': is_limited,
+                                    'license_quantity': license_quantity
+                                },
+                            ))
+            if bulk_info:
+                TenantPlan.objects.bulk_create(bulk_info)
+        return True

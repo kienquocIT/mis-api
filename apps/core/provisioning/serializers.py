@@ -9,6 +9,8 @@ from apps.shared import UUIDEncoder, APIMsg, ProvisioningMsg
 
 # UTILS PROVISIONING
 class TenantCreateSerializer(serializers.ModelSerializer):
+    plan = serializers.JSONField(required=False)
+
     class Meta:
         model = Tenant
         fields = '__all__'
@@ -60,6 +62,7 @@ class ProvisioningTenantData(serializers.ModelSerializer):
     user_request_created = UserRequestCreateSerializer()
     auto_create_company = serializers.BooleanField()
     company_quality_max = serializers.IntegerField()
+    plan = serializers.JSONField(required=False)
 
     class Meta:
         model = Tenant
@@ -68,6 +71,7 @@ class ProvisioningTenantData(serializers.ModelSerializer):
             'representative_fullname', 'representative_phone_number',
             'auto_create_company', 'company_quality_max',
             'user_request_created',
+            'plan'
         )
 
 
@@ -87,6 +91,7 @@ class ProvisioningCreateNewTenant(serializers.Serializer):  # noqa
     user_data = ProvisioningUserData(required=False)
     create_admin = serializers.BooleanField()
     create_employee = serializers.BooleanField()
+    plan_data = serializers.JSONField(required=False)
 
     def validate(self, data):
         if data['create_admin'] is True:
