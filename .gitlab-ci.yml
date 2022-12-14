@@ -15,7 +15,7 @@ default:
   #  paths:
   #    - ~/.cache/pip/
   before_script:
-    - apt-get install python3-mysqldb
+    - apk --no-cache add py-mysqldb
     - pip3 --version
     - pip3 install pip==20.0.2
     - pip3 install -r req.txt
