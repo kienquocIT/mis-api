@@ -64,6 +64,7 @@ class NewTenant(APIView):
         auto_create_company = ser.validated_data['tenant_data']['auto_create_company']
         user_data = ser.validated_data['user_data'] if ser.validated_data['create_admin'] else None
         create_employee = ser.validated_data['create_employee']
+        plan_data = ser.validated_data['plan_data']
 
         tenant_controller = TenantController()
         is_success = tenant_controller.setup_new(
@@ -72,6 +73,7 @@ class NewTenant(APIView):
             user_data=user_data,
             create_company=auto_create_company,
             create_employee=create_employee,
+            plan_data=plan_data
         )
         if is_success is True:
             return ResponseController.success_200(

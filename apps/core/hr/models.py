@@ -15,6 +15,7 @@ class Employee(TenantCoreModel):
     search_content = models.CharField(verbose_name='Support Search Content', max_length=300, blank=True, null=True)
     avatar = models.TextField(null=True, verbose_name='avatar path')
 
+    date_joined = models.DateTimeField(verbose_name='joining day', null=True)
     dob = models.DateField(verbose_name='birthday', null=True)
     gender = models.CharField(
         verbose_name='gender male or female',
@@ -31,6 +32,12 @@ class Employee(TenantCoreModel):
         related_name='employee_map_space'
     )
 
+    # plan & application of plan
+    # {
+    #       '{code_Plan}': [app1, app2, ...]
+    # }
+    plan_application = JSONField(default={})
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -40,7 +47,7 @@ class Employee(TenantCoreModel):
 
     def save(self, *args, **kwargs):
         # setup full name for search engine
-        self.full_name_search = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
+        self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
         super(Employee, self).save(*args, **kwargs)
 
     def get_detail(self, excludes=None):
@@ -53,6 +60,24 @@ class Employee(TenantCoreModel):
         result['avatar'] = self.avatar
         return result
 
+    def get_full_name(self, order_arrange=2):
+        """
+        order_arrange: The ways arrange full name from first_name and last_name
+        ---
+        First Name: Nguyen Van
+        Last Name: A
+
+        Two ways arrange full name:
+        [1] {First Name}{Space}{Last Name} <=> Nguyen Van A
+        [2] {Last Name}{Point}{Space}{First Name} <=> A. Nguyen Van
+        [Another] Return default order_arrange
+        """
+        if self.last_name or self.first_name:
+            if order_arrange == 1:
+                return '{}, {}'.format(self.last_name, self.first_name)  # first ways
+            return '{} {}'.format(self.last_name, self.first_name)  # second ways or another arrange
+        return None
+
 
 class SpaceEmployee(M2MModel):
     space = models.ForeignKey('tenant.Space', on_delete=models.CASCADE)
@@ -62,6 +87,25 @@ class SpaceEmployee(M2MModel):
     class Meta:
         verbose_name = 'Space of Employee'
         verbose_name_plural = 'Space of Employee'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PlanEmployee(M2MModel):
+    plan = models.ForeignKey(
+        'tenant.SubscriptionPlan',
+        on_delete=models.CASCADE
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE
+    )
+    application = JSONField(default=[])
+
+    class Meta:
+        verbose_name = 'Plan of Employee'
+        verbose_name_plural = 'Plan of Employee'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
