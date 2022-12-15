@@ -1,17 +1,34 @@
+from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 
+from apps.core.account.mixins import AccountListMixin, AccountCreateMixin
+from apps.core.account.models import User
+from apps.core.account.serializers import UserListSerializer
 from apps.shared import ResponseController
 
 
-class UserList(APIView):
+class UserList(
+    AccountListMixin,
+    AccountCreateMixin,
+    generics.GenericAPIView
+):
     permission_classes = [IsAuthenticated]
+    queryset = User.objects.all()
+    search_fields = ["full_name_search"]
 
-    @swagger_auto_schema()
+    serializer_class = UserListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="User list",
+        operation_description="Get user list",
+    )
     def get(self, request, *args, **kwargs):
-        # user_list = SerUser(userobjs, many=True).data
-        return ResponseController.success_200(data=[], key_data='result')
-    # {
-    #     'result': user_list
-    # }
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create user",
+        operation_description="Create a new user",
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
