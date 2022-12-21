@@ -27,7 +27,6 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):
         raise serializers.ValidationError("Value must be array.")
 
 
-
 class EmployeePlanAppUpdateSerializer(serializers.Serializer):
     plan = serializers.UUIDField(required=False)
     application = serializers.ListSerializer(
