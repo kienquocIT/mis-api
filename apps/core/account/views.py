@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from .models import User
-from .serializers import UserListSerializer, UserCreateSerializer, UserDetailSerializer
+from .serializers import UserListSerializer, UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 
 from apps.shared import ResponseController
 
@@ -45,10 +45,10 @@ class UserDetail(APIView):
         user = UserDetailSerializer(user)
         return ResponseController.success_200(data=user.data, key_data='result')
 
-    @swagger_auto_schema(operation_summary="Update User", request_body=UserListSerializer)
+    @swagger_auto_schema(operation_summary="Update User", request_body=UserUpdateSerializer)
     def put(self, request, pk, *args, **kwargs):
         user = User.objects.get(pk=pk)
-        user = UserListSerializer(user, data=request.data)
+        user = UserUpdateSerializer(instance=user, data=request.data)
         if user.is_valid():
             user.save()
             return ResponseController.success_200(
@@ -62,6 +62,7 @@ class UserDetail(APIView):
         try:
             user = User.objects.get(pk=pk)
             user.delete()
-            return ResponseController.success_200(data={}, key_data='result')
+            user = UserDetailSerializer(user)
+            return ResponseController.success_200(data=user.data, key_data='result')
         except:
-            return ResponseController.bad_request_400(msg='Setup new user was raised undefined error.')
+            return ResponseController.bad_request_400(msg='User does not exist')
