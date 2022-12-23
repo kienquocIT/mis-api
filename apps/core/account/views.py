@@ -1,16 +1,32 @@
+from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import AllowAny
-from rest_framework.views import APIView
 from .models import User
 from .serializers import UserListSerializer, UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 
+from apps.core.account.mixins import AccountListMixin, AccountCreateMixin
+from apps.core.account.models import User
+from apps.core.account.serializers import UserListSerializer
 from apps.shared import ResponseController
 
 
-class UserList(APIView):
+class UserList(
+    AccountListMixin,
+    AccountCreateMixin,
+    generics.GenericAPIView
+):
     permission_classes = [AllowAny]
+    queryset = User.objects.select_related(
+        "tenant_current",
+    )
+    search_fields = ["full_name_search"]
 
-    @swagger_auto_schema(operation_summary='User List')
+    serializer_class = UserListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="User list",
+        operation_description="Get user list",
+    )
     def get(self, request, *args, **kwargs):
         users = User.objects.all()
         users = UserListSerializer(users, many=True)

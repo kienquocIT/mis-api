@@ -70,7 +70,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
         if self.last_name or self.first_name:
             if order_arrange == 1:
                 return '{}, {}'.format(self.last_name, self.first_name)  # first ways
-            return '{}. {}'.format(self.last_name, self.first_name)  # second ways or another arrange
+            return '{} {}'.format(self.last_name, self.first_name)  # second ways or another arrange
         return self.username
 
     class Meta:

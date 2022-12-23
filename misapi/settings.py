@@ -57,6 +57,7 @@ INSTALLED_APPS = \
         'apps.core.account',
         'apps.core.tenant',
         'apps.core.hr',
+        'apps.core.organization',
     ]
 
 MIDDLEWARE = [
@@ -255,6 +256,39 @@ FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 # option account user create
 
 ENABLE_TURN_ON_IS_EMAIL = False
+
+# LOGGING
+
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+if not os.path.exists(LOG_DIR):
+    os.makedirs(LOG_DIR)
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+            "datefmt": "%d/%b/%Y-%H:%M:%S",
+        },
+    },
+    "handlers": {
+        "file": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": os.path.join(LOG_DIR, "api.log"),
+            "when": "D",
+            "interval": 1,
+            "backupCount": 10,
+            "formatter": "verbose",
+        },
+    },
+    "loggers": {
+        "": {
+            "handlers": ["file"],
+            "level": "INFO",
+        },
+    },
+}
 
 # another import
 

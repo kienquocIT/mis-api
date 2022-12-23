@@ -15,6 +15,7 @@ default:
   #  paths:
   #    - ~/.cache/pip/
   before_script:
+    - apk add gcc musl-dev mariadb-connector-c-dev
     - pip3 --version
     - pip3 install pip==20.0.2
     - pip3 install -r req.txt

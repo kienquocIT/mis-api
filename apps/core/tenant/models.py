@@ -12,6 +12,12 @@ TENANT_KIND = (
     (2, 'On-prem'),
 )
 
+# TenantPlan model choices
+LICENSE_BUY_TYPE = (
+    (0, "Auto Renew"),
+    (1, "One Time"),
+)
+
 
 class Tenant(BaseModel):
     # override field from BASE MODEL
@@ -28,6 +34,15 @@ class Tenant(BaseModel):
     # representative
     representative_fullname = models.CharField(max_length=100)
     representative_phone_number = models.CharField(max_length=50)
+
+    # plan info
+    # {
+    #       '{code_Plan}': {
+    #           'license_limited': true,    # License: limit or unlimited
+    #           'license_quantity': 100,     # quantity: null if unlimited, required if limit.
+    #       }
+    # }
+    plan = JSONField(default={})
 
     # company of tenant
     auto_create_company = models.BooleanField(default=True)
@@ -145,6 +160,68 @@ class CompanyLicenseTracking(M2MModel):
     class Meta:
         verbose_name = 'Company License Tracking'
         verbose_name_plural = 'Company License Tracking'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class SubscriptionPlan(BaseModel):
+    class Meta:
+        verbose_name = 'Subscription Plan'
+        ordering = ('title',)
+        default_permissions = ()
+        permissions = ()
+
+
+class TenantPlan(BaseModel):
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='tenant_plan_tenant',
+        null=True
+    )
+    plan = models.ForeignKey(
+        SubscriptionPlan,
+        on_delete=models.CASCADE,
+        related_name='tenant_plan_plan',
+        null=True
+    )
+    purchase_order = models.CharField(
+        max_length=200,
+        blank=True,
+        null=True
+    )
+    date_active = models.DateTimeField(null=True)
+    date_end = models.DateTimeField(null=True)
+    is_limited = models.BooleanField(null=True)
+    license_quantity = models.IntegerField(null=True)
+    license_used = models.IntegerField(null=True)
+    is_expired = models.BooleanField(
+        null=True,
+        default=False
+    )
+    license_buy_type = models.SmallIntegerField(
+        verbose_name="license buy type",
+        choices=LICENSE_BUY_TYPE,
+        help_text='Choose in (0, "Auto Renew"), (1, "One Time")',
+        default=0,
+    )
+
+    class Meta:
+        verbose_name = 'Tenant Plan'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class Application(BaseModel):
+    remarks = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Application'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
