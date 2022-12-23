@@ -11,6 +11,7 @@ class Employee(TenantCoreModel):
     email = models.CharField(max_length=150)
     phone = models.CharField(max_length=25)
 
+    is_active = models.BooleanField(verbose_name='active status', default=True)
     is_delete = models.BooleanField(verbose_name='delete', default=False)
     search_content = models.CharField(verbose_name='Support Search Content', max_length=300, blank=True, null=True)
     avatar = models.TextField(null=True, verbose_name='avatar path')

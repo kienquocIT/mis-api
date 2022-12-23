@@ -27,7 +27,6 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):
         raise serializers.ValidationError("Value must be array.")
 
 
-
 class EmployeePlanAppUpdateSerializer(serializers.Serializer):
     plan = serializers.UUIDField(required=False)
     application = serializers.ListSerializer(
@@ -53,6 +52,9 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    department = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
+    date_joined = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -64,10 +66,26 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'full_name',
             'email',
             'phone',
+            'date_joined',
+            'department',
+            'role',
+            'is_active',
         )
 
     def get_full_name(self, obj):
         return Employee.get_full_name(obj, 2)
+
+    def get_date_joined(self, obj):
+        return obj.date_created
+
+    def get_department(self, obj):
+        return {'id': 1, 'name': 'ABC'}
+
+    def get_role(self, obj):
+        return [
+            {'id': 1, 'name': 'R1'},
+            {'id': 1, 'name': 'R2'},
+        ]
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
@@ -208,4 +226,3 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                 info.employee = instance
             PlanEmployee.object_normal.bulk_create(bulk_info)
         return instance
-

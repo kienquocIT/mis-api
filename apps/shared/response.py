@@ -2,7 +2,7 @@ from rest_framework.response import Response
 from .extends import convert_errors
 
 
-def cus_response(data, status=None, is_errors=False):
+def cus_response(data, status, is_errors=False):
     if is_errors:
         data = convert_errors(data, status_code=status)
     else:
