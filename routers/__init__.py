@@ -1,14 +1,14 @@
 # Routers use db when event call hit DB (default always use)
 # define DB map apps
-DB_ROUTERS_LOG_APP_LABELS = ("hr",)
+DB_ROUTERS_LOG_APP_LABELS = ("logs")
 DB_ROUTERS_LOG_MAP_MODELS = {
-    "hr": ("Employee",),
+    "logs": (),
 }
 
 
 # class config
 class LogRouter:
-    db_config = "hr"
+    db_config = "logs"
     route_app_labels = DB_ROUTERS_LOG_APP_LABELS
     route_app_labels_models = DB_ROUTERS_LOG_MAP_MODELS
 
