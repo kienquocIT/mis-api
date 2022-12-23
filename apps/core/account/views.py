@@ -1,6 +1,8 @@
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import AllowAny
+from rest_framework.views import APIView
+
 from .models import User
 from .serializers import UserListSerializer, UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 
@@ -28,9 +30,7 @@ class UserList(
         operation_description="Get user list",
     )
     def get(self, request, *args, **kwargs):
-        users = User.objects.all()
-        users = UserListSerializer(users, many=True)
-        return ResponseController.success_200(data=users.data, key_data='result')
+        return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Create New User', request_body=UserCreateSerializer)
     def post(self, request, *args, **kwargs):

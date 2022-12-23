@@ -24,7 +24,7 @@ class UserListSerializer(serializers.ModelSerializer):
         return User.get_full_name(obj, 2)
 
     def get_tenant_current(self, obj):
-		 if obj.tenant_current:
+        if obj.tenant_current:
             return {
                 'id': obj.tenant_current_id,
                 'title': obj.tenant_current.title,
@@ -42,11 +42,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'password', 'phone', 'email', 'tenant_current')
+        fields = ('first_name', 'last_name', 'username', 'password', 'email', 'tenant_current')
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = '__all__'
-       
