@@ -4,7 +4,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
 from .models import User
-from .serializers import UserListSerializer, UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
+from .serializers import  UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 
 from apps.core.account.mixins import AccountListMixin, AccountCreateMixin
 from apps.core.account.models import User
