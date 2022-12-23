@@ -51,7 +51,7 @@ class UserRequestCreateSerializer(serializers.Serializer):  # noqa
     id = serializers.UUIDField()
     full_name = serializers.CharField()
     email = serializers.CharField()
-    phone = serializers.CharField()
+    phone = serializers.CharField(allow_null=True)
 
     def validate(self, attrs):
         return json.dumps(attrs, cls=UUIDEncoder)
@@ -79,7 +79,10 @@ class ProvisioningUserData(serializers.ModelSerializer):
     first_name = serializers.CharField(max_length=80)
     last_name = serializers.CharField(max_length=150)
     email = serializers.CharField(max_length=150)
-    phone = serializers.CharField(max_length=50)
+    phone = serializers.CharField(
+        max_length=50,
+        allow_null=True
+    )
 
     class Meta:
         model = User

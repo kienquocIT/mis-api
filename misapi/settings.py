@@ -57,6 +57,7 @@ INSTALLED_APPS = \
         'apps.core.account',
         'apps.core.tenant',
         'apps.core.hr',
+        'apps.core.organization',
     ]
 
 MIDDLEWARE = [

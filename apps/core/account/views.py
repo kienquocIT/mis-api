@@ -14,7 +14,9 @@ class UserList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.all()
+    queryset = User.objects.select_related(
+        "tenant_current",
+    )
     search_fields = ["full_name_search"]
 
     serializer_class = UserListSerializer

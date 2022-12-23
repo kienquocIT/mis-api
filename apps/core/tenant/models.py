@@ -28,7 +28,7 @@ class Tenant(BaseModel):
     private_block = models.CharField(max_length=100, blank=True)
 
     # tenant detail
-    sub_domain = models.CharField(max_length=10, unique=True)
+    sub_domain = models.CharField(max_length=20, unique=True)
     sub_domain_suffix = models.CharField(max_length=25, default='.quantrimis.com.vn')
 
     # representative

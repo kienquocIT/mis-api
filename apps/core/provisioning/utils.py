@@ -133,7 +133,7 @@ class TenantController:
                 admin_created=True,
                 admin=self.user_obj
             )
-        return True
+        return self.user_obj
 
     @classmethod
     def get_tenant_by_code(cls, tenant_code):
