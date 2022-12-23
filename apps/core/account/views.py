@@ -1,5 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from .models import User
 from .serializers import UserListSerializer, UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
@@ -8,6 +8,7 @@ from apps.shared import ResponseController
 
 
 class UserList(APIView):
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(operation_summary='User List')
     def get(self, request, *args, **kwargs):
@@ -17,7 +18,8 @@ class UserList(APIView):
 
     @swagger_auto_schema(operation_summary='Create New User', request_body=UserCreateSerializer)
     def post(self, request, *args, **kwargs):
-        user = UserCreateSerializer(data=request.data)
+        data = request.data
+        user = UserCreateSerializer(data=data)
         if user.is_valid():
             user.save()
             return ResponseController.success_200(
@@ -28,7 +30,7 @@ class UserList(APIView):
 
 
 class UserDetail(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
     @swagger_auto_schema(operation_summary="Detail User")
     def get_object(self, request, pk, *args, **kwargs):
