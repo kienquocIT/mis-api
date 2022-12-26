@@ -3,8 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from .models import User
-from .serializers import  UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
+from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 
 from apps.core.account.mixins import AccountListMixin, AccountCreateMixin
 from apps.core.account.models import User
@@ -37,7 +36,7 @@ class UserList(
         data = request.data
         user = UserCreateSerializer(data=data)
         if user.is_valid():
-            user.save()
+            user.save(tenant_current=request.user.tenant_current)
             return ResponseController.success_200(
                 data=user.data,
                 key_data='result',
