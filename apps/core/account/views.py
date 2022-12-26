@@ -1,6 +1,6 @@
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
@@ -16,7 +16,7 @@ class UserList(
     AccountCreateMixin,
     generics.GenericAPIView
 ):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
     queryset = User.objects.select_related(
         "tenant_current",
     )
@@ -45,7 +45,7 @@ class UserList(
 
 
 class UserDetail(APIView):
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(operation_summary="Detail User")
     def get_object(self, request, pk, *args, **kwargs):
