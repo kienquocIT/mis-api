@@ -34,9 +34,12 @@ class UserList(
     @swagger_auto_schema(operation_summary='Create New User', request_body=UserCreateSerializer)
     def post(self, request, *args, **kwargs):
         data = request.data
+        password = data['password']
         user = UserCreateSerializer(data=data)
         if user.is_valid():
-            user.save(tenant_current=request.user.tenant_current)
+            obj = user.save(tenant_current=request.user.tenant_current)
+            obj.set_password(password)
+            obj.save()
             return ResponseController.success_200(
                 data=user.data,
                 key_data='result',
