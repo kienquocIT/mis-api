@@ -68,9 +68,17 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'apps.shared.AllowCIDRAndProvisioningMiddleware',  # allow IP range
-    'apps.shared.AllFilterMiddleware',  # filter all request
 ]
+# Author: Paul McLanahan <pmac@mozilla.com>
+# Package: Allow range IP or switch path view from request key (customize)
+# Home Page: https://github.com/mozmeao/django-allow-cidr
+# Package Healthy Score: https://snyk.io/advisor/python/django-allow-cidr
+MIDDLEWARE += ['apps.shared.AllowCIDRAndProvisioningMiddleware']
+# Author: ©2018, Nine More Minutes, Inc.. | Powered by Sphinx 1.8.5 & Alabaster 0.7.12 | Page source
+# Package: CRUM - Current Request User Middleware
+# Home Page: https://django-crum.readthedocs.io/en/latest/
+# Package Health Score: https://snyk.io/advisor/python/django-crum
+MIDDLEWARE += ['crum.CurrentRequestUserMiddleware']
 
 ROOT_URLCONF = 'misapi.urls'
 
@@ -128,6 +136,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
+# translate active language in Authenticated Classes
 
 LOCALE_PATHS = [os.path.join(BASE_DIR, 'locale')]
 
