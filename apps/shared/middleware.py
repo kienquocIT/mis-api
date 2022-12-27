@@ -1,5 +1,9 @@
 import ipaddress
 
+from django.contrib.auth.models import AnonymousUser
+from django.utils import translation
+from django.utils.deprecation import MiddlewareMixin
+
 try:
     from packaging.version import Version
 except ImportError:
@@ -9,6 +13,14 @@ import django
 from django.conf import settings
 from django.core.exceptions import DisallowedHost, MiddlewareNotUsed
 from django.http.request import split_domain_port, validate_host
+
+from threading import local
+
+_thread_locals = local()
+
+
+def get_user_data():
+    return getattr(_thread_locals, "user_data", None)
 
 
 class AllowCIDRAndProvisioningMiddleware:
@@ -97,7 +109,33 @@ class AllowCIDRAndProvisioningMiddleware:
 
                 if should_raise:
                     raise DisallowedHost("Invalid HTTP_HOST header: %r." % host)
-
         response = self.get_response(request)
 
         return response
+
+
+class AllFilterMiddleware(MiddlewareMixin):
+    @classmethod
+    def process_request(cls, request):
+        if request.user and not isinstance(request.user, AnonymousUser):
+            language = getattr(request.user, 'language', settings.LANGUAGE_CODE)
+        else:
+            language_accept = request.headers.get('Accept-Language', settings.LANGUAGE_CODE)
+            if language_accept and isinstance(language_accept, str):
+                try:
+                    language = language_accept.split(";")[0].split(',')[-1]
+                except Exception as err:
+                    print(err)
+                    language = settings.LANGUAGE_CODE
+            else:
+                language = settings.LANGUAGE_CODE
+        translation.activate(language)
+
+        if request.user and not isinstance(request.user, AnonymousUser):
+            request.user_data = _thread_locals.user_data = {
+                'is_admin_tenant': request.user.is_admin_tenant,
+                'tenant_id': request.user.tenant_current_id,
+                'company_id': request.user.company_current_id,
+                'space_id': request.user.space_current_id,
+                'employee_id': request.user.employee_current_id,
+            }
