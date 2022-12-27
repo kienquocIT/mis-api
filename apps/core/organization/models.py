@@ -1,6 +1,7 @@
 # from django.db import models
+# from jsonfield import JSONField
 #
-# from apps.shared import TenantCoreModel
+# from apps.shared import TenantCoreModel, M2MModel
 #
 #
 # # Organization Group Level
@@ -56,13 +57,31 @@
 #         blank=True,
 #         null=True
 #     )
+#     group_employee = JSONField(
+#         verbose_name="group employee",
+#         null=True,
+#         default=[]
+#     )
 #     first_manager = models.ForeignKey(
 #         'hr.Employee',
 #         on_delete=models.CASCADE,
+#         related_name="group_first_manager",
 #         null=True
 #     )
 #     first_manager_title = models.CharField(
 #         verbose_name='first manager title',
+#         max_length=100,
+#         blank=True,
+#         null=True
+#     )
+#     second_manager = models.ForeignKey(
+#         'hr.Employee',
+#         on_delete=models.CASCADE,
+#         related_name="group_second_manager",
+#         null=True
+#     )
+#     second_manager_title = models.CharField(
+#         verbose_name='second manager title',
 #         max_length=100,
 #         blank=True,
 #         null=True
@@ -74,3 +93,24 @@
 #         ordering = ('-date_created',)
 #         default_permissions = ()
 #         permissions = ()
+#
+#
+# # M2M Group Employee
+# class GroupEmployee(M2MModel):
+#     group = models.ForeignKey(
+#         'organization.Group',
+#         on_delete=models.CASCADE,
+#         related_name="group_employee_group",
+#         null=True
+#     )
+#     employee = models.ForeignKey(
+#         'hr.Employee',
+#         on_delete=models.CASCADE,
+#         related_name="group_employee_employee",
+#         null=True
+#     )
+#     role = JSONField(
+#         verbose_name="role",
+#         null=True,
+#         default=[]
+#     )
