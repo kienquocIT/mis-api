@@ -16,7 +16,10 @@ class HRListMixin:
 
     def list(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            queryset = self.get_queryset()
+            queryset = self.filter_queryset(
+                self.get_queryset()
+                .filter(**kwargs)
+            )
             if queryset:
                 serializer = self.serializer_class(queryset, many=True)
                 return ResponseController.success_200(serializer.data, key_data='result')

@@ -4,9 +4,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
-from apps.core.auths.middleware import get_user_data
 from apps.shared.controllers import ResponseController
-from apps.shared import translations as trans
 from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer
 from apps.shared.translations import AuthMsg
 
