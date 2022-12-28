@@ -8,4 +8,4 @@ from .constant import *
 from .translations import *
 from .formats import FORMATTING
 from .utils import StringHandler, UUIDEncoder
-from .middleware import AllowCIDRAndProvisioningMiddleware, AllFilterMiddleware, get_user_data
+from .middleware.cidr_provisioning import AllowCIDRAndProvisioningMiddleware
