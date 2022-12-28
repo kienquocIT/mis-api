@@ -97,7 +97,6 @@ class AllowCIDRAndProvisioningMiddleware:
 
                 if should_raise:
                     raise DisallowedHost("Invalid HTTP_HOST header: %r." % host)
-
         response = self.get_response(request)
 
         return response

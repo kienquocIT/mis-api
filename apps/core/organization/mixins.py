@@ -3,7 +3,7 @@ from apps.shared import ResponseController
 from rest_framework.exceptions import ValidationError
 
 
-class HRListMixin:
+class OrganizationListMixin:
 
     #     @MixinController.authenticate_request
     #     def list(self, request, *args, **kwargs):
@@ -26,7 +26,7 @@ class HRListMixin:
         return ResponseController.unauthorized_401()
 
 
-class HRCreateMixin:
+class OrganizationCreateMixin:
 
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
@@ -54,7 +54,7 @@ class HRCreateMixin:
             return e
 
 
-class HRRetrieveMixin:
+class OrganizationRetrieveMixin:
 
     def retrieve(self, request, *args, **kwargs):
         if hasattr(request, "user"):
@@ -68,7 +68,7 @@ class HRRetrieveMixin:
         return ResponseController.unauthorized_401()
 
 
-class HRUpdateMixin:
+class OrganizationUpdateMixin:
 
     def update(self, request, *args, **kwargs):
         if hasattr(request, "user"):

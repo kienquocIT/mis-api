@@ -132,8 +132,8 @@ class ResponseController:
         return cus_response(
             {
                 "status": status.HTTP_404_NOT_FOUND,
-                "detail": msg if msg else ServerMsg.SERVER_ERR
-            }, status=status.HTTP_404_NOT_FOUND, is_errors=True,
+                "detail": str(msg) if msg else str(ServerMsg.SERVER_ERR)
+            }, status=status.HTTP_404_NOT_FOUND, is_errors=True
         )
 
 

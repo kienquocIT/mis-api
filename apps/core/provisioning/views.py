@@ -28,35 +28,6 @@ class NewTenant(APIView):
         request_body=ProvisioningCreateNewTenant
     )
     def post(self, request, *args, **kwargs):
-        req_body_eg = {
-            'tenant_data': {
-                'title': 'Cong Ty Co Phan Minh Tam Solution',
-                'code': 'MIS',
-                'sub_domain': 'mis',
-                'representative_fullname': 'Nguyen Van A',
-                'representative_phone_number': '0987654321',
-                'user_request_created': {
-                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                    "full_name": "string",
-                    "email": "string",
-                    "phone": "string"
-                },
-                'auto_create_company': True,
-                'company_quality_max': 5,
-            },
-            'employee_data': {
-                'first_name': 'Nguyen Van',
-                'last_name': 'A',
-                'email': 'a@mis.com.vn',
-                'phone': '0988776655',
-            },
-            'user_data': {
-                'username': 'mis',
-                'password': '111111',
-            },
-            'create_admin': True,
-        }
-
         ser = ProvisioningCreateNewTenant(data=request.data)
         ser.is_valid(raise_exception=True)
 
