@@ -82,7 +82,6 @@ class UserDetail(APIView):
         try:
             user = User.objects.get(pk=pk)
             user.delete()
-            user = UserDetailSerializer(user)
-            return ResponseController.success_200(data=user.data, key_data='result')
+            return ResponseController.success_200({'detail': 'success'}, key_data='result')
         except:
             return ResponseController.bad_request_400(msg='User does not exist')
