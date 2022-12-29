@@ -53,28 +53,61 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):
         many=True
     )
 
-    def create(self, validated_data):
-        bulk_info = []
-        if 'group_level_data' in validated_data:
-            if isinstance(validated_data['group_level_data'], list) and validated_data['group_level_data']:
-                group_level_old_level = GroupLevel.object_global.filter(
+    def create_new_update_old_group_level(self, validated_data, group_level_old_level_list, bulk_info):
+        group_level_old_level = GroupLevel.object_global.filter(
+            tenant_id=validated_data.get('tenant_id', None),
+            company_id=validated_data.get('company_id', None),
+        ).values_list('level', flat=True)
+        for level in group_level_old_level:
+            group_level_old_level_list.append(level)
+        for data in validated_data['group_level_data']:
+            # create new
+            if data['level'] not in group_level_old_level:
+                bulk_info.append(GroupLevel(
+                    **data,
+                    user_created=validated_data.get('user_created', None),
                     tenant_id=validated_data.get('tenant_id', None),
                     company_id=validated_data.get('company_id', None),
-                ).values_list('level', flat=True)
-                for data in validated_data['group_level_data']:
-                    if data['level'] not in group_level_old_level:
-                        bulk_info.append(GroupLevel(
-                            **data,
-                            user_created=validated_data.get('user_created', None),
-                            tenant_id=validated_data.get('tenant_id', None),
-                            company_id=validated_data.get('company_id', None),
-                        ))
-                    else:
-                        group_level_instance = GroupLevel.object_global.filter(level=data['level']).first()
-                        if group_level_instance:
-                            for key, value in data.items():
-                                setattr(group_level_instance, key, value)
-                            group_level_instance.save()
+                ))
+            # update old
+            else:
+                group_level_instance = GroupLevel.object_global.filter(level=data['level']).first()
+                if group_level_instance:
+                    for key, value in data.items():
+                        setattr(group_level_instance, key, value)
+                    group_level_instance.save()
+                    group_level_old_level_list.remove(data['level'])
+        return True
+
+    def create(self, validated_data):
+        bulk_info = []
+        group_level_old_level_list = []
+        if 'group_level_data' in validated_data:
+            if isinstance(validated_data['group_level_data'], list):
+                # create new or update group level
+                if validated_data['group_level_data']:
+                    self.create_new_update_old_group_level(
+                        validated_data=validated_data,
+                        group_level_old_level_list=group_level_old_level_list,
+                        bulk_info=bulk_info
+                    )
+                # delete all group level if data from UI == []
+                else:
+                    group_level_old_level = GroupLevel.object_global.filter(
+                        tenant_id=validated_data.get('tenant_id', None),
+                        company_id=validated_data.get('company_id', None),
+                    )
+                    if group_level_old_level:
+                        group_level_old_level.delete()
+        # delete group level
+        if group_level_old_level_list:
+            group_level_delete = GroupLevel.object_global.filter(
+                    tenant_id=validated_data.get('tenant_id', None),
+                    company_id=validated_data.get('company_id', None),
+                    level__in=group_level_old_level_list
+                )
+            if group_level_delete:
+                group_level_delete.delete()
         group_level = GroupLevel.object_global.bulk_create(bulk_info)
         return group_level
 
