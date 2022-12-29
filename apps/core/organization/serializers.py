@@ -46,8 +46,37 @@ class GroupLevelCreateSerializer(serializers.ModelSerializer):
             'second_manager_description',
         )
 
+
+class GroupLevelMainCreateSerializer(serializers.Serializer):
+    group_level_data = GroupLevelCreateSerializer(
+        required=False,
+        many=True
+    )
+
     def create(self, validated_data):
-        GroupLevel.objects.create(**validated_data)
+        bulk_info = []
+        if 'group_level_data' in validated_data:
+            if isinstance(validated_data['group_level_data'], list) and validated_data['group_level_data']:
+                group_level_old_level = GroupLevel.object_global.filter(
+                    tenant_id=validated_data.get('tenant_id', None),
+                    company_id=validated_data.get('company_id', None),
+                ).values_list('level', flat=True)
+                for data in validated_data['group_level_data']:
+                    if data['level'] not in group_level_old_level:
+                        bulk_info.append(GroupLevel(
+                            **data,
+                            user_created=validated_data.get('user_created', None),
+                            tenant_id=validated_data.get('tenant_id', None),
+                            company_id=validated_data.get('company_id', None),
+                        ))
+                    else:
+                        group_level_instance = GroupLevel.object_global.filter(level=data['level']).first()
+                        if group_level_instance:
+                            for key, value in data.items():
+                                setattr(group_level_instance, key, value)
+                            group_level_instance.save()
+        group_level = GroupLevel.object_global.bulk_create(bulk_info)
+        return group_level
 
 
 class GroupLevelUpdateSerializer(serializers.ModelSerializer):

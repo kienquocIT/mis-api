@@ -32,7 +32,7 @@ class GroupLevel(TenantCoreModel):
     class Meta:
         verbose_name = 'Group Level'
         verbose_name_plural = 'Group Levels'
-        ordering = ('-date_created',)
+        ordering = ('level',)
         default_permissions = ()
         permissions = ()
 
