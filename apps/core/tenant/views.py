@@ -9,6 +9,7 @@ from apps.core.tenant.serializers import CompanyCreateSerializer
 
 # Company
 class CompanyList(
+    CompanyListMixin,
     CompanyCreateMixin,
     generics.GenericAPIView
 ):
@@ -18,9 +19,16 @@ class CompanyList(
     serializer_create = CompanyCreateSerializer
 
     @swagger_auto_schema(
+        operation_summary="Company list",
+        operation_description="Company list",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
         operation_summary="Create Company",
         operation_description="Create new Company",
-        # request_body=GroupCreateSerializer,
+        request_body=CompanyCreateSerializer,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

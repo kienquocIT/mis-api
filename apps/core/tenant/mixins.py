@@ -6,6 +6,20 @@ from apps.core.tenant.models import Tenant
 
 
 # Company
+class CompanylistMixin:
+
+    def list(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            queryset = self.filter_queryset(
+                self.get_queryset()
+                .filter(**kwargs)
+            )
+            if queryset:
+                serializer = self.serializer_class(queryset, many=True)
+                return ResponseController.success_200(serializer.data, key_data='result')
+        return ResponseController.unauthorized_401()
+
+
 class CompanyCreateMixin:
 
     def create(self, request, *args, **kwargs):
