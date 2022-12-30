@@ -114,3 +114,34 @@ class GroupEmployee(M2MModel):
         null=True,
         default=[]
     )
+
+
+class Role(TenantCoreModel):
+    role_name = models.CharField(
+        verbose_name='name of row',
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    abbreviation = models.CharField(
+        verbose_name='abbreviation of row (Bussiness analysis -> BA)',
+        max_length=10,
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Role'
+        verbose_name_plural = 'Roles'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class RoleHolder(M2MModel):
+    group = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        related_name="role_employee_role",
+        null=True
+    )
