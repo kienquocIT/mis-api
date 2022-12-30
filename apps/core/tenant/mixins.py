@@ -2,20 +2,18 @@ from django.db import transaction
 from apps.shared import ResponseController
 from apps.core.tenant.serializers import CompanyCreateSerializer
 from rest_framework.exceptions import ValidationError
-from apps.core.tenant.models import Tenant
+from apps.core.tenant.models import Tenant, Company
 
 
 # Company
-class CompanylistMixin:
+class CompanyListMixin:
 
     def list(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            queryset = self.filter_queryset(
-                self.get_queryset()
-                .filter(**kwargs)
-            )
+            tenant = Tenant.objects.get(admin_id=request.user.id)
+            queryset = Company.objects.filter(tenant_id=tenant)
             if queryset:
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = CompanyCreateSerializer(queryset, many=True)
                 return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
