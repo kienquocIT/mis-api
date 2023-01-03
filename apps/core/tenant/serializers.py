@@ -31,9 +31,9 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'code',
             'tenant_id',
             'representative_fullname',
-            'representative_address',
-            'representative_email',
-            'representative_phone',
+            'address',
+            'email',
+            'phone',
         )
 
     def validate_tenant_id(self, attrs):

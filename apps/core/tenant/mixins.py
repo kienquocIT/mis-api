@@ -39,7 +39,7 @@ class CompanyCreateMixin:
         instance = serializer.save(tenant=self.request.data.get('tenant', None),
                                    code=self.request.data.get('code', None),
                                    representative_fullname=self.request.data.get('representative_fullname', None),
-                                   representative_address=self.request.data.get('representative_address', None),
-                                   representative_email=self.request.data.get('representative_email', None),
-                                   representative_phone=self.request.data.get('representative_phone', None))
+                                   address=self.request.data.get('address', None),
+                                   email=self.request.data.get('email', None),
+                                   phone=self.request.data.get('phone', None))
         return instance
