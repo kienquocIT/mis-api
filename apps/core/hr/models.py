@@ -110,3 +110,33 @@ class PlanEmployee(M2MModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+class Role(TenantCoreModel):
+    abbreviation = models.CharField(
+        verbose_name='abbreviation of role (Business analysis -> BA)',
+        max_length=10,
+        blank=True,
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Role'
+        verbose_name_plural = 'Roles'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class RoleHolder(M2MModel):
+    employees = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        null=True,
+    )
+
+    roles = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        null=True,
+    )
