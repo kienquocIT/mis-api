@@ -130,10 +130,14 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
 
 # Group Serializer
 class GroupListSerializer(serializers.ModelSerializer):
+    group_level = serializers.SerializerMethodField()
+
     class Meta:
         model = Group
         fields = (
             'id',
+            'title',
+            'code',
             'group_level',
             'parent_n',
             'description',
@@ -145,6 +149,16 @@ class GroupListSerializer(serializers.ModelSerializer):
             'user_created',
             'user_modified',
         )
+
+    def get_group_level(self, obj):
+        if obj.group_level:
+            return {
+                'id': obj.group_level.id,
+                'code': obj.group_level.code,
+                'level': obj.group_level.level,
+                'description': obj.group_level.description,
+            }
+        return {}
 
 
 class GroupDetailSerializer(serializers.ModelSerializer):
@@ -190,15 +204,20 @@ class GroupCreateSerializer(serializers.ModelSerializer):
             'second_manager_title'
         )
 
+    def validate_code(self, value):
+        if Group.object_global.filter(code=value).exists():
+            raise serializers.ValidationError("Code is exist.")
+        return value
+
     def validate_group_level(self, value):
         try:
-            return GroupLevel.objects.get(id=value)
+            return GroupLevel.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group level does not exist.")
 
     def validate_parent_n(self, value):
         try:
-            return Group.objects.get(id=value)
+            return Group.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group does not exist.")
 
@@ -208,13 +227,13 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
     def validate_first_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
     def validate_second_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 

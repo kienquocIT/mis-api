@@ -77,7 +77,7 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.object_global.select_related("group_level")
     search_fields = [
         "title",
         "code",
