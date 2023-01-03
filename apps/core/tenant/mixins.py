@@ -1,6 +1,6 @@
 from django.db import transaction
 from apps.shared import ResponseController
-from apps.core.tenant.serializers import CompanyCreateSerializer
+from apps.core.tenant.serializers import CompanyCreateSerializer, CompanyListSerializer
 from rest_framework.exceptions import ValidationError
 from apps.core.tenant.models import Tenant, Company
 
@@ -13,7 +13,7 @@ class CompanyListMixin:
             tenant = Tenant.objects.get(admin_id=request.user.id)
             queryset = Company.objects.filter(tenant_id=tenant)
             if queryset:
-                serializer = CompanyCreateSerializer(queryset, many=True)
+                serializer = CompanyListSerializer(queryset, many=True)
                 return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
@@ -24,8 +24,7 @@ class CompanyCreateMixin:
         if hasattr(request, "user"):
             data = request.data
             tenant = Tenant.objects.get(admin_id=request.user.id)
-            data.update({'tenant_id': tenant})
-            data.update({'code': 'TEST001'})
+            data.update({'tenant': tenant})
             serializer = CompanyCreateSerializer(data=data)
             serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer)
@@ -36,7 +35,10 @@ class CompanyCreateMixin:
         return ResponseController.unauthorized_401()
 
     def perform_create(self, serializer):
-        instance = serializer.save(title=self.request.data.get('title', None),
+        instance = serializer.save(tenant=self.request.data.get('tenant', None),
                                    code=self.request.data.get('code', None),
-                                   tenant=self.request.data.get('tenant_id', None))
+                                   representative_fullname=self.request.data.get('representative_fullname', None),
+                                   representative_address=self.request.data.get('representative_address', None),
+                                   representative_email=self.request.data.get('representative_email', None),
+                                   representative_phone=self.request.data.get('representative_phone', None))
         return instance
