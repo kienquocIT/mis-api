@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.hr.models import Employee
 from apps.core.organization.models import GroupLevel, Group, GroupEmployee
+from apps.core.hr.models import Role, RoleHolder
 
 
 # Group Level Serializer
@@ -329,6 +330,63 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
                 GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return instance
+
+
+class RoleListSerializer(serializers.ModelSerializer):
+    employees = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Role
+        fields = (
+            'id',
+            'title',
+            'abbreviation',
+            'employees',
+        )
+
+    def get_employees(self, obj):
+        emp = RoleHolder.object_normal.filter(role_id=obj.id)
+        employees = [{'id': i.employee_id} for i in emp]
+        return employees
+
+
+class RoleCreateSerializer(serializers.ModelSerializer):
+    employees = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False,
+    )
+
+    class Meta:
+        model = Role
+        fields = (
+            'title',
+            'code',
+            'abbreviation',
+            'employees',
+        )
+
+    def validate_code(self, value):
+        if Role.object_global.filter(code=value).exists():
+            raise serializers.ValidationError("Code is exist.")
+        return value
+
+    def create(self, validated_data):
+        if 'employees' in validated_data:
+            data_bulk = validated_data['employees']
+        del validated_data['employees']
+        role = Role.objects.create(**validated_data)
+        if data_bulk:
+            bulk_info = []
+            for employee in data_bulk:
+                bulk_info.append(RoleHolder(
+                    role=role,
+                    employee_id=employee
+                ))
+            if bulk_info:
+                RoleHolder.object_normal.bulk_create(bulk_info)
+        return role
+
+
 
 
 

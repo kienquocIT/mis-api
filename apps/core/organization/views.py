@@ -3,11 +3,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
-    OrganizationUpdateMixin
+    OrganizationUpdateMixin, RoleListMixin, RoleCreateMixin
 from apps.core.organization.models import GroupLevel, Group
+from apps.core.hr.models import Role
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, RoleListSerializer, RoleCreateSerializer
 
 
 # Group Level
@@ -131,3 +132,29 @@ class GroupDetail(
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+
+class RoleList(
+    RoleListMixin,
+    RoleCreateMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Role.objects.filter()
+    serializer_class = RoleListSerializer
+    serializer_create = RoleCreateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Role List",
+        operation_description="Get Role List",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+    @swagger_auto_schema(
+        operation_summary="Create Role",
+        operation_description="Create new role",
+        request_body=RoleCreateSerializer,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
