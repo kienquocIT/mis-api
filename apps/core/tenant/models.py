@@ -114,19 +114,19 @@ class Company(BaseModel):
         max_length=100,
         blank=True,
     )
-    representative_address = models.CharField(
+    address = models.CharField(
         verbose_name='address',
         blank=True,
         null=True,
         max_length=150
     )
-    representative_email = models.CharField(
+    email = models.CharField(
         verbose_name='email',
         blank=True,
         null=True,
         max_length=150
     )
-    representative_phone = models.CharField(
+    phone = models.CharField(
         verbose_name='phone',
         blank=True,
         null=True,
