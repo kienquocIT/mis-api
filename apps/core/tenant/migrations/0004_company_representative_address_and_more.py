@@ -10,24 +10,24 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
+        migrations.AlterField(
             model_name='company',
             name='representative_address',
-            field=models.CharField(default='', max_length=150, verbose_name='address'),
+            field=models.CharField(blank=True, max_length=150, null=True, verbose_name='address'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='company',
             name='representative_email',
-            field=models.EmailField(blank=True, max_length=254, null=True, verbose_name='email'),
+            field=models.CharField(blank=True, max_length=150, null=True, verbose_name='email'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='company',
             name='representative_fullname',
-            field=models.CharField(default='', max_length=100, verbose_name='fullname'),
+            field=models.CharField(max_length=100, verbose_name='fullname'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='company',
             name='representative_phone',
-            field=models.CharField(blank=True, max_length=50, null=True, verbose_name='phone'),
+            field=models.CharField(blank=True, max_length=25, null=True, verbose_name='phone'),
         ),
     ]
