@@ -129,15 +129,14 @@ class Role(TenantCoreModel):
 
 
 class RoleHolder(M2MModel):
-    employees = models.ForeignKey(
+    employee = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
         null=True,
     )
 
-    roles = models.ForeignKey(
+    role = models.ForeignKey(
         'hr.Role',
         on_delete=models.CASCADE,
         null=True,
     )
-    
