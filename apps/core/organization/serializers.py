@@ -263,6 +263,12 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
+    def validate(self, validate_data):
+        if 'group_level' in validate_data:
+            if Group.object_global.filter(group_level=validate_data['group_level']).exists():
+                raise serializers.ValidationError({"detail": "Group with this level was exist."})
+        return validate_data
+
     def create(self, validated_data):
         # create Group
         group = Group.objects.create(**validated_data)
