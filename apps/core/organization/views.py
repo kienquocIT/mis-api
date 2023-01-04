@@ -5,11 +5,12 @@ from rest_framework.permissions import IsAuthenticated
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
     OrganizationUpdateMixin, RoleListMixin, RoleCreateMixin, RoleRetrieveMixin, RoleUpdateMixin
 from apps.core.organization.models import GroupLevel, Group
-from apps.core.hr.models import Role
+from apps.core.hr.models import Role, RoleHolder
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
     GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, RoleListSerializer, \
     RoleCreateSerializer, RoleUpdateSerializer, RoleDetailSerializer
+from apps.shared import ResponseController
 
 
 # Group Level
@@ -185,3 +186,14 @@ class RoleDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Delete Role")
+    def delete(self, request, pk, *args, **kwargs):
+        try:
+            role = Role.objects.get(pk=pk)
+            role_holder = RoleHolder.object_normal.filter(role_id=pk)
+            role_holder.delete()
+            role.delete()
+            return ResponseController.success_200({'detail': 'success'}, key_data='result')
+        except:
+            return ResponseController.bad_request_400(msg='User does not exist')
