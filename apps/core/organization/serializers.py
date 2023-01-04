@@ -401,12 +401,13 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
         model = Role
         fields = (
             'title',
+            'code',
             'abbreviation',
             'employees',
         )
 
     def validate_code(self, value):
-        if Role.object_global.filter(code=value).exists():
+        if Role.object_global.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
 
@@ -440,6 +441,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'abbreviation',
             'employees',
         )
