@@ -86,6 +86,14 @@ class Group(TenantCoreModel):
         blank=True,
         null=True
     )
+    is_active = models.BooleanField(
+        verbose_name='active status',
+        default=True
+    )
+    is_delete = models.BooleanField(
+        verbose_name='delete',
+        default=False
+    )
 
     class Meta:
         verbose_name = 'Group'

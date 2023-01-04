@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
-    OrganizationUpdateMixin
+    OrganizationUpdateMixin, OrganizationDestroyMixin
 from apps.core.organization.models import GroupLevel, Group
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
@@ -112,6 +112,7 @@ class GroupList(
 class GroupDetail(
     OrganizationRetrieveMixin,
     OrganizationUpdateMixin,
+    OrganizationDestroyMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
