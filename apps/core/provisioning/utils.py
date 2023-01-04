@@ -206,7 +206,10 @@ class TenantController:
         try:
             ser = EmployeeCreateSerializer(data=kwargs)
             ser.is_valid(raise_exception=True)
-            return ser.save()
+            return ser.save(
+                tenant_id=kwargs.get('tenant'),
+                company_id=kwargs.get('company')
+            )
         except serializers.ValidationError as err:
             err.detail['step'] = [ErrorDetail(string='In step setup employee')]
             raise err
