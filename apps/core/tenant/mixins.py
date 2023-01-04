@@ -7,15 +7,13 @@ from apps.core.tenant.models import Tenant, Company
 
 # Company
 class CompanyListMixin:
-
     def list(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             tenant = Tenant.objects.get(admin_id=request.user.id)
             queryset = Company.objects.filter(tenant_id=tenant)
-            if queryset:
-                serializer = CompanyListSerializer(queryset, many=True)
-                serializer.data[0].update({'is_auto_create_company': tenant.auto_create_company})
-                return ResponseController.success_200(serializer.data, key_data='result')
+            serializer = CompanyListSerializer(queryset, many=True)
+            serializer.data[0].update({'is_auto_create_company': tenant.auto_create_company})
+            return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
 
