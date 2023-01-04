@@ -360,7 +360,6 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         model = Role
         fields = (
             'title',
-            'code',
             'abbreviation',
             'employees',
         )
@@ -387,7 +386,64 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         return role
 
 
+class RoleUpdateSerializer(serializers.ModelSerializer):
+    employees = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False,
+    )
 
+    class Meta:
+        model = Role
+        fields = (
+            'title',
+            'abbreviation',
+            'employees',
+        )
+
+    def validate_code(self, value):
+        if Role.object_global.filter(code=value).exists():
+            raise serializers.ValidationError("Code is exist.")
+        return value
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        if 'employees' in validated_data:
+            employees_old = RoleHolder.object_normal.filter(role=instance)
+            if employees_old:
+                employees_old.delete()
+            data_bulk = validated_data['employees']
+        del validated_data['employees']
+        if data_bulk:
+            bulk_info = []
+            for employee in data_bulk:
+                bulk_info.append(RoleHolder(
+                    role=instance,
+                    employee_id=employee
+                ))
+            if bulk_info:
+                RoleHolder.object_normal.bulk_create(bulk_info)
+        return instance
+
+
+class RoleDetailSerializer(serializers.ModelSerializer):
+    employees = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Role
+        fields = (
+            'id',
+            'code',
+            'title',
+            'abbreviation',
+            'employees',
+        )
+
+    def get_employees(self, obj):
+        emp = RoleHolder.object_normal.filter(role_id=obj.id)
+        employees = [{'id': i.employee_id} for i in emp]
+        return employees
 
 
 

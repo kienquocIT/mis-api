@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.core.organization.views import GroupLevelList, GroupLevelDetail, GroupDetail, GroupList, RoleList
+from apps.core.organization.views import GroupLevelList, GroupLevelDetail, GroupDetail, GroupList, RoleList, RoleDetail
 
 urlpatterns = [
     path('levels', GroupLevelList.as_view(), name='GroupLevelList'),
@@ -8,5 +8,6 @@ urlpatterns = [
     path('groups', GroupList.as_view(), name='GroupList'),
     path("group/<str:pk>", GroupDetail.as_view(), name="GroupDetail"),
 
-    path("role", RoleList.as_view(), name="RoleList"),
+    path("roles", RoleList.as_view(), name="RoleList"),
+    path("role/<str:pk>", RoleDetail.as_view(), name="RoleDetail"),
 ]

@@ -139,4 +139,47 @@ class RoleCreateMixin:
             print(e)
             return e
 
+class RoleRetrieveMixin:
+
+    def retrieve(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            instance = self.filter_queryset(
+                self.get_queryset().filter(**kwargs, is_delete=False)
+            ).first()
+            if instance:
+                serializer = self.serializer_class(instance)
+                return ResponseController.success_200(serializer.data, key_data='result')
+            raise ResponseController.notfound_404()
+        return ResponseController.unauthorized_401()
+
+
+class RoleUpdateMixin:
+
+    def update(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            instance = self.filter_queryset(
+                self.get_queryset().filter(**kwargs)
+            ).first()
+            if instance:
+                serializer = self.serializer_class(instance, data=request.data)
+                serializer.is_valid(raise_exception=True)
+                perform_update = self.perform_update(serializer)
+                if not isinstance(perform_update, Exception):
+                    return ResponseController.success_200(serializer.data, key_data='result')
+                elif isinstance(perform_update, ValidationError):
+                    return ResponseController.internal_server_error_500()
+            raise ResponseController.notfound_404()
+        return ResponseController.unauthorized_401()
+
+    @classmethod
+    def perform_update(cls, serializer):
+        try:
+            with transaction.atomic():
+                instance = serializer.save()
+            return instance
+        except Exception as e:
+            print(e)
+            return e
+        # return None
+
 

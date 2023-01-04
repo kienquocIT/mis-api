@@ -3,12 +3,13 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
-    OrganizationUpdateMixin, RoleListMixin, RoleCreateMixin
+    OrganizationUpdateMixin, RoleListMixin, RoleCreateMixin, RoleRetrieveMixin, RoleUpdateMixin
 from apps.core.organization.models import GroupLevel, Group
 from apps.core.hr.models import Role
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, RoleListSerializer, RoleCreateSerializer
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, RoleListSerializer, \
+    RoleCreateSerializer, RoleUpdateSerializer, RoleDetailSerializer
 
 
 # Group Level
@@ -139,7 +140,7 @@ class RoleList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.objects.filter()
+    queryset = Role.objects.all()
     serializer_class = RoleListSerializer
     serializer_create = RoleCreateSerializer
 
@@ -158,3 +159,29 @@ class RoleList(
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class RoleDetail(
+    RoleRetrieveMixin,
+    RoleUpdateMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Role.object_global
+    serializer_class = RoleDetailSerializer
+    serializer_update = RoleUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Role Detail",
+        operation_description="Get Role Detail by ID",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Role",
+        operation_description="Update Role by ID",
+        request_body=RoleUpdateSerializer,
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
