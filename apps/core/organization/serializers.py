@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.core.organization.models import GroupLevel, Group, GroupEmployee
 from apps.core.hr.models import Role, RoleHolder
+from apps.core.hr.serializers.employee_serializers import EmployeeDetailSerializer
 
 
 # Group Level Serializer
@@ -345,8 +346,12 @@ class RoleListSerializer(serializers.ModelSerializer):
         )
 
     def get_employees(self, obj):
-        emp = RoleHolder.object_normal.filter(role_id=obj.id)
-        employees = [{'id': i.employee_id} for i in emp]
+        emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
+        employees = []
+        for item in emp_holder:
+            emp = Employee.objects.get(pk=item.employee_id)
+            ser = EmployeeDetailSerializer(emp)
+            employees.append(ser.data)
         return employees
 
 
@@ -434,15 +439,18 @@ class RoleDetailSerializer(serializers.ModelSerializer):
         model = Role
         fields = (
             'id',
-            'code',
             'title',
             'abbreviation',
             'employees',
         )
 
     def get_employees(self, obj):
-        emp = RoleHolder.object_normal.filter(role_id=obj.id)
-        employees = [{'id': i.employee_id} for i in emp]
+        emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
+        employees = []
+        for item in emp_holder:
+            emp = Employee.objects.get(pk=item.employee_id)
+            ser = EmployeeDetailSerializer(emp)
+            employees.append(ser.data)
         return employees
 
 

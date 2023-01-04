@@ -144,7 +144,7 @@ class RoleRetrieveMixin:
     def retrieve(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             instance = self.filter_queryset(
-                self.get_queryset().filter(**kwargs, is_delete=False)
+                self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
                 serializer = self.serializer_class(instance)
@@ -161,7 +161,7 @@ class RoleUpdateMixin:
                 self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
-                serializer = self.serializer_class(instance, data=request.data)
+                serializer = self.serializer_update(instance, data=request.data)
                 serializer.is_valid(raise_exception=True)
                 perform_update = self.perform_update(serializer)
                 if not isinstance(perform_update, Exception):
@@ -178,7 +178,6 @@ class RoleUpdateMixin:
                 instance = serializer.save()
             return instance
         except Exception as e:
-            print(e)
             return e
         # return None
 
