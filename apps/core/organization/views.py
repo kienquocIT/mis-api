@@ -135,3 +135,10 @@ class GroupDetail(
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Delete Group",
+        operation_description="Delete Group by ID",
+    )
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
+
