@@ -7,7 +7,7 @@ from apps.core.organization.mixins import OrganizationListMixin, OrganizationCre
 from apps.core.organization.models import GroupLevel, Group
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
 
 
 # Group Level
@@ -25,7 +25,7 @@ class GroupLevelList(
     ]
 
     serializer_class = GroupLevelListSerializer
-    serializer_create = GroupLevelCreateSerializer
+    serializer_create = GroupLevelMainCreateSerializer
 
     @swagger_auto_schema(
         operation_summary="Group Level list",
@@ -37,7 +37,7 @@ class GroupLevelList(
     @swagger_auto_schema(
         operation_summary="Create Group Level",
         operation_description="Create new group level",
-        request_body=GroupLevelCreateSerializer,
+        request_body=GroupLevelMainCreateSerializer,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -77,7 +77,7 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.object_global.select_related("group_level")
     search_fields = [
         "title",
         "code",
