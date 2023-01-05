@@ -81,7 +81,7 @@ class GroupList(
         "group_level",
         "first_manager",
         "parent_n",
-    )
+    ).filter(is_delete=False)
     search_fields = [
         "title",
         "code",
