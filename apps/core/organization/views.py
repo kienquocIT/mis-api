@@ -5,11 +5,9 @@ from rest_framework.permissions import IsAuthenticated
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
     OrganizationUpdateMixin, OrganizationDestroyMixin
 from apps.core.organization.models import GroupLevel, Group
-from apps.core.hr.models import Role, RoleHolder
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
     GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
-from apps.shared import ResponseController
 
 
 # Group Level
