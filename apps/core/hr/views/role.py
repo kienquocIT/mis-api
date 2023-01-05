@@ -6,7 +6,6 @@ from apps.core.hr.mixins import RoleUpdateMixin, RoleRetrieveMixin, RoleCreateMi
 from apps.core.hr.models import Role, RoleHolder
 from apps.core.hr.serializers.role_serializers import RoleUpdateSerializer, RoleDetailSerializer, RoleCreateSerializer, \
     RoleListSerializer
-from apps.shared import ResponseController
 
 
 class RoleList(
@@ -26,7 +25,6 @@ class RoleList(
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
-
     @swagger_auto_schema(
         operation_summary="Create Role",
         operation_description="Create new role",
@@ -34,7 +32,6 @@ class RoleList(
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
 
 
 class RoleDetail(
@@ -69,4 +66,3 @@ class RoleDetail(
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
-

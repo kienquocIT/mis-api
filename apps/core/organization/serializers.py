@@ -102,10 +102,10 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):
         # delete group level
         if group_level_old_level_list:
             group_level_delete = GroupLevel.object_global.filter(
-                    tenant_id=validated_data.get('tenant_id', None),
-                    company_id=validated_data.get('company_id', None),
-                    level__in=group_level_old_level_list
-                )
+                tenant_id=validated_data.get('tenant_id', None),
+                company_id=validated_data.get('company_id', None),
+                level__in=group_level_old_level_list
+            )
             if group_level_delete:
                 group_level_delete.delete()
         group_level = GroupLevel.object_global.bulk_create(bulk_info)
