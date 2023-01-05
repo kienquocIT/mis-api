@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.hr.mixins import RoleUpdateMixin, RoleRetrieveMixin, RoleCreateMixin, RoleListMixin, RoleDestroyMixin
-from apps.core.hr.models import Role, RoleHolder
+from apps.core.hr.models import Role
 from apps.core.hr.serializers.role_serializers import RoleUpdateSerializer, RoleDetailSerializer, RoleCreateSerializer, \
     RoleListSerializer
 
@@ -14,7 +14,7 @@ class RoleList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.objects.all()
+    queryset = Role.object_normal
     serializer_class = RoleListSerializer
     serializer_create = RoleCreateSerializer
 

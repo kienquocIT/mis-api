@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Role, RoleHolder, Employee
-from apps.core.hr.serializers.employee_serializers import EmployeeDetailSerializer
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -21,9 +20,12 @@ class RoleListSerializer(serializers.ModelSerializer):
         employees = []
         for item in emp_holder:
             try:
-                emp = Employee.objects.get(pk=item.employee_id)
-                ser = EmployeeDetailSerializer(emp)
-                employees.append(ser.data)
+                emp = Employee.object_global.get(pk=item.employee_id)
+                employees.append({
+                    'id': emp.id,
+                    'full_name': emp.first_name + ' ' + emp.last_name,
+                    'code': emp.code,
+                })
             except Exception as err:
                 raise serializers.ValidationError("Employee does not exist.")
         return employees
@@ -52,7 +54,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         if 'employees' in validated_data:
             data_bulk = validated_data['employees']
         del validated_data['employees']
-        role = Role.objects.create(**validated_data)
+        role = Role.object_global.create(**validated_data)
         if data_bulk:
             bulk_info = []
             for employee in data_bulk:
@@ -125,9 +127,12 @@ class RoleDetailSerializer(serializers.ModelSerializer):
         employees = []
         for item in emp_holder:
             try:
-                emp = Employee.objects.get(pk=item.employee_id)
-                ser = EmployeeDetailSerializer(emp)
-                employees.append(ser.data)
+                emp = Employee.object_global.get(pk=item.employee_id)
+                employees.append({
+                    'id': emp.id,
+                    'full_name': emp.last_name + emp.first_name,
+                    'code': emp.code,
+                })
             except Exception as err:
                 raise serializers.ValidationError("Employee does not exist.")
         return employees
