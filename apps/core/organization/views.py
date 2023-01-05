@@ -80,7 +80,11 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global.select_related("group_level")
+    queryset = Group.object_global.select_related(
+        "group_level",
+        "first_manager",
+        "parent_n",
+    )
     search_fields = [
         "title",
         "code",
@@ -134,66 +138,10 @@ class GroupDetail(
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
-
-class RoleList(
-    RoleListMixin,
-    RoleCreateMixin,
-    generics.GenericAPIView
-):
-    permission_classes = [IsAuthenticated]
-    queryset = Role.objects.all()
-    serializer_class = RoleListSerializer
-    serializer_create = RoleCreateSerializer
-
     @swagger_auto_schema(
-        operation_summary="Role List",
-        operation_description="Get Role List",
+        operation_summary="Delete Group",
+        operation_description="Delete Group by ID",
     )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
-
-    @swagger_auto_schema(
-        operation_summary="Create Role",
-        operation_description="Create new role",
-        request_body=RoleCreateSerializer,
-    )
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-
-class RoleDetail(
-    RoleRetrieveMixin,
-    RoleUpdateMixin,
-    generics.GenericAPIView
-):
-    permission_classes = [IsAuthenticated]
-    queryset = Role.object_global
-    serializer_class = RoleDetailSerializer
-    serializer_update = RoleUpdateSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Role Detail",
-        operation_description="Get Role Detail by ID",
-    )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Update Role",
-        operation_description="Update Role by ID",
-        request_body=RoleUpdateSerializer,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    @swagger_auto_schema(operation_summary="Delete Role")
-    def delete(self, request, pk, *args, **kwargs):
-        try:
-            role = Role.objects.get(pk=pk)
-            role_holder = RoleHolder.object_normal.filter(role_id=pk)
-            role_holder.delete()
-            role.delete()
-            return ResponseController.success_200({'detail': 'success'}, key_data='result')
-        except:
-            return ResponseController.bad_request_400(msg='User does not exist')

@@ -133,6 +133,8 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
 # Group Serializer
 class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
+    first_manager = serializers.SerializerMethodField()
+    parent_n = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -159,6 +161,24 @@ class GroupListSerializer(serializers.ModelSerializer):
                 'code': obj.group_level.code,
                 'level': obj.group_level.level,
                 'description': obj.group_level.description,
+            }
+        return {}
+
+    def get_first_manager(self, obj):
+        if obj.first_manager:
+            return {
+                'id': obj.first_manager.id,
+                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'code': obj.first_manager.code
+            }
+        return {}
+
+    def get_parent_n(self, obj):
+        if obj.parent_n:
+            return {
+                'id': obj.parent_n.id,
+                'title': obj.parent_n.title,
+                'code': obj.parent_n.code
             }
         return {}
 
@@ -225,7 +245,13 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
     def validate_group_employee(self, value):
         if isinstance(value, list):
-            pass
+            employee_list = Employee.object_global.filter(id__in=value).count()
+            if employee_list == len(value):
+                return value
+            else:
+                raise serializers.ValidationError("Some employee does not exist.")
+        else:
+            raise serializers.ValidationError("Employee must be array.")
 
     def validate_first_manager(self, value):
         try:
@@ -238,6 +264,12 @@ class GroupCreateSerializer(serializers.ModelSerializer):
             return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
+
+    def validate(self, validate_data):
+        if 'group_level' in validate_data:
+            if Group.object_global.filter(group_level=validate_data['group_level']).exists():
+                raise serializers.ValidationError({"detail": "Group with this level was exist."})
+        return validate_data
 
     def create(self, validated_data):
         # create Group

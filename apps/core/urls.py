@@ -6,4 +6,5 @@ urlpatterns = [
     path('provisioning/', include('apps.core.provisioning.urls')),
     path('hr/', include('apps.core.hr.urls')),
     path('organization/', include('apps.core.organization.urls')),
+    path('tenant/', include('apps.core.tenant.urls')),
 ]

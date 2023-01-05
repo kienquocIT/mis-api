@@ -4,20 +4,17 @@ from rest_framework.exceptions import ValidationError
 
 
 class AccountListMixin:
-
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
-        if queryset:
-            serializer = self.serializer_class(queryset, many=True)
-            return ResponseController.success_200(serializer.data, key_data='result')
+        serializer = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(serializer.data, key_data='result')
 
 
 class AccountCreateMixin:
-
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_create(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer, request.user_org)
+        instance = self.perform_create(serializer, request.user)
         if not isinstance(instance, Exception):
             return ResponseController.created_201(self.serializer_class(instance).data)
         elif isinstance(instance, ValidationError):

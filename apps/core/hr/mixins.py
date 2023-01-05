@@ -3,31 +3,19 @@ from apps.shared import ResponseController
 from rest_framework.exceptions import ValidationError
 
 
-class HRListMixin:
-
-    #     @MixinController.authenticate_request
-    #     def list(self, request, *args, **kwargs):
-    #         return MixinController.list_full_action(
-    #             mixin_self=self,
-    #             request=request,
-    #             list_or_detail='list',
-    #             is_singleton=True,
-    #         )
-
+class HRListMixin(object):
     def list(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             queryset = self.filter_queryset(
                 self.get_queryset()
                 .filter(**kwargs)
             )
-            if queryset:
-                serializer = self.serializer_class(queryset, many=True)
-                return ResponseController.success_200(serializer.data, key_data='result')
+            serializer = self.serializer_class(queryset, many=True)
+            return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
 
-class HRCreateMixin:
-
+class HRCreateMixin(object):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             serializer = self.serializer_create(data=request.data)

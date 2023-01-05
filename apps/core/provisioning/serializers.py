@@ -50,8 +50,8 @@ class EmployeeSpaceCreateSerializer(serializers.ModelSerializer):
 class UserRequestCreateSerializer(serializers.Serializer):  # noqa
     id = serializers.UUIDField()
     full_name = serializers.CharField()
-    email = serializers.CharField()
-    phone = serializers.CharField(allow_null=True)
+    email = serializers.CharField(allow_null=True, allow_blank=True)
+    phone = serializers.CharField(allow_null=True, allow_blank=True)
 
     def validate(self, attrs):
         return json.dumps(attrs, cls=UUIDEncoder)

@@ -109,6 +109,29 @@ class Company(BaseModel):
 
     # Total | receive from client, increase or decrease
     total_user = models.IntegerField(default=0)
+    representative_fullname = models.CharField(
+        verbose_name='fullname',
+        max_length=100,
+        blank=True,
+    )
+    address = models.CharField(
+        verbose_name='address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    email = models.CharField(
+        verbose_name='email',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    phone = models.CharField(
+        verbose_name='phone',
+        blank=True,
+        null=True,
+        max_length=25
+    )
 
     class Meta:
         verbose_name = 'Company'
