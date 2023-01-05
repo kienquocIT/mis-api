@@ -3,13 +3,12 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
-    OrganizationUpdateMixin, RoleListMixin, RoleCreateMixin, RoleRetrieveMixin, RoleUpdateMixin
+    OrganizationUpdateMixin, OrganizationDestroyMixin
 from apps.core.organization.models import GroupLevel, Group
 from apps.core.hr.models import Role, RoleHolder
 from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, RoleListSerializer, \
-    RoleCreateSerializer, RoleUpdateSerializer, RoleDetailSerializer
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
 from apps.shared import ResponseController
 
 
@@ -115,6 +114,7 @@ class GroupList(
 class GroupDetail(
     OrganizationRetrieveMixin,
     OrganizationUpdateMixin,
+    OrganizationDestroyMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]

@@ -55,7 +55,6 @@ class UserList(APIView):
         return ResponseController.unauthorized_401()
 
 
-
 class UserDetail(APIView):
     permission_classes = [IsAuthenticated]
 
