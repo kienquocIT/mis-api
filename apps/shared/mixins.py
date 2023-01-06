@@ -4,6 +4,10 @@ from apps.shared import ResponseController, HttpMsg
 
 
 class BaseMixin(GenericAPIView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.serializer_class = self.serializer_list
+
     @staticmethod
     def setup_hidden(fields: list, user) -> dict:
         ctx = {}
