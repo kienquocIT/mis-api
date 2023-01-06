@@ -132,6 +132,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
+    upper_group = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -147,6 +148,7 @@ class GroupListSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
+            'upper_group',
             'user_created',
             'user_modified',
         )
@@ -179,12 +181,32 @@ class GroupListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    def get_upper_group(self, obj):
+        current_level = obj.group_level.level
+        if current_level:
+            upper_group = Group.object_global.filter(group_level__level=(current_level+1)).first()
+            if upper_group:
+                return {
+                    'id': upper_group.id,
+                    'title': upper_group.title,
+                    'code': upper_group.code
+                }
+        return {}
+
 
 class GroupDetailSerializer(serializers.ModelSerializer):
+    group_level = serializers.SerializerMethodField()
+    first_manager = serializers.SerializerMethodField()
+    second_manager = serializers.SerializerMethodField()
+    parent_n = serializers.SerializerMethodField()
+    group_employee = serializers.SerializerMethodField()
+
     class Meta:
         model = Group
         fields = (
             'id',
+            'title',
+            'code',
             'group_level',
             'parent_n',
             'description',
@@ -196,6 +218,58 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             'user_created',
             'user_modified',
         )
+
+    def get_group_level(self, obj):
+        if obj.group_level:
+            return {
+                'id': obj.group_level.id,
+                'code': obj.group_level.code,
+                'level': obj.group_level.level,
+                'description': obj.group_level.description,
+                'first_manager_description': obj.group_level.first_manager_description,
+                'second_manager_description': obj.group_level.second_manager_description,
+            }
+        return {}
+
+    def get_first_manager(self, obj):
+        if obj.first_manager:
+            return {
+                'id': obj.first_manager.id,
+                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'code': obj.first_manager.code
+            }
+        return {}
+
+    def get_second_manager(self, obj):
+        if obj.second_manager:
+            return {
+                'id': obj.second_manager.id,
+                'full_name': Employee.get_full_name(obj.second_manager, 2),
+                'code': obj.second_manager.code
+            }
+        return {}
+
+    def get_parent_n(self, obj):
+        if obj.parent_n:
+            return {
+                'id': obj.parent_n.id,
+                'title': obj.parent_n.title,
+                'code': obj.parent_n.code
+            }
+        return {}
+
+    def get_group_employee(self, obj):
+        result = []
+        if obj.group_employee and isinstance(obj.group_employee, list):
+            group_employee = Employee.object_global.filter(id__in=obj.group_employee)
+            if group_employee:
+                for employee in group_employee:
+                    result.append({
+                        'id': employee.id,
+                        'full_name': Employee.get_full_name(employee, 2),
+                        'code': employee.code
+                    })
+        return result
 
 
 class GroupCreateSerializer(serializers.ModelSerializer):
