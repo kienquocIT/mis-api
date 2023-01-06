@@ -2,10 +2,10 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.core.tenant.models import SubscriptionPlan, Application
+from apps.core.base.models import SubscriptionPlan, Application
 
 
-class EmployeePlanAppCreateSerializer(serializers.Serializer):
+class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
     plan = serializers.UUIDField()
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)

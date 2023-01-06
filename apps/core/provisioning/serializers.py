@@ -3,7 +3,9 @@ import json
 from rest_framework import serializers
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, SpaceEmployee
-from apps.core.tenant.models import Tenant, Company, Space
+from apps.core.tenant.models import Tenant
+from apps.core.space.models import Space
+from apps.core.company.models import Company
 from apps.shared import UUIDEncoder, APIMsg, ProvisioningMsg
 
 

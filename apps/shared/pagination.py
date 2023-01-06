@@ -9,8 +9,8 @@ class CustomResultsSetPagination(PageNumberPagination):
     page_size_query_description = ("page_size_query_description (value -1 with get not page).",)
 
     def get_page_size(self, request):
-        page_size_str = request.query_params[self.page_size_query_param]
         page_size_int = self.page_size
+        page_size_str = request.query_params.get(self.page_size_query_param, str(page_size_int))
         try:
             page_size_int = int(page_size_str)
         except (KeyError, ValueError):

@@ -5,7 +5,8 @@ from rest_framework.exceptions import ErrorDetail
 
 from apps.shared import ProvisioningMsg
 
-from apps.core.tenant.models import Tenant, SubscriptionPlan, TenantPlan
+from apps.core.tenant.models import Tenant, TenantPlan
+from apps.core.base.models import SubscriptionPlan
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,

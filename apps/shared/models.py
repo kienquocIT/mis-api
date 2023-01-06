@@ -104,7 +104,7 @@ class TenantCoreModel(BaseModel):
     Base + Tenant Obj + Company Obj
     """
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.SET_NULL, null=True)
-    company = models.ForeignKey('tenant.Company', on_delete=models.CASCADE, null=True)
+    company = models.ForeignKey('company.Company', on_delete=models.CASCADE, null=True)
     # space = models.F
 
     mode = models.IntegerField(choices=DOCUMENT_MODE, default=0)

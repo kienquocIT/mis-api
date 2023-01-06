@@ -7,7 +7,9 @@ from rest_framework.views import APIView
 from apps.core.provisioning.serializers import ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer, \
     TenantListViewSerializer
 from apps.core.provisioning.utils import TenantController
-from apps.core.tenant.models import Tenant, Company, Space
+from apps.core.tenant.models import Tenant
+from apps.core.space.models import Space
+from apps.core.company.models import Company
 from apps.shared import ResponseController, ProvisioningMsg
 
 
