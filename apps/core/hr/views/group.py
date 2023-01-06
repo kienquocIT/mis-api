@@ -2,18 +2,17 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.organization.mixins import OrganizationListMixin, OrganizationCreateMixin, OrganizationRetrieveMixin, \
-    OrganizationUpdateMixin, OrganizationDestroyMixin
-from apps.core.organization.models import GroupLevel, Group
-from apps.core.organization.serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
+from apps.core.hr.mixins import HRCreateMixin, HRListMixin, HRRetrieveMixin, HRUpdateMixin, HRDestroyMixin
+from apps.core.hr.models import GroupLevel, Group
+from apps.core.hr.serializers.group_serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
     GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
 
 
 # Group Level
 class GroupLevelList(
-    OrganizationListMixin,
-    OrganizationCreateMixin,
+    HRListMixin,
+    HRCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -44,8 +43,8 @@ class GroupLevelList(
 
 
 class GroupLevelDetail(
-    OrganizationRetrieveMixin,
-    OrganizationUpdateMixin,
+    HRRetrieveMixin,
+    HRUpdateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -72,8 +71,8 @@ class GroupLevelDetail(
 
 # Group
 class GroupList(
-    OrganizationListMixin,
-    OrganizationCreateMixin,
+    HRListMixin,
+    HRCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -110,9 +109,9 @@ class GroupList(
 
 
 class GroupDetail(
-    OrganizationRetrieveMixin,
-    OrganizationUpdateMixin,
-    OrganizationDestroyMixin,
+    HRRetrieveMixin,
+    HRUpdateMixin,
+    HRDestroyMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
