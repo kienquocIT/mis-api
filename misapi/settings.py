@@ -54,10 +54,13 @@ INSTALLED_APPS = \
     ] + [  # integrate some service management or tracing
         'apps.core.provisioning',  # config receive request from PROVISIONING server
     ] + [  # application
+        'apps.core.base',
         'apps.core.account',
         'apps.core.tenant',
         'apps.core.hr',
         'apps.core.organization',
+        'apps.core.company',
+        'apps.core.space',
     ]
 
 MIDDLEWARE = [
@@ -183,8 +186,6 @@ REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'apps.shared.custom_exception_handler',
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        # 'rest_framework.authentication.SessionAuthentication',
-        # 'rest_framework.authentication.BasicAuthentication',
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
         'apps.core.auths.authenticate.MyCustomJWTAuthenticate',
     ),

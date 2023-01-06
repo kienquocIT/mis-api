@@ -93,7 +93,7 @@ class User(AuthUser):
         related_name='tenant_current'
     )
     company_current = models.ForeignKey(
-        'tenant.Company', on_delete=models.SET_NULL, null=True,
+        'company.Company', on_delete=models.SET_NULL, null=True,
         related_name='company_current'
     )
     employee_current = models.ForeignKey(
@@ -101,7 +101,7 @@ class User(AuthUser):
         related_name='employee_current'
     )
     space_current = models.ForeignKey(
-        'tenant.Space', on_delete=models.SET_NULL, null=True,
+        'space.Space', on_delete=models.SET_NULL, null=True,
         related_name='space_current'
     )
 
@@ -160,6 +160,7 @@ class User(AuthUser):
             'company_current': self.company_current.get_detail() if self.company_current else {},
             'space_current': self.space_current.get_detail() if self.space_current else {},
             'employee_current': self.employee_current.get_detail() if self.employee_current else {},
+            'language': self.language,
         }
 
 

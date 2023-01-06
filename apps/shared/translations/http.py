@@ -7,3 +7,4 @@ class HttpMsg:
     LOGIN_EXPIRES = _("Login was expired. Please login and try again.")
     FORBIDDEN = _("Don't have permission.")
     NOT_FOUND = _("Not found")
+    SUCCESSFULLY = _("Successfully")

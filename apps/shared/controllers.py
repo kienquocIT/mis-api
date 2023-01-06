@@ -131,9 +131,9 @@ class ResponseController:
     def internal_server_error_500(cls, msg=None):
         return cus_response(
             {
-                "status": status.HTTP_404_NOT_FOUND,
+                "status": status.HTTP_500_INTERNAL_SERVER_ERROR,
                 "detail": str(msg) if msg else str(ServerMsg.SERVER_ERR)
-            }, status=status.HTTP_404_NOT_FOUND, is_errors=True
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR, is_errors=True
         )
 
 

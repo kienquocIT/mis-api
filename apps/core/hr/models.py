@@ -26,7 +26,7 @@ class Employee(TenantCoreModel):
     user = models.ForeignKey('account.User', on_delete=models.CASCADE, null=True)
 
     space = models.ManyToManyField(
-        'tenant.Space',
+        'space.Space',
         through="SpaceEmployee",
         symmetrical=False,
         blank=True,
@@ -81,7 +81,7 @@ class Employee(TenantCoreModel):
 
 
 class SpaceEmployee(M2MModel):
-    space = models.ForeignKey('tenant.Space', on_delete=models.CASCADE)
+    space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
     application = JSONField(default=[])
 
@@ -95,7 +95,7 @@ class SpaceEmployee(M2MModel):
 
 class PlanEmployee(M2MModel):
     plan = models.ForeignKey(
-        'tenant.SubscriptionPlan',
+        'base.SubscriptionPlan',
         on_delete=models.CASCADE
     )
     employee = models.ForeignKey(
