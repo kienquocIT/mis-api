@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.company.models import Company
-from apps.core.company.serializers import CompanyCreateSerializer, CompanyListSerializer
+from apps.core.company.serializers import CompanyCreateSerializer, CompanyListSerializer, CompanyOverviewSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
@@ -34,3 +34,21 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class CompanyListOverview(BaseListMixin):
+    """
+    Company Overview:
+        GET: /company/list/overview
+    """
+    queryset = Company.object_normal.all()
+    serializer_list = CompanyOverviewSerializer
+    list_hidden_field = ['tenant_id']
+
+    @swagger_auto_schema(
+        operation_summary="Company list",
+        operation_description="Company list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
