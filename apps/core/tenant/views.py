@@ -8,6 +8,8 @@ class TenantInformation(BaseListMixin, BaseCreateMixin):
     queryset = Company.object_normal.all()
     serializer_list = TenantInformationSerializer
 
+    def get_queryset(self):
+        return Company.object_normal.filter(tenant_id=self.request.user.tenant_current_id)
     @swagger_auto_schema(
         operation_summary="Tenant Information",
         operation_description="Tenant Information",
