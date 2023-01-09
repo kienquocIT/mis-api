@@ -42,7 +42,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'password', 'email')
+        fields = ('first_name', 'last_name', 'username', 'password', 'company_current', 'email')
 
     def create(self, validated_data):
         if validated_data.get('tenant_current', None):
