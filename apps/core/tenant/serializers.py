@@ -33,7 +33,16 @@ class TenantInformationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Tenant does not exist.")
 
     def get_license_used(self, obj):
-        return 25
+        return [
+            {
+                'plan': 'Sale',
+                'quantity': 25,
+            },
+            {
+                'plan': 'Hr',
+                'quantity': 10,
+            }
+        ]
 
     def get_power_user(self, obj):
         return 2
