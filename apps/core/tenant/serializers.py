@@ -4,7 +4,7 @@ from apps.core.tenant.models import Tenant
 from apps.core.hr.models import Employee
 
 
-class TenantDetailSerializer(serializers.ModelSerializer):
+class TenantInformationSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
