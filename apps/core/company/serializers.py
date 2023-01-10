@@ -21,8 +21,10 @@ class CompanyListSerializer(serializers.ModelSerializer):
         )
 
     def get_tenant_auto_create_company(self, obj):
-        tenant_auto_create_company = Tenant.object_normal.filter(id=obj.tenant_id).first().auto_create_company
-        return tenant_auto_create_company
+        try:
+            return Tenant.object_normal.filter(id=obj.tenant_id).first().auto_create_company
+        except Exception as e:
+            raise serializers.ValidationError("Tenant_auto_create_company fields does not exist.")
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
@@ -30,6 +32,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
+            'id',
             'title',
             'code',
             'representative_fullname',

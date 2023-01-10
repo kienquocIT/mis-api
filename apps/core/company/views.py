@@ -8,7 +8,6 @@ from apps.core.company.serializers import (CompanyCreateSerializer,
                                            CompanyListSerializer,
                                            CompanyDetailSerializer,
                                            CompanyUpdateSerializer,
-
                                            TenantInformationSerializer)
 
 
@@ -18,7 +17,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.all()
+    queryset = Company.object_normal.select_related('tenant')
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
     serializer_detail = CompanyListSerializer
