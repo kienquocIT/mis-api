@@ -21,7 +21,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
         )
 
     def get_tenant_auto_create_company(self, obj):
-        tenant_auto_create_company = Tenant.objects.get(id=obj.tenant_id).auto_create_company
+        tenant_auto_create_company = Tenant.object_normal.filter(id=obj.tenant_id).first().auto_create_company
         return tenant_auto_create_company
 
 
