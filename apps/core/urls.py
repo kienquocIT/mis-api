@@ -7,4 +7,5 @@ urlpatterns = [
     path('hr/', include('apps.core.hr.urls')),
     path('tenant/', include('apps.core.tenant.urls')),
     path('company/', include('apps.core.company.urls')),
+    path('base/', include('apps.core.base.urls')),
 ]

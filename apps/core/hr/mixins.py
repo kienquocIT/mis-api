@@ -9,7 +9,11 @@ class HRListMixin(object):
         if hasattr(request, "user"):
             queryset = self.filter_queryset(
                 self.get_queryset()
-                .filter(**kwargs)
+                .filter(
+                    mode=0,
+                    tenant_id=request.user.tenant_current_id,
+                    **kwargs
+                )
             )
             serializer = self.serializer_class(queryset, many=True)
             return ResponseController.success_200(serializer.data, key_data='result')
