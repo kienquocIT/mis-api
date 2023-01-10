@@ -104,16 +104,28 @@ class TenantInformationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Tenant does not exist.")
 
     def get_license_used(self, obj):
-        return [
-            {'key': 'Hrm', 'quantity': 10},
-            {'key': 'Sale', 'quantity': 10}
-        ]
+        try:
+            return [
+                {'key': 'Hrm', 'quantity': 10},
+                {'key': 'Sale', 'quantity': 10}
+            ]
+        except Exception as e:
+            raise serializers.ValidationError("License used does not exist.")
 
     def get_power_user(self, obj):
-        return 2
+        try:
+            return 2
+        except Exception as e:
+            raise serializers.ValidationError("Power user used does not exist.")
 
     def get_employee(self, obj):
-        return 18
+        try:
+            return 18
+        except Exception as e:
+            raise serializers.ValidationError("Employee used does not exist.")
 
     def get_employee_linked_user(self, obj):
-        return 4
+        try:
+            return 4
+        except Exception as e:
+            raise serializers.ValidationError("Employee linked user used does not exist.")
