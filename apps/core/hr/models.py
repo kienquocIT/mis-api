@@ -38,6 +38,13 @@ class Employee(TenantCoreModel):
     #       '{code_Plan}': [app1, app2, ...]
     # }
     plan_application = JSONField(default={})
+    group = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="department",
+        related_name="employee_group",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Employee'
