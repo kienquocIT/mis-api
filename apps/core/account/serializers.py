@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
 from apps.core.account.models import User
+from apps.core.company.models import Company
 
 
 class UserListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+
     # tenant_current = serializers.SerializerMethodField()
 
     class Meta:
@@ -42,7 +44,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'username', 'password', 'company_current', 'email')
+        fields = (
+            'first_name',
+            'last_name',
+            'username',
+            'password',
+            'phone',
+            'company_current',
+            'email'
+        )
 
     def create(self, validated_data):
         if validated_data.get('tenant_current', None):
@@ -55,6 +65,32 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    company = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = '__all__'
+        fields = (
+            'id',
+            'first_name',
+            'last_name',
+            'full_name',
+            'company', 'email',
+            'username',
+            'company_current_id',
+            'phone'
+        )
+
+    def get_full_name(self, obj):
+        return User.get_full_name(obj, 2)
+
+    def get_company(self, obj):
+        companies = []
+        company = Company.object_normal.filter(pk=obj.company_current_id)
+        for item in company:
+            companies.append({
+                'code': item.code,
+                'title': item.title,
+                'license': ['Sale', 'Hr'],
+            })
+        return companies
