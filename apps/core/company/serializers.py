@@ -79,7 +79,7 @@ class TenantInformationSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
-    employee_connect_to_user = serializers.SerializerMethodField()
+    employee_linked_user = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -94,7 +94,7 @@ class TenantInformationSerializer(serializers.ModelSerializer):
             'license_used',
             'power_user',
             'employee',
-            'employee_connect_to_user'
+            'employee_linked_user'
         )
 
     def validate_tenant_id(self, attrs):
@@ -105,14 +105,15 @@ class TenantInformationSerializer(serializers.ModelSerializer):
 
     def get_license_used(self, obj):
         return [
-            {'key': 'Hrm', 'quantity': 10}
+            {'key': 'Hrm', 'quantity': 10},
+            {'key': 'Sale', 'quantity': 10}
         ]
 
     def get_power_user(self, obj):
         return 2
 
     def get_employee(self, obj):
-        return Employee.objects.filter(company_id=obj.id).count()
+        return 18
 
-    def get_employee_connect_to_user(self, obj):
-        return Employee.objects.filter(company_id=obj.id).count()
+    def get_employee_linked_user(self, obj):
+        return 4
