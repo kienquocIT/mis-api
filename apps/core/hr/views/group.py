@@ -2,6 +2,7 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
+from apps.core.hr.filters import GroupListFilter
 from apps.core.hr.mixins import HRCreateMixin, HRListMixin, HRRetrieveMixin, HRUpdateMixin, HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
@@ -88,6 +89,8 @@ class GroupList(
         "first_manager_title",
         "second_manager_title"
     ]
+    filterset_class = GroupListFilter
+    ordering = ['group_level__level']
 
     serializer_class = GroupListSerializer
     serializer_create = GroupCreateSerializer
