@@ -38,7 +38,13 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'phone')
+        fields = (
+            'first_name',
+            'last_name',
+            'email',
+            'phone',
+            'company_current'
+        )
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -91,6 +97,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             companies.append({
                 'code': item.code,
                 'title': item.title,
+                'representative': item.representative_fullname,
                 'license': ['Sale', 'Hr'],
             })
         return companies
