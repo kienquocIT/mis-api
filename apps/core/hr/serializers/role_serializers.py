@@ -76,6 +76,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = (
+            'id',
             'title',
             'code',
             'abbreviation',
