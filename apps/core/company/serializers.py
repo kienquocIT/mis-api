@@ -14,7 +14,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'tenant_id',
             'date_created',
             'representative_fullname',
             'tenant_auto_create_company',
@@ -49,18 +48,11 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'code',
-            'tenant_id',
             'representative_fullname',
             'address',
             'email',
             'phone',
         )
-
-    def validate_tenant_id(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs)
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
@@ -70,7 +62,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'code',
-            'tenant_id',
             'representative_fullname',
             'address',
             'email',
@@ -90,7 +81,6 @@ class TenantInformationSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'tenant_id',
             'date_created',
             'representative_fullname',
             'total_user',
@@ -99,12 +89,6 @@ class TenantInformationSerializer(serializers.ModelSerializer):
             'employee',
             'employee_linked_user'
         )
-
-    def validate_tenant_id(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs).id
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
 
     def get_license_used(self, obj):
         try:

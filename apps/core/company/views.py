@@ -20,7 +20,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     queryset = Company.object_normal.select_related('tenant')
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
-    serializer_detail = CompanyListSerializer
+    serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
 
