@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee
+from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee, RoleHolder
 
 
 # Group Level Serializer
@@ -264,10 +264,20 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             group_employee = Employee.object_global.filter(id__in=obj.group_employee)
             if group_employee:
                 for employee in group_employee:
+                    role_list = []
+                    employee_role = RoleHolder.object_normal.filter(employee=employee)
+                    if employee_role:
+                        for emp_role in employee_role:
+                            role_list.append({
+                                'id': emp_role.role.id,
+                                'title': emp_role.role.title,
+                                'code': emp_role.role.code,
+                            })
                     result.append({
                         'id': employee.id,
                         'full_name': Employee.get_full_name(employee, 2),
-                        'code': employee.code
+                        'code': employee.code,
+                        'role': role_list
                     })
         return result
 
@@ -386,29 +396,35 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
 
     def validate_group_level(self, value):
         try:
-            return GroupLevel.objects.get(id=value)
+            return GroupLevel.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group level does not exist.")
 
     def validate_parent_n(self, value):
         try:
-            return Group.objects.get(id=value)
+            return Group.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group does not exist.")
 
     def validate_group_employee(self, value):
         if isinstance(value, list):
-            pass
+            employee_list = Employee.object_global.filter(id__in=value).count()
+            if employee_list == len(value):
+                return value
+            else:
+                raise serializers.ValidationError("Some employee does not exist.")
+        else:
+            raise serializers.ValidationError("Employee must be array.")
 
     def validate_first_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
     def validate_second_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 

@@ -69,7 +69,7 @@ class HRUpdateMixin:
                 self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
-                serializer = self.serializer_class(instance, data=request.data)
+                serializer = self.serializer_update(instance, data=request.data)
                 serializer.is_valid(raise_exception=True)
                 perform_update = self.perform_update(serializer)
                 if not isinstance(perform_update, Exception):

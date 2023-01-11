@@ -52,9 +52,9 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
-    department = serializers.SerializerMethodField()
-    role = serializers.SerializerMethodField()
     date_joined = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -67,9 +67,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'date_joined',
-            'department',
             'role',
             'is_active',
+            'group',
+            'role'
         )
 
     def get_full_name(self, obj):
@@ -78,14 +79,26 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_date_joined(self, obj):
         return obj.date_created
 
-    def get_department(self, obj):
-        return {'id': 1, 'name': 'ABC'}
+    def get_group(self, obj):
+        if obj.group:
+            return {
+                'id': obj.group.id,
+                'title': obj.group.title,
+                'code': obj.group.code
+            }
+        return {}
 
     def get_role(self, obj):
-        return [
-            {'id': 1, 'name': 'R1'},
-            {'id': 1, 'name': 'R2'},
-        ]
+        result = []
+        employee_role = RoleHolder.object_normal.filter(employee=obj)
+        if employee_role:
+            for emp_role in employee_role:
+                result.append({
+                    'id': emp_role.role.id,
+                    'title': emp_role.role.title,
+                    'code': emp_role.role.code
+                })
+        return result
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
