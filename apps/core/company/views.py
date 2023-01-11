@@ -7,7 +7,8 @@ from apps.shared import ResponseController
 from apps.core.company.serializers import (CompanyCreateSerializer,
                                            CompanyListSerializer,
                                            CompanyDetailSerializer,
-                                           CompanyUpdateSerializer)
+                                           CompanyUpdateSerializer,
+                                           TenantInformationSerializer)
 
 
 class CompanyList(BaseListMixin, BaseCreateMixin):
@@ -16,10 +17,10 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.all()
+    queryset = Company.object_normal.select_related('tenant')
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
-    serializer_detail = CompanyListSerializer
+    serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
 
@@ -74,3 +75,17 @@ class CompanyDetail(APIView):
             return ResponseController.success_200(data={'state': 'Delete successfully'}, key_data='result')
         return ResponseController.unauthorized_401()
 
+
+class CompanyOverviewList(BaseListMixin, BaseCreateMixin):
+    queryset = Company.object_normal.all()
+    serializer_list = TenantInformationSerializer
+
+    def get_queryset(self):
+        return Company.object_normal.filter(tenant_id=self.request.user.tenant_current_id)
+    @swagger_auto_schema(
+        operation_summary="Tenant Information",
+        operation_description="Tenant Information",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

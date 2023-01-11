@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from apps.core.company.models import Company
 from apps.core.tenant.models import Tenant
+from apps.core.hr.models import Employee
 
 
-# Group Level Serializer
+# Company Serializer
 class CompanyListSerializer(serializers.ModelSerializer):
     tenant_auto_create_company = serializers.SerializerMethodField()
-    tenant_representative_fullname = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
@@ -14,32 +14,13 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'tenant_id',
-            'tenant_representative_fullname',
             'date_created',
             'representative_fullname',
             'tenant_auto_create_company',
         )
 
-    def get_tenant_representative_fullname(self, obj):
-        tenant_representative_fullname = Tenant.objects.get(id=obj.tenant_id).representative_fullname
-        return tenant_representative_fullname
-
     def get_tenant_auto_create_company(self, obj):
-        tenant_auto_create_company = Tenant.objects.get(id=obj.tenant_id).auto_create_company
-        return tenant_auto_create_company
-
-    def validate_tenant_id(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs).id
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
-
-    def validate_is_auto_create_company(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs).auto_create_company
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
+        return obj.tenant.auto_create_company
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
@@ -47,6 +28,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
+            'id',
             'title',
             'code',
             'representative_fullname',
@@ -54,12 +36,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'address',
             'phone'
         )
-
-    def validate_tenant(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs)
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
@@ -69,18 +45,11 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'code',
-            'tenant_id',
             'representative_fullname',
             'address',
             'email',
             'phone',
         )
-
-    def validate_tenant_id(self, attrs):
-        try:
-            return Tenant.objects.get(id=attrs)
-        except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
@@ -90,15 +59,57 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'code',
-            'tenant_id',
             'representative_fullname',
             'address',
             'email',
             'phone',
         )
 
-    def validate_tenant_id(self, attrs):
+
+class TenantInformationSerializer(serializers.ModelSerializer):
+    license_used = serializers.SerializerMethodField()
+    power_user = serializers.SerializerMethodField()
+    employee = serializers.SerializerMethodField()
+    employee_linked_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = (
+            'id',
+            'title',
+            'code',
+            'date_created',
+            'representative_fullname',
+            'total_user',
+            'license_used',
+            'power_user',
+            'employee',
+            'employee_linked_user'
+        )
+
+    def get_license_used(self, obj):
         try:
-            return Tenant.objects.get(id=attrs)
+            return [
+                {'key': 'Hrm', 'quantity': 10},
+                {'key': 'Sale', 'quantity': 10}
+            ]
         except Exception as e:
-            raise serializers.ValidationError("Tenant does not exist.")
+            raise serializers.ValidationError("License used does not exist.")
+
+    def get_power_user(self, obj):
+        try:
+            return 2
+        except Exception as e:
+            raise serializers.ValidationError("Power user used does not exist.")
+
+    def get_employee(self, obj):
+        try:
+            return 18
+        except Exception as e:
+            raise serializers.ValidationError("Employee used does not exist.")
+
+    def get_employee_linked_user(self, obj):
+        try:
+            return 4
+        except Exception as e:
+            raise serializers.ValidationError("Employee linked user used does not exist.")
