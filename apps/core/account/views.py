@@ -64,7 +64,6 @@ class UserDetail(APIView):
             user = User.objects.get(pk=pk)
             user = UserDetailSerializer(user)
             return ResponseController.success_200(data=user.data, key_data='result')
-
         return ResponseController.unauthorized_401()
 
     @swagger_auto_schema(operation_summary='Detail User')
@@ -95,5 +94,4 @@ class UserDetail(APIView):
             user = User.objects.get(pk=pk)
             user.delete()
             return ResponseController.success_200({'detail': 'success'}, key_data='result')
-
         return ResponseController.unauthorized_401()

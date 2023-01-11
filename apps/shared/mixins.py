@@ -1,5 +1,4 @@
 from rest_framework.generics import GenericAPIView
-
 from apps.shared import ResponseController, HttpMsg
 
 
@@ -70,7 +69,6 @@ class BaseListMixin(BaseMixin):
     def list(self, request, *args, **kwargs):
         kwargs.update(self.setup_list_field_hidden(request.user))
         queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))
-
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True)

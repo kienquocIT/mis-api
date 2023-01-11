@@ -5,5 +5,5 @@ import uuid
 
 urlpatterns = [
     path('users', UserList.as_view(), name='UserList'),
-    path('users/<str:pk>', UserDetail.as_view(), name='UserDetail'),
+    path('user/<str:pk>', UserDetail.as_view(), name='UserDetail'),
 ]
