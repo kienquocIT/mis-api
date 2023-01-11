@@ -49,13 +49,22 @@ class Employee(TenantCoreModel):
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
-        ordering = ('code',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
     def save(self, *args, **kwargs):
         # setup full name for search engine
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
+
+        # auto create code (temporary)
+        employee = Employee.object_global.filter(is_delete=False).count()
+        char = "EMP"
+        if not self.code:
+            temper = "%04d" % (employee + 1)
+            code = "{}{}".format(char, temper)
+            self.code = code
+
         super(Employee, self).save(*args, **kwargs)
 
     def get_detail(self, excludes=None):
