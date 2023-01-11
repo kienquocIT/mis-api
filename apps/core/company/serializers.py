@@ -20,10 +20,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
         )
 
     def get_tenant_auto_create_company(self, obj):
-        try:
-            return Tenant.object_normal.filter(id=obj.tenant_id).first().auto_create_company
-        except Exception as e:
-            raise serializers.ValidationError("Tenant_auto_create_company fields does not exist.")
+        return obj.tenant.auto_create_company
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
