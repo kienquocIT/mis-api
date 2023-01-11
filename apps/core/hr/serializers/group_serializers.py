@@ -184,7 +184,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_upper_group(self, obj):
         current_level = obj.group_level.level
         if current_level:
-            upper_group = Group.object_global.filter(group_level__level=(current_level+1)).first()
+            upper_group = Group.object_global.filter(group_level__level=(current_level-1)).first()
             if upper_group:
                 return {
                     'id': upper_group.id,
@@ -336,11 +336,11 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
-    def validate(self, validate_data):
-        if 'group_level' in validate_data:
-            if Group.object_global.filter(group_level=validate_data['group_level']).exists():
-                raise serializers.ValidationError({"detail": "Group with this level was exist."})
-        return validate_data
+    # def validate(self, validate_data):
+    #     if 'group_level' in validate_data:
+    #         if Group.object_global.filter(group_level=validate_data['group_level']).exists():
+    #             raise serializers.ValidationError({"detail": "Group with this level was exist."})
+    #     return validate_data
 
     def create(self, validated_data):
         # create Group
