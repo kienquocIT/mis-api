@@ -47,9 +47,8 @@ class UserList(APIView):
                 obj = user.save(tenant_current=request.user.tenant_current)
                 obj.set_password(password)
                 obj.save()
-                return ResponseController.success_200(
+                return ResponseController.created_201(
                     data=user.data,
-                    key_data='result',
                 )
             return ResponseController.bad_request_400(msg='Setup new user was raised undefined error.')
         return ResponseController.unauthorized_401()
