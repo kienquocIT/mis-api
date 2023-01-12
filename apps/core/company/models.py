@@ -47,6 +47,8 @@ class Company(BaseModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
+        self.user_created = self.tenant.admin_id
+        self.user_modified = self.tenant.admin_id
         super(Company, self).save(*args, **kwargs)
         # update total company of tenant
         if self.tenant:

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.core.company.models import Company
+from apps.shared import APIMsg
 # from apps.core.tenant.models import Tenant
 # from apps.core.hr.models import Employee
 
@@ -40,7 +41,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
