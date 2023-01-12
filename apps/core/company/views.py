@@ -82,6 +82,7 @@ class CompanyOverviewList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return Company.object_normal.filter(tenant_id=self.request.user.tenant_current_id)
+
     @swagger_auto_schema(
         operation_summary="Tenant Information",
         operation_description="Tenant Information",
@@ -89,3 +90,4 @@ class CompanyOverviewList(BaseListMixin, BaseCreateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+    
