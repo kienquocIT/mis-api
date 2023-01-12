@@ -22,7 +22,8 @@ class UserListSerializer(serializers.ModelSerializer):
             # 'tenant_current'
         )
 
-    def get_full_name(self, obj):
+    @classmethod
+    def get_full_name(cls, obj):
         return User.get_full_name(obj, 2)
 
     # def get_tenant_current(self, obj):
@@ -48,6 +49,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=150, allow_null=True, allow_blank=True)
+
     class Meta:
         model = User
         fields = (
@@ -60,9 +63,24 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'email'
         )
 
+    @classmethod
+    def validate_password(cls, attrs):
+        # count upper character
+        # count lower character
+        # count number
+        # count special character
+        return attrs
+
+    def validate(self, attrs):
+        # attrs = {"first_name": "first name validated"}
+        return attrs
+
     def create(self, validated_data):
         if validated_data.get('tenant_current', None):
+            passwd = validated_data.pop("password", None)
             obj = User.objects.create(**validated_data)
+            obj.set_password(passwd)
+            obj.save()
             # company - user
             # tenant - user
             # space - user

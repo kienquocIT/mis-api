@@ -9,7 +9,7 @@ from uuid import uuid4
 from jsonfield import JSONField
 
 from apps.core.account.manager import AccountManager
-from apps.shared import AuthMsg, FORMATTING
+from apps.shared import AuthMsg, FORMATTING, DisperseModel
 
 
 class AuthUser(AbstractBaseUser, PermissionsMixin):
@@ -128,6 +128,17 @@ class User(AuthUser):
             ):
                 self.is_phone = True
 
+    def sync_map(self, company_id):
+        if company_id:
+            company_employee_user_model = DisperseModel(app_model='company_CompanyUserEmployee').get_model()
+            if company_employee_user_model:
+                if hasattr(company_employee_user_model, 'create_new'):
+                    company_employee_user_model.create_new(company_id, None, self.id)
+                    return True
+                raise NotImplementedError("Model company_CompanyUserEmployee sync is not found.")
+            raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
+        raise AttributeError('[Account.User.sync_map] Company ID must be required.')
+
     def save(self, *args, **kwargs):
         # generate username for login
         self.username_auth = self.convert_username_field_data(self.username, self.tenant_current)
@@ -151,8 +162,8 @@ class User(AuthUser):
         default_permissions = ()
         permissions = ()
 
-    def get_detail(self):
-        return {
+    def get_detail(self, is_full=True):
+        data = {
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
@@ -160,12 +171,16 @@ class User(AuthUser):
             'email': self.email,
             'last_login': FORMATTING.parse_datetime(self.last_login),
             'is_admin_tenant': self.is_admin_tenant,
-            'tenant_current': self.tenant_current.get_detail() if self.tenant_current else {},
-            'company_current': self.company_current.get_detail() if self.company_current else {},
-            'space_current': self.space_current.get_detail() if self.space_current else {},
-            'employee_current': self.employee_current.get_detail() if self.employee_current else {},
             'language': self.language,
         }
+        if is_full:
+            data.update({
+                'tenant_current': self.tenant_current.get_detail() if self.tenant_current else {},
+                'company_current': self.company_current.get_detail() if self.company_current else {},
+                'space_current': self.space_current.get_detail() if self.space_current else {},
+                'employee_current': self.employee_current.get_detail() if self.employee_current else {},
+            })
+        return data
 
 
 class VerifyContact(models.Model):

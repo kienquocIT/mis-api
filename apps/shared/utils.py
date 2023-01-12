@@ -44,3 +44,21 @@ class UUIDEncoder(json.JSONEncoder):
             # if the obj is uuid, we simply return the value of uuid
             return str(obj)
         return json.JSONEncoder.default(self, obj)
+
+
+class TypeCheck(object):
+    @staticmethod
+    def check_uuid(data: any, return_data=False) -> (True or False) or (UUID or None):
+        # check
+        try:
+            if isinstance(data, UUID):
+                data_checked = data
+            else:
+                data_checked = UUID(data)
+        except (Exception,):
+            data_checked = None
+
+        # return
+        if return_data is True:
+            return data_checked if data_checked else None
+        return True if data_checked else False
