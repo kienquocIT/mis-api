@@ -1,8 +1,10 @@
+from copy import deepcopy
+
 from django.contrib.auth.models import Permission
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, M2MModel, GENDER_CHOICE
+from apps.shared import TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel
 
 
 class Employee(TenantCoreModel):
@@ -46,10 +48,74 @@ class Employee(TenantCoreModel):
         default_permissions = ()
         permissions = ()
 
+    def get_old_value(self, field_name_list: list):
+        _original_fields_old = dict([(field, None) for field in field_name_list])
+        if field_name_list and isinstance(field_name_list, list):
+            try:
+                self_fetch = deepcopy(self)
+                self_fetch.refresh_from_db()
+                _original_fields_old = dict(
+                    [(field, getattr(self_fetch, field)) for field in field_name_list]
+                )
+                return _original_fields_old
+            except Exception as e:
+                print(e)
+        return _original_fields_old
+
+    def sync_company_map(self, user_id_old, user_id_new, is_new) -> models.Model or Exception:
+        if self.company_id:
+            company_employee_user_model = DisperseModel(app_model='company_CompanyUserEmployee').get_model()
+            if company_employee_user_model:
+                if is_new is True:
+                    if (
+                            hasattr(company_employee_user_model, 'create_new')
+                            and hasattr(company_employee_user_model, 'assign_map')
+                    ):
+                        company_employee_user_model.create_new(self.company_id, self.id, None)
+                        if self.user_id:
+                            company_employee_user_model.assign_map(self.company_id, self.id, self.user_id)
+                        return True
+                    raise NotImplementedError("Model company_CompanyUserEmployee sync is not found.")
+                else:
+                    if user_id_old != user_id_new:
+                        if (
+                                hasattr(company_employee_user_model, 'remove_map')
+                                and hasattr(company_employee_user_model, 'assign_map')
+                        ):
+                            if user_id_old:
+                                company_employee_user_model.remove_map(self.company_id, self.id, user_id_old)
+                            if user_id_new:
+                                company_employee_user_model.assign_map(self.company_id, self.id, user_id_new)
+                            return True
+                        raise NotImplementedError(
+                            "Model company_CompanyUserEmployee remove_map|assign_map is not found."
+                        )
+                    else:
+                        # by pass when don't change
+                        pass
+            raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
+        raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
+
+    def check_change_user(self):
+        original_fields_old = self.get_old_value(
+            field_name_list=['user_id'],
+        )
+        original_fields_new = dict(
+            [(field, getattr(self, field)) for field in ['user_id']]
+        )
+        return original_fields_old['user_id'], original_fields_new['user_id']
+
     def save(self, *args, **kwargs):
         # setup full name for search engine
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
+        # get old user and new user
+        user_id_old, user_id_new = None, self.user_id
+        if not kwargs.get('force_insert', False):
+            user_id_old, user_id_new = self.check_change_user()
+        # hit DB
         super(Employee, self).save(*args, **kwargs)
+        # call sync
+        self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
 
     def get_detail(self, excludes=None):
         result = super(Employee, self)._get_detail(excludes=['tenant', 'company'])

@@ -8,7 +8,7 @@ from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailS
 from apps.core.account.mixins import AccountListMixin, AccountCreateMixin
 from apps.core.account.models import User
 from apps.core.account.serializers import UserListSerializer
-from apps.shared import ResponseController
+from apps.shared import ResponseController, mask_view, TypeCheck
 
 
 # class UserList(
@@ -38,21 +38,23 @@ class UserList(APIView):
         # return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Create New User', request_body=UserCreateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
-        if request.user:
-            data = request.data
-            password = data['password']
-            user = UserCreateSerializer(data=data)
-            if user.is_valid():
-                obj = user.save(tenant_current=request.user.tenant_current)
-                obj.set_password(password)
-                obj.save()
-                return ResponseController.success_200(
-                    data=user.data,
-                    key_data='result',
-                )
-            return ResponseController.bad_request_400(msg='Setup new user was raised undefined error.')
-        return ResponseController.unauthorized_401()
+        data = request.data
+        ser = UserCreateSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save(tenant_current=request.user.tenant_current)
+        self.sync_new_user_to_map(obj, request.user.company_current_id)
+        return ResponseController.created_201(
+            data=UserDetailSerializer(obj).data,
+        )
+
+    @staticmethod
+    def sync_new_user_to_map(user_obj, company_id):
+        if user_obj and isinstance(user_obj, User) and company_id and TypeCheck.check_uuid(company_id):
+            user_obj.sync_map(company_id)
+            return True
+        return False
 
 
 class UserDetail(APIView):

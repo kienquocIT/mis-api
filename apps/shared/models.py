@@ -1,6 +1,6 @@
-from datetime import datetime
 from uuid import uuid4
 
+from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
@@ -10,6 +10,49 @@ from .constant import DOCUMENT_MODE
 from .formats import FORMATTING
 
 
+class DisperseModel:
+    """
+    Get model class with name of models and apps.
+    """
+    setup_called = False
+    app_label = None
+    model = None
+    class_model = None
+
+    def __init__(self, **kwargs):
+        app_model = kwargs.get("app_model", None)
+        if app_model:
+            app_tmp, model_tmp = app_model.split("_")
+            self.setup(app_label=app_tmp.lower(), model_name=model_tmp.lower())
+        else:
+            raise AttributeError("App models must be required. It's format is  {app_name}_{model name}.")
+
+    def setup(self, app_label, model_name, *args, **kwargs):
+        if app_label and model_name:
+            self.app_label = app_label
+            self.model = model_name
+            self.setup_called = True
+            return True
+        raise Exception(
+            f"[{str(self.__class__.__name__)}] " f"app_label, model_name are required."
+        )
+
+    def __call__(self, *args, **kwargs):
+        return self.get_model()
+
+    def get_model(self) -> models.Model:
+        if self.setup_called:
+            self.class_model = apps.get_model(
+                app_label=self.app_label, model_name=self.model
+            )
+            return self.class_model
+        raise Exception(
+            f"[{str(self.__class__.__name__)}] "
+            f"Execute setup() function before call get_model() function."
+        )
+
+
+# abstract models
 class BaseModel(models.Model):
     """
     Use for normal app without reference to tenant and company

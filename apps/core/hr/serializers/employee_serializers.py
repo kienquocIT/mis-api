@@ -88,6 +88,23 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         ]
 
 
+class EmployeeListByCompanyOverviewSerializer(EmployeeListSerializer):
+    class Meta:
+        model = Employee
+        fields = (
+            'id',
+            'code',
+            'first_name',
+            'last_name',
+            'full_name',
+            'email',
+            'phone',
+            'date_joined',
+            'user_id',
+            'is_active',
+        )
+
+
 class EmployeeDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 

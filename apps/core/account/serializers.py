@@ -5,6 +5,7 @@ from apps.core.account.models import User
 
 class UserListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+
     # tenant_current = serializers.SerializerMethodField()
 
     class Meta:
@@ -20,7 +21,8 @@ class UserListSerializer(serializers.ModelSerializer):
             # 'tenant_current'
         )
 
-    def get_full_name(self, obj):
+    @classmethod
+    def get_full_name(cls, obj):
         return User.get_full_name(obj, 2)
 
     # def get_tenant_current(self, obj):
@@ -40,13 +42,31 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(max_length=150, allow_null=True, allow_blank=True)
+
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'username', 'password', 'email')
 
+    @classmethod
+    def validate_password(cls, attrs):
+        # count upper character
+        # count lower character
+        # count number
+        # count special character
+        raise serializers.ValidationError()
+        pass
+
+    def validate(self, attrs):
+        # attrs = {"first_name": "first name validated"}
+        pass
+
     def create(self, validated_data):
         if validated_data.get('tenant_current', None):
+            passwd = validated_data.pop("password", None)
             obj = User.objects.create(**validated_data)
+            obj.set_password(passwd)
+            obj.save()
             # company - user
             # tenant - user
             # space - user
