@@ -46,7 +46,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate_code(self, value):
-        if Role.object_global.filter(code=value).exists():
+        if Role.object_global.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
 

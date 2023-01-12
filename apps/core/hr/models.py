@@ -45,7 +45,6 @@ class Employee(TenantCoreModel):
         related_name="employee_group",
         null=True
     )
-
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'

@@ -1,5 +1,5 @@
 from django.db import transaction
-from apps.shared import ResponseController
+from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
 from rest_framework.exceptions import ValidationError
 from apps.core.hr.models import RoleHolder
 
@@ -135,14 +135,14 @@ class RoleListMixin:
         return ResponseController.unauthorized_401()
 
 
-class RoleCreateMixin:
+class RoleCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             serializer = self.serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.serializer_class(instance).data)
+                return ResponseController.created_201(self.serializer_detail(instance).data)
             elif isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
         return ResponseController.unauthorized_401()
@@ -205,7 +205,7 @@ class RoleUpdateMixin:
         # return None
 
 
-class RoleDestroyMixin:
+class RoleDestroyMixin(BaseDestroyMixin):
     def destroy(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             instance = self.filter_queryset(

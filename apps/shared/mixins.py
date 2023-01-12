@@ -95,7 +95,7 @@ class BaseRetrieveMixin(BaseMixin):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer_detail(instance)
-        return ResponseController.success_200(data=serializer.data, key_data='detail')
+        return ResponseController.success_200(data=serializer.data, key_data='result')
 
 
 class BaseUpdateMixin(BaseMixin):
@@ -111,7 +111,7 @@ class BaseUpdateMixin(BaseMixin):
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
 
-        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='detail')
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
