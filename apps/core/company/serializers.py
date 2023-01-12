@@ -124,9 +124,9 @@ class TenantInformationSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError("Employee linked user used does not exist.")
 
+
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
-    total_user = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
     employee_linked_user = serializers.SerializerMethodField()
@@ -146,16 +146,12 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_license_used(cls, obj):
-        return {
-            'sale': random.randrange(20, 50, 3),
-            'e-office': random.randrange(20, 50, 3),
-            'hrm': random.randrange(20, 50, 3),
-            'personal': random.randrange(20, 50, 3)
-        }
-
-    @classmethod
-    def get_total_user(cls, obj):
-        return random.randrange(20, 50, 3)
+        return [
+                {'key': 'Hrm', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'Sale', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'Personal', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'E-office', 'quantity': random.randrange(20, 50, 3)},
+        ]
 
     @classmethod
     def get_power_user(cls, obj):

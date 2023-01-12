@@ -9,7 +9,6 @@ from apps.core.company.serializers import (
     CompanyListSerializer,
     CompanyDetailSerializer,
     CompanyUpdateSerializer,
-    TenantInformationSerializer,
     CompanyOverviewSerializer,
 )
 
