@@ -51,7 +51,10 @@ class TypeCheck(object):
     def check_uuid(data: any, return_data=False) -> (True or False) or (UUID or None):
         # check
         try:
-            data_checked = UUID(data)
+            if isinstance(data, UUID):
+                data_checked = data
+            else:
+                data_checked = UUID(data)
         except (Exception,):
             data_checked = None
 

@@ -9,10 +9,32 @@ class HRListMixin(object):
         if hasattr(request, "user"):
             queryset = self.filter_queryset(
                 self.get_queryset()
-                .filter(**kwargs)
+                .filter(
+                    mode=0,
+                    tenant_id=request.user.tenant_current_id,
+                    **kwargs
+                )
             )
             serializer = self.serializer_class(queryset, many=True)
             return ResponseController.success_200(serializer.data, key_data='result')
+        return ResponseController.unauthorized_401()
+
+    def list_group_parent(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            if 'level' in kwargs:
+                level = int(kwargs['level'])
+                del kwargs['level']
+                queryset = self.filter_queryset(
+                    self.get_queryset()
+                    .filter(
+                        mode=0,
+                        tenant_id=request.user.tenant_current_id,
+                        group_level__level__lt=level,
+                        **kwargs
+                    )
+                )
+                serializer = self.serializer_class(queryset, many=True)
+                return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
 
@@ -65,7 +87,7 @@ class HRUpdateMixin:
                 self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
-                serializer = self.serializer_class(instance, data=request.data)
+                serializer = self.serializer_update(instance, data=request.data)
                 serializer.is_valid(raise_exception=True)
                 perform_update = self.perform_update(serializer)
                 if not isinstance(perform_update, Exception):

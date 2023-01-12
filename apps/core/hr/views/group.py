@@ -2,11 +2,12 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
+from apps.core.hr.filters import GroupListFilter
 from apps.core.hr.mixins import HRCreateMixin, HRListMixin, HRRetrieveMixin, HRUpdateMixin, HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer
 
 
 # Group Level
@@ -88,6 +89,8 @@ class GroupList(
         "first_manager_title",
         "second_manager_title"
     ]
+    filterset_class = GroupListFilter
+    ordering = ['group_level__level']
 
     serializer_class = GroupListSerializer
     serializer_create = GroupCreateSerializer
@@ -141,4 +144,24 @@ class GroupDetail(
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class GroupParentList(
+    HRListMixin,
+    HRCreateMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Group.object_global.filter(is_delete=False)
+    search_fields = []
+    ordering = ['group_level__level']
+
+    serializer_class = GroupParentListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Group parent list",
+        operation_description="Get group parent list",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list_group_parent(request, *args, **kwargs)
 

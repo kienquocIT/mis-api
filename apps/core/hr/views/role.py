@@ -14,7 +14,7 @@ class RoleList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object_normal
+    queryset = Role.object_global
     serializer_class = RoleListSerializer
     serializer_create = RoleCreateSerializer
 

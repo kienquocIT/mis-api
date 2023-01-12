@@ -1,7 +1,7 @@
 from django.urls import path
 
 from apps.core.hr.views.employee import EmployeeList, EmployeeDetail
-from apps.core.hr.views.group import GroupLevelList, GroupLevelDetail, GroupList, GroupDetail
+from apps.core.hr.views.group import GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList
 from apps.core.hr.views.role import RoleList, RoleDetail
 from apps.core.hr.views import EmployeeUserByCompanyOverviewDetail
 
@@ -20,4 +20,6 @@ urlpatterns = [
     path("level/<str:pk>", GroupLevelDetail.as_view(), name="GroupLevelDetail"),
     path('groups', GroupList.as_view(), name='GroupList'),
     path("group/<str:pk>", GroupDetail.as_view(), name="GroupDetail"),
+
+    path("group/parent/<str:level>", GroupParentList.as_view(), name="GroupParentList"),
 ]

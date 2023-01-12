@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee
+from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee, RoleHolder
 
 
 # Group Level Serializer
@@ -128,6 +128,24 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
 
 
 # Group Serializer
+class GroupParentListSerializer(serializers.ModelSerializer):
+    level = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Group
+        fields = (
+            'id',
+            'title',
+            'code',
+            'level'
+        )
+
+    def get_level(self, obj):
+        if obj.group_level:
+            return obj.group_level.level
+        return None
+
+
 class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
@@ -184,7 +202,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_upper_group(self, obj):
         current_level = obj.group_level.level
         if current_level:
-            upper_group = Group.object_global.filter(group_level__level=(current_level+1)).first()
+            upper_group = Group.object_global.filter(group_level__level=(current_level-1)).first()
             if upper_group:
                 return {
                     'id': upper_group.id,
@@ -260,15 +278,24 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
     def get_group_employee(self, obj):
         result = []
-        if obj.group_employee and isinstance(obj.group_employee, list):
-            group_employee = Employee.object_global.filter(id__in=obj.group_employee)
-            if group_employee:
-                for employee in group_employee:
-                    result.append({
-                        'id': employee.id,
-                        'full_name': Employee.get_full_name(employee, 2),
-                        'code': employee.code
-                    })
+        group_employee = Employee.object_global.filter(group=obj)
+        if group_employee:
+            for employee in group_employee:
+                role_list = []
+                employee_role = RoleHolder.object_normal.filter(employee=employee)
+                if employee_role:
+                    for emp_role in employee_role:
+                        role_list.append({
+                            'id': emp_role.role.id,
+                            'title': emp_role.role.title,
+                            'code': emp_role.role.code,
+                        })
+                result.append({
+                    'id': employee.id,
+                    'full_name': Employee.get_full_name(employee, 2),
+                    'code': employee.code,
+                    'role': role_list
+                })
         return result
 
 
@@ -336,25 +363,33 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
-    def validate(self, validate_data):
-        if 'group_level' in validate_data:
-            if Group.object_global.filter(group_level=validate_data['group_level']).exists():
-                raise serializers.ValidationError({"detail": "Group with this level was exist."})
-        return validate_data
+    # def validate(self, validate_data):
+    #     if 'group_level' in validate_data:
+    #         if Group.object_global.filter(group_level=validate_data['group_level']).exists():
+    #             raise serializers.ValidationError({"detail": "Group with this level was exist."})
+    #     return validate_data
 
     def create(self, validated_data):
         # create Group
         group = Group.objects.create(**validated_data)
         # create Group Employee
         if 'group_employee' in validated_data:
-            bulk_info = []
-            for employee in validated_data['group_employee']:
-                bulk_info.append(GroupEmployee(
-                    group=group,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                GroupEmployee.object_normal.bulk_create(bulk_info)
+            employee_list = Employee.object_global.filter(
+                id__in=validated_data['group_employee']
+            )
+            if employee_list:
+                for employee in employee_list:
+                    employee.group = group
+                    employee.save()
+
+            # bulk_info = []
+            # for employee in validated_data['group_employee']:
+            #     bulk_info.append(GroupEmployee(
+            #         group=group,
+            #         employee_id=employee
+            #     ))
+            # if bulk_info:
+            #     GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return group
 
@@ -386,29 +421,35 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
 
     def validate_group_level(self, value):
         try:
-            return GroupLevel.objects.get(id=value)
+            return GroupLevel.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group level does not exist.")
 
     def validate_parent_n(self, value):
         try:
-            return Group.objects.get(id=value)
+            return Group.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Group does not exist.")
 
     def validate_group_employee(self, value):
         if isinstance(value, list):
-            pass
+            employee_list = Employee.object_global.filter(id__in=value).count()
+            if employee_list == len(value):
+                return value
+            else:
+                raise serializers.ValidationError("Some employee does not exist.")
+        else:
+            raise serializers.ValidationError("Employee must be array.")
 
     def validate_first_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
     def validate_second_manager(self, value):
         try:
-            return Employee.objects.get(id=value)
+            return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
 
@@ -417,20 +458,29 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        # delete old & update Group Employee
+
+        # update Group for Employee
         if 'group_employee' in validated_data:
-            group_employee_old = GroupEmployee.object_normal.filter(
-                group=instance
+            employee_list = Employee.object_global.filter(
+                id__in=validated_data['group_employee']
             )
-            if group_employee_old:
-                group_employee_old.delete()
-            bulk_info = []
-            for employee in validated_data['group_employee']:
-                bulk_info.append(GroupEmployee(
-                    group=instance,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                GroupEmployee.object_normal.bulk_create(bulk_info)
+            if employee_list:
+                for employee in employee_list:
+                    employee.group = instance
+                    employee.save()
+
+            # group_employee_old = GroupEmployee.object_normal.filter(
+            #     group=instance
+            # )
+            # if group_employee_old:
+            #     group_employee_old.delete()
+            # bulk_info = []
+            # for employee in validated_data['group_employee']:
+            #     bulk_info.append(GroupEmployee(
+            #         group=instance,
+            #         employee_id=employee
+            #     ))
+            # if bulk_info:
+            #     GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return instance

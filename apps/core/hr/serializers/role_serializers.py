@@ -23,7 +23,7 @@ class RoleListSerializer(serializers.ModelSerializer):
                 emp = Employee.object_global.get(pk=item.employee_id)
                 employees.append({
                     'id': emp.id,
-                    'full_name': emp.first_name + ' ' + emp.last_name,
+                    'full_name': emp.last_name + ' ' + emp.first_name,
                     'code': emp.code,
                 })
             except Exception as err:
@@ -76,6 +76,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = (
+            'id',
             'title',
             'code',
             'abbreviation',
@@ -130,7 +131,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
                 emp = Employee.object_global.get(pk=item.employee_id)
                 employees.append({
                     'id': emp.id,
-                    'full_name': emp.last_name + emp.first_name,
+                    'full_name': emp.first_name + emp.last_name,
                     'code': emp.code,
                 })
             except Exception as err:

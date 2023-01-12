@@ -1,11 +1,19 @@
-# from django_filters import rest_framework as filters
-#
-#
-# class EmployeeUserByCompanyOverviewDetailFilter(filters.FilterSet):
-#     # 1: all user and employee
-#     # 1: employee linked user
-#     option_display = filters.ChoiceFilter(choices=[1, 2], method='filter_all_user_and_employee')
-#
-#     @classmethod
-#     def filter_all_user_and_employee(cls, queryset, name, value):
-#         return queryset
+from django_filters import rest_framework as filters
+
+from apps.core.hr.models import Group
+
+
+class GroupListFilter(filters.FilterSet):
+    parent_level = filters.CharFilter(method="filter_parent_level")
+
+    def filter_parent_level(self, queryset, key, value):
+        if value:
+            return queryset.filter(group_level__level__lt=int(value))
+        return queryset.none()
+
+    class Meta:
+        model = Group
+        fields = (
+            "group_level__level",
+            "parent_level"
+        )

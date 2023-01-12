@@ -40,11 +40,18 @@ class Employee(TenantCoreModel):
     #       '{code_Plan}': [app1, app2, ...]
     # }
     plan_application = JSONField(default={})
+    group = models.ForeignKey(
+        'hr.Group',
+        on_delete=models.CASCADE,
+        verbose_name="department",
+        related_name="employee_group",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
-        ordering = ('code',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -108,6 +115,15 @@ class Employee(TenantCoreModel):
     def save(self, *args, **kwargs):
         # setup full name for search engine
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
+
+        # auto create code (temporary)
+        employee = Employee.object_global.filter(is_delete=False).count()
+        char = "EMP"
+        if not self.code:
+            temper = "%04d" % (employee + 1)
+            code = "{}{}".format(char, temper)
+            self.code = code
+
         # get old user and new user
         user_id_old, user_id_new = None, self.user_id
         if not kwargs.get('force_insert', False):
