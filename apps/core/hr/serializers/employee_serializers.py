@@ -52,7 +52,7 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
-    date_joined = serializers.SerializerMethodField()
+    # date_joined = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
 
@@ -76,8 +76,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_full_name(self, obj):
         return Employee.get_full_name(obj, 2)
 
-    def get_date_joined(self, obj):
-        return obj.date_created
+    # def get_date_joined(self, obj):
+    #     return obj.date_joined
 
     def get_group(self, obj):
         if obj.group:
