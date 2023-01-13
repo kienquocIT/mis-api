@@ -1,6 +1,34 @@
 from django.db import transaction
-from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
+from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
 from rest_framework.exceptions import ValidationError
+
+
+class AccountListMixin(BaseListMixin):
+    @staticmethod
+    def setup_hidden(fields: list, user) -> dict:
+        ctx = {}
+        for key in fields:
+            data = None
+            match key:
+                case 'tenant_current_id':
+                    data = user.tenant_current_id
+                case 'tenant_current':
+                    data = user.tenant_current
+                case 'company_current_id':
+                    data = user.company_current_id
+                case 'company_current':
+                    data = user.company_current
+                case 'space_current_id':
+                    data = user.space_current_id
+                case 'space_current':
+                    data = user.space_current
+                case 'employee_current_id':
+                    data = user.employee_current_id
+                case 'employee_current':
+                    data = user.employee_current
+            if data is not None:
+                ctx[key] = data
+        return ctx
 
 
 class AccountCreateMixin(BaseCreateMixin):

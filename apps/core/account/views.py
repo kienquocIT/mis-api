@@ -1,14 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from .mixins import AccountCreateMixin, AccountDestroyMixin
+from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 from apps.core.account.models import User
 from apps.core.account.serializers import UserListSerializer
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, \
-    BaseRetrieveMixin, BaseDestroyMixin, TypeCheck
+from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, \
+    BaseRetrieveMixin, TypeCheck
 
 
-class UserList(BaseListMixin, AccountCreateMixin):
+class UserList(AccountListMixin, AccountCreateMixin):
     """
         User List:
             GET: List
@@ -63,4 +63,3 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
-
