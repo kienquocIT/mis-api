@@ -1,4 +1,7 @@
 from django.db import transaction
+
+from apps.core.company.models import Company
+from apps.core.account.models import User
 from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
 from rest_framework.exceptions import ValidationError
 
@@ -20,6 +23,11 @@ class AccountCreateMixin(BaseCreateMixin):
                 instance = serializer.save(
                     tenant_current_id=user.tenant_current_id,
                 )
+                if instance.company_current_id:
+                    company_current_id = instance.company_current_id
+                    company = Company.object_normal.get(id=company_current_id)
+                    company.total_user = User.objects.filter(company_current=company_current_id).count()
+                    company.save()
             return instance
         except Exception as e:
             print(e)
@@ -34,4 +42,11 @@ class AccountDestroyMixin(BaseDestroyMixin):
 
     @staticmethod
     def perform_destroy(instance):
-        instance.delete()
+        if instance.company_current_id:
+            company_current_id = instance.company_current_id
+
+            instance.delete()
+
+            company = Company.object_normal.get(id=company_current_id)
+            company.total_user = User.objects.filter(company_current=company_current_id).count()
+            company.save()

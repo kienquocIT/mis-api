@@ -152,8 +152,8 @@ class User(AuthUser):
         super(User, self).save(*args, **kwargs)
 
         # update_total_user_for_company
-        self.company_current.total_user = self.__class__.objects.filter(company_current=self.company_current).count()
-        self.company_current.save()
+        # self.company_current.total_user = self.__class__.objects.filter(company_current=self.company_current).count()
+        # self.company_current.save()
 
     class Meta:
         verbose_name = 'Account User'

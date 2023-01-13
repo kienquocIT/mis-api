@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin
 from apps.core.company.models import Company
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
-from apps.shared import ResponseController
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
     CompanyListSerializer,
@@ -13,7 +13,7 @@ from apps.core.company.serializers import (
 )
 
 
-class CompanyList(BaseListMixin, BaseCreateMixin):
+class CompanyList(BaseListMixin, CompanyCreateMixin):
     """
     Company List:
         GET: List
@@ -44,38 +44,26 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class CompanyDetail(APIView):
+class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     permission_classes = [IsAuthenticated]
+    queryset = Company.objects.select_related('tenant')
+    serializer_detail = CompanyDetailSerializer
 
     @swagger_auto_schema(operation_summary='Detail Company')
-    def get(self, request, pk, *args, **kwargs):
-        if request.user:
-            company = Company.objects.get(pk=pk)
-            company_ser = CompanyDetailSerializer(company)
-            return ResponseController.success_200(data=company_ser.data, key_data='result')
-        return ResponseController.unauthorized_401()
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update User", request_body=CompanyUpdateSerializer)
-    def put(self, request, pk, *args, **kwargs):
-        if request.user:
-            company = Company.objects.get(pk=pk)
-            company_ser = CompanyUpdateSerializer(instance=company, data=request.data)
-            if company_ser.is_valid():
-                company_ser.save()
-                return ResponseController.success_200(
-                    data=company_ser.data,
-                    key_data='result',
-                )
-            return ResponseController.bad_request_400(msg='Setup new user was raised undefined error.')
-        return ResponseController.unauthorized_401()
+    @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = CompanyUpdateSerializer
+        return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete Company")
-    def delete(self, request, pk, *args, **kwargs):
-        if request.user:
-            company = Company.objects.get(pk=pk)
-            company.delete()
-            return ResponseController.success_200(data={'state': 'Delete successfully'}, key_data='result')
-        return ResponseController.unauthorized_401()
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class CompanyListOverview(BaseListMixin):
@@ -90,7 +78,7 @@ class CompanyListOverview(BaseListMixin):
 
     @swagger_auto_schema(
         operation_summary="Company list",
-        operation_description="Company list",
+        operation_description="Company list"
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
