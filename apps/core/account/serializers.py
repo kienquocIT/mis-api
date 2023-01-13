@@ -49,6 +49,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'phone',
             'company_current'
         )
+
     @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():

@@ -4,11 +4,14 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from apps.shared import ResponseController
-from apps.core.company.serializers import (CompanyCreateSerializer,
-                                           CompanyListSerializer,
-                                           CompanyDetailSerializer,
-                                           CompanyUpdateSerializer,
-                                           TenantInformationSerializer)
+from apps.core.company.serializers import (
+    CompanyCreateSerializer,
+    CompanyListSerializer,
+    CompanyDetailSerializer,
+    CompanyUpdateSerializer,
+    TenantInformationSerializer,
+    CompanyOverviewSerializer,
+)
 
 
 class CompanyList(BaseListMixin, BaseCreateMixin):
@@ -76,15 +79,18 @@ class CompanyDetail(APIView):
         return ResponseController.unauthorized_401()
 
 
-class CompanyOverviewList(BaseListMixin, BaseCreateMixin):
+class CompanyListOverview(BaseListMixin):
+    """
+    Company Overview:
+        GET: /company/list/overview
+    """
     queryset = Company.object_normal.all()
-    serializer_list = TenantInformationSerializer
+    serializer_list = CompanyOverviewSerializer
+    list_hidden_field = ['tenant_id']
 
-    def get_queryset(self):
-        return Company.object_normal.filter(tenant_id=self.request.user.tenant_current_id)
     @swagger_auto_schema(
-        operation_summary="Tenant Information",
-        operation_description="Tenant Information",
+        operation_summary="Company list",
+        operation_description="Company list",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

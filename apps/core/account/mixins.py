@@ -35,3 +35,4 @@ class AccountDestroyMixin(BaseDestroyMixin):
     @staticmethod
     def perform_destroy(instance):
         instance.delete()
+

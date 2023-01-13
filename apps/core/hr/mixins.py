@@ -19,6 +19,24 @@ class HRListMixin(object):
             return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
+    def list_group_parent(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            if 'level' in kwargs:
+                level = int(kwargs['level'])
+                del kwargs['level']
+                queryset = self.filter_queryset(
+                    self.get_queryset()
+                    .filter(
+                        mode=0,
+                        tenant_id=request.user.tenant_current_id,
+                        group_level__level__lt=level,
+                        **kwargs
+                    )
+                )
+                serializer = self.serializer_class(queryset, many=True)
+                return ResponseController.success_200(serializer.data, key_data='result')
+        return ResponseController.unauthorized_401()
+
 
 class HRCreateMixin(object):
     def create(self, request, *args, **kwargs):

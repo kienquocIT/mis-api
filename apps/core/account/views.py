@@ -5,7 +5,7 @@ from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailS
 from apps.core.account.models import User
 from apps.core.account.serializers import UserListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, \
-    BaseRetrieveMixin, BaseDestroyMixin
+    BaseRetrieveMixin, BaseDestroyMixin, TypeCheck
 
 
 class UserList(BaseListMixin, AccountCreateMixin):
@@ -32,6 +32,13 @@ class UserList(BaseListMixin, AccountCreateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+    @staticmethod
+    def sync_new_user_to_map(user_obj, company_id):
+        if user_obj and isinstance(user_obj, User) and company_id and TypeCheck.check_uuid(company_id):
+            user_obj.sync_map(company_id)
+            return True
+        return False
 
 
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):

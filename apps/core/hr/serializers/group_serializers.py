@@ -128,6 +128,24 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
 
 
 # Group Serializer
+class GroupParentListSerializer(serializers.ModelSerializer):
+    level = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Group
+        fields = (
+            'id',
+            'title',
+            'code',
+            'level'
+        )
+
+    def get_level(self, obj):
+        if obj.group_level:
+            return obj.group_level.level
+        return None
+
+
 class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
@@ -260,25 +278,24 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
     def get_group_employee(self, obj):
         result = []
-        if obj.group_employee and isinstance(obj.group_employee, list):
-            group_employee = Employee.object_global.filter(id__in=obj.group_employee)
-            if group_employee:
-                for employee in group_employee:
-                    role_list = []
-                    employee_role = RoleHolder.object_normal.filter(employee=employee)
-                    if employee_role:
-                        for emp_role in employee_role:
-                            role_list.append({
-                                'id': emp_role.role.id,
-                                'title': emp_role.role.title,
-                                'code': emp_role.role.code,
-                            })
-                    result.append({
-                        'id': employee.id,
-                        'full_name': Employee.get_full_name(employee, 2),
-                        'code': employee.code,
-                        'role': role_list
-                    })
+        group_employee = Employee.object_global.filter(group=obj)
+        if group_employee:
+            for employee in group_employee:
+                role_list = []
+                employee_role = RoleHolder.object_normal.filter(employee=employee)
+                if employee_role:
+                    for emp_role in employee_role:
+                        role_list.append({
+                            'id': emp_role.role.id,
+                            'title': emp_role.role.title,
+                            'code': emp_role.role.code,
+                        })
+                result.append({
+                    'id': employee.id,
+                    'full_name': Employee.get_full_name(employee, 2),
+                    'code': employee.code,
+                    'role': role_list
+                })
         return result
 
 
@@ -357,14 +374,22 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         group = Group.objects.create(**validated_data)
         # create Group Employee
         if 'group_employee' in validated_data:
-            bulk_info = []
-            for employee in validated_data['group_employee']:
-                bulk_info.append(GroupEmployee(
-                    group=group,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                GroupEmployee.object_normal.bulk_create(bulk_info)
+            employee_list = Employee.object_global.filter(
+                id__in=validated_data['group_employee']
+            )
+            if employee_list:
+                for employee in employee_list:
+                    employee.group = group
+                    employee.save()
+
+            # bulk_info = []
+            # for employee in validated_data['group_employee']:
+            #     bulk_info.append(GroupEmployee(
+            #         group=group,
+            #         employee_id=employee
+            #     ))
+            # if bulk_info:
+            #     GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return group
 
@@ -433,20 +458,29 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        # delete old & update Group Employee
+
+        # update Group for Employee
         if 'group_employee' in validated_data:
-            group_employee_old = GroupEmployee.object_normal.filter(
-                group=instance
+            employee_list = Employee.object_global.filter(
+                id__in=validated_data['group_employee']
             )
-            if group_employee_old:
-                group_employee_old.delete()
-            bulk_info = []
-            for employee in validated_data['group_employee']:
-                bulk_info.append(GroupEmployee(
-                    group=instance,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                GroupEmployee.object_normal.bulk_create(bulk_info)
+            if employee_list:
+                for employee in employee_list:
+                    employee.group = instance
+                    employee.save()
+
+            # group_employee_old = GroupEmployee.object_normal.filter(
+            #     group=instance
+            # )
+            # if group_employee_old:
+            #     group_employee_old.delete()
+            # bulk_info = []
+            # for employee in validated_data['group_employee']:
+            #     bulk_info.append(GroupEmployee(
+            #         group=instance,
+            #         employee_id=employee
+            #     ))
+            # if bulk_info:
+            #     GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return instance

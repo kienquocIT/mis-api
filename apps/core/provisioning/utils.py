@@ -12,6 +12,7 @@ from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
     UserCreateSerializer, EmployeeSpaceCreateSerializer
 )
+from ..company.models import CompanyUserEmployee
 
 
 class TenantController:
@@ -78,7 +79,11 @@ class TenantController:
 
                     # create employee & create User
                     if self.tenant_obj and user_data:
+                        # create user
                         self.setup_user(user_data)
+                        # create map user - company
+                        self.user_obj.sync_map(self.company_obj.id)
+                        # create employee
                         if create_employee and self.company_obj:
                             self.employee_obj = self.create_employee(
                                 first_name=self.user_obj.first_name,
@@ -89,7 +94,7 @@ class TenantController:
                                 company=self.company_obj.id,
                                 user=self.user_obj.id
                             )
-                            self.update_employee(self.employee_obj, user=self.user_obj)
+                            # self.update_employee(self.employee_obj, user=self.user_obj)
                             self.update_user(self.user_obj, employee_current=self.employee_obj)
                             if self.space_obj:
                                 self.create_space_employee(self.employee_obj, self.space_obj, **{})
