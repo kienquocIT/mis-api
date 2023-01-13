@@ -1,5 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyUserEmployee
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -10,7 +10,7 @@ from apps.core.company.serializers import (
     CompanyDetailSerializer,
     CompanyUpdateSerializer,
     TenantInformationSerializer,
-    CompanyOverviewSerializer,
+    CompanyOverviewSerializer, CompanyUserNotMapEmployeeSerializer,
 )
 
 
@@ -91,6 +91,23 @@ class CompanyListOverview(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Company list",
         operation_description="Company list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class CompanyUserNotMapEmployeeList(BaseListMixin):
+    queryset = CompanyUserEmployee.object_normal.select_related(
+        'user'
+    ).filter(
+        employee=None
+    )
+    serializer_list = CompanyUserNotMapEmployeeSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Company User Not Map Employee list",
+        operation_description="Company User Not Map Employee list",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
