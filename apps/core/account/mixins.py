@@ -1,16 +1,9 @@
 from django.db import transaction
-from apps.shared import ResponseController
+from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
 from rest_framework.exceptions import ValidationError
 
 
-class AccountListMixin:
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return ResponseController.success_200(serializer.data, key_data='result')
-
-
-class AccountCreateMixin:
+class AccountCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_create(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -21,14 +14,24 @@ class AccountCreateMixin:
             return ResponseController.internal_server_error_500()
 
     @classmethod
-    def perform_create(cls, serializer, user_org):
+    def perform_create(cls, serializer, user):
         try:
             with transaction.atomic():
                 instance = serializer.save(
-                    user_created_id=user_org["user_id"],
+                    tenant_current_id=user.tenant_current_id,
                 )
             return instance
         except Exception as e:
             print(e)
             return e
 
+
+class AccountDestroyMixin(BaseDestroyMixin):
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return ResponseController.success_200({}, key_data='result')
+
+    @staticmethod
+    def perform_destroy(instance):
+        instance.delete()
