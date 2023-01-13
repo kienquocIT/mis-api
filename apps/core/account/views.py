@@ -34,13 +34,13 @@ class UserList(BaseListMixin, AccountCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
     permission_classes = [IsAuthenticated]
     queryset = User.objects.select_related('tenant_current')
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
+
     @swagger_auto_schema(operation_summary='Detail User')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

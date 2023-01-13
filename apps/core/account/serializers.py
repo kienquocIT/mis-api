@@ -59,6 +59,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, allow_blank=True)
     email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)
+    username = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
@@ -85,18 +86,17 @@ class UserCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Password must contain number")
         return attrs
 
+    @classmethod
+    def validate_username(cls, attrs):
+        if User.objects.filter(username=attrs).exists():
+            raise serializers.ValidationError("Username is exists")
+        return attrs
+
     def create(self, validated_data):
         obj = User.objects.create(**validated_data)
         password = validated_data.pop("password")
-        if hasattr(validated_data, 'username'):
-            username = validated_data['username']
-            if User.objects.filter(usename=username).exists():
-                raise serializers.ValidationError("Username exists")
         obj.set_password(password)
         obj.save()
-        # company - user
-        # tenant - user
-        # space - user
         return obj
 
     @classmethod
