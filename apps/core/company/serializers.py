@@ -2,7 +2,8 @@ import random
 
 from rest_framework import serializers
 
-from apps.core.company.models import Company
+from apps.core.account.models import User
+from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.tenant.models import Tenant
 from apps.core.hr.models import Employee
 
@@ -161,3 +162,27 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
     @classmethod
     def get_employee_linked_user(cls, obj):
         return random.randrange(1, 20, 3)
+
+
+# Company Map User Employee
+class CompanyUserNotMapEmployeeSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompanyUserEmployee
+        fields = (
+            'id',
+            'user'
+        )
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                'id': obj.user.id,
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'email': obj.user.email,
+                'phone': obj.user.phone,
+                'full_name': User.get_full_name(obj.user, 2),
+            }
+        return {}
