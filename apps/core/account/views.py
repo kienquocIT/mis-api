@@ -4,7 +4,7 @@ from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
 from apps.core.account.models import User
 from apps.core.account.serializers import UserListSerializer
-from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, \
+from apps.shared import mask_view, BaseUpdateMixin, \
     BaseRetrieveMixin, TypeCheck
 
 
