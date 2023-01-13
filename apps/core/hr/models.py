@@ -99,7 +99,7 @@ class Employee(TenantCoreModel):
                         )
                     else:
                         # by pass when don't change
-                        pass
+                        return True
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
