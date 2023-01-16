@@ -2,7 +2,7 @@ from django.db import transaction
 
 from apps.core.company.models import Company
 from apps.core.account.models import User
-from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
+from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
 from rest_framework.exceptions import ValidationError
 
 
