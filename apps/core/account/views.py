@@ -40,6 +40,7 @@ class UserList(AccountListMixin, AccountCreateMixin):
             return True
         return False
 
+
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
     permission_classes = [IsAuthenticated]

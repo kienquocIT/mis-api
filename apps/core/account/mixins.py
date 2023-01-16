@@ -57,6 +57,8 @@ class AccountCreateMixin(BaseCreateMixin):
 class AccountDestroyMixin(BaseDestroyMixin):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if instance.is_admin_tenant:
+            return ResponseController.internal_server_error_500(msg="Cannot delete user admin")
         self.perform_destroy(instance)
         return ResponseController.success_200({}, key_data='result')
 
