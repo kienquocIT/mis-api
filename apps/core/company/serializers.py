@@ -4,7 +4,8 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
-from apps.core.tenant.models import Tenant
+from apps.core.account.models import User
+# from apps.core.tenant.models import Tenant
 from apps.core.hr.models import Employee
 
 
@@ -23,7 +24,8 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'tenant_auto_create_company',
         )
 
-    def get_tenant_auto_create_company(self, obj):
+    @classmethod
+    def get_tenant_auto_create_company(cls, obj):
         return obj.tenant.auto_create_company
 
 
@@ -43,7 +45,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -70,57 +71,8 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
 
-class TenantInformationSerializer(serializers.ModelSerializer):
-    license_used = serializers.SerializerMethodField()
-    power_user = serializers.SerializerMethodField()
-    employee = serializers.SerializerMethodField()
-    employee_linked_user = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Company
-        fields = (
-            'id',
-            'title',
-            'code',
-            'date_created',
-            'representative_fullname',
-            'total_user',
-            'license_used',
-            'power_user',
-            'employee',
-            'employee_linked_user'
-        )
-
-    def get_license_used(self, obj):
-        try:
-            return [
-                {'key': 'Hrm', 'quantity': 10},
-                {'key': 'Sale', 'quantity': 10}
-            ]
-        except Exception as e:
-            raise serializers.ValidationError("License used does not exist.")
-
-    def get_power_user(self, obj):
-        try:
-            return 2
-        except Exception as e:
-            raise serializers.ValidationError("Power user used does not exist.")
-
-    def get_employee(self, obj):
-        try:
-            return 18
-        except Exception as e:
-            raise serializers.ValidationError("Employee used does not exist.")
-
-    def get_employee_linked_user(self, obj):
-        try:
-            return 4
-        except Exception as e:
-            raise serializers.ValidationError("Employee linked user used does not exist.")
-
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
-    total_user = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
     employee_linked_user = serializers.SerializerMethodField()
@@ -140,28 +92,24 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_license_used(cls, obj):
-        return {
-            'sale': random.randrange(20, 50, 3),
-            'e-office': random.randrange(20, 50, 3),
-            'hrm': random.randrange(20, 50, 3),
-            'personal': random.randrange(20, 50, 3)
-        }
-
-    @classmethod
-    def get_total_user(cls, obj):
-        return random.randrange(20, 50, 3)
+        return [
+                {'key': 'Hrm', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'Sale', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'Personal', 'quantity': random.randrange(20, 50, 3)},
+                {'key': 'E-office', 'quantity': random.randrange(20, 50, 3)},
+        ]
 
     @classmethod
     def get_power_user(cls, obj):
-        return random.randrange(1, 10, 3)
+        return User.objects.filter(company_current=obj.id).filter(is_superuser=1).count()
 
     @classmethod
     def get_employee(cls, obj):
-        return random.randrange(20, 50, 3)
+        return Employee.objects.filter(company=obj.id).count()
 
     @classmethod
     def get_employee_linked_user(cls, obj):
-        return random.randrange(1, 20, 3)
+        return Employee.objects.filter(company=obj.id).exclude(user_id__isnull=False).count()
 
 
 # Company Map User Employee
