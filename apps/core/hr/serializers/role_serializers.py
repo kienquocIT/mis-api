@@ -37,7 +37,6 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False,
     )
-    title = serializers.CharField(max_length=100, allow_null=False, allow_blank=False)
 
     class Meta:
         model = Role
@@ -52,12 +51,6 @@ class RoleCreateSerializer(serializers.ModelSerializer):
         if Role.object_global.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
-
-    @classmethod
-    def validate_title(cls, attrs):
-        if Role.object_global.filter(title=attrs).exists():
-            raise serializers.ValidationError("Role is exist")
-        return attrs
 
     def create(self, validated_data):
         if 'employees' in validated_data:

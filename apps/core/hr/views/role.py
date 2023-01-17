@@ -17,6 +17,8 @@ class RoleList(
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
 
     @swagger_auto_schema(
         operation_summary="Role List",

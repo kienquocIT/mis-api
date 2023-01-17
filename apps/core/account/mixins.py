@@ -41,9 +41,11 @@ class AccountCreateMixin(BaseCreateMixin):
         instance = self.perform_create(serializer, request.user)
         self.sync_new_user_to_map(instance, request.user.company_current_id)
         if not isinstance(instance, Exception):
-            return ResponseController.created_201(self.serializer_class(instance).data)
+            return ResponseController.created_201(self.serializer_detail(instance).data)
         elif isinstance(instance, ValidationError):
             return ResponseController.internal_server_error_500()
+        else:
+            return ResponseController.bad_request_400(instance.args[1])
 
     @classmethod
     def perform_create(cls, serializer, user):
@@ -59,7 +61,6 @@ class AccountCreateMixin(BaseCreateMixin):
                     company.save()
             return instance
         except Exception as e:
-            print(e)
             return e
 
 

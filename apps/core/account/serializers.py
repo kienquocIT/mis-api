@@ -71,7 +71,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'password',
             'phone',
             'company_current',
-            'email'
+            'email',
         )
 
     @classmethod
@@ -88,9 +88,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     @classmethod
-    def validate_username(cls, attrs):
-        if User.objects.filter(username=attrs).exists():
-            raise serializers.ValidationError("Username is exists")
+    def validate_phone(cls, attrs):
+        if not attrs.isnumeric():
+            raise serializers.ValidationError("phone number does not contain characters")
         return attrs
 
     def create(self, validated_data):
@@ -99,12 +99,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
         obj.set_password(password)
         obj.save()
         return obj
-
-    @classmethod
-    def validate_phone(cls, attrs):
-        if not attrs.isnumeric():
-            raise serializers.ValidationError("phone number does not contain characters")
-        return attrs
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -123,6 +117,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'username',
             'company_current_id',
             'phone',
+            'tenant_current',
         )
 
     @classmethod
