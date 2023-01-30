@@ -382,15 +382,6 @@ class GroupCreateSerializer(serializers.ModelSerializer):
                     employee.group = group
                     employee.save()
 
-            # bulk_info = []
-            # for employee in validated_data['group_employee']:
-            #     bulk_info.append(GroupEmployee(
-            #         group=group,
-            #         employee_id=employee
-            #     ))
-            # if bulk_info:
-            #     GroupEmployee.object_normal.bulk_create(bulk_info)
-
         return group
 
 
@@ -461,6 +452,14 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
 
         # update Group for Employee
         if 'group_employee' in validated_data:
+            employee_group_old = Employee.object_global.filter(
+                group=instance
+            )
+            for emp_group_old in employee_group_old:
+                if emp_group_old.id not in validated_data['group_employee']:
+                    emp_group_old.group = None
+                    emp_group_old.save()
+
             employee_list = Employee.object_global.filter(
                 id__in=validated_data['group_employee']
             )
@@ -468,19 +467,5 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
                 for employee in employee_list:
                     employee.group = instance
                     employee.save()
-
-            # group_employee_old = GroupEmployee.object_normal.filter(
-            #     group=instance
-            # )
-            # if group_employee_old:
-            #     group_employee_old.delete()
-            # bulk_info = []
-            # for employee in validated_data['group_employee']:
-            #     bulk_info.append(GroupEmployee(
-            #         group=instance,
-            #         employee_id=employee
-            #     ))
-            # if bulk_info:
-            #     GroupEmployee.object_normal.bulk_create(bulk_info)
 
         return instance
