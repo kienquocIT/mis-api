@@ -54,6 +54,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -69,7 +70,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'role',
             'is_active',
             'group',
-            'role'
+            'role',
+            'user'
         )
 
     def get_full_name(self, obj):
@@ -95,6 +97,14 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                     'code': emp_role.role.code
                 })
         return result
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                'id': obj.user.id,
+                'username': obj.user.username,
+            }
+        return {}
 
 
 class EmployeeListByCompanyOverviewSerializer(EmployeeListSerializer):

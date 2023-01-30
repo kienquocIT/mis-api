@@ -17,7 +17,10 @@ class EmployeeList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_global
+    queryset = Employee.object_global.select_related(
+        'group',
+        'user'
+    )
     search_fields = ["search_content"]
 
     serializer_class = EmployeeListSerializer
