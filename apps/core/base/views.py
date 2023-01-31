@@ -11,7 +11,7 @@ from apps.core.base.serializers import PlanListSerializer
 # Subscription Plan
 class PlanList(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
-    queryset = SubscriptionPlan.objects.all()
+    queryset = SubscriptionPlan.objects
     search_fields = []
 
     serializer_class = PlanListSerializer

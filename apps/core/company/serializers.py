@@ -2,9 +2,10 @@ import random
 
 from rest_framework import serializers
 
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.tenant.models import Tenant
 from apps.core.hr.models import Employee
+from apps.shared import DisperseModel
 
 
 # Company Serializer
@@ -27,7 +28,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -42,7 +42,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -56,7 +55,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -117,6 +115,7 @@ class TenantInformationSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError("Employee linked user used does not exist.")
 
+
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     total_user = serializers.SerializerMethodField()
@@ -161,3 +160,67 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
     @classmethod
     def get_employee_linked_user(cls, obj):
         return random.randrange(1, 20, 3)
+
+
+class EmployeeListByCompanyOverviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyUserEmployee
+        fields = '__all__'
+
+
+class EmployeeListByCompanyOverviewSerializer1(serializers.ModelSerializer):
+    license = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DisperseModel(app_model='hr.Employee').get_model()
+        fields = (
+            'id',
+            'code',
+            'first_name',
+            'last_name',
+            'full_name',
+            'email',
+            'phone',
+            'date_joined',
+            'user_id',
+            'is_active',
+            'license',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name()
+
+    @classmethod
+    def get_license(cls, obj):
+        data = [
+            {"id": 1, "code": "sale", "title": "Sale"},
+            {"id": 2, "code": "e-office", "title": "E-Office"},
+            {"id": 3, "code": "personal", "title": "Personal"},
+            {"id": 4, "code": "hrm", "title": "hrm"},
+            {"id": 5, "code": "a", "title": "A"},
+            {"id": 6, "code": "b", "title": "B"},
+            {"id": 7, "code": "c", "title": "C"},
+        ]
+        stt = random.randrange(0, 4)
+        stt2 = random.randrange(5, 7)
+        return data[stt:stt2]
+
+
+class UserListByCompanyOverviewSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DisperseModel(app_model='account.User').get_model()
+        fields = (
+            'id',
+            'first_name',
+            'last_name',
+            'full_name',
+            'is_active',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name()

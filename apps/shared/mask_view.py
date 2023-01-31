@@ -1,6 +1,7 @@
 from functools import wraps
 
 import rest_framework.exceptions
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.http import HttpResponse
 
@@ -89,6 +90,8 @@ def mask_view(**parent_kwargs):
             except rest_framework.exceptions.AuthenticationFailed as err:
                 return ResponseController.unauthorized_401(msg=str(err.detail))
             except Exception as err:
+                if settings.DEBUG is True:
+                    print(err)
                 return ResponseController.internal_server_error_500(msg=str(err))
             raise ValueError('Return not map happy case.')
 
