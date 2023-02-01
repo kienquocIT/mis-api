@@ -151,8 +151,9 @@ class User(AuthUser):
 
         super(User, self).save(*args, **kwargs)
 
-    def __str__(self):
-        return f'{self.last_name}. {self.first_name}'
+        # update_total_user_for_company
+        # self.company_current.total_user = self.__class__.objects.filter(company_current=self.company_current).count()
+        # self.company_current.save()
 
     class Meta:
         verbose_name = 'Account User'
@@ -166,6 +167,7 @@ class User(AuthUser):
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
+            'username_auth': self.username_auth,
             'username': self.username,
             'email': self.email,
             'last_login': FORMATTING.parse_datetime(self.last_login),

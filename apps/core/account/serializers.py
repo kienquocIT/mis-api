@@ -37,6 +37,9 @@ class UserListSerializer(serializers.ModelSerializer):
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
+    phone = serializers.CharField(max_length=50, allow_null=True, allow_blank=True)
+    email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)
+
     class Meta:
         model = User
         fields = (
@@ -47,9 +50,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             'company_current'
         )
 
+    @classmethod
+    def validate_phone(cls, attrs):
+        if not attrs.isnumeric():
+            raise serializers.ValidationError("phone number does not contain characters")
+        return attrs
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(max_length=150, allow_null=True, allow_blank=True)
+    password = serializers.CharField(max_length=128, allow_blank=True)
+    email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)
+    username = serializers.CharField(max_length=150)
 
     class Meta:
         model = User
@@ -60,32 +71,34 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'password',
             'phone',
             'company_current',
-            'email'
+            'email',
         )
 
     @classmethod
     def validate_password(cls, attrs):
-        # count upper character
-        # count lower character
-        # count number
-        # count special character
+        # uppercase_count = sum(1 for char in attrs if char.isupper())
+        # lower_count = sum(1 for char in attrs if char.isupper())
+        num_count = sum(1 for char in attrs if char.isnumeric())
+        # if uppercase_count == 0:
+        #     raise serializers.ValidationError("Password must contain upper letters")
+        # if lower_count == 0:
+        #     raise serializers.ValidationError("Password must contain character")
+        if num_count == 0:
+            raise serializers.ValidationError("Password must contain number")
         return attrs
 
-    def validate(self, attrs):
-        # attrs = {"first_name": "first name validated"}
+    @classmethod
+    def validate_phone(cls, attrs):
+        if not attrs.isnumeric():
+            raise serializers.ValidationError("phone number does not contain characters")
         return attrs
 
     def create(self, validated_data):
-        if validated_data.get('tenant_current', None):
-            passwd = validated_data.pop("password", None)
-            obj = User.objects.create(**validated_data)
-            obj.set_password(passwd)
-            obj.save()
-            # company - user
-            # tenant - user
-            # space - user
-            return obj
-        raise serializers.ValidationError({'tenant_current': 'Tenant not found.'})
+        obj = User.objects.create(**validated_data)
+        password = validated_data.pop("password")
+        obj.set_password(password)
+        obj.save()
+        return obj
 
 
 class UserDetailSerializer(serializers.ModelSerializer):
@@ -99,16 +112,20 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'full_name',
-            'company', 'email',
+            'company',
+            'email',
             'username',
             'company_current_id',
-            'phone'
+            'phone',
+            'tenant_current',
         )
 
-    def get_full_name(self, obj):
+    @classmethod
+    def get_full_name(cls, obj):
         return User.get_full_name(obj, 2)
 
-    def get_company(self, obj):
+    @classmethod
+    def get_company(cls, obj):
         companies = []
         company = Company.object_normal.filter(pk=obj.company_current_id)
         for item in company:

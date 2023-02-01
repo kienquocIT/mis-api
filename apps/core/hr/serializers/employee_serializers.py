@@ -52,9 +52,9 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
 
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
-    date_joined = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -70,14 +70,12 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'role',
             'is_active',
             'group',
-            'role'
+            'role',
+            'user'
         )
 
     def get_full_name(self, obj):
         return Employee.get_full_name(obj, 2)
-
-    def get_date_joined(self, obj):
-        return obj.date_created
 
     def get_group(self, obj):
         if obj.group:
@@ -100,9 +98,21 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                 })
         return result
 
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                'id': obj.user.id,
+                'username': obj.user.username,
+            }
+        return {}
+
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    plan_app = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -114,10 +124,72 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'full_name',
             'email',
             'phone',
+            'plan_app',
+            'user',
+            'group',
+            'dob',
+            'date_joined',
+            'role'
         )
 
     def get_full_name(self, obj):
         return Employee.get_full_name(obj, 2)
+
+    def get_plan_app(self, obj):
+        result = []
+        employee_plan = PlanEmployee.object_normal.select_related('plan').filter(
+            employee=obj
+        )
+        if employee_plan:
+            for emp_plan in employee_plan:
+                app_list = []
+                if emp_plan.application and isinstance(emp_plan.application, list):
+                    application_list = Application.objects.filter(id__in=emp_plan.application)
+                    if application_list:
+                        for application in application_list:
+                            app_list.append({
+                                'id': application.id,
+                                'title': application.title,
+                                'code': application.code
+                            })
+                result.append({
+                    'id': emp_plan.plan.id,
+                    'title': emp_plan.plan.title,
+                    'code': emp_plan.plan.code,
+                    'application': app_list
+                })
+        return result
+
+    def get_user(self, obj):
+        if obj.user:
+            return {
+                'id': obj.user.id,
+                'full_name': User.get_full_name(obj.user, 2),
+            }
+        return {}
+
+    def get_group(self, obj):
+        if obj.group:
+            return {
+                'id': obj.group.id,
+                'title': obj.group.title,
+                'code': obj.group.code
+            }
+        return {}
+
+    def get_role(self, obj):
+        result = []
+        employee_role = RoleHolder.object_normal.select_related('role').filter(
+            employee=obj
+        )
+        if employee_role:
+            for emp_role in employee_role:
+                result.append({
+                    'id': emp_role.role.id,
+                    'title': emp_role.role.title,
+                    'code': emp_role.role.code
+                })
+        return result
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
@@ -190,8 +262,8 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             del validated_data['role']
         # create new employee
         employee = Employee.objects.create(**validated_data)
+        # create M2M PlanEmployee
         if employee and plan_app_data and bulk_info:
-            # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = employee
             PlanEmployee.object_normal.bulk_create(bulk_info)

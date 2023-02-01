@@ -15,7 +15,8 @@ class RoleListSerializer(serializers.ModelSerializer):
             'employees',
         )
 
-    def get_employees(self, obj):
+    @classmethod
+    def get_employees(cls, obj):
         emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
         employees = []
         for item in emp_holder:
@@ -45,26 +46,27 @@ class RoleCreateSerializer(serializers.ModelSerializer):
             'employees',
         )
 
-    def validate_code(self, value):
-        if Role.object_global.filter(code=value).exists():
+    @classmethod
+    def validate_code(cls, value):
+        if Role.object_global.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
 
     def create(self, validated_data):
         if 'employees' in validated_data:
-            data_bulk = validated_data['employees']
-        del validated_data['employees']
-        role = Role.object_global.create(**validated_data)
-        if data_bulk:
-            bulk_info = []
-            for employee in data_bulk:
-                bulk_info.append(RoleHolder(
-                    role=role,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                RoleHolder.object_normal.bulk_create(bulk_info)
-        return role
+            data_bulk = validated_data.pop('employees')
+            role = Role.object_global.create(**validated_data)
+            if data_bulk:
+                bulk_info = []
+                for employee in data_bulk:
+                    bulk_info.append(RoleHolder(
+                        role=role,
+                        employee_id=employee
+                    ))
+                if bulk_info:
+                    RoleHolder.object_normal.bulk_create(bulk_info)
+            return role
+        raise serializers.ValidationError("Data is not valid")
 
 
 class RoleUpdateSerializer(serializers.ModelSerializer):
@@ -83,7 +85,8 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
             'employees',
         )
 
-    def validate_code(self, value):
+    @classmethod
+    def validate_code(cls, value):
         if Role.object_global.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
@@ -96,17 +99,16 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
             employees_old = RoleHolder.object_normal.filter(role=instance)
             if employees_old:
                 employees_old.delete()
-            data_bulk = validated_data['employees']
-        del validated_data['employees']
-        if data_bulk:
-            bulk_info = []
-            for employee in data_bulk:
-                bulk_info.append(RoleHolder(
-                    role=instance,
-                    employee_id=employee
-                ))
-            if bulk_info:
-                RoleHolder.object_normal.bulk_create(bulk_info)
+            data_bulk = validated_data.pop('employees')
+            if data_bulk:
+                bulk_info = []
+                for employee in data_bulk:
+                    bulk_info.append(RoleHolder(
+                        role=instance,
+                        employee_id=employee
+                    ))
+                if bulk_info:
+                    RoleHolder.object_normal.bulk_create(bulk_info)
         return instance
 
 
@@ -123,7 +125,8 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             'employees',
         )
 
-    def get_employees(self, obj):
+    @classmethod
+    def get_employees(cls, obj):
         emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
         employees = []
         for item in emp_holder:

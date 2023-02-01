@@ -1,8 +1,9 @@
 from django.urls import path
 from apps.core.company.views import (
-    CompanyList, CompanyDetail,
-    CompanyListOverview, UserByCompanyOverviewDetail, EmployeeByCompanyOverviewDetail,
-    CompanyLoginOfUserForOverviewDetail,
+    CompanyList,
+    CompanyDetail,
+    CompanyListOverview,
+    CompanyUserNotMapEmployeeList
 )
 
 urlpatterns = [
@@ -11,14 +12,5 @@ urlpatterns = [
 
     # overview company page
     path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),
-    path('overview/user/<str:company_id>', UserByCompanyOverviewDetail.as_view(), name='UserByCompanyOverviewDetail'),
-    path(
-        'overview/employee/<str:company_id>', EmployeeByCompanyOverviewDetail.as_view(),
-        name='EmployeeByCompanyOverviewDetail'
-    ),
-    path(
-        'overview/company-of-user/<str:company_id>', CompanyLoginOfUserForOverviewDetail.as_view(),
-        name='CompanyLoginOfUserForOverviewDetail'
-    ),
-
+    path('user-available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
 ]

@@ -47,7 +47,6 @@ class Employee(TenantCoreModel):
         related_name="employee_group",
         null=True
     )
-
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -99,7 +98,7 @@ class Employee(TenantCoreModel):
                         )
                     else:
                         # by pass when don't change
-                        pass
+                        return True
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
