@@ -155,7 +155,7 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
                     'name': company.title,
                 })
             except Exception as err:
-                raise serializers.ValidationError("Employee does not exist.")
+                raise serializers.ValidationError("Company does not exist.")
         return companies
 
 
