@@ -1,8 +1,5 @@
 import random
-
 from rest_framework import serializers
-
-from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 # from apps.core.tenant.models import Tenant
@@ -70,7 +67,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
 
-
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
@@ -134,3 +130,70 @@ class CompanyUserNotMapEmployeeSerializer(serializers.ModelSerializer):
                 'full_name': User.get_full_name(obj.user, 2),
             }
         return {}
+
+
+class CompanyUserDetailSerializer(serializers.ModelSerializer):
+    companies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'company_current',
+            'companies',
+        )
+
+    @classmethod
+    def get_companies(cls, obj):
+        company_user = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
+        companies = []
+        for item in company_user:
+            try:
+                company = Company.object_normal.get(id=item.company_id)
+                companies.append({
+                    'id': company.id,
+                    'name': company.title,
+                })
+            except Exception as err:
+                raise serializers.ValidationError("Employee does not exist.")
+        return companies
+
+
+class CompanyUserUpdateSerializer(serializers.ModelSerializer):
+    companies = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False,
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'companies',
+        )
+
+    def update(self, instance, validated_data):
+        if 'companies' in validated_data:
+            user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
+            user_companies = [i.company_id for i in user_companies]
+            data_bulk = validated_data.pop('companies')
+            if data_bulk:
+                bulk_info = []
+                for company in data_bulk:
+                    if company in user_companies:
+                        user_companies.remove(company)
+                    else:
+                        bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+                if bulk_info:
+                    CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+                for co in user_companies:
+                    if User.objects.filter(company_current=co).exists():
+                        print("Can not delete current")
+                        raise serializers.ValidationError('Can not delete company_current')
+                    else:
+                        co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
+                        if co_old.employee_id is None:
+                            co_old.delete()
+                        else:
+                            co_old = CompanyUserEmployee.user_id = None
+                            co_old.save()
+            return instance
