@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 
-from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin
+from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin, CompanyListMixin
 from apps.core.company.models import Company
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from rest_framework.permissions import IsAuthenticated
@@ -84,7 +84,6 @@ class CompanyListOverview(BaseListMixin):
     serializer_list = CompanyOverviewSerializer
     list_hidden_field = ['tenant_id']
 
-
     @swagger_auto_schema(
         operation_summary="Company list",
         operation_description="Company list"
@@ -94,7 +93,7 @@ class CompanyListOverview(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class CompanyUserNotMapEmployeeList(BaseListMixin):
+class CompanyUserNotMapEmployeeList(CompanyListMixin):
     queryset = CompanyUserEmployee.object_normal.select_related(
         'user'
     ).filter(
@@ -108,7 +107,7 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+        return self.list_company_user_employee(request, *args, **kwargs)
 
 
 class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):

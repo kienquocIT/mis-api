@@ -165,6 +165,10 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.user.id,
                 'full_name': User.get_full_name(obj.user, 2),
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'email': obj.user.email,
+                'phone': obj.user.phone,
             }
         return {}
 
@@ -281,10 +285,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
-    plan_app = EmployeePlanAppCreateSerializer(
+    plan_app = EmployeePlanAppUpdateSerializer(
         required=False,
         many=True
     )
+    group = serializers.UUIDField(required=False)
+    role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
 
     class Meta:
         model = Employee
@@ -296,8 +302,24 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'phone',
             'date_joined',
             'dob',
-            'plan_app'
+            'plan_app',
+            'group',
+            'role',
         )
+
+    def validate_group(self, value):
+        try:
+            return Group.object_global.get(id=value)
+        except Exception as e:
+            raise serializers.ValidationError("Group does not exist.")
+
+    def validate_role(self, value):
+        if isinstance(value, list):
+            role_list = Role.object_global.filter(id__in=value).count()
+            if role_list == len(value):
+                return value
+            raise serializers.ValidationError("Some role does not exist.")
+        raise serializers.ValidationError("Role must be array.")
 
     def validate_user(self, value):
         try:
@@ -308,6 +330,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         plan_application_dict = {}
         plan_app_data = None
+        role_list = None
         bulk_info = []
         if 'plan_app' in validated_data:
             plan_app_data = validated_data['plan_app']
@@ -328,10 +351,14 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                         }))
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+        if 'role' in validated_data:
+            role_list = validated_data['role']
+            del validated_data['role']
         # update employee
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
         if instance and plan_app_data and bulk_info:
             # delete old M2M PlanEmployee
             plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
@@ -341,4 +368,19 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             for info in bulk_info:
                 info.employee = instance
             PlanEmployee.object_normal.bulk_create(bulk_info)
+
+        if instance and role_list:
+            # delete old M2M RoleEmployee
+            role_employee_old = RoleHolder.object_normal.filter(employee=instance)
+            if role_employee_old:
+                role_employee_old.delete()
+            # create M2M RoleEmployee
+            bulk_info = []
+            for role in role_list:
+                bulk_info.append(RoleHolder(**{
+                    'employee': instance,
+                    'role_id': role,
+                }))
+            RoleHolder.object_normal.bulk_create(bulk_info)
+
         return instance
