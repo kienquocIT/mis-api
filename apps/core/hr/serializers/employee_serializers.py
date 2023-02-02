@@ -357,22 +357,22 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
+        # delete old M2M PlanEmployee
+        plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
+        if plan_employee_old:
+            plan_employee_old.delete()
+        # create M2M PlanEmployee
         if instance and plan_app_data and bulk_info:
-            # delete old M2M PlanEmployee
-            plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
-            if plan_employee_old:
-                plan_employee_old.delete()
-            # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = instance
             PlanEmployee.object_normal.bulk_create(bulk_info)
 
+        # delete old M2M RoleEmployee
+        role_employee_old = RoleHolder.object_normal.filter(employee=instance)
+        if role_employee_old:
+            role_employee_old.delete()
+        # create M2M RoleEmployee
         if instance and role_list:
-            # delete old M2M RoleEmployee
-            role_employee_old = RoleHolder.object_normal.filter(employee=instance)
-            if role_employee_old:
-                role_employee_old.delete()
-            # create M2M RoleEmployee
             bulk_info = []
             for role in role_list:
                 bulk_info.append(RoleHolder(**{
