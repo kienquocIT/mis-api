@@ -112,8 +112,6 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
         return CompanyUserEmployee.object_normal.filter(company=obj.id).exclude(user_id__isnull=True).count()
 
 
-
-
 # Company Map User Employee
 class CompanyUserNotMapEmployeeSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
