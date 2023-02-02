@@ -4,7 +4,6 @@ from apps.core.company.views import (
     CompanyDetail,
     CompanyListOverview,
     CompanyUserNotMapEmployeeList,
-    CompanyUserDetail,
 )
 
 urlpatterns = [
@@ -14,5 +13,4 @@ urlpatterns = [
     # overview company page
     path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),
     path('user-available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
-    path('user-company/<str:pk>', CompanyUserDetail.as_view(), name='CompanyUserDetail'),
 ]
