@@ -200,6 +200,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                         if co_old.employee_id is None:
                             co_old.delete()
                         else:
-                            co_old = CompanyUserEmployee.user_id = None
+                            co_old.user_id = None
                             co_old.save()
             return instance
