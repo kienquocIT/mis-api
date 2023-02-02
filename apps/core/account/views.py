@@ -1,7 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
-from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer
+from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer, \
+    CompanyUserDetailSerializer
 from apps.core.account.models import User
 from apps.core.account.serializers import UserListSerializer
 from apps.shared import mask_view, TypeCheck, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, \
@@ -63,3 +64,27 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = User.objects.select_related('company_current')
+    serializer_update = CompanyUserUpdateSerializer
+    serializer_detail = CompanyUserDetailSerializer
+
+    @swagger_auto_schema(
+        operation_summary="User's Companies",
+        operation_description="User's Companies",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Add Or Delete User For Company",
+        operation_description="Add Or Delete User For Company",
+        request_body=CompanyUserUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = CompanyUserUpdateSerializer
+        return self.update(request, *args, **kwargs)

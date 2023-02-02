@@ -13,9 +13,7 @@ from apps.core.company.serializers import (
     CompanyDetailSerializer,
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
-    CompanyUserNotMapEmployeeSerializer,
-    CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer, CompanyOverviewDetailSerializer,
+    CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer,
 )
 
 
@@ -108,30 +106,6 @@ class CompanyUserNotMapEmployeeList(CompanyListMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list_company_user_employee(request, *args, **kwargs)
-
-
-class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = User.objects.select_related('company_current')
-    serializer_update = CompanyUserUpdateSerializer
-    serializer_detail = CompanyUserDetailSerializer
-
-    @swagger_auto_schema(
-        operation_summary="User's Companies",
-        operation_description="User's Companies",
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Add Or Delete User For Company",
-        operation_description="Add Or Delete User For Company",
-        request_body=CompanyUserUpdateSerializer,
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUserUpdateSerializer
-        return self.update(request, *args, **kwargs)
 
 
 class CompanyOverviewDetail(BaseRetrieveMixin):
