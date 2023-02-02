@@ -203,13 +203,13 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             return instance
 
 
-class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
+class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
     employee = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
 
     class Meta:
         model = CompanyUserEmployee
-        field = (
+        fields = (
             "employee",
             "user",
         )
@@ -217,10 +217,19 @@ class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
     def get_employee(self, obj):
         license_list = []
         if obj.employee:
+            plan_list = obj.employee.plan.all()
+            if plan_list:
+                for plan in plan_list:
+                    license_list.append({
+                        'id': plan.id,
+                        'title': plan.title,
+                        'code': plan.code
+                    })
             return {
                 'id': obj.employee.id,
                 'full_name': Employee.get_full_name(obj.employee, 2),
                 'code': obj.employee.code,
+                'license_list': license_list
             }
         return {}
 
@@ -241,7 +250,27 @@ class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
                 'id': obj.user.id,
                 'full_name': User.get_full_name(obj.user, 2),
                 'username': obj.user.username,
-                'code': obj.user.code,
                 'company_list': company_list
             }
         return {}
+
+
+class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
+    company_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = (
+            "id",
+            "title",
+            "company_data",
+        )
+
+    def get_company_data(self, obj):
+        return CompanyOverviewDetailDataSerializer(
+            CompanyUserEmployee.object_normal.select_related(
+                'user',
+                'employee'
+            ).filter(company=obj),
+            many=True
+        ).data

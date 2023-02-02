@@ -54,6 +54,13 @@ class Employee(TenantCoreModel):
         blank=True,
         related_name='employee_map_role'
     )
+    plan = models.ManyToManyField(
+        'base.SubscriptionPlan',
+        through="PlanEmployee",
+        symmetrical=False,
+        blank=True,
+        related_name='employee_map_plan'
+    )
 
     class Meta:
         verbose_name = 'Employee'

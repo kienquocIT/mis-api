@@ -15,7 +15,7 @@ from apps.core.company.serializers import (
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer,
     CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer,
+    CompanyUserDetailSerializer, CompanyOverviewDetailSerializer,
 )
 
 
@@ -132,3 +132,14 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = CompanyUserUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class CompanyOverviewDetail(BaseRetrieveMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Company.objects.all()
+    serializer_detail = CompanyOverviewDetailSerializer
+
+    @swagger_auto_schema(operation_summary='Detail Company Overview')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
