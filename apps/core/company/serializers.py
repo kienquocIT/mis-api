@@ -83,7 +83,11 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
             'total_user',
             'power_user',
             'employee',
-            'employee_linked_user'
+            'employee_linked_user',
+
+            # 'all_total_user',
+            # 'all_power_user',
+            # 'all_employee'
         )
 
     @classmethod
@@ -101,11 +105,11 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee(cls, obj):
-        return Employee.objects.filter(company=obj.id).count()
+        return CompanyUserEmployee.object_normal.filter(company=obj.id).count()
 
     @classmethod
     def get_employee_linked_user(cls, obj):
-        return Employee.objects.filter(company=obj.id).exclude(user_id__isnull=True).count()
+        return CompanyUserEmployee.object_normal.filter(company=obj.id).exclude(user_id__isnull=True).count()
 
 
 # Company Map User Employee

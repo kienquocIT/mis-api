@@ -47,6 +47,14 @@ class Employee(TenantCoreModel):
         related_name="employee_group",
         null=True
     )
+    role = models.ManyToManyField(
+        'hr.Role',
+        through="RoleHolder",
+        symmetrical=False,
+        blank=True,
+        related_name='employee_map_role'
+    )
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -199,6 +207,13 @@ class Role(TenantCoreModel):
         max_length=10,
         blank=True,
         null=True
+    )
+    employee = models.ManyToManyField(
+        'hr.Employee',
+        through="RoleHolder",
+        symmetrical=False,
+        blank=True,
+        related_name='role_map_employee'
     )
 
     class Meta:
