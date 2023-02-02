@@ -2,13 +2,12 @@ from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.shared import mask_view
-from apps.shared.mixins import BaseListMixin
-
 from apps.core.hr.mixins import HRListMixin, HRCreateMixin, HRUpdateMixin, HRRetrieveMixin
 from apps.core.hr.models import Employee
-from apps.core.hr.serializers.employee_serializers import EmployeeListSerializer, EmployeeCreateSerializer, \
-    EmployeeDetailSerializer, EmployeeUpdateSerializer, EmployeeListByCompanyOverviewSerializer
+from apps.core.hr.serializers.employee_serializers import (
+    EmployeeListSerializer, EmployeeCreateSerializer,
+    EmployeeDetailSerializer, EmployeeUpdateSerializer,
+)
 
 
 class EmployeeList(
@@ -48,11 +47,12 @@ class EmployeeDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.objects.select_related(
-        "user",
-    )
+    queryset = Employee.object_normal
     serializer_class = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
+
+    def get_queryset(self):
+        return super(EmployeeDetail, self).get_queryset().select_related("user")
 
     @swagger_auto_schema(
         operation_summary="Employee detail",
@@ -69,17 +69,3 @@ class EmployeeDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
-
-class EmployeeUserByCompanyOverviewDetail(BaseListMixin):
-    queryset = Employee.object_normal.all()
-    serializer_list = EmployeeListByCompanyOverviewSerializer
-    list_hidden_field = ['tenant_id']
-    filterset_fields = {
-        "user": ["isnull", "exact"],
-    }
-
-    @swagger_auto_schema(operation_summary="Employee List for Company Overview")
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)

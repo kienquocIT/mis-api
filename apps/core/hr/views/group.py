@@ -77,11 +77,7 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global.select_related(
-        "group_level",
-        "first_manager",
-        "parent_n",
-    ).filter(is_delete=False)
+    queryset = Group.object_global
     search_fields = [
         "title",
         "code",
@@ -94,6 +90,13 @@ class GroupList(
 
     serializer_class = GroupListSerializer
     serializer_create = GroupCreateSerializer
+
+    def get_queryset(self):
+        return super(GroupList, self).get_queryset().select_related(
+            "group_level",
+            "first_manager",
+            "parent_n",
+        ).filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Group list",
@@ -152,11 +155,14 @@ class GroupParentList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global.filter(is_delete=False)
+    queryset = Group.object_global
     search_fields = []
     ordering = ['group_level__level']
 
     serializer_class = GroupParentListSerializer
+
+    def get_queryset(self):
+        return super(GroupParentList, self).get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Group parent list",
@@ -164,4 +170,3 @@ class GroupParentList(
     )
     def get(self, request, *args, **kwargs):
         return self.list_group_parent(request, *args, **kwargs)
-

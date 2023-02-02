@@ -34,17 +34,20 @@ class BaseMixin(GenericAPIView):
         return ctx
 
     def setup_create_field_hidden(self, user) -> dict:
-        return self.setup_hidden(getattr(self, 'create_hidden_field', []), user)
+        return self.setup_hidden(self.create_hidden_field, user)
 
     def setup_list_field_hidden(self, user) -> dict:
-        return self.setup_hidden(getattr(self, 'list_hidden_field', []), user)
+        return self.setup_hidden(self.list_hidden_field, user)
 
     def setup_retrieve_field_hidden(self, user) -> dict:
-        return self.setup_hidden(getattr(self, 'retrieve_hidden_field', []), user)
+        return self.setup_hidden(self.retrieve_hidden_field, user)
 
     serializer_list = None
     serializer_create = None
     serializer_detail = None
+    list_hidden_field = []
+    create_hidden_field = []
+    retrieve_hidden_field = []
 
     def get_serializer_list(self, *args, **kwargs):
         tmp = getattr(self, 'serializer_list', None)

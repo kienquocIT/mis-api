@@ -266,6 +266,11 @@ FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 
 ENABLE_TURN_ON_IS_EMAIL = False
 
+# DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
+RAISE_EXCEPTION_DEBUG = False
+MODEL_HIT_DB_DEBUG = False
+SQL_HIT_DB_DEBUG = False
+
 # LOGGING
 
 LOG_DIR = os.path.join(BASE_DIR, "logs")

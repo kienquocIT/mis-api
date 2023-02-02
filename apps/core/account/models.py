@@ -167,6 +167,7 @@ class User(AuthUser):
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
+            'username_auth': self.username_auth,
             'username': self.username,
             'email': self.email,
             'last_login': FORMATTING.parse_datetime(self.last_login),
