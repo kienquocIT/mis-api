@@ -197,3 +197,47 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                             co_old = CompanyUserEmployee.user_id = None
                             co_old.save()
             return instance
+
+
+class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
+    employee = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompanyUserEmployee
+        field = (
+            "employee",
+            "user",
+        )
+
+    def get_employee(self, obj):
+        license_list = []
+        if obj.employee:
+            return {
+                'id': obj.employee.id,
+                'full_name': Employee.get_full_name(obj.employee, 2),
+                'code': obj.employee.code,
+            }
+        return {}
+
+    def get_user(self, obj):
+        company_list = []
+        if obj.user:
+            company_user_list = CompanyUserEmployee.object_normal.select_related('company').filter(
+                user=obj.user
+            )
+            if company_user_list:
+                for company_user in company_user_list:
+                    company_list.append({
+                        'id': company_user.company.id,
+                        'title': company_user.company.title,
+                        'code': company_user.company.code
+                    })
+            return {
+                'id': obj.user.id,
+                'full_name': User.get_full_name(obj.user, 2),
+                'username': obj.user.username,
+                'code': obj.user.code,
+                'company_list': company_list
+            }
+        return {}
