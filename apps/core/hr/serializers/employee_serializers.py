@@ -88,13 +88,13 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         result = []
-        employee_role = RoleHolder.object_normal.filter(employee=obj)
-        if employee_role:
-            for emp_role in employee_role:
+        role_list = obj.role.all()
+        if role_list:
+            for role in role_list:
                 result.append({
-                    'id': emp_role.role.id,
-                    'title': emp_role.role.title,
-                    'code': emp_role.role.code
+                    'id': role.id,
+                    'title': role.title,
+                    'code': role.code
                 })
         return result
 
@@ -200,15 +200,13 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         result = []
-        employee_role = RoleHolder.object_normal.select_related('role').filter(
-            employee=obj
-        )
-        if employee_role:
-            for emp_role in employee_role:
+        role_list = obj.role.all()
+        if role_list:
+            for role in role_list:
                 result.append({
-                    'id': emp_role.role.id,
-                    'title': emp_role.role.title,
-                    'code': emp_role.role.code
+                    'id': role.id,
+                    'title': role.title,
+                    'code': role.code
                 })
         return result
 
