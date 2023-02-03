@@ -6,6 +6,7 @@ from apps.core.hr.models import Role, RoleHolder, Employee
 class RoleListSerializer(serializers.ModelSerializer):
 
     holder = serializers.SerializerMethodField()
+
     class Meta:
         model = Role
         fields = (
