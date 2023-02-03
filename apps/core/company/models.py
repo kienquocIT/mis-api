@@ -102,6 +102,7 @@ class CompanyUserEmployee(M2MModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
     user = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True)
     employee = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
+    is_created_company = models.BooleanField(verbose_name='company user created', default=False)
 
     class Meta:
         verbose_name = 'Company Map Employee Map User'
@@ -155,7 +156,8 @@ class CompanyUserEmployee(M2MModel):
                     return cls.check_obj_map(user_map, 'user')
                 else:
                     return cls.object_normal.create(
-                        company_id=company_id, employee_id=None, user_id=user_id
+                        company_id=company_id, employee_id=None, user_id=user_id,
+                        is_created_company=True,
                     )
         raise AttributeError('[CompanyUserEmployee.create_new] Company ID must be required.')
 
