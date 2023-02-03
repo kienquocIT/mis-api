@@ -244,7 +244,8 @@ class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
                     company_list.append({
                         'id': company_user.company.id,
                         'title': company_user.company.title,
-                        'code': company_user.company.code
+                        'code': company_user.company.code,
+                        'is_created_company': company_user.is_created_company
                     })
             return {
                 'id': obj.user.id,
