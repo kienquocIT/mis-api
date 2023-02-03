@@ -3,9 +3,9 @@ from apps.core.company.views import (
     CompanyList,
     CompanyDetail,
     CompanyListOverview,
-    CompanyUserNotMapEmployeeList,
-    CompanyUserDetail, CompanyOverviewDetail,
+    CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
 )
+
 
 urlpatterns = [
     path('list', CompanyList.as_view(), name='CompanyList'),
@@ -15,5 +15,4 @@ urlpatterns = [
     path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),
     path('overview/<str:pk>', CompanyOverviewDetail.as_view(), name='CompanyOverviewDetail'),
     path('user-available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
-    path('user-company/<str:pk>', CompanyUserDetail.as_view(), name='CompanyUserDetail'),
 ]
