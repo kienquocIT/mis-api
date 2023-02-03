@@ -136,6 +136,7 @@ class CompanyUserNotMapEmployeeSerializer(serializers.ModelSerializer):
         return {}
 
 
+# Company Overview All
 class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
     employee = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
@@ -208,3 +209,31 @@ class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
             ).filter(company=obj),
             many=True
         ).data
+
+
+# Company Overview Employee Connected
+class CompanyOverviewConnectedSerializer(serializers.ModelSerializer):
+    company_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = (
+            "id",
+            "title",
+            "company_data",
+        )
+
+    def get_company_data(self, obj):
+        return CompanyOverviewDetailDataSerializer(
+            CompanyUserEmployee.object_normal.select_related(
+                'user',
+                'employee'
+            ).filter(
+                company=obj,
+                employee__isnull=False
+            ),
+            many=True
+        ).data
+
+
+

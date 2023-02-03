@@ -13,7 +13,7 @@ from apps.core.company.serializers import (
     CompanyDetailSerializer,
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
-    CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer,
+    CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
 )
 
 
@@ -113,7 +113,12 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
     queryset = Company.objects.all()
     serializer_detail = CompanyOverviewDetailSerializer
 
-    @swagger_auto_schema(operation_summary='Detail Company Overview')
+    @swagger_auto_schema(
+        operation_summary='Detail Company Overview (0: All, 1: Employee Connected)'
+    )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        if 'option' in kwargs:
+            if kwargs['option'] == 1:
+                self.serializer_detail = CompanyOverviewConnectedSerializer
         return self.retrieve(request, *args, **kwargs)
