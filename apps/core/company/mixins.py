@@ -7,13 +7,21 @@ from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, B
 
 class CompanyCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_create(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer, request.user)
-        if not isinstance(instance, Exception):
-            return ResponseController.created_201(self.serializer_class(instance).data)
-        elif isinstance(instance, ValidationError):
-            return ResponseController.internal_server_error_500()
+        tenant_current_id = request.user.tenant_current_id
+        current_tenant = Tenant.object_normal.get(id=tenant_current_id)
+        company_quantity_max = current_tenant.company_quality_max
+        current_company_quantity = current_tenant.company_total
+
+        if company_quantity_max > current_company_quantity:
+            serializer = self.serializer_create(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            instance = self.perform_create(serializer, request.user)
+            if not isinstance(instance, Exception):
+                return ResponseController.created_201(self.serializer_class(instance).data)
+            elif isinstance(instance, ValidationError):
+                return ResponseController.internal_server_error_500()
+        else:
+            return ResponseController.forbidden_403(msg='Maximum 5 companies only')
 
     @classmethod
     def perform_create(cls, serializer, user):
