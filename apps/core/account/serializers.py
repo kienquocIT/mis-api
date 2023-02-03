@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
+from apps.core.hr.models import Employee
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -188,11 +189,16 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     if company in user_companies:
                         user_companies.remove(company)
                     else:
-                        bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+                        emp = Employee.object_normal.get(user_id=instance.id)
+                        if emp.id is None:
+                            bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+                        else:
+                            bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id,
+                                                                 employee_id=emp.id))
                 if bulk_info:
                     CompanyUserEmployee.object_normal.bulk_create(bulk_info)
                 for co in user_companies:
-                    if User.objects.filter(company_current=co).exists():
+                    if User.objects.filter(company_current=co, id=instance.id).exists():
                         print("Can not delete current")
                         raise serializers.ValidationError('Can not delete company_current')
                     else:
