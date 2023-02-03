@@ -199,7 +199,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     CompanyUserEmployee.object_normal.bulk_create(bulk_info)
                 for co in user_companies:
                     if User.objects.filter(company_current=co, id=instance.id).exists():
-                        print("Can not delete current")
                         raise serializers.ValidationError('Can not delete company_current')
                     else:
                         co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
