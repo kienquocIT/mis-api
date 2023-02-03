@@ -8,6 +8,7 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
 )
+from apps.shared import BaseUpdateMixin, mask_view
 
 
 class EmployeeList(
@@ -43,7 +44,7 @@ class EmployeeList(
 
 class EmployeeDetail(
     HRRetrieveMixin,
-    HRUpdateMixin,
+    BaseUpdateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -64,8 +65,10 @@ class EmployeeDetail(
 
     @swagger_auto_schema(
         operation_summary="Update employee",
-        operation_description="Update employee information by ID",
+        operation_description="Update employee by ID",
         request_body=EmployeeUpdateSerializer,
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
+        self.serializer_class = EmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
