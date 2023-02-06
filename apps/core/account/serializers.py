@@ -183,32 +183,48 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
             user_companies = [i.company_id for i in user_companies]
             data_bulk = validated_data.pop('companies')
-            if data_bulk:
-                bulk_info = []
-                for company in data_bulk:
-                    if company in user_companies:
-                        user_companies.remove(company)
-                    else:
-                        try:
-                            emp = Employee.object_normal.get(user_id=instance.id, company_id=company)
-                            bulk_info.append(
-                                CompanyUserEmployee(company_id=company, user_id=instance.id, employee_id=emp.id))
-                        except Exception as err:
-                            bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
-                for co in user_companies:
-                    if User.objects.filter(company_current=co, id=instance.id).exists():
-                        raise AttributeError('Can not delete company_current')
-                    else:
-                        if len(data_bulk) == 1:
-                            User.objects.get(pk=instance.id).change_is_superuser(False)
-                        co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
-                        if co_old.employee_id is None:
-                            co_old.delete()
-                        else:
-                            co_old.user_id = None
-                            co_old.save()
-                if bulk_info:
-                    if len(data_bulk) > 1:
-                        User.objects.get(pk=instance.id).change_is_superuser(True)
-                    CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+            list_add_company = data_bulk.copy()
+            list_update_company = user_companies.copy()
+            # if data_bulk:
+            bulk_info = []
+            for company in data_bulk:
+                if company in user_companies:
+                    list_update_company.remove(company)
+                    list_add_company.remove(company)
+            for co_id in list_update_company:
+                if User.objects.filter(pk=instance.id, company_current=co_id).exists():
+                    list_update_company.remove(co_id)
+
+            for co in list_update_company:
+                User.objects.get(pk=instance.id).change_is_superuser(False)
+                co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
+                if co_old.employee_id is None:
+                    co_old.delete()
+                else:
+                    co_old.user_id = None
+                    co_old.save()
+                co_obj = Company.object_normal.get(id=co)
+                co_obj.total_user = co_obj.total_user - 1
+                co_obj.save()
+
+            for company in list_add_company:
+                co_obj = Company.object_normal.get(id=company)
+                co_obj.total_user = co_obj.total_user + 1
+                co_obj.save()
+                try:
+                    try:
+                        co_emp_user = CompanyUserEmployee.object_normal.get(company_id=company, user_id=None)
+                        co_emp_user.user_id = instance.id
+                        co_emp_user.save()
+                    except Exception as err:
+                        emp = Employee.object_normal.get(user_id=instance.id, company_id=company)
+                        bulk_info.append(
+                            CompanyUserEmployee(company_id=company, user_id=instance.id, employee_id=emp.id))
+                except Exception as err:
+                    bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+
+            if bulk_info:
+                if len(list_add_company) > 0:
+                    User.objects.get(pk=instance.id).change_is_superuser(True)
+                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
             return instance
