@@ -101,7 +101,12 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_power_user(cls, obj):
-        return User.objects.filter(company_current=obj.id).filter(is_superuser=1).count()
+        co = CompanyUserEmployee.object_normal.filter(company_id=obj.id)
+        cnt_power_user = 0
+        for item in co:
+            if item.user_id is not None and User.objects.get(pk=item.user_id).is_superuser:
+                cnt_power_user += 1
+        return cnt_power_user
 
     @classmethod
     def get_employee(cls, obj):
