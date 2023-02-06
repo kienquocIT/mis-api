@@ -1,3 +1,4 @@
+from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee
 from apps.core.tenant.models import TenantPlan
 
@@ -50,3 +51,21 @@ def update_tenant_plan():
 
     print('update done.')
     return True
+
+
+def mapping_user_to_company_user_employee():
+    user_list = User.objects.filter(
+        tenant_current_id="c4c3a81a-3bc4-4ae3-ad10-f010f1d2bdac"
+    )
+    if user_list:
+        for user in user_list:
+            if not CompanyUserEmployee.object_normal.filter(user_id=user.id).exists():
+                CompanyUserEmployee.object_normal.create(
+                    user_id=user.id,
+                    company_id=user.company_current_id
+                )
+
+    print('update done.')
+    return True
+
+

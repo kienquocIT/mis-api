@@ -20,6 +20,8 @@ class TenantPlanList(generics.GenericAPIView):
     )
     def get(self, request, *args, **kwargs):
         if hasattr(request, "user"):
+            if request.user:
+                kwargs.update({'tenant_id': request.user.tenant_current_id})
             queryset = self.filter_queryset(
                 self.get_queryset()
                 .filter(**kwargs)
