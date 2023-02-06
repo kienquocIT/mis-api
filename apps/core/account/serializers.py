@@ -189,22 +189,26 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     if company in user_companies:
                         user_companies.remove(company)
                     else:
-                        emp = Employee.object_normal.get(user_id=instance.id)
-                        if emp.id is None:
+                        try:
+                            emp = Employee.object_normal.get(user_id=instance.id, company_id=company)
+                            bulk_info.append(
+                                CompanyUserEmployee(company_id=company, user_id=instance.id, employee_id=emp.id))
+                        except Exception as err:
                             bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
-                        else:
-                            bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id,
-                                                                 employee_id=emp.id))
-                if bulk_info:
-                    CompanyUserEmployee.object_normal.bulk_create(bulk_info)
                 for co in user_companies:
                     if User.objects.filter(company_current=co, id=instance.id).exists():
-                        raise serializers.ValidationError('Can not delete company_current')
+                        raise AttributeError('Can not delete company_current')
                     else:
+                        if len(data_bulk) == 1:
+                            User.objects.get(pk=instance.id).change_is_superuser(False)
                         co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
                         if co_old.employee_id is None:
                             co_old.delete()
                         else:
                             co_old.user_id = None
                             co_old.save()
+                if bulk_info:
+                    if len(data_bulk) > 1:
+                        User.objects.get(pk=instance.id).change_is_superuser(True)
+                    CompanyUserEmployee.object_normal.bulk_create(bulk_info)
             return instance
