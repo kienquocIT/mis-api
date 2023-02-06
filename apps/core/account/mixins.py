@@ -39,7 +39,7 @@ class AccountCreateMixin(BaseCreateMixin):
         serializer = self.serializer_create(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.perform_create(serializer, request.user)
-        self.sync_new_user_to_map(instance, request.user.company_current_id)
+        self.sync_new_user_to_map(instance, request.data.get('company_current', None))
         if not isinstance(instance, Exception):
             return ResponseController.created_201(self.serializer_detail(instance).data)
         elif isinstance(instance, ValidationError):
