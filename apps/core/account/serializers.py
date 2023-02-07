@@ -196,7 +196,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     list_update_company.remove(co_id)
 
             for co in list_update_company:
-                User.objects.get(pk=instance.id).change_is_superuser(False)
                 co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
                 if co_old is not None:
                     try:
@@ -212,6 +211,8 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
 
             if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
                 User.objects.get(pk=instance.id).change_is_superuser(True)
+            else:
+                User.objects.get(pk=instance.id).change_is_superuser(False)
 
             for company in list_add_company:
                 try:
