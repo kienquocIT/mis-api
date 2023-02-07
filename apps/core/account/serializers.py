@@ -130,12 +130,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
         companies = []
         company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
         for item in company:
-            co = Company.object_normal.get(pk=item.company_id)
-            companies.append({
+            try:
+                co = Company.object_normal.get(pk=item.company_id)
+                companies.append({
                 'code': co.code,
                 'title': co.title,
                 'representative': co.representative_fullname,
-            })
+                })
+            except Exception as err:
+                pass
         return companies
 
 
