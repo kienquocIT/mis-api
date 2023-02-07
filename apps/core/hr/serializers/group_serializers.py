@@ -308,6 +308,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
     )
     first_manager = serializers.UUIDField()
     second_manager = serializers.UUIDField(required=False)
+    first_manager_title = serializers.CharField(max_length=100)
 
     class Meta:
         model = Group
