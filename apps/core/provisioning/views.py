@@ -43,7 +43,7 @@ class NewTenant(APIView):
         is_success = tenant_controller.setup_new(
             tenant_code=tenant_code,
             tenant_data=ser.validated_data['tenant_data'],
-            user_data=user_data,zz
+            user_data=user_data,
             create_company=auto_create_company,
             create_employee=create_employee,
             plan_data=plan_data
