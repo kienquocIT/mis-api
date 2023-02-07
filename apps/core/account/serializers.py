@@ -208,9 +208,12 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                 co_obj.save()
 
             for company in list_add_company:
-                co_obj = Company.object_normal.get(id=company)
-                co_obj.total_user = co_obj.total_user + 1
-                co_obj.save()
+                try:
+                    co_obj = Company.object_normal.get(id=company)
+                    co_obj.total_user = co_obj.total_user + 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
                 try:
                     try:
                         co_emp_user = CompanyUserEmployee.object_normal.get(company_id=company, user_id=None)
