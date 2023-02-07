@@ -119,7 +119,7 @@ class TenantPlan(BaseModel):
     date_active = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     is_limited = models.BooleanField(null=True)
-    license_quantity = models.IntegerField(null=True)
+    license_quantity = models.IntegerField(null=True)#
     license_used = models.IntegerField(null=True)
     is_expired = models.BooleanField(
         null=True,
