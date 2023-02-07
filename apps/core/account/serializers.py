@@ -200,7 +200,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
                 except Exception as err:
                     raise AttributeError("Company not exists")
-                if co_old is not None:
+                if co_old:
                     try:
                         emp = Employee.object_normal.get(pk=co_old.employee_id)
                         emp.user_id = None
@@ -214,6 +214,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     co_obj.save()
                 except Exception as err:
                     raise AttributeError("Company not exists")
+
             for company in list_add_company:
                 try:
                     co_obj = Company.object_normal.get(id=company)
