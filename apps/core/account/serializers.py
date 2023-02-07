@@ -209,11 +209,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                 co_obj.total_user = co_obj.total_user - 1
                 co_obj.save()
 
-            if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-                User.objects.get(pk=instance.id).change_is_superuser(True)
-            else:
-                User.objects.get(pk=instance.id).change_is_superuser(False)
-
             for company in list_add_company:
                 try:
                     co_obj = Company.object_normal.get(id=company)
@@ -225,4 +220,9 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
 
             if bulk_info:
                 CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+
+            if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+                User.objects.get(pk=instance.id).change_is_superuser(True)
+            else:
+                User.objects.get(pk=instance.id).change_is_superuser(False)
             return instance
