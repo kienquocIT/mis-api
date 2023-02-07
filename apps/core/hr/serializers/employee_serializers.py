@@ -3,13 +3,15 @@ from rest_framework import serializers
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application
+from apps.core.tenant.models import TenantPlan
 
 
-class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
+class EmployeePlanAppCreateSerializer(serializers.Serializer):
     plan = serializers.UUIDField()
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
+    license_used = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -33,6 +35,7 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    license_used = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -235,6 +238,19 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Some role does not exist.")
         raise serializers.ValidationError("Role must be array.")
 
+    # def validate(self, validate_data):
+    #     check_plan_app = []
+    #     if 'user' in validate_data:
+    #         if 'plan_app' in validate_data:
+    #             for plan_app in validate_data['plan_app']:
+    #                 if 'application' in plan_app:
+    #                     check_plan_app += plan_app['application']
+    #             if not check_plan_app:
+    #                 raise serializers.ValidationError("Must choose Plan if Employee has User.")
+    #         else:
+    #             raise serializers.ValidationError("Must choose Plan if Employee has User.")
+    #     return validate_data
+
     def create(self, validated_data):
         plan_application_dict = {}
         plan_app_data = None
@@ -264,11 +280,22 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             del validated_data['role']
         # create new employee
         employee = Employee.objects.create(**validated_data)
-        # create M2M PlanEmployee
+        # create M2M PlanEmployee + update TenantPlan
         if employee and plan_app_data and bulk_info:
+            # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = employee
             PlanEmployee.object_normal.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.object_normal.filter(
+                        tenant=employee.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
         # create M2M Role Employee
         if role_list:
             bulk_info = []
@@ -361,11 +388,22 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
         if plan_employee_old:
             plan_employee_old.delete()
-        # create M2M PlanEmployee
+        # create M2M PlanEmployee + update TenantPlan
         if instance and plan_app_data and bulk_info:
+            # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = instance
             PlanEmployee.object_normal.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.object_normal.filter(
+                        tenant=instance.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
 
         # delete old M2M RoleEmployee
         role_employee_old = RoleHolder.object_normal.filter(employee=instance)

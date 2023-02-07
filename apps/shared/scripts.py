@@ -1,6 +1,7 @@
 from apps.core.account.models import User
-from apps.core.company.models import CompanyUserEmployee
-from apps.core.tenant.models import TenantPlan
+from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
+from apps.core.hr.models import PlanEmployee, Employee
+from apps.core.tenant.models import TenantPlan, Tenant
 
 
 def update_company_created_user():
@@ -67,5 +68,33 @@ def mapping_user_to_company_user_employee():
 
     print('update done.')
     return True
+
+
+def update_data_company_license_tracking():
+    plan_employee = PlanEmployee.object_normal.all()
+    if plan_employee:
+        plan_employee.delete()
+    tenant_list = Tenant.objects.all()
+    if tenant_list:
+        for tenant in tenant_list:
+            tenant_plan_list = TenantPlan.object_normal.filter(tenant=tenant)
+            tenant_company_list = Company.objects.filter(tenant=tenant)
+            if tenant_company_list:
+                for company in tenant_company_list:
+                    bulk_info = []
+                    for tenant_plan in tenant_plan_list:
+                        bulk_info.append(CompanyLicenseTracking(**{
+                            'company_id': company.id,
+                            'license_plan': tenant_plan.plan.code,
+                            'license_use_count': 0
+                        }))
+                    if bulk_info:
+                        CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
+
+    print('update done.')
+    return True
+
+
+
 
 
