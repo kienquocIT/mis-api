@@ -219,9 +219,15 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     raise AttributeError("Company not exists")
                 try:
                     try:
-                        co_emp_user = CompanyUserEmployee.object_normal.get(company_id=company, user_id=None)
-                        co_emp_user.user_id = instance.id
-                        co_emp_user.save()
+                        try:
+                            emp = Employee.object_normal.get(user_id=instance.id)
+                            co_emp_user = CompanyUserEmployee.object_normal.get(
+                                company_id=company, employee_id=emp.id, user_id=None
+                            )
+                            co_emp_user.user_id = instance.id
+                            co_emp_user.save()
+                        except Exception as err:
+                            CompanyUserEmployee.create_new(company_id=company, user_id=instance.id)
                     except Exception as err:
                         emp = Employee.object_normal.get(user_id=instance.id, company_id=company)
                         bulk_info.append(
