@@ -1,3 +1,6 @@
+import datetime
+import json
+
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
@@ -49,9 +52,10 @@ class TenantController:
                 plan_obj_list = self.check_and_create_plan(plan_data)
                 self.tenant_obj = self.get_tenant_by_code(tenant_code)
                 if not self.tenant_obj:
+                    tenant_data.update({'code': tenant_code})
+                    tenant_data.update({'plan': json.dumps(plan_data)})
                     self.tenant_obj = self.create_tenant(
                         **tenant_data,
-                        code=tenant_code,
                     )
 
                     # create TenantPlan
@@ -302,7 +306,7 @@ class TenantController:
             if not plan_obj:
                 plan_obj = SubscriptionPlan.objects.create(**{
                     'title': plan_title,
-                    'code': plan_code
+                    'code': plan_code,
                 })
                 if plan_obj:
                     result.append(plan_obj)
@@ -317,20 +321,28 @@ class TenantController:
             bulk_info = []
             if tenant_obj.plan:
                 tenant_plan_json = tenant_obj.plan
+                tenant_plan_json = json.loads(tenant_plan_json)
             if tenant_plan_json:
-                for plan_obj in plan_obj_list:
-                    if plan_obj.code in tenant_plan_json:
-                        is_limited = tenant_plan_json[plan_obj.code].get('license_limited', None)
-                        license_quantity = tenant_plan_json[plan_obj.code].get('license_quantity', None)
-                        if is_limited and license_quantity:
-                            bulk_info.append(TenantPlan(
-                                **{
-                                    'tenant': tenant_obj,
-                                    'plan': plan_obj,
-                                    'is_limited': is_limited,
-                                    'license_quantity': license_quantity
-                                },
-                            ))
+                for tenant_plan in tenant_plan_json:
+                    is_limited = tenant_plan.get('is_limited', None)
+                    license_quantity = tenant_plan.get('quantity', None)
+                    plan = SubscriptionPlan.objects.get(code=tenant_plan.get('code', None))
+                    purchase_order = tenant_plan.get('purchase_order', None)
+                    date_active = tenant_plan.get('date_active', None)
+                    date_end = tenant_plan.get('date_end', None)
+                    if plan:
+                        bulk_info.append(TenantPlan(
+                            **{
+                                'date_active': date_active,
+                                'date_end': date_end,
+                                'tenant': tenant_obj,
+                                'plan': plan,
+                                'is_limited': is_limited,
+                                'license_quantity': license_quantity,
+                                'license_used': 0,
+                                'purchase_order': purchase_order
+                            },
+                        ))
             if bulk_info:
                 TenantPlan.objects.bulk_create(bulk_info)
         return True
