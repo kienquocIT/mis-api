@@ -7,13 +7,16 @@ from apps.core.tenant.models import TenantPlan
 class TenantPlanSerializer(serializers.ModelSerializer):
     tenant = serializers.SerializerMethodField()
     plan = serializers.SerializerMethodField()
+    license_used = serializers.SerializerMethodField()
 
     class Meta:
         model = TenantPlan
         fields = (
             'id',
             'tenant',
-            'plan'
+            'plan',
+            'license_quantity',
+            'license_used'
         )
 
     def get_tenant(self, obj):
@@ -45,4 +48,9 @@ class TenantPlanSerializer(serializers.ModelSerializer):
                 'application': application
             }
         return {}
+
+    def get_license_used(self, obj):
+        if obj.license_used:
+            return obj.license_used
+        return 0
 
