@@ -203,7 +203,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                         emp.user_id = None
                         emp.save()
                     except Exception as err:
-                        continue
+                        raise AttributeError("Employee doesn't exists")
                 co_old.delete()
                 co_obj = Company.object_normal.get(id=co)
                 co_obj.total_user = co_obj.total_user - 1
