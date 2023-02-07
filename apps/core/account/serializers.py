@@ -130,12 +130,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
         companies = []
         company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
         for item in company:
-            co = Company.object_normal.get(pk=item.company_id)
-            companies.append({
+            try:
+                co = Company.object_normal.get(pk=item.company_id)
+                companies.append({
                 'code': co.code,
                 'title': co.title,
                 'representative': co.representative_fullname,
-            })
+                })
+            except Exception as err:
+                pass
         return companies
 
 
@@ -196,22 +199,24 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     list_update_company.remove(co_id)
 
             for co in list_update_company:
-                User.objects.get(pk=instance.id).change_is_superuser(False)
-                co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
-                if co_old is not None:
+                try:
+                    co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+                if co_old:
                     try:
                         emp = Employee.object_normal.get(pk=co_old.employee_id)
                         emp.user_id = None
                         emp.save()
                     except Exception as err:
-                        continue
+                        pass
                 co_old.delete()
-                co_obj = Company.object_normal.get(id=co)
-                co_obj.total_user = co_obj.total_user - 1
-                co_obj.save()
-
-            if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-                User.objects.get(pk=instance.id).change_is_superuser(True)
+                try:
+                    co_obj = Company.object_normal.get(id=co)
+                    co_obj.total_user = co_obj.total_user - 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
 
             for company in list_add_company:
                 try:
@@ -224,4 +229,13 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
 
             if bulk_info:
                 CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+
+            try:
+                user = User.objects.get(pk=instance.id)
+                if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+                    user.save(is_superuser=True)
+                else:
+                    user.save()
+            except Exception as err:
+                raise AttributeError("User not exists")
             return instance
