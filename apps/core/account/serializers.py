@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
+from apps.core.hr.models import Employee
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -129,12 +130,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
         companies = []
         company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
         for item in company:
-            co = Company.object_normal.get(pk=item.company_id)
-            companies.append({
+            try:
+                co = Company.object_normal.get(pk=item.company_id)
+                companies.append({
                 'code': co.code,
                 'title': co.title,
                 'representative': co.representative_fullname,
-            })
+                })
+            except Exception as err:
+                pass
         return companies
 
 
@@ -182,24 +186,56 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
             user_companies = [i.company_id for i in user_companies]
             data_bulk = validated_data.pop('companies')
-            if data_bulk:
-                bulk_info = []
-                for company in data_bulk:
-                    if company in user_companies:
-                        user_companies.remove(company)
-                    else:
-                        bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
-                if bulk_info:
-                    CompanyUserEmployee.object_normal.bulk_create(bulk_info)
-                for co in user_companies:
-                    if User.objects.filter(company_current=co).exists():
-                        print("Can not delete current")
-                        raise serializers.ValidationError('Can not delete company_current')
-                    else:
-                        co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
-                        if co_old.employee_id is None:
-                            co_old.delete()
-                        else:
-                            co_old.user_id = None
-                            co_old.save()
+            list_add_company = data_bulk.copy()
+            list_update_company = user_companies.copy()
+            # if data_bulk:
+            bulk_info = []
+            for company in data_bulk:
+                if company in user_companies:
+                    list_update_company.remove(company)
+                    list_add_company.remove(company)
+            for co_id in list_update_company:
+                if User.objects.filter(pk=instance.id, company_current=co_id).exists():
+                    list_update_company.remove(co_id)
+
+            for co in list_update_company:
+                try:
+                    co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+                if co_old:
+                    try:
+                        emp = Employee.object_normal.get(pk=co_old.employee_id)
+                        emp.user_id = None
+                        emp.save()
+                    except Exception as err:
+                        pass
+                co_old.delete()
+                try:
+                    co_obj = Company.object_normal.get(id=co)
+                    co_obj.total_user = co_obj.total_user - 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+
+            for company in list_add_company:
+                try:
+                    co_obj = Company.object_normal.get(id=company)
+                    co_obj.total_user = co_obj.total_user + 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+                bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+
+            if bulk_info:
+                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+
+            try:
+                user = User.objects.get(pk=instance.id)
+                if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+                    user.save(is_superuser=True)
+                else:
+                    user.save()
+            except Exception as err:
+                raise AttributeError("User not exists")
             return instance
