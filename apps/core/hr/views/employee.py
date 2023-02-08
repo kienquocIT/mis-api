@@ -17,14 +17,21 @@ class EmployeeList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_global.select_related(
-        'group',
-        'user'
-    )
+    queryset = Employee.object_global
+    # queryset = Employee.object_global.select_related(
+    #     'group',
+    #     'user'
+    # )
     search_fields = ["search_content"]
 
     serializer_class = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
+
+    def get_queryset(self):
+        return super(EmployeeList, self).get_queryset().select_related(
+            'group',
+            'user'
+        )
 
     @swagger_auto_schema(
         operation_summary="Employee list",
@@ -48,7 +55,7 @@ class EmployeeDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_normal
+    queryset = Employee.object_global
     serializer_class = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
 

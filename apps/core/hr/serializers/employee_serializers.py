@@ -12,6 +12,7 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):
         child=serializers.UUIDField(required=False)
     )
     license_used = serializers.IntegerField(required=False)
+    license_quantity = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -36,6 +37,7 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
         required=False
     )
     license_used = serializers.IntegerField(required=False)
+    license_quantity = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -238,18 +240,30 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Some role does not exist.")
         raise serializers.ValidationError("Role must be array.")
 
-    # def validate(self, validate_data):
-    #     check_plan_app = []
-    #     if 'user' in validate_data:
-    #         if 'plan_app' in validate_data:
-    #             for plan_app in validate_data['plan_app']:
-    #                 if 'application' in plan_app:
-    #                     check_plan_app += plan_app['application']
-    #             if not check_plan_app:
-    #                 raise serializers.ValidationError("Must choose Plan if Employee has User.")
-    #         else:
-    #             raise serializers.ValidationError("Must choose Plan if Employee has User.")
-    #     return validate_data
+    def validate(self, validate_data):
+        # check_plan_app = []
+        # if 'user' in validate_data:
+        #     if 'plan_app' in validate_data:
+        #         for plan_app in validate_data['plan_app']:
+        #             if 'application' in plan_app:
+        #                 check_plan_app += plan_app['application']
+        #         if not check_plan_app:
+        #             raise serializers.ValidationError("Must choose Plan if Employee has User.")
+        #     else:
+        #         raise serializers.ValidationError("Must choose Plan if Employee has User.")
+
+        plan_license_check = ""
+        if 'user' in validate_data:
+            if 'plan_app' in validate_data:
+                for plan_app in validate_data['plan_app']:
+                    if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
+                        if plan_app['license_used'] > plan_app['license_quantity']:
+                            plan_license_check += plan_app['plan'].title + ", "
+        if plan_license_check:
+            raise serializers.ValidationError(
+                "Licenses used of " + plan_license_check + "plan is over total licenses."
+            )
+        return validate_data
 
     def create(self, validated_data):
         plan_application_dict = {}
@@ -351,6 +365,20 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             return User.objects.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("User does not exist.")
+
+    def validate(self, validate_data):
+        plan_license_check = ""
+        if 'user' in validate_data:
+            if 'plan_app' in validate_data:
+                for plan_app in validate_data['plan_app']:
+                    if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
+                        if plan_app['license_used'] > plan_app['license_quantity']:
+                            plan_license_check += plan_app['plan'].title + ", "
+        if plan_license_check:
+            raise serializers.ValidationError(
+                "Licenses used of " + plan_license_check + "plan is over total licenses."
+            )
+        return validate_data
 
     def update(self, instance, validated_data):
         plan_application_dict = {}
