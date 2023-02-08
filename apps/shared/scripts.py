@@ -17,38 +17,63 @@ def update_company_created_user():
 def update_tenant_plan():
     data_list = [
         {
-            'id': "8e83942e-1665-45d7-8c57-bdcfd84d0fc0",
-            'tenant_id': "5434d55e-b2f7-4b0a-8f9c-42c4a4adae91",
+            'id': "d3bd3202-d92c-427a-a4da-9b2043dc2615",
+            'tenant_id': "98730aaf-efd4-403d-9da7-418fc49696e2",
+            'plan_id': "4e082324-45e2-4c27-a5aa-e16a758d5627",
+            'purchase_order': "PO022",
+            'is_limited': False,
+            'license_quantity': None,
+            'date_active': "2023-02-06 07:39:00.000000",
+            'date_end': "2023-08-06 07:39:00.000000",
+        },
+        {
+            'id': "30e78436-091a-4a2a-a96e-92f2d27b64ea",
+            'tenant_id': "98730aaf-efd4-403d-9da7-418fc49696e2",
+            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
+            'purchase_order': "PO022",
+            'is_limited': False,
+            'license_quantity': None,
+            'date_active': "2023-02-06 07:39:00.000000",
+            'date_end': "2023-08-06 07:39:00.000000",
+        },
+        {
+            'id': "a256580d-298e-4d2b-a6dd-307a6be22b87",
+            'tenant_id': "c4c3a81a-3bc4-4ae3-ad10-f010f1d2bdac",
+            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
+            'purchase_order': "PO023",
+            'is_limited': True,
+            'license_quantity': 30,
+            'date_active': "2023-02-08 02:00:00.000000",
+            'date_end': "2023-08-08 02:00:00.000000"
+        },
+        {
+            'id': "76beb796-fcbb-4231-9a55-ed21b9f16d0d",
+            'tenant_id': "4aa530c3-bd4b-4165-bbbb-f89735a1c66a",
             'plan_id': "395eb68e-266f-45b9-b667-bd2086325522",
-            'purchase_order': "PO019",
-            'is_limited': True,
-            'license_quantity': 30,
-            'date_active': "2023-01-30 07:16:00.000000",
-            'date_end': "2024-01-30 07:16:00.000000",
-        },
-        {
-            'id': "5e01c595-3f69-4707-b698-67a80915ecfe",
-            'tenant_id': "5434d55e-b2f7-4b0a-8f9c-42c4a4adae91",
-            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
-            'purchase_order': "PO019",
-            'is_limited': True,
-            'license_quantity': 30,
-            'date_active': "2023-01-30 07:16:00.000000",
-            'date_end': "2024-01-30 07:16:00.000000"
-        },
-        {
-            'id': "9fbf5b68-851c-4895-b29c-2f66b06d73b4",
-            'tenant_id': "2a6de9c2-291f-439f-a750-c7c335945021",
-            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
-            'purchase_order': "PO021",
+            'purchase_order': "PO001",
             'is_limited': True,
             'license_quantity': 10,
-            'date_active': "2023-02-02 10:38:00.000000",
-            'date_end': "2023-05-02 10:38:00.000000"
+            'date_active': "2023-01-13 07:44:00.000000",
+            'date_end': "2023-03-13 07:44:00.000000"
+        },
+        {
+            'id': "6d08677a-df6d-4ee2-b18c-ee5c21fdf6ab",
+            'tenant_id': "9a600efe-7214-446c-9154-1dec004c8de9",
+            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
+            'purchase_order': "PO008",
+            'is_limited': True,
+            'license_quantity': 10,
+            'date_active': "2023-01-16 04:16:00.000000",
+            'date_end': "2023-06-16 04:16:00.000000",
+            'license_buy_type': 1,
         }
     ]
     for data in data_list:
-        TenantPlan.objects.create(**data)
+        if not TenantPlan.objects.filter(
+                tenant_id=data['tenant_id'],
+                plan_id=data['plan_id']
+        ).exists():
+            TenantPlan.objects.create(**data)
 
     print('update done.')
     return True
