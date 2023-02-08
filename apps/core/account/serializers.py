@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.account.models import User
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyUserEmployee
+from apps.core.hr.models import Employee
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -127,12 +128,114 @@ class UserDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_company(cls, obj):
         companies = []
-        company = Company.object_normal.filter(pk=obj.company_current_id)
+        company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
         for item in company:
-            companies.append({
-                'code': item.code,
-                'title': item.title,
-                'representative': item.representative_fullname,
-                'license': ['Sale', 'Hr'],
-            })
+            try:
+                co = Company.object_normal.get(pk=item.company_id)
+                companies.append({
+                'code': co.code,
+                'title': co.title,
+                'representative': co.representative_fullname,
+                })
+            except Exception as err:
+                pass
         return companies
+
+
+class CompanyUserDetailSerializer(serializers.ModelSerializer):
+    companies = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'company_current',
+            'companies',
+        )
+
+    @classmethod
+    def get_companies(cls, obj):
+        company_user = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
+        companies = []
+        for item in company_user:
+            try:
+                company = Company.object_normal.get(id=item.company_id)
+                companies.append({
+                    'id': company.id,
+                    'name': company.title,
+                })
+            except Exception as err:
+                raise serializers.ValidationError("Company does not exist.")
+        return companies
+
+
+class CompanyUserUpdateSerializer(serializers.ModelSerializer):
+    companies = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False,
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'companies',
+        )
+
+    def update(self, instance, validated_data):
+        if 'companies' in validated_data:
+            user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
+            user_companies = [i.company_id for i in user_companies]
+            data_bulk = validated_data.pop('companies')
+            list_add_company = data_bulk.copy()
+            list_update_company = user_companies.copy()
+            # if data_bulk:
+            bulk_info = []
+            for company in data_bulk:
+                if company in user_companies:
+                    list_update_company.remove(company)
+                    list_add_company.remove(company)
+            for co_id in list_update_company:
+                if User.objects.filter(pk=instance.id, company_current=co_id).exists():
+                    list_update_company.remove(co_id)
+
+            for co in list_update_company:
+                try:
+                    co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+                if co_old:
+                    try:
+                        emp = Employee.object_normal.get(pk=co_old.employee_id)
+                        emp.user_id = None
+                        emp.save()
+                    except Exception as err:
+                        pass
+                co_old.delete()
+                try:
+                    co_obj = Company.object_normal.get(id=co)
+                    co_obj.total_user = co_obj.total_user - 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+
+            for company in list_add_company:
+                try:
+                    co_obj = Company.object_normal.get(id=company)
+                    co_obj.total_user = co_obj.total_user + 1
+                    co_obj.save()
+                except Exception as err:
+                    raise AttributeError("Company not exists")
+                bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+
+            if bulk_info:
+                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+
+            try:
+                user = User.objects.get(pk=instance.id)
+                if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+                    user.save(is_superuser=True)
+                else:
+                    user.save()
+            except Exception as err:
+                raise AttributeError("User not exists")
+            return instance

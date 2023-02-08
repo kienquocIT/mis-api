@@ -2,18 +2,26 @@ from django.db import transaction
 from apps.core.company.models import Company
 from apps.core.tenant.models import Tenant
 from rest_framework.exceptions import ValidationError
-from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin
+from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, BaseListMixin
 
 
 class CompanyCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_create(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer, request.user)
-        if not isinstance(instance, Exception):
-            return ResponseController.created_201(self.serializer_class(instance).data)
-        elif isinstance(instance, ValidationError):
-            return ResponseController.internal_server_error_500()
+        tenant_current_id = request.user.tenant_current_id
+        current_tenant = Tenant.object_normal.get(id=tenant_current_id)
+        company_quantity_max = current_tenant.company_quality_max
+        current_company_quantity = current_tenant.company_total
+
+        if company_quantity_max > current_company_quantity:
+            serializer = self.serializer_create(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            instance = self.perform_create(serializer, request.user)
+            if not isinstance(instance, Exception):
+                return ResponseController.created_201(self.serializer_class(instance).data)
+            elif isinstance(instance, ValidationError):
+                return ResponseController.internal_server_error_500()
+        else:
+            return ResponseController.forbidden_403(msg='Maximum 5 companies only')
 
     @classmethod
     def perform_create(cls, serializer, user):
@@ -51,3 +59,18 @@ class CompanyDestroyMixin(BaseDestroyMixin):
             return ResponseController.success_200({}, key_data='result')
 
         return ResponseController.internal_server_error_500()
+
+
+class CompanyListMixin(BaseListMixin):
+
+    def list_company_user_employee(self, request, *args, **kwargs):
+        kwargs.update(self.setup_list_field_hidden(request.user))
+        kwargs.update({'company_id': request.user.company_current_id})
+        queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer_list(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer_list(queryset, many=True)
+        return ResponseController.success_200(data=serializer.data, key_data='result')

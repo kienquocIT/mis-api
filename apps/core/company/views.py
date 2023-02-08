@@ -1,7 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 
-from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin
+from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin, CompanyListMixin
 from apps.core.company.models import Company
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from rest_framework.permissions import IsAuthenticated
@@ -11,7 +13,7 @@ from apps.core.company.serializers import (
     CompanyDetailSerializer,
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
-    CompanyUserNotMapEmployeeSerializer,
+    CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
 )
 
 
@@ -21,12 +23,15 @@ class CompanyList(BaseListMixin, CompanyCreateMixin):
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.select_related('tenant')
+    queryset = Company.object_normal
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
     serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
+
+    def get_queryset(self):
+        return super(CompanyList, self).get_queryset().select_related('tenant')
 
     @swagger_auto_schema(
         operation_summary="Company list",
@@ -73,10 +78,9 @@ class CompanyListOverview(BaseListMixin):
     Company Overview:
         GET: /company/list/overview
     """
-    queryset = Company.object_normal.all()
+    queryset = Company.object_normal
     serializer_list = CompanyOverviewSerializer
     list_hidden_field = ['tenant_id']
-
 
     @swagger_auto_schema(
         operation_summary="Company list",
@@ -87,7 +91,7 @@ class CompanyListOverview(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class CompanyUserNotMapEmployeeList(BaseListMixin):
+class CompanyUserNotMapEmployeeList(CompanyListMixin):
     queryset = CompanyUserEmployee.object_normal.select_related(
         'user'
     ).filter(
@@ -101,4 +105,20 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+        return self.list_company_user_employee(request, *args, **kwargs)
+
+
+class CompanyOverviewDetail(BaseRetrieveMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Company.objects.all()
+    serializer_detail = CompanyOverviewDetailSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Detail Company Overview (0: All, 1: Employee Connected)'
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        if 'option' in kwargs:
+            if kwargs['option'] == 1:
+                self.serializer_detail = CompanyOverviewConnectedSerializer
+        return self.retrieve(request, *args, **kwargs)

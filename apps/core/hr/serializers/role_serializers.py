@@ -4,7 +4,8 @@ from apps.core.hr.models import Role, RoleHolder, Employee
 
 
 class RoleListSerializer(serializers.ModelSerializer):
-    employees = serializers.SerializerMethodField()
+
+    holder = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
@@ -12,16 +13,15 @@ class RoleListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'abbreviation',
-            'employees',
+            'holder',
         )
 
     @classmethod
-    def get_employees(cls, obj):
-        emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
+    def get_holder(cls, obj):
         employees = []
-        for item in emp_holder:
+        for emp in obj.employee.all():
             try:
-                emp = Employee.object_global.get(pk=item.employee_id)
+                emp = Employee.object_global.get(pk=emp.id)
                 employees.append({
                     'id': emp.id,
                     'full_name': emp.last_name + ' ' + emp.first_name,
@@ -113,7 +113,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
 
 
 class RoleDetailSerializer(serializers.ModelSerializer):
-    employees = serializers.SerializerMethodField()
+    holder = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
@@ -122,19 +122,18 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'abbreviation',
-            'employees',
+            'holder',
         )
 
     @classmethod
-    def get_employees(cls, obj):
-        emp_holder = RoleHolder.object_normal.filter(role_id=obj.id)
+    def get_holder(cls, obj):
         employees = []
-        for item in emp_holder:
+        for emp in obj.employee.all():
             try:
-                emp = Employee.object_global.get(pk=item.employee_id)
+                emp = Employee.object_global.get(pk=emp.id)
                 employees.append({
                     'id': emp.id,
-                    'full_name': emp.first_name + emp.last_name,
+                    'full_name': emp.last_name + ' ' + emp.first_name,
                     'code': emp.code,
                 })
             except Exception as err:

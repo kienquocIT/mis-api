@@ -1,12 +1,10 @@
 import random
-
 from rest_framework import serializers
-
-from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 # from apps.core.tenant.models import Tenant
 from apps.core.hr.models import Employee
+from apps.shared import DisperseModel
 
 
 # Company Serializer
@@ -30,7 +28,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -58,7 +55,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Company
         fields = (
@@ -87,7 +83,11 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
             'total_user',
             'power_user',
             'employee',
-            'employee_linked_user'
+            'employee_linked_user',
+
+            # 'all_total_user',
+            # 'all_power_user',
+            # 'all_employee'
         )
 
     @classmethod
@@ -101,15 +101,24 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_power_user(cls, obj):
-        return User.objects.filter(company_current=obj.id).filter(is_superuser=1).count()
+        co = CompanyUserEmployee.object_normal.filter(company_id=obj.id)
+        cnt_power_user = 0
+        for item in co:
+            try:
+                user = User.objects.get(pk=item.user_id)
+                if item.user_id and user.is_superuser:
+                    cnt_power_user += 1
+            except Exception as err:
+                pass
+        return cnt_power_user
 
     @classmethod
     def get_employee(cls, obj):
-        return Employee.objects.filter(company=obj.id).count()
+        return CompanyUserEmployee.object_normal.filter(company=obj.id).count()
 
     @classmethod
     def get_employee_linked_user(cls, obj):
-        return Employee.objects.filter(company=obj.id).exclude(user_id__isnull=True).count()
+        return CompanyUserEmployee.object_normal.filter(company=obj.id).exclude(user_id__isnull=True).count()
 
 
 # Company Map User Employee
@@ -134,3 +143,106 @@ class CompanyUserNotMapEmployeeSerializer(serializers.ModelSerializer):
                 'full_name': User.get_full_name(obj.user, 2),
             }
         return {}
+
+
+# Company Overview All
+class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
+    employee = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CompanyUserEmployee
+        fields = (
+            "employee",
+            "user",
+        )
+
+    def get_employee(self, obj):
+        license_list = []
+        if obj.employee:
+            plan_list = obj.employee.plan.all()
+            if plan_list:
+                for plan in plan_list:
+                    license_list.append({
+                        'id': plan.id,
+                        'title': plan.title,
+                        'code': plan.code
+                    })
+            return {
+                'id': obj.employee.id,
+                'full_name': Employee.get_full_name(obj.employee, 2),
+                'code': obj.employee.code,
+                'license_list': license_list
+            }
+        return {}
+
+    def get_user(self, obj):
+        company_list = []
+        if obj.user:
+            company_user_list = CompanyUserEmployee.object_normal.select_related('company').filter(
+                user=obj.user
+            )
+            if company_user_list:
+                for company_user in company_user_list:
+                    company_list.append({
+                        'id': company_user.company.id,
+                        'title': company_user.company.title,
+                        'code': company_user.company.code,
+                        'is_created_company': company_user.is_created_company
+                    })
+            return {
+                'id': obj.user.id,
+                'full_name': User.get_full_name(obj.user, 2),
+                'username': obj.user.username,
+                'company_list': company_list
+            }
+        return {}
+
+
+class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
+    company_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = (
+            "id",
+            "title",
+            "company_data",
+        )
+
+    def get_company_data(self, obj):
+        return CompanyOverviewDetailDataSerializer(
+            CompanyUserEmployee.object_normal.select_related(
+                'user',
+                'employee'
+            ).filter(company=obj),
+            many=True
+        ).data
+
+
+# Company Overview Employee Connected
+class CompanyOverviewConnectedSerializer(serializers.ModelSerializer):
+    company_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = (
+            "id",
+            "title",
+            "company_data",
+        )
+
+    def get_company_data(self, obj):
+        return CompanyOverviewDetailDataSerializer(
+            CompanyUserEmployee.object_normal.select_related(
+                'user',
+                'employee'
+            ).filter(
+                company=obj,
+                employee__isnull=False
+            ),
+            many=True
+        ).data
+
+
+

@@ -3,13 +3,15 @@ from rest_framework import serializers
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application
+from apps.core.tenant.models import TenantPlan
 
 
-class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
+class EmployeePlanAppCreateSerializer(serializers.Serializer):
     plan = serializers.UUIDField()
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
     )
+    license_used = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -33,6 +35,7 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    license_used = serializers.IntegerField(required=False)
 
     def validate_plan(self, value):
         try:
@@ -88,13 +91,13 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         result = []
-        employee_role = RoleHolder.object_normal.filter(employee=obj)
-        if employee_role:
-            for emp_role in employee_role:
+        role_list = obj.role.all()
+        if role_list:
+            for role in role_list:
                 result.append({
-                    'id': emp_role.role.id,
-                    'title': emp_role.role.title,
-                    'code': emp_role.role.code
+                    'id': role.id,
+                    'title': role.title,
+                    'code': role.code
                 })
         return result
 
@@ -105,23 +108,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                 'username': obj.user.username,
             }
         return {}
-
-
-class EmployeeListByCompanyOverviewSerializer(EmployeeListSerializer):
-    class Meta:
-        model = Employee
-        fields = (
-            'id',
-            'code',
-            'first_name',
-            'last_name',
-            'full_name',
-            'email',
-            'phone',
-            'date_joined',
-            'user_id',
-            'is_active',
-        )
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
@@ -182,6 +168,10 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.user.id,
                 'full_name': User.get_full_name(obj.user, 2),
+                'first_name': obj.user.first_name,
+                'last_name': obj.user.last_name,
+                'email': obj.user.email,
+                'phone': obj.user.phone,
             }
         return {}
 
@@ -196,15 +186,13 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
 
     def get_role(self, obj):
         result = []
-        employee_role = RoleHolder.object_normal.select_related('role').filter(
-            employee=obj
-        )
-        if employee_role:
-            for emp_role in employee_role:
+        role_list = obj.role.all()
+        if role_list:
+            for role in role_list:
                 result.append({
-                    'id': emp_role.role.id,
-                    'title': emp_role.role.title,
-                    'code': emp_role.role.code
+                    'id': role.id,
+                    'title': role.title,
+                    'code': role.code
                 })
         return result
 
@@ -250,6 +238,19 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Some role does not exist.")
         raise serializers.ValidationError("Role must be array.")
 
+    # def validate(self, validate_data):
+    #     check_plan_app = []
+    #     if 'user' in validate_data:
+    #         if 'plan_app' in validate_data:
+    #             for plan_app in validate_data['plan_app']:
+    #                 if 'application' in plan_app:
+    #                     check_plan_app += plan_app['application']
+    #             if not check_plan_app:
+    #                 raise serializers.ValidationError("Must choose Plan if Employee has User.")
+    #         else:
+    #             raise serializers.ValidationError("Must choose Plan if Employee has User.")
+    #     return validate_data
+
     def create(self, validated_data):
         plan_application_dict = {}
         plan_app_data = None
@@ -279,11 +280,22 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             del validated_data['role']
         # create new employee
         employee = Employee.objects.create(**validated_data)
-        # create M2M PlanEmployee
+        # create M2M PlanEmployee + update TenantPlan
         if employee and plan_app_data and bulk_info:
+            # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = employee
             PlanEmployee.object_normal.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.object_normal.filter(
+                        tenant=employee.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
         # create M2M Role Employee
         if role_list:
             bulk_info = []
@@ -298,10 +310,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
 class EmployeeUpdateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
-    plan_app = EmployeePlanAppCreateSerializer(
+    plan_app = EmployeePlanAppUpdateSerializer(
         required=False,
         many=True
     )
+    group = serializers.UUIDField(required=False)
+    role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
 
     class Meta:
         model = Employee
@@ -313,8 +327,24 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'phone',
             'date_joined',
             'dob',
-            'plan_app'
+            'plan_app',
+            'group',
+            'role',
         )
+
+    def validate_group(self, value):
+        try:
+            return Group.object_global.get(id=value)
+        except Exception as e:
+            raise serializers.ValidationError("Group does not exist.")
+
+    def validate_role(self, value):
+        if isinstance(value, list):
+            role_list = Role.object_global.filter(id__in=value).count()
+            if role_list == len(value):
+                return value
+            raise serializers.ValidationError("Some role does not exist.")
+        raise serializers.ValidationError("Role must be array.")
 
     def validate_user(self, value):
         try:
@@ -325,6 +355,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         plan_application_dict = {}
         plan_app_data = None
+        role_list = None
         bulk_info = []
         if 'plan_app' in validated_data:
             plan_app_data = validated_data['plan_app']
@@ -345,17 +376,47 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                         }))
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+        if 'role' in validated_data:
+            role_list = validated_data['role']
+            del validated_data['role']
         # update employee
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+        # delete old M2M PlanEmployee
+        plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
+        if plan_employee_old:
+            plan_employee_old.delete()
+        # create M2M PlanEmployee + update TenantPlan
         if instance and plan_app_data and bulk_info:
-            # delete old M2M PlanEmployee
-            plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
-            if plan_employee_old:
-                plan_employee_old.delete()
             # create M2M PlanEmployee
             for info in bulk_info:
                 info.employee = instance
             PlanEmployee.object_normal.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.object_normal.filter(
+                        tenant=instance.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
+
+        # delete old M2M RoleEmployee
+        role_employee_old = RoleHolder.object_normal.filter(employee=instance)
+        if role_employee_old:
+            role_employee_old.delete()
+        # create M2M RoleEmployee
+        if instance and role_list:
+            bulk_info = []
+            for role in role_list:
+                bulk_info.append(RoleHolder(**{
+                    'employee': instance,
+                    'role_id': role,
+                }))
+            RoleHolder.object_normal.bulk_create(bulk_info)
+
         return instance
