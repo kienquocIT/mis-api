@@ -4,6 +4,7 @@ from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application
 from apps.core.tenant.models import TenantPlan
+from apps.shared.decorators import query_debugger
 
 
 class EmployeePlanAppCreateSerializer(serializers.Serializer):
@@ -91,15 +92,15 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @query_debugger
     def get_role(self, obj):
         result = []
-        role_list = obj.role.all()
+        role_list = obj.role.all().values('id', 'title')
         if role_list:
             for role in role_list:
                 result.append({
-                    'id': role.id,
-                    'title': role.title,
-                    'code': role.code
+                    'id': role['id'],
+                    'title': role['title'],
                 })
         return result
 

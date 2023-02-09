@@ -1,20 +1,49 @@
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.db import models
+from django.db import models, connection
 from crum import get_current_user
+
+counter_queries = 0
 
 
 def print_model_hit_db(func):
+    def cut_from(sql):
+        arr = []
+        arr_cut = sql.split("FROM")
+        if len(arr_cut) > 1:
+            for idx in range(1, len(arr_cut)):
+                arr.append(
+                    arr_cut[idx].split('WHERE')[0]
+                )
+        return arr
+
     def wrapper(self, *args, **kwargs):
         result = func(self, *args, **kwargs)
-        if settings.MODEL_HIT_DB_DEBUG and settings.SQL_HIT_DB_DEBUG:
-            print(
-                f"[{str(self)}] : {str(result.query) if hasattr(result, 'query') else '[SHOW ERRORS]'}"
-            )
-        elif settings.MODEL_HIT_DB_DEBUG:
-            print('[MODEL CALL HIT DB]: ', str(self))
-        elif settings.SQL_HIT_DB_DEBUG:
-            print('SQL: ', str(result.query) if hasattr(result, 'query') else '[SHOW ERRORS]')
+        if settings.MODEL_HIT_DB_DEBUG or settings.SQL_HIT_DB_DEBUG:
+            global counter_queries
+            if settings.MODEL_HIT_DB_DEBUG and settings.SQL_HIT_DB_DEBUG:
+                new_counter_queries = len(connection.queries)
+                for idx in range(counter_queries, new_counter_queries):
+                    time_tmp = connection.queries[idx]["time"]
+                    sql_tmp = connection.queries[idx]["sql"]
+                    model_tmp = cut_from(sql_tmp)
+                    print(f'[{time_tmp}] {"<FROM>" + " | ".join(model_tmp)} {"<SQL> " + sql_tmp}')
+                counter_queries = new_counter_queries
+            elif settings.MODEL_HIT_DB_DEBUG:
+                new_counter_queries = len(connection.queries)
+                for idx in range(counter_queries, new_counter_queries):
+                    time_tmp = connection.queries[idx]["time"]
+                    sql_tmp = connection.queries[idx]["sql"]
+                    model_tmp = cut_from(sql_tmp)
+                    print(f'[{time_tmp}] {("  >>> " + " | ".join(model_tmp)) if model_tmp else " "}')
+                counter_queries = new_counter_queries
+            elif settings.SQL_HIT_DB_DEBUG:
+                new_counter_queries = len(connection.queries)
+                for idx in range(counter_queries, new_counter_queries):
+                    time_tmp = connection.queries[idx]["time"]
+                    sql_tmp = connection.queries[idx]["sql"]
+                    print(f'[{time_tmp}] {">>SQL>> " + sql_tmp}')
+                counter_queries = new_counter_queries
         return result
 
     return wrapper
