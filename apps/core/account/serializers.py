@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.hr.models import Employee
+from apps.shared.decorators import query_debugger
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -181,6 +182,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             'companies',
         )
 
+    @query_debugger
     def update(self, instance, validated_data):
         if 'companies' in validated_data:
             user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
@@ -188,7 +190,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             data_bulk = validated_data.pop('companies')
             list_add_company = data_bulk.copy()
             list_update_company = user_companies.copy()
-            # if data_bulk:
             bulk_info = []
             for company in data_bulk:
                 if company in user_companies:
@@ -225,16 +226,15 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     co_obj.save()
                 except Exception as err:
                     raise AttributeError("Company not exists")
-                bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
-
-            if bulk_info:
-                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+                CompanyUserEmployee.create_new(company_id=company, user_id=instance.id)
 
             try:
                 user = User.objects.get(pk=instance.id)
                 if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-                    user.save(is_superuser=True)
+                    user.is_superuser = True
+                    user.save()
                 else:
+                    user.is_superuser = False
                     user.save()
             except Exception as err:
                 raise AttributeError("User not exists")

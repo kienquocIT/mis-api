@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Role, RoleHolder, Employee
+from apps.shared.decorators import query_debugger
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -16,19 +17,15 @@ class RoleListSerializer(serializers.ModelSerializer):
             'holder',
         )
 
-    @classmethod
-    def get_holder(cls, obj):
+    @query_debugger
+    def get_holder(self, obj):
         employees = []
-        for emp in obj.employee.all():
-            try:
-                emp = Employee.object_global.get(pk=emp.id)
-                employees.append({
-                    'id': emp.id,
-                    'full_name': emp.last_name + ' ' + emp.first_name,
-                    'code': emp.code,
-                })
-            except Exception as err:
-                raise serializers.ValidationError("Employee does not exist.")
+        for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code'):
+            employees.append({
+                'id': emp['id'],
+                'full_name': emp['last_name'] + ' ' + emp['first_name'],
+                'code': emp['code'],
+            })
         return employees
 
 
@@ -125,17 +122,13 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             'holder',
         )
 
-    @classmethod
-    def get_holder(cls, obj):
+    @query_debugger
+    def get_holder(self, obj):
         employees = []
-        for emp in obj.employee.all():
-            try:
-                emp = Employee.object_global.get(pk=emp.id)
-                employees.append({
-                    'id': emp.id,
-                    'full_name': emp.last_name + ' ' + emp.first_name,
-                    'code': emp.code,
-                })
-            except Exception as err:
-                raise serializers.ValidationError("Employee does not exist.")
+        for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code'):
+            employees.append({
+                'id': emp['id'],
+                'full_name': emp['last_name'] + ' ' + emp['first_name'],
+                'code': emp['code'],
+            })
         return employees
