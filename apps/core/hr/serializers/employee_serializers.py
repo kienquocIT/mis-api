@@ -95,13 +95,12 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     @query_debugger
     def get_role(self, obj):
         result = []
-        role_list = obj.role.all()
+        role_list = obj.role.all().values('id', 'title')
         if role_list:
             for role in role_list:
                 result.append({
-                    'id': role.id,
-                    'title': role.title,
-                    'code': role.code
+                    'id': role['id'],
+                    'title': role['title'],
                 })
         return result
 
