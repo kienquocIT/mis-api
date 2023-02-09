@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 # from apps.core.tenant.models import Tenant
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, PlanEmployee
 from apps.shared import DisperseModel
 
 
@@ -92,12 +92,27 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_license_used(cls, obj):
-        return [
-                {'key': 'Hrm', 'quantity': random.randrange(20, 50, 3)},
-                {'key': 'Sale', 'quantity': random.randrange(20, 50, 3)},
-                {'key': 'Personal', 'quantity': random.randrange(20, 50, 3)},
-                {'key': 'E-office', 'quantity': random.randrange(20, 50, 3)},
-        ]
+        result = []
+        data_dict = {}
+        company_employee_plan = PlanEmployee.object_normal.select_related(
+            'plan'
+        ).filter(
+            employee__company=obj
+        )
+        if company_employee_plan:
+            for employee_plan in company_employee_plan:
+                if employee_plan.plan.code not in data_dict:
+                    data_dict.update({employee_plan.plan.code: 1})
+                else:
+                    data_dict[employee_plan.plan.code] += 1
+        if data_dict:
+            for key, value in data_dict.items():
+                result.append({
+                    'key': key,
+                    'quantity': value
+                })
+
+        return result
 
     @classmethod
     def get_power_user(cls, obj):
