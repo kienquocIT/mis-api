@@ -75,6 +75,9 @@ class BaseModel(models.Model):
 
     extras = JSONField(default={})
 
+    is_active = models.BooleanField(verbose_name="active", default=True)
+    is_delete = models.BooleanField(verbose_name="delete", default=False)
+
     objects = NormalManager()
     object_normal = NormalManager()
 
@@ -117,8 +120,19 @@ class TenantModel(BaseModel):
     company_id = models.UUIDField(null=True)
     space_id = models.UUIDField(null=True)
 
-    mode = models.IntegerField(choices=DOCUMENT_MODE, default=0)
+    mode = models.IntegerField(
+        choices=DOCUMENT_MODE,
+        default=0
+    )
     mode_id = models.UUIDField(null=True)
+
+    employee_created = models.UUIDField(null=True)
+    employee_inherit = models.UUIDField(null=True)
+    group_created = models.UUIDField(null=True)
+    group_inherit = models.UUIDField(null=True)
+
+    # check if document finish workflow
+    is_allow_use = models.BooleanField(default=False)
 
     # manager customize
     object_global = GlobalManager()
