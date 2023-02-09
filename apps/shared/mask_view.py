@@ -53,13 +53,19 @@ def mask_view(**parent_kwargs):
             if not request.user or isinstance(request.user, AnonymousUser):
                 user = None
 
+            # get require key check
+            login_require = parent_kwargs.get('login_require', True)
+            auth_require = parent_kwargs.get('auth_require', False)
+            if auth_require:
+                login_require = True
+
             # check login_require | check user in request is exist and not Anonymous
-            if parent_kwargs.get('login_require', True) and not user:
+            if login_require and not user:
                 return ResponseController.unauthorized_401()
 
             # check auth permission require | verify from data input
             code_perm = parent_kwargs.get('code_perm', None)
-            if parent_kwargs.get('auth_require', False) and not AuthPermission(user=user, code_perm=code_perm).check():
+            if auth_require and not AuthPermission(user=user, code_perm=code_perm).check():
                 return ResponseController.forbidden_403()
 
             # call view when access login and auth permission | Data returned is three case:
