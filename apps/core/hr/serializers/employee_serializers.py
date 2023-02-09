@@ -86,7 +86,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_group(self, obj):
         if obj.group:
             return {
-                'id': obj.group.id,
+                'id': obj.group_id,
                 'title': obj.group.title,
                 'code': obj.group.code
             }
@@ -95,7 +95,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     @query_debugger
     def get_role(self, obj):
         result = []
-        role_list = obj.role.all().values('id', 'title')
+        role_list = obj.role.all().values(
+            'id',
+            'title',
+        )
         if role_list:
             for role in role_list:
                 result.append({
@@ -107,7 +110,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         if obj.user:
             return {
-                'id': obj.user.id,
+                'id': obj.user_id,
                 'username': obj.user.username,
             }
         return {}
@@ -150,16 +153,18 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             for emp_plan in employee_plan:
                 app_list = []
                 if emp_plan.application and isinstance(emp_plan.application, list):
-                    application_list = Application.objects.filter(id__in=emp_plan.application)
+                    application_list = Application.objects.filter(
+                        id__in=emp_plan.application
+                    ).values('id', 'title', 'code')
                     if application_list:
                         for application in application_list:
                             app_list.append({
-                                'id': application.id,
-                                'title': application.title,
-                                'code': application.code
+                                'id': application['id'],
+                                'title': application['title'],
+                                'code': application['code']
                             })
                 result.append({
-                    'id': emp_plan.plan.id,
+                    'id': emp_plan.plan_id,
                     'title': emp_plan.plan.title,
                     'code': emp_plan.plan.code,
                     'application': app_list
@@ -169,7 +174,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     def get_user(self, obj):
         if obj.user:
             return {
-                'id': obj.user.id,
+                'id': obj.user_id,
                 'full_name': User.get_full_name(obj.user, 2),
                 'first_name': obj.user.first_name,
                 'last_name': obj.user.last_name,
@@ -181,21 +186,24 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     def get_group(self, obj):
         if obj.group:
             return {
-                'id': obj.group.id,
+                'id': obj.group_id,
                 'title': obj.group.title,
                 'code': obj.group.code
             }
         return {}
 
+    @query_debugger
     def get_role(self, obj):
         result = []
-        role_list = obj.role.all()
+        role_list = obj.role.all().values(
+            'id',
+            'title'
+        )
         if role_list:
             for role in role_list:
                 result.append({
-                    'id': role.id,
-                    'title': role.title,
-                    'code': role.code
+                    'id': role['id'],
+                    'title': role['title'],
                 })
         return result
 
