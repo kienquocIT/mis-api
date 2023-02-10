@@ -193,7 +193,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             data_bulk.remove(instance.company_current_id)
 
             list_add_company = data_bulk.copy()
-            list_update_company = list(set(user_companies.copy()))
+            list_update_company = user_companies.copy()
 
             bulk_info = []
             for company in data_bulk:
