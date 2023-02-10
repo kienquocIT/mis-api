@@ -200,10 +200,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     list_update_company.remove(co_id)
 
             for co in list_update_company:
-                try:
-                    co_old = CompanyUserEmployee.object_normal.get(company_id=co, user_id=instance.id)
-                except Exception as err:
-                    raise AttributeError("Company not exists")
+                co_old = CompanyUserEmployee.object_normal.filter(user=instance, company_id=co).first()
                 if co_old:
                     try:
                         emp = Employee.object_normal.get(pk=co_old.employee_id)
@@ -211,7 +208,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                         emp.save()
                     except Exception as err:
                         pass
-                co_old.delete()
+                    co_old.delete()
                 try:
                     co_obj = Company.object_normal.get(id=co)
                     co_obj.total_user = co_obj.total_user - 1
@@ -226,16 +223,13 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                     co_obj.save()
                 except Exception as err:
                     raise AttributeError("Company not exists")
-                CompanyUserEmployee.create_new(company_id=company, user_id=instance.id)
+                bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
 
-            try:
-                user = User.objects.get(pk=instance.id)
-                if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-                    user.is_superuser = True
-                    user.save()
-                else:
-                    user.is_superuser = False
-                    user.save()
-            except Exception as err:
-                raise AttributeError("User not exists")
+            if bulk_info:
+                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+
+            if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+                instance.save(is_superuser=True)
+            else:
+                instance.save()
             return instance
