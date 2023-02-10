@@ -139,7 +139,7 @@ class User(AuthUser):
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('[Account.User.sync_map] Company ID must be required.')
 
-    def save(self,is_superuser=False, *args, **kwargs):
+    def save(self, is_superuser=False, *args, **kwargs):
         # generate username for login
         self.username_auth = self.convert_username_field_data(self.username, self.tenant_current)
 
