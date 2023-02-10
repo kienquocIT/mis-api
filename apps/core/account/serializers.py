@@ -187,17 +187,19 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
         if 'companies' in validated_data:
             user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
             user_companies = [i.company_id for i in user_companies]
+            user_companies.remove(instance.company_current_id)
+
             data_bulk = validated_data.pop('companies')
+            data_bulk.remove(instance.company_current_id)
+
             list_add_company = data_bulk.copy()
-            list_update_company = user_companies.copy()
+            list_update_company = list(set(user_companies.copy()))
+
             bulk_info = []
             for company in data_bulk:
                 if company in user_companies:
                     list_update_company.remove(company)
                     list_add_company.remove(company)
-            for co_id in list_update_company:
-                if User.objects.filter(pk=instance.id, company_current=co_id).exists():
-                    list_update_company.remove(co_id)
 
             for co in list_update_company:
                 co_old = CompanyUserEmployee.object_normal.filter(user=instance, company_id=co).first()
