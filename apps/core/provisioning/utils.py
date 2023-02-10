@@ -72,6 +72,7 @@ class TenantController:
                             title=self.tenant_obj.title,
                             code=f'{self.tenant_obj.code}01',
                             tenant=self.tenant_obj.id,
+                            total_user=1,
                         )
                         self.space_obj = self.create_space(
                             title='Global',
