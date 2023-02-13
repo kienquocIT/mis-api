@@ -4,6 +4,15 @@ from apps.core.hr.models import PlanEmployee, Employee
 from apps.core.tenant.models import TenantPlan, Tenant
 
 
+def update_company_total_user():
+    company_id = '643b1dba-5f97-4f10-916a-bd4f1a719e40'
+    company = Company.objects.get(pk=company_id)
+    company.total_user = CompanyUserEmployee.object_normal.filter(company_id=company_id).count()
+    company.save()
+    print('update done')
+    return True
+
+
 def update_company_created_user():
     company_user_emp = CompanyUserEmployee.object_normal.filter(user__isnull=False)
     if company_user_emp:
