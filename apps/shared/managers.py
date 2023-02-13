@@ -27,7 +27,17 @@ def print_model_hit_db(func):
                     time_tmp = connection.queries[idx]["time"]
                     sql_tmp = connection.queries[idx]["sql"]
                     model_tmp = cut_from(sql_tmp)
-                    print(f'[{time_tmp}] {"<FROM>" + " | ".join(model_tmp)} {"<SQL> " + sql_tmp}')
+
+                    try:
+                        print(
+                            u'[{time_tmp}] {model_tmp} {sql_tmp}'.format(
+                                time_tmp=time_tmp,
+                                model_tmp="<FROM>" + " | ".join(model_tmp),
+                                sql_tmp="<SQL> " + sql_tmp
+                            ).encode("ascii", "ignore").decode()
+                        )
+                    except Exception as err:
+                        print(err)
                 counter_queries = new_counter_queries
             elif settings.MODEL_HIT_DB_DEBUG:
                 new_counter_queries = len(connection.queries)
