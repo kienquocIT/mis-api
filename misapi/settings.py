@@ -60,6 +60,8 @@ INSTALLED_APPS = \
         'apps.core.hr',
         'apps.core.company',
         'apps.core.space',
+
+        'apps.core.workflow'
     ]
 
 MIDDLEWARE = [
