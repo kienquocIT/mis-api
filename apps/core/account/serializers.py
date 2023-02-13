@@ -134,9 +134,9 @@ class UserDetailSerializer(serializers.ModelSerializer):
             try:
                 co = Company.object_normal.get(pk=item.company_id)
                 companies.append({
-                'code': co.code,
-                'title': co.title,
-                'representative': co.representative_fullname,
+                    'code': co.code,
+                    'title': co.title,
+                    'representative': co.representative_fullname,
                 })
             except Exception as err:
                 pass
@@ -185,47 +185,30 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     @query_debugger
     def update(self, instance, validated_data):
         if 'companies' in validated_data:
-            user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance)
-            user_companies = [i.company_id for i in user_companies]
-            user_companies.remove(instance.company_current_id)
-
             data_bulk = validated_data.pop('companies')
-            data_bulk.remove(instance.company_current_id)
-
-            list_add_company = data_bulk.copy()
-            list_update_company = user_companies.copy()
-
+            user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance). \
+                exclude(company=instance.company_current)
             bulk_info = []
-            for company in data_bulk:
-                if company in user_companies:
-                    list_update_company.remove(company)
-                    list_add_company.remove(company)
 
-            for co in list_update_company:
-                co_old = CompanyUserEmployee.object_normal.filter(user=instance, company_id=co).first()
-                if co_old:
-                    try:
-                        emp = Employee.object_normal.get(pk=co_old.employee_id)
-                        emp.user_id = None
-                        emp.save()
-                    except Exception as err:
-                        pass
-                    co_old.delete()
-                try:
-                    co_obj = Company.object_normal.get(id=co)
-                    co_obj.total_user = co_obj.total_user - 1
-                    co_obj.save()
-                except Exception as err:
-                    raise AttributeError("Company not exists")
+            for co in data_bulk:
+                if co != instance.company_current_id:
+                    if co not in user_companies:
+                        co_obj = Company.object_normal.filter(id=co).first()
+                        if co_obj:
+                            co_obj.total_user = co_obj.total_user + 1
+                            co_obj.save()
+                        bulk_info.append(CompanyUserEmployee(company_id=co, user_id=instance.id))
+                    else:
+                        user_companies = user_companies.exclude(company_id=co)
 
-            for company in list_add_company:
-                try:
-                    co_obj = Company.object_normal.get(id=company)
-                    co_obj.total_user = co_obj.total_user + 1
-                    co_obj.save()
-                except Exception as err:
-                    raise AttributeError("Company not exists")
-                bulk_info.append(CompanyUserEmployee(company_id=company, user_id=instance.id))
+            for co in user_companies:
+                if co.employee:
+                    co.employee.user = None
+                    co.employee.save()
+
+                co.company.total_user = co.company.total_user - 1
+                co.company.save()
+                co.delete()
 
             if bulk_info:
                 CompanyUserEmployee.object_normal.bulk_create(bulk_info)
@@ -234,4 +217,4 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                 instance.save(is_superuser=True)
             else:
                 instance.save()
-            return instance
+        return instance
