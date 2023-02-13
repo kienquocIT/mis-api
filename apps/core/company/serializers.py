@@ -70,7 +70,9 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
+    power_user_summary = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
+    total_user_summary = serializers.SerializerMethodField()
     employee_linked_user = serializers.SerializerMethodField()
 
     class Meta:
@@ -81,7 +83,9 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
             'code',
             'license_used',
             'total_user',
+            'total_user_summary',
             'power_user',
+            'power_user_summary',
             'employee',
             'employee_linked_user',
         )
@@ -128,8 +132,18 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
         return Employee.object_normal.filter(company=obj.id).count()
 
     @classmethod
+    def get_total_user_summary(cls, obj):
+        return User.objects.filter(tenant_current=obj.tenant).count()
+
+    @classmethod
+    def get_power_user_summary(cls, obj):
+        return User.objects.filter(tenant_current=obj.tenant, is_superuser=True).count()
+
+    @classmethod
     def get_employee_linked_user(cls, obj):
-        return CompanyUserEmployee.object_normal.filter(company=obj.id).exclude(user_id__isnull=True).exclude(employee_id__isnull=True).count()
+        return CompanyUserEmployee.object_normal.filter(company=obj).exclude(user_id__isnull=True).exclude(
+            employee_id__isnull=True
+        ).count()
 
 
 # Company Map User Employee
@@ -254,6 +268,3 @@ class CompanyOverviewConnectedSerializer(serializers.ModelSerializer):
             ),
             many=True
         ).data
-
-
-
