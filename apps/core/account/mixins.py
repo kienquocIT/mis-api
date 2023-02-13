@@ -1,6 +1,6 @@
 from django.db import transaction
 
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
 from rest_framework.exceptions import ValidationError
@@ -55,9 +55,9 @@ class AccountCreateMixin(BaseCreateMixin):
                     tenant_current_id=user.tenant_current_id,
                 )
                 if instance.company_current_id:
-                    company_current_id = instance.company_current_id
-                    company = Company.object_normal.get(id=company_current_id)
-                    company.total_user = User.objects.filter(company_current=company_current_id).count()
+                    company_added_id = instance.company_current_id
+                    company = Company.object_normal.get(id=company_added_id)
+                    company.total_user = CompanyUserEmployee.object_normal.filter(company_id=company_added_id).count()+1
                     company.save()
             return instance
         except Exception as e:
