@@ -119,12 +119,9 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
         co = CompanyUserEmployee.object_normal.filter(company_id=obj.id)
         cnt_power_user = 0
         for item in co:
-            try:
-                user = User.objects.get(pk=item.user_id)
-                if item.user_id and user.is_superuser:
-                    cnt_power_user += 1
-            except Exception as err:
-                pass
+            user = User.objects.filter(pk=item.user_id).first()
+            if item.user_id and user.is_superuser and user:
+                cnt_power_user += 1
         return cnt_power_user
 
     @classmethod
