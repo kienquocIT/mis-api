@@ -3,7 +3,6 @@ from jsonfield import JSONField
 
 from apps.shared import TenantCoreModel
 
-
 WORKFLOW_ACTION = (
     (0, "Create"),
     (1, "Approve"),
@@ -46,15 +45,15 @@ class Zone(TenantCoreModel):
     )
     name = models.TextField(
         verbose_name="name",
-        required=True
+        default='default zone'
+
     )
     remark = models.TextField(
         verbose_name="description",
-        required=False
+        null=True
     )
     zone_field = JSONField(
         verbose_name="zone field",
-        required=True,
         default=[]
     )
 
@@ -172,4 +171,3 @@ class Transition(TenantCoreModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-

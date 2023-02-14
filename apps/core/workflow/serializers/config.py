@@ -2,12 +2,12 @@ from rest_framework import serializers
 
 from apps.core.workflow.models import Workflow, Node, Audit
 
-
 OPTION_AUDIT = (
     (0, "In form"),
     (1, "Out form"),
     (2, "In workflow"),
 )
+
 
 # Audit
 class AuditCreateSerializer(serializers.ModelSerializer):
@@ -71,8 +71,10 @@ class WorkflowListSerializer(serializers.ModelSerializer):
         model = Workflow
         fields = (
             'id',
+            'title',
             'code_application',
-            'code'
+            'code',
+            'is_active',
         )
 
 
@@ -137,4 +139,3 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                 )
 
         return workflow
-
