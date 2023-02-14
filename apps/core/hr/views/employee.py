@@ -8,12 +8,12 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
 )
-from apps.shared import BaseUpdateMixin, mask_view
+from apps.shared import BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin
 
 
 class EmployeeList(
-    HRListMixin,
-    HRCreateMixin,
+    BaseListMixin,
+    BaseCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -24,7 +24,7 @@ class EmployeeList(
     # )
     search_fields = ["search_content"]
 
-    serializer_class = EmployeeListSerializer
+    serializer_list = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
 
     def get_queryset(self):
@@ -50,13 +50,13 @@ class EmployeeList(
 
 
 class EmployeeDetail(
-    HRRetrieveMixin,
+    BaseRetrieveMixin,
     BaseUpdateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
     queryset = Employee.object_global
-    serializer_class = EmployeeDetailSerializer
+    serializer_detail = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
 
     def get_queryset(self):
