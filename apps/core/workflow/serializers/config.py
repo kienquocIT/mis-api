@@ -3,6 +3,12 @@ from rest_framework import serializers
 from apps.core.workflow.models import Workflow, Node, Audit
 
 
+OPTION_AUDIT = (
+    (0, "In form"),
+    (1, "Out form"),
+    (2, "In workflow"),
+)
+
 # Audit
 class AuditCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -26,6 +32,7 @@ class NodeListSerializer(serializers.ModelSerializer):
 
 class NodeCreateSerializer(serializers.ModelSerializer):
     audit = AuditCreateSerializer()
+    option_audit = serializers.ChoiceField(choices=OPTION_AUDIT)
 
     class Meta:
         model = Node
@@ -95,6 +102,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # initial
         node_list = None
+        audit_list = None
         if 'node' in validated_data:
             node_list = validated_data['node']
             del validated_data['node']
@@ -107,11 +115,26 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             for node in node_list:
                 if 'option' in node:
                     if node['option'] != 2:
-                        pass
+                        if 'audit' in node:
+                            del node['audit']
+                        Node.object_global.create(
+                            **node,
+                            workflow=workflow
+                        )
+                    else:
+                        if 'audit' in node:
+                            audit_list = node['audit']
+                            del node['audit']
+                        node = Node.object_global.create(
+                            **node,
+                            workflow=workflow
+                        )
+                        if audit_list:
+                            for audit in audit_list:
+                                Audit.object_global.create(
+                                    **audit,
+                                    node=node
+                                )
 
-                if 'audit' in node:
-                    audit = node['audit']
-                    del node['audit']
-
-                node = Node.object_global
+        return workflow
 
