@@ -39,6 +39,8 @@ class BaseMixin(GenericAPIView):
                     data = getattr(user, 'mode_id', 0)
                 case 'mode':
                     data = getattr(user, 'mode', 0)
+                case 'user_created':
+                    data = user.id
             if data is not None:
                 ctx[key] = data
         return ctx

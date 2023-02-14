@@ -25,7 +25,10 @@ class EmployeeList(
     search_fields = ["search_content"]
 
     serializer_list = EmployeeListSerializer
+    serializer_detail = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     def get_queryset(self):
         return super(EmployeeList, self).get_queryset().select_related(
