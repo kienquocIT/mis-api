@@ -4,10 +4,10 @@ from django.contrib.auth.models import Permission
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel
+from apps.shared import TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel, PermissionCoreModel
 
 
-class Employee(TenantCoreModel):
+class Employee(TenantCoreModel, PermissionCoreModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(max_length=150)
@@ -208,7 +208,7 @@ class PlanEmployee(M2MModel):
         permissions = ()
 
 
-class Role(TenantCoreModel):
+class Role(TenantCoreModel, PermissionCoreModel):
     abbreviation = models.CharField(
         verbose_name='abbreviation of role (Business analysis -> BA)',
         max_length=10,
