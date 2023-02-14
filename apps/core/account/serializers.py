@@ -275,9 +275,10 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                                 data_remove.company.save()
                             data_remove.delete()
 
-            if len(company_old_id_list) == len(remove_list):
-                instance.save()
-
-            if len(company_id_list) - len(company_id_list) == 1:
-                instance.save(is_superuser=True)
+            if len(company_old_id_list) != 0:
+                if len(company_old_id_list) == len(remove_list):
+                    instance.save()
+            else:
+                if len(bulk_info_add) > 0:
+                    instance.save(is_superuser=True)
         return instance
