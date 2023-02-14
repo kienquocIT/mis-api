@@ -4,8 +4,18 @@ from apps.shared import ResponseController, HttpMsg
 
 class BaseMixin(GenericAPIView):
     def __init__(self, *args, **kwargs):
+        serializer_list = getattr(self, 'serializer_list', None)
+        serializer_detail = getattr(self, 'serializer_detail', None)
+        if serializer_list:
+            self.serializer_class = self.serializer_list
+        elif serializer_detail:
+            self.serializer_class = self.serializer_detail
+        else:
+            raise AttributeError(
+                f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute in class view.'
+            )
+
         super().__init__(*args, **kwargs)
-        self.serializer_class = self.serializer_list
 
     @staticmethod
     def setup_hidden(fields: list, user) -> dict:
