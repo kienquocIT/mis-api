@@ -73,6 +73,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+#
+MIDDLEWARE += ['apps.shared.middleware.CustomizeMiddleware']
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
@@ -269,9 +271,7 @@ FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 ENABLE_TURN_ON_IS_EMAIL = False
 
 # DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
-RAISE_EXCEPTION_DEBUG = False
-MODEL_HIT_DB_DEBUG = False
-SQL_HIT_DB_DEBUG = False
+DEBUG_HIT_DB = False
 
 # LOGGING
 
