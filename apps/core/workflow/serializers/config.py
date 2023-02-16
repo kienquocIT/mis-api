@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.workflow.models import Workflow, Node, Audit
+from apps.core.workflow.models import Workflow, Node, Audit, Zone
 
 OPTION_AUDIT = (
     (0, "In form"),
@@ -103,6 +103,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         fields = (
             'code_application',
             'node',
+            'zone'
         )
 
     def create(self, validated_data):
@@ -122,9 +123,15 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         workflow = Workflow.object_global.create(**validated_data)
 
         # create zone
-        # if workflow and zone_list:
-        #     for zone in zone_list:
-
+        if workflow and zone_list:
+            bulk_info = []
+            for zone in zone_list:
+                if 'order' in zone:
+                    order = zone['order']
+                    del zone['order']
+                    zone = Zone.object_global.create()
+                    if zone:
+                        zone_created_data.update({order: zone.id})
 
         # create node for workflow
         if workflow and node_list:

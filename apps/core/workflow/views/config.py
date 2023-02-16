@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.workflow.models import Workflow
+from apps.core.workflow.models import Workflow, Node
 from apps.core.workflow.serializers.config import WorkflowListSerializer
 from apps.shared import BaseListMixin, mask_view
 
@@ -12,8 +12,6 @@ class WorkflowList(
     permission_classes = [IsAuthenticated]
     queryset = Workflow.object_global.select_related("company")
     serializer_list = WorkflowListSerializer
-    # serializer_create = RoleCreateSerializer
-    # serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
 
@@ -33,3 +31,23 @@ class WorkflowList(
     # @mask_view(login_require=True, auth_require=True, code_perm='')
     # def post(self, request, *args, **kwargs):
     #     return self.create(request, *args, **kwargs)
+
+
+class NodeSystemList(
+    BaseListMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Node.objects
+    serializer_list = WorkflowListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super(NodeSystemList, self).get_queryset().filter(is_system=True)
+
+    @swagger_auto_schema(
+        operation_summary="Node System List",
+        operation_description="Get Node System List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
