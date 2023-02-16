@@ -105,6 +105,9 @@ class Node(TenantCoreModel):
         default=[],
         help_text="list zones of audit"
     )
+    order = models.IntegerField(
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Node'

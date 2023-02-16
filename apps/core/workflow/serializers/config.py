@@ -25,6 +25,7 @@ class NodeListSerializer(serializers.ModelSerializer):
         model = Node
         fields = (
             'id',
+            'title',
             'remarks',
             'is_system'
         )
@@ -48,7 +49,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'option_audit',
             'employee_list',
             'node_zone',
-            'audit'
+            'audit',
+            'order'
         )
 
 
