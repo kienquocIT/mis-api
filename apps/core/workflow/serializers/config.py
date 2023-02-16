@@ -69,6 +69,22 @@ class NodeUpdateSerializer(serializers.ModelSerializer):
         )
 
 
+# Zone
+class ZoneCreateSerializer(serializers.ModelSerializer):
+    property_list = serializers.ListField(
+        child=serializers.CharField(required=True),
+        required=True,
+    )
+    class Meta:
+        model = Zone
+        fields = (
+            'title',
+            'remark',
+            'property_list',
+            'order'
+        )
+
+
 # Workflow
 class WorkflowListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -97,13 +113,20 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    zone = ZoneCreateSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Workflow
         fields = (
+            'title',
             'code_application',
             'node',
-            'zone'
+            'zone',
+            'is_multi_company',
+            'is_define_zone',
         )
 
     def create(self, validated_data):
@@ -128,8 +151,11 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             for zone in zone_list:
                 if 'order' in zone:
                     order = zone['order']
-                    del zone['order']
-                    zone = Zone.object_global.create()
+                    # del zone['order']
+                    zone = Zone.object_global.create(
+                        **zone,
+                        workflow=workflow
+                    )
                     if zone:
                         zone_created_data.update({order: zone.id})
 

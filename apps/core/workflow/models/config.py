@@ -27,6 +27,10 @@ class Workflow(TenantCoreModel):
         verbose_name='Multi company',
         default=False
     )
+    is_define_zone = models.BooleanField(
+        verbose_name='Define zone',
+        default=False
+    )
 
     class Meta:
         verbose_name = 'Workflow'
@@ -43,18 +47,16 @@ class Zone(TenantCoreModel):
         related_name="zone_workflow",
         null=False
     )
-    name = models.TextField(
-        verbose_name="name",
-        default='default zone'
-
-    )
     remark = models.TextField(
-        verbose_name="description",
+        verbose_name="Description",
         null=True
     )
-    zone_field = JSONField(
-        verbose_name="zone field",
+    property_list = JSONField(
+        verbose_name="property list",
         default=[]
+    )
+    order = models.IntegerField(
+        null=True
     )
 
     class Meta:
@@ -73,8 +75,8 @@ class Node(TenantCoreModel):
         related_name="node_workflow",
         null=True
     )
-    remarks = models.TextField(
-        verbose_name="remarks",
+    remark = models.TextField(
+        verbose_name="Description",
         null=True,
         blank=True
     )
