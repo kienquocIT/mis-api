@@ -54,29 +54,3 @@ class TenantPlanSerializer(serializers.ModelSerializer):
             return obj.license_used
         return 0
 
-
-class TenantApplicationSerializer(serializers.ModelSerializer):
-    application = serializers.SerializerMethodField()
-
-    class Meta:
-        model = TenantPlan
-        fields = (
-            'id',
-            'application'
-        )
-
-    def get_application(self, obj):
-        if obj.plan:
-            application = []
-            plan_app_list = PlanApplication.object_normal.select_related('application').filter(
-                plan=obj.plan
-            )
-            if plan_app_list:
-                for plan_app in plan_app_list:
-                    application.append({
-                        'id': plan_app.application.id,
-                        'title': plan_app.application.title,
-                        'code': plan_app.application.code,
-                    })
-            return application
-        return []

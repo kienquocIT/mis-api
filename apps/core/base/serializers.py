@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.base.models import SubscriptionPlan, PlanApplication
+from apps.core.base.models import SubscriptionPlan, PlanApplication, Application
 
 
 # Subscription Plan
@@ -29,3 +29,13 @@ class PlanListSerializer(serializers.ModelSerializer):
                     'code': plan_app.application.code,
                 })
         return result
+
+
+class ApplicationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Application
+        fields = (
+            'id',
+            'title',
+            'code'
+        )
