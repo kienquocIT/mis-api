@@ -95,12 +95,18 @@ class Node(TenantCoreModel):
         default=0,
         help_text="option choose audit: In form, Out form, In workflow"
     )
-
-    # use for option_audit in [In form, Out form]
+    # use for option_audit In form
+    field_of_employee = models.CharField(
+        max_length=550,
+        blank=True,
+        null=True,
+        help_text="field has data employees, option 1"
+    )
+    # use for option_audit Out form
     employee_list = JSONField(
         verbose_name="employees",
         default=[],
-        help_text="list employees, depend on option"
+        help_text="list employees, option 2"
     )
     zone = JSONField(
         verbose_name="zone",

@@ -48,6 +48,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'remark',
             'actions',
             'option_audit',
+            'field_of_employee',
             'employee_list',
             'node_zone',
             'audit',
