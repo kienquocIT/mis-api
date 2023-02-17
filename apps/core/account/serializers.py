@@ -182,39 +182,102 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             'companies',
         )
 
+    # @query_debugger
+    # def update(self, instance, validated_data):
+    #     if 'companies' in validated_data:
+    #         data_bulk = validated_data.pop('companies')
+    #         user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance). \
+    #             exclude(company=instance.company_current)
+    #         bulk_info = []
+    #
+    #         for co in data_bulk:
+    #             if co != instance.company_current_id:
+    #                 if co not in user_companies:
+    #                     co_obj = Company.object_normal.filter(id=co).first()
+    #                     if co_obj:
+    #                         co_obj.total_user = co_obj.total_user + 1
+    #                         co_obj.save()
+    #                     bulk_info.append(CompanyUserEmployee(company_id=co, user_id=instance.id))
+    #                 else:
+    #                     user_companies = user_companies.exclude(company_id=co)
+    #
+    #         for co in user_companies:
+    #             if co.employee:
+    #                 co.employee.user = None
+    #                 co.employee.save()
+    #
+    #             co.company.total_user = co.company.total_user - 1
+    #             co.company.save()
+    #             co.delete()
+    #
+    #         if bulk_info:
+    #             CompanyUserEmployee.object_normal.bulk_create(bulk_info)
+    #
+    #         if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
+    #             instance.save(is_superuser=True)
+    #         else:
+    #             instance.save()
+    #     return instance
+
     @query_debugger
     def update(self, instance, validated_data):
         if 'companies' in validated_data:
-            data_bulk = validated_data.pop('companies')
-            user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance). \
-                exclude(company=instance.company_current)
-            bulk_info = []
+            bulk_info_add = []
+            remove_list = []
+            company_id_list = validated_data['companies']
+            company_old_id_list = CompanyUserEmployee.object_normal.filter(
+                user=instance
+            ).exclude(
+                company_id=instance.company_current_id
+            ).values_list(
+                'company_id',
+                flat=True
+            )
+            # check add
+            for company_id in company_id_list:
+                if company_id != instance.company_current_id:
+                    if company_id not in company_old_id_list:
+                        bulk_info_add.append(CompanyUserEmployee(
+                            company_id=company_id,
+                            user_id=instance.id)
+                        )
+            # check remove
+            for company_old_id in company_old_id_list:
+                if company_old_id not in company_id_list:
+                    remove_list.append(company_old_id)
+            if bulk_info_add:
+                company_user_add = CompanyUserEmployee.object_normal.bulk_create(bulk_info_add)
+                if company_user_add:
+                    for company_add in company_user_add:
+                        company_add.company.total_user += 1
+                        company_add.company.save()
+            if remove_list:
+                company_user_remove = CompanyUserEmployee.object_normal.filter(
+                    company_id__in=remove_list,
+                    user=instance
+                ).select_related(
+                    'employee',
+                    'company'
+                )
+                if company_user_remove:
+                    for data_remove in company_user_remove:
+                        if data_remove.employee:
+                            data_remove.employee.user = None
+                            data_remove.employee.save()
+                            # data_remove.user = None
+                            # data_remove.save()
+                            if data_remove.company.total_user > 0:
+                                data_remove.company.total_user -= 1
+                                data_remove.company.save()
+                        else:
+                            if data_remove.company.total_user > 0:
+                                data_remove.company.total_user -= 1
+                                data_remove.company.save()
+                            data_remove.delete()
 
-            for co in data_bulk:
-                if co != instance.company_current_id:
-                    if co not in user_companies:
-                        co_obj = Company.object_normal.filter(id=co).first()
-                        if co_obj:
-                            co_obj.total_user = co_obj.total_user + 1
-                            co_obj.save()
-                        bulk_info.append(CompanyUserEmployee(company_id=co, user_id=instance.id))
-                    else:
-                        user_companies = user_companies.exclude(company_id=co)
-
-            for co in user_companies:
-                if co.employee:
-                    co.employee.user = None
-                    co.employee.save()
-
-                co.company.total_user = co.company.total_user - 1
-                co.company.save()
-                co.delete()
-
-            if bulk_info:
-                CompanyUserEmployee.object_normal.bulk_create(bulk_info)
-
-            if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-                instance.save(is_superuser=True)
-            else:
+            if len(company_old_id_list) == len(remove_list):
                 instance.save()
+
+            if len(company_id_list) - len(company_id_list) == 1:
+                instance.save(is_superuser=True)
         return instance
