@@ -5,9 +5,9 @@ from rest_framework.views import APIView
 
 from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin
-from apps.core.base.models import SubscriptionPlan, Application
+from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty
 
-from apps.core.base.serializers import PlanListSerializer, ApplicationListSerializer
+from apps.core.base.serializers import PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer
 
 
 # Subscription Plan
@@ -49,3 +49,27 @@ class TenantApplicationList(
     )
     def get(self, request, *args, **kwargs):
         return self.tenant_application_list(request, *args, **kwargs)
+
+
+class ApplicationPropertyList(
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = ApplicationProperty.objects
+    search_fields = []
+
+    serializer_class = ApplicationPropertyListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Application Property list",
+        operation_description="Get application property list",
+    )
+    def get(self, request, *args, **kwargs):
+        if hasattr(request, "user"):
+            queryset = self.filter_queryset(
+                self.get_queryset()
+                .filter(**kwargs)
+            )
+            serializer = self.serializer_class(queryset, many=True)
+            return ResponseController.success_200(serializer.data, key_data='result')
+        return ResponseController.unauthorized_401()

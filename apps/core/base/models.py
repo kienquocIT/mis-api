@@ -40,3 +40,28 @@ class PlanApplication(M2MModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+class ApplicationProperty(BaseModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE
+    )
+    remark = models.TextField(
+        null=True,
+        blank=True
+    )
+    code = models.TextField(
+        null=True,
+        blank=True
+    )
+    type = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Application property'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

@@ -50,7 +50,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'username_auth'
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = ['username_auth', 'email']
 
     def __str__(self):
         return self.get_full_name()
