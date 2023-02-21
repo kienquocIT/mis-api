@@ -1,18 +1,18 @@
 from rest_framework import serializers
 
-from apps.core.workflow.models import Workflow, Node, Audit, Zone
+from apps.core.workflow.models import Workflow, Node, Collaborator, Zone
 
-OPTION_AUDIT = (
+OPTION_COLLABORATOR = (
     (0, "In form"),
     (1, "Out form"),
     (2, "In workflow"),
 )
 
 
-# Audit
-class AuditCreateSerializer(serializers.ModelSerializer):
+# Collaborator
+class CollaboratorCreateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Audit
+        model = Collaborator
         fields = (
             'employee',
             'zone'
@@ -33,8 +33,8 @@ class NodeListSerializer(serializers.ModelSerializer):
 
 
 class NodeCreateSerializer(serializers.ModelSerializer):
-    audit = AuditCreateSerializer()
-    option_audit = serializers.ChoiceField(choices=OPTION_AUDIT)
+    collaborator = CollaboratorCreateSerializer()
+    option_collaborator = serializers.ChoiceField(choices=OPTION_COLLABORATOR)
     node_zone = serializers.ListField(
         child=serializers.IntegerField(required=False),
         required=False
@@ -47,17 +47,17 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'title',
             'remark',
             'actions',
-            'option_audit',
+            'option_collaborator',
             'field_of_employee',
             'employee_list',
             'node_zone',
-            'audit',
+            'collaborator',
             'order'
         )
 
 
 class NodeUpdateSerializer(serializers.ModelSerializer):
-    audit = AuditCreateSerializer(
+    collaborator = CollaboratorCreateSerializer(
         many=True,
         required=False
     )
@@ -69,7 +69,7 @@ class NodeUpdateSerializer(serializers.ModelSerializer):
             'title',
             'remark',
             'actions',
-            'audit'
+            'collaborator'
         )
 
 
@@ -79,6 +79,7 @@ class ZoneCreateSerializer(serializers.ModelSerializer):
         child=serializers.CharField(required=True),
         required=True,
     )
+
     class Meta:
         model = Zone
         fields = (
@@ -136,7 +137,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         # initial
         node_list = None
-        audit_list = None
+        collaborator_list = None
         zone_list = None
         zone_created_data = {}
         if 'node' in validated_data:
@@ -178,24 +179,24 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                     node['zone'].append(zone_created_data[node_zone])
                     # check option & create node
                     if node['option'] != 2:
-                        if 'audit' in node:
-                            del node['audit']
+                        if 'collaborator' in node:
+                            del node['collaborator']
                         Node.object_global.create(
                             **node,
                             workflow=workflow
                         )
                     else:
-                        if 'audit' in node:
-                            audit_list = node['audit']
-                            del node['audit']
+                        if 'collaborator' in node:
+                            collaborator_list = node['collaborator']
+                            del node['collaborator']
                         node = Node.object_global.create(
                             **node,
                             workflow=workflow
                         )
-                        if audit_list:
-                            for audit in audit_list:
-                                Audit.object_global.create(
-                                    **audit,
+                        if collaborator_list:
+                            for collaborator in collaborator_list:
+                                Collaborator.object_global.create(
+                                    **collaborator,
                                     node=node
                                 )
 
