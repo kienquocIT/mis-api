@@ -66,12 +66,11 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 co_user_emp = list(CompanyUserEmployee.object_normal.filter(user=instance))
                 if len(co_user_emp) == 1:
                     if co_user_emp[0].employee:
-                        co_user_emp[0].employee.user = None
+                        co_user_emp[0].employee.company = data_bulk
                         co_user_emp[0].employee.save()
 
-                    co_user_emp[0].delete()
-
-                    CompanyUserEmployee.create_new(company_id=data_bulk.id, user_id=instance.id)
+                        co_user_emp[0].company = data_bulk
+                        co_user_emp[0].save()
 
                     instance.company_current.total_user -= 1
                     instance.company_current.save()
