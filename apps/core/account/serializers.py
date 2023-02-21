@@ -69,8 +69,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                         co_user_emp[0].employee.company = data_bulk
                         co_user_emp[0].employee.save()
 
-                        co_user_emp[0].company = data_bulk
-                        co_user_emp[0].save()
+                    co_user_emp[0].company = data_bulk
+                    co_user_emp[0].save()
 
                     instance.company_current.total_user -= 1
                     instance.company_current.save()
