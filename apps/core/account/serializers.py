@@ -63,7 +63,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
-                co_user_emp = list(CompanyUserEmployee.object_normal.filter(user=instance))
+                co_user_emp = list(CompanyUserEmployee.object_normal.select_related('employee').filter(user=instance))
                 if len(co_user_emp) == 1:
                     if co_user_emp[0].employee:
                         co_user_emp[0].employee.company = data_bulk
