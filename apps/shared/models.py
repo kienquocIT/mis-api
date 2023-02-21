@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Union, Literal
 from uuid import uuid4, UUID
 
@@ -11,6 +12,7 @@ from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager
 from .constant import DOCUMENT_MODE, PERMISSION_OPTION
 from .formats import FORMATTING
 from .permissions import PermOption
+from .caches import CacheController
 
 
 class DisperseModel:
@@ -60,6 +62,132 @@ class DisperseModel:
             f"[{str(self.__class__.__name__)}] "
             f"Execute setup() function before call get_model() function."
         )
+
+
+class CacheByModel(object):
+    def __init__(self):
+        ...
+
+    @staticmethod
+    def get_model(app_model):
+        return DisperseModel(app_model=app_model).get_model()
+
+    @staticmethod
+    def key(model_cls, doc_id):
+        if hasattr(model_cls, 'key_cache') and TypeCheck.check_uuid(doc_id):
+            return model_cls.key_cache(doc_id)
+        return None
+
+    @staticmethod
+    def exist_cache(key):
+        data = CacheController().get(key)
+        return data if data else None
+
+    @classmethod
+    def get_cache(cls, app_model, doc_id) -> Union[None, dict]:
+        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
+            model_cls = cls.get_model(app_model)
+            key = cls.key(model_cls, doc_id)
+            data = cls.exist_cache(key)
+            if data:
+                return data
+            else:
+                if hasattr(model_cls, 'get_cache'):
+                    return model_cls.get_cache(doc_id)
+        return None
+
+    @classmethod
+    def get_cache_obj(cls, doc_obj) -> Union[None, dict]:
+        if doc_obj and hasattr(doc_obj, 'id'):
+            model_cls = doc_obj.__class___
+            key = cls.key(model_cls, doc_obj.id)
+            data = cls.exist_cache(key)
+            if data:
+                return data
+            else:
+                if hasattr(model_cls, 'force_cache'):
+                    return doc_obj.force_cache()
+        return None
+
+    @classmethod
+    def reset_cache(cls, app_model, doc_id) -> Union[None, dict]:
+        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
+            model_cls = cls.get_model(app_model)
+            if hasattr(model_cls, 'force_cache'):
+                try:
+                    obj = model_cls.objects.get(pk=doc_id)
+                    return obj.force_cache()
+                except model_cls.DoesNotExist as err:
+                    print(err)
+        return None
+
+    @classmethod
+    def reset_cache_obj(cls, doc_obj) -> Union[None, dict]:
+        if doc_obj and hasattr(doc_obj, 'id') and hasattr(doc_obj, 'force_cache'):
+            return doc_obj.force_cache()
+        return None
+
+    @classmethod
+    def destroy_cache(cls, app_model, doc_id) -> bool:
+        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
+            model_cls = cls.get_model(app_model)
+            if hasattr(model_cls, 'destroy_cache'):
+                return model_cls.destroy_cache(doc_id)
+        return False
+
+    @classmethod
+    def destroy_cache_obj(cls, doc_obj) -> bool:
+        if doc_obj and hasattr(doc_obj, 'id') and hasattr(doc_obj, 'destroy_cache'):
+            return doc_obj.destroy_cache(doc_obj.id)
+        return False
+
+
+class CacheCoreModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    @property
+    def key_cache_prefix(self):
+        raise NotImplementedError('This key_cache_prefix function must be override.')
+
+    @classmethod
+    def key_cache(cls, doc_id: Union[UUID, str]) -> str:
+        return f'{cls.key_cache_prefix}__{str(doc_id)}'
+
+    @property
+    def data_cache(self) -> dict:
+        """
+        Return data save to cache
+        """
+        raise NotImplementedError('This data_cache function must be override.')
+
+    def force_cache(self):
+        """
+        Force save key:data to cache
+        """
+        data = self.data_cache
+        CacheController().set_never_expires(self.key_cache(self.id), data)
+        return data
+
+    @classmethod
+    def get_cache(cls, doc_id, auto_cache: bool = True) -> Union[None, dict]:
+        data = CacheController().get(cls.key_cache(doc_id))
+        if not data and auto_cache is True:
+            try:
+                obj = cls.objects.get(pk=doc_id)
+                data = obj.force_cache()
+            except Exception as err:
+                print(err)
+                data = None
+        return data
+
+    @classmethod
+    def destroy_cache(cls, doc_id) -> bool:
+        return CacheController().destroy(cls.key_cache(doc_id))
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
 
 
 # abstract models
@@ -112,6 +240,22 @@ class BaseModel(models.Model):
             for f_name in excludes:
                 result.pop(f_name)
         return result
+
+    def get_old_value(self, field_name_list: list):
+        if self._state.adding is False:
+            _original_fields_old = dict([(field, None) for field in field_name_list])
+            if field_name_list and isinstance(field_name_list, list):
+                try:
+                    self_fetch = deepcopy(self)
+                    self_fetch.refresh_from_db()
+                    _original_fields_old = dict(
+                        [(field, getattr(self_fetch, field)) for field in field_name_list]
+                    )
+                    return _original_fields_old
+                except Exception as e:
+                    print(e)
+            return _original_fields_old
+        return {}
 
 
 class TenantModel(BaseModel):
