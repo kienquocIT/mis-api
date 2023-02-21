@@ -72,7 +72,9 @@ class ApplicationProperty(BaseModel):
         blank=True
     )
     properties = models.JSONField(
-        default=dict
+        default=dict,
+        null=True,
+        blank=True,
     )
 
     class Meta:
