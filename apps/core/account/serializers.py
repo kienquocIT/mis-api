@@ -58,6 +58,31 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("phone number does not contain characters")
         return attrs
 
+    @query_debugger
+    def update(self, instance, validated_data):
+        if 'company_current' in validated_data:
+            data_bulk = validated_data['company_current']
+            if data_bulk != instance.company_current:
+                co_user_emp = list(CompanyUserEmployee.object_normal.filter(user=instance))
+                if len(co_user_emp) == 1:
+                    if co_user_emp[0].employee:
+                        co_user_emp[0].employee.user = None
+                        co_user_emp[0].employee.save()
+
+                    co_user_emp[0].delete()
+
+                    CompanyUserEmployee.create_new(company_id=data_bulk.id, user_id=instance.id)
+
+                    instance.company_current.total_user -= 1
+                    instance.company_current.save()
+
+                    data_bulk.total_user += 1
+                    data_bulk.save()
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
+        return instance
+
 
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, allow_blank=True)
@@ -182,43 +207,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             'companies',
         )
 
-    # @query_debugger
-    # def update(self, instance, validated_data):
-    #     if 'companies' in validated_data:
-    #         data_bulk = validated_data.pop('companies')
-    #         user_companies = CompanyUserEmployee.object_normal.filter(user_id=instance). \
-    #             exclude(company=instance.company_current)
-    #         bulk_info = []
-    #
-    #         for co in data_bulk:
-    #             if co != instance.company_current_id:
-    #                 if co not in user_companies:
-    #                     co_obj = Company.object_normal.filter(id=co).first()
-    #                     if co_obj:
-    #                         co_obj.total_user = co_obj.total_user + 1
-    #                         co_obj.save()
-    #                     bulk_info.append(CompanyUserEmployee(company_id=co, user_id=instance.id))
-    #                 else:
-    #                     user_companies = user_companies.exclude(company_id=co)
-    #
-    #         for co in user_companies:
-    #             if co.employee:
-    #                 co.employee.user = None
-    #                 co.employee.save()
-    #
-    #             co.company.total_user = co.company.total_user - 1
-    #             co.company.save()
-    #             co.delete()
-    #
-    #         if bulk_info:
-    #             CompanyUserEmployee.object_normal.bulk_create(bulk_info)
-    #
-    #         if CompanyUserEmployee.object_normal.filter(user_id=instance.id).count() > 1:
-    #             instance.save(is_superuser=True)
-    #         else:
-    #             instance.save()
-    #     return instance
-
     @query_debugger
     def update(self, instance, validated_data):
         if 'companies' in validated_data:
@@ -264,8 +252,8 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                         if data_remove.employee:
                             data_remove.employee.user = None
                             data_remove.employee.save()
-                            # data_remove.user = None
-                            # data_remove.save()
+                            data_remove.delete()
+
                             if data_remove.company.total_user > 0:
                                 data_remove.company.total_user -= 1
                                 data_remove.company.save()
