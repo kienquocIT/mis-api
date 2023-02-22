@@ -11,11 +11,16 @@ OPTION_COLLABORATOR = (
 
 # Collaborator
 class CollaboratorCreateSerializer(serializers.ModelSerializer):
+    collaborator_zone = serializers.ListField(
+        child=serializers.IntegerField(required=False),
+        required=False
+    )
+
     class Meta:
         model = Collaborator
         fields = (
             'employee',
-            'zone'
+            'collaborator_zone'
         )
 
 
@@ -37,9 +42,20 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    option_collaborator = serializers.ChoiceField(choices=OPTION_COLLABORATOR)
+    option_collaborator = serializers.ChoiceField(
+        choices=OPTION_COLLABORATOR,
+        required=False
+    )
     node_zone = serializers.ListField(
         child=serializers.IntegerField(required=False),
+        required=False
+    )
+    actions = serializers.ListField(
+        child=serializers.IntegerField(required=False),
+        required=False
+    )
+    employee_list = serializers.ListField(
+        child=serializers.UUIDField(required=False),
         required=False
     )
 
@@ -170,7 +186,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         # create node for workflow
         if workflow and node_list:
             for node in node_list:
-                if 'option' in node:
+                if 'option_collaborator' in node:
                     # mapping zone
                     if 'node_zone' in node:
                         node_zone_list = node['node_zone']
@@ -197,10 +213,23 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                             workflow=workflow
                         )
                         if collaborator_list:
+                            bulk_info = []
                             for collaborator in collaborator_list:
-                                Collaborator.object_global.create(
+                                # mapping zone
+                                if 'collaborator_zone' in collaborator:
+                                    collaborator_zone_list = collaborator['collaborator_zone']
+                                    del collaborator['collaborator_zone']
+                                    collaborator.update({'zone': []})
+                                    if collaborator_zone_list:
+                                        for collaborator_zone in collaborator_zone_list:
+                                            if collaborator_zone in zone_created_data:
+                                                collaborator['zone'].append(zone_created_data[collaborator_zone])
+
+                                bulk_info.append(Collaborator(
                                     **collaborator,
                                     node=node
-                                )
+                                ))
+                            if bulk_info:
+                                Collaborator.object_global.bulk_create(bulk_info)
 
         return workflow

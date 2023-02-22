@@ -55,6 +55,7 @@ class Zone(TenantCoreModel):
     )
     remark = models.TextField(
         verbose_name="Description",
+        blank=True,
         null=True
     )
     property_list = JSONField(
