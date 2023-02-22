@@ -197,7 +197,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                 if node_zone in zone_created_data:
                                     node['zone'].append(zone_created_data[node_zone])
                     # check option & create node
-                    if node['option'] != 2:
+                    if node['option_collaborator'] != 2:
                         if 'collaborator' in node:
                             del node['collaborator']
                         Node.object_global.create(
