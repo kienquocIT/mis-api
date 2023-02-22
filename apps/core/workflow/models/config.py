@@ -32,6 +32,12 @@ class Workflow(TenantCoreModel):
         default=False
     )
 
+    # [{0: "rename1"}, {1: "rename2"}, ....]
+    actions_rename = JSONField(
+        default=[],
+        help_text="use for show rename of actions in specific workflow"
+    )
+
     class Meta:
         verbose_name = 'Workflow'
         verbose_name_plural = 'Workflows'
@@ -90,19 +96,19 @@ class Node(TenantCoreModel):
         help_text="nodes of system: Initial, Approve, Complete,...",
         default=False,
     )
-    option_audit = models.SmallIntegerField(
-        verbose_name="audit options",
+    option_collaborator = models.SmallIntegerField(
+        verbose_name="collaborator options",
         default=0,
-        help_text="option choose audit: In form, Out form, In workflow"
+        help_text="option choose collaborator: In form, Out form, In workflow"
     )
-    # use for option_audit In form
+    # use for option_collaborator In form
     field_of_employee = models.CharField(
         max_length=550,
         blank=True,
         null=True,
         help_text="field has data employees, option 1"
     )
-    # use for option_audit Out form
+    # use for option_collaborator Out form
     employee_list = JSONField(
         verbose_name="employees",
         default=[],
@@ -111,7 +117,7 @@ class Node(TenantCoreModel):
     zone = JSONField(
         verbose_name="zone",
         default=[],
-        help_text="list zones of audit"
+        help_text="list zones of collaborator"
     )
     order = models.IntegerField(
         null=True
@@ -125,30 +131,30 @@ class Node(TenantCoreModel):
         permissions = ()
 
 
-class Audit(TenantCoreModel):
+class Collaborator(TenantCoreModel):
     node = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node",
-        related_name="audit_node",
+        related_name="collaborator_node",
         null=True
     )
     employee = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
         verbose_name="employee",
-        related_name="audit_employee",
+        related_name="collaborator_employee",
         null=True
     )
     zone = JSONField(
         verbose_name="zone",
         default=[],
-        help_text="list zones of audit"
+        help_text="list zones of collaborator"
     )
 
     class Meta:
-        verbose_name = 'Audit'
-        verbose_name_plural = 'Audits'
+        verbose_name = 'Collaborator'
+        verbose_name_plural = 'Collaborators'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
