@@ -33,7 +33,10 @@ class NodeListSerializer(serializers.ModelSerializer):
 
 
 class NodeCreateSerializer(serializers.ModelSerializer):
-    collaborator = CollaboratorCreateSerializer()
+    collaborator = CollaboratorCreateSerializer(
+        many=True,
+        required=False
+    )
     option_collaborator = serializers.ChoiceField(choices=OPTION_COLLABORATOR)
     node_zone = serializers.ListField(
         child=serializers.IntegerField(required=False),

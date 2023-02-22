@@ -32,6 +32,12 @@ class Workflow(TenantCoreModel):
         default=False
     )
 
+    # [{0: "rename1"}, {1: "rename2"}, ....]
+    actions_rename = JSONField(
+        default=[],
+        help_text="use for show rename of actions in specific workflow"
+    )
+
     class Meta:
         verbose_name = 'Workflow'
         verbose_name_plural = 'Workflows'
