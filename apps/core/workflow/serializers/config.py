@@ -71,7 +71,9 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'employee_list',
             'node_zone',
             'collaborator',
-            'order'
+            'order',
+            'is_system',
+            'code_node_system'
         )
 
 
@@ -141,6 +143,10 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    actions_rename = serializers.ListField(
+        child=serializers.JSONField(required=False),
+        required=False
+    )
 
     class Meta:
         model = Workflow
@@ -153,6 +159,17 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             'is_define_zone',
             'actions_rename'
         )
+
+    def mapping_zone(self, key, data_dict, zone_created_data):
+        if key in data_dict:
+            zone_list = data_dict[key]
+            del data_dict[key]
+            data_dict.update({'zone': []})
+            if zone_list:
+                for zone in zone_list:
+                    if zone in zone_created_data:
+                        data_dict['zone'].append(zone_created_data[zone])
+        return True
 
     def create(self, validated_data):
         # initial
@@ -187,50 +204,52 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         # create node for workflow
         if workflow and node_list:
             for node in node_list:
-                if 'option_collaborator' in node:
-                    # mapping zone
-                    if 'node_zone' in node:
-                        node_zone_list = node['node_zone']
-                        del node['node_zone']
-                        node.update({'zone': []})
-                        if node_zone_list:
-                            for node_zone in node_zone_list:
-                                if node_zone in zone_created_data:
-                                    node['zone'].append(zone_created_data[node_zone])
-                    # check option & create node
-                    if node['option_collaborator'] != 2:
-                        if 'collaborator' in node:
-                            del node['collaborator']
-                        Node.object_global.create(
-                            **node,
-                            workflow=workflow
+                if 'is_system' in node:
+                    if node['is_system'] is True:
+                        # mapping zone
+                        self.mapping_zone(
+                            key='node_zone',
+                            data_dict=node,
+                            zone_created_data=zone_created_data
                         )
                     else:
-                        if 'collaborator' in node:
-                            collaborator_list = node['collaborator']
-                            del node['collaborator']
-                        node = Node.object_global.create(
-                            **node,
-                            workflow=workflow
-                        )
-                        if collaborator_list:
-                            bulk_info = []
-                            for collaborator in collaborator_list:
-                                # mapping zone
-                                if 'collaborator_zone' in collaborator:
-                                    collaborator_zone_list = collaborator['collaborator_zone']
-                                    del collaborator['collaborator_zone']
-                                    collaborator.update({'zone': []})
-                                    if collaborator_zone_list:
-                                        for collaborator_zone in collaborator_zone_list:
-                                            if collaborator_zone in zone_created_data:
-                                                collaborator['zone'].append(zone_created_data[collaborator_zone])
-
-                                bulk_info.append(Collaborator(
-                                    **collaborator,
-                                    node=node
-                                ))
-                            if bulk_info:
-                                Collaborator.object_global.bulk_create(bulk_info)
+                        if 'option_collaborator' in node:
+                            # mapping zone
+                            self.mapping_zone(
+                                key='node_zone',
+                                data_dict=node,
+                                zone_created_data=zone_created_data
+                            )
+                            # check option & create node
+                            if node['option_collaborator'] != 2:
+                                if 'collaborator' in node:
+                                    del node['collaborator']
+                                Node.object_global.create(
+                                    **node,
+                                    workflow=workflow
+                                )
+                            else:
+                                if 'collaborator' in node:
+                                    collaborator_list = node['collaborator']
+                                    del node['collaborator']
+                                node = Node.object_global.create(
+                                    **node,
+                                    workflow=workflow
+                                )
+                                if collaborator_list:
+                                    bulk_info = []
+                                    for collaborator in collaborator_list:
+                                        # mapping zone
+                                        self.mapping_zone(
+                                            key='collaborator_zone',
+                                            data_dict=collaborator,
+                                            zone_created_data=zone_created_data
+                                        )
+                                        bulk_info.append(Collaborator(
+                                            **collaborator,
+                                            node=node
+                                        ))
+                                    if bulk_info:
+                                        Collaborator.object_global.bulk_create(bulk_info)
 
         return workflow

@@ -94,8 +94,14 @@ class Node(TenantCoreModel):
     )
     is_system = models.BooleanField(
         verbose_name="is system",
-        help_text="nodes of system: Initial, Approve, Complete,...",
         default=False,
+        help_text="check if is nodes system",
+    )
+    code_node_system = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True,
+        help_text="code nodes system: Initial, Approve, Complete,...",
     )
     option_collaborator = models.SmallIntegerField(
         verbose_name="collaborator options",
