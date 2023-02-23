@@ -14,6 +14,13 @@ WORKFLOW_ACTION = (
 
 
 class Workflow(TenantCoreModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name="application",
+        related_name="workflow_application",
+        null=True
+    )
     code_application = models.TextField(
         verbose_name="code application",
         null=True,
@@ -36,6 +43,10 @@ class Workflow(TenantCoreModel):
     actions_rename = JSONField(
         default=[],
         help_text="use for show rename of actions in specific workflow"
+    )
+    is_in_use = models.BooleanField(
+        null=True,
+        help_text="to know what workflow is currently config for application"
     )
 
     class Meta:
@@ -109,14 +120,14 @@ class Node(TenantCoreModel):
         help_text="option choose collaborator: In form, Out form, In workflow"
     )
     # use for option_collaborator In form
-    field_of_employee = models.CharField(
+    field_select_collaborator = models.CharField(
         max_length=550,
         blank=True,
         null=True,
-        help_text="field has data employees, option 1"
+        help_text="field has data employees in document, option 1"
     )
     # use for option_collaborator Out form
-    employee_list = JSONField(
+    collaborator_list = JSONField(
         verbose_name="employees",
         default=[],
         help_text="list employees, option 2"

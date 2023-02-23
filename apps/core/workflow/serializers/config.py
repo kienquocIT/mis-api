@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application, ApplicationProperty
+from apps.core.hr.models import Employee
 from apps.core.workflow.models import Workflow, Node, Collaborator, Zone
 
 OPTION_COLLABORATOR = (
@@ -55,7 +57,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         child=serializers.IntegerField(required=False),
         required=False
     )
-    employee_list = serializers.ListField(
+    collaborator_list = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
@@ -68,8 +70,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'remark',
             'actions',
             'option_collaborator',
-            'field_of_employee',
-            'employee_list',
+            'field_select_collaborator',
+            'collaborator_list',
             'node_zone',
             'collaborator',
             'order',
@@ -114,28 +116,157 @@ class ZoneCreateSerializer(serializers.ModelSerializer):
 
 # Workflow
 class WorkflowListSerializer(serializers.ModelSerializer):
+    application = serializers.SerializerMethodField()
+
     class Meta:
         model = Workflow
         fields = (
             'id',
             'title',
-            'code_application',
+            'application',
             'code',
             'is_active',
         )
 
+    def get_application(self, obj):
+        if obj.application:
+            return {
+                'id': obj.application_id,
+                'title': obj.application.title
+            }
+        return {}
+
 
 class WorkflowDetailSerializer(serializers.ModelSerializer):
+    actions_rename = serializers.JSONField()
+    application = serializers.SerializerMethodField()
+    zone = serializers.SerializerMethodField()
+    node = serializers.SerializerMethodField()
+
     class Meta:
         model = Workflow
         fields = (
             'id',
-            'code_application',
-            'code'
+            'application',
+            'is_multi_company',
+            'is_define_zone',
+            'actions_rename',
+            'zone',
+            'node',
+            'is_active',
         )
+
+    def get_application(self, obj):
+        if obj.application:
+            return {
+                'id': obj.application_id,
+                'title': obj.application.title
+            }
+        return {}
+
+    def get_zone(self, obj):
+        result = []
+        zone_list = Zone.object_global.filter(workflow=obj)
+        if zone_list:
+            for zone in zone_list:
+                if zone.property_list:
+                    property_list = ApplicationProperty.objects.filter(
+                        id__in=zone.property_list
+                    )
+                    if property_list:
+                        pass
+                result.append({
+                    'id': zone.id,
+                    'title': zone.title,
+                    'remark': zone.remark,
+                    'property_list': []
+                })
+        return result
+
+    def get_node(self, obj):
+        result = []
+        node_list = Node.object_global.filter(workflow=obj)
+        if node_list:
+            for node in node_list:
+                if node.option_collaborator:
+                    zone_data = []
+                    if node.zone:
+                        node_zone_list = Zone.object_global.filter(id__in=node.zone)
+                        if node_zone_list:
+                            for node_zone in node_zone_list:
+                                zone_data.append({
+                                    'id': node_zone.id,
+                                    'title': node_zone.title
+                                })
+                    # option in form
+                    if node.option_collaborator == 0:
+                        result.append({
+                            'id': node.id,
+                            'title': node.title,
+                            'remark': node.remark,
+                            'actions': node.actions,
+                            'option_collaborator': node.option_collaborator,
+                            'field_select_collaborator': node.field_select_collaborator,
+                            'zone': zone_data
+
+                        })
+                    # option out form
+                    elif node.option_collaborator == 1:
+                        employee_data = []
+                        if node.collaborator_list:
+                            employee_list = Employee.object_global.filter(id__in=node.collaborator_list)
+                            if employee_list:
+                                for employee in employee_list:
+                                    employee_data.append({
+                                        'id': employee.id,
+                                        'title': employee.title
+                                    })
+                        result.append({
+                            'id': node.id,
+                            'title': node.title,
+                            'remark': node.remark,
+                            'actions': node.actions,
+                            'option_collaborator': node.option_collaborator,
+                            'collaborator_list': employee_data,
+                            'zone': zone_data
+                        })
+                    # option in workflow
+                    elif node.option_collaborator == 2:
+                        collaborator_data = []
+                        in_workflow_collaborator = Collaborator.object_global.filter(
+                            node=node
+                        ).select_related('employee')
+                        if in_workflow_collaborator:
+                            for collaborator in in_workflow_collaborator:
+                                zone_in_workflow_data = []
+                                if collaborator.zone:
+                                    zone_list = Zone.object_global.filter(id__in=collaborator.zone)
+                                    if zone_list:
+                                        for zone in zone_list:
+                                            zone_in_workflow_data.append({
+                                                'id': zone.id,
+                                                'title': zone.title
+                                            })
+                                collaborator_data.append({
+                                    'employee': {
+                                        'id': collaborator.employee_id,
+                                        'title': collaborator.employee.title
+                                    },
+                                    'zone': zone_in_workflow_data
+                                })
+                        result.append({
+                            'id': node.id,
+                            'title': node.title,
+                            'remark': node.remark,
+                            'actions': node.actions,
+                            'option_collaborator': node.option_collaborator,
+                            'collaborator_list': collaborator_data,
+                        })
+        return result
 
 
 class WorkflowCreateSerializer(serializers.ModelSerializer):
+    application = serializers.UUIDField()
     node = NodeCreateSerializer(
         many=True,
         required=False
@@ -153,13 +284,19 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         model = Workflow
         fields = (
             'title',
-            'code_application',
+            'application',
             'node',
             'zone',
             'is_multi_company',
             'is_define_zone',
             'actions_rename'
         )
+
+    def validate_application(self, value):
+        try:
+            return Application.objects.get(id=value)
+        except Exception as e:
+            raise serializers.ValidationError("Application does not exist.")
 
     def mapping_zone(self, key, data_dict, zone_created_data):
         if key in data_dict:

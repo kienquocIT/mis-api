@@ -2,8 +2,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.workflow.models import Workflow, Node
-from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, NodeListSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
+from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, NodeListSerializer, \
+    WorkflowDetailSerializer
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin
 
 
 class WorkflowList(
@@ -11,12 +12,18 @@ class WorkflowList(
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Workflow.object_global.select_related("company")
+    queryset = Workflow.object_global
     serializer_list = WorkflowListSerializer
     serializer_create = WorkflowCreateSerializer
     serializer_detail = WorkflowListSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
+
+    def get_queryset(self):
+        return super(WorkflowList, self).get_queryset().select_related(
+            "company",
+            "application"
+        )
 
     @swagger_auto_schema(
         operation_summary="Workflow List",
@@ -34,6 +41,22 @@ class WorkflowList(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class WorkflowDetail(
+    BaseRetrieveMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Workflow.object_global.all()
+    serializer_detail = WorkflowDetailSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Workflow detail",
+        operation_description="Get workflow detail by ID",
+    )
+    def get(self, request, *args, **kwargs):
+        self.serializer_class = WorkflowDetailSerializer
+        return self.retrieve(request, *args, **kwargs)
 
 
 class NodeSystemList(

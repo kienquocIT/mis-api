@@ -41,6 +41,7 @@ class PlanApplication(M2MModel):
         default_permissions = ()
         permissions = ()
 
+
 PROPERTIES_TYPE = (
     ('text', 'Text'),
     ('text_area', 'Text area'),
@@ -50,6 +51,8 @@ PROPERTIES_TYPE = (
     ('file', 'Files'),
     ('masterdata', 'Master data'),
 )
+
+
 class ApplicationProperty(BaseModel):
     application = models.ForeignKey(
         'base.Application',
