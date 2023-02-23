@@ -31,6 +31,7 @@ class NodeListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'remark',
             'is_system',
             'order'
