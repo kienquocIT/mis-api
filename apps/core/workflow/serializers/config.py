@@ -248,7 +248,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                                                 'title': zone.title
                                             })
                                 collaborator_data.append({
-                                    'employee': {
+                                    'collaborator': {
                                         'id': collaborator.employee_id,
                                         'title': collaborator.employee.title
                                     },
@@ -334,7 +334,9 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                     # del zone['order']
                     zone = Zone.object_global.create(
                         **zone,
-                        workflow=workflow
+                        workflow=workflow,
+                        tenant_id=workflow.tenant_id,
+                        company_id=workflow.company_id,
                     )
                     if zone:
                         zone_created_data.update({order: zone.id})
@@ -364,7 +366,9 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                     del node['collaborator']
                                 Node.object_global.create(
                                     **node,
-                                    workflow=workflow
+                                    workflow=workflow,
+                                    tenant_id=workflow.tenant_id,
+                                    company_id=workflow.company_id,
                                 )
                             else:
                                 if 'collaborator' in node:
@@ -372,7 +376,9 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                     del node['collaborator']
                                 node = Node.object_global.create(
                                     **node,
-                                    workflow=workflow
+                                    workflow=workflow,
+                                    tenant_id=workflow.tenant_id,
+                                    company_id=workflow.company_id,
                                 )
                                 if collaborator_list:
                                     bulk_info = []
@@ -385,7 +391,9 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                         )
                                         bulk_info.append(Collaborator(
                                             **collaborator,
-                                            node=node
+                                            node=node,
+                                            tenant_id=workflow.tenant_id,
+                                            company_id=workflow.company_id,
                                         ))
                                     if bulk_info:
                                         Collaborator.object_global.bulk_create(bulk_info)
