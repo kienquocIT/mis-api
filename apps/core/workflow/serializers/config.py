@@ -151,6 +151,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             'zone',
             'is_multi_company',
             'is_define_zone',
+            'actions_rename'
         )
 
     def create(self, validated_data):
