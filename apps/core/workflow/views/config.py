@@ -16,8 +16,8 @@ class WorkflowList(
     serializer_list = WorkflowListSerializer
     serializer_create = WorkflowCreateSerializer
     serializer_detail = WorkflowListSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super(WorkflowList, self).get_queryset().select_related(
