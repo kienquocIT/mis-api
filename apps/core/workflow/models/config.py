@@ -178,15 +178,15 @@ class Collaborator(TenantCoreModel):
         permissions = ()
 
 
-class Transition(TenantCoreModel):
-    node_input = models.ForeignKey(
+class Association(TenantCoreModel):
+    node_in = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node input",
         related_name="transition_node_input",
         null=True
     )
-    node_output = models.ForeignKey(
+    node_out = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node output",
@@ -201,8 +201,8 @@ class Transition(TenantCoreModel):
     )
 
     class Meta:
-        verbose_name = 'Transition'
-        verbose_name_plural = 'Transitions'
+        verbose_name = 'Association'
+        verbose_name_plural = 'Associations'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
