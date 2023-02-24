@@ -8,3 +8,11 @@ DOCUMENT_MODE = (
     (1, 'Private'),
     (2, 'Team'),
 )
+
+SYSTEM_STATUS = (
+    (0, 'Draft'),
+    (1, 'Created'),
+    (2, 'Added'),
+    (3, 'Finish'),
+    (4, 'Cancel'),
+)

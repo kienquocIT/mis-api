@@ -5,8 +5,8 @@ from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
-from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager
-from .constant import DOCUMENT_MODE
+from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager, MasterDataManager
+from .constant import DOCUMENT_MODE, SYSTEM_STATUS
 from .formats import FORMATTING
 
 
@@ -128,11 +128,13 @@ class TenantModel(BaseModel):
 
     employee_created = models.UUIDField(null=True)
     employee_inherit = models.UUIDField(null=True)
-    group_created = models.UUIDField(null=True)
-    group_inherit = models.UUIDField(null=True)
 
-    # check if document finish workflow
-    is_allow_use = models.BooleanField(default=False)
+    system_status = models.IntegerField(
+        choices=SYSTEM_STATUS,
+        default=0
+    )
+    system_remarks = JSONField(default={})
+    process_id = models.UUIDField(null=True)
 
     # manager customize
     object_global = GlobalManager()
@@ -226,3 +228,27 @@ class M2MModel(models.Model):
 
     def get_detail(self, excludes=None):
         return self._get_detail(excludes=excludes)
+
+
+class MasterDataModel(models.Model):
+    """
+    Use for models in master data apps
+    """
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    title = models.CharField(max_length=100, blank=True)
+    code = models.CharField(max_length=100, blank=True)
+
+    tenant_id = models.UUIDField(null=True)
+    company_id = models.UUIDField(null=True)
+
+    is_active = models.BooleanField(verbose_name="active", default=True)
+    is_delete = models.BooleanField(verbose_name="delete", default=False)
+
+    # manager customize
+    object_normal = NormalManager()
+    object_data = MasterDataManager()
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
