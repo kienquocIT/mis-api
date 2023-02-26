@@ -51,6 +51,7 @@ INSTALLED_APPS = \
         'rest_framework',  # rest API
         'compressor',  # Compress Assets File
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
+        'django_celery_results',  # Listen celery task and record it to database.
     ] + [  # integrate some service management or tracing
         'apps.core.provisioning',  # config receive request from PROVISIONING server
     ] + [  # application
@@ -113,12 +114,13 @@ WSGI_APPLICATION = 'misapi.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
-}
+DATABASES = {}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
 
 DATABASE_ROUTERS = ['routers.LogRouter']
 
@@ -262,6 +264,7 @@ SWAGGER_SETTINGS = {
     'APIS_SORTER': 'alpha',
     'OPERATIONS_SORTER': 'alpha',
     'DOC_EXPANSION': 'none',
+    'CSS_OVERRIDE': '/statics/swagger-dark.css',  # Thêm đường dẫn đến file CSS tùy chỉnh
 }
 SWAGGER_URL = 'http://127.0.0.1:8000/api'
 FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
@@ -286,6 +289,9 @@ LOGGING = {
             "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
             "datefmt": "%d/%b/%Y-%H:%M:%S",
         },
+        "celery_formatter": {
+            "format": "%(asctime)s %(levelname)s module=%(module)s, process_id=%(process)d, %(message)s",
+        }
     },
     "handlers": {
         "file": {
@@ -297,18 +303,119 @@ LOGGING = {
             "backupCount": 10,
             "formatter": "verbose",
         },
+        "celery_handler": {
+            "level": "INFO",
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": os.path.join(LOG_DIR, "celery.log"),
+            "when": "D",
+            "interval": 1,
+            "backupCount": 10,
+            "formatter": "celery_formatter",
+        },
     },
     "loggers": {
         "": {
             "handlers": ["file"],
             "level": "INFO",
         },
+        "celery": {
+            "handlers": ["celery_handler"],
+            "level": "INFO",
+            "propagate": True
+        },
     },
 }
 
-# another import
+# CELERY + RABBITMQ CONFIG
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
+CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
+USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=prod
 
+# DATABASE CONFIG
+USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=prod
+
+# import local_settings
 try:
     from .local_settings import *
 except ImportError:
     pass
+
+# Celery configurations
+if not CELERY_BROKER_URL:
+    match USE_CELERY_CONFIG_OPTION:
+        case 1:  # <<<DEVELOPMENT environment>>> | Auto config by docker container
+            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//'
+        case 2:  # <<<PRODUCTION environment>>> | Auto config by docker-compose environment
+            CELERY_TASK_ALWAYS_EAGER = False
+            MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
+            MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
+            MSG_QUEUE_USER = os.environ.get("MSG_QUEUE_USER")  # default 'rabbitmq_user'
+            MSG_QUEUE_PASSWORD = os.environ.get("MSG_QUEUE_PASSWORD")  # default 'rabbitmq_password'
+            if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
+                CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_USER}:{MSG_QUEUE_PASSWORD}@{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}//'
+            else:
+                raise ValueError('CELERY CONFIG must be required HOST & PORT.')
+        case _:  # <<<ANOTHER>>> | Auto config broker is none and execute task real-time.
+            CELERY_BROKER_URL = None
+            CELERY_TASK_ALWAYS_EAGER = True
+
+# Database configurations
+if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES):
+    match USE_DATABASE_CONFIG_OPTION:
+        case 1:
+            DATABASES.update(
+                {
+                    'default': {
+                        'ENGINE': 'django.db.backends.mysql',
+                        'NAME': 'my_db',
+                        'USER': 'my_user',
+                        'PASSWORD': 'my_password',
+                        'HOST': '127.0.0.1',
+                        'PORT': '3307',
+                    }
+                }
+            )
+        case 2:
+            DATABASES.update(
+                {
+                    'default': {
+                        'ENGINE': 'django.db.backends.mysql',
+                        'NAME': os.environ.get('DB_NAME'),
+                        'USER': os.environ.get('DB_USER'),
+                        'PASSWORD': os.environ.get('DB_PASSWORD'),
+                        'HOST': os.environ.get('DB_HOST'),
+                        'PORT': os.environ.get('DB_PORT'),
+                    }
+                }
+            )
+        case _:
+            DATABASES['default'] = {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+
+if DEBUG is True:
+    from colorama import Fore
+
+    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 else 'DB SERVICE'
+    print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
+    match USE_DATABASE_CONFIG_OPTION:
+        case 1:
+            print(Fore.BLUE, '#  1. DATABASES:          [DOCKER-DEV]:          ', DATABASES, '\033[0m')
+        case 2:
+            print(Fore.BLUE, '#  1. DATABASES:          [DOCKER-PROD]:         ', DATABASES, '\033[0m')
+        case _:
+            print(Fore.BLUE, '#  1. DATABASES:          [LOCAL]:               ', DATABASES, '\033[0m')
+    match USE_CELERY_CONFIG_OPTION:
+        case 1:
+            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [DOCKER-DEV]:          ', str(CELERY_BROKER_URL), '\033[0m')
+        case 2:
+            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [DOCKER-PROD]:         ', str(CELERY_BROKER_URL), '\033[0m')
+        case _:
+            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
+    print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
+    print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')

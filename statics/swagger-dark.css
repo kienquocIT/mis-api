@@ -1,0 +1,29 @@
+/* Đổi màu nền */
+.swagger-ui .topbar {
+    background-color: #202020;
+}
+
+/* Đổi màu chữ */
+.swagger-ui .topbar-wrapper a, .swagger-ui .topbar-wrapper span {
+    color: #FFFFFF !important;
+}
+
+/* Đổi màu nền của sidebar */
+.swagger-ui .sidebar {
+    background-color: #1F1F1F;
+}
+
+/* Đổi màu chữ trong sidebar */
+.swagger-ui .sidebar li a {
+    color: #FFFFFF;
+}
+
+/* Đổi màu cho nội dung */
+.swagger-ui .opblock {
+    background-color: #282828;
+}
+
+/* Đổi màu chữ trong nội dung */
+.swagger-ui .opblock-summary-method, .swagger-ui .opblock-summary-path {
+    color: #FFFFFF !important;
+}

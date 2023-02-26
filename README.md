@@ -42,7 +42,7 @@ Có 2 cách sử dụng:
         MYSQL_DATABASE: my_db
         MYSQL_USER: my_user
         MYSQL_PASSWORD: my_password
-        + Dữ liệu của container này lưu tại: /d/DockerStorage/MySQLData/ --> nếu máy không có ổ D vào file compose thay đổi volume.
+        + Dữ liệu của container này lưu tại: /c/DockerStorage/MySQLData/
         - Để truy cập vào mysql: Sử dụng hedies truy cập với (HOST, PORT, USER, PASSWORD) tương ứng (127.0.0.1, 3307, root, my_secret_password)
     
     Traceback:
@@ -122,6 +122,7 @@ a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình 
 b. Sử dụng queue:
     B1: Mở terminal (với shell path là git bash)
     B2: command: celery -A misapi worker --loglevel=INFO
+        Windows: celery -A misapi worker --loglevel=INFO --pool=solo
     B3: Muốn dừng phải dùng ctrl + C (task không tự động load lại khi sửa đổi)
 ```   
 2. Khởi chạy source code:
@@ -129,7 +130,8 @@ b. Sử dụng queue:
 a. Sử dụng run của pycharm + cấu hình interpreter sử dụng python local dev.
 b. Sử dụng command: python manage.py runserver 8000
 ```
-3. 
+3. Vào Task Manager -> tab Startup -> Enable Docker: Để docker tự khởi động khi mở máy.
+4. 
 
 
 ---

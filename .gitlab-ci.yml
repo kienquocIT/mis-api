@@ -7,7 +7,7 @@ variables:
   MYSQL_PASSWORD: $MYSQL_PASS
 
 default:
-  image: python:3.11.1-alpine3.17
+  image: python:3.11
   #services:
   #  - mysql:8.0
 
@@ -15,7 +15,8 @@ default:
   #  paths:
   #    - ~/.cache/pip/
   before_script:
-    - apk add gcc musl-dev mariadb-connector-c-dev
+#    - apk add gcc musl-dev mariadb-connector-c-dev
+    - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
     - pip3 --version
     - pip3 install pip==20.0.2
     - pip3 install -r req.txt
