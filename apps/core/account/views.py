@@ -45,7 +45,7 @@ class UserList(AccountListMixin, AccountCreateMixin):
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.select_related('tenant_current')
+    queryset = User.objects.select_related('tenant_current', 'company_current')
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
 
