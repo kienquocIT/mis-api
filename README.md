@@ -1,4 +1,4 @@
-# Management Information System API (MIS API)
+~~# Management Information System API (MIS API)
 
 ---
 
@@ -9,6 +9,133 @@
 - Django Rest Framework (djangorestframework==3.14.0) (viết tắt là DRF)
 - JSON Web Token (djangorestframework-simplejwt==5.2.2)
 - ...
+
+---
+
+
+### Docker Desktop for Windows
+1. Hướng dẫn: https://docs.docker.com/desktop/install/windows-install/
+2. Download: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe
+3. Sau khi cài đặt xong. Cài đặt compose: https://docs.docker.com/compose/install/#scenario-two-install-the-compose-plugin
+
+
+### Cấu hình môi trường Dev
+1. Python: 3.11
+```text
+Cài đặt python vào môi trường local của dev
+Link download: 
+- WinOS: https://www.python.org/ftp/python/3.11.2/python-3.11.2-amd64.exe
+- MacOS: https://www.python.org/ftp/python/3.11.2/python-3.11.2-macos11.pkg
+```
+2. MySQL: 8.0
+```text
+Có 2 cách sử dụng:
+1. [RECOMMEND] Sử dụng docker-compose tại {source}/builder/dev/ 
+    - Cài đặt: 
+        $ docker-compose up --build     # chạy command này tại thư mục {source}/builder/dev/ 
+    
+    - Thông tin server:
+        NAME HOST DNS: 'db'
+        HOST: '127.0.0.1'
+        PORT: '3307'
+        MYSQL_ROOT_PASSWORD: my_secret_password
+        MYSQL_DATABASE: my_db
+        MYSQL_USER: my_user
+        MYSQL_PASSWORD: my_password
+        + Dữ liệu của container này lưu tại: /c/DockerStorage/MySQLData/
+        - Để truy cập vào mysql: Sử dụng hedies truy cập với (HOST, PORT, USER, PASSWORD) tương ứng (127.0.0.1, 3307, root, my_secret_password)
+    
+    Traceback:
+        - Nếu đã chạy docker-compose build mà khởi động lại máy không kết nối source tới DB thì:
+            B1: Khởi động docker
+            B2: Mở git bash và thực hiện command "docker start db"
+            B3: Sau đó chạy lại source 
+        - Xóa thư mục chứa source SQL lỗi xóa bằng GUI Windows:
+            B1: Mở git bash tại thư mục chứa source
+            B2: Sử dụng lệnh rm -rf {tên folder cần xóa}
+            
+2. Cài đặt MySQL Server dưới local dev. 
+    - Yêu cầu: MySQL 8.x
+    - Tham khảo tại: https://dev.mysql.com/downloads/mysql/
+    - Download tại: https://downloads.mysql.com/archives/get/p/23/file/mysql-8.0.31-winx64.zip
+```
+3. Rabbit: 3.9.28
+```text
+Có 2 cách sử dụng:
+1. [RECOMMEND] Sử dụng docker-compose tại {source}/builder/dev/ 
+    - Cài đặt: Nếu đã thực hiện cài đặt MySQL docker ở bước truớc thì không cần thực hiện. 
+        $ docker-compose up --build     # chạy command này tại thư mục {source}/builder/dev/ 
+    
+    - Thông tin:
+        NAME HOST DNS: 'queue'
+        HOST: '127.0.0.1'
+        PORT: '15673' (15672: port sử dụng để quản lý rabbit <-- không cần thiết sử dụng)
+        USER: 'rabbitmq_user'
+        PASSWORD: 'rabbitmq_passwd'
+        
+    - Notes:
+        + Thay đổi cấu hình BROKER của celery trong settings (đưa vào local_settings): 
+            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//' (Format: 'amqp://{user}:{passwd}@{host}:{port}//')
+            USE_CELERY_CONFIG_OPTION = 1  # xem settings cuối file
+            CELERY_TASK_ALWAYS_EAGER = False # xem settings cuối file
+        + Nếu không sử dụng Queue có thể thay đổi config trong settings để bỏ qua kết nối queue và thực thi task real-time.
+            USE_CELERY_CONFIG_OPTION = 0
+            CELERY_TASK_ALWAYS_EAGER = True
+    Traceback:
+        - Nếu đã chạy docker-compose build mà khởi động lại máy không kết nối source tới DB thì:
+            B1: Khởi động docker
+            B2: Mở git bash và thực hiện command "docker start queue"
+            B3: Sau đó chạy lại source 
+            
+2. Cài đặt Rabbit Server dưới local dev:
+    - Yêu cầu: RabbitMQ 3.9
+    - Tham khảo và Download tại: https://www.rabbitmq.com/install-windows.html
+```
+4. Thêm các cấu hình vào local_settings để sử dụng. Copy đoạn dưới bỏ vào misapi/local_settings.py
+```python
+# Bật trạng thái debug khi run server source
+DEBUG = True
+
+# Bật trang API Docs
+SHOW_API_DOCS = True
+
+# Bật hiển thị các truy vấn đã thực hiện xuống DB theo mỗi request tới API.
+DEBUG_HIT_DB = True
+
+# True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
+USE_CELERY_CONFIG_OPTION = 1
+CELERY_TASK_ALWAYS_EAGER = False
+
+# 0: Sử dụng sqlite3 làm database cho "default"
+# 1: Sử dụng mysql với docker container mysql đã cài và chạy container dưới local.
+# 2: Sử dụng mysql với server prod sử dụng biến môi trường làm thông tin kết nối.
+USE_DATABASE_CONFIG_OPTION = 1
+
+# 0: Bỏ qua sử dụng Celery, 
+# 1: Bật celery với docker container rabbit đã cài và chạy container dưới local.
+# 2: Bật celery với server prod sử dụng biến môi trường làm thông tin kết nối.
+USE_CELERY_CONFIG_OPTION = 1
+```
+5. 
+
+### Khởi động source code
+1. Khởi chạy celery nhận và thực hiện task
+```text
+a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True
+b. Sử dụng queue:
+    B1: Mở terminal (với shell path là git bash)
+    B2: command: celery -A misapi worker --loglevel=INFO
+        Windows: celery -A misapi worker --loglevel=INFO --pool=solo
+    B3: Muốn dừng phải dùng ctrl + C (task không tự động load lại khi sửa đổi)
+```   
+2. Khởi chạy source code:
+```text
+a. Sử dụng run của pycharm + cấu hình interpreter sử dụng python local dev.
+b. Sử dụng command: python manage.py runserver 8000
+```
+3. Vào Task Manager -> tab Startup -> Enable Docker: Để docker tự khởi động khi mở máy.
+4. 
+
 
 ---
 
@@ -66,7 +193,8 @@ urlpatterns = [
 
 ### Views: Sử dụng class view kế thừa từ mixins - sử dụng hàm của class là tên method (get, post, put, delete)
 
-1. Sử dụng khung class view của DRF: Kế thừa từ BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin --> cos thể extends từ các class này để custom thêm
+1. Sử dụng khung class view của DRF: Kế thừa từ BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
+   BaseDestroyMixin --> cos thể extends từ các class này để custom thêm
 2. Sử dụng @swagger_auto_schema trên hàm của class view để tự động generate API Docs
 
 ```python
@@ -81,33 +209,34 @@ from apps.core.hr.serializers.employee_serializers import (
     EmployeeDetailSerializer, EmployeeUpdateSerializer
 )
 
-
 from apps.core.company.models import Company
 from apps.core.company.serializers import CompanyCreateSerializer, CompanyListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
-class CompanyList(BaseListMixin, BaseCreateMixin): # Kế thừa (extend) từ lớp mixin cơ bản
+class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ lớp mixin cơ bản
     """
     Company List:
         GET: List
         POST: Create a new
     """
     queryset = Company.object_normal.all()  # required | query hỗ trợ truy vấn dữ liệu
-    serializer_list = CompanyListSerializer # required | serializer hỗ trợ phân tích dữ liệu GET danh sách
-    serializer_create = CompanyCreateSerializer # required | serializer hỗ trợ tạo dữ liệu POST tạo
-    serializer_detail = CompanyListSerializer # required | serializer hỗ trợ phân tích dữ liệu sau khi tạo thành công
-    list_hidden_field = ['tenant_id'] # default [] | hỗ trợ filter mặc định các trường trong danh sách (xem thêm ở class mixin)
-    create_hidden_field = ['tenant_id'] # default [] | hỗ trợ thêm vào hàm serializer.save(**{data_extras}) để lưu xuống DB 
-    
+    serializer_list = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu GET danh sách
+    serializer_create = CompanyCreateSerializer  # required | serializer hỗ trợ tạo dữ liệu POST tạo
+    serializer_detail = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu sau khi tạo thành công
+    list_hidden_field = [
+        'tenant_id']  # default [] | hỗ trợ filter mặc định các trường trong danh sách (xem thêm ở class mixin)
+    create_hidden_field = [
+        'tenant_id']  # default [] | hỗ trợ thêm vào hàm serializer.save(**{data_extras}) để lưu xuống DB 
+
     @swagger_auto_schema(
         operation_summary="Company list",
         operation_description="Company list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='') # hỗ trợ kiểm tra trung gian trước khi vào view
+    @mask_view(login_require=True, auth_require=True, code_perm='')  # hỗ trợ kiểm tra trung gian trước khi vào view
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
-    
+
     @swagger_auto_schema(
         operation_summary="Create Company",
         operation_description="Create new Company",
@@ -117,7 +246,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin): # Kế thừa (extend) từ l
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
-    
+
 # @mask_view(login_require=True, auth_require=True, code_perm='')
 # 1. login_require: Yêu cầu đã đăng nhập (token còn hạn sử dụng - định danh người dùng) --> Đảm bảo lúc chạy view request.user là đã xác thực
 # 2. auth_require: Yêu cầu kiểm tra quyền trước khi vào view (bắt buộc login_require = True khi dùng option này)
@@ -179,5 +308,84 @@ raise AuthenticationFailed
 
 Đề nghị tuân thủ nghiêm ngặt các quy định - mọi quy định nằm ngoài rules phải được thoải thuận với team dev để đưa ra
 hướng giải quyết và được ghi chú ở đay!
+
+---
+
+### Using environment trong môi trường sản xuất sản phẩm cho khách hàng.
+
+1. Database:
+
+```properties
+DB_NAME='my_db'
+DB_USER='my-user'
+DB_PASSWORD='my-password'
+DB_HOST='127.0.0.1'
+DB_PORT='3306'
+```
+
+```python
+# ==> USING FOR PRODUCTION WHEN SET ENVIRONMENT VARIABLE (sensitive information) <===
+import os
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.environ.get('DB_NAME'), 'USER': os.environ.get('DB_USER'),
+        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'HOST': os.environ.get('DB_HOST'),
+        'PORT': os.environ.get('DB_PORT'),
+    }
+}
+```
+
+2. Celery:
+
+```properties
+MSG_QUEUE_HOST='127.0.0.1'
+MSG_QUEUE_PORT='5672'
+```
+
+```python
+import os
+
+MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
+MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
+if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
+    CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}//'  # 'amqp://127.0.0.1:5672//'
+else:
+    CELERY_BROKER_URL = None
+
+USE_CELERY_CONFIG_OPTION = 1
+CELERY_TASK_ALWAYS_EAGER = False
+# Khi bật celery sẽ thực hiện task ngay lập tức trước khi close thread request.
+# Vì không đẩy task vào queue nên không yêu cầu có Queue Message Server tồn tại.
+```
+
+3. Cache
+
+```properties
+CACHE_HOST='127.0.0.1'
+CACHE_PORT='11211'
+CACHE_OPTION='{"no_delay": true, "ignore_exc": true, "max_pool_size": 4, "use_pooling": true}'
+```
+
+```python
+import os
+import json
+
+CACHE_HOST = os.environ.get("MSG_QUEUE_HOST")
+CACHE_PORT = os.environ.get("MSG_QUEUE_PORT")
+CACHE_OPTION = os.environ.get("CACHE_OPTION")
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+        'LOCATION': f'{CACHE_HOST}:{CACHE_PORT}',
+        'OPTIONS': json.loads(CACHE_OPTION)
+    }
+}
+```
+
+4.~~ 
+
 
 ---
