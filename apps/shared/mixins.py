@@ -1,5 +1,6 @@
 from rest_framework.generics import GenericAPIView
-from apps.shared import ResponseController, HttpMsg
+from .controllers import ResponseController
+from .translations import HttpMsg
 
 
 class BaseMixin(GenericAPIView):

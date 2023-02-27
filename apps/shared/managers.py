@@ -33,3 +33,11 @@ class TeamManager(models.Manager):
         if user_obj and not isinstance(user_obj, AnonymousUser):
             return super().get_queryset().filter(mode=2, tenant_id=user_obj.tenant_current_id)
         return super().get_queryset().filter(mode=2)
+
+
+class MasterDataManager(models.Manager):
+    def get_queryset(self):
+        user_obj = get_current_user()
+        if user_obj and not isinstance(user_obj, AnonymousUser):
+            return super().get_queryset().filter(tenant_id=user_obj.tenant_current_id)
+        return super().get_queryset().filter()

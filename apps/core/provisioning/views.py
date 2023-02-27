@@ -4,13 +4,25 @@ from rest_framework import serializers
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 
-from apps.core.provisioning.serializers import ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer, \
-    TenantListViewSerializer
+from apps.core.provisioning.serializers import (
+    ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer,
+    TenantListViewSerializer,
+)
+from apps.core.provisioning.tasks import call_task_background, testing
 from apps.core.provisioning.utils import TenantController
 from apps.core.tenant.models import Tenant
 from apps.core.space.models import Space
 from apps.core.company.models import Company
 from apps.shared import ResponseController, ProvisioningMsg
+
+
+class TestView(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(operation_summary='Tenant List')
+    def get(self, request, *args, **kwargs):
+        call_task_background(testing, msg='TAO DANG GOI NEK', abc='testing function')
+        return ResponseController.success_200(data={}, key_data='result')
 
 
 class NewTenant(APIView):
@@ -66,9 +78,11 @@ class TenantNewAdmin(APIView):
             tenant_obj = Tenant.objects.filter(pk=pk).first()
             if tenant_obj:
                 if tenant_obj.admin_created is True or tenant_obj.admin:
-                    raise serializers.ValidationError({
-                        'tenant': ProvisioningMsg.TENANT_ADMIN_READY
-                    })
+                    raise serializers.ValidationError(
+                        {
+                            'tenant': ProvisioningMsg.TENANT_ADMIN_READY
+                        }
+                    )
                 ser = ProvisioningUserData(data=request.data)
                 ser.is_valid(raise_exception=True)
                 tenant_controller = TenantController()
@@ -91,9 +105,11 @@ class TenantUpdateAdmin(APIView):
             tenant_obj = Tenant.objects.filter(code=code).first()
             if tenant_obj:
                 if tenant_obj.admin_created is True or tenant_obj.admin:
-                    raise serializers.ValidationError({
-                        'tenant': ProvisioningMsg.TENANT_ADMIN_READY
-                    })
+                    raise serializers.ValidationError(
+                        {
+                            'tenant': ProvisioningMsg.TENANT_ADMIN_READY
+                        }
+                    )
                 company_obj = Company.objects.filter(code=(tenant_obj.code + "01")).first()
                 space_obj = Space.objects.filter(code=(tenant_obj.code.upper() + " Global")).first()
                 ser = ProvisioningUserData(data=request.data)

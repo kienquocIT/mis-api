@@ -1,6 +1,7 @@
 import json
 import random
 import string
+from typing import Union
 
 from uuid import UUID
 
@@ -48,7 +49,7 @@ class UUIDEncoder(json.JSONEncoder):
 
 class TypeCheck(object):
     @staticmethod
-    def check_uuid(data: any, return_data=False) -> (True or False) or (UUID or None):
+    def check_uuid(data: any, return_data=False) -> Union[UUID, bool, None]:
         # check
         try:
             if isinstance(data, UUID):
@@ -62,3 +63,21 @@ class TypeCheck(object):
         if return_data is True:
             return data_checked if data_checked else None
         return True if data_checked else False
+
+    @classmethod
+    def check_uuid_list(cls, data: list[any], return_data=False) -> Union[list, bool]:
+        result = []
+        if data and isinstance(data, list):
+            for idx_val in data:
+                tmp = cls.check_uuid(idx_val, return_data=return_data)
+                if return_data is True:
+                    if tmp is not None:
+                        result.append(tmp)
+                else:
+                    result.append(tmp)
+                    if tmp is False:
+                        break
+
+        if return_data is True:
+            return result
+        return True if (len(result) == len(data) and all(result) is True) else False
