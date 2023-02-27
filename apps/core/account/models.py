@@ -17,7 +17,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
     username_validator = UnicodeUsernameValidator()
     username_auth = models.CharField(
         verbose_name='''Account Username for Authenticate, 
-        format: "{username}-{TenantCode|upper}", slugify before call authenticate''',
+        format: "{username}-{TenantCode|upper}" , slugify before call authenticate''',
         help_text=AuthMsg.USERNAME_REQUIRE, error_messages={'unique': AuthMsg.USERNAME_ALREADY_EXISTS},
         max_length=150 + 32, unique=True, validators=[username_validator],
     )
@@ -50,7 +50,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
 
     EMAIL_FIELD = 'email'
     USERNAME_FIELD = 'username_auth'
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = ['username_auth', 'email']
 
     def __str__(self):
         return self.get_full_name()

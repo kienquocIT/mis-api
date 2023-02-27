@@ -40,3 +40,48 @@ class PlanApplication(M2MModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+PROPERTIES_TYPE = (
+    ('text', 'Text'),
+    ('text_area', 'Text area'),
+    ('date_time', 'Date time'),
+    ('select', 'Choices'),
+    ('check', 'Checkbox'),
+    ('file', 'Files'),
+    ('masterdata', 'Master data'),
+)
+
+
+class ApplicationProperty(BaseModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE
+    )
+    remark = models.TextField(
+        null=True,
+        blank=True
+    )
+    code = models.TextField(
+        null=True,
+        blank=True
+    )
+    type = models.TextField(
+        choices=PROPERTIES_TYPE,
+        default='text'
+    )
+    content_type = models.TextField(
+        null=True,
+        blank=True
+    )
+    properties = models.JSONField(
+        default=dict,
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'Application property'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

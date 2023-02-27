@@ -2,6 +2,7 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee, Employee
 from apps.core.tenant.models import TenantPlan, Tenant
+from apps.core.workflow.models import Node
 
 
 def update_company_created_user():
@@ -117,6 +118,35 @@ def update_data_company_license_tracking():
                         CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
 
     print('update done.')
+    return True
+
+
+def create_initial_node():
+    data = [
+        Node(**{
+            'id': 'abccf657-7dce-4a14-9601-f6c4c4f2722a',
+            'title': 'Initial Node',
+            'code': 'Initial',
+            'is_system': True,
+            'order': 1,
+        }),
+        Node(**{
+            'id': '1fbb680e-3521-424a-8523-9f7a34ce867e',
+            'title': 'Approved Node',
+            'code': 'Approved',
+            'is_system': True,
+            'order': 2,
+        }),
+        Node(**{
+            'id': '580f887c-1280-44ea-b275-8cb916543b10',
+            'title': 'Completed Node',
+            'code': 'Completed',
+            'is_system': True,
+            'order': 3,
+        })
+    ]
+    Node.object_global.bulk_create(data)
+
     return True
 
 
