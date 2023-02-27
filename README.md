@@ -76,9 +76,11 @@ Có 2 cách sử dụng:
     - Notes:
         + Thay đổi cấu hình BROKER của celery trong settings (đưa vào local_settings): 
             CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//' (Format: 'amqp://{user}:{passwd}@{host}:{port}//')
-            CELERY_DEV_ENVIRONMENT = False
+            USE_CELERY_CONFIG_OPTION = 1  # xem settings cuối file
+            CELERY_TASK_ALWAYS_EAGER = False # xem settings cuối file
         + Nếu không sử dụng Queue có thể thay đổi config trong settings để bỏ qua kết nối queue và thực thi task real-time.
-            CELERY_DEV_ENVIRONMENT = True
+            USE_CELERY_CONFIG_OPTION = 0
+            CELERY_TASK_ALWAYS_EAGER = True
     Traceback:
         - Nếu đã chạy docker-compose build mà khởi động lại máy không kết nối source tới DB thì:
             B1: Khởi động docker
@@ -101,7 +103,8 @@ SHOW_API_DOCS = True
 DEBUG_HIT_DB = True
 
 # True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
-CELERY_DEV_ENVIRONMENT = False
+USE_CELERY_CONFIG_OPTION = 1
+CELERY_TASK_ALWAYS_EAGER = False
 
 # 0: Sử dụng sqlite3 làm database cho "default"
 # 1: Sử dụng mysql với docker container mysql đã cài và chạy container dưới local.
@@ -118,7 +121,7 @@ USE_CELERY_CONFIG_OPTION = 1
 ### Khởi động source code
 1. Khởi chạy celery nhận và thực hiện task
 ```text
-a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_DEV_ENVIRONMENT = True
+a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True
 b. Sử dụng queue:
     B1: Mở terminal (với shell path là git bash)
     B2: command: celery -A misapi worker --loglevel=INFO
@@ -352,7 +355,8 @@ if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
 else:
     CELERY_BROKER_URL = None
 
-CELERY_DEV_ENVIRONMENT = False  # Cờ thể hiện sử dụng celery dưới môi trường phát triển
+USE_CELERY_CONFIG_OPTION = 1
+CELERY_TASK_ALWAYS_EAGER = False
 # Khi bật celery sẽ thực hiện task ngay lập tức trước khi close thread request.
 # Vì không đẩy task vào queue nên không yêu cầu có Queue Message Server tồn tại.
 ```
