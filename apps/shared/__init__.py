@@ -13,5 +13,6 @@ from .middleware.cidr_provisioning import AllowCIDRAndProvisioningMiddleware
 from .mask_view import AuthPermission, mask_view
 from .mixins import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from .utils import StringHandler, UUIDEncoder, TypeCheck
+from .tasks import call_task_background
 from .translations import *
 from .response import cus_response

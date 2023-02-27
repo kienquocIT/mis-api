@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
+from .utils import TypeCheck
 from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager, MasterDataManager
 from .constant import DOCUMENT_MODE, SYSTEM_STATUS, PERMISSION_OPTION
 from .formats import FORMATTING
