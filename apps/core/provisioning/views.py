@@ -1,4 +1,3 @@
-from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny
@@ -8,12 +7,12 @@ from apps.core.provisioning.serializers import (
     ProvisioningCreateNewTenant, ProvisioningUserData, TenantListSerializer,
     TenantListViewSerializer,
 )
-from apps.core.provisioning.tasks import call_task_background, testing
+from apps.core.provisioning.tasks import testing_task
 from apps.core.provisioning.utils import TenantController
 from apps.core.tenant.models import Tenant
 from apps.core.space.models import Space
 from apps.core.company.models import Company
-from apps.shared import ResponseController, ProvisioningMsg
+from apps.shared import ResponseController, ProvisioningMsg, call_task_background
 
 
 class TestView(APIView):
@@ -21,7 +20,7 @@ class TestView(APIView):
 
     @swagger_auto_schema(operation_summary='Tenant List')
     def get(self, request, *args, **kwargs):
-        call_task_background(testing, msg='TAO DANG GOI NEK', abc='testing function')
+        call_task_background(testing_task, msg='TAO DANG GOI NEK', abc='testing function')
         return ResponseController.success_200(data={}, key_data='result')
 
 

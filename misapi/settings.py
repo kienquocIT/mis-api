@@ -333,10 +333,10 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
-USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=prod
+USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # DATABASE CONFIG
-USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=prod
+USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # import local_settings
 try:
@@ -348,7 +348,8 @@ except ImportError:
 if not CELERY_BROKER_URL:
     match USE_CELERY_CONFIG_OPTION:
         case 1:  # <<<DEVELOPMENT environment>>> | Auto config by docker container
-            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//'
+            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673'
+            CELERY_BROKER_VHOST = '/'
         case 2:  # <<<PRODUCTION environment>>> | Auto config by docker-compose environment
             CELERY_TASK_ALWAYS_EAGER = False
             MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
@@ -356,12 +357,15 @@ if not CELERY_BROKER_URL:
             MSG_QUEUE_USER = os.environ.get("MSG_QUEUE_USER")  # default 'rabbitmq_user'
             MSG_QUEUE_PASSWORD = os.environ.get("MSG_QUEUE_PASSWORD")  # default 'rabbitmq_password'
             if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
-                CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_USER}:{MSG_QUEUE_PASSWORD}@{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}//'
+                CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_USER}:{MSG_QUEUE_PASSWORD}@{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}'
             else:
                 raise ValueError('CELERY CONFIG must be required HOST & PORT.')
+
+            CELERY_BROKER_VHOST = os.environ.get('MSG_QUEUE_BROKER_VHOST', '/')
         case _:  # <<<ANOTHER>>> | Auto config broker is none and execute task real-time.
             CELERY_BROKER_URL = None
             CELERY_TASK_ALWAYS_EAGER = True
+            CELERY_BROKER_VHOST = '/'
 
 # Database configurations
 if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES):
@@ -418,4 +422,5 @@ if DEBUG is True:
         case _:
             print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
+    print(Fore.RED, '#  4. ALLOWED_HOSTS:                  ', str(ALLOWED_HOSTS), '\033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
