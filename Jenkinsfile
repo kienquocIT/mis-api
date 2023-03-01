@@ -18,12 +18,12 @@ pipeline {
                     }
                     if (GIT_BRANCH_NAME == 'dev') {
                         env.PROJECT_DIR = '/home/jenkins/dev/api';
-                        env.PROJECT_BUILD_DIR = env.PROJECT_DIR;
+                        env.PROJECT_BUILD_DIR = env.PROJECT_DIR  + '/';
                         env.DEPLOY_SERVER_IP = '192.168.0.111';
                     }
                     if (GIT_BRANCH_NAME == 'sit') {
                         env.PROJECT_DIR = '/home/jenkins/sit/api';
-                        env.PROJECT_BUILD_DIR = env.PROJECT_DIR;
+                        env.PROJECT_BUILD_DIR = env.PROJECT_DIR  + '/';
                         env.DEPLOY_SERVER_IP = '192.168.0.111';
                     }
                 }
