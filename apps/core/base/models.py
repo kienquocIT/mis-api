@@ -49,7 +49,7 @@ PROPERTIES_TYPE = (
     ('select', 'Choices'),
     ('check', 'Checkbox'),
     ('file', 'Files'),
-    ('masterdata', 'Master data'),
+    ('master_data', 'Master data'),
 )
 
 
@@ -76,8 +76,9 @@ class ApplicationProperty(BaseModel):
     )
     properties = models.JSONField(
         default=dict,
-        null=True,
-        blank=True,
+    )
+    compare_operator = models.JSONField(
+        default=dict,
     )
 
     class Meta:
