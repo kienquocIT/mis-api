@@ -8,7 +8,7 @@ pipeline {
         stage('Setup-ENV') {
             steps {
                 script {
-                    env.DEPLOY_SERVER_USER = 'jenkins'
+                    env.DEPLOY_SERVER_USER = 'jenkins';
                     env.GIT_BRANCH_NAME = getGitBranchName();
                     env.PUSHER = sh (script: 'whoami', returnStdout: true).trim();
                     if (GIT_BRANCH_NAME == 'master') {
@@ -31,11 +31,11 @@ pipeline {
         }
         stage('Deploy') {
             steps {
-                echo "START SSH SERVER"
+                echo "START SSH SERVER";
                 script {
-                    sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh"""
+                    sh """ssh -tt $DEPLOY_SERVER_USER@$DEPLOY_SERVER_IP $PROJECT_DIR/deploy.sh""";
                 }
-                echo "DONE SSH SERVER"
+                echo "DONE SSH SERVER";
             }
         }
     }
