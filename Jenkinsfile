@@ -8,6 +8,7 @@ pipeline {
         stage('Setup-ENV') {
             steps {
                 script {
+                    echo "SETUP ENVIRONMENT STARTED";
                     env.DEPLOY_SERVER_USER = 'jenkins';
                     env.GIT_BRANCH_NAME = getGitBranchName();
                     env.PUSHER = sh (script: 'whoami', returnStdout: true).trim();
