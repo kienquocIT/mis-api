@@ -8,13 +8,9 @@ pipeline {
         stage('Setup-ENV') {
             steps {
                 script {
-                    echo "SETUP ENVIRONMENT STARTED";
                     env.DEPLOY_SERVER_USER = 'jenkins';
-                    echo "DONE: DEPLOY_SERVER_USER";
                     env.GIT_BRANCH_NAME = getGitBranchName();
-                    echo "DONE: GIT_BRANCH_NAME";
                     env.PUSHER = sh (script: 'whoami', returnStdout: true).trim();
-                    echo "DONE: PUSHER";
                     if (env.GIT_BRANCH_NAME == 'master') {
                         env.PROJECT_DIR = '/home/jenkins/api_mis';
                         env.DEPLOY_SERVER_IP = '192.168.0.111';
@@ -46,9 +42,6 @@ pipeline {
 
 @NonCPS
 def getGitBranchName() {
-    println "getGitBranchName started..."
-    def branch_tmp = scm.branches
-    println "${branch_tmp}"
     return scm.branches[0].name.split("/")[1]
 }
 
