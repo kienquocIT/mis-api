@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
+from django.db.models import Q
 
 
 # Salutation
@@ -236,7 +237,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False)
+    account_name = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Contact
@@ -256,7 +257,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
-    @staticmethod
     def validate_account_name(self, value):
         try:
             return Account.object_normal.get(id=value)
@@ -281,8 +281,15 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {'id': obj.owner_id, 'fullname': obj.owner.last_name + ' ' + obj.owner.first_name}
+        try:
+            if obj.owner:
+                owner = Employee.object_normal.get(id=obj.owner)
+                return {
+                    'id': owner.id,
+                    'fullname': Employee.get_full_name(owner, 2)
+                }
+        except Exception as e:
+            print(e)
         return {}
 
 
@@ -439,14 +446,25 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
 class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
+    account = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
         fields = (
             'id',
             'full_name',
+            'account',
         )
 
     @classmethod
     def get_full_name(cls, obj):
         return Employee.get_full_name(obj, 2)
+
+    def get_account(self, obj):
+        account_list = Account.object_normal.filter(Q(manager__contains=[str(obj.id)]))
+        id_list = []
+        name_list = []
+        for account in account_list:
+            id_list.append(account.id)
+            name_list.append(account.name)
+        return {'name': name_list, 'id': id_list}
