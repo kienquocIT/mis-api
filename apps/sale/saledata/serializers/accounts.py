@@ -337,6 +337,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    contact_primary = serializers.UUIDField()
 
     class Meta:
         model = Account
@@ -356,12 +357,16 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         contact_select_list = None
         contact_create_list = None
+        contact_primary = None
         if 'contact_select_list' in validated_data:
             contact_select_list = validated_data['contact_select_list']
             del validated_data['contact_select_list']
         if 'contact_create_list' in validated_data:
             contact_create_list = validated_data['contact_create_list']
             del validated_data['contact_create_list']
+        if 'contact_primary' in validated_data:
+            contact_primary = validated_data['contact_primary']
+            del validated_data['contact_primary']
 
         # create account
         account = Account.object_global.create(**validated_data)
@@ -370,7 +375,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if contact_select_list:
             contact_list = Contact.object_global.filter(id__in=contact_select_list)
             if contact_list:
-                contact_list.update(account_name=account)
+                for contact in contact_list:
+                    if contact.id == contact_primary:
+                        contact.is_primary = True
+                    contact.account_name = account
+                    contact.save()
 
         # create new contact
         if contact_create_list:
