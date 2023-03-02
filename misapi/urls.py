@@ -9,6 +9,7 @@ from rest_framework import permissions
 urlpatterns = [
     path('api/', include('apps.core.urls')),
     path('django-admin/', admin.site.urls),
+    path('saledata/', include('apps.sale.urls')),
 ]
 
 if getattr(settings, 'SHOW_API_DOCS', False):

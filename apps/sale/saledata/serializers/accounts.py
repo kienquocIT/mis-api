@@ -254,6 +254,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "report_to",
             "address_infor",
             "additional_infor",
+            'account_name'
         )
 
     @staticmethod
