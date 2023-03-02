@@ -341,7 +341,25 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = "__all__"
+        fields = (
+            'name',
+            'code',
+            'website',
+            'account_type',
+            'manager',
+            'parent_account',
+            'tax_code',
+            'industry',
+            'annual_revenue',
+            'total_employees',
+            'phone',
+            'email',
+            'shipping_address',
+            'billing_address',
+            'contact_select_list',
+            'contact_create_list',
+            'contact_primary'
+        )
 
     def validate(self, validate_data):
         account_type = []
