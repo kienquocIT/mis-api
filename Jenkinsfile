@@ -46,6 +46,9 @@ pipeline {
 
 @NonCPS
 def getGitBranchName() {
+    println "getGitBranchName started..."
+    def branch_tmp = scm.branches
+    println "${branch_tmp}"
     return scm.branches[0].name.split("/")[1]
 }
 
