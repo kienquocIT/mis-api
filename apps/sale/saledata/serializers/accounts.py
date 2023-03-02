@@ -1,92 +1,100 @@
-import random
 from rest_framework import serializers
-
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import Salutation, Interest, AccountType, Industry, Contact, ContactDraft, \
-    Account
-from apps.shared import DisperseModel
+from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
 
 
+# Salutation
 class SalutationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
-        fields = ['code', 'title', 'description']
+        fields = ('code', 'title', 'description')
 
 
 class SalutationDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
+# Interest
 class InterestsListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
 class InterestsCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
-        fields = ['code', 'title', 'description']
+        fields = ('code', 'title', 'description')
 
 
 class InterestsDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
+# Account Type
 class AccountTypeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
 class AccountTypeCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
-        fields = ['code', 'title', 'description']
+        fields = ('code', 'title', 'description')
 
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
+# Industry
 class IndustryListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
 class IndustryCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = ['code', 'title', 'description']
+        fields = ('code', 'title', 'description')
 
 
 class IndustryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = "__all__"
+        fields = ('id', 'title', 'code', 'description')
 
 
-# Contact Serializer
+# Contact
 class ContactListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
-        fields = ('id', 'fullname', 'job_title', 'owner', 'account_name', 'mobile', 'email')
+        fields = (
+            'id',
+            'fullname',
+            'job_title',
+            'owner',
+            'account_name',
+            'mobile',
+            'email'
+        )
 
     @classmethod
     def get_owner(cls, obj):
@@ -129,6 +137,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
+    @staticmethod
     def validate_account_name(self, value):
         try:
             return Account.object_global.get(id=value)
@@ -146,13 +155,28 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contact
-        fields = "__all__"
+        fields = (
+            "id",
+            "owner",
+            "job_title",
+            "bio",
+            "avatar",
+            "fullname",
+            "salutation",
+            "phone",
+            "mobile",
+            "email",
+            "report_to",
+            "address_infor",
+            "additional_infor",
+            'account_name'
+        )
 
     @classmethod
     def get_salutation(cls, obj):
         if obj.salutation:
             return {'id': obj.salutation_id, 'title': obj.salutation.title}
-        return ''
+        return {}
 
     @classmethod
     def get_owner(cls, obj):
@@ -193,7 +217,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                 )
             obj.additional_infor['interests'] = interest_list
             return obj.additional_infor
-        return ''
+        return []
 
     @classmethod
     def get_fullname(cls, obj):
@@ -203,13 +227,13 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                 'last_name': obj.fullname.split(' ')[-1],
                 'first_name': ' '.join(obj.fullname.split(' ')[:-1])
             }
-        return ''
+        return {}
 
     @classmethod
     def get_account_name(cls, obj):
         if obj.account_name:
             return {"id": obj.account_name_id, 'name': obj.account_name.name}
-        return ''
+        return {}
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
@@ -232,6 +256,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "additional_infor",
         )
 
+    @staticmethod
     def validate_account_name(self, value):
         try:
             return Account.object_global.get(id=value)
@@ -239,94 +264,26 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Account does not exist.')
 
 
-# Contact Draft Serializer
-class ContactDraftListSerializer(serializers.ModelSerializer):
-    salutation = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ContactDraft
-        fields = "__all__"
-
-    @classmethod
-    def get_salutation(cls, obj):
-        if obj.salutation:
-            return Salutation.object_normal.get(id=obj.salutation).id
-        return ''
-
-    @classmethod
-    def get_owner(cls, obj):
-        if obj.owner:
-            owner = Employee.object_normal.get(id=obj.owner)
-            return owner.last_name + ' ' + owner.first_name
-        return ''
-
-
-class ContactDraftCreateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ContactDraft
-        fields = ("owner",
-                  "job_title",
-                  "bio",
-                  "avatar",
-                  "fullname",
-                  "salutation",
-                  "phone",
-                  "mobile",
-                  "account_name",
-                  "email",
-                  "report_to",
-                  "address_infor",
-                  "additional_infor",)
-
-
-class ContactDraftDetailSerializer(serializers.ModelSerializer):
-    fullname = serializers.SerializerMethodField()
-    additional_infor = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ContactDraft
-        fields = "__all__"
-
-    @classmethod
-    def get_additional_infor(cls, obj):
-        if obj.additional_infor:
-            interest_list = []
-            for i in obj.additional_infor['interests']:
-                interest_list.append(str(Interest.object_normal.get(id=i).id))
-            obj.additional_infor['interests'] = str(interest_list).replace("'", '"')
-            return obj.additional_infor
-        return ''
-
-    @classmethod
-    def get_fullname(cls, obj):
-        if obj.fullname:
-            return {
-                'fullname': obj.fullname,
-                'last_name': obj.fullname.split(' ')[-1],
-                'first_name': ' '.join(obj.fullname.split(' ')[:-1])
-            }
-        return ''
-
-
-class ContactDraftUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ContactDraft
-        fields = "__all__"
-
-
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
-        fields = ('id', 'fullname', 'job_title', 'owner', 'mobile', 'phone', 'email')
+        fields = (
+            'id',
+            'fullname',
+            'job_title',
+            'owner',
+            'mobile',
+            'phone',
+            'email'
+        )
 
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            return {'id': obj.owner.id, 'fullname': obj.owner.last_name + ' ' + obj.owner.first_name}
-        return ''
+            return {'id': obj.owner_id, 'fullname': obj.owner.last_name + ' ' + obj.owner.first_name}
+        return {}
 
 
 # Account
@@ -463,5 +420,6 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
             'full_name',
         )
 
-    def get_full_name(self, obj):
+    @classmethod
+    def get_full_name(cls, obj):
         return Employee.get_full_name(obj, 2)

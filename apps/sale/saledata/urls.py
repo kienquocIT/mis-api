@@ -10,7 +10,8 @@ from apps.sale.saledata.views.accounts import (
 )
 
 urlpatterns = [
-    path('contact/salutation/list', SalutationList.as_view(), name='SalutationList'),
+    path('salurations', SalutationList.as_view(), name='SalutationList'),
+    path('saluration/<str: pk>', SalutationList.as_view(), name='SalutationList'),
     path('contact/interest/list', InterestsList.as_view(), name='InterestsList'),
     path('account/accounttype/list', AccountTypeList.as_view(), name='AccountTypeList'),
     path('account/industry/list', IndustryList.as_view(), name='IndustryList'),

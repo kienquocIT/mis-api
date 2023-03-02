@@ -1,8 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import Salutation, Interest, AccountType, Industry, Contact, ContactDraft, \
-    Account
+from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
 from apps.sale.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer,
     InterestsListSerializer, InterestsCreateSerializer, InterestsDetailsSerializer,
@@ -10,8 +9,7 @@ from apps.sale.saledata.serializers.accounts import (
     IndustryListSerializer, IndustryCreateSerializer, IndustryDetailsSerializer,
 
     ContactListSerializer, ContactCreateSerializer, ContactDetailSerializer,
-    ContactDraftListSerializer, ContactDraftCreateSerializer, ContactDraftDetailSerializer,
-    ContactDraftUpdateSerializer, ContactUpdateSerializer, ContactListNotMapAccountSerializer,
+    ContactUpdateSerializer, ContactListNotMapAccountSerializer,
 
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
     AccountUpdateSerializer, EmployeeMapAccountListSerializer,
@@ -157,51 +155,6 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = ContactUpdateSerializer
-        return self.update(request, *args, **kwargs)
-
-
-class ContactDraftList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
-    queryset = ContactDraft.object_normal
-    serializer_list = ContactDraftListSerializer
-    serializer_create = ContactDraftCreateSerializer
-    serializer_detail = ContactDraftDetailSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Contact list draft",
-        operation_description="Contact list draft",
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        kwargs.update({'is_delete': 0})
-        return self.list(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Create Contact",
-        operation_description="Create new Contact",
-        request_body=ContactDraftCreateSerializer,
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-
-class ContactDraftDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
-    queryset = ContactDraft.objects
-    serializer_list = ContactDraftListSerializer
-    serializer_create = ContactDraftCreateSerializer
-    serializer_detail = ContactDraftDetailSerializer
-
-    @swagger_auto_schema(operation_summary='Detail Contact Draft')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(operation_summary="Update Contact", request_body=ContactDraftUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        self.serializer_class = ContactDraftUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
