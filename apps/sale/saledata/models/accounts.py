@@ -193,6 +193,7 @@ class Contact(TenantModel):
         verbose_name='account_name',
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
         related_name='contacts'
     )
     email = models.CharField(
@@ -208,6 +209,8 @@ class Contact(TenantModel):
         max_length=150
     )
     report_to = models.UUIDField(
+        null=True,
+        blank=True,
         help_text='employee'
     )
     address_infor = models.JSONField(

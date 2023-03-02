@@ -24,6 +24,8 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Salutation list",
@@ -48,6 +50,8 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Interests list",
@@ -72,6 +76,8 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="AccountType list",
@@ -96,6 +102,8 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Industry list",
@@ -122,6 +130,8 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Contact list",
@@ -145,6 +155,8 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -181,6 +193,8 @@ class AccountList(BaseListMixin, BaseCreateMixin):
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Account list",
@@ -204,6 +218,8 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -223,7 +239,6 @@ class EmployeeMapAccountList(BaseListMixin):
     search_fields = ["search_content"]
 
     serializer_list = EmployeeMapAccountListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super(EmployeeMapAccountList, self).get_queryset().select_related(

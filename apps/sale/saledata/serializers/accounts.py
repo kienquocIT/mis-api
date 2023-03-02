@@ -100,7 +100,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object_global.get(id=obj.owner)
+                owner = Employee.object_normal.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -117,7 +117,7 @@ class ContactListSerializer(serializers.ModelSerializer):
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False)
+    account_name = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Contact
@@ -137,10 +137,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
-    @staticmethod
-    def validate_account_name(self, value):
+    def validate_account_name(self, attrs):
         try:
-            return Account.object_global.get(id=value)
+            return Account.object_normal.get(id=attrs)
         except Exception as e:
             raise serializers.ValidationError('Account does not exist.')
 
@@ -182,7 +181,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object_global.get(id=obj.owner)
+                owner = Employee.object_normal.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -195,7 +194,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_report_to(cls, obj):
         try:
             if obj.report_to:
-                owner = Employee.object_global.get(id=obj.report_to)
+                owner = Employee.object_normal.get(id=obj.report_to)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -260,7 +259,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
     @staticmethod
     def validate_account_name(self, value):
         try:
-            return Account.object_global.get(id=value)
+            return Account.object_normal.get(id=value)
         except Exception as e:
             raise serializers.ValidationError('Account does not exist.')
 
@@ -337,7 +336,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    contact_primary = serializers.UUIDField()
+    contact_primary = serializers.UUIDField(required=False)
 
     class Meta:
         model = Account
@@ -387,11 +386,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             del validated_data['contact_primary']
 
         # create account
-        account = Account.object_global.create(**validated_data)
+        account = Account.object_normal.create(**validated_data)
 
         # update contact select
         if contact_select_list:
-            contact_list = Contact.object_global.filter(id__in=contact_select_list)
+            contact_list = Contact.object_normal.filter(id__in=contact_select_list)
             if contact_list:
                 for contact in contact_list:
                     if contact.id == contact_primary:
@@ -408,7 +407,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                     account_name=account
                 ))
             if bulk_info:
-                Contact.object_global.bulk_create(bulk_info)
+                Contact.object_normal.bulk_create(bulk_info)
 
         return account
 

@@ -11,7 +11,7 @@ urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
     path('interests', InterestsList.as_view(), name='InterestsList'),
     path('accounttypes', AccountTypeList.as_view(), name='AccountTypeList'),
-    path('industries;', IndustryList.as_view(), name='IndustryList'),
+    path('industries', IndustryList.as_view(), name='IndustryList'),
 
     # contact
     path('contacts', ContactList.as_view(), name='ContactList'),
