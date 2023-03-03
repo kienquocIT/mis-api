@@ -306,6 +306,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = (
+            "id",
             "name",
             "website",
             "account_type",
