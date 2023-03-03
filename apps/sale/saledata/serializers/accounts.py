@@ -392,7 +392,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        contact_select_list = None
+        contact_select_list = None # [..............]
         contact_primary = None
         if 'contact_select_list' in validated_data:
             contact_select_list = validated_data.get('contact_select_list', None)
@@ -406,6 +406,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         # update contact select
         if contact_select_list:
+            if contact_primary:
+                contact_select_list.append(contact_primary)
             contact_list = Contact.object_normal.filter(id__in=contact_select_list)
             if contact_list:
                 for contact in contact_list:
