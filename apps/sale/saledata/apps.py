@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class MasterdataConfig(AppConfig):
+class SaledataConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.sale.masterdata'
+    name = 'apps.sale.saledata'
