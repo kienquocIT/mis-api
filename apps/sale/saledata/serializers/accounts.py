@@ -101,7 +101,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object_normal.get(id=obj.owner)
+                owner = Employee.object_global.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -184,7 +184,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object_normal.get(id=obj.owner)
+                owner = Employee.object_global.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -197,7 +197,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_report_to(cls, obj):
         try:
             if obj.report_to:
-                owner = Employee.object_normal.get(id=obj.report_to)
+                owner = Employee.object_global.get(id=obj.report_to)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -210,7 +210,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_additional_infor(cls, obj):
         if obj.additional_infor:
             interest_list = []
-            for i in obj.additional_infor['interests']:
+            for i in obj.additional_infor.get('interests', None):
                 interest_list.append(
                     {
                         'id': Interest.object_normal.get(id=i).id,
@@ -287,7 +287,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object_normal.get(id=obj.owner)
+                owner = Employee.object_global.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -305,12 +305,19 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Account
-        fields = "__all__"
+        fields = (
+            "name",
+            "website",
+            "account_type",
+            "manager",
+            "industry",
+            "phone",
+        )
 
     @classmethod
     def get_account_type(cls, obj):
         if obj.account_type:
-            all_account_types = [account_type['title'] for account_type in obj.account_type]
+            all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
             return all_account_types
         return []
 
@@ -373,7 +380,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         account_type = []
-        for item in validate_data['account_type']:
+        for item in validate_data.get('account_type', None):
             title = AccountType.object_normal.get(id=item).title
             detail = ''
             if title.lower() == 'customer':
@@ -386,10 +393,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         contact_select_list = None
         contact_primary = None
         if 'contact_select_list' in validated_data:
-            contact_select_list = validated_data['contact_select_list']
+            contact_select_list = validated_data.get('contact_select_list', None)
             del validated_data['contact_select_list']
         if 'contact_primary' in validated_data:
-            contact_primary = validated_data['contact_primary']
+            contact_primary = validated_data.get('contact_primary', None)
             del validated_data['contact_primary']
 
         # create account
