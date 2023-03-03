@@ -195,12 +195,13 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_report_to(cls, obj):
+        print(obj.report_to)
         try:
             if obj.report_to:
-                owner = Employee.object_global.get(id=obj.report_to)
+                owner = Contact.object_normal.get(id=obj.report_to)
                 return {
                     'id': owner.id,
-                    'fullname': Employee.get_full_name(owner, 2)
+                    'fullname': owner.fullname
                 }
         except Exception as e:
             print(e)
