@@ -338,7 +338,26 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         many=True
     )
     group = serializers.UUIDField(required=False)
-    role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    role = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
+    first_name = serializers.CharField(
+        max_length=100,
+        required=False
+    )
+    last_name = serializers.CharField(
+        max_length=100,
+        required=False
+    )
+    email = serializers.CharField(
+        max_length=150,
+        required=False
+    )
+    phone = serializers.CharField(
+        max_length=25,
+        required=False
+    )
 
     class Meta:
         model = Employee

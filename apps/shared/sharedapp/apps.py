@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class MasterdataConfig(AppConfig):
+class SharedappConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.eoffice.masterdata'
+    name = 'apps.shared.sharedapp'

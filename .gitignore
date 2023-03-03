@@ -9,3 +9,5 @@ logs/*
 *.log
 *.sqlite3
 /html_jampack/**
+.env
+*/.env
