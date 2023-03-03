@@ -140,7 +140,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     def validate_account_name(self, attrs):
         try:
-            return Account.object_normal.get(id=attrs)
+            if attrs is not None:
+                return Account.object_normal.get(id=attrs)
+            return None
         except Exception as e:
             raise serializers.ValidationError('Account does not exist.')
 
@@ -259,7 +261,9 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     def validate_account_name(self, value):
         try:
-            return Account.object_normal.get(id=value)
+            if value is not None:
+                return Account.object_normal.get(id=value)
+            return None
         except Exception as e:
             raise serializers.ValidationError('Account does not exist.')
 
@@ -380,14 +384,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         contact_select_list = None
-        contact_create_list = None
         contact_primary = None
         if 'contact_select_list' in validated_data:
             contact_select_list = validated_data['contact_select_list']
             del validated_data['contact_select_list']
-        if 'contact_create_list' in validated_data:
-            contact_create_list = validated_data['contact_create_list']
-            del validated_data['contact_create_list']
         if 'contact_primary' in validated_data:
             contact_primary = validated_data['contact_primary']
             del validated_data['contact_primary']
@@ -404,17 +404,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                         contact.is_primary = True
                     contact.account_name = account
                     contact.save()
-
-        # create new contact
-        if contact_create_list:
-            bulk_info = []
-            for contact_create in contact_create_list:
-                bulk_info.append(Contact(
-                    **contact_create,
-                    account_name=account
-                ))
-            if bulk_info:
-                Contact.object_normal.bulk_create(bulk_info)
 
         return account
 
