@@ -26,7 +26,7 @@ class SalutationDetailSerializer(serializers.ModelSerializer):
 class SalutationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('title', 'code', 'description')
 
 
 # Interest
@@ -51,7 +51,7 @@ class InterestsDetailsSerializer(serializers.ModelSerializer):
 class InterestsUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('title', 'code', 'description')
 
 
 # Account Type
@@ -76,7 +76,7 @@ class AccountTypeDetailsSerializer(serializers.ModelSerializer):
 class AccountTypeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('title', 'code', 'description')
 
 
 # Industry
@@ -101,7 +101,7 @@ class IndustryDetailsSerializer(serializers.ModelSerializer):
 class IndustryUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('title', 'code', 'description')
 
 
 # Contact
