@@ -48,7 +48,6 @@ PROPERTIES_TYPE = (
     ('date_time', 'Date time'),
     ('select', 'Choices'),
     ('check', 'Checkbox'),
-    ('file', 'Files'),
     ('masterdata', 'Master data'),
 )
 

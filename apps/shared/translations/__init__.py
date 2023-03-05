@@ -3,3 +3,4 @@ from .server import ServerMsg
 from .http import HttpMsg
 from .provisioning import ProvisioningMsg
 from .api import APIMsg
+from .workflow import WorkflowMsg

@@ -3,11 +3,12 @@ from rest_framework import serializers
 from apps.core.base.models import Application, ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.core.workflow.models import Workflow, Node, Collaborator, Zone
+from apps.shared import WorkflowMsg
 
 OPTION_COLLABORATOR = (
-    (0, "In form"),
-    (1, "Out form"),
-    (2, "In workflow"),
+    (0, WorkflowMsg.COLLABORATOR_IN),
+    (1, WorkflowMsg.COLLABORATOR_OUT),
+    (2, WorkflowMsg.COLLABORATOR_WF),
 )
 
 

@@ -1,15 +1,15 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel
+from apps.shared import TenantCoreModel, WorkflowMsg
 
 WORKFLOW_ACTION = (
-    (0, "Create"),
-    (1, "Approve"),
-    (2, "Reject"),
-    (3, "Return"),
-    (4, "Receive"),
-    (5, "To do"),
+    (0, WorkflowMsg.ACTION_CREATE),
+    (1, WorkflowMsg.ACTION_APPROVE),
+    (2, WorkflowMsg.ACTION_REJECT),
+    (3, WorkflowMsg.ACTION_RETURN),
+    (4, WorkflowMsg.ACTION_RECEIVE),
+    (5, WorkflowMsg.ACTION_TODO),
 )
 
 
