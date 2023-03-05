@@ -12,9 +12,15 @@ class SalutationListSerializer(serializers.ModelSerializer):
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Salutation
         fields = ('code', 'title', 'description')
+
+    def validate_code(self, value):
+        if Salutation.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is exist.")
+        return value
 
 
 class SalutationDetailSerializer(serializers.ModelSerializer):
@@ -416,7 +422,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        contact_select_list = None # [..............]
+        contact_select_list = None
         contact_primary = None
         if 'contact_select_list' in validated_data:
             contact_select_list = validated_data.get('contact_select_list', None)
@@ -428,10 +434,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         # create account
         account = Account.object_normal.create(**validated_data)
 
+        if contact_primary:
+            contact_select_list.append(contact_primary)
         # update contact select
         if contact_select_list:
-            if contact_primary:
-                contact_select_list.append(contact_primary)
             contact_list = Contact.object_normal.filter(id__in=contact_select_list)
             if contact_list:
                 for contact in contact_list:
