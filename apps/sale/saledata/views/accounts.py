@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
@@ -16,7 +17,6 @@ from apps.sale.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
     AccountUpdateSerializer, EmployeeMapAccountListSerializer, AccountTypeUpdateSerializer,
 )
-from rest_framework.permissions import IsAuthenticated
 
 
 # Create your views here.
