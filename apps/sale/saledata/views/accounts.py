@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
     Salutation, Interest, AccountType, Industry, Contact, Account
@@ -15,7 +16,6 @@ from apps.sale.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
     AccountUpdateSerializer, EmployeeMapAccountListSerializer, AccountTypeUpdateSerializer,
 )
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from rest_framework.permissions import IsAuthenticated
 
 
