@@ -30,7 +30,7 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
         if value:
             if Salutation.object_normal.filter(title=value).exists():
                 raise serializers.ValidationError("Name is already exist.")
-        return value
+            return value
 
 
 class SalutationDetailSerializer(serializers.ModelSerializer):
@@ -229,8 +229,8 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist:
+            pass
         return {}
 
     @classmethod
@@ -241,8 +241,8 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': obj.account_name.id,
                     'name': obj.account_name.name
                 }
-        except Exception as e:
-            print(e)
+        except Account.DoesNotExist:
+            pass
         return {}
 
 
@@ -279,18 +279,21 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         if attrs is not None:
             if Contact.object_normal.filter(email=attrs).exists():
                 raise serializers.ValidationError("Email is already exist.")
+            return attrs
         return ''
 
     def validate_phone(self, attrs):
         if attrs is not None:
             if Contact.object_normal.filter(phone=attrs).exists():
                 raise serializers.ValidationError("Phone is already exist.")
+            return attrs
         return ''
 
     def validate_mobile(self, attrs):
         if attrs is not None:
             if Contact.object_normal.filter(mobile=attrs).exists():
                 raise serializers.ValidationError("Mobile is already exist.")
+            return attrs
         return ''
 
 
@@ -329,8 +332,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.salutation_id,
                     'title': obj.salutation.title
                 }
-        except Exception as e:
-            print(e)
+        except Salutation.DoesNotExist:
+            pass
         return {}
 
     @classmethod
@@ -342,8 +345,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist:
+            pass
         return {}
 
     @classmethod
@@ -355,39 +358,33 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': owner.fullname
                 }
-        except Exception as e:
-            print(e)
+        except Contact.DoesNotExist:
+            pass
         return {}
 
     @classmethod
     def get_additional_infor(cls, obj):
-        try:
-            if obj.additional_infor:
-                interest_list = []
-                for i in obj.additional_infor.get('interests', None):
-                    interest_list.append(
-                        {
-                            'id': Interest.object_normal.get(id=i).id,
-                            'title': Interest.object_normal.get(id=i).title
-                        }
-                    )
-                obj.additional_infor['interests'] = interest_list
-                return obj.additional_infor
-        except Exception as e:
-            print(e)
+        if obj.additional_infor:
+            interest_list = []
+            for i in obj.additional_infor.get('interests', None):
+                interest_list.append(
+                    {
+                        'id': Interest.object_normal.get(id=i).id,
+                        'title': Interest.object_normal.get(id=i).title
+                    }
+                )
+            obj.additional_infor['interests'] = interest_list
+            return obj.additional_infor
         return []
 
     @classmethod
     def get_fullname(cls, obj):
-        try:
-            if obj.fullname:
-                return {
-                    'fullname': obj.fullname,
-                    'last_name': obj.fullname.split(' ')[-1],
-                    'first_name': ' '.join(obj.fullname.split(' ')[:-1])
-                }
-        except Exception as e:
-            print(e)
+        if obj.fullname:
+            return {
+                'fullname': obj.fullname,
+                'last_name': obj.fullname.split(' ')[-1],
+                'first_name': ' '.join(obj.fullname.split(' ')[:-1])
+            }
         return {}
 
     @classmethod
@@ -398,8 +395,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     "id": obj.account_name_id,
                     'name': obj.account_name.name
                 }
-        except Exception as e:
-            print(e)
+        except Account.DoesNotExist:
+            pass
         return {}
 
 
@@ -434,20 +431,23 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     def validate_email(self, attrs):
         if attrs is not None:
-            if Contact.object_normal.filter(email=attrs).exists():
+            if attrs != self.instance.email and Contact.object_normal.filter(email=attrs).exists():
                 raise serializers.ValidationError("Email is already exist.")
+            return attrs
         return ''
 
     def validate_phone(self, attrs):
         if attrs is not None:
-            if Contact.object_normal.filter(phone=attrs).exists():
+            if attrs != self.instance.phone and Contact.object_normal.filter(phone=attrs).exists():
                 raise serializers.ValidationError("Phone is already exist.")
+            return attrs
         return ''
 
     def validate_mobile(self, attrs):
         if attrs is not None:
-            if Contact.object_normal.filter(mobile=attrs).exists():
+            if attrs != self.instance.mobile and Contact.object_normal.filter(mobile=attrs).exists():
                 raise serializers.ValidationError("Mobile is already exist.")
+            return attrs
         return ''
 
 
@@ -475,8 +475,8 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist:
+            pass
         return {}
 
 
@@ -506,8 +506,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             if obj.account_type:
                 all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
                 return all_account_types
-        except Exception as e:
-            print(e)
+        except AccountType.DoesNotExist:
+            pass
         return []
 
     @classmethod
@@ -515,8 +515,8 @@ class AccountListSerializer(serializers.ModelSerializer):
         try:
             if obj.industry:
                 return obj.industry.title
-        except Exception as e:
-            print(e)
+        except Industry.DoesNotExist:
+            pass
         return []
 
     @classmethod
@@ -526,8 +526,8 @@ class AccountListSerializer(serializers.ModelSerializer):
                 all_managers = [Employee.object_normal.get(id=employees_id).get_full_name() for employees_id in
                                 obj.manager]
                 return all_managers
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist:
+            pass
         return []
 
     @classmethod
@@ -539,8 +539,8 @@ class AccountListSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': owner.fullname
                 }
-        except Exception as e:
-            print(e)
+        except Contact.DoesNotExist:
+            pass
         return {}
 
 
@@ -592,8 +592,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             if value:
                 if Account.object_normal.filter(code=value).exists():
                     raise serializers.ValidationError("Code is already exist.")
-        except Exception as e:
-            print(e)
+        except Account.DoesNotExist:
+            pass
         return value
 
     def validate(self, validate_data):
@@ -655,8 +655,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                     }
                 )
             return list_owner
-        except Exception as e:
-            print(e)
+        except Contact.DoesNotExist:
+            pass
         return []
 
 
@@ -682,8 +682,8 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
     def get_full_name(cls, obj):
         try:
             return Employee.get_full_name(obj, 2)
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist:
+            pass
         return ''
 
     def get_account(self, obj):
@@ -698,6 +698,6 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
                 'name': name_list,
                 'id': id_list
             }
-        except Exception as e:
-            print(e)
+        except Account.DoesNotExist:
+            pass
         return
