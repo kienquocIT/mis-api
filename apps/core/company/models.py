@@ -1,6 +1,6 @@
-from django.db import models
-from jsonfield import JSONField
 from typing import Literal
+from jsonfield import JSONField
+from django.db import models
 
 from apps.shared import BaseModel, M2MModel
 
@@ -48,7 +48,7 @@ class Company(BaseModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Company, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         # update total company of tenant
         if self.tenant:
             self.tenant.company_total = self.__class__.objects.filter(tenant=self.tenant).count()
@@ -120,15 +120,14 @@ class CompanyUserEmployee(M2MModel):
                 if obj_map.employee_id is None:
                     return obj_map
                 return None
-            elif is_user_or_employee == 'employee':
+            if is_user_or_employee == 'employee':
                 if obj_map.user_id is None:
                     return obj_map
                 return None
-            else:
-                raise AttributeError(
-                    f'[CompanyUserEmployee.check_obj_map] '
-                    f'check_user_or_employee not support code: {is_user_or_employee}'
-                )
+            raise AttributeError(
+                f'[CompanyUserEmployee.check_obj_map] '
+                f'check_user_or_employee not support code: {is_user_or_employee}'
+            )
         raise RuntimeError(
             '[CompanyUserEmployee.create_new] User Map return more than one records.'
         )
@@ -142,23 +141,21 @@ class CompanyUserEmployee(M2MModel):
                     '[CompanyUserEmployee.create_new] Employee ID or User ID must be required. '
                     'Remaining argument must be is None'
                 )
-            elif employee_id:
+            if employee_id:
                 emp_map = cls.object_normal.filter(company_id=company_id, employee_id=employee_id)
                 if emp_map:
                     return cls.check_obj_map(emp_map, 'employee')
-                else:
-                    return cls.object_normal.create(
-                        company_id=company_id, employee_id=employee_id, user_id=None
-                    )
-            elif user_id:
+                return cls.object_normal.create(
+                    company_id=company_id, employee_id=employee_id, user_id=None
+                )
+            if user_id:
                 user_map = cls.object_normal.filter(company_id=company_id, user_id=user_id)
                 if user_map:
                     return cls.check_obj_map(user_map, 'user')
-                else:
-                    return cls.object_normal.create(
-                        company_id=company_id, employee_id=None, user_id=user_id,
-                        is_created_company=True,
-                    )
+                return cls.object_normal.create(
+                    company_id=company_id, employee_id=None, user_id=user_id,
+                    is_created_company=True,
+                )
         raise AttributeError('[CompanyUserEmployee.create_new] Company ID must be required.')
 
     @classmethod

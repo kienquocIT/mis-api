@@ -1,4 +1,3 @@
-import datetime
 import json
 
 from django.contrib.auth import get_user_model
@@ -15,7 +14,6 @@ from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
     UserCreateSerializer, EmployeeSpaceCreateSerializer
 )
-from ..company.models import CompanyUserEmployee
 
 
 class TenantController:

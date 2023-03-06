@@ -2,7 +2,6 @@ import base64
 import json
 
 from django.core.exceptions import PermissionDenied
-from django.http import QueryDict
 from django.utils.functional import wraps
 
 
@@ -19,7 +18,6 @@ def ajax_required(view):
                 body_data_loaded = json.loads(body_data_base)
                 request.data_parsed = body_data_loaded
             return view(request, *args, **kwargs)
-        else:
-            raise PermissionDenied
+        raise PermissionDenied
 
     return wraps(view)(wrapper)

@@ -4,10 +4,9 @@ from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application
 from apps.core.tenant.models import TenantPlan
-from apps.shared.decorators import query_debugger
 
 
-class EmployeePlanAppCreateSerializer(serializers.Serializer):
+class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
     plan = serializers.UUIDField()
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False)
@@ -15,23 +14,24 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):
     license_used = serializers.IntegerField(required=False)
     license_quantity = serializers.IntegerField(required=False)
 
-    def validate_plan(self, value):
+    @classmethod
+    def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except Exception as e:
-            raise serializers.ValidationError("Plan does not exist.")
+        except SubscriptionPlan.DoesNotExist as exc:
+            raise serializers.ValidationError("Plan does not exist.") from exc
 
-    def validate_application(self, value):
+    @classmethod
+    def validate_application(cls, value):
         if isinstance(value, list):
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            else:
-                raise serializers.ValidationError("Some application does not exist.")
+            raise serializers.ValidationError("Some application does not exist.")
         raise serializers.ValidationError("Value must be array.")
 
 
-class EmployeePlanAppUpdateSerializer(serializers.Serializer):
+class EmployeePlanAppUpdateSerializer(serializers.Serializer): # noqa
     plan = serializers.UUIDField(required=False)
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False),
@@ -40,19 +40,20 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):
     license_used = serializers.IntegerField(required=False)
     license_quantity = serializers.IntegerField(required=False)
 
-    def validate_plan(self, value):
+    @classmethod
+    def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except Exception as e:
-            raise serializers.ValidationError("Plan does not exist.")
+        except SubscriptionPlan.DoesNotExist as exc:
+            raise serializers.ValidationError("Plan does not exist.") from exc
 
-    def validate_application(self, value):
+    @classmethod
+    def validate_application(cls, value):
         if isinstance(value, list):
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            else:
-                raise serializers.ValidationError("Some application does not exist.")
+            raise serializers.ValidationError("Some application does not exist.")
         raise serializers.ValidationError("Value must be array.")
 
 
@@ -80,10 +81,12 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'user'
         )
 
-    def get_full_name(self, obj):
-        return Employee.get_full_name(obj, 2)
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name(2)
 
-    def get_group(self, obj):
+    @classmethod
+    def get_group(cls, obj):
         if obj.group:
             return {
                 'id': obj.group_id,
@@ -92,8 +95,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    @query_debugger
-    def get_role(self, obj):
+    @classmethod
+    def get_role(cls, obj):
         result = []
         role_list = obj.role.all().values(
             'id',
@@ -101,13 +104,16 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         )
         if role_list:
             for role in role_list:
-                result.append({
-                    'id': role['id'],
-                    'title': role['title'],
-                })
+                result.append(
+                    {
+                        'id': role['id'],
+                        'title': role['title'],
+                    }
+                )
         return result
 
-    def get_user(self, obj):
+    @classmethod
+    def get_user(cls, obj):
         if obj.user:
             return {
                 'id': obj.user_id,
@@ -141,10 +147,12 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'role'
         )
 
-    def get_full_name(self, obj):
-        return Employee.get_full_name(obj, 2)
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name(2)
 
-    def get_plan_app(self, obj):
+    @classmethod
+    def get_plan_app(cls, obj):
         result = []
         employee_plan = PlanEmployee.object_normal.select_related('plan').filter(
             employee=obj
@@ -158,24 +166,29 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                     ).values('id', 'title', 'code')
                     if application_list:
                         for application in application_list:
-                            app_list.append({
-                                'id': application['id'],
-                                'title': application['title'],
-                                'code': application['code']
-                            })
-                result.append({
-                    'id': emp_plan.plan_id,
-                    'title': emp_plan.plan.title,
-                    'code': emp_plan.plan.code,
-                    'application': app_list
-                })
+                            app_list.append(
+                                {
+                                    'id': application['id'],
+                                    'title': application['title'],
+                                    'code': application['code']
+                                }
+                            )
+                result.append(
+                    {
+                        'id': emp_plan.plan_id,
+                        'title': emp_plan.plan.title,
+                        'code': emp_plan.plan.code,
+                        'application': app_list
+                    }
+                )
         return result
 
-    def get_user(self, obj):
+    @classmethod
+    def get_user(cls, obj):
         if obj.user:
             return {
                 'id': obj.user_id,
-                'full_name': User.get_full_name(obj.user, 2),
+                'full_name': obj.user.get_full_name(2),
                 'first_name': obj.user.first_name,
                 'last_name': obj.user.last_name,
                 'email': obj.user.email,
@@ -183,7 +196,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_group(self, obj):
+    @classmethod
+    def get_group(cls, obj):
         if obj.group:
             return {
                 'id': obj.group_id,
@@ -192,8 +206,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    @query_debugger
-    def get_role(self, obj):
+    @classmethod
+    def get_role(cls, obj):
         result = []
         role_list = obj.role.all().values(
             'id',
@@ -201,10 +215,12 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
         )
         if role_list:
             for role in role_list:
-                result.append({
-                    'id': role['id'],
-                    'title': role['title'],
-                })
+                result.append(
+                    {
+                        'id': role['id'],
+                        'title': role['title'],
+                    }
+                )
         return result
 
 
@@ -229,19 +245,22 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             'role',
         )
 
-    def validate_user(self, value):
+    @classmethod
+    def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
-        except Exception as e:
-            raise serializers.ValidationError("User does not exist.")
+        except User.DoesNotExist as exc:
+            raise serializers.ValidationError("User does not exist.") from exc
 
-    def validate_group(self, value):
+    @classmethod
+    def validate_group(cls, value):
         try:
             return Group.object_global.get(id=value)
-        except Exception as e:
+        except Group.DoesNotExist:
             raise serializers.ValidationError("Group does not exist.")
 
-    def validate_role(self, value):
+    @classmethod
+    def validate_role(cls, value):
         if isinstance(value, list):
             role_list = Role.object_global.filter(id__in=value).count()
             if role_list == len(value):
@@ -250,17 +269,6 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError("Role must be array.")
 
     def validate(self, validate_data):
-        # check_plan_app = []
-        # if 'user' in validate_data:
-        #     if 'plan_app' in validate_data:
-        #         for plan_app in validate_data['plan_app']:
-        #             if 'application' in plan_app:
-        #                 check_plan_app += plan_app['application']
-        #         if not check_plan_app:
-        #             raise serializers.ValidationError("Must choose Plan if Employee has User.")
-        #     else:
-        #         raise serializers.ValidationError("Must choose Plan if Employee has User.")
-
         plan_license_check = ""
         if 'user' in validate_data:
             if 'plan_app' in validate_data:
@@ -274,7 +282,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             )
         return validate_data
 
-    def create(self, validated_data):
+    def create(self, validated_data):   # pylint: disable=R0912
         plan_application_dict = {}
         plan_app_data = None
         role_list = None
@@ -292,10 +300,14 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
                         app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
                     if plan_code and app_code_list:
                         plan_application_dict.update({plan_code: app_code_list})
-                        bulk_info.append(PlanEmployee(**{
-                            'plan': plan_app['plan'],
-                            'application': [app.id for app in plan_app['application']]
-                        }))
+                        bulk_info.append(
+                            PlanEmployee(
+                                **{
+                                    'plan': plan_app['plan'],
+                                    'application': [app.id for app in plan_app['application']]
+                                }
+                            )
+                        )
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
         if 'role' in validated_data:
@@ -323,10 +335,14 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         if role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(RoleHolder(**{
-                    'employee': employee,
-                    'role_id': role,
-                }))
+                bulk_info.append(
+                    RoleHolder(
+                        **{
+                            'employee': employee,
+                            'role_id': role,
+                        }
+                    )
+                )
             RoleHolder.object_normal.bulk_create(bulk_info)
         return employee
 
@@ -338,7 +354,26 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         many=True
     )
     group = serializers.UUIDField(required=False)
-    role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    role = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
+    first_name = serializers.CharField(
+        max_length=100,
+        required=False
+    )
+    last_name = serializers.CharField(
+        max_length=100,
+        required=False
+    )
+    email = serializers.CharField(
+        max_length=150,
+        required=False
+    )
+    phone = serializers.CharField(
+        max_length=25,
+        required=False
+    )
 
     class Meta:
         model = Employee
@@ -355,13 +390,15 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'role',
         )
 
-    def validate_group(self, value):
+    @classmethod
+    def validate_group(cls, value):
         try:
             return Group.object_global.get(id=value)
-        except Exception as e:
+        except Group.DoesNotExist:
             raise serializers.ValidationError("Group does not exist.")
 
-    def validate_role(self, value):
+    @classmethod
+    def validate_role(cls, value):
         if isinstance(value, list):
             role_list = Role.object_global.filter(id__in=value).count()
             if role_list == len(value):
@@ -369,10 +406,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Some role does not exist.")
         raise serializers.ValidationError("Role must be array.")
 
-    def validate_user(self, value):
+    @classmethod
+    def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
-        except Exception as e:
+        except User.DoesNotExist:
             raise serializers.ValidationError("User does not exist.")
 
     def validate(self, validate_data):
@@ -389,7 +427,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             )
         return validate_data
 
-    def update(self, instance, validated_data):
+    def update(self, instance, validated_data): # pylint: disable=R0912,R0914
         plan_application_dict = {}
         plan_app_data = None
         role_list = None
@@ -407,10 +445,14 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                         app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
                     if plan_code and app_code_list:
                         plan_application_dict.update({plan_code: app_code_list})
-                        bulk_info.append(PlanEmployee(**{
-                            'plan': plan_app['plan'],
-                            'application': [app.id for app in plan_app['application']]
-                        }))
+                        bulk_info.append(
+                            PlanEmployee(
+                                **{
+                                    'plan': plan_app['plan'],
+                                    'application': [app.id for app in plan_app['application']]
+                                }
+                            )
+                        )
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
         if 'role' in validated_data:
@@ -450,10 +492,14 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         if instance and role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(RoleHolder(**{
-                    'employee': instance,
-                    'role_id': role,
-                }))
+                bulk_info.append(
+                    RoleHolder(
+                        **{
+                            'employee': instance,
+                            'role_id': role,
+                        }
+                    )
+                )
             RoleHolder.object_normal.bulk_create(bulk_info)
 
         return instance

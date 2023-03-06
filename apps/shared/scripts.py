@@ -1,6 +1,6 @@
 from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
-from apps.core.hr.models import PlanEmployee, Employee
+from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.core.workflow.models import Node
 
