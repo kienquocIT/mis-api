@@ -1,7 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
+from apps.sale.saledata.models.accounts import (
+    Salutation, Interest, AccountType, Industry, Contact, Account
+)
 from apps.sale.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer, SalutationUpdateSerializer,
     InterestsListSerializer, InterestsCreateSerializer, InterestsDetailsSerializer, IndustryUpdateSerializer,
