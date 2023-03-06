@@ -8,25 +8,28 @@ variables:
 
 default:
   image: python:3.11
-  #services:
-  #  - mysql:8.0
-
-  #cache:
-  #  paths:
-  #    - ~/.cache/pip/
   before_script:
-#    - apk add gcc musl-dev mariadb-connector-c-dev
     - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
     - pip3 --version
     - pip3 install pip==20.0.2
     - pip3 install -r req.txt
-    - python3 manage.py makemigrations
-    - python3 manage.py migrate
 
 
 stages:
- - test
+  - check
+  - test
 
+
+lint:
+  stage: check
+  script:
+    - python3 -m pylint --recursive=y .
+
+migrate:
+  stage: migrations-init
+  script:
+    - python3 manage.py makemigrations
+    - python3 manage.py migrate
 
 cmis-tests:
   stage: test
