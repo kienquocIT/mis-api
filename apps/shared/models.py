@@ -39,7 +39,7 @@ class DisperseModel:
         else:
             raise AttributeError("App models must be required. It's format is  {app_name}_{model name}.")
 
-    def setup(self, app_label, model_name, *args, **kwargs):
+    def setup(self, app_label, model_name):
         if app_label and model_name:
             self.app_label = app_label
             self.model = model_name
@@ -205,17 +205,17 @@ class BaseModel(models.Model):
             Clone object and refresh it from database.
         """
         if self._state.adding is False:
-            _original_fields_old = dict([(field, None) for field in field_name_list])
+            _original_fields_old = {field: None for field in field_name_list}
             if field_name_list and isinstance(field_name_list, list):
                 try:
                     self_fetch = deepcopy(self)
                     self_fetch.refresh_from_db()
-                    _original_fields_old = dict(
-                        [(field, getattr(self_fetch, field)) for field in field_name_list]
-                    )
+                    _original_fields_old = {
+                        field: getattr(self_fetch, field) for field in field_name_list
+                    }
                     return _original_fields_old
-                except Exception as e:
-                    print(e)
+                except Exception as err:
+                    print(err)
             return _original_fields_old
         return {}
 
@@ -259,7 +259,7 @@ class TenantModel(BaseModel):
         if not isinstance(excludes, list):
             excludes = []
 
-        result = super(TenantModel, self)._get_detail()
+        result = super()._get_detail()
         if 'space_id' not in excludes:
             result['space_id'] = self.space_id
         if 'tenant_id' not in excludes:
@@ -299,11 +299,11 @@ class TenantCoreModel(BaseModel):
         if not isinstance(excludes, list):
             excludes = []
 
-        result = super(TenantCoreModel, self)._get_detail()
+        result = super()._get_detail()
         if 'tenant' not in excludes:
-            result['tenant'] = self.tenant._get_detail()
+            result['tenant'] = self.tenant._get_detail()  # pylint: disable=W0212,E1101
         if 'company' not in excludes:
-            result['company'] = self.company._get_detail()
+            result['company'] = self.company._get_detail()  # pylint: disable=W0212,E1101
         if 'mode' not in excludes:
             result['mode'] = self.mode
         if 'mode_id' not in excludes:
@@ -326,17 +326,15 @@ class M2MModel(models.Model):
         default_permissions = ()
         permissions = ()
 
-    def _get_detail(self, excludes=None):
-        if not isinstance(excludes, list):
-            excludes = []
+    def _get_detail(self, **_kwargs):   # pylint: disable=W0613
         return {
             'id': self.id,
             'date_created': FORMATTING.parse_datetime(self.date_created),
             'extras': self.extras,
         }
 
-    def get_detail(self, excludes=None):
-        return self._get_detail(excludes=excludes)
+    def get_detail(self, **_kwargs):  # pylint: disable=W0613
+        return self._get_detail()
 
 
 class MasterDataModel(models.Model):
@@ -403,7 +401,7 @@ class PermissionCoreModel(models.Model):
         else:
             return False
 
-        super(PermissionCoreModel, self).save(update_fields=field_name, force_update=True)
+        super().save(update_fields=field_name, force_update=True)
         return True
 
     def save(
@@ -413,7 +411,7 @@ class PermissionCoreModel(models.Model):
             for key in self.permission_keys:
                 if key in update_fields:
                     update_fields.remove(key)
-        super(PermissionCoreModel, self).save(force_insert, force_update, using, update_fields)
+        super().save(force_insert, force_update, using, update_fields)
 
     @staticmethod
     def check_perm_code(data) -> bool:
@@ -438,22 +436,22 @@ class PermissionCoreModel(models.Model):
             match action:
                 case 'add':
                     if data and TypeCheck.check_uuid_list(data):
-                        data_id = self.permission_by_id.get(code_perm, [])
+                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
                         data_id += data
-                        self.permission_by_id[code_perm] = list(set(data_id))
+                        self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
                         state = True
                 case 'remove':
                     if data and TypeCheck.check_uuid_list(data):
-                        data_id = self.permission_by_id.get(code_perm, [])
+                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
                         if data_id and isinstance(data_id, list):
                             for idx_val in data:
                                 if str(idx_val) in data_id:
                                     data_id.remove(str(idx_val))
                                     state = True
                             if state is True:
-                                self.permission_by_id[code_perm] = list(set(data_id))
+                                self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
                 case 'drop':
-                    data_id = self.permission_by_id.pop(code_perm, None)
+                    data_id = self.permission_by_id.pop(code_perm, None)  # pylint: disable=E1101
                     if data_id is not None:
                         state = True
 
@@ -489,16 +487,20 @@ class PermissionCoreModel(models.Model):
             match action:
                 case 'update':
                     if self.check_perm_option(data):
-                        data_configured = self.permission_by_configured.get(code_perm, {})
+                        data_configured = self.permission_by_configured.get(  # pylint: disable=E1101
+                            code_perm, {}
+                        )
                         data_configured.update(data)
-                        self.permission_by_configured[code_perm] = data_configured
+                        self.permission_by_configured[code_perm] = data_configured  # pylint: disable=E1101,E1137
                         state = True
                 case 'override':
                     if self.check_perm_option(data):
-                        self.permission_by_configured[code_perm] = data
+                        self.permission_by_configured[code_perm] = data  # pylint: disable=E1101,E1137
                         state = True
                 case 'drop':
-                    data_configured = self.permission_by_configured.pop(code_perm, None)
+                    data_configured = self.permission_by_configured.pop(  # pylint: disable=E1101
+                        code_perm, None
+                    )
                     if data_configured is not None:
                         state = True
 

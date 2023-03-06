@@ -2,14 +2,10 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
-from apps.core.hr.models import Employee
-from apps.shared.decorators import query_debugger
 
 
 class UserListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
-
-    # tenant_current = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -21,21 +17,11 @@ class UserListSerializer(serializers.ModelSerializer):
             'username',
             'email',
             'phone',
-            # 'tenant_current'
         )
 
     @classmethod
     def get_full_name(cls, obj):
         return User.get_full_name(obj, 2)
-
-    # def get_tenant_current(self, obj):
-    #     if obj.tenant_current:
-    #         return {
-    #             'id': obj.tenant_current_id,
-    #             'title': obj.tenant_current.title,
-    #             'code': obj.tenant_current.code
-    #         }
-    #     return {}
 
 
 class UserUpdateSerializer(serializers.ModelSerializer):
@@ -58,7 +44,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("phone number does not contain characters")
         return attrs
 
-    @query_debugger
     def update(self, instance, validated_data):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
@@ -156,13 +141,15 @@ class UserDetailSerializer(serializers.ModelSerializer):
         company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
         for item in company:
             try:
-                co = Company.object_normal.get(pk=item.company_id)
-                companies.append({
-                    'code': co.code,
-                    'title': co.title,
-                    'representative': co.representative_fullname,
-                })
-            except Exception as err:
+                comp_obj = Company.object_normal.get(pk=item.company_id)
+                companies.append(
+                    {
+                        'code': comp_obj.code,
+                        'title': comp_obj.title,
+                        'representative': comp_obj.representative_fullname,
+                    }
+                )
+            except Company.DoesNotExist:
                 pass
         return companies
 
@@ -185,12 +172,14 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
         for item in company_user:
             try:
                 company = Company.object_normal.get(id=item.company_id)
-                companies.append({
-                    'id': company.id,
-                    'name': company.title,
-                })
-            except Exception as err:
-                raise serializers.ValidationError("Company does not exist.")
+                companies.append(
+                    {
+                        'id': company.id,
+                        'name': company.title,
+                    }
+                )
+            except Company.DoesNotExist as exc:
+                raise serializers.ValidationError("Company does not exist.") from exc
         return companies
 
 
@@ -206,9 +195,8 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             'companies',
         )
 
-    @query_debugger
-    def update(self, instance, validated_data):
-        if 'companies' in validated_data:
+    def update(self, instance, validated_data): # pylint: disable=R0912
+        if 'companies' in validated_data: # pylint: disable=R1702
             bulk_info_add = []
             remove_list = []
             company_id_list = validated_data['companies']
@@ -224,9 +212,11 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             for company_id in company_id_list:
                 if company_id != instance.company_current_id:
                     if company_id not in company_old_id_list:
-                        bulk_info_add.append(CompanyUserEmployee(
-                            company_id=company_id,
-                            user_id=instance.id)
+                        bulk_info_add.append(
+                            CompanyUserEmployee(
+                                company_id=company_id,
+                                user_id=instance.id
+                            )
                         )
             # check remove
             for company_old_id in company_old_id_list:

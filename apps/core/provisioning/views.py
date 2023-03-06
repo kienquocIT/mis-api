@@ -35,7 +35,7 @@ class NewTenant(APIView):
 
     @swagger_auto_schema(
         operation_summary='Allow Provisioning Server call "Create New Tenant".',
-        operation_description='''Provisioning config: 
+        operation_description='''Provisioning config:
         - settings: ALLOWED_IP_PROVISIONING, PROVISIONING_PATH_PREFIX
         - (no longer supported) table record: AllowedIPProvisioning''',
         request_body=ProvisioningCreateNewTenant
@@ -72,7 +72,7 @@ class TenantNewAdmin(APIView):
 
     @swagger_auto_schema(operation_summary='Create New Tenant Admin', request_body=ProvisioningUserData)
     def post(self, request, *args, **kwargs):
-        pk = kwargs.get('pk', None)
+        pk = kwargs.get('pk', None)  # pylint: disable=C0103
         if pk:
             tenant_obj = Tenant.objects.filter(pk=pk).first()
             if tenant_obj:
@@ -109,8 +109,8 @@ class TenantUpdateAdmin(APIView):
                             'tenant': ProvisioningMsg.TENANT_ADMIN_READY
                         }
                     )
-                company_obj = Company.objects.filter(code=(tenant_obj.code + "01")).first()
-                space_obj = Space.objects.filter(code=(tenant_obj.code.upper() + " Global")).first()
+                company_obj = Company.objects.filter(code=tenant_obj.code + "01").first()
+                space_obj = Space.objects.filter(code=tenant_obj.code.upper() + " Global").first()
                 ser = ProvisioningUserData(data=request.data)
                 ser.is_valid(raise_exception=True)
                 tenant_controller = TenantController()

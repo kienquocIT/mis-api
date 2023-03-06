@@ -1,13 +1,12 @@
-from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from django.db import models, connection
+from django.db import models
 from crum import get_current_user
 
-counter_queries = 0
+counter_queries = 0  # pylint: disable=C0103
 
 
 class NormalManager(models.Manager):
-    def get_queryset(self):
+    def get_queryset(self):  # pylint: disable=W0246
         return super().get_queryset()
 
 

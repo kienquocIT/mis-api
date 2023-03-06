@@ -11,7 +11,7 @@ class CacheController:
     EXPIRES_SECONDS_DEFAULT = 60 * 60
 
     def __init__(self, location='default'):
-        self.sv = caches[location]
+        self.sv = caches[location]  # pylint: disable=C0103
 
     @classmethod
     def append_prefix_key_cache(cls, key: str) -> str:

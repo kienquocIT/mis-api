@@ -1,13 +1,14 @@
 from typing import Union
 from uuid import UUID
 
-from django.contrib.auth.models import Permission
-from django.db import models
+from django.db import models, transaction
+from django.db.models.signals import post_save, post_delete
+from django.dispatch import receiver
 from jsonfield import JSONField
 
 from apps.shared import (
     TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel, PermissionCoreModel, TypeCheck,
-    CacheCoreModel, call_task_background,
+    CacheCoreModel, CacheByModel, call_task_background,
 )
 from .tasks import reset_cache_employee_n_group
 
@@ -75,7 +76,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         permissions = ()
 
     def sync_company_map(self, user_id_old, user_id_new, is_new) -> models.Model or Exception:
-        if self.company_id:
+        if self.company_id:  # pylint: disable=R1702
             company_employee_user_model = DisperseModel(app_model='company_CompanyUserEmployee').get_model()
             if company_employee_user_model:
                 if is_new is True:
@@ -88,23 +89,20 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
                             company_employee_user_model.assign_map(self.company_id, self.id, self.user_id)
                         return True
                     raise NotImplementedError("Model company_CompanyUserEmployee sync is not found.")
-                else:
-                    if user_id_old != user_id_new:
-                        if (
-                                hasattr(company_employee_user_model, 'remove_map')
-                                and hasattr(company_employee_user_model, 'assign_map')
-                        ):
-                            if user_id_old:
-                                company_employee_user_model.remove_map(self.company_id, self.id, user_id_old)
-                            if user_id_new:
-                                company_employee_user_model.assign_map(self.company_id, self.id, user_id_new)
-                            return True
-                        raise NotImplementedError(
-                            "Model company_CompanyUserEmployee remove_map|assign_map is not found."
-                        )
-                    else:
-                        # by pass when don't change
+                if user_id_old != user_id_new:
+                    if (
+                            hasattr(company_employee_user_model, 'remove_map')
+                            and hasattr(company_employee_user_model, 'assign_map')
+                    ):
+                        if user_id_old:
+                            company_employee_user_model.remove_map(self.company_id, self.id, user_id_old)
+                        if user_id_new:
+                            company_employee_user_model.assign_map(self.company_id, self.id, user_id_new)
                         return True
+                    raise NotImplementedError(
+                        "Model company_CompanyUserEmployee remove_map|assign_map is not found."
+                    )
+                return True
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
@@ -112,9 +110,9 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         original_fields_old = self.get_old_value(
             field_name_list=['user_id'],
         )
-        original_fields_new = dict(
-            [(field, getattr(self, field)) for field in ['user_id']]
-        )
+        original_fields_new = {
+            field: getattr(self, field) for field in ['user_id']
+        }
         return original_fields_old['user_id'], original_fields_new['user_id']
 
     def increment_code(self):
@@ -130,7 +128,12 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        self.increment_code()
+        employee = Employee.object_global.filter(is_delete=False).count()
+        char = "EMP"
+        if not self.code:
+            temper = "%04d" % (employee + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
 
         # get old user and new user
         user_id_old, user_id_new = None, self.user_id
@@ -143,7 +146,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         )['group_id']
 
         # hit DB
-        super(Employee, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
@@ -166,7 +169,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         )
 
     def get_detail(self, excludes=None):
-        result = super(Employee, self)._get_detail(excludes=['tenant', 'company'])
+        result = super()._get_detail(excludes=['tenant', 'company'])
         result['first_name'] = self.first_name
         result['last_name'] = self.last_name
         result['email'] = self.email
@@ -189,8 +192,8 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         """
         if self.last_name or self.first_name:
             if order_arrange == 1:
-                return '{}, {}'.format(self.last_name, self.first_name)  # first ways
-            return '{} {}'.format(self.last_name, self.first_name)  # second ways or another arrange
+                return f'{self.last_name}, {self.first_name}'  # first ways
+            return f'{self.last_name} {self.first_name}'  # second ways or another arrange
         return None
 
     @classmethod
@@ -409,7 +412,7 @@ class Group(TenantCoreModel, CacheCoreModel):
         manager_1st_id_old = self.get_old_value(
             field_name_list=['first_manager_id'],
         )['first_manager_id']
-        super(Group, self).save(force_insert, force_update, using, update_fields)
+        super().save(force_insert, force_update, using, update_fields)
         self.call_reset_cache(manager_1st_id_old)
 
     def call_reset_cache(self, manager_1st_id_old):
