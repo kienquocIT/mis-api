@@ -36,7 +36,7 @@ stages:
 lint:
   stage: check
   script:
-    - python -m pylint --recursive=y misapi/__init__.py
+    - python -m pylint --recursive=y .
 
 test_migrations:
   stage: migrations-init
