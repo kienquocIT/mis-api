@@ -26,10 +26,10 @@ lint:
   script:
     - python3 -m pylint --recursive=y misapi/__init__.py
 
-migrate:
+test_migrations:
   stage: migrations-init
   script:
-    - python3 manage.py makemigrations
+    - python3 manage.py makemigrations --check --dry-run --noinput
     - python3 manage.py migrate
 
 cmis-tests:
