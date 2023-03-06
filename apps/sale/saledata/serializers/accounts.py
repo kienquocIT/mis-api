@@ -271,7 +271,6 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         try:
             if attrs is not None:
                 return Account.object_normal.get(id=attrs)
-            return None
         except Account.DoesNotExist:
             pass
 
