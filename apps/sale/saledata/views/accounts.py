@@ -5,14 +5,14 @@ from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountTyp
 from apps.sale.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer, SalutationUpdateSerializer,
     InterestsListSerializer, InterestsCreateSerializer, InterestsDetailsSerializer, IndustryUpdateSerializer,
-    AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountUpdateSerializer,
+    AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer,
     IndustryListSerializer, IndustryCreateSerializer, IndustryDetailsSerializer, InterestsUpdateSerializer,
 
     ContactListSerializer, ContactCreateSerializer, ContactDetailSerializer,
     ContactUpdateSerializer, ContactListNotMapAccountSerializer,
 
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
-    AccountUpdateSerializer, EmployeeMapAccountListSerializer,
+    AccountUpdateSerializer, EmployeeMapAccountListSerializer, AccountTypeUpdateSerializer,
 )
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from rest_framework.permissions import IsAuthenticated
@@ -104,10 +104,10 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update Interest", request_body=IndustryUpdateSerializer)
+    @swagger_auto_schema(operation_summary="Update Interest", request_body=InterestsUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = IndustryUpdateSerializer
+        self.serializer_class = InterestsUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -150,10 +150,10 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update AccountType", request_body=AccountUpdateSerializer)
+    @swagger_auto_schema(operation_summary="Update AccountType", request_body=AccountTypeUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = AccountUpdateSerializer
+        self.serializer_class = AccountTypeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 

@@ -11,6 +11,7 @@ class Salutation(MasterDataModel):
     class Meta:
         verbose_name = 'Salutation'
         verbose_name_plural = 'Salutations'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
@@ -26,6 +27,7 @@ class Interest(MasterDataModel):
     class Meta:
         verbose_name = 'Interest'
         verbose_name_plural = 'Interests'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
@@ -41,6 +43,7 @@ class AccountType(MasterDataModel):
     class Meta:
         verbose_name = 'AccountType'
         verbose_name_plural = 'AccountTypes'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
@@ -56,6 +59,7 @@ class Industry(MasterDataModel):
     class Meta:
         verbose_name = 'Industry'
         verbose_name_plural = 'Industries'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
