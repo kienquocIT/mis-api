@@ -46,8 +46,6 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
 
     last_login = models.DateTimeField(verbose_name='Last Login', null=True)
 
-    test = models.TextField(default='')
-
     objects = AccountManager()
 
     EMAIL_FIELD = 'email'
