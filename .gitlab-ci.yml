@@ -41,8 +41,13 @@ lint:
 test_migrations:
   stage: migrations-init
   script:
-    - python manage.py makemigrations --check --dry-run --noinput
-    - python manage.py migrate
+    - if [ "$CI_COMMIT_BRANCH" in "master sit dev" ]; 
+      then
+        python manage.py makemigrations --check --dry-run --noinput;
+        python manage.py migrate;
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH != null'
 
 cmis-tests:
   stage: test
