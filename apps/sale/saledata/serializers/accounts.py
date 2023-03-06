@@ -272,8 +272,8 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             if attrs is not None:
                 return Account.object_normal.get(id=attrs)
             return None
-        except Exception as e:
-            raise serializers.ValidationError('Account does not exist.')
+        except Account.DoesNotExist:
+            pass
 
     def validate_email(self, attrs):
         if attrs is not None:
@@ -425,7 +425,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         try:
             if value is not None:
                 return Account.object_normal.get(id=value)
-            return None
         except Account.DoesNotExist:
             pass
 
@@ -701,4 +700,3 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
             }
         except Account.DoesNotExist:
             pass
-        return
