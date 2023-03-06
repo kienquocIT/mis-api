@@ -271,6 +271,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         try:
             if attrs is not None:
                 return Account.object_normal.get(id=attrs)
+            return None
         except Account.DoesNotExist:
             pass
 
@@ -424,6 +425,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         try:
             if value is not None:
                 return Account.object_normal.get(id=value)
+            return None
         except Account.DoesNotExist:
             pass
 
@@ -682,7 +684,6 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
             return Employee.get_full_name(obj, 2)
         except Employee.DoesNotExist:
             pass
-        return ''
 
     @classmethod
     def get_account(cls, obj):
