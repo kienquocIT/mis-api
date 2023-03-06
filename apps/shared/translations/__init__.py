@@ -3,3 +3,6 @@ from .server import ServerMsg
 from .http import HttpMsg
 from .provisioning import ProvisioningMsg
 from .api import APIMsg
+from .hr import HRMsg
+from .base import BaseMsg
+from.account import AccountMsg
