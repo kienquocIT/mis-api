@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 
 from apps.sale.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,

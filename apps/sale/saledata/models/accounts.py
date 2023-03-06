@@ -16,7 +16,7 @@ class Salutation(MasterDataModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Salutation, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Interest(MasterDataModel):
@@ -32,7 +32,7 @@ class Interest(MasterDataModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Interest, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class AccountType(MasterDataModel):
@@ -48,7 +48,7 @@ class AccountType(MasterDataModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(AccountType, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Industry(MasterDataModel):
@@ -64,7 +64,7 @@ class Industry(MasterDataModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Industry, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 # Accounts
@@ -152,7 +152,7 @@ class Account(TenantModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Account, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 # Contact
@@ -235,4 +235,4 @@ class Contact(TenantModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Contact, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)

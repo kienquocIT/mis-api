@@ -667,6 +667,7 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
             return Employee.get_full_name(obj, 2)
         except Employee.DoesNotExist:
             pass
+        return ''
 
     @classmethod
     def get_account(cls, obj):
@@ -683,3 +684,4 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
             }
         except Account.DoesNotExist:
             pass
+        return None
