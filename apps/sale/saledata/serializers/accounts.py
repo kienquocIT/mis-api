@@ -1,7 +1,9 @@
+from django.db.models import Q
 from rest_framework import serializers
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
-from django.db.models import Q
+from apps.sale.saledata.models.accounts import (
+    Salutation, Interest, AccountType, Industry, Contact, Account
+)
 
 
 # Salutation
@@ -501,10 +503,12 @@ class AccountDetailSerializer(serializers.ModelSerializer):
         list_owner = []
         resp = Contact.object_normal.filter(account_name=obj)
         for item in resp:
-            list_owner.append({
-                'id': item.id,
-                'fullname': item.fullname,
-            })
+            list_owner.append(
+                {
+                    'id': item.id,
+                    'fullname': item.fullname,
+                }
+            )
         return list_owner
 
 
