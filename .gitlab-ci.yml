@@ -11,7 +11,7 @@ variables:
 
 before_script:
   - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
-  - pip install -r req.txt
+  - usr/local/bin/python -m pip install -r req.txt
 
 #cache:
 #  key: python_n_package_1
@@ -23,8 +23,8 @@ before_script:
 cache:
   key: python_n_package
   paths:
-    - usr/local/bin/python3.11
-    - usr/local/lib/python3.11/site-packages/
+    - usr/local/bin/python
+    - usr/local/lib/python/site-packages/
   untracked: true
 
 stages:
@@ -36,17 +36,17 @@ stages:
 lint:
   stage: check
   script:
-    - usr/local/bin/python3.11 -m pylint --recursive=y misapi/__init__.py
+    - usr/local/bin/python -m pylint --recursive=y misapi/__init__.py
 
 test_migrations:
   stage: migrations-init
   script:
-    - usr/local/bin/python3.11 manage.py makemigrations --check --dry-run --noinput
-    - usr/local/bin/python3.11 manage.py migrate
+    - usr/local/bin/python manage.py makemigrations --check --dry-run --noinput
+    - usr/local/bin/python manage.py migrate
 
 cmis-tests:
   stage: test
   script:
-    - usr/local/bin/python3.11 manage.py test
+    - usr/local/bin/python manage.py test
   after_script:
     - exit
