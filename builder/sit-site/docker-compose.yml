@@ -4,9 +4,9 @@ services:
   api-sit:
     build:
       context: ../../
-      dockerfile: builder/sit-site/Dockerfile
+      dockerfile: builder/Dockerfile
     container_name: api-sit
-    command: sh ./builder/sit-site/docker_entry_point.sh
+    command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:
       - ../../:/code

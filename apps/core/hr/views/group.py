@@ -1,13 +1,15 @@
 from rest_framework import generics
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.hr.filters import GroupListFilter
 from apps.core.hr.mixins import HRCreateMixin, HRListMixin, HRRetrieveMixin, HRUpdateMixin, HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
-from apps.core.hr.serializers.group_serializers import GroupLevelListSerializer, GroupLevelCreateSerializer, \
-    GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer, \
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer
+from apps.core.hr.serializers.group_serializers import (
+    GroupLevelListSerializer,
+    GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
+    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer,
+)
 
 
 # Group Level
@@ -92,7 +94,7 @@ class GroupList(
     serializer_create = GroupCreateSerializer
 
     def get_queryset(self):
-        return super(GroupList, self).get_queryset().select_related(
+        return super().get_queryset().select_related(
             "group_level",
             "first_manager",
             "parent_n",
@@ -162,7 +164,7 @@ class GroupParentList(
     serializer_class = GroupParentListSerializer
 
     def get_queryset(self):
-        return super(GroupParentList, self).get_queryset().filter(is_delete=False)
+        return super().get_queryset().filter(is_delete=False)
 
     @swagger_auto_schema(
         operation_summary="Group parent list",

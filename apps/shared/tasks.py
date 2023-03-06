@@ -20,10 +20,9 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
     if isinstance(my_task, celery.Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             return my_task(*args, **kwargs)
-        else:
-            result = my_task.apply_async(args=args, kwargs=kwargs)
-            my_task_result.delay(result.id, args, kwargs)
-            return True
+        result = my_task.apply_async(args=args, kwargs=kwargs)
+        my_task_result.delay(result.id, args, kwargs)
+        return True
     raise AttributeError('my_task must be celery task function that have decorator is shared_task')
 
 

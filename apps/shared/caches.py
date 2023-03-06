@@ -7,7 +7,7 @@ class CacheController:
     EXPIRES_SECONDS_DEFAULT = 60 * 60
 
     def __init__(self, location='default'):
-        self.sv = caches[location]
+        self.sv = caches[location]  # pylint: disable=C0103
 
     def get(self, key):
         return self.sv.get(key)

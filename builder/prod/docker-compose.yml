@@ -24,9 +24,9 @@ services:
   web:
     build:
       context: ../../
-      dockerfile: builder/prod/Dockerfile
+      dockerfile: builder/Dockerfile
     container_name: web
-    command: sh ./builder/prod/docker_entry_point.sh
+    command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:
       - ../../:/code

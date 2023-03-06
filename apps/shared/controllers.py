@@ -71,7 +71,7 @@ class ResponseController:
                 data.update({'status': status.HTTP_200_OK})
                 return cus_response(data, status=status.HTTP_200_OK)
             return cls.internal_server_error_500(ServerMsg.ERR_KEY_DATA)
-        elif key_data in ['result', 'detail', ]:
+        if key_data in ['result', 'detail', ]:
             return cus_response({key_data: data, 'status': status.HTTP_200_OK}, status=status.HTTP_200_OK)
         return cls.internal_server_error_500(
             f'Argument result_or_detail of success_200 must be choice in "list" or "detail". '

@@ -4,9 +4,9 @@ services:
   api-dev:
     build:
       context: ../../
-      dockerfile: builder/dev-site/Dockerfile
+      dockerfile: builder/Dockerfile
     container_name: api-dev
-    command: sh ./builder/dev-site/docker_entry_point.sh
+    command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:
       - ../../:/code

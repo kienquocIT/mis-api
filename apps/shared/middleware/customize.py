@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import connection
 
-counter_queries = 0
+counter_queries = 0  # pylint: disable=C0103
 
 
 class CustomizeMiddleware:
@@ -38,7 +38,7 @@ class CustomizeMiddleware:
 
         # show query db hit
         if settings.DEBUG_HIT_DB:
-            global counter_queries
+            global counter_queries  # pylint: disable=W0603
             new_counter_queries = len(connection.queries)
             for idx in range(counter_queries, new_counter_queries):
                 time_tmp = connection.queries[idx]["time"]

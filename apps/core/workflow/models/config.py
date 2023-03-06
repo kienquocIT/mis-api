@@ -1,5 +1,4 @@
 from django.db import models
-from jsonfield import JSONField
 
 from apps.shared import TenantCoreModel
 
@@ -17,4 +16,3 @@ class Workflow(TenantCoreModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-

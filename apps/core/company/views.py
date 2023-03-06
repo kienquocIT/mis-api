@@ -1,12 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
 
-from apps.core.account.models import User
-from apps.core.company.models import Company, CompanyUserEmployee
 
+from apps.core.company.models import CompanyUserEmployee
 from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin, CompanyListMixin
 from apps.core.company.models import Company
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
-from rest_framework.permissions import IsAuthenticated
+from apps.shared import mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
     CompanyListSerializer,
@@ -31,7 +30,7 @@ class CompanyList(BaseListMixin, CompanyCreateMixin):
     create_hidden_field = ['tenant_id']
 
     def get_queryset(self):
-        return super(CompanyList, self).get_queryset().select_related('tenant')
+        return super().get_queryset().select_related('tenant')
 
     @swagger_auto_schema(
         operation_summary="Company list",

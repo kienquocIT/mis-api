@@ -1,6 +1,3 @@
-from django.contrib.auth.models import Permission
-
-from ..translations import APIMsg
 from ..constant import PERMISSION_OPTION
 
 

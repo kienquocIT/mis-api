@@ -3,9 +3,9 @@ KEY_NOT_CONVERT_EXCEPTIONS = ['id_list']
 KEY_NOT_EXCEPTIONS = ['result', 'status', 'results', 'error_data']
 
 
-def convert_errors(dict_error, status_code=None):
+def convert_errors(dict_error, status_code=None):  # pylint: disable=R0912
     data = {"errors": {}}
-    for field, value in dict_error.items():
+    for field, value in dict_error.items():  # pylint: disable=R1702
         if field in KEY_NOT_CONVERT_EXCEPTIONS:
             data["errors"].update({field: value})
         elif field not in KEY_NOT_EXCEPTIONS:

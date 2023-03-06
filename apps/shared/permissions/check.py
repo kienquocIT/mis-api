@@ -49,6 +49,6 @@ class PermCheck:
             q_result = None
         return q_result if q_result else None
 
-    def for_id(self, doc_obj, new_data=None) -> bool:
-        print(self.employee_id)
-        return True
+    # def for_id(self, doc_obj, new_data=None) -> bool:
+    #     print(self.employee_id)
+    #     return True
