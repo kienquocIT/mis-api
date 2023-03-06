@@ -1,0 +1,12 @@
+[FORMAT]
+max-line-length=120 # max line length map to Pycharm
+
+[MASTER]
+disable=
+    C0114, # missing-module-docstring
+    C0115, # missing-class-docstring
+    C0116, # missing-function-docstring
+    R0903, # too-few-public-methods
+    W0719, # broad-exception-raised
+    R0913, # too-many-arguments
+    W0718, # broad-exception-caught
