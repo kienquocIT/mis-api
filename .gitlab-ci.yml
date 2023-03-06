@@ -10,9 +10,7 @@ default:
   image: python:3.11
   before_script:
     - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
-    - pip3 --version
-    - pip3 install pip==20.0.2
-    - pip3 install -r req.txt
+    - pip install -r req.txt
 
 
 stages:
@@ -24,17 +22,17 @@ stages:
 lint:
   stage: check
   script:
-    - python3 -m pylint --recursive=y misapi/__init__.py
+    - python -m pylint --recursive=y misapi/__init__.py
 
 test_migrations:
   stage: migrations-init
   script:
-    - python3 manage.py makemigrations --check --dry-run --noinput
-    - python3 manage.py migrate
+    - python manage.py makemigrations --check --dry-run --noinput
+    - python manage.py migrate
 
 cmis-tests:
   stage: test
   script:
-    - python3 manage.py test
+    - python manage.py test
   after_script:
     - exit
