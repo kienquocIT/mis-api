@@ -41,8 +41,7 @@ lint:
 test_migrations:
   stage: migrations-init
   script:
-    - if [ "$CI_COMMIT_BRANCH" in "master sit dev" ]; 
-      then
+    - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
         python manage.py makemigrations --check --dry-run --noinput;
         python manage.py migrate;
       fi
