@@ -17,6 +17,7 @@ cache:
   paths:
     - /usr/local/bin/python3.11
     - /usr/local/lib/python3.11/site-packages/
+  untracked: true
 
 stages:
   - check
@@ -28,22 +29,12 @@ lint:
   stage: check
   script:
     - python -m pylint --recursive=y misapi/__init__.py
-  cache:
-    key: pylint-cache
-    paths:
-      - /usr/local/bin/python3.11
-      - /usr/local/lib/python3.11/site-packages/
 
 test_migrations:
   stage: migrations-init
   script:
     - python manage.py makemigrations --check --dry-run --noinput
     - python manage.py migrate
-  cache:
-    key: pylint-cache
-    paths:
-      - /usr/local/bin/python3.11
-      - /usr/local/lib/python3.11/site-packages/
 
 cmis-tests:
   stage: test
@@ -51,8 +42,3 @@ cmis-tests:
     - python manage.py test
   after_script:
     - exit
-  cache:
-    key: pylint-cache
-    paths:
-      - /usr/local/bin/python3.11
-      - /usr/local/lib/python3.11/site-packages/
