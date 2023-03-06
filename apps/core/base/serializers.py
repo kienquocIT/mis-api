@@ -47,5 +47,9 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
-            'code'
+            'code',
+            'remark',
+            'type',
+            'content_type',
+            'properties'
         )
