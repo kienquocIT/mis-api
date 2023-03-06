@@ -11,7 +11,9 @@ default:
   before_script:
     - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
     - pip install -r req.txt
+    - python --version
     - which python
+    - python3 --version
     - which python3.11
 
 cache:
