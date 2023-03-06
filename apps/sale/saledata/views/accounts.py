@@ -322,7 +322,7 @@ class EmployeeMapAccountList(BaseListMixin):
     serializer_list = EmployeeMapAccountListSerializer
 
     def get_queryset(self):
-        return super(EmployeeMapAccountList, self).get_queryset().select_related(
+        return super(self, EmployeeMapAccountList).get_queryset().select_related(
             'group',
             'user'
         )
