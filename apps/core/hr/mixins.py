@@ -1,10 +1,15 @@
-from django.db import transaction
-from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin
 from rest_framework.exceptions import ValidationError
+
+from django.db import transaction
+
+from apps.shared import (
+    ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin, BaseRetrieveMixin,
+    BaseUpdateMixin,
+)
 from apps.core.hr.models import RoleHolder
 
 
-class HRListMixin(object):
+class HRListMixin(BaseListMixin):
     def list(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             queryset = self.filter_queryset(
@@ -15,8 +20,11 @@ class HRListMixin(object):
                     **kwargs
                 )
             )
-            serializer = self.serializer_class(queryset, many=True)
-            return ResponseController.success_200(serializer.data, key_data='result')
+            serializer = self.serializer_class.__class__(queryset, many=True)
+            return ResponseController.success_200(
+                getattr(serializer, 'data', None),
+                key_data='result'
+            )
         return ResponseController.unauthorized_401()
 
     def list_group_parent(self, request, *args, **kwargs):
@@ -33,25 +41,26 @@ class HRListMixin(object):
                         **kwargs
                     )
                 )
-                serializer = self.serializer_class(queryset, many=True)
+                serializer = self.serializer_class.__class__(queryset, many=True)
                 return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
 
-class HRCreateMixin(object):
+class HRCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            serializer = self.serializer_create(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            serializer = self.serializer_create.__class__(data=request.data)
+            if hasattr(serializer, 'is_valid'):
+                serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.serializer_class(instance).data)
-            elif isinstance(instance, ValidationError):
+                return ResponseController.created_201(getattr(self.serializer_class.__class__(instance), 'data', None))
+            if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
         return ResponseController.unauthorized_401()
 
     @classmethod
-    def perform_create(cls, serializer, user):
+    def perform_create(cls, serializer, user):  # pylint: disable=W0237
         try:
             with transaction.atomic():
                 instance = serializer.save(
@@ -60,12 +69,12 @@ class HRCreateMixin(object):
                     company_id=user.company_current_id,
                 )
             return instance
-        except Exception as e:
-            print(e)
-            return e
+        except Exception as exc:
+            print(exc)
+            return exc
 
 
-class HRRetrieveMixin:
+class HRRetrieveMixin(BaseRetrieveMixin):
 
     def retrieve(self, request, *args, **kwargs):
         if hasattr(request, "user"):
@@ -73,13 +82,13 @@ class HRRetrieveMixin:
                 self.get_queryset().filter(**kwargs, is_delete=False)
             ).first()
             if instance:
-                serializer = self.serializer_class(instance)
-                return ResponseController.success_200(serializer.data, key_data='result')
-            raise ResponseController.notfound_404()
+                serializer = self.serializer_class.__class__(instance)
+                return ResponseController.success_200(getattr(serializer, 'data', None), key_data='result')
         return ResponseController.unauthorized_401()
 
 
-class HRUpdateMixin:
+class HRUpdateMixin(BaseUpdateMixin):
+    serializer_update = None
 
     def update(self, request, *args, **kwargs):
         if hasattr(request, "user"):
@@ -87,14 +96,15 @@ class HRUpdateMixin:
                 self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
-                serializer = self.serializer_update(instance, data=request.data)
-                serializer.is_valid(raise_exception=True)
+                serializer = self.serializer_update.__class__(instance, data=request.data)
+                if hasattr(serializer, 'is_valid'):
+                    serializer.is_valid(raise_exception=True)
                 perform_update = self.perform_update(serializer)
                 if not isinstance(perform_update, Exception):
-                    return ResponseController.success_200(serializer.data, key_data='result')
-                elif isinstance(perform_update, ValidationError):
+                    return ResponseController.success_200(getattr(serializer, 'data', None), key_data='result')
+                if isinstance(perform_update, ValidationError):
                     return ResponseController.internal_server_error_500()
-            raise ResponseController.notfound_404()
+            return ResponseController.notfound_404()
         return ResponseController.unauthorized_401()
 
     @classmethod
@@ -103,13 +113,13 @@ class HRUpdateMixin:
             with transaction.atomic():
                 instance = serializer.save()
             return instance
-        except Exception as e:
-            print(e)
-            return e
+        except Exception as exc:
+            print(exc)
+            return exc
         # return None
 
 
-class HRDestroyMixin:
+class HRDestroyMixin(BaseDestroyMixin):
     def destroy(self, request, *args, **kwargs):
         if hasattr(request, "user"):
             instance = self.filter_queryset(
@@ -120,7 +130,7 @@ class HRDestroyMixin:
                 if state:
                     return ResponseController.no_content_204()
                 return ResponseController.internal_server_error_500()
-            raise ResponseController.notfound_404()
+            return ResponseController.notfound_404()
         return ResponseController.unauthorized_401()
 
     @classmethod
@@ -133,40 +143,26 @@ class HRDestroyMixin:
                 instance.is_delete = True
                 instance.save()
             return True
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
         return False
-
-
-class RoleListMixin:
-
-    def list(self, request, *args, **kwargs):
-        if hasattr(request, "user"):
-            queryset = self.filter_queryset(
-                self.get_queryset()
-                .filter(**kwargs)
-            )
-            if queryset:
-                serializer = self.serializer_class(queryset, many=True)
-                return ResponseController.success_200(serializer.data, key_data='result')
-            return ResponseController.success_200({}, key_data='result')
-        return ResponseController.unauthorized_401()
 
 
 class RoleCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            serializer = self.serializer_create(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            serializer = self.serializer_create.__class__(data=request.data)
+            if hasattr(serializer, 'is_valid'):
+                serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.serializer_detail(instance).data)
-            elif isinstance(instance, ValidationError):
+                return ResponseController.created_201(getattr(self.serializer_detail.__class__(instance), 'data', None))
+            if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
         return ResponseController.unauthorized_401()
 
     @classmethod
-    def perform_create(cls, serializer, user):
+    def perform_create(cls, serializer, user):  # pylint: disable=W0237
         try:
             with transaction.atomic():
                 instance = serializer.save(
@@ -175,52 +171,9 @@ class RoleCreateMixin(BaseCreateMixin):
                     company_id=user.company_current_id,
                 )
             return instance
-        except Exception as e:
-            print(e)
-            return e
-
-
-class RoleRetrieveMixin:
-
-    def retrieve(self, request, *args, **kwargs):
-        if hasattr(request, "user"):
-            instance = self.filter_queryset(
-                self.get_queryset().filter(**kwargs)
-            ).first()
-            if instance:
-                serializer = self.serializer_class(instance)
-                return ResponseController.success_200(serializer.data, key_data='result')
-            raise ResponseController.notfound_404()
-        return ResponseController.unauthorized_401()
-
-
-class RoleUpdateMixin:
-
-    def update(self, request, *args, **kwargs):
-        if hasattr(request, "user"):
-            instance = self.filter_queryset(
-                self.get_queryset().filter(**kwargs)
-            ).first()
-            if instance:
-                serializer = self.serializer_update(instance, data=request.data)
-                serializer.is_valid(raise_exception=True)
-                perform_update = self.perform_update(serializer)
-                if not isinstance(perform_update, Exception):
-                    return ResponseController.success_200(serializer.data, key_data='result')
-                elif isinstance(perform_update, ValidationError):
-                    return ResponseController.internal_server_error_500()
-            raise ResponseController.notfound_404()
-        return ResponseController.unauthorized_401()
-
-    @classmethod
-    def perform_update(cls, serializer):
-        try:
-            with transaction.atomic():
-                instance = serializer.save()
-            return instance
-        except Exception as e:
-            return e
-        # return None
+        except Exception as exc:
+            print(exc)
+            return exc
 
 
 class RoleDestroyMixin(BaseDestroyMixin):
@@ -234,7 +187,7 @@ class RoleDestroyMixin(BaseDestroyMixin):
                 if state:
                     return ResponseController.success_200({'detail': 'success'}, key_data='result')
                 return ResponseController.internal_server_error_500()
-            raise ResponseController.notfound_404()
+            return ResponseController.notfound_404()
         return ResponseController.unauthorized_401()
 
     @classmethod
@@ -250,6 +203,6 @@ class RoleDestroyMixin(BaseDestroyMixin):
                 instance.is_delete = True
                 instance.save()
             return True
-        except Exception as e:
-            print(e)
+        except Exception as exc:
+            print(exc)
         return False

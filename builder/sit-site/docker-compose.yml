@@ -1,11 +1,11 @@
 version: '2.12'
 
 services:
-  api-dev:
+  api-sit:
     build:
       context: ../../
       dockerfile: builder/Dockerfile
-    container_name: api-dev
+    container_name: api-sit
     command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:

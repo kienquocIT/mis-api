@@ -1,3 +1,6 @@
+from uuid import uuid4
+from jsonfield import JSONField
+
 from django.contrib.auth.base_user import AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.contrib.auth.validators import UnicodeUsernameValidator
@@ -5,8 +8,6 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from uuid import uuid4
-from jsonfield import JSONField
 
 from apps.core.account.manager import AccountManager
 from apps.shared import AuthMsg, FORMATTING, DisperseModel
@@ -16,7 +17,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     username_validator = UnicodeUsernameValidator()
     username_auth = models.CharField(
-        verbose_name='''Account Username for Authenticate, 
+        verbose_name='''Account Username for Authenticate,
         format: "{username}-{TenantCode|upper}", slugify before call authenticate''',
         help_text=AuthMsg.USERNAME_REQUIRE, error_messages={'unique': AuthMsg.USERNAME_ALREADY_EXISTS},
         max_length=150 + 32, unique=True, validators=[username_validator],
@@ -69,8 +70,8 @@ class AuthUser(AbstractBaseUser, PermissionsMixin):
         """
         if self.last_name or self.first_name:
             if order_arrange == 1:
-                return '{}, {}'.format(self.last_name, self.first_name)  # first ways
-            return '{} {}'.format(self.last_name, self.first_name)  # second ways or another arrange
+                return f'{self.last_name}, {self.first_name}'  # first ways
+            return f'{self.last_name} {self.first_name}'  # second ways or another arrange
         return self.username
 
     class Meta:
@@ -139,7 +140,7 @@ class User(AuthUser):
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('[Account.User.sync_map] Company ID must be required.')
 
-    def save(self, is_superuser=False, *args, **kwargs):
+    def save(self, *args, is_superuser=False, **kwargs):
         # generate username for login
         self.username_auth = self.convert_username_field_data(self.username, self.tenant_current)
 
@@ -152,7 +153,7 @@ class User(AuthUser):
             self.is_superuser = True
         else:
             self.is_superuser = False
-        super(User, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
         # update_total_user_for_company
         # self.company_current.total_user = self.__class__.objects.filter(company_current=self.company_current).count()

@@ -24,4 +24,3 @@ PERMISSION_OPTION = (
     (3, "All staff in owner group"),
     (4, "All staff in owner company"),
 )
-

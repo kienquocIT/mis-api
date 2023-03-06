@@ -1,16 +1,14 @@
-from copy import deepcopy
 from typing import Union
 from uuid import UUID
 
-from django.contrib.auth.models import Permission
 from django.db import models, transaction
-from django.db.models.signals import post_save, pre_delete, pre_save, post_delete
+from django.db.models.signals import post_save, post_delete
 from django.dispatch import receiver
 from jsonfield import JSONField
 
 from apps.shared import (
     TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel, PermissionCoreModel, TypeCheck,
-    CacheController, CacheCoreModel, CacheByModel,
+    CacheCoreModel, CacheByModel,
 )
 
 
@@ -77,7 +75,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         permissions = ()
 
     def sync_company_map(self, user_id_old, user_id_new, is_new) -> models.Model or Exception:
-        if self.company_id:
+        if self.company_id:  # pylint: disable=R1702
             company_employee_user_model = DisperseModel(app_model='company_CompanyUserEmployee').get_model()
             if company_employee_user_model:
                 if is_new is True:
@@ -90,23 +88,20 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
                             company_employee_user_model.assign_map(self.company_id, self.id, self.user_id)
                         return True
                     raise NotImplementedError("Model company_CompanyUserEmployee sync is not found.")
-                else:
-                    if user_id_old != user_id_new:
-                        if (
-                                hasattr(company_employee_user_model, 'remove_map')
-                                and hasattr(company_employee_user_model, 'assign_map')
-                        ):
-                            if user_id_old:
-                                company_employee_user_model.remove_map(self.company_id, self.id, user_id_old)
-                            if user_id_new:
-                                company_employee_user_model.assign_map(self.company_id, self.id, user_id_new)
-                            return True
-                        raise NotImplementedError(
-                            "Model company_CompanyUserEmployee remove_map|assign_map is not found."
-                        )
-                    else:
-                        # by pass when don't change
+                if user_id_old != user_id_new:
+                    if (
+                            hasattr(company_employee_user_model, 'remove_map')
+                            and hasattr(company_employee_user_model, 'assign_map')
+                    ):
+                        if user_id_old:
+                            company_employee_user_model.remove_map(self.company_id, self.id, user_id_old)
+                        if user_id_new:
+                            company_employee_user_model.assign_map(self.company_id, self.id, user_id_new)
                         return True
+                    raise NotImplementedError(
+                        "Model company_CompanyUserEmployee remove_map|assign_map is not found."
+                    )
+                return True
             raise ReferenceError("Get models company_CompanyUserEmployee was returned not found.")
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
@@ -114,9 +109,9 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         original_fields_old = self.get_old_value(
             field_name_list=['user_id'],
         )
-        original_fields_new = dict(
-            [(field, getattr(self, field)) for field in ['user_id']]
-        )
+        original_fields_new = {
+            field: getattr(self, field) for field in ['user_id']
+        }
         return original_fields_old['user_id'], original_fields_new['user_id']
 
     def save(self, *args, **kwargs):
@@ -127,8 +122,8 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         employee = Employee.object_global.filter(is_delete=False).count()
         char = "EMP"
         if not self.code:
-            temper = "%04d" % (employee + 1)
-            code = "{}{}".format(char, temper)
+            temper = "%04d" % (employee + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
             self.code = code
 
         # get old user and new user
@@ -136,13 +131,13 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         if not kwargs.get('force_insert', False):
             user_id_old, user_id_new = self.check_change_user()
         # hit DB
-        super(Employee, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
         self.force_cache()
 
     def get_detail(self, excludes=None):
-        result = super(Employee, self)._get_detail(excludes=['tenant', 'company'])
+        result = super()._get_detail(excludes=['tenant', 'company'])
         result['first_name'] = self.first_name
         result['last_name'] = self.last_name
         result['email'] = self.email
@@ -165,8 +160,8 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         """
         if self.last_name or self.first_name:
             if order_arrange == 1:
-                return '{}, {}'.format(self.last_name, self.first_name)  # first ways
-            return '{} {}'.format(self.last_name, self.first_name)  # second ways or another arrange
+                return f'{self.last_name}, {self.first_name}'  # first ways
+            return f'{self.last_name} {self.first_name}'  # second ways or another arrange
         return None
 
     @property
@@ -396,7 +391,7 @@ class Group(TenantCoreModel, CacheCoreModel):
             self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
         old_data = self.get_old_value(field_name_list=['first_manager'])
-        super(Group, self).save(force_insert, force_update, using, update_fields)
+        super().save(force_insert, force_update, using, update_fields)
         if old_data['first_manager'] != self.first_manager:
             if old_data['first_manager']:
                 CacheByModel.reset_cache_obj(old_data['first_manager'])
@@ -475,7 +470,7 @@ class GroupEmployee(M2MModel):
                     objs.delete()
 
                 # reset cache with background tasks
-                reset_cache_employee_group(employee_id_reset_cache, [group_id])
+                # reset_cache_employee_group(employee_id_reset_cache, [group_id])
 
                 return True
             except Exception as err:
@@ -513,7 +508,7 @@ class GroupEmployee(M2MModel):
                     objs.delete()
 
                 # reset cache with background tasks
-                reset_cache_employee_group([employee_id], group_id_reset_cache)
+                # reset_cache_employee_group([employee_id], group_id_reset_cache)
 
                 return True
             except Exception as err:
@@ -523,7 +518,7 @@ class GroupEmployee(M2MModel):
 
 @receiver(post_save, sender=GroupEmployee)
 @receiver(post_delete, sender=GroupEmployee)
-def post_save_group_employee(sender, instance, **kwargs):
+def post_save_group_employee(sender, instance, **kwargs):  # pylint: disable=W0613
     CacheByModel.reset_cache_obj(instance.employee)
     CacheByModel.reset_cache_obj(instance.group)
     instance.save()

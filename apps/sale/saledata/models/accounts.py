@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from django.db import models
 from apps.shared.models import MasterDataModel, TenantModel
 
@@ -313,3 +314,5 @@ class Contact(TenantModel):
 #
 #     def save(self, *args, **kwargs):
 #         super(ContactDraft, self).save(*args, **kwargs)
+=======
+>>>>>>> master

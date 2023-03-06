@@ -21,7 +21,7 @@ pipeline {
                         env.DEPLOY_SERVER_IP = '192.168.0.111';
                     }
                     if (env.GIT_BRANCH_NAME == 'sit') {
-                        env.PROJECT_DIR = '/home/jenkins/dev/api';
+                        env.PROJECT_DIR = '/home/jenkins/sit/api';
                         env.DEPLOY_SERVER_IP = '192.168.0.111';
                     }
                     echo "SETUP ENVIRONMENT SUCCESSFUL";

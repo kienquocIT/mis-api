@@ -5,7 +5,7 @@ from apps.core.hr.mixins import RoleCreateMixin, RoleDestroyMixin
 from apps.core.hr.models import Role
 from apps.core.hr.serializers.role_serializers import RoleUpdateSerializer, RoleDetailSerializer, RoleCreateSerializer,\
     RoleListSerializer
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, BaseDestroyMixin, BaseRetrieveMixin
+from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin
 
 
 class RoleList(
