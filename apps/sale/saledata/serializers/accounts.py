@@ -180,8 +180,14 @@ class ContactListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {'id': obj.account_name.id, 'name': obj.account_name.name}
+        try:
+            if obj.account_name:
+                return {
+                    'id': obj.account_name.id,
+                    'name': obj.account_name.name
+                }
+        except Exception as e:
+            print(e)
         return {}
 
 
@@ -244,8 +250,14 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_salutation(cls, obj):
-        if obj.salutation:
-            return {'id': obj.salutation_id, 'title': obj.salutation.title}
+        try:
+            if obj.salutation:
+                return {
+                    'id': obj.salutation_id,
+                    'title': obj.salutation.title
+                }
+        except Exception as e:
+            print(e)
         return {}
 
     @classmethod
@@ -276,33 +288,45 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_additional_infor(cls, obj):
-        if obj.additional_infor:
-            interest_list = []
-            for i in obj.additional_infor.get('interests', None):
-                interest_list.append(
-                    {
-                        'id': Interest.object_normal.get(id=i).id,
-                        'title': Interest.object_normal.get(id=i).title
-                    }
-                )
-            obj.additional_infor['interests'] = interest_list
-            return obj.additional_infor
+        try:
+            if obj.additional_infor:
+                interest_list = []
+                for i in obj.additional_infor.get('interests', None):
+                    interest_list.append(
+                        {
+                            'id': Interest.object_normal.get(id=i).id,
+                            'title': Interest.object_normal.get(id=i).title
+                        }
+                    )
+                obj.additional_infor['interests'] = interest_list
+                return obj.additional_infor
+        except Exception as e:
+            print(e)
         return []
 
     @classmethod
     def get_fullname(cls, obj):
-        if obj.fullname:
-            return {
-                'fullname': obj.fullname,
-                'last_name': obj.fullname.split(' ')[-1],
-                'first_name': ' '.join(obj.fullname.split(' ')[:-1])
-            }
+        try:
+            if obj.fullname:
+                return {
+                    'fullname': obj.fullname,
+                    'last_name': obj.fullname.split(' ')[-1],
+                    'first_name': ' '.join(obj.fullname.split(' ')[:-1])
+                }
+        except Exception as e:
+            print(e)
         return {}
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {"id": obj.account_name_id, 'name': obj.account_name.name}
+        try:
+            if obj.account_name:
+                return {
+                    "id": obj.account_name_id,
+                    'name': obj.account_name.name
+                }
+        except Exception as e:
+            print(e)
         return {}
 
 
@@ -370,6 +394,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -379,29 +404,53 @@ class AccountListSerializer(serializers.ModelSerializer):
             "website",
             "account_type",
             "manager",
+            "owner",
             "industry",
             "phone",
         )
 
     @classmethod
     def get_account_type(cls, obj):
-        if obj.account_type:
-            all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
-            return all_account_types
+        try:
+            if obj.account_type:
+                all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
+                return all_account_types
+        except Exception as e:
+            print(e)
         return []
 
     @classmethod
     def get_industry(cls, obj):
-        if obj.industry:
-            return obj.industry.title
+        try:
+            if obj.industry:
+                return obj.industry.title
+        except Exception as e:
+            print(e)
         return []
 
     @classmethod
     def get_manager(cls, obj):
-        if obj.manager:
-            all_managers = [Employee.object_normal.get(id=employees_id).get_full_name() for employees_id in obj.manager]
-            return all_managers
+        try:
+            if obj.manager:
+                all_managers = [Employee.object_normal.get(id=employees_id).get_full_name() for employees_id in
+                                obj.manager]
+                return all_managers
+        except Exception as e:
+            print(e)
         return []
+
+    @classmethod
+    def get_owner(cls, obj):
+        try:
+            if obj.id:
+                owner = Contact.object_normal.get(account_name=obj.id, is_primary=True)
+                return {
+                    'id': owner.id,
+                    'fullname': owner.fullname
+                }
+        except Exception as e:
+            print(e)
+        return {}
 
 
 class ContactSubCreateSerializer(serializers.ModelSerializer):
@@ -500,16 +549,20 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        list_owner = []
-        resp = Contact.object_normal.filter(account_name=obj)
-        for item in resp:
-            list_owner.append(
-                {
-                    'id': item.id,
-                    'fullname': item.fullname,
-                }
-            )
-        return list_owner
+        try:
+            list_owner = []
+            resp = Contact.object_normal.filter(account_name=obj)
+            for item in resp:
+                list_owner.append(
+                    {
+                        'id': item.id,
+                        'fullname': item.fullname,
+                    }
+                )
+            return list_owner
+        except Exception as e:
+            print(e)
+        return []
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
@@ -532,13 +585,24 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_full_name(cls, obj):
-        return Employee.get_full_name(obj, 2)
+        try:
+            return Employee.get_full_name(obj, 2)
+        except Exception as e:
+            print(e)
+        return ''
 
     def get_account(self, obj):
-        account_list = Account.object_normal.filter(Q(manager__contains=[str(obj.id)]))
-        id_list = []
-        name_list = []
-        for account in account_list:
-            id_list.append(account.id)
-            name_list.append(account.name)
-        return {'name': name_list, 'id': id_list}
+        try:
+            account_list = Account.object_normal.filter(Q(manager__contains=[str(obj.id)]))
+            id_list = []
+            name_list = []
+            for account in account_list:
+                id_list.append(account.id)
+                name_list.append(account.name)
+            return {
+                'name': name_list,
+                'id': id_list
+            }
+        except Exception as e:
+            print(e)
+        return
