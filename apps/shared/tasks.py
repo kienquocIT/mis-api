@@ -1,13 +1,11 @@
-import time
-
-import celery
 import json
+
 from typing import Union
 from uuid import uuid4
 
-from celery import shared_task
-from misapi import celery_app
+from celery import shared_task, Task
 from celery.utils.log import get_task_logger
+
 from django.conf import settings
 from django_celery_results.models import TaskResult
 
@@ -22,7 +20,7 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
     """
     countdown = kwargs.pop('countdown', 0)
 
-    if isinstance(my_task, celery.Task):
+    if isinstance(my_task, Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             return my_task(*args, **kwargs)
         _id = str(uuid4())
@@ -39,7 +37,7 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
 
 
 @shared_task(ignore_result=True, default_retry_delay=10, max_retries=3)  # default_retry_delay: seconds
-def my_task_result(sender, task_id, task_path, task_args, task_kwargs):
+def my_task_result(sender, task_id, task_path, task_args, task_kwargs):  # pylint: disable=W0613
     """
     Function task support update arguments and keyword arguments to record TASK ID
     (fix middle django-celery-results not workings)

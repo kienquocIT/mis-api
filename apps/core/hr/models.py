@@ -1,14 +1,12 @@
 from typing import Union
 from uuid import UUID
 
-from django.db import models, transaction
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
+from django.db import models
 from jsonfield import JSONField
 
 from apps.shared import (
     TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel, PermissionCoreModel, TypeCheck,
-    CacheCoreModel, CacheByModel, call_task_background,
+    CacheCoreModel, call_task_background,
 )
 from .tasks import reset_cache_employee_n_group
 
@@ -118,7 +116,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
     def increment_code(self):
         if not self.code:
             counter = self.__class__.object_global.filter(is_delete=False).count() + 1
-            temper = "%04d" % counter
+            temper = "%04d" % counter   # pylint: disable=C0209
             self.code = f"EMP{temper}"
             return True
         return False
