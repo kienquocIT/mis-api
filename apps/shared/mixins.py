@@ -13,7 +13,7 @@ class BaseMixin(GenericAPIView):
             self.serializer_class = self.serializer_detail
         else:
             raise AttributeError(
-                f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute in class view.'
+                f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute.'
             )
 
         super().__init__(*args, **kwargs)
@@ -64,20 +64,20 @@ class BaseMixin(GenericAPIView):
 
     def get_serializer_list(self, *args, **kwargs):
         tmp = getattr(self, 'serializer_list', None)
-        if tmp:
-            return tmp(*args, **kwargs)
+        if tmp and callable(tmp):
+            return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer list attribute in view must be implement.')
 
     def get_serializer_create(self, *args, **kwargs):
         tmp = getattr(self, 'serializer_create', None)
-        if tmp:
-            return tmp(*args, **kwargs)
+        if tmp and callable(tmp):
+            return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer create attribute in view must be implement.')
 
     def get_serializer_detail(self, *args, **kwargs):
         tmp = getattr(self, 'serializer_detail', None)
-        if tmp:
-            return tmp(*args, **kwargs)
+        if tmp and callable(tmp):
+            return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer detail attribute in view must be implement.')
 
 
@@ -125,7 +125,7 @@ class BaseUpdateMixin(BaseMixin):
         if getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+            instance._prefetched_objects_cache = {}  # pylint: disable=W0212
 
         return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
 

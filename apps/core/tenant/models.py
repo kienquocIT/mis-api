@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import BaseModel, M2MModel
+from apps.shared import BaseModel
 
 TENANT_KIND = (
     (0, 'Cloud'),
@@ -49,12 +49,14 @@ class Tenant(BaseModel):
     company_quality_max = models.IntegerField(default=5)
 
     # admin of tenant info
-    admin_info = JSONField(default={
-        'fullname': '',
-        'phone_number': '',
-        'username': '',
-        'email': '',
-    })
+    admin_info = JSONField(
+        default={
+            'fullname': '',
+            'phone_number': '',
+            'username': '',
+            'email': '',
+        }
+    )
     admin_created = models.BooleanField(default=False)
     admin = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True)
 
@@ -70,17 +72,15 @@ class Tenant(BaseModel):
         permissions = ()
 
     def get_old_value(self, field_name_list: list):
-        _original_fields_old = dict([(field, None) for field in field_name_list])
+        _original_fields_old = {field: None for field in field_name_list}
         if field_name_list and isinstance(field_name_list, list):
             try:
                 self_fetch = deepcopy(self)
                 self_fetch.refresh_from_db()
-                _original_fields_old = dict(
-                    [(field, getattr(self_fetch, field)) for field in field_name_list]
-                )
+                _original_fields_old = {field: getattr(self_fetch, field) for field in field_name_list}
                 return _original_fields_old
-            except Exception as e:
-                print(e)
+            except Exception as exc:
+                print(exc)
         return _original_fields_old
 
     def save(self, *args, **kwargs):
@@ -89,7 +89,7 @@ class Tenant(BaseModel):
             # get old code and new code
             old_code = self.get_old_value(field_name_list=['code'])['code']
 
-        super(Tenant, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
         # update username_auth for user when change tenant code
         if old_code is not None and old_code != self.code:

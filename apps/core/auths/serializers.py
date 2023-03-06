@@ -6,12 +6,12 @@ from rest_framework.serializers import Serializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.core.tenant.models import Tenant
-from apps.shared import translations as trans, ServerMsg
+from apps.shared import ServerMsg
 from apps.core.account.models import User
 from apps.shared.translations import AuthMsg
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):   # pylint: disable=W0223
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -38,7 +38,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return data
 
 
-class AuthLoginSerializer(Serializer):  # noqa
+class AuthLoginSerializer(Serializer):  # pylint: disable=W0223
     tenant_code = serializers.CharField(max_length=15)
     username = serializers.SlugField(max_length=100)
     password = serializers.CharField(max_length=None)
@@ -74,7 +74,8 @@ class AuthLoginSerializer(Serializer):  # noqa
                 if user_obj.check_password(attrs['password']):
                     return user_obj
                 raise User.DoesNotExist()
-        except User.DoesNotExist:
             raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
-        except Exception:
-            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
+        except User.DoesNotExist as exc:
+            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT}) from exc
+        except Exception as exc:
+            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR}) from exc

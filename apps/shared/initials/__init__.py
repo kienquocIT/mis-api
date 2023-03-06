@@ -1,5 +1,5 @@
 from .data.plan import plan_data, application_data, plan_application_data
-from apps.shared import DisperseModel
+from ..models import DisperseModel
 
 
 class Initial:
@@ -19,7 +19,9 @@ class Initial:
         plan_check = plan_model.objects.all()
         if plan_check:
             plan_check.delete()
-        records = plan_model.objects.bulk_create([plan_model(**tmp) for tmp in plan_data])
+        records = plan_model.objects.bulk_create(
+            [plan_model.__class__(**tmp) for tmp in plan_data]
+        )
         return records
 
     @classmethod
@@ -29,15 +31,19 @@ class Initial:
         application_check = application_model.objects.all()
         if application_check:
             application_check.delete()
-        records = application_model.objects.bulk_create([application_model(**tmp) for tmp in application_data])
+        records = application_model.objects.bulk_create(
+            [application_model.__class__(**tmp) for tmp in application_data]
+        )  # pylint: disable=E1102
         return records
 
     @classmethod
     def create_plan_application(cls):
         # plan application
         plan_application_model = DisperseModel(app_model='base_PlanApplication').get_model()
-        plan_application_check = plan_application_model.object_normal.all()
+        plan_application_check = plan_application_model.objects.all()
         if plan_application_check:
             plan_application_check.delete()
-        records = plan_application_model.object_normal.bulk_create([plan_application_model(**tmp) for tmp in plan_application_data])
+        records = plan_application_model.objects.bulk_create(
+            [plan_application_model.__class__(**tmp) for tmp in plan_application_data]
+        )
         return records

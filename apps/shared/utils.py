@@ -7,8 +7,8 @@ from uuid import UUID
 
 
 class LinkListHandler:
-    def __init__(self, ll=None):
-        self.ll = {} if not isinstance(ll, dict) else ll
+    def __init__(self, ll=None):  # pylint: disable=C0103
+        self.ll = {} if not isinstance(ll, dict) else ll  # pylint: disable=C0103
 
     def convert(self, start_key):
         if self.ll:
@@ -47,7 +47,7 @@ class UUIDEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-class TypeCheck(object):
+class TypeCheck:
     @staticmethod
     def check_uuid(data: any, return_data=False) -> Union[UUID, bool, None]:
         # check
@@ -62,7 +62,9 @@ class TypeCheck(object):
         # return
         if return_data is True:
             return data_checked if data_checked else None
-        return True if data_checked else False
+        if data_checked:
+            return True
+        return False
 
     @classmethod
     def check_uuid_list(cls, data: list[any], return_data=False) -> Union[list, bool]:
@@ -80,4 +82,6 @@ class TypeCheck(object):
 
         if return_data is True:
             return result
-        return True if (len(result) == len(data) and all(result) is True) else False
+        if len(result) == len(data) and all(result) is True:
+            return True
+        return False

@@ -1,6 +1,6 @@
 from rest_framework import generics
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import ResponseController
 from apps.core.base.models import SubscriptionPlan
@@ -29,4 +29,3 @@ class PlanList(generics.GenericAPIView):
             serializer = self.serializer_class(queryset, many=True)
             return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
-

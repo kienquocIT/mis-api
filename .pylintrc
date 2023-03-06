@@ -1,7 +1,15 @@
+[TYPECHECK]
+ignored-argument-names=kwargs,args
+
 [FORMAT]
 max-line-length=120 # max line length map to Pycharm
 
 [MASTER]
+load-plugins=pylint_django
+django-settings-module=misapi.settings
+init-hook='import sys; sys.path.append("./")'
+ignore=migrations,builder,locale,statics,routers,misapi,logs,build.sh,manage.py,.pylintrc,tests.py,tests,admin.py
+ignore-paths: apps\core\account\views.py
 disable=
     C0114, # missing-module-docstring
     C0115, # missing-class-docstring
@@ -10,3 +18,8 @@ disable=
     W0719, # broad-exception-raised
     R0913, # too-many-arguments
     W0718, # broad-exception-caught
+    R0901, # too-many-ancestors
+    W0223, # abstract-method
+    W0707, # raise-missing-from
+    W0237, # arguments-renamed
+    R0801, # duplicate-code

@@ -363,14 +363,14 @@ class M2MModel(models.Model):
         default_permissions = ()
         permissions = ()
 
-    def _get_detail(self, **_kwargs):
+    def _get_detail(self, **_kwargs):   # pylint: disable=W0613
         return {
             'id': self.id,
             'date_created': FORMATTING.parse_datetime(self.date_created),
             'extras': self.extras,
         }
 
-    def get_detail(self, **_kwargs):
+    def get_detail(self, **_kwargs):  # pylint: disable=W0613
         return self._get_detail()
 
 

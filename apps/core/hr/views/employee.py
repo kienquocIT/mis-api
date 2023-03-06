@@ -1,8 +1,7 @@
 from rest_framework import generics
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.hr.mixins import HRListMixin, HRCreateMixin, HRUpdateMixin, HRRetrieveMixin
 from apps.core.hr.models import Employee
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
@@ -18,10 +17,6 @@ class EmployeeList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Employee.object_global
-    # queryset = Employee.object_global.select_related(
-    #     'group',
-    #     'user'
-    # )
     search_fields = ["search_content"]
 
     serializer_list = EmployeeListSerializer
@@ -31,7 +26,7 @@ class EmployeeList(
     create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     def get_queryset(self):
-        return super(EmployeeList, self).get_queryset().select_related(
+        return super().get_queryset().select_related(
             'group',
             'user'
         )
@@ -63,7 +58,7 @@ class EmployeeDetail(
     serializer_update = EmployeeUpdateSerializer
 
     def get_queryset(self):
-        return super(EmployeeDetail, self).get_queryset().select_related("user")
+        return super().get_queryset().select_related("user")
 
     @swagger_auto_schema(
         operation_summary="Employee detail",
