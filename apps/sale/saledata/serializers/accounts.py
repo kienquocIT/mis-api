@@ -271,9 +271,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         try:
             if attrs is not None:
                 return Account.object_normal.get(id=attrs)
-            return None
         except Account.DoesNotExist:
             pass
+        return None
 
     def validate_email(self, attrs):
         if attrs is not None:
@@ -425,9 +425,9 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         try:
             if value is not None:
                 return Account.object_normal.get(id=value)
-            return None
         except Account.DoesNotExist:
             pass
+        return None
 
     def validate_email(self, attrs):
         if attrs is not None:
