@@ -322,10 +322,7 @@ class EmployeeMapAccountList(BaseListMixin):
     serializer_list = EmployeeMapAccountListSerializer
 
     def get_queryset(self):
-        return super(self, EmployeeMapAccountList).get_queryset().select_related(
-            'group',
-            'user'
-        )
+        return super().get_queryset().select_related('group', 'user')
 
     @swagger_auto_schema(
         operation_summary="Account Map Employee list",
