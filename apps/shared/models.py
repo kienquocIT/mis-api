@@ -64,94 +64,22 @@ class DisperseModel:
         )
 
 
-class CacheByModel(object):
-    def __init__(self):
-        ...
-
-    @staticmethod
-    def get_model(app_model):
-        return DisperseModel(app_model=app_model).get_model()
-
-    @staticmethod
-    def key(model_cls, doc_id):
-        if hasattr(model_cls, 'key_cache') and TypeCheck.check_uuid(doc_id):
-            return model_cls.key_cache(doc_id)
-        return None
-
-    @staticmethod
-    def exist_cache(key):
-        data = CacheController().get(key)
-        return data if data else None
-
-    @classmethod
-    def get_cache(cls, app_model, doc_id) -> Union[None, dict]:
-        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
-            model_cls = cls.get_model(app_model)
-            key = cls.key(model_cls, doc_id)
-            data = cls.exist_cache(key)
-            if data:
-                return data
-            else:
-                if hasattr(model_cls, 'get_cache'):
-                    return model_cls.get_cache(doc_id)
-        return None
-
-    @classmethod
-    def get_cache_obj(cls, doc_obj) -> Union[None, dict]:
-        if doc_obj and hasattr(doc_obj, 'id'):
-            model_cls = doc_obj.__class___
-            key = cls.key(model_cls, doc_obj.id)
-            data = cls.exist_cache(key)
-            if data:
-                return data
-            else:
-                if hasattr(model_cls, 'force_cache'):
-                    return doc_obj.force_cache()
-        return None
-
-    @classmethod
-    def reset_cache(cls, app_model, doc_id) -> Union[None, dict]:
-        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
-            model_cls = cls.get_model(app_model)
-            if hasattr(model_cls, 'force_cache'):
-                try:
-                    obj = model_cls.objects.get(pk=doc_id)
-                    return obj.force_cache()
-                except model_cls.DoesNotExist as err:
-                    print(err)
-        return None
-
-    @classmethod
-    def reset_cache_obj(cls, doc_obj) -> Union[None, dict]:
-        if doc_obj and hasattr(doc_obj, 'id') and hasattr(doc_obj, 'force_cache'):
-            return doc_obj.force_cache()
-        return None
-
-    @classmethod
-    def destroy_cache(cls, app_model, doc_id) -> bool:
-        if app_model and doc_id and TypeCheck.check_uuid(doc_id):
-            model_cls = cls.get_model(app_model)
-            if hasattr(model_cls, 'destroy_cache'):
-                return model_cls.destroy_cache(doc_id)
-        return False
-
-    @classmethod
-    def destroy_cache_obj(cls, doc_obj) -> bool:
-        if doc_obj and hasattr(doc_obj, 'id') and hasattr(doc_obj, 'destroy_cache'):
-            return doc_obj.destroy_cache(doc_obj.id)
-        return False
-
-
 class CacheCoreModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
     @property
-    def key_cache_prefix(self):
-        raise NotImplementedError('This key_cache_prefix function must be override.')
+    def key_cache_prefix(self) -> str:
+        """
+        Return prefix key cache
+        """
+        return f'{self.__class__._meta.app_label}.{self.__class__.__name__}'
 
     @classmethod
     def key_cache(cls, doc_id: Union[UUID, str]) -> str:
-        return f'{cls.key_cache_prefix}__{str(doc_id)}'
+        """
+        Return key save to cache.
+        """
+        return str(f'{cls().key_cache_prefix}_{str(doc_id)}').lower()
 
     @property
     def data_cache(self) -> dict:
@@ -160,21 +88,46 @@ class CacheCoreModel(models.Model):
         """
         raise NotImplementedError('This data_cache function must be override.')
 
-    def force_cache(self):
+    def force_cache(self, data=None):
         """
         Force save key:data to cache
         """
-        data = self.data_cache
-        CacheController().set_never_expires(self.key_cache(self.id), data)
+        if not data:
+            data = self.data_cache
+        CacheController().set(
+            key=self.key_cache(self.id),
+            value=data,
+            expires=60 * 24 * 3  # 3 days
+        )
+        return data
+
+    def get_cache_obj(self, auto_cache: bool = True):
+        """
+        Support get cache and auto get data after save cache if not exist.
+        The function was called by Object Model.
+        """
+        data = CacheController().get(self.key_cache(self.id))
+        if not data:
+            try:
+                data = self.data_cache
+                if auto_cache:
+                    self.force_cache(data)
+            except Exception as err:
+                print(err)
+                data = None
         return data
 
     @classmethod
     def get_cache(cls, doc_id, auto_cache: bool = True) -> Union[None, dict]:
+        """
+        Support get cache and auto get data after save cache if not exist.
+        The function was called by Class Model (no hit db for get PK before).
+        """
         data = CacheController().get(cls.key_cache(doc_id))
-        if not data and auto_cache is True:
+        if not data:
             try:
                 obj = cls.objects.get(pk=doc_id)
-                data = obj.force_cache()
+                data = obj.get_cache_obj(auto_cache=auto_cache)
             except Exception as err:
                 print(err)
                 data = None
@@ -182,6 +135,9 @@ class CacheCoreModel(models.Model):
 
     @classmethod
     def destroy_cache(cls, doc_id) -> bool:
+        """
+        Destroy cache with key auto generate by Doc ID.
+        """
         return CacheController().destroy(cls.key_cache(doc_id))
 
     class Meta:
@@ -242,6 +198,12 @@ class BaseModel(models.Model):
         return result
 
     def get_old_value(self, field_name_list: list):
+        """
+        Get old data before call super save for compare data change.
+
+        Solution:
+            Clone object and refresh it from database.
+        """
         if self._state.adding is False:
             _original_fields_old = dict([(field, None) for field in field_name_list])
             if field_name_list and isinstance(field_name_list, list):
@@ -546,4 +508,3 @@ class PermissionCoreModel(models.Model):
                     self.save_permissions(['permission_by_id'])
                 return True
         return False
-

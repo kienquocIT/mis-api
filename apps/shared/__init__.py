@@ -6,7 +6,6 @@ from .formats import FORMATTING
 from .pagination import CustomResultsSetPagination as CustomPagination
 from .models import (
     DisperseModel, BaseModel, TenantCoreModel, TenantModel, M2MModel, PermissionCoreModel, CacheCoreModel,
-    CacheByModel,
 )
 from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager
 from .middleware.cidr_provisioning import AllowCIDRAndProvisioningMiddleware

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee, RoleHolder
+from apps.core.hr.models import Employee, GroupLevel, Group, RoleHolder
 
 
 # Group Level Serializer
