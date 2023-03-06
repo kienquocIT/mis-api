@@ -36,17 +36,17 @@ stages:
 lint:
   stage: check
   script:
-    - usr/local/bin/python -m pylint --recursive=y misapi/__init__.py
+    - python -m pylint --recursive=y misapi/__init__.py
 
 test_migrations:
   stage: migrations-init
   script:
-    - usr/local/bin/python manage.py makemigrations --check --dry-run --noinput
-    - usr/local/bin/python manage.py migrate
+    - python manage.py makemigrations --check --dry-run --noinput
+    - python manage.py migrate
 
 cmis-tests:
   stage: test
   script:
-    - usr/local/bin/python manage.py test
+    - python manage.py test
   after_script:
     - exit
