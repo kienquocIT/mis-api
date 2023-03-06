@@ -43,12 +43,12 @@ class PlanApplication(M2MModel):
 
 
 PROPERTIES_TYPE = (
-    ('text', 'Text'),
-    ('text_area', 'Text area'),
-    ('date_time', 'Date time'),
-    ('select', 'Choices'),
-    ('check', 'Checkbox'),
-    ('masterdata', 'Master data'),
+    (1, 'Text'),
+    (2, 'Date time'),
+    (3, 'Choices'),
+    (4, 'Checkbox'),
+    (5, 'Master data'),
+    (6, 'Number'),
 )
 
 
@@ -65,7 +65,7 @@ class ApplicationProperty(BaseModel):
         null=True,
         blank=True
     )
-    type = models.TextField(
+    type = models.IntegerField(
         choices=PROPERTIES_TYPE,
         default='text'
     )
