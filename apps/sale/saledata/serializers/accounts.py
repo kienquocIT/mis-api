@@ -21,16 +21,14 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title', 'description')
 
     def validate_code(self, value):
-        if value:
-            if Salutation.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if Salutation.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if Salutation.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if Salutation.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 class SalutationDetailSerializer(serializers.ModelSerializer):
@@ -45,16 +43,14 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        if value:
-            if value != self.instance.code and Salutation.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if value != self.instance.code and Salutation.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if value != self.instance.title and Salutation.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if value != self.instance.title and Salutation.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 # Interest
@@ -70,16 +66,14 @@ class InterestsCreateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title', 'description')
 
     def validate_code(self, value):
-        if value:
-            if Interest.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if Interest.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if Interest.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if Interest.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 class InterestsDetailsSerializer(serializers.ModelSerializer):
@@ -94,16 +88,14 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        if value:
-            if value != self.instance.code and Interest.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if value != self.instance.code and Interest.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if value != self.instance.title and Interest.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if value != self.instance.title and Interest.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 # Account Type
@@ -119,16 +111,14 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title', 'description')
 
     def validate_code(self, value):
-        if value:
-            if AccountType.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if AccountType.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -142,15 +132,13 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        if value:
-            if value != self.instance.code and AccountType.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if value != self.instance.code and AccountType.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
+        if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
         return value
 
 
@@ -167,16 +155,14 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
         fields = ('code', 'title', 'description')
 
     def validate_code(self, value):
-        if value:
-            if Industry.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if Industry.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if Industry.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if Industry.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 class IndustryDetailsSerializer(serializers.ModelSerializer):
@@ -191,16 +177,14 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        if value:
-            if value != self.instance.code and Industry.object_normal.filter(code=value).exists():
-                raise serializers.ValidationError("Code is already exist.")
-            return value
+        if value != self.instance.code and Industry.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError("Code is already exist.")
+        return value
 
     def validate_title(self, value):
-        if value:
-            if value != self.instance.title and Industry.object_normal.filter(title=value).exists():
-                raise serializers.ValidationError("Name is already exist.")
-            return value
+        if value != self.instance.title and Industry.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError("Name is already exist.")
+        return value
 
 
 # Contact
@@ -589,9 +573,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     def validate_code(self, value):
         try:
-            if value:
-                if Account.object_normal.filter(code=value).exists():
-                    raise serializers.ValidationError("Code is already exist.")
+            if Account.object_normal.filter(code=value).exists():
+                raise serializers.ValidationError("Code is already exist.")
         except Account.DoesNotExist:
             pass
         return value
