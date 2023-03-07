@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
-from apps.core.base.models import SubscriptionPlan, Application
+from apps.core.base.models import SubscriptionPlan, Application, PermissionApplication
 from apps.core.tenant.models import TenantPlan
 from apps.shared import HrMsg, PERMISSION_OPTION
 
@@ -32,7 +32,7 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
         raise serializers.ValidationError("Value must be array.")
 
 
-class EmployeePlanAppUpdateSerializer(serializers.Serializer): # noqa
+class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
     plan = serializers.UUIDField(required=False)
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False),
@@ -283,7 +283,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(HrMsg.LICENSE_OVER_TOTAL.format(str(plan_license_check)))
         return validate_data
 
-    def create(self, validated_data):   # pylint: disable=R0912
+    def create(self, validated_data):  # pylint: disable=R0912
         """
         Steps:
             1. Create plan app (function: create_plan_app)
@@ -440,7 +440,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             )
         return validate_data
 
-    def update(self, instance, validated_data): # pylint: disable=R0912,R0914
+    def update(self, instance, validated_data):  # pylint: disable=R0912,R0914
         plan_application_dict = {}
         plan_app_data = None
         role_list = None
@@ -475,6 +475,8 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if 'permission_by_configured' in validated_data.keys():
+            instance.save_permissions(field_name=['permission_by_configured'])
 
         # delete old M2M PlanEmployee
         plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
@@ -519,12 +521,21 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_permission_by_configured(cls, attrs):
+        """
+        Permissions By Configured format should a dictionary:
+            key: '{code}__{app_label}__{model}'
+            value: {'option': PERMISSION_OPTION}
+
+        Code_name in models PermissionApplication (cached 14 days)
+        Config_data must be required "option" name key and value exist in PERMISSION_OPTION.
+        """
         if isinstance(attrs, dict):
             option_choices = [x[0] for x in PERMISSION_OPTION]
+            permission_choices = {x['permission']: x for x in PermissionApplication.data_list_filter(None)}
             for code_name, config_data in attrs.items():
                 # check code_name exist
-                if code_name:
-                    ...
+                if not (code_name and code_name in permission_choices):
+                    raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_NOT_EXIST)
 
                 # check config_data
                 if config_data and isinstance(config_data, dict) and 'option' in config_data:
@@ -533,4 +544,5 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_OPTION_INCORRECT)
                 else:
                     raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_CHILD_REQUIRED)
+            return attrs
         raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_DICT_TYPE)

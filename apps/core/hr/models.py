@@ -403,14 +403,12 @@ class Group(TenantCoreModel, CacheCoreModel):
             'all_staff': Employee.employee_of_group(group_id=self.id),
         }
 
-    def save(
-            self, force_insert=False, force_update=False, using=None, update_fields=None
-    ):
+    def save(self, *args, **kwargs):
         # get old group and new group
         manager_1st_id_old = self.get_old_value(
             field_name_list=['first_manager_id'],
         )['first_manager_id']
-        super().save(force_insert, force_update, using, update_fields)
+        super().save(*args, **kwargs)
         self.call_reset_cache(manager_1st_id_old)
 
     def call_reset_cache(self, manager_1st_id_old):

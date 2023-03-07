@@ -53,6 +53,7 @@ INSTALLED_APPS = \
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
     ] + [  # integrate some service management or tracing
+        'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
     ] + [  # application
         'apps.core.base',
@@ -405,7 +406,8 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
 if DEBUG is True:
     from colorama import Fore
 
-    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 else 'DB SERVICE'
+    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
+        else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
     match USE_DATABASE_CONFIG_OPTION:
         case 1:

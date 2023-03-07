@@ -1,3 +1,4 @@
+import json
 from copy import deepcopy
 from typing import Union, Literal
 from uuid import uuid4, UUID
@@ -7,12 +8,18 @@ from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
-from .utils import TypeCheck
+from .utils import TypeCheck, UUIDEncoder
 from .managers import GlobalManager, PrivateManager, TeamManager, NormalManager, MasterDataManager
 from .constant import DOCUMENT_MODE, SYSTEM_STATUS, PERMISSION_OPTION
 from .formats import FORMATTING
 from .permissions import PermOption
 from .caches import CacheController
+
+__all__ = [
+    'DisperseModel', 'CacheCoreModel', 'AbstractBaseModel',
+    'BaseModel', 'TenantModel', 'TenantCoreModel', 'M2MModel',
+    'MasterDataModel', 'PermissionCoreModel'
+]
 
 
 class DisperseModel:
@@ -64,6 +71,7 @@ class DisperseModel:
         )
 
 
+# abstract model
 class CacheCoreModel(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
 
@@ -146,8 +154,79 @@ class CacheCoreModel(models.Model):
         permissions = ()
 
 
-# abstract models
-class BaseModel(models.Model):
+class AbstractBaseModel(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+
+    objects = NormalManager()
+    object_normal = NormalManager()
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
+
+    CACHE_EXPIRES = 60 * 24 * 30  # 30 days
+    KEY_CACHE_SUFFIX = 'filter'
+    FIELD_SELECT_RELATED = []  # field name list that you want select_related data.
+
+    @property
+    def key_cache_prefix(self) -> str:
+        """
+        Return prefix key cache
+        """
+        return f'{self.__class__._meta.app_label}.{self.__class__.__name__}'
+
+    @classmethod
+    def key_cache(cls):
+        return str(f'{cls().key_cache_prefix}_{str(cls.KEY_CACHE_SUFFIX)}').lower()
+
+    def parse_obj(self):
+        raise NotImplementedError()
+
+    @classmethod
+    def data_list_filter(cls, filter_kwargs: dict = None):
+        """
+        Get data from cache if exists else hit db and save to cache
+
+        Key cache: Base.PermissionApplication__filter
+        Value: {
+                    '': {...data...},
+                    'app_id__xxxx': {...data_filtered...},
+                    ...
+                }
+        """
+
+        if not filter_kwargs:
+            filter_kwargs = {}
+
+        key__child = '.'.join([f"{k}___{v}" for k, v in filter_kwargs.items()])
+        data = CacheController().get(cls.key_cache())
+        if not data or (data and isinstance(data, dict) and key__child not in data):
+            data__child = [
+                x.parse_obj() for x in cls.objects.select_related(*cls.FIELD_SELECT_RELATED).filter(**filter_kwargs)
+            ]
+            data__child = json.loads(json.dumps(data__child, cls=UUIDEncoder))
+            if isinstance(data, dict):
+                data[key__child] = data__child
+            else:
+                data = {key__child: data__child}
+            CacheController().set(key=cls.key_cache(), value=data, expires=cls.CACHE_EXPIRES)
+        return data[key__child]
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.destroy_cache()
+
+    @classmethod
+    def destroy_cache(cls):
+        """
+        Destroy cache when change data or deploy with restart cache.
+        """
+        return CacheController().destroy(cls.key_cache())
+
+
+# base models extend from ABSTRACT MODELS
+class BaseModel(AbstractBaseModel):
     """
     Use for normal app without reference to tenant and company
     """
@@ -172,6 +251,17 @@ class BaseModel(models.Model):
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'user_created': str(self.user_created),
+            'date_created': str(self.date_created),
+            'is_active': self.is_active,
+            'extras': self.extras,
+        }
 
     def __str__(self):
         return f'{self.title} - {self.code}'
@@ -311,7 +401,7 @@ class TenantCoreModel(BaseModel):
         return result
 
 
-class M2MModel(models.Model):
+class M2MModel(AbstractBaseModel):
     """
     Use for reference many to many between two apps
     """
@@ -326,7 +416,12 @@ class M2MModel(models.Model):
         default_permissions = ()
         permissions = ()
 
-    def _get_detail(self, **_kwargs):   # pylint: disable=W0613
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+        }
+
+    def _get_detail(self, **_kwargs):  # pylint: disable=W0613
         return {
             'id': self.id,
             'date_created': FORMATTING.parse_datetime(self.date_created),
@@ -337,7 +432,7 @@ class M2MModel(models.Model):
         return self._get_detail()
 
 
-class MasterDataModel(models.Model):
+class MasterDataModel(AbstractBaseModel):
     """
     Use for models in master data apps
     """
@@ -360,8 +455,16 @@ class MasterDataModel(models.Model):
         default_permissions = ()
         permissions = ()
 
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'is_active': self.is_active,
+        }
 
-class PermissionCoreModel(models.Model):
+
+class PermissionCoreModel(AbstractBaseModel):
     # by ID
     permission_by_id_sample = {
         '{code}__{app_label}__{model}': ['id1', 'id2', ]
@@ -377,12 +480,19 @@ class PermissionCoreModel(models.Model):
     permission_by_configured = JSONField(default={})
 
     # summary keys
-    permission_keys = ['permission_by_id', 'permission_by_configured']
+    permission_keys = ('permission_by_id', 'permission_by_configured')
 
     class Meta:
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'permission_by_id': self.permission_by_id,
+            'permission_by_configured': self.permission_by_configured,
+        }
 
     @property
     def permissions(self):
@@ -404,14 +514,20 @@ class PermissionCoreModel(models.Model):
         super().save(update_fields=field_name, force_update=True)
         return True
 
-    def save(
-            self, force_insert=False, force_update=False, using=None, update_fields=None
-    ):
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields', None)
         if isinstance(update_fields, list):
             for key in self.permission_keys:
                 if key in update_fields:
                     update_fields.remove(key)
-        super().save(force_insert, force_update, using, update_fields)
+        else:
+            update_fields = []
+            for f_cls in self.__class__._meta.get_fields():
+                if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
+                    if f_cls.many_to_many is False:
+                        update_fields.append(f_cls.name)
+        kwargs['update_fields'] = update_fields
+        super().save(*args, **kwargs)
 
     @staticmethod
     def check_perm_code(data) -> bool:
