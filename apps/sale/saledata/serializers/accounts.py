@@ -118,9 +118,11 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_title(self, value):
-        if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
+        if AccountType.object_normal.filter(title=value).exists():
             raise serializers.ValidationError("Name is already exist.")
         return value
+
+
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
