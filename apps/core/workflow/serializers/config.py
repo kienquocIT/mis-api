@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import Application, ApplicationProperty
 from apps.core.hr.models import Employee
-from apps.core.workflow.models import Workflow, Node, Collaborator, Zone, Association
+from apps.core.workflow.models import Workflow, Node, Collaborator, Zone, Association # pylint: disable-msg=E0611
 
 
 # Collaborator
@@ -126,11 +126,11 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
                 'code'
             )
             if property_list:
-                for property in property_list:
+                for proper in property_list:
                     result.append({
-                        'id': property['id'],
-                        'title': property['title'],
-                        'code': property['code'],
+                        'id': proper['id'],
+                        'title': proper['title'],
+                        'code': proper['code'],
                     })
         return result
 
@@ -225,85 +225,115 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         ).data
 
     @classmethod
+    def node_zone_data(cls, node):
+        zone_data = []
+        if node.zone:
+            node_zone_list = Zone.object_global.filter(id__in=node.zone)
+            if node_zone_list:
+                for node_zone in node_zone_list:
+                    zone_data.append({
+                        'id': node_zone.id,
+                        'title': node_zone.title
+                    })
+        return zone_data
+
+    @classmethod
+    def node_in_form(cls, node, result, zone_data):
+        result.append({
+            'id': node.id,
+            'title': node.title,
+            'remark': node.remark,
+            'actions': node.actions,
+            'option_collaborator': node.option_collaborator,
+            'field_select_collaborator': node.field_select_collaborator,
+            'zone': zone_data
+        })
+        return True
+
+    @classmethod
+    def node_out_form(cls, node, result, zone_data):
+        employee_data = []
+        if node.collaborator_list:
+            employee_list = Employee.object_global.filter(id__in=node.collaborator_list)
+            if employee_list:
+                for employee in employee_list:
+                    employee_data.append({
+                        'id': employee.id,
+                        'full_name': employee.get_full_name(2)
+                    })
+        result.append({
+            'id': node.id,
+            'title': node.title,
+            'remark': node.remark,
+            'actions': node.actions,
+            'option_collaborator': node.option_collaborator,
+            'collaborator_list': employee_data,
+            'zone': zone_data
+        })
+        return True
+
+    @classmethod
+    def node_in_workflow(cls, node, result):
+        collaborator_data = []
+        in_workflow_collaborator = Collaborator.object_global.filter(
+            node=node
+        ).select_related('employee')
+        if in_workflow_collaborator:
+            for collaborator in in_workflow_collaborator:
+                zone_in_workflow_data = []
+                if collaborator.zone:
+                    zone_list = Zone.object_global.filter(id__in=collaborator.zone)
+                    if zone_list:
+                        for zone in zone_list:
+                            zone_in_workflow_data.append({
+                                'id': zone.id,
+                                'title': zone.title
+                            })
+                collaborator_data.append({
+                    'collaborator': {
+                        'id': collaborator.employee_id,
+                        'full_name': collaborator.employee.get_full_name(2)
+                    },
+                    'zone': zone_in_workflow_data
+                })
+        result.append({
+            'id': node.id,
+            'title': node.title,
+            'remark': node.remark,
+            'actions': node.actions,
+            'option_collaborator': node.option_collaborator,
+            'collaborator_list': collaborator_data,
+        })
+        return True
+
+    @classmethod
     def get_node(cls, obj):
         result = []
         node_list = Node.object_global.filter(workflow=obj)
         if node_list:
             for node in node_list:
                 if node.option_collaborator:
-                    zone_data = []
-                    if node.zone:
-                        node_zone_list = Zone.object_global.filter(id__in=node.zone)
-                        if node_zone_list:
-                            for node_zone in node_zone_list:
-                                zone_data.append({
-                                    'id': node_zone.id,
-                                    'title': node_zone.title
-                                })
+                    zone_data = cls.node_zone_data(node=node)
                     # option in form
                     if node.option_collaborator == 0:
-                        result.append({
-                            'id': node.id,
-                            'title': node.title,
-                            'remark': node.remark,
-                            'actions': node.actions,
-                            'option_collaborator': node.option_collaborator,
-                            'field_select_collaborator': node.field_select_collaborator,
-                            'zone': zone_data
-
-                        })
+                        cls.node_in_form(
+                            node=node,
+                            result=result,
+                            zone_data=zone_data
+                        )
                     # option out form
                     elif node.option_collaborator == 1:
-                        employee_data = []
-                        if node.collaborator_list:
-                            employee_list = Employee.object_global.filter(id__in=node.collaborator_list)
-                            if employee_list:
-                                for employee in employee_list:
-                                    employee_data.append({
-                                        'id': employee.id,
-                                        'title': employee.title
-                                    })
-                        result.append({
-                            'id': node.id,
-                            'title': node.title,
-                            'remark': node.remark,
-                            'actions': node.actions,
-                            'option_collaborator': node.option_collaborator,
-                            'collaborator_list': employee_data,
-                            'zone': zone_data
-                        })
+                        cls.node_out_form(
+                            node=node,
+                            result=result,
+                            zone_data=zone_data
+                        )
                     # option in workflow
                     elif node.option_collaborator == 2:
-                        collaborator_data = []
-                        in_workflow_collaborator = Collaborator.object_global.filter(
-                            node=node
-                        ).select_related('employee')
-                        if in_workflow_collaborator:
-                            for collaborator in in_workflow_collaborator:
-                                zone_in_workflow_data = []
-                                if collaborator.zone:
-                                    zone_list = Zone.object_global.filter(id__in=collaborator.zone)
-                                    if zone_list:
-                                        for zone in zone_list:
-                                            zone_in_workflow_data.append({
-                                                'id': zone.id,
-                                                'title': zone.title
-                                            })
-                                collaborator_data.append({
-                                    'collaborator': {
-                                        'id': collaborator.employee_id,
-                                        'title': collaborator.employee.title
-                                    },
-                                    'zone': zone_in_workflow_data
-                                })
-                        result.append({
-                            'id': node.id,
-                            'title': node.title,
-                            'remark': node.remark,
-                            'actions': node.actions,
-                            'option_collaborator': node.option_collaborator,
-                            'collaborator_list': collaborator_data,
-                        })
+                        cls.node_in_workflow(
+                            node=node,
+                            result=result,
+                        )
         return result
 
 
@@ -358,10 +388,173 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                         data_dict['zone'].append(zone_created_data[zone])
         return True
 
+    @classmethod
+    def create_zone_for_workflow(
+            cls,
+            workflow,
+            zone_list,
+            zone_created_data
+    ):
+        if workflow and zone_list:
+            for zone in zone_list:
+                if 'order' in zone:
+                    order = zone['order']
+                    zone = Zone.object_global.create(
+                        **zone,
+                        workflow=workflow,
+                        tenant_id=workflow.tenant_id,
+                        company_id=workflow.company_id,
+                    )
+                    if zone:
+                        zone_created_data.update({order: zone.id})
+        return True
+
+    @classmethod
+    def create_association_for_workflow(
+            cls,
+            workflow,
+            node_list,
+            association_list,
+            node_created_data
+    ):
+        if workflow and node_list and association_list:
+            if association_list:
+                bulk_info = []
+                for association in association_list:
+                    if 'node_in' in association and 'node_out' in association:
+                        if association['node_in'] in node_created_data and association['node_out'] in node_created_data:
+                            association.update({
+                                'node_in': node_created_data[association['node_in']],
+                                'node_out': node_created_data[association['node_out']],
+                            })
+                            bulk_info.append(Association(
+                                **association,
+                                tenant_id=workflow.tenant_id,
+                                company_id=workflow.company_id
+                            ))
+                if bulk_info:
+                    Association.object_global.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_node_option_in_out_form(
+            cls,
+            node,
+            workflow,
+            node_created_data
+    ):
+        node_create = Node.object_global.create(
+            **node,
+            workflow=workflow,
+            tenant_id=workflow.tenant_id,
+            company_id=workflow.company_id,
+        )
+        if node_create and 'order' in node:
+            node_created_data.update({node['order']: node_create})
+        return True
+
+    @classmethod
+    def create_node_option_in_workflow(
+            cls,
+            node,
+            workflow,
+            node_created_data,
+            collaborator_list,
+            zone_created_data
+    ):
+        node_create = Node.object_global.create(
+            **node,
+            workflow=workflow,
+            tenant_id=workflow.tenant_id,
+            company_id=workflow.company_id,
+        )
+        if node_create and 'order' in node:
+            node_created_data.update({node['order']: node_create})
+        if collaborator_list:
+            bulk_info = []
+            for collaborator in collaborator_list:
+                # mapping zone
+                cls.mapping_zone(
+                    key='collaborator_zone',
+                    data_dict=collaborator,
+                    zone_created_data=zone_created_data
+                )
+                bulk_info.append(Collaborator(
+                    **collaborator,
+                    node=node_create,
+                    tenant_id=workflow.tenant_id,
+                    company_id=workflow.company_id,
+                ))
+            if bulk_info:
+                Collaborator.object_global.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_node(
+            cls,
+            node,
+            zone_created_data,
+            workflow,
+            node_created_data
+    ):
+        collaborator_list = None
+        if node['is_system'] is True:
+            # mapping zone
+            cls.mapping_zone(
+                key='node_zone',
+                data_dict=node,
+                zone_created_data=zone_created_data
+            )
+        else:
+            if 'option_collaborator' in node:
+                # mapping zone
+                cls.mapping_zone(
+                    key='node_zone',
+                    data_dict=node,
+                    zone_created_data=zone_created_data
+                )
+                # check option & create node
+                if 'collaborator' in node:
+                    collaborator_list = node['collaborator']
+                    del node['collaborator']
+                if node['option_collaborator'] != 2:
+                    cls.create_node_option_in_out_form(
+                        node=node,
+                        workflow=workflow,
+                        node_created_data=node_created_data
+                    )
+                else:
+                    cls.create_node_option_in_workflow(
+                        node=node,
+                        workflow=workflow,
+                        node_created_data=node_created_data,
+                        collaborator_list=collaborator_list,
+                        zone_created_data=zone_created_data
+                    )
+        return True
+
+    @classmethod
+    def create_node_for_workflow(
+            cls,
+            workflow,
+            node_list,
+            zone_created_data,
+            node_created_data
+    ):
+        if workflow and node_list:
+            for node in node_list:
+                if 'is_system' in node:
+                    cls.create_node(
+                        node=node,
+                        zone_created_data=zone_created_data,
+                        workflow=workflow,
+                        node_created_data=node_created_data
+                    )
+        return True
+
     def create(self, validated_data):
         # initial
         node_list = None
-        collaborator_list = None
         zone_list = None
         association_list = None
         zone_created_data = {}
@@ -380,99 +573,26 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         workflow = Workflow.object_global.create(**validated_data)
 
         # create zone for workflow
-        if workflow and zone_list:
-            bulk_info = []
-            for zone in zone_list:
-                if 'order' in zone:
-                    order = zone['order']
-                    # del zone['order']
-                    zone = Zone.object_global.create(
-                        **zone,
-                        workflow=workflow,
-                        tenant_id=workflow.tenant_id,
-                        company_id=workflow.company_id,
-                    )
-                    if zone:
-                        zone_created_data.update({order: zone.id})
+        self.create_zone_for_workflow(
+            workflow=workflow,
+            zone_list=zone_list,
+            zone_created_data=zone_created_data
+        )
 
         # create node for workflow
-        if workflow and node_list:
-            for node in node_list:
-                if 'is_system' in node:
-                    if node['is_system'] is True:
-                        # mapping zone
-                        self.mapping_zone(
-                            key='node_zone',
-                            data_dict=node,
-                            zone_created_data=zone_created_data
-                        )
-                    else:
-                        if 'option_collaborator' in node:
-                            # mapping zone
-                            self.mapping_zone(
-                                key='node_zone',
-                                data_dict=node,
-                                zone_created_data=zone_created_data
-                            )
-                            # check option & create node
-                            if node['option_collaborator'] != 2:
-                                if 'collaborator' in node:
-                                    del node['collaborator']
-                                node_create = Node.object_global.create(
-                                    **node,
-                                    workflow=workflow,
-                                    tenant_id=workflow.tenant_id,
-                                    company_id=workflow.company_id,
-                                )
-                                if node_create and 'order' in node:
-                                    node_created_data.update({node['order']: node_create})
-                            else:
-                                if 'collaborator' in node:
-                                    collaborator_list = node['collaborator']
-                                    del node['collaborator']
-                                node_create = Node.object_global.create(
-                                    **node,
-                                    workflow=workflow,
-                                    tenant_id=workflow.tenant_id,
-                                    company_id=workflow.company_id,
-                                )
-                                if node_create and 'order' in node:
-                                    node_created_data.update({node['order']: node_create})
-                                if collaborator_list:
-                                    bulk_info = []
-                                    for collaborator in collaborator_list:
-                                        # mapping zone
-                                        self.mapping_zone(
-                                            key='collaborator_zone',
-                                            data_dict=collaborator,
-                                            zone_created_data=zone_created_data
-                                        )
-                                        bulk_info.append(Collaborator(
-                                            **collaborator,
-                                            node=node_create,
-                                            tenant_id=workflow.tenant_id,
-                                            company_id=workflow.company_id,
-                                        ))
-                                    if bulk_info:
-                                        Collaborator.object_global.bulk_create(bulk_info)
+        self.create_node_for_workflow(
+            workflow=workflow,
+            node_list=node_list,
+            zone_created_data=zone_created_data,
+            node_created_data=node_created_data
+        )
 
         # create association for workflow
-        if workflow and node_list and association_list:
-            if association_list:
-                bulk_info = []
-                for association in association_list:
-                    if 'node_in' in association and 'node_out' in association:
-                        if association['node_in'] in node_created_data and association['node_out'] in node_created_data:
-                            association.update({
-                                'node_in': node_created_data[association['node_in']],
-                                'node_out': node_created_data[association['node_out']],
-                            })
-                            bulk_info.append(Association(
-                                **association,
-                                tenant_id=workflow.tenant_id,
-                                company_id=workflow.company_id
-                            ))
-                if bulk_info:
-                    Association.object_global.bulk_create(bulk_info)
+        self.create_association_for_workflow(
+            workflow=workflow,
+            node_list=node_list,
+            association_list=association_list,
+            node_created_data=node_created_data
+        )
 
         return workflow

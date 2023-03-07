@@ -48,5 +48,3 @@ CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
-
-

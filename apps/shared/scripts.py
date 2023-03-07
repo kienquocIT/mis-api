@@ -1,9 +1,7 @@
 from apps.core.account.models import User
-from apps.core.base.models import ApplicationProperty
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
-from apps.core.workflow.models import Node, Workflow, Association
 
 
 def update_company_created_user():
@@ -119,110 +117,4 @@ def update_data_company_license_tracking():
                         CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
 
     print('update done.')
-    return True
-
-
-# TEST WORKFLOW
-def create_initial_node():
-    data = [
-        Node(**{
-            'id': 'abccf657-7dce-4a14-9601-f6c4c4f2722a',
-            'title': 'Initial Node',
-            'code': 'Initial',
-            'is_system': True,
-            'order': 1,
-        }),
-        Node(**{
-            'id': '1fbb680e-3521-424a-8523-9f7a34ce867e',
-            'title': 'Approved Node',
-            'code': 'Approved',
-            'is_system': True,
-            'order': 2,
-        }),
-        Node(**{
-            'id': '580f887c-1280-44ea-b275-8cb916543b10',
-            'title': 'Completed Node',
-            'code': 'Completed',
-            'is_system': True,
-            'order': 3,
-        })
-    ]
-    Node.object_global.bulk_create(data)
-
-    return True
-
-
-def create_data_property():
-    data = {
-        'id': '582a4296-299d-4856-adf2-84c1a7be3d08',
-        'application_id': '50348927-2c4f-4023-b638-445469c66953',
-        'title': 'Doanh thu',
-        'code': 'revenue',
-        'type': 'text',
-        'compare_operator': {
-            '=': 'equal',
-            '>': 'greater than',
-            '<': 'less than',
-            '>=': 'greater or equal',
-            '<=': 'less or equal',
-            '!=': 'not equal'
-        }
-    }
-    ApplicationProperty.objects.create(**data)
-    return True
-
-
-def create_data_workflow():
-    workflow_data = {
-        'id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
-        'application_id': '50348927-2c4f-4023-b638-445469c66953',
-        'title': 'workflow test',
-        'code': 'test',
-    }
-    node_data = [
-        {
-            'id': '1c70776b-9722-4553-bed9-ea3a238ce072',
-            'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
-            'title': 'node initial',
-            'is_system': True,
-            'code_node_system': 'Initial'
-        },
-        {
-            'id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
-            'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
-            'title': 'node CEO Duy?t'
-        },
-    ]
-    association_data = {
-        'id': '2e02dd3b-54b8-4557-b2f6-2c6d3f496846',
-        'node_in_id': '1c70776b-9722-4553-bed9-ea3a238ce072',
-        'node_out_id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
-        'condition': [
-            {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-            'AND',
-            {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-            'AND',
-            {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-            'AND',
-            [
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-                'AND',
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-                'AND',
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-            ],
-            'AND',
-            [
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-                'OR',
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-                'OR',
-                {'left_cond': 'total_revenue', 'operator': '>', 'right_cond': 100},
-            ],
-        ]
-    }
-    Workflow.objects.create(**workflow_data)
-    for node in node_data:
-        Node.objects.create(**node)
-    Association.objects.create(**association_data)
     return True

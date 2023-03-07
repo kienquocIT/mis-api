@@ -91,7 +91,7 @@ class EmployeeCompanyList(
     list_hidden_field = ['tenant_id']
 
     def get_queryset(self):
-        return super(EmployeeCompanyList, self).get_queryset().select_related(
+        return super().get_queryset().select_related(
             'group',
             'user'
         )

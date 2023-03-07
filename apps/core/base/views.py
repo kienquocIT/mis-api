@@ -1,10 +1,9 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.views import APIView
 
 from apps.core.base.mixins import ApplicationListMixin
-from apps.shared import ResponseController, BaseListMixin
+from apps.shared import ResponseController
 from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty
 
 from apps.core.base.serializers import PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer

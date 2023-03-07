@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.workflow.models import Workflow, Node
-from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, NodeListSerializer, \
-    WorkflowDetailSerializer
+from apps.core.workflow.models import Workflow, Node # pylint: disable-msg=E0611
+from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, \
+    NodeListSerializer, WorkflowDetailSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin
 
 
@@ -20,7 +20,7 @@ class WorkflowList(
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super(WorkflowList, self).get_queryset().select_related(
+        return super().get_queryset().select_related(
             "company",
             "application"
         )
@@ -68,7 +68,7 @@ class NodeSystemList(
     list_hidden_field = []
 
     def get_queryset(self):
-        return super(NodeSystemList, self).get_queryset().filter(is_system=True).order_by('order')
+        return super().get_queryset().filter(is_system=True).order_by('order')
 
     @swagger_auto_schema(
         operation_summary="Node System List",
