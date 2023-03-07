@@ -1,3 +1,6 @@
+from apps.shared import WorkflowMsg
+
+
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -36,13 +39,14 @@ WORKFLOW_ACTION = (
 )
 
 OPTION_COLLABORATOR = (
-    (0, "In form"),
-    (1, "Out form"),
-    (2, "In workflow"),
+    (0, WorkflowMsg.COLLABORATOR_IN),
+    (1, WorkflowMsg.COLLABORATOR_OUT),
+    (2, WorkflowMsg.COLLABORATOR_WF),
 )
 
 CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
+
 

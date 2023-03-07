@@ -3,14 +3,6 @@ from rest_framework import serializers
 from apps.core.base.models import Application, ApplicationProperty
 from apps.core.hr.models import Employee
 from apps.core.workflow.models import Workflow, Node, Collaborator, Zone, Association
-from apps.shared import WorkflowMsg
-
-
-OPTION_COLLABORATOR = (
-    (0, WorkflowMsg.COLLABORATOR_IN),
-    (1, WorkflowMsg.COLLABORATOR_OUT),
-    (2, WorkflowMsg.COLLABORATOR_WF),
-)
 
 
 # Collaborator
@@ -122,8 +114,24 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
             'order'
         )
 
-    def get_property_list(self, obj):
+    @classmethod
+    def get_property_list(cls, obj):
         result = []
+        if obj.property_list and isinstance(obj.property_list, list):
+            property_list = ApplicationProperty.object_normal.filter(
+                id__in=obj.property_list
+            ).values(
+                'id',
+                'title',
+                'code'
+            )
+            if property_list:
+                for property in property_list:
+                    result.append({
+                        'id': property['id'],
+                        'title': property['title'],
+                        'code': property['code'],
+                    })
         return result
 
 
@@ -171,7 +179,8 @@ class WorkflowListSerializer(serializers.ModelSerializer):
             'is_active',
         )
 
-    def get_application(self, obj):
+    @classmethod
+    def get_application(cls, obj):
         if obj.application:
             return {
                 'id': obj.application_id,
@@ -199,7 +208,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'is_active',
         )
 
-    def get_application(self, obj):
+    @classmethod
+    def get_application(cls, obj):
         if obj.application:
             return {
                 'id': obj.application_id,
@@ -207,13 +217,15 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_zone(self, obj):
+    @classmethod
+    def get_zone(cls, obj):
         return ZoneDetailSerializer(
             Zone.object_global.filter(workflow=obj),
             many=True
         ).data
 
-    def get_node(self, obj):
+    @classmethod
+    def get_node(cls, obj):
         result = []
         node_list = Node.object_global.filter(workflow=obj)
         if node_list:
@@ -327,13 +339,15 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             'association'
         )
 
-    def validate_application(self, value):
+    @classmethod
+    def validate_application(cls, value):
         try:
             return Application.objects.get(id=value)
-        except Exception as e:
-            raise serializers.ValidationError("Application does not exist.")
+        except Application.DoesNotExist as exc:
+            raise serializers.ValidationError("Application does not exist.") from exc
 
-    def mapping_zone(self, key, data_dict, zone_created_data):
+    @classmethod
+    def mapping_zone(cls, key, data_dict, zone_created_data):
         if key in data_dict:
             zone_list = data_dict[key]
             del data_dict[key]
