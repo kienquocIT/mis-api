@@ -108,6 +108,11 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         obj = User.objects.create(**validated_data)
+        company = validated_data['company_current']
+        company.total_user = CompanyUserEmployee.object_normal.filter(
+            company_id=validated_data['company_current']
+        ).count() + 1
+        company.save()
         password = validated_data.pop("password")
         obj.set_password(password)
         obj.save()
