@@ -1,4 +1,4 @@
-from apps.shared import WorkflowMsg
+from .translations import WorkflowMsg
 
 
 # Core
