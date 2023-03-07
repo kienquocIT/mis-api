@@ -580,6 +580,12 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
+        """
+        step 1: contact_select_list: get list contact selected
+        step 2: get primary contact
+        step 3: contact_select_list = contact_select_list append primary contact
+        step 4: update is_primary in which id == primary
+        """
         contact_select_list = None
         contact_primary = None
         if 'contact_select_list' in validated_data:
