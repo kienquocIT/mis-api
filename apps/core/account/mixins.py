@@ -40,13 +40,15 @@ class AccountCreateMixin(BaseCreateMixin):
         raise NotImplementedError
 
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_create.__class__(data=request.data)
+        serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
         if hasattr(serializer, 'is_valid'):
             serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             self.sync_new_user_to_map(instance, request.data.get('company_current', None))
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.serializer_detail.__class__(instance).data)
+                return ResponseController.created_201(
+                    self.serializer_detail(instance).data   # pylint: disable=not-callable / E1102
+                )
             if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
             return ResponseController.bad_request_400(instance.args[1])

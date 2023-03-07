@@ -20,7 +20,7 @@ class HRListMixin(BaseListMixin):
                     **kwargs
                 )
             )
-            serializer = self.serializer_class.__class__(queryset, many=True)
+            serializer = self.serializer_list(queryset, many=True)  # pylint: disable=not-callable / E1102
             return ResponseController.success_200(
                 getattr(serializer, 'data', None),
                 key_data='result'
@@ -41,7 +41,7 @@ class HRListMixin(BaseListMixin):
                         **kwargs
                     )
                 )
-                serializer = self.serializer_class.__class__(queryset, many=True)
+                serializer = self.serializer_class(queryset, many=True)  # pylint: disable=not-callable / E1102
                 return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 
@@ -49,12 +49,14 @@ class HRListMixin(BaseListMixin):
 class HRCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            serializer = self.serializer_create.__class__(data=request.data)
+            serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
             if hasattr(serializer, 'is_valid'):
                 serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(getattr(self.serializer_class.__class__(instance), 'data', None))
+                return ResponseController.created_201(
+                    getattr(self.serializer_class(instance), 'data', None)  # pylint: disable=not-callable / E1102
+                )
             if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
         return ResponseController.unauthorized_401()
@@ -82,7 +84,7 @@ class HRRetrieveMixin(BaseRetrieveMixin):
                 self.get_queryset().filter(**kwargs, is_delete=False)
             ).first()
             if instance:
-                serializer = self.serializer_class.__class__(instance)
+                serializer = self.serializer_class(instance)  # pylint: disable=not-callable / E1102
                 return ResponseController.success_200(getattr(serializer, 'data', None), key_data='result')
         return ResponseController.unauthorized_401()
 
@@ -96,7 +98,7 @@ class HRUpdateMixin(BaseUpdateMixin):
                 self.get_queryset().filter(**kwargs)
             ).first()
             if instance:
-                serializer = self.serializer_update.__class__(instance, data=request.data)
+                serializer = self.serializer_update(instance, data=request.data)  # pylint: disable=not-callable / E1102
                 if hasattr(serializer, 'is_valid'):
                     serializer.is_valid(raise_exception=True)
                 perform_update = self.perform_update(serializer)
@@ -151,12 +153,14 @@ class HRDestroyMixin(BaseDestroyMixin):
 class RoleCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         if hasattr(request, "user"):
-            serializer = self.serializer_create.__class__(data=request.data)
+            serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
             if hasattr(serializer, 'is_valid'):
                 serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(getattr(self.serializer_detail.__class__(instance), 'data', None))
+                return ResponseController.created_201(
+                    getattr(self.serializer_detail(instance), 'data', None)  # pylint: disable=not-callable / E1102
+                )
             if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
         return ResponseController.unauthorized_401()

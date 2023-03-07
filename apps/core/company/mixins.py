@@ -14,14 +14,14 @@ class CompanyCreateMixin(BaseCreateMixin):
         current_company_quantity = current_tenant.company_total
 
         if company_quantity_max > current_company_quantity:
-            serializer = self.serializer_create.__class__(data=request.data)
+            serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
             if hasattr(serializer, 'is_valid'):
                 serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
                 return ResponseController.created_201(
                     getattr(
-                        self.serializer_class.__class__(instance),
+                        self.serializer_class(instance),  # pylint: disable=not-callable / E1102
                         'data',
                         None
                     )

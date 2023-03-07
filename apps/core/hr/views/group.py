@@ -91,6 +91,7 @@ class GroupList(
     ordering = ['group_level__level']
 
     serializer_class = GroupListSerializer
+    serializer_list = GroupListSerializer
     serializer_create = GroupCreateSerializer
 
     def get_queryset(self):
