@@ -167,7 +167,7 @@ class GroupParentList(
     search_fields = []
     ordering = ['group_level__level']
 
-    serializer_class = GroupParentListSerializer
+    serializer_list = GroupParentListSerializer
 
     def get_queryset(self):
         return super().get_queryset().filter(is_delete=False)

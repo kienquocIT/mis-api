@@ -241,11 +241,13 @@ def validate_employee_create_update(validate_data):
     return validate_data
 
 
-def set_up_data_plan_app(
-        plan_app_data,
-        plan_application_dict,
-        bulk_info
-):
+def set_up_data_plan_app(validated_data):
+    plan_application_dict = {}
+    plan_app_data = []
+    bulk_info = []
+    if 'plan_app' in validated_data:
+        plan_app_data = validated_data['plan_app']
+        del validated_data['plan_app']
     if plan_app_data:
         for plan_app in plan_app_data:
             plan_code = None
@@ -260,7 +262,7 @@ def set_up_data_plan_app(
                     'plan': plan_app['plan'],
                     'application': [app.id for app in plan_app['application']]
                 }))
-    return True
+    return plan_application_dict, plan_app_data, bulk_info
 
 
 def create_plan_employee_update_tenant_plan(
@@ -340,21 +342,11 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             step 3: create M2M PlanEmployee + update TenantPlan
             step 4: create M2M Role Employee
         """
-        plan_application_dict = {}
-        plan_app_data = None
-        role_list = None
-        bulk_info = []
-        if 'plan_app' in validated_data:
-            plan_app_data = validated_data['plan_app']
-            del validated_data['plan_app']
-            set_up_data_plan_app(
-                plan_app_data=plan_app_data,
-                plan_application_dict=plan_application_dict,
-                bulk_info=bulk_info
-            )
-
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(validated_data)
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+
+        role_list = None
         if 'role' in validated_data:
             role_list = validated_data['role']
             del validated_data['role']
@@ -457,21 +449,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             step 3: delete old M2M PlanEmployee + create new M2M PlanEmployee + update TenantPlan
             step 4: delete old M2M RoleEmployee + create new M2M RoleEmployee
         """
-        plan_application_dict = {}
-        plan_app_data = None
-        role_list = None
-        bulk_info = []
-        if 'plan_app' in validated_data:
-            plan_app_data = validated_data['plan_app']
-            del validated_data['plan_app']
-            set_up_data_plan_app(
-                plan_app_data=plan_app_data,
-                plan_application_dict=plan_application_dict,
-                bulk_info=bulk_info
-            )
-
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(validated_data)
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+
+        role_list = None
         if 'role' in validated_data:
             role_list = validated_data['role']
             del validated_data['role']
