@@ -122,6 +122,7 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Name is already exist.")
         return value
 
+
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
