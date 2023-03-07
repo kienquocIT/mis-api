@@ -1,22 +1,31 @@
 # docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
 
+image: python:3.11
+
 variables:
   MYSQL_DATABASE: $MYSQL_DB
   MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
   MYSQL_USER: $MYSQL_USER
   MYSQL_PASSWORD: $MYSQL_PASS
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
-default:
-  image: python:3.11
-  before_script:
-    - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
-    - pip install -r req.txt
+before_script:
+  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
+  - pip install -r req.txt
+
+#cache:
+#  key: python_n_package_1
+#  paths:
+#    - .cache/pip
+#    - venv/
+
 
 cache:
   key: python_n_package
   paths:
-    - /usr/local/bin/python3.11
-    - /usr/local/lib/python3.11/site-packages/
+    - usr/local/bin/python
+    - usr/local/lib/python/site-packages/
+  untracked: true
 
 stages:
   - check
@@ -27,13 +36,17 @@ stages:
 lint:
   stage: check
   script:
-    - python -m pylint --recursive=y misapi/__init__.py
+    - python -m pylint --recursive=y .
 
 test_migrations:
   stage: migrations-init
   script:
-    - python manage.py makemigrations --check --dry-run --noinput
-    - python manage.py migrate
+    - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
+        python manage.py makemigrations --check --dry-run --noinput;
+        python manage.py migrate;
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH != null'
 
 cmis-tests:
   stage: test

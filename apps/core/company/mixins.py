@@ -1,7 +1,8 @@
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
+
 from apps.core.company.models import Company
 from apps.core.tenant.models import Tenant
-from rest_framework.exceptions import ValidationError
 from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, BaseListMixin
 
 
@@ -13,18 +14,24 @@ class CompanyCreateMixin(BaseCreateMixin):
         current_company_quantity = current_tenant.company_total
 
         if company_quantity_max > current_company_quantity:
-            serializer = self.serializer_create(data=request.data)
-            serializer.is_valid(raise_exception=True)
+            serializer = self.serializer_create.__class__(data=request.data)
+            if hasattr(serializer, 'is_valid'):
+                serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.serializer_class(instance).data)
-            elif isinstance(instance, ValidationError):
+                return ResponseController.created_201(
+                    getattr(
+                        self.serializer_class.__class__(instance),
+                        'data',
+                        None
+                    )
+                )
+            if isinstance(instance, ValidationError):
                 return ResponseController.internal_server_error_500()
-        else:
-            return ResponseController.forbidden_403(msg='Maximum 5 companies only')
+        return ResponseController.forbidden_403(msg='Maximum 5 companies only')
 
     @classmethod
-    def perform_create(cls, serializer, user):
+    def perform_create(cls, serializer, user):  # pylint: disable=W0237
         try:
             with transaction.atomic():
                 if user.tenant_current_id:
@@ -40,9 +47,9 @@ class CompanyCreateMixin(BaseCreateMixin):
                     tenant.company_total = Company.object_normal.filter(tenant_id=tenant_current_id).count()
                     tenant.save()
             return instance
-        except Exception as e:
-            print(e)
-            return e
+        except Exception as exc:
+            print(exc)
+            return exc
 
 
 class CompanyDestroyMixin(BaseDestroyMixin):

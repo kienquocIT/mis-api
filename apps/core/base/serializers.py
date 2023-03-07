@@ -16,7 +16,8 @@ class PlanListSerializer(serializers.ModelSerializer):
             'application'
         )
 
-    def get_application(self, obj):
+    @classmethod
+    def get_application(cls, obj):
         result = []
         plan_app_list = PlanApplication.object_normal.select_related('application').filter(
             plan=obj

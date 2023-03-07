@@ -19,4 +19,3 @@ class FORMATTING:
         if isinstance(value, date):
             return datetime.strftime(value, cls.DATE) if value else None
         return str(value)
-

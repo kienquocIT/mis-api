@@ -1,12 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+
+from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
+
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
-from .serializers import UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer, \
-    CompanyUserDetailSerializer
-from apps.core.account.models import User
-from apps.core.account.serializers import UserListSerializer
-from apps.shared import mask_view, TypeCheck, BaseListMixin, BaseCreateMixin, BaseUpdateMixin, \
-    BaseRetrieveMixin, BaseDestroyMixin
+from .serializers import (
+    UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
+    CompanyUserDetailSerializer, UserListSerializer
+)
+from .models import User
 
 
 class UserList(AccountListMixin, AccountCreateMixin):

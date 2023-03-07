@@ -1,7 +1,7 @@
 from apps.core.account.models import User
 from apps.core.base.models import ApplicationProperty
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
-from apps.core.hr.models import PlanEmployee, Employee
+from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.core.workflow.models import Node, Workflow, Association
 from apps.shared import CONDITION_LOGIC
@@ -191,7 +191,7 @@ def create_data_workflow():
         {
             'id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
             'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
-            'title': 'node CEO Duyệt'
+            'title': 'node CEO Duy?t'
         },
     ]
     association_data = {

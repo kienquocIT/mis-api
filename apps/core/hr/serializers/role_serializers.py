@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Role, RoleHolder, Employee
-from apps.shared.decorators import query_debugger
+from apps.core.hr.models import Role, RoleHolder
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -17,16 +16,15 @@ class RoleListSerializer(serializers.ModelSerializer):
             'holder',
         )
 
-    @query_debugger
-    def get_holder(self, obj):
-        employees = []
-        for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code'):
-            employees.append({
+    @classmethod
+    def get_holder(cls, obj):
+        return [
+            {
                 'id': emp['id'],
                 'full_name': emp['last_name'] + ' ' + emp['first_name'],
                 'code': emp['code'],
-            })
-        return employees
+            } for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code')
+        ]
 
 
 class RoleCreateSerializer(serializers.ModelSerializer):
@@ -56,10 +54,12 @@ class RoleCreateSerializer(serializers.ModelSerializer):
             if data_bulk:
                 bulk_info = []
                 for employee in data_bulk:
-                    bulk_info.append(RoleHolder(
-                        role=role,
-                        employee_id=employee
-                    ))
+                    bulk_info.append(
+                        RoleHolder(
+                            role=role,
+                            employee_id=employee
+                        )
+                    )
                 if bulk_info:
                     RoleHolder.object_normal.bulk_create(bulk_info)
             return role
@@ -100,10 +100,12 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
             if data_bulk:
                 bulk_info = []
                 for employee in data_bulk:
-                    bulk_info.append(RoleHolder(
-                        role=instance,
-                        employee_id=employee
-                    ))
+                    bulk_info.append(
+                        RoleHolder(
+                            role=instance,
+                            employee_id=employee
+                        )
+                    )
                 if bulk_info:
                     RoleHolder.object_normal.bulk_create(bulk_info)
         return instance
@@ -122,13 +124,12 @@ class RoleDetailSerializer(serializers.ModelSerializer):
             'holder',
         )
 
-    @query_debugger
-    def get_holder(self, obj):
-        employees = []
-        for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code'):
-            employees.append({
+    @classmethod
+    def get_holder(cls, obj):
+        return [
+            {
                 'id': emp['id'],
                 'full_name': emp['last_name'] + ' ' + emp['first_name'],
                 'code': emp['code'],
-            })
-        return employees
+            } for emp in obj.employee.all().values('id', 'last_name', 'first_name', 'code')
+        ]

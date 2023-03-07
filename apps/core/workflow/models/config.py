@@ -1,7 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, WorkflowMsg, OPTION_COLLABORATOR, CONDITION_LOGIC
+from apps.shared import TenantCoreModel, WorkflowMsg, OPTION_COLLABORATOR
 
 WORKFLOW_ACTION = (
     (0, WorkflowMsg.ACTION_CREATE),
@@ -11,6 +11,7 @@ WORKFLOW_ACTION = (
     (4, WorkflowMsg.ACTION_RECEIVE),
     (5, WorkflowMsg.ACTION_TODO),
 )
+
 
 class Workflow(TenantCoreModel):
     application = models.ForeignKey(
@@ -211,67 +212,3 @@ class Association(TenantCoreModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-
-# class AssociationCondition(TenantCoreModel):
-#     association = models.ForeignKey(
-#         'workflow.Association',
-#         on_delete=models.CASCADE,
-#         verbose_name="association",
-#         related_name="condition_association",
-#         null=True
-#     )
-#     parent_n = models.ForeignKey(
-#         "self",
-#         on_delete=models.CASCADE,
-#         verbose_name="parent condition",
-#         related_name="condition_parent",
-#         null=True,
-#     )
-#     property = models.ForeignKey(
-#         'base.ApplicationProperty',
-#         on_delete=models.CASCADE,
-#         verbose_name="application property",
-#         related_name="condition_property",
-#         null=True
-#     )
-#     logic = models.SmallIntegerField(
-#         verbose_name="logic",
-#         choices=CONDITION_LOGIC,
-#         default=0,
-#         help_text="And/Or"
-#     )
-#     operator = models.CharField(
-#         max_length=300,
-#         blank=True,
-#         null=True
-#     )
-#
-#     # compare data (depend on property type)
-#     text_value = models.TextField(
-#         blank=True,
-#         null=True
-#     )
-#     number_value = models.FloatField(
-#         null=True
-#     )
-#     date_time_value = models.DateTimeField(
-#         null=True
-#     )
-#     choice_value = models.SmallIntegerField(
-#         null=True
-#     )
-#     boolean_value = models.BooleanField(
-#         null=True
-#     )
-#     master_data_value = models.UUIDField(
-#         null=True
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Association Condition'
-#         verbose_name_plural = 'Association Conditions'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-

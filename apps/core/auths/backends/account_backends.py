@@ -6,7 +6,8 @@ class AccountBackend(ModelBackend):
     def get_user(self, user_id):
         return get_user_model().objects.filter(id=user_id).first()
 
-    def get_user_by_username(self, username):
+    @classmethod
+    def get_user_by_username(cls, username):
         return get_user_model().objects.filter(**{get_user_model().USERNAME_FIELD: username}).first()
 
     def authenticate(self, request, username=None, password=None, **kwargs):

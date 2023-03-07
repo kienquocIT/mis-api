@@ -422,5 +422,5 @@ if DEBUG is True:
         case _:
             print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
-    print(Fore.RED, '#  4. ALLOWED_HOSTS:                  ', str(ALLOWED_HOSTS), '\033[0m')
+    print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
