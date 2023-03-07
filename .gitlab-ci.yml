@@ -33,24 +33,24 @@ stages:
   - test
 
 
-lint:
-  stage: check
+pylint-check:
+  stage: pylint-check
   script:
     - python -m pylint --recursive=y .
 
-test_migrations:
+migrations-init:
   stage: migrations-init
   script:
     - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
         python manage.py makemigrations --check --dry-run --noinput;
         python manage.py migrate;
+        python manage.py init_data;
       fi
-    - python manage.py init_data
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
 
-cmis-tests:
-  stage: test
+run-testcase:
+  stage: run-testcase
   script:
     - python manage.py test
   after_script:
