@@ -269,13 +269,6 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return ''
 
-    def validate_phone(self, attrs):
-        if attrs is not None:
-            if Contact.object_normal.filter(phone=attrs).exists():
-                raise serializers.ValidationError("Phone is already exist.")
-            return attrs
-        return ''
-
     def validate_mobile(self, attrs):
         if attrs is not None:
             if Contact.object_normal.filter(mobile=attrs).exists():
@@ -420,13 +413,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         if attrs is not None:
             if attrs != self.instance.email and Contact.object_normal.filter(email=attrs).exists():
                 raise serializers.ValidationError("Email is already exist.")
-            return attrs
-        return ''
-
-    def validate_phone(self, attrs):
-        if attrs is not None:
-            if attrs != self.instance.phone and Contact.object_normal.filter(phone=attrs).exists():
-                raise serializers.ValidationError("Phone is already exist.")
             return attrs
         return ''
 
