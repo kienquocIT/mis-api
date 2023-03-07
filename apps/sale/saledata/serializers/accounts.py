@@ -516,8 +516,9 @@ class AccountListSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': owner.fullname
                 }
-            except Contact.DoesNotExist as exc:
+            except Contact.DoesNotExist:
                 return {}
+        return {}
 
 
 class ContactSubCreateSerializer(serializers.ModelSerializer):

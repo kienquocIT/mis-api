@@ -148,8 +148,3 @@ def create_initial_node():
     Node.object_global.bulk_create(data)
 
     return True
-
-
-
-
-
