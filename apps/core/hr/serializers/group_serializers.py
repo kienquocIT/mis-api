@@ -176,7 +176,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_group_level(cls, obj):
         if obj.group_level:
             return {
-                'id': obj.group_level.id,
+                'id': obj.group_level_id,
                 'code': obj.group_level.code,
                 'level': obj.group_level.level,
                 'description': obj.group_level.description,
@@ -187,8 +187,8 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_first_manager(cls, obj):
         if obj.first_manager:
             return {
-                'id': obj.first_manager.id,
-                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'id': obj.first_manager_id,
+                'full_name': obj.first_manager.get_full_name(2),
                 'code': obj.first_manager.code
             }
         return {}
@@ -197,7 +197,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_parent_n(cls, obj):
         if obj.parent_n:
             return {
-                'id': obj.parent_n.id,
+                'id': obj.parent_n_id,
                 'title': obj.parent_n.title,
                 'code': obj.parent_n.code
             }
@@ -233,7 +233,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_group_level(cls, obj):
         if obj.group_level:
             return {
-                'id': obj.group_level.id,
+                'id': obj.group_level_id,
                 'code': obj.group_level.code,
                 'level': obj.group_level.level,
                 'description': obj.group_level.description,
@@ -246,8 +246,8 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_first_manager(cls, obj):
         if obj.first_manager:
             return {
-                'id': obj.first_manager.id,
-                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'id': obj.first_manager_id,
+                'full_name': obj.first_manager.get_full_name(2),
                 'code': obj.first_manager.code
             }
         return {}
@@ -256,8 +256,8 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_second_manager(cls, obj):
         if obj.second_manager:
             return {
-                'id': obj.second_manager.id,
-                'full_name': Employee.get_full_name(obj.second_manager, 2),
+                'id': obj.second_manager_id,
+                'full_name': obj.second_manager.get_full_name(2),
                 'code': obj.second_manager.code
             }
         return {}
@@ -266,7 +266,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_parent_n(cls, obj):
         if obj.parent_n:
             return {
-                'id': obj.parent_n.id,
+                'id': obj.parent_n_id,
                 'title': obj.parent_n.title,
                 'code': obj.parent_n.code
             }
@@ -289,7 +289,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
                         })
                 result.append({
                     'id': employee.id,
-                    'full_name': Employee.get_full_name(employee, 2),
+                    'full_name': employee.get_full_name(2),
                     'code': employee.code,
                     'role': role_list
                 })
