@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Role, RoleHolder
+from apps.shared import HRMsg
 
 
 class RoleListSerializer(serializers.ModelSerializer):
-
     holder = serializers.SerializerMethodField()
 
     class Meta:
@@ -44,7 +44,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if Role.object_global.filter(code=value).exclude(code=value).exists():
-            raise serializers.ValidationError("Code is exist.")
+            raise serializers.ValidationError(HRMsg.ROLE_CODE_EXIST)
         return value
 
     def create(self, validated_data):
@@ -63,7 +63,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
                 if bulk_info:
                     RoleHolder.object_normal.bulk_create(bulk_info)
             return role
-        raise serializers.ValidationError("Data is not valid")
+        raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
 
 
 class RoleUpdateSerializer(serializers.ModelSerializer):
@@ -85,7 +85,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if Role.object_global.filter(code=value).exclude(code=value).exists():
-            raise serializers.ValidationError("Code is exist.")
+            raise serializers.ValidationError(HRMsg.ROLE_CODE_EXIST)
         return value
 
     def update(self, instance, validated_data):
@@ -108,7 +108,8 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
                     )
                 if bulk_info:
                     RoleHolder.object_normal.bulk_create(bulk_info)
-        return instance
+            return instance
+        raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
 
 
 class RoleDetailSerializer(serializers.ModelSerializer):

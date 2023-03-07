@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.company.models import Company, CompanyUserEmployee
+from apps.shared import AccountMsg
 
 
 class UserListSerializer(serializers.ModelSerializer):
@@ -41,10 +42,15 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():
-            raise serializers.ValidationError("phone number does not contain characters")
+            raise serializers.ValidationError(AccountMsg.PHONE_CONTAIN_CHARACTER)
         return attrs
 
     def update(self, instance, validated_data):
+        """
+            if user is employee and only in 1 company (line 57)
+            -> move employee + user in new company
+        """
+
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
@@ -65,7 +71,8 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
-        return instance
+            return instance
+        raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -87,21 +94,16 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_password(cls, attrs):
-        # uppercase_count = sum(1 for char in attrs if char.isupper())
-        # lower_count = sum(1 for char in attrs if char.isupper())
         num_count = sum(1 for char in attrs if char.isnumeric())
-        # if uppercase_count == 0:
-        #     raise serializers.ValidationError("Password must contain upper letters")
-        # if lower_count == 0:
-        #     raise serializers.ValidationError("Password must contain character")
-        if num_count == 0:
-            raise serializers.ValidationError("Password must contain number")
+        alpha_count = sum(1 for char in attrs if char.isalpha())
+        if num_count == 0 or alpha_count == 0:
+            raise serializers.ValidationError(AccountMsg.VALID_PASSWORD)
         return attrs
 
     @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():
-            raise serializers.ValidationError("phone number does not contain characters")
+            raise serializers.ValidationError(AccountMsg.PHONE_CONTAIN_CHARACTER)
         return attrs
 
     def create(self, validated_data):
@@ -149,8 +151,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
                         'representative': comp_obj.representative_fullname,
                     }
                 )
-            except Company.DoesNotExist:
-                pass
+            except Company.DoesNotExist as exc:
+                raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST) from exc
         return companies
 
 
@@ -179,7 +181,7 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
                     }
                 )
             except Company.DoesNotExist as exc:
-                raise serializers.ValidationError("Company does not exist.") from exc
+                raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST) from exc
         return companies
 
 
@@ -276,4 +278,6 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             else:
                 if len(bulk_info_add) > 0:
                     instance.save(is_superuser=True)
-        return instance
+
+            return instance
+        raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)

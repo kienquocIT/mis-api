@@ -11,3 +11,5 @@ class HRMsg:
     EMPLOYEE_NOT_EXIST = _('Employee does not exist.')
     EMPLOYEES_NOT_EXIST = _('Employees do not exist.')
     EMPLOYEE_IS_ARRAY = _('Employee must be array.')
+    ROLE_CODE_EXIST = _('Role code is exist.')
+    ROLE_DATA_VALID = _('Data is not valid')
