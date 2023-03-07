@@ -1,9 +1,9 @@
 from django.db import transaction
+from rest_framework.exceptions import ValidationError
 
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
-from rest_framework.exceptions import ValidationError
 
 
 class AccountListMixin(BaseListMixin):
@@ -35,20 +35,26 @@ class AccountListMixin(BaseListMixin):
 
 
 class AccountCreateMixin(BaseCreateMixin):
+    @staticmethod
+    def sync_new_user_to_map(user_obj, company_id):
+        raise NotImplementedError
+
     def create(self, request, *args, **kwargs):
-        serializer = self.serializer_create(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        instance = self.perform_create(serializer, request.user)
-        self.sync_new_user_to_map(instance, request.data.get('company_current', None))
-        if not isinstance(instance, Exception):
-            return ResponseController.created_201(self.serializer_detail(instance).data)
-        elif isinstance(instance, ValidationError):
-            return ResponseController.internal_server_error_500()
-        else:
+        serializer = self.serializer_create.__class__(data=request.data)
+        if hasattr(serializer, 'is_valid'):
+            serializer.is_valid(raise_exception=True)
+            instance = self.perform_create(serializer, request.user)
+            self.sync_new_user_to_map(instance, request.data.get('company_current', None))
+            if not isinstance(instance, Exception):
+                return ResponseController.created_201(self.serializer_detail.__class__(instance).data)
+            if isinstance(instance, ValidationError):
+                return ResponseController.internal_server_error_500()
             return ResponseController.bad_request_400(instance.args[1])
+        return ResponseController.internal_server_error_500()
 
     @classmethod
-    def perform_create(cls, serializer, user):
+    def perform_create(cls, serializer, user):  # pylint: disable=W0237
+        # arguments-renamed / W0237
         try:
             with transaction.atomic():
                 instance = serializer.save(
@@ -57,11 +63,13 @@ class AccountCreateMixin(BaseCreateMixin):
                 if instance.company_current_id:
                     company_added_id = instance.company_current_id
                     company = Company.object_normal.get(id=company_added_id)
-                    company.total_user = CompanyUserEmployee.object_normal.filter(company_id=company_added_id).count()+1
+                    company.total_user = CompanyUserEmployee.object_normal.filter(
+                        company_id=company_added_id
+                    ).count() + 1
                     company.save()
             return instance
-        except Exception as e:
-            return e
+        except Exception as err:
+            return err
 
 
 class AccountDestroyMixin(BaseDestroyMixin):

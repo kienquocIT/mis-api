@@ -19,7 +19,8 @@ class TenantPlanSerializer(serializers.ModelSerializer):
             'license_used'
         )
 
-    def get_tenant(self, obj):
+    @classmethod
+    def get_tenant(cls, obj):
         if obj.tenant:
             return {
                 'id': obj.tenant.id,
@@ -28,7 +29,8 @@ class TenantPlanSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_plan(self, obj):
+    @classmethod
+    def get_plan(cls, obj):
         if obj.plan:
             application = []
             plan_app_list = PlanApplication.object_normal.select_related('application').filter(
@@ -49,8 +51,8 @@ class TenantPlanSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_license_used(self, obj):
+    @classmethod
+    def get_license_used(cls, obj):
         if obj.license_used:
             return obj.license_used
         return 0
-

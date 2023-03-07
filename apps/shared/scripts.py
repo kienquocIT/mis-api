@@ -1,10 +1,9 @@
 from apps.core.account.models import User
 from apps.core.base.models import ApplicationProperty
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
-from apps.core.hr.models import PlanEmployee, Employee
+from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.core.workflow.models import Node, Workflow, Association
-from apps.shared import CONDITION_LOGIC
 
 
 def update_company_created_user():
@@ -191,7 +190,7 @@ def create_data_workflow():
         {
             'id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
             'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
-            'title': 'node CEO Duyệt'
+            'title': 'node CEO Duy?t'
         },
     ]
     association_data = {
@@ -227,54 +226,3 @@ def create_data_workflow():
         Node.objects.create(**node)
     Association.objects.create(**association_data)
     return True
-
-
-def get_true_false(condition_data):
-    tmp = True
-    return tmp
-
-
-def check_condition(condition_list):
-    result = []
-    for idx in range(0, len(condition_list)):
-        if idx % 2 == 0:
-            if isinstance(condition_list[idx], dict):
-                result.append(get_true_false(condition_list[idx]))
-            elif isinstance(condition_list[idx], list):
-                result.append(check_condition(
-                    condition_list=condition_list[idx],
-                ))
-        else:
-            result.append(condition_list[idx].lower())
-
-    return result
-
-
-def get_condition_tree(condition_obj):
-    """ return a tree for a condition object """
-
-    children = condition_obj.condition_parent.all()
-
-    if not children:
-        # this condition has no children, recursion ends here
-        return {'title': condition_obj.title, 'children': []}
-
-    # this condition has children, get every child's family tree
-    return {
-        'title': condition_obj.title,
-        'children': [get_condition_tree(child) for child in children],
-    }
-
-
-def get_node_condition(node_id):
-    result = []
-    association_list = Association.objects.filter(
-        node_in_id=node_id,
-    ).values('condition')
-    if association_list:
-        for association in association_list:
-            tmp = check_condition(
-                condition_list=association['condition'],
-            )
-
-    return result

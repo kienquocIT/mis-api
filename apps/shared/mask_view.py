@@ -47,7 +47,7 @@ def mask_view(**parent_kwargs):
         parent_kwargs = {}
 
     def decorated(func_view):
-        def wrapper(self, request, *args, **kwargs):
+        def wrapper(self, request, *args, **kwargs):  # pylint: disable=R0911
             # get user in request
             user = request.user
             if not request.user or isinstance(request.user, AnonymousUser):
@@ -76,9 +76,9 @@ def mask_view(**parent_kwargs):
                 view_return = func_view(self, request, *args, **kwargs)  # --> {'user_list': user_list}
                 if isinstance(view_return, HttpResponse):
                     return view_return
-                elif isinstance(view_return, Exception):
+                if isinstance(view_return, Exception):
                     return view_return
-                elif isinstance(view_return, (list, tuple)) and len(view_return) == 2:
+                if isinstance(view_return, (list, tuple)) and len(view_return) == 2:
                     data, http_status = view_return
                     match http_status:
                         case status.HTTP_401_UNAUTHORIZED:

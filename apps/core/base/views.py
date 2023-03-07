@@ -1,6 +1,6 @@
 from rest_framework import generics
-from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
 from apps.core.base.mixins import ApplicationListMixin
