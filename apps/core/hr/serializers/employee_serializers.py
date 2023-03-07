@@ -4,7 +4,7 @@ from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application, PermissionApplication
 from apps.core.tenant.models import TenantPlan
-from apps.shared import HrMsg, PERMISSION_OPTION
+from apps.shared import HRMsg, BaseMsg, AccountMsg, PERMISSION_OPTION
 
 
 class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
@@ -20,7 +20,7 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
         try:
             return SubscriptionPlan.objects.get(id=value)
         except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError("Plan does not exist.") from exc
+            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
 
     @classmethod
     def validate_application(cls, value):
@@ -28,8 +28,8 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            raise serializers.ValidationError("Some application does not exist.")
-        raise serializers.ValidationError("Value must be array.")
+            raise serializers.ValidationError(BaseMsg.APPLICATIONS_NOT_EXIST)
+        raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
 
 
 class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
@@ -46,7 +46,7 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
         try:
             return SubscriptionPlan.objects.get(id=value)
         except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError("Plan does not exist.") from exc
+            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
 
     @classmethod
     def validate_application(cls, value):
@@ -54,8 +54,8 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            raise serializers.ValidationError("Some application does not exist.")
-        raise serializers.ValidationError("Value must be array.")
+            raise serializers.ValidationError(BaseMsg.APPLICATIONS_NOT_EXIST)
+        raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
 
 
 class EmployeeListSerializer(serializers.ModelSerializer):
@@ -227,6 +227,69 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
         return result
 
 
+# functions for create/ update employee
+def validate_employee_create_update(validate_data):
+    plan_license_check = ""
+    if 'user' in validate_data:
+        if 'plan_app' in validate_data:
+            for plan_app in validate_data['plan_app']:
+                if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
+                    if plan_app['license_used'] > plan_app['license_quantity']:
+                        plan_license_check += plan_app['plan'].title + ", "
+    if plan_license_check:
+        raise serializers.ValidationError({
+            'detail': HRMsg.EMPLOYEE_PLAN_APP_CHECK.format(plan_license_check)
+        })
+    return validate_data
+
+
+def set_up_data_plan_app(validated_data):
+    plan_application_dict = {}
+    plan_app_data = []
+    bulk_info = []
+    if 'plan_app' in validated_data:
+        plan_app_data = validated_data['plan_app']
+        del validated_data['plan_app']
+    if plan_app_data:
+        for plan_app in plan_app_data:
+            plan_code = None
+            app_code_list = []
+            if 'plan' in plan_app:
+                plan_code = plan_app['plan'].code if plan_app['plan'] else None
+            if 'application' in plan_app:
+                app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
+            if plan_code and app_code_list:
+                plan_application_dict.update({plan_code: app_code_list})
+                bulk_info.append(PlanEmployee(**{
+                    'plan': plan_app['plan'],
+                    'application': [app.id for app in plan_app['application']]
+                }))
+    return plan_application_dict, plan_app_data, bulk_info
+
+
+def create_plan_employee_update_tenant_plan(
+        employee,
+        plan_app_data,
+        bulk_info
+):
+    if employee and plan_app_data and bulk_info:
+        # create M2M PlanEmployee
+        for info in bulk_info:
+            info.employee = employee
+        PlanEmployee.object_normal.bulk_create(bulk_info)
+        # update TenantPlan
+        for plan_data in plan_app_data:
+            if 'plan' in plan_data and 'license_used' in plan_data:
+                tenant_plan = TenantPlan.object_normal.filter(
+                    tenant=employee.tenant,
+                    plan=plan_data['plan']
+                ).first()
+                if tenant_plan:
+                    tenant_plan.license_used = plan_data['license_used']
+                    tenant_plan.save()
+    return True
+
+
 class EmployeeCreateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
     plan_app = EmployeePlanAppCreateSerializer(many=True)
@@ -253,14 +316,14 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         try:
             return User.objects.get(id=value)
         except User.DoesNotExist as exc:
-            raise serializers.ValidationError("User does not exist.") from exc
+            raise serializers.ValidationError(AccountMsg.USER_NOT_EXIST) from exc
 
     @classmethod
     def validate_group(cls, value):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError("Group does not exist.")
+            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
 
     @classmethod
     def validate_role(cls, value):
@@ -268,88 +331,46 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             role_list = Role.object_global.filter(id__in=value).count()
             if role_list == len(value):
                 return value
-            raise serializers.ValidationError("Some role does not exist.")
-        raise serializers.ValidationError("Role must be array.")
+            raise serializers.ValidationError(HRMsg.ROLES_NOT_EXIST)
+        raise serializers.ValidationError(HRMsg.ROLE_IS_ARRAY)
 
     def validate(self, validate_data):
-        plan_license_check = ""
-        if 'user' in validate_data:
-            if 'plan_app' in validate_data:
-                for plan_app in validate_data['plan_app']:
-                    if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
-                        if plan_app['license_used'] > plan_app['license_quantity']:
-                            plan_license_check += plan_app['plan'].title + ", "
-        if plan_license_check:
-            raise serializers.ValidationError(HrMsg.LICENSE_OVER_TOTAL.format(str(plan_license_check)))
-        return validate_data
+        return validate_employee_create_update(validate_data=validate_data)
 
     def create(self, validated_data):  # pylint: disable=R0912
         """
-        Steps:
-            1. Create plan app (function: create_plan_app)
-            2. Create user
-
+            step 1: set up data for create
+            step 2: create employee
+            step 3: create M2M PlanEmployee + update TenantPlan
+            step 4: create M2M Role Employee
         """
-        plan_application_dict = {}
-        plan_app_data = None
-        role_list = None
-        bulk_info = []
-        if 'plan_app' in validated_data:
-            plan_app_data = validated_data['plan_app']
-            del validated_data['plan_app']
-            if plan_app_data:
-                for plan_app in plan_app_data:
-                    plan_code = None
-                    app_code_list = []
-                    if 'plan' in plan_app:
-                        plan_code = plan_app['plan'].code if plan_app['plan'] else None
-                    if 'application' in plan_app:
-                        app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
-                    if plan_code and app_code_list:
-                        plan_application_dict.update({plan_code: app_code_list})
-                        bulk_info.append(
-                            PlanEmployee(
-                                **{
-                                    'plan': plan_app['plan'],
-                                    'application': [app.id for app in plan_app['application']]
-                                }
-                            )
-                        )
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(validated_data)
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+
+        role_list = None
         if 'role' in validated_data:
             role_list = validated_data['role']
             del validated_data['role']
+
         # create new employee
         employee = Employee.objects.create(**validated_data)
+
         # create M2M PlanEmployee + update TenantPlan
-        if employee and plan_app_data and bulk_info:
-            # create M2M PlanEmployee
-            for info in bulk_info:
-                info.employee = employee
-            PlanEmployee.object_normal.bulk_create(bulk_info)
-            # update TenantPlan
-            for plan_data in plan_app_data:
-                if 'plan' in plan_data and 'license_used' in plan_data:
-                    tenant_plan = TenantPlan.object_normal.filter(
-                        tenant=employee.tenant,
-                        plan=plan_data['plan']
-                    ).first()
-                    if tenant_plan:
-                        tenant_plan.license_used = plan_data['license_used']
-                        tenant_plan.save()
+        create_plan_employee_update_tenant_plan(
+            employee=employee,
+            plan_app_data=plan_app_data,
+            bulk_info=bulk_info
+        )
+
         # create M2M Role Employee
         if role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(
-                    RoleHolder(
-                        **{
-                            'employee': employee,
-                            'role_id': role,
-                        }
-                    )
-                )
+                bulk_info.append(RoleHolder(**{
+                    'employee': employee,
+                    'role_id': role,
+                }))
             RoleHolder.object_normal.bulk_create(bulk_info)
         return employee
 
@@ -408,7 +429,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError("Group does not exist.")
+            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
 
     @classmethod
     def validate_role(cls, value):
@@ -416,61 +437,35 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             role_list = Role.object_global.filter(id__in=value).count()
             if role_list == len(value):
                 return value
-            raise serializers.ValidationError("Some role does not exist.")
-        raise serializers.ValidationError("Role must be array.")
+            raise serializers.ValidationError(HRMsg.ROLES_NOT_EXIST)
+        raise serializers.ValidationError(HRMsg.ROLE_IS_ARRAY)
 
     @classmethod
     def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
         except User.DoesNotExist:
-            raise serializers.ValidationError("User does not exist.")
+            raise serializers.ValidationError(AccountMsg.USER_NOT_EXIST)
 
     def validate(self, validate_data):
-        plan_license_check = ""
-        if 'user' in validate_data:
-            if 'plan_app' in validate_data:
-                for plan_app in validate_data['plan_app']:
-                    if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
-                        if plan_app['license_used'] > plan_app['license_quantity']:
-                            plan_license_check += plan_app['plan'].title + ", "
-        if plan_license_check:
-            raise serializers.ValidationError(
-                "Licenses used of " + plan_license_check + "plan is over total licenses."
-            )
-        return validate_data
+        return validate_employee_create_update(validate_data=validate_data)
 
     def update(self, instance, validated_data):  # pylint: disable=R0912,R0914
-        plan_application_dict = {}
-        plan_app_data = None
-        role_list = None
-        bulk_info = []
-        if 'plan_app' in validated_data:
-            plan_app_data = validated_data['plan_app']
-            del validated_data['plan_app']
-            if plan_app_data:
-                for plan_app in plan_app_data:
-                    plan_code = None
-                    app_code_list = []
-                    if 'plan' in plan_app:
-                        plan_code = plan_app['plan'].code if plan_app['plan'] else None
-                    if 'application' in plan_app:
-                        app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
-                    if plan_code and app_code_list:
-                        plan_application_dict.update({plan_code: app_code_list})
-                        bulk_info.append(
-                            PlanEmployee(
-                                **{
-                                    'plan': plan_app['plan'],
-                                    'application': [app.id for app in plan_app['application']]
-                                }
-                            )
-                        )
+        """
+            step 1: set up data for update
+            step 2: update employee
+            step 3: delete old M2M PlanEmployee + create new M2M PlanEmployee + update TenantPlan
+            step 4: delete old M2M RoleEmployee + create new M2M RoleEmployee
+        """
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(validated_data)
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
+
+        role_list = None
         if 'role' in validated_data:
             role_list = validated_data['role']
             del validated_data['role']
+
         # update employee
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -482,39 +477,27 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
         if plan_employee_old:
             plan_employee_old.delete()
+
         # create M2M PlanEmployee + update TenantPlan
-        if instance and plan_app_data and bulk_info:
-            # create M2M PlanEmployee
-            for info in bulk_info:
-                info.employee = instance
-            PlanEmployee.object_normal.bulk_create(bulk_info)
-            # update TenantPlan
-            for plan_data in plan_app_data:
-                if 'plan' in plan_data and 'license_used' in plan_data:
-                    tenant_plan = TenantPlan.object_normal.filter(
-                        tenant=instance.tenant,
-                        plan=plan_data['plan']
-                    ).first()
-                    if tenant_plan:
-                        tenant_plan.license_used = plan_data['license_used']
-                        tenant_plan.save()
+        create_plan_employee_update_tenant_plan(
+            employee=instance,
+            plan_app_data=plan_app_data,
+            bulk_info=bulk_info
+        )
 
         # delete old M2M RoleEmployee
         role_employee_old = RoleHolder.object_normal.filter(employee=instance)
         if role_employee_old:
             role_employee_old.delete()
+
         # create M2M RoleEmployee
         if instance and role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(
-                    RoleHolder(
-                        **{
-                            'employee': instance,
-                            'role_id': role,
-                        }
-                    )
-                )
+                bulk_info.append(RoleHolder(**{
+                    'employee': instance,
+                    'role_id': role,
+                }))
             RoleHolder.object_normal.bulk_create(bulk_info)
 
         return instance
@@ -535,14 +518,14 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):
-                    raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_NOT_EXIST)
+                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
 
                 # check config_data
                 if config_data and isinstance(config_data, dict) and 'option' in config_data:
                     option = config_data['option']
                     if option not in option_choices:
-                        raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_OPTION_INCORRECT)
+                        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
                 else:
-                    raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_CHILD_REQUIRED)
+                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
             return attrs
-        raise serializers.ValidationError(HrMsg.PERMISSIONS_BY_CONFIGURED_DICT_TYPE)
+        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
