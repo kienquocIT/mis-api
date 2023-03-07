@@ -123,7 +123,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
