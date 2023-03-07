@@ -28,18 +28,18 @@ cache:
   untracked: true
 
 stages:
-  - check
-  - migrations-init
-  - test
+  - pylint_check
+  - migrations_init
+  - run_testcase
 
 
 pylint_check:
-  stage: pylint-check
+  stage: pylint_check
   script:
     - python -m pylint --recursive=y .
 
 migrations_init:
-  stage: migrations-init
+  stage: migrations_init
   script:
     - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
         python manage.py makemigrations --check --dry-run --noinput;
@@ -50,7 +50,7 @@ migrations_init:
     - if: '$CI_COMMIT_BRANCH != null'
 
 run_testcase:
-  stage: run-testcase
+  stage: run_testcase
   script:
     - python manage.py test
   after_script:
