@@ -1,8 +1,10 @@
 from apps.core.account.models import User
+from apps.core.base.models import ApplicationProperty
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee, Employee
 from apps.core.tenant.models import TenantPlan, Tenant
-from apps.core.workflow.models import Node
+from apps.core.workflow.models import Node, Workflow, Association
+from apps.shared import CONDITION_LOGIC
 
 
 def update_company_created_user():
@@ -121,6 +123,7 @@ def update_data_company_license_tracking():
     return True
 
 
+# TEST WORKFLOW
 def create_initial_node():
     data = [
         Node(**{
@@ -150,6 +153,128 @@ def create_initial_node():
     return True
 
 
+def create_data_property():
+    data = {
+        'id': '582a4296-299d-4856-adf2-84c1a7be3d08',
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'Doanh thu',
+        'code': 'revenue',
+        'type': 'text',
+        'compare_operator': {
+            '=': 'equal',
+            '>': 'greater than',
+            '<': 'less than',
+            '>=': 'greater or equal',
+            '<=': 'less or equal',
+            '!=': 'not equal'
+        }
+    }
+    ApplicationProperty.objects.create(**data)
+    return True
 
 
+def create_data_workflow():
+    workflow_data = {
+        'id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'workflow test',
+        'code': 'test',
+    }
+    node_data = [
+        {
+            'id': '1c70776b-9722-4553-bed9-ea3a238ce072',
+            'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
+            'title': 'node initial',
+            'is_system': True,
+            'code_node_system': 'Initial'
+        },
+        {
+            'id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
+            'workflow_id': 'a86f8b07-02f3-42da-90c7-3fcefe1dae2b',
+            'title': 'node CEO Duyệt'
+        },
+    ]
+    association_data = {
+        'id': '2e02dd3b-54b8-4557-b2f6-2c6d3f496846',
+        'node_in_id': '1c70776b-9722-4553-bed9-ea3a238ce072',
+        'node_out_id': 'e31ccba9-7007-4017-8076-2e7c06d5ed97',
+        'condition': [
+            {'property': 'total_revenue', 'operator': '>', 'value': 100},
+            'AND',
+            {'property': 'total_revenue', 'operator': '>', 'value': 100},
+            'AND',
+            {'property': 'total_revenue', 'operator': '>', 'value': 100},
+            'AND',
+            [
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+                'AND',
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+                'AND',
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+            ],
+            'AND',
+            [
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+                'OR',
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+                'OR',
+                {'property': 'total_revenue', 'operator': '>', 'value': 100},
+            ],
+        ]
+    }
+    Workflow.objects.create(**workflow_data)
+    for node in node_data:
+        Node.objects.create(**node)
+    Association.objects.create(**association_data)
+    return True
 
+
+def get_true_false(condition_data):
+    tmp = True
+    return tmp
+
+
+def check_condition(condition_list):
+    result = []
+    for idx in range(0, len(condition_list)):
+        if idx % 2 == 0:
+            if isinstance(condition_list[idx], dict):
+                result.append(get_true_false(condition_list[idx]))
+            elif isinstance(condition_list[idx], list):
+                result.append(check_condition(
+                    condition_list=condition_list[idx],
+                ))
+        else:
+            result.append(condition_list[idx].lower())
+
+    return result
+
+
+def get_condition_tree(condition_obj):
+    """ return a tree for a condition object """
+
+    children = condition_obj.condition_parent.all()
+
+    if not children:
+        # this condition has no children, recursion ends here
+        return {'title': condition_obj.title, 'children': []}
+
+    # this condition has children, get every child's family tree
+    return {
+        'title': condition_obj.title,
+        'children': [get_condition_tree(child) for child in children],
+    }
+
+
+def get_node_condition(node_id):
+    result = []
+    association_list = Association.objects.filter(
+        node_in_id=node_id,
+    ).values('condition')
+    if association_list:
+        for association in association_list:
+            tmp = check_condition(
+                condition_list=association['condition'],
+            )
+
+    return result

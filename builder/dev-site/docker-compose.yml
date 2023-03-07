@@ -1,0 +1,22 @@
+version: '2.12'
+
+services:
+  api-dev:
+    build:
+      context: ../../
+      dockerfile: builder/dev-site/Dockerfile
+    container_name: api-dev
+    command: sh ./builder/dev-site/docker_entry_point.sh
+    restart: unless-stopped
+    volumes:
+      - ../../:/code
+    ports:
+      - "${RUNNING_PORT}:8000"
+    env_file:
+      - ../../.env
+    networks:
+      - docker_network_cloud
+
+networks:
+  docker_network_cloud:
+    external: true

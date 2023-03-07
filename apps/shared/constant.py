@@ -25,3 +25,24 @@ PERMISSION_OPTION = (
     (4, "All staff in owner company"),
 )
 
+# workflow
+WORKFLOW_ACTION = (
+    (0, "Create"),
+    (1, "Approve"),
+    (2, "Reject"),
+    (3, "Return"),
+    (4, "Receive"),
+    (5, "To do"),
+)
+
+OPTION_COLLABORATOR = (
+    (0, "In form"),
+    (1, "Out form"),
+    (2, "In workflow"),
+)
+
+CONDITION_LOGIC = (
+    (0, "And"),
+    (1, "Or"),
+)
+

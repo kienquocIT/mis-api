@@ -75,8 +75,9 @@ class ApplicationProperty(BaseModel):
     )
     properties = models.JSONField(
         default=dict,
-        null=True,
-        blank=True,
+    )
+    compare_operator = models.JSONField(
+        default=dict,
     )
 
     class Meta:

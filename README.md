@@ -1,4 +1,4 @@
-~~# Management Information System API (MIS API)
+# Management Information System API (MIS API)
 
 ---
 
@@ -103,7 +103,6 @@ SHOW_API_DOCS = True
 DEBUG_HIT_DB = True
 
 # True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
-USE_CELERY_CONFIG_OPTION = 1
 CELERY_TASK_ALWAYS_EAGER = False
 
 # 0: Sử dụng sqlite3 làm database cho "default"

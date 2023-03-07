@@ -1,7 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, WorkflowMsg
+from apps.shared import TenantCoreModel, WorkflowMsg, OPTION_COLLABORATOR, CONDITION_LOGIC
 
 WORKFLOW_ACTION = (
     (0, WorkflowMsg.ACTION_CREATE),
@@ -11,7 +11,6 @@ WORKFLOW_ACTION = (
     (4, WorkflowMsg.ACTION_RECEIVE),
     (5, WorkflowMsg.ACTION_TODO),
 )
-
 
 class Workflow(TenantCoreModel):
     application = models.ForeignKey(
@@ -116,6 +115,7 @@ class Node(TenantCoreModel):
     )
     option_collaborator = models.SmallIntegerField(
         verbose_name="collaborator options",
+        choices=OPTION_COLLABORATOR,
         default=0,
         help_text="option choose collaborator: In form, Out form, In workflow"
     )
@@ -179,19 +179,24 @@ class Collaborator(TenantCoreModel):
 
 
 class Association(TenantCoreModel):
+    workflow = models.ForeignKey(
+        'workflow.Workflow',
+        on_delete=models.CASCADE,
+        verbose_name="workflow",
+        related_name="association_workflow",
+        null=True
+    )
     node_in = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node input",
         related_name="transition_node_input",
-        null=True
     )
     node_out = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node output",
         related_name="transition_node_output",
-        null=True
     )
     condition = JSONField(
         verbose_name="Condition",
@@ -206,3 +211,67 @@ class Association(TenantCoreModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# class AssociationCondition(TenantCoreModel):
+#     association = models.ForeignKey(
+#         'workflow.Association',
+#         on_delete=models.CASCADE,
+#         verbose_name="association",
+#         related_name="condition_association",
+#         null=True
+#     )
+#     parent_n = models.ForeignKey(
+#         "self",
+#         on_delete=models.CASCADE,
+#         verbose_name="parent condition",
+#         related_name="condition_parent",
+#         null=True,
+#     )
+#     property = models.ForeignKey(
+#         'base.ApplicationProperty',
+#         on_delete=models.CASCADE,
+#         verbose_name="application property",
+#         related_name="condition_property",
+#         null=True
+#     )
+#     logic = models.SmallIntegerField(
+#         verbose_name="logic",
+#         choices=CONDITION_LOGIC,
+#         default=0,
+#         help_text="And/Or"
+#     )
+#     operator = models.CharField(
+#         max_length=300,
+#         blank=True,
+#         null=True
+#     )
+#
+#     # compare data (depend on property type)
+#     text_value = models.TextField(
+#         blank=True,
+#         null=True
+#     )
+#     number_value = models.FloatField(
+#         null=True
+#     )
+#     date_time_value = models.DateTimeField(
+#         null=True
+#     )
+#     choice_value = models.SmallIntegerField(
+#         null=True
+#     )
+#     boolean_value = models.BooleanField(
+#         null=True
+#     )
+#     master_data_value = models.UUIDField(
+#         null=True
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Association Condition'
+#         verbose_name_plural = 'Association Conditions'
+#         ordering = ('-date_created',)
+#         default_permissions = ()
+#         permissions = ()
+

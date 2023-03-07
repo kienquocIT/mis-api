@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee, GroupLevel, Group, GroupEmployee, RoleHolder
+from apps.core.hr.models import Employee, GroupLevel, Group, RoleHolder
 
 
 # Group Level Serializer
@@ -150,7 +150,6 @@ class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
-    # upper_group = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -166,7 +165,6 @@ class GroupListSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
-            # 'upper_group',
             'user_created',
             'user_modified',
         )
@@ -198,18 +196,6 @@ class GroupListSerializer(serializers.ModelSerializer):
                 'code': obj.parent_n.code
             }
         return {}
-
-    # def get_upper_group(self, obj):
-    #     current_level = obj.group_level.level
-    #     if current_level:
-    #         upper_group = Group.object_global.filter(group_level__level=(current_level-1)).first()
-    #         if upper_group:
-    #             return {
-    #                 'id': upper_group.id,
-    #                 'title': upper_group.title,
-    #                 'code': upper_group.code
-    #             }
-    #     return {}
 
 
 class GroupDetailSerializer(serializers.ModelSerializer):
@@ -363,12 +349,6 @@ class GroupCreateSerializer(serializers.ModelSerializer):
             return Employee.object_global.get(id=value)
         except Exception as e:
             raise serializers.ValidationError("Employee does not exist.")
-
-    # def validate(self, validate_data):
-    #     if 'group_level' in validate_data:
-    #         if Group.object_global.filter(group_level=validate_data['group_level']).exists():
-    #             raise serializers.ValidationError({"detail": "Group with this level was exist."})
-    #     return validate_data
 
     def create(self, validated_data):
         # create Group

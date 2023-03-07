@@ -8,29 +8,36 @@ variables:
 
 default:
   image: python:3.11
-  #services:
-  #  - mysql:8.0
-
-  #cache:
-  #  paths:
-  #    - ~/.cache/pip/
   before_script:
-#    - apk add gcc musl-dev mariadb-connector-c-dev
     - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
-    - pip3 --version
-    - pip3 install pip==20.0.2
-    - pip3 install -r req.txt
-    - python3 manage.py makemigrations
-    - python3 manage.py migrate
+    - pip install -r req.txt
 
+cache:
+  key: python_n_package
+  paths:
+    - /usr/local/bin/python3.11
+    - /usr/local/lib/python3.11/site-packages/
 
 stages:
- - test
+  - check
+  - migrations-init
+  - test
 
+
+lint:
+  stage: check
+  script:
+    - python -m pylint --recursive=y misapi/__init__.py
+
+test_migrations:
+  stage: migrations-init
+  script:
+    - python manage.py makemigrations --check --dry-run --noinput
+    - python manage.py migrate
 
 cmis-tests:
   stage: test
   script:
-    - python3 manage.py test
+    - python manage.py test
   after_script:
     - exit
