@@ -2,20 +2,20 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.hr.filters import GroupListFilter
-from apps.core.hr.mixins import HRCreateMixin, HRListMixin, HRRetrieveMixin, HRUpdateMixin, HRDestroyMixin
+from apps.core.hr.mixins import HRListMixin, HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import (
     GroupLevelListSerializer,
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
     GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer,
 )
+from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 # Group Level
 class GroupLevelList(
-    HRListMixin,
-    HRCreateMixin,
+    BaseListMixin,
+    BaseCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -26,8 +26,11 @@ class GroupLevelList(
         "second_manager_description"
     ]
 
-    serializer_class = GroupLevelListSerializer
+    serializer_list = GroupLevelListSerializer
+    serializer_detail = GroupLevelListSerializer
     serializer_create = GroupLevelMainCreateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     @swagger_auto_schema(
         operation_summary="Group Level list",
@@ -46,13 +49,13 @@ class GroupLevelList(
 
 
 class GroupLevelDetail(
-    HRRetrieveMixin,
-    HRUpdateMixin,
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
     queryset = GroupLevel.object_global
-    serializer_class = GroupLevelDetailSerializer
+    serializer_detail = GroupLevelDetailSerializer
     serializer_update = GroupLevelUpdateSerializer
 
     @swagger_auto_schema(
@@ -74,8 +77,8 @@ class GroupLevelDetail(
 
 # Group
 class GroupList(
-    HRListMixin,
-    HRCreateMixin,
+    BaseListMixin,
+    BaseCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -87,11 +90,13 @@ class GroupList(
         "first_manager_title",
         "second_manager_title"
     ]
-    filterset_class = GroupListFilter
     ordering = ['group_level__level']
 
-    serializer_class = GroupListSerializer
+    serializer_list = GroupListSerializer
+    serializer_detail = GroupListSerializer
     serializer_create = GroupCreateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -117,14 +122,14 @@ class GroupList(
 
 
 class GroupDetail(
-    HRRetrieveMixin,
-    HRUpdateMixin,
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
     HRDestroyMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
     queryset = Group.object_global
-    serializer_class = GroupDetailSerializer
+    serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
 
     @swagger_auto_schema(
@@ -153,7 +158,6 @@ class GroupDetail(
 
 class GroupParentList(
     HRListMixin,
-    HRCreateMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -161,7 +165,7 @@ class GroupParentList(
     search_fields = []
     ordering = ['group_level__level']
 
-    serializer_class = GroupParentListSerializer
+    serializer_list = GroupParentListSerializer
 
     def get_queryset(self):
         return super().get_queryset().filter(is_delete=False)
@@ -171,4 +175,4 @@ class GroupParentList(
         operation_description="Get group parent list",
     )
     def get(self, request, *args, **kwargs):
-        return self.list_group_parent(request, *args, **kwargs)
+        return self.list_group_parent(request, **kwargs)
