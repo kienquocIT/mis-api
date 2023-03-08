@@ -1,13 +1,13 @@
 from django.db import transaction
 
 from apps.shared import (
-    ResponseController, BaseDestroyMixin, BaseListMixin,
+    ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
 )
 from apps.core.hr.models import RoleHolder
 
 
 class HRListMixin(BaseListMixin):
-    def list_group_parent(self, request, *args, **kwargs):
+    def list_group_parent(self, request, **kwargs):
         if hasattr(request, "user"):
             if 'level' in kwargs:
                 level = int(kwargs['level'])
@@ -21,7 +21,7 @@ class HRListMixin(BaseListMixin):
                         **kwargs
                     )
                 )
-                serializer = self.serializer_class.__class__(queryset, many=True)
+                serializer = self.get_serializer_list(queryset, many=True)
                 return ResponseController.success_200(serializer.data, key_data='result')
         return ResponseController.unauthorized_401()
 

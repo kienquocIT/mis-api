@@ -2,7 +2,6 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.hr.filters import GroupListFilter
 from apps.core.hr.mixins import HRListMixin, HRDestroyMixin
 from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import (
@@ -91,7 +90,6 @@ class GroupList(
         "first_manager_title",
         "second_manager_title"
     ]
-    filterset_class = GroupListFilter
     ordering = ['group_level__level']
 
     serializer_list = GroupListSerializer
@@ -167,7 +165,7 @@ class GroupParentList(
     search_fields = []
     ordering = ['group_level__level']
 
-    serializer_class = GroupParentListSerializer
+    serializer_list = GroupParentListSerializer
 
     def get_queryset(self):
         return super().get_queryset().filter(is_delete=False)
@@ -177,4 +175,4 @@ class GroupParentList(
         operation_description="Get group parent list",
     )
     def get(self, request, *args, **kwargs):
-        return self.list_group_parent(request, *args, **kwargs)
+        return self.list_group_parent(request, **kwargs)
