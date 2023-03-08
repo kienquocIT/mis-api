@@ -290,6 +290,15 @@ def create_plan_employee_update_tenant_plan(
     return True
 
 
+def validate_role_for_employee(value):
+    if value and isinstance(value, list):
+        role_list = Role.object_global.filter(id__in=value).count()
+        if role_list == len(value):
+            return value
+        raise serializers.ValidationError({'detail': HRMsg.ROLES_NOT_EXIST})
+    raise serializers.ValidationError({'detail': HRMsg.ROLE_IS_ARRAY})
+
+
 class EmployeeCreateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
     plan_app = EmployeePlanAppCreateSerializer(many=True)
@@ -316,28 +325,23 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         try:
             return User.objects.get(id=value)
         except User.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountMsg.USER_NOT_EXIST) from exc
+            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST}) from exc
 
     @classmethod
     def validate_group(cls, value):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
     @classmethod
     def validate_role(cls, value):
-        if isinstance(value, list):
-            role_list = Role.object_global.filter(id__in=value).count()
-            if role_list == len(value):
-                return value
-            raise serializers.ValidationError(HRMsg.ROLES_NOT_EXIST)
-        raise serializers.ValidationError(HRMsg.ROLE_IS_ARRAY)
+        return validate_role_for_employee(value)
 
     def validate(self, validate_data):
         return validate_employee_create_update(validate_data=validate_data)
 
-    def create(self, validated_data):  # pylint: disable=R0912
+    def create(self, validated_data):
         """
             step 1: set up data for create
             step 2: create employee
@@ -429,28 +433,23 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
     @classmethod
     def validate_role(cls, value):
-        if isinstance(value, list):
-            role_list = Role.object_global.filter(id__in=value).count()
-            if role_list == len(value):
-                return value
-            raise serializers.ValidationError(HRMsg.ROLES_NOT_EXIST)
-        raise serializers.ValidationError(HRMsg.ROLE_IS_ARRAY)
+        return validate_role_for_employee(value)
 
     @classmethod
     def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
         except User.DoesNotExist:
-            raise serializers.ValidationError(AccountMsg.USER_NOT_EXIST)
+            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
 
     def validate(self, validate_data):
         return validate_employee_create_update(validate_data=validate_data)
 
-    def update(self, instance, validated_data):  # pylint: disable=R0912,R0914
+    def update(self, instance, validated_data):
         """
             step 1: set up data for update
             step 2: update employee
