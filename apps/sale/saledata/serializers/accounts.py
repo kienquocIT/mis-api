@@ -552,9 +552,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate_code(self, value):
-        if Account.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError("Code is already exist.")
-        return value
+        if value:
+            if Account.object_normal.filter(code=value).exists():
+                raise serializers.ValidationError("Code is already exist.")
+            return value
+        return None
 
     def validate(self, validate_data):
         account_type = []

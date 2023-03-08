@@ -80,8 +80,7 @@ class Account(TenantModel):
     )
     code = models.CharField(
         verbose_name='account_code',
-        blank=True,
-        null=True,
+        null=False,
         max_length=150
     )
     website = models.CharField(
