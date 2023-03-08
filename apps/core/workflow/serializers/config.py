@@ -64,6 +64,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    condition = serializers.JSONField(required=False)
 
     class Meta:
         model = Node
@@ -79,7 +80,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'collaborator',
             'order',
             'is_system',
-            'code_node_system'
+            'code_node_system',
+            'condition'
         )
 
 
@@ -357,6 +359,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                         'code': association.node_in.code,
                         'is_system': association.node_in.is_system,
                         'code_node_system': association.node_in.code_node_system,
+                        'condition': association.node_in.condition,
+                        'order': association.node_in.order
                     },
                     'node_out': {
                         'id': association.node_out_id,
@@ -364,6 +368,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                         'code': association.node_out.code,
                         'is_system': association.node_out.is_system,
                         'code_node_system': association.node_out.code_node_system,
+                        'condition': association.node_out.condition,
+                        'order': association.node_out.order
                     },
                     'condition': association.condition
                 })
