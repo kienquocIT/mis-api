@@ -67,7 +67,7 @@ class ApplicationProperty(BaseModel):
     )
     type = models.IntegerField(
         choices=PROPERTIES_TYPE,
-        default='text'
+        default=1
     )
     content_type = models.TextField(
         null=True,
