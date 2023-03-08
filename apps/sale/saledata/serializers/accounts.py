@@ -267,14 +267,14 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             if Contact.object_normal.filter(email=attrs).exists():
                 raise serializers.ValidationError("Email is already exist.")
             return attrs
-        return ''
+        return None
 
     def validate_mobile(self, attrs):
         if attrs is not None:
             if Contact.object_normal.filter(mobile=attrs).exists():
                 raise serializers.ValidationError("Mobile is already exist.")
             return attrs
-        return ''
+        return None
 
 
 class ContactDetailSerializer(serializers.ModelSerializer):
@@ -414,14 +414,14 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             if attrs != self.instance.email and Contact.object_normal.filter(email=attrs).exists():
                 raise serializers.ValidationError("Email is already exist.")
             return attrs
-        return ''
+        return None
 
     def validate_mobile(self, attrs):
         if attrs is not None:
             if attrs != self.instance.mobile and Contact.object_normal.filter(mobile=attrs).exists():
                 raise serializers.ValidationError("Mobile is already exist.")
             return attrs
-        return ''
+        return None
 
 
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
