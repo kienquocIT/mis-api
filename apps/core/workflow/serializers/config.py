@@ -243,15 +243,32 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return zone_data
 
     @classmethod
+    def node_system(cls, node, result, zone_data):
+        result.append({
+            'id': node.id,
+            'title': node.title,
+            'remark': node.remark,
+            'actions': node.actions,
+            'is_system': node.is_system,
+            'code_node_system': node.code_node_system,
+            'zone': zone_data,
+            'order': node.order,
+        })
+        return True
+
+    @classmethod
     def node_in_form(cls, node, result, zone_data):
         result.append({
             'id': node.id,
             'title': node.title,
             'remark': node.remark,
             'actions': node.actions,
+            'is_system': node.is_system,
+            'code_node_system': node.code_node_system,
             'option_collaborator': node.option_collaborator,
             'field_select_collaborator': node.field_select_collaborator,
-            'zone': zone_data
+            'zone': zone_data,
+            'order': node.order,
         })
         return True
 
@@ -271,9 +288,12 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'title': node.title,
             'remark': node.remark,
             'actions': node.actions,
+            'is_system': node.is_system,
+            'code_node_system': node.code_node_system,
             'option_collaborator': node.option_collaborator,
             'collaborator_list': employee_data,
-            'zone': zone_data
+            'zone': zone_data,
+            'order': node.order,
         })
         return True
 
@@ -306,21 +326,30 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'title': node.title,
             'remark': node.remark,
             'actions': node.actions,
+            'is_system': node.is_system,
+            'code_node_system': node.code_node_system,
             'option_collaborator': node.option_collaborator,
             'collaborator_list': collaborator_data,
+            'order': node.order,
         })
         return True
 
     @classmethod
     def get_node(cls, obj):
         result = []
-        node_list = Node.object_global.filter(workflow=obj)
+        node_list = Node.object_global.filter(workflow=obj).order_by('order')
         if node_list:
             for node in node_list:
-                if node.option_collaborator:
+                if node.option_collaborator or node.option_collaborator == 0:
                     zone_data = cls.node_zone_data(node=node)
+                    if node.option_collaborator == 0 and node.is_system is True:
+                        cls.node_system(
+                            node=node,
+                            result=result,
+                            zone_data=zone_data
+                        )
                     # option in form
-                    if node.option_collaborator == 0:
+                    elif node.option_collaborator == 0 and node.is_system is False:
                         cls.node_in_form(
                             node=node,
                             result=result,
