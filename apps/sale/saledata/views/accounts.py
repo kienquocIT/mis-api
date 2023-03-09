@@ -319,6 +319,7 @@ class EmployeeMapAccountList(BaseListMixin):
     permission_classes = [IsAuthenticated]
     queryset = Employee.object_global
     search_fields = ["search_content"]
+    list_hidden_field = ['tenant_id', 'company_id']
 
     serializer_list = EmployeeMapAccountListSerializer
 
