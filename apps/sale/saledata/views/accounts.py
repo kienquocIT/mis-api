@@ -256,6 +256,7 @@ class ContactListNotMapAccount(BaseListMixin):
     queryset = Contact.object_normal
     serializer_list = ContactListNotMapAccountSerializer
     serializer_detail = ContactDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Contact list not map account",
@@ -318,6 +319,7 @@ class EmployeeMapAccountList(BaseListMixin):
     permission_classes = [IsAuthenticated]
     queryset = Employee.object_global
     search_fields = ["search_content"]
+    list_hidden_field = ['tenant_id', 'company_id']
 
     serializer_list = EmployeeMapAccountListSerializer
 
