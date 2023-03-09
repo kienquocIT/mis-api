@@ -1,8 +1,8 @@
-from typing import Union, Literal
+from typing import Union, Literal, TypedDict
 from uuid import UUID
+from jsonfield import JSONField
 
 from django.db import models
-from jsonfield import JSONField
 
 from apps.core.models import TenantAbstractModel
 from apps.shared import (
@@ -12,8 +12,6 @@ from apps.shared import (
     call_task_background,
 )
 from .tasks import reset_cache_employee_n_group
-
-from typing import TypedDict
 
 
 class PermOption(TypedDict, total=False):
@@ -332,7 +330,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             countdown=10
         )
 
-    def get_detail(self, excludes=None):
+    def get_detail(self, *args):
         return {
             'id': self.id,
             'first_name': self.first_name,

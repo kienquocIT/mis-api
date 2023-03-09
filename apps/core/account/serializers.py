@@ -109,7 +109,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         obj = User.objects.create(**validated_data)
         company = validated_data['company_current']
-        company.total_user = CompanyUserEmployee.object_normal.filter(
+        company.total_user = CompanyUserEmployee.objects.filter(
             company_id=validated_data['company_current']
         ).count() + 1
         company.save()
@@ -215,7 +215,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def add_company(cls, bulk_info_add):
         if bulk_info_add:
-            company_user_add = CompanyUserEmployee.object_normal.bulk_create(bulk_info_add)
+            company_user_add = CompanyUserEmployee.objects.bulk_create(bulk_info_add)
             if company_user_add:
                 for company_add in company_user_add:
                     company_add.company.total_user += 1
@@ -232,7 +232,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def delete_user(cls, instance, remove_list):
         if remove_list:
-            company_user_remove = CompanyUserEmployee.object_normal.filter(
+            company_user_remove = CompanyUserEmployee.objects.filter(
                 company_id__in=remove_list,
                 user=instance
             ).select_related(

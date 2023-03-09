@@ -16,4 +16,3 @@ class HRMsg:
 
     PERMISSIONS_BY_CONFIGURED_INCORRECT = _("Permissions is incorrect.")
     PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT = _("Permission item is incorrect.")
-

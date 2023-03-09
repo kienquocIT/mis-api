@@ -1,7 +1,9 @@
 from django.urls import path
 
-from apps.core.base.views import PlanList, TenantApplicationList, ApplicationPropertyList, \
-    ApplicationPropertyEmployeeList, PermissionApplicationList
+from apps.core.base.views import (
+    PlanList, ApplicationList, ApplicationPropertyList, ApplicationPropertyEmployeeList, PermissionApplicationList,
+    TenantApplicationList,
+)
 
 urlpatterns = [
     path('plans', PlanList.as_view(), name='PlanList'),

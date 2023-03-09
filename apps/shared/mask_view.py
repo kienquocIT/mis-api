@@ -11,6 +11,10 @@ from rest_framework.response import Response
 from .controllers import ResponseController
 from .translations import ServerMsg
 
+__all__ = [
+    'mask_view'
+]
+
 
 class AuthPermission:
     def __init__(self, user, code_perm):
@@ -60,7 +64,7 @@ def mask_view(**parent_kwargs):
                 login_require = True
 
             # check login_require | check user in request is exist and not Anonymous
-            if login_require and not user:
+            if login_require and (not user or user.is_authenticated is False or user.is_anonymous is False):
                 return ResponseController.unauthorized_401()
 
             # check auth permission require | verify from data input

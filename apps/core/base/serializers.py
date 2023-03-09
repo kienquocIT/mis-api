@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from apps.core.base.models import SubscriptionPlan, PlanApplication, Application, ApplicationProperty, PermissionApplication
+from apps.core.base.models import (
+    SubscriptionPlan, PlanApplication, Application, ApplicationProperty, PermissionApplication,
+)
 
 
 # Subscription Plan
@@ -27,9 +29,6 @@ class PlanListSerializer(serializers.ModelSerializer):
                 'application__id', 'application__title', 'application__code'
             )
         ]
-
-
-
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
@@ -74,4 +73,3 @@ class PermissionApplicationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermissionApplication
         fields = ('permission', 'app', 'extras')
-

@@ -96,7 +96,7 @@ def mapping_user_to_company_user_employee():
 
 
 def update_data_company_license_tracking():
-    plan_employee = PlanEmployee.object_normal.all()
+    plan_employee = PlanEmployee.objects.all()
     if plan_employee:
         plan_employee.delete()
     tenant_list = Tenant.objects.all()

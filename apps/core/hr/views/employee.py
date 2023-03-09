@@ -84,7 +84,7 @@ class EmployeeCompanyList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_global
+    queryset = Employee.object
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer

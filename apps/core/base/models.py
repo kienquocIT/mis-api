@@ -99,7 +99,7 @@ PROPERTIES_TYPE = (
 )
 
 
-class ApplicationProperty(BaseModel):
+class ApplicationProperty(CoreAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE

@@ -351,10 +351,19 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # import local_settings
+LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
 try:
     from .local_settings import *
 except ImportError:
     pass
+
+# change log config
+if LOG_ENABLE is False:
+    LOGGING['loggers'] = {}
+if LOG_BACKUP_ENABLE is False:
+    if 'handlers' in LOGGING:
+        for _key, handler in LOGGING['handlers'].items():
+            handler['backupCount'] = 1
 
 # debug toolbar IP Internal
 

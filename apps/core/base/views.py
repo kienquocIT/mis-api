@@ -6,7 +6,10 @@ from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty, PermissionApplication
 
-from apps.core.base.serializers import PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer, PermissionApplicationListSerializer
+from apps.core.base.serializers import (
+    PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
+    PermissionApplicationListSerializer,
+)
 
 
 class PlanList(generics.GenericAPIView):
@@ -29,8 +32,6 @@ class PlanList(generics.GenericAPIView):
         queryset = self.filter_queryset(self.get_queryset().filter())
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
-
-
 
 
 class TenantApplicationList(
@@ -135,4 +136,3 @@ class PermissionApplicationList(generics.GenericAPIView):
         queryset = self.filter_queryset(self.get_queryset().filter())
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
-

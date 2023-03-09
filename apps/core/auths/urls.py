@@ -6,4 +6,5 @@ urlpatterns = [
     path('sign-in', AuthLogin.as_view(), name='AuthLogin'),
     path('token-refresh', AuthRefreshLogin.as_view(), name='AuthRefreshLogin'),
     path('profile', MyProfile.as_view(), name='MyProfile'),
+    path('alive-check', MyProfile.as_view(), name='MyProfile'),
 ]

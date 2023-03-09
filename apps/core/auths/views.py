@@ -84,3 +84,14 @@ class MyProfile(APIView):
             'tenant_current', 'company_current', 'space_current', 'employee_current',
         ).get(pk=request.user.id)
         return ResponseController.success_200(data={'data': obj.get_detail()}, key_data='result')
+
+
+class AliveCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(operation_summary='Check session is alive')
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if not user or user.is_authenticated is False or user.is_anonymous is False:
+            return ResponseController.unauthorized_401()
+        return ResponseController.success_200(data={'state': 'You are still alive.'}, key_data='result')
