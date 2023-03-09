@@ -108,11 +108,15 @@ def update_data_company_license_tracking():
                 for company in tenant_company_list:
                     bulk_info = []
                     for tenant_plan in tenant_plan_list:
-                        bulk_info.append(CompanyLicenseTracking(**{
-                            'company_id': company.id,
-                            'license_plan': tenant_plan.plan.code,
-                            'license_use_count': 0
-                        }))
+                        bulk_info.append(
+                            CompanyLicenseTracking(
+                                **{
+                                    'company_id': company.id,
+                                    'license_plan': tenant_plan.plan.code,
+                                    'license_use_count': 0
+                                }
+                            )
+                        )
                     if bulk_info:
                         CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
 

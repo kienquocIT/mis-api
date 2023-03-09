@@ -77,3 +77,28 @@ class EmployeeDetail(
     def put(self, request, *args, **kwargs):
         self.serializer_class = EmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class EmployeeCompanyList(
+    BaseListMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Employee.object_global
+
+    serializer_list = EmployeeListSerializer
+    serializer_detail = EmployeeListSerializer
+    list_hidden_field = ['tenant_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'group',
+            'user'
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Employee Company list",
+        operation_description="Get employee Company list",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

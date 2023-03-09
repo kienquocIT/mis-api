@@ -176,7 +176,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_group_level(cls, obj):
         if obj.group_level:
             return {
-                'id': obj.group_level.id,
+                'id': obj.group_level_id,
                 'code': obj.group_level.code,
                 'level': obj.group_level.level,
                 'description': obj.group_level.description,
@@ -187,8 +187,8 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_first_manager(cls, obj):
         if obj.first_manager:
             return {
-                'id': obj.first_manager.id,
-                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'id': obj.first_manager_id,
+                'full_name': obj.first_manager.get_full_name(2),
                 'code': obj.first_manager.code
             }
         return {}
@@ -197,7 +197,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     def get_parent_n(cls, obj):
         if obj.parent_n:
             return {
-                'id': obj.parent_n.id,
+                'id': obj.parent_n_id,
                 'title': obj.parent_n.title,
                 'code': obj.parent_n.code
             }
@@ -233,7 +233,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_group_level(cls, obj):
         if obj.group_level:
             return {
-                'id': obj.group_level.id,
+                'id': obj.group_level_id,
                 'code': obj.group_level.code,
                 'level': obj.group_level.level,
                 'description': obj.group_level.description,
@@ -246,8 +246,8 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_first_manager(cls, obj):
         if obj.first_manager:
             return {
-                'id': obj.first_manager.id,
-                'full_name': Employee.get_full_name(obj.first_manager, 2),
+                'id': obj.first_manager_id,
+                'full_name': obj.first_manager.get_full_name(2),
                 'code': obj.first_manager.code
             }
         return {}
@@ -256,8 +256,8 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_second_manager(cls, obj):
         if obj.second_manager:
             return {
-                'id': obj.second_manager.id,
-                'full_name': Employee.get_full_name(obj.second_manager, 2),
+                'id': obj.second_manager_id,
+                'full_name': obj.second_manager.get_full_name(2),
                 'code': obj.second_manager.code
             }
         return {}
@@ -266,7 +266,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     def get_parent_n(cls, obj):
         if obj.parent_n:
             return {
-                'id': obj.parent_n.id,
+                'id': obj.parent_n_id,
                 'title': obj.parent_n.title,
                 'code': obj.parent_n.code
             }
@@ -289,11 +289,20 @@ class GroupDetailSerializer(serializers.ModelSerializer):
                         })
                 result.append({
                     'id': employee.id,
-                    'full_name': Employee.get_full_name(employee, 2),
+                    'full_name': employee.get_full_name(2),
                     'code': employee.code,
                     'role': role_list
                 })
         return result
+
+
+def validate_employee_for_group(value):
+    if isinstance(value, list):
+        employee_list = Employee.object_global.filter(id__in=value).count()
+        if employee_list == len(value):
+            return value
+        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
+    raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
 
 
 class GroupCreateSerializer(serializers.ModelSerializer):
@@ -325,7 +334,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if Group.object_global.filter(code=value).exists():
-            raise serializers.ValidationError(HRMsg.GROUP_CODE_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
         return value
 
     @classmethod
@@ -333,37 +342,32 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         try:
             return GroupLevel.object_global.get(id=value)
         except GroupLevel.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_LEVEL_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_NOT_EXIST})
 
     @classmethod
     def validate_parent_n(cls, value):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
     @classmethod
     def validate_group_employee(cls, value):
-        if isinstance(value, list):
-            employee_list = Employee.object_global.filter(id__in=value).count()
-            if employee_list == len(value):
-                return value
-            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
-        raise serializers.ValidationError(HRMsg.EMPLOYEE_IS_ARRAY)
+        return validate_employee_for_group(value)
 
     @classmethod
     def validate_first_manager(cls, value):
         try:
             return Employee.object_global.get(id=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.EMPLOYEE_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
         try:
             return Employee.object_global.get(id=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.EMPLOYEE_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def create(self, validated_data):
         # create Group
@@ -411,37 +415,32 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         try:
             return GroupLevel.object_global.get(id=value)
         except GroupLevel.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_LEVEL_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_NOT_EXIST})
 
     @classmethod
     def validate_parent_n(cls, value):
         try:
             return Group.object_global.get(id=value)
         except Group.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.GROUP_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
     @classmethod
     def validate_group_employee(cls, value):
-        if isinstance(value, list):
-            employee_list = Employee.object_global.filter(id__in=value).count()
-            if employee_list == len(value):
-                return value
-            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
-        raise serializers.ValidationError(HRMsg.EMPLOYEE_IS_ARRAY)
+        return validate_employee_for_group(value)
 
     @classmethod
     def validate_first_manager(cls, value):
         try:
             return Employee.object_global.get(id=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.EMPLOYEE_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
         try:
             return Employee.object_global.get(id=value)
         except Employee.DoesNotExist:
-            raise serializers.ValidationError(HRMsg.EMPLOYEE_NOT_EXIST)
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def update(self, instance, validated_data):
         # update Group
