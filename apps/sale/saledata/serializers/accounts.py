@@ -1,39 +1,85 @@
+from django.db.models import Q
 from rest_framework import serializers
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import (Salutation, Interest, AccountType, Industry, Contact, Account)
-from django.db.models import Q
+from apps.sale.saledata.models.accounts import (
+    Salutation, Interest, AccountType, Industry, Contact, Account
+)
+from apps.shared import HRMsg
+from apps.shared.translations.accounts import AccountsMsg
 
 
 # Salutation
-class SalutationListSerializer(serializers.ModelSerializer):
+class SalutationListSerializer(serializers.ModelSerializer):  # noqa
+
     class Meta:
         model = Salutation
         fields = ('id', 'title', 'code', 'description')
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = Salutation
         fields = ('code', 'title', 'description')
 
+    @classmethod
+    def validate_code(cls, value):
+        if Salutation.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
 
-class SalutationDetailSerializer(serializers.ModelSerializer):
+    @classmethod
+    def validate_title(cls, value):
+        if Salutation.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
+
+
+class SalutationDetailSerializer(serializers.ModelSerializer): # noqa
     class Meta:
         model = Salutation
         fields = ('id', 'title', 'code', 'description')
+
+
+class SalutationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Salutation
+        fields = ('title', 'code', 'description')
+
+    def validate_code(self, value):
+        if value != self.instance.code and Salutation.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    def validate_title(self, value):
+        if value != self.instance.title and Salutation.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
 
 
 # Interest
-class InterestsListSerializer(serializers.ModelSerializer):
+class InterestsListSerializer(serializers.ModelSerializer): # noqa
     class Meta:
         model = Interest
         fields = ('id', 'title', 'code', 'description')
 
 
-class InterestsCreateSerializer(serializers.ModelSerializer):
+class InterestsCreateSerializer(serializers.ModelSerializer): # noqa
     class Meta:
         model = Interest
         fields = ('code', 'title', 'description')
+
+    @classmethod
+    def validate_code(cls, value):
+        if Interest.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_title(cls, value):
+        if Interest.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
 
 
 class InterestsDetailsSerializer(serializers.ModelSerializer):
@@ -42,23 +88,67 @@ class InterestsDetailsSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code', 'description')
 
 
+class InterestsUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Interest
+        fields = ('title', 'code', 'description')
+
+    def validate_code(self, value):
+        if value != self.instance.code and Interest.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    def validate_title(self, value):
+        if value != self.instance.title and Interest.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
+
+
 # Account Type
-class AccountTypeListSerializer(serializers.ModelSerializer):
+class AccountTypeListSerializer(serializers.ModelSerializer): # noqa
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code', 'description')
 
 
-class AccountTypeCreateSerializer(serializers.ModelSerializer):
+class AccountTypeCreateSerializer(serializers.ModelSerializer): # noqa
     class Meta:
         model = AccountType
         fields = ('code', 'title', 'description')
+
+    @classmethod
+    def validate_code(cls, value):
+        if AccountType.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_title(cls, value):
+        if AccountType.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
 
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code', 'description')
+
+
+class AccountTypeUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccountType
+        fields = ('title', 'code', 'description')
+
+    def validate_code(self, value):
+        if value != self.instance.code and AccountType.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    def validate_title(self, value):
+        if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
 
 
 # Industry
@@ -73,11 +163,39 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
         model = Industry
         fields = ('code', 'title', 'description')
 
+    @classmethod
+    def validate_code(cls, value):
+        if Industry.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_title(cls, value):
+        if Industry.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
+
 
 class IndustryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
         fields = ('id', 'title', 'code', 'description')
+
+
+class IndustryUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Industry
+        fields = ('title', 'code', 'description')
+
+    def validate_code(self, value):
+        if value != self.instance.code and Industry.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
+    def validate_title(self, value):
+        if value != self.instance.title and Industry.object_normal.filter(title=value).exists():
+            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+        return value
 
 
 # Contact
@@ -106,14 +224,20 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist as exc:
+            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
         return {}
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {'id': obj.account_name.id, 'name': obj.account_name.name}
+        try:
+            if obj.account_name:
+                return {
+                    'id': obj.account_name.id,
+                    'name': obj.account_name.name
+                }
+        except Account.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
         return {}
 
 
@@ -138,13 +262,30 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
-    def validate_account_name(self, attrs):
+    @classmethod
+    def validate_account_name(cls, attrs):
         try:
             if attrs is not None:
                 return Account.object_normal.get(id=attrs)
-            return None
-        except Exception as e:
-            raise serializers.ValidationError('Account does not exist.')
+        except Account.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
+        return None
+
+    @classmethod
+    def validate_email(cls, attrs):
+        if attrs is not None:
+            if Contact.object_normal.filter(email=attrs).exists():
+                raise serializers.ValidationError(AccountsMsg.EMAIL_EXIST)
+            return attrs
+        return None
+
+    @classmethod
+    def validate_mobile(cls, attrs):
+        if attrs is not None:
+            if Contact.object_normal.filter(mobile=attrs).exists():
+                raise serializers.ValidationError(AccountsMsg.MOBILE_EXIST)
+            return attrs
+        return None
 
 
 class ContactDetailSerializer(serializers.ModelSerializer):
@@ -176,8 +317,14 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_salutation(cls, obj):
-        if obj.salutation:
-            return {'id': obj.salutation_id, 'title': obj.salutation.title}
+        try:
+            if obj.salutation:
+                return {
+                    'id': obj.salutation_id,
+                    'title': obj.salutation.title
+                }
+        except Salutation.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.SALUTATION_NOT_EXIST) from exc
         return {}
 
     @classmethod
@@ -189,13 +336,12 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist as exc:
+            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
         return {}
 
     @classmethod
     def get_report_to(cls, obj):
-        print(obj.report_to)
         try:
             if obj.report_to:
                 owner = Contact.object_normal.get(id=obj.report_to)
@@ -203,8 +349,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': owner.fullname
                 }
-        except Exception as e:
-            print(e)
+        except Contact.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
         return {}
 
     @classmethod
@@ -234,8 +380,14 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_name(cls, obj):
-        if obj.account_name:
-            return {"id": obj.account_name_id, 'name': obj.account_name.name}
+        try:
+            if obj.account_name:
+                return {
+                    "id": obj.account_name_id,
+                    'name': obj.account_name.name
+                }
+        except Account.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
         return {}
 
 
@@ -260,13 +412,28 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
-    def validate_account_name(self, value):
+    @classmethod
+    def validate_account_name(cls, value):
         try:
             if value is not None:
                 return Account.object_normal.get(id=value)
-            return None
-        except Exception as e:
-            raise serializers.ValidationError('Account does not exist.')
+        except Account.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
+        return None
+
+    def validate_email(self, attrs):
+        if attrs is not None:
+            if attrs != self.instance.email and Contact.object_normal.filter(email=attrs).exists():
+                raise serializers.ValidationError(AccountsMsg.EMAIL_EXIST)
+            return attrs
+        return None
+
+    def validate_mobile(self, attrs):
+        if attrs is not None:
+            if attrs != self.instance.mobile and Contact.object_normal.filter(mobile=attrs).exists():
+                raise serializers.ValidationError(AccountsMsg.MOBILE_EXIST)
+            return attrs
+        return None
 
 
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
@@ -293,8 +460,8 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
                 }
-        except Exception as e:
-            print(e)
+        except Employee.DoesNotExist as exc:
+            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
         return {}
 
 
@@ -303,6 +470,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -312,6 +480,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "website",
             "account_type",
             "manager",
+            "owner",
             "industry",
             "phone",
         )
@@ -332,9 +501,23 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_manager(cls, obj):
         if obj.manager:
-            all_managers = [Employee.object_normal.get(id=employees_id).get_full_name() for employees_id in obj.manager]
+            all_managers = [Employee.object_normal.get(id=employees_id).get_full_name() for employees_id in
+                            obj.manager]
             return all_managers
         return []
+
+    @classmethod
+    def get_owner(cls, obj):
+        if obj.id:
+            try:
+                owner = Contact.object_normal.filter(account_name_id=obj.id).get(is_primary=True)
+                return {
+                    'id': owner.id,
+                    'fullname': owner.fullname
+                }
+            except Contact.DoesNotExist:
+                return {}
+        return {}
 
 
 class ContactSubCreateSerializer(serializers.ModelSerializer):
@@ -357,6 +540,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     contact_primary = serializers.UUIDField(required=False)
+    name = serializers.CharField(max_length=150)
+    code = serializers.CharField(max_length=150)
+    account_type = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -380,6 +566,12 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'contact_primary'
         )
 
+    @classmethod
+    def validate_code(cls, value):
+        if Account.object_normal.filter(code=value).exists():
+            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+        return value
+
     def validate(self, validate_data):
         account_type = []
         for item in validate_data.get('account_type', None):
@@ -392,7 +584,13 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        contact_select_list = None # [..............]
+        """
+        step 1: contact_select_list: get list contact selected
+        step 2: get primary contact
+        step 3: contact_select_list = contact_select_list append primary contact
+        step 4: update is_primary in which id == primary
+        """
+        contact_select_list = None
         contact_primary = None
         if 'contact_select_list' in validated_data:
             contact_select_list = validated_data.get('contact_select_list', None)
@@ -404,10 +602,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         # create account
         account = Account.object_normal.create(**validated_data)
 
+        if contact_primary:
+            contact_select_list.append(contact_primary)
         # update contact select
         if contact_select_list:
-            if contact_primary:
-                contact_select_list.append(contact_primary)
             contact_list = Contact.object_normal.filter(id__in=contact_select_list)
             if contact_list:
                 for contact in contact_list:
@@ -428,14 +626,19 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        list_owner = []
-        resp = Contact.object_normal.filter(account_name=obj)
-        for item in resp:
-            list_owner.append({
-                'id': item.id,
-                'fullname': item.fullname,
-            })
-        return list_owner
+        try:
+            list_owner = []
+            resp = Contact.object_normal.filter(account_name=obj)
+            for item in resp:
+                list_owner.append(
+                    {
+                        'id': item.id,
+                        'fullname': item.fullname,
+                    }
+                )
+            return list_owner
+        except Contact.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
@@ -458,13 +661,23 @@ class EmployeeMapAccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_full_name(cls, obj):
-        return Employee.get_full_name(obj, 2)
+        try:
+            return Employee.get_full_name(obj, 2)
+        except Employee.DoesNotExist as exc:
+            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
 
-    def get_account(self, obj):
-        account_list = Account.object_normal.filter(Q(manager__contains=[str(obj.id)]))
-        id_list = []
-        name_list = []
-        for account in account_list:
-            id_list.append(account.id)
-            name_list.append(account.name)
-        return {'name': name_list, 'id': id_list}
+    @classmethod
+    def get_account(cls, obj):
+        try:
+            account_list = Account.object_normal.filter(Q(manager__contains=[str(obj.id)]))
+            id_list = []
+            name_list = []
+            for account in account_list:
+                id_list.append(account.id)
+                name_list.append(account.name)
+            return {
+                'name': name_list,
+                'id': id_list
+            }
+        except Account.DoesNotExist as exc:
+            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc

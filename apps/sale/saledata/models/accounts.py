@@ -11,11 +11,12 @@ class Salutation(MasterDataModel):
     class Meta:
         verbose_name = 'Salutation'
         verbose_name_plural = 'Salutations'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Salutation, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Interest(MasterDataModel):
@@ -26,11 +27,12 @@ class Interest(MasterDataModel):
     class Meta:
         verbose_name = 'Interest'
         verbose_name_plural = 'Interests'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Interest, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class AccountType(MasterDataModel):
@@ -41,11 +43,12 @@ class AccountType(MasterDataModel):
     class Meta:
         verbose_name = 'AccountType'
         verbose_name_plural = 'AccountTypes'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(AccountType, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class Industry(MasterDataModel):
@@ -56,11 +59,12 @@ class Industry(MasterDataModel):
     class Meta:
         verbose_name = 'Industry'
         verbose_name_plural = 'Industries'
+        ordering = ('code',)
         default_permissions = ()
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Industry, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 # Accounts
@@ -71,7 +75,8 @@ class Account(TenantModel):
     )
     name = models.CharField(
         verbose_name='account_name',
-        null=False,
+        blank=True,
+        null=True,
         max_length=150
     )
     code = models.CharField(
@@ -148,7 +153,7 @@ class Account(TenantModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Account, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 # Contact
@@ -231,81 +236,4 @@ class Contact(TenantModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        super(Contact, self).save(*args, **kwargs)
-
-
-# class ContactDraft(TenantModel):
-#     owner = models.CharField(
-#         verbose_name='owner',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     bio = models.CharField(
-#         verbose_name='bio',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     avatar = models.TextField(
-#         null=True,
-#         verbose_name='avatar path'
-#     )
-#     fullname = models.CharField(
-#         verbose_name='fullname',
-#         null=True,
-#         max_length=150
-#     )
-#     salutation = models.CharField(
-#         verbose_name='salutation',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     phone = models.CharField(
-#         verbose_name='phone',
-#         blank=True,
-#         null=True,
-#         max_length=25
-#     )
-#     mobile = models.CharField(
-#         verbose_name='mobile',
-#         blank=True,
-#         null=True,
-#         max_length=25
-#     )
-#     account_name = models.CharField(
-#         verbose_name='account_name',
-#         blank=True,
-#         max_length=150
-#     )
-#     email = models.CharField(
-#         verbose_name='email',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     job_title = models.CharField(
-#         verbose_name='job_title',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     report_to = models.CharField(
-#         verbose_name='report_to',
-#         blank=True,
-#         null=True,
-#         max_length=150
-#     )
-#     address_infor = models.JSONField(default=dict)
-#     additional_infor = models.JSONField(default=dict)
-#
-#     class Meta:
-#         verbose_name = 'Contact Draft'
-#         verbose_name_plural = 'Contact Draft'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-#
-#     def save(self, *args, **kwargs):
-#         super(ContactDraft, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
