@@ -301,7 +301,14 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
     plan_app = EmployeePlanAppCreateSerializer(many=True)
     group = serializers.UUIDField(required=False)
-    role = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    role = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    email = serializers.CharField(max_length=150)
+    phone = serializers.CharField(max_length=25)
 
     class Meta:
         model = Employee

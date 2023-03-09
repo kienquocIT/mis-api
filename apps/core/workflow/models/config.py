@@ -1,16 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, WorkflowMsg, OPTION_COLLABORATOR
-
-WORKFLOW_ACTION = (
-    (0, WorkflowMsg.ACTION_CREATE),
-    (1, WorkflowMsg.ACTION_APPROVE),
-    (2, WorkflowMsg.ACTION_REJECT),
-    (3, WorkflowMsg.ACTION_RETURN),
-    (4, WorkflowMsg.ACTION_RECEIVE),
-    (5, WorkflowMsg.ACTION_TODO),
-)
+from apps.shared import TenantCoreModel, OPTION_COLLABORATOR
 
 
 class Workflow(TenantCoreModel):

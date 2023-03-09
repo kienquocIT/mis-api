@@ -225,7 +225,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_zone(cls, obj):
         return ZoneDetailSerializer(
-            Zone.object_global.filter(workflow=obj),
+            Zone.object_global.filter(workflow=obj).order_by('order'),
             many=True
         ).data
 
