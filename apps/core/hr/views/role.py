@@ -1,19 +1,19 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.hr.mixins import RoleCreateMixin, RoleDestroyMixin
+from apps.core.hr.mixins import RoleDestroyMixin
 from apps.core.hr.models import Role
 from apps.core.hr.serializers.role_serializers import (
     RoleUpdateSerializer, RoleDetailSerializer,
     RoleCreateSerializer,
     RoleListSerializer,
 )
-from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin
+from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin, BaseCreateMixin
 
 
 class RoleList(
     BaseListMixin,
-    RoleCreateMixin,
+    BaseCreateMixin,
 ):
     permission_classes = [IsAuthenticated]
     queryset = Role.object
@@ -21,7 +21,7 @@ class RoleList(
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    create_hidden_field = ['company_id', 'tenant_id', 'user_created']
 
     def get_queryset(self):
         return super().get_queryset().select_related('company')

@@ -1,7 +1,7 @@
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 
-from apps.core.company.models import Company, CompanyUserEmployee
+from apps.core.company.models import Company
 from apps.core.account.models import User
 from apps.shared import ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
 
@@ -60,13 +60,6 @@ class AccountCreateMixin(BaseCreateMixin):
                 instance = serializer.save(
                     tenant_current_id=user.tenant_current_id,
                 )
-                if instance.company_current_id:
-                    company_added_id = instance.company_current_id
-                    company = Company.objects.get(id=company_added_id)
-                    company.total_user = CompanyUserEmployee.objects.filter(
-                        company_id=company_added_id
-                    ).count() + 1
-                    company.save()
             return instance
         except Exception as err:
             return err

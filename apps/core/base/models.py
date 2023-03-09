@@ -88,6 +88,51 @@ class PlanApplication(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
+PROPERTIES_TYPE = (
+    (1, 'Text'),
+    (2, 'Date time'),
+    (3, 'Choices'),
+    (4, 'Checkbox'),
+    (5, 'Master data'),
+    (6, 'Number'),
+)
+
+
+class ApplicationProperty(BaseModel):
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE
+    )
+    remark = models.TextField(
+        null=True,
+        blank=True
+    )
+    code = models.TextField(
+        null=True,
+        blank=True
+    )
+    type = models.IntegerField(
+        choices=PROPERTIES_TYPE,
+        default=1
+    )
+    content_type = models.TextField(
+        null=True,
+        blank=True
+    )
+    properties = models.JSONField(
+        default=dict,
+    )
+    compare_operator = models.JSONField(
+        default=dict,
+    )
+
+    class Meta:
+        verbose_name = 'Application property'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         clear_cache_base_group()
