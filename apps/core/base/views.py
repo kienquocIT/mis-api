@@ -25,9 +25,9 @@ class PlanList(generics.GenericAPIView):
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        query_data = request.query_params.dict()
-        data = SubscriptionPlan.data_list_filter(query_data)
-        return ResponseController.success_200(data, key_data='result')
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
 
 
 class ApplicationList(generics.GenericAPIView):
@@ -39,9 +39,9 @@ class ApplicationList(generics.GenericAPIView):
     @swagger_auto_schema()
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        query_data = request.query_params.dict()
-        data = Application.data_list_filter(query_data)
-        return ResponseController.success_200(data, key_data='result')
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
 
 
 class PermissionApplicationList(generics.GenericAPIView):
@@ -63,6 +63,6 @@ class PermissionApplicationList(generics.GenericAPIView):
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        filter_kwargs = request.query_params.dict()
-        data = PermissionApplication.data_list_filter(filter_kwargs)
-        return ResponseController.success_200(data=data, key_data='result')
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')

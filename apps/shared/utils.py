@@ -1,12 +1,13 @@
 import json
 import random
 import string
+from datetime import datetime
 from typing import Union
 
 from uuid import UUID
 
 __all__ = [
-    'LinkListHandler', 'StringHandler', 'UUIDEncoder', 'TypeCheck',
+    'LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck',
 ]
 
 
@@ -43,10 +44,9 @@ class StringHandler:
         return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
 
 
-class UUIDEncoder(json.JSONEncoder):
+class CustomizeEncoder(json.JSONEncoder):
     def default(self, obj):
-        if isinstance(obj, UUID):
-            # if the obj is uuid, we simply return the value of uuid
+        if isinstance(obj, (UUID, datetime)):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 

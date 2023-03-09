@@ -6,7 +6,7 @@ from apps.core.hr.models import Employee, SpaceEmployee
 from apps.core.tenant.models import Tenant
 from apps.core.space.models import Space
 from apps.core.company.models import Company
-from apps.shared import UUIDEncoder, APIMsg, ProvisioningMsg
+from apps.shared import CustomizeEncoder, APIMsg, ProvisioningMsg
 
 
 # UTILS PROVISIONING
@@ -56,7 +56,7 @@ class UserRequestCreateSerializer(serializers.Serializer):  # noqa
     phone = serializers.CharField(allow_null=True, allow_blank=True)
 
     def validate(self, attrs):
-        return json.dumps(attrs, cls=UUIDEncoder)
+        return json.dumps(attrs, cls=CustomizeEncoder)
 
 
 class ProvisioningTenantData(serializers.ModelSerializer):

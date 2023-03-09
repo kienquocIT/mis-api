@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import sys
+import socket
 import os
 from datetime import timedelta
 
@@ -52,6 +53,7 @@ INSTALLED_APPS = \
         'compressor',  # Compress Assets File
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
+        'debug_toolbar',  # debug toolbar support check API
     ] + [  # integrate some service management or tracing
         'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
@@ -63,7 +65,8 @@ INSTALLED_APPS = \
         'apps.core.company',
         'apps.core.space',
 
-        'apps.core.workflow'
+        'apps.core.workflow',
+        'apps.core.process',
     ]
 
 MIDDLEWARE = [
@@ -87,6 +90,13 @@ MIDDLEWARE += ['apps.shared.AllowCIDRAndProvisioningMiddleware']
 # Home Page: https://django-crum.readthedocs.io/en/latest/
 # Package Health Score: https://snyk.io/advisor/python/django-crum
 MIDDLEWARE += ['crum.CurrentRequestUserMiddleware']
+# debug toolbar middleware
+MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware', ]
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 ROOT_URLCONF = 'misapi.urls'
 
@@ -344,6 +354,12 @@ try:
     from .local_settings import *
 except ImportError:
     pass
+
+# debug toolbar IP Internal
+
+if DEBUG:
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
 # Celery configurations
 if not CELERY_BROKER_URL:

@@ -4,6 +4,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
+from apps.core.account.models import User
+from apps.shared import mask_view
 from apps.shared.controllers import ResponseController
 from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer
 from apps.shared.translations import AuthMsg
@@ -76,5 +78,9 @@ class MyProfile(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(operation_summary='Get My Profile')
+    @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        return ResponseController.success_200(data={'data': request.user.get_detail()}, key_data='result')
+        obj = User.objects.select_related(
+            'tenant_current', 'company_current', 'space_current', 'employee_current',
+        ).get(pk=request.user.id)
+        return ResponseController.success_200(data={'data': obj.get_detail()}, key_data='result')

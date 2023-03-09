@@ -18,20 +18,15 @@ class PlanListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_application(cls, obj):
-        result = []
-        plan_app_list = PlanApplication.object_normal.select_related('application').filter(
-            plan=obj
-        )
-        if plan_app_list:
-            for plan_app in plan_app_list:
-                result.append(
-                    {
-                        'id': plan_app.application.id,
-                        'title': plan_app.application.title,
-                        'code': plan_app.application.code,
-                    }
-                )
-        return result
+        return [
+            {
+                'id': x['application__id'],
+                'title': x['application__title'],
+                'code': x['application__code'],
+            } for x in PlanApplication.objects.filter(plan=obj).values(
+                'application__id', 'application__title', 'application__code'
+            )
+        ]
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):

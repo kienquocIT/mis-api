@@ -43,8 +43,8 @@ class CompanyCreateMixin(BaseCreateMixin):
                         user_modified=user.id,
                     )
 
-                    tenant = Tenant.object_normal.get(id=tenant_current_id)
-                    tenant.company_total = Company.object_normal.filter(tenant_id=tenant_current_id).count()
+                    tenant = Tenant.objects.get(id=tenant_current_id)
+                    tenant.company_total = Company.objects.filter(tenant_id=tenant_current_id).count()
                     tenant.save()
             return instance
         except Exception as exc:
@@ -59,8 +59,8 @@ class CompanyDestroyMixin(BaseDestroyMixin):
             instance.delete()
 
             tenant_current_id = request.user.tenant_current_id
-            tenant = Tenant.object_normal.get(id=tenant_current_id)
-            tenant.company_total = Company.object_normal.filter(tenant_id=tenant_current_id).count()
+            tenant = Tenant.objects.get(id=tenant_current_id)
+            tenant.company_total = Company.objects.filter(tenant_id=tenant_current_id).count()
             tenant.save()
 
             return ResponseController.success_200({}, key_data='result')

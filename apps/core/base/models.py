@@ -1,18 +1,20 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import BaseModel, M2MModel, AbstractBaseModel
+from apps.shared import SimpleAbstractModel
+
+from apps.core.models import CoreAbstractModel
 
 
 def clear_cache_base_group():
-    SubscriptionPlan.destroy_cache()
-    Application.destroy_cache()
-    PlanApplication.destroy_cache()
-    PermissionApplication.destroy_cache()
+    # SubscriptionPlan.destroy_cache()
+    # Application.destroy_cache()
+    # PlanApplication.destroy_cache()
+    # PermissionApplication.destroy_cache()
     return True
 
 
-class SubscriptionPlan(BaseModel):
+class SubscriptionPlan(CoreAbstractModel):
     class Meta:
         verbose_name = 'Subscription Plan'
         ordering = ('title',)
@@ -35,7 +37,7 @@ class SubscriptionPlan(BaseModel):
         clear_cache_base_group()
 
 
-class Application(BaseModel):
+class Application(CoreAbstractModel):
     remarks = models.TextField(
         null=True,
         blank=True
@@ -68,7 +70,7 @@ class Application(BaseModel):
         clear_cache_base_group()
 
 
-class PlanApplication(M2MModel):
+class PlanApplication(SimpleAbstractModel):
     plan = models.ForeignKey(
         SubscriptionPlan,
         on_delete=models.CASCADE
@@ -83,7 +85,6 @@ class PlanApplication(M2MModel):
     class Meta:
         verbose_name = 'Plan Application'
         verbose_name_plural = 'Plan Applications'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -92,7 +93,7 @@ class PlanApplication(M2MModel):
         clear_cache_base_group()
 
 
-class PermissionApplication(AbstractBaseModel):
+class PermissionApplication(SimpleAbstractModel):
     permission = models.CharField(max_length=100, unique=True)
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     extras = JSONField(default={})

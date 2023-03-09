@@ -219,7 +219,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.all()  # required | query hỗ trợ truy vấn dữ liệu
+    queryset = Company.objects.all()  # required | query hỗ trợ truy vấn dữ liệu
     serializer_list = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu GET danh sách
     serializer_create = CompanyCreateSerializer  # required | serializer hỗ trợ tạo dữ liệu POST tạo
     serializer_detail = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu sau khi tạo thành công

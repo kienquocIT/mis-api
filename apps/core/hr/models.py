@@ -1,17 +1,183 @@
-from typing import Union
+from typing import Union, Literal
 from uuid import UUID
 
 from django.db import models
 from jsonfield import JSONField
 
+from apps.core.models import TenantAbstractModel
 from apps.shared import (
-    TenantCoreModel, M2MModel, GENDER_CHOICE, DisperseModel, PermissionCoreModel, TypeCheck,
-    CacheCoreModel, call_task_background,
+    SimpleAbstractModel, PERMISSION_OPTION,
+    DisperseModel,
+    GENDER_CHOICE, TypeCheck,
+    call_task_background,
 )
 from .tasks import reset_cache_employee_n_group
 
+from typing import TypedDict
 
-class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
+
+class PermOption(TypedDict, total=False):
+    option: int
+
+
+class PermissionAbstractModel(models.Model):
+    # by ID
+    permission_by_id_sample = {
+        '{code}__{app_label}__{model}': ['id1', 'id2', ]
+    }
+    permission_by_id = JSONField(default={})
+
+    # by be configured
+    permission_by_configured_sample = {
+        '{code}__{app_label}__{model}': {
+            'option': PERMISSION_OPTION
+        }
+    }
+    permission_by_configured = JSONField(default={})
+
+    # summary keys
+    permission_keys = ('permission_by_id', 'permission_by_configured')
+
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
+
+    @property
+    def permissions(self):
+        return {
+            'by_id': self.permission_by_id,
+            'by_configured': self.permission_by_configured,
+        }
+
+    def save_permissions(self, field_name: list[str] = None) -> bool:
+        if field_name is None:
+            field_name = self.permission_keys
+        elif isinstance(field_name, list):
+            for key in field_name:
+                if key not in self.permission_keys:
+                    return False
+        else:
+            return False
+
+        super().save(update_fields=field_name, force_update=True)
+        return True
+
+    def save(self, *args, **kwargs):
+        update_fields = kwargs.get('update_fields', None)
+        if isinstance(update_fields, list):
+            for key in self.permission_keys:
+                if key in update_fields:
+                    update_fields.remove(key)
+        else:
+            update_fields = []
+            for f_cls in self.__class__._meta.get_fields():
+                if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
+                    if f_cls.many_to_many is False:
+                        update_fields.append(f_cls.name)
+        kwargs['update_fields'] = update_fields
+        super().save(*args, **kwargs)
+
+    @staticmethod
+    def check_perm_code(data) -> bool:
+        if data and isinstance(data, str) and len(data.split('__')) == 3:
+            return True
+        return False
+
+    def force_permission_by_id(
+            self,
+            code_perm: str, action: Literal['add', 'remove', 'drop'],
+            data: list[Union[str, UUID]] = None,
+            force_fetch: bool = False,
+            force_save: bool = False,
+    ) -> bool:
+        if code_perm and self.check_perm_code(code_perm) and action and action in ['add', 'remove', 'drop']:
+            # active force fetch real-data from db
+            if force_fetch is True:
+                self.refresh_from_db()
+
+            # handle data
+            state = False
+            match action:
+                case 'add':
+                    if data and TypeCheck.check_uuid_list(data):
+                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
+                        data_id += data
+                        self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
+                        state = True
+                case 'remove':
+                    if data and TypeCheck.check_uuid_list(data):
+                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
+                        if data_id and isinstance(data_id, list):
+                            for idx_val in data:
+                                if str(idx_val) in data_id:
+                                    data_id.remove(str(idx_val))
+                                    state = True
+                            if state is True:
+                                self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
+                case 'drop':
+                    data_id = self.permission_by_id.pop(code_perm, None)  # pylint: disable=E1101
+                    if data_id is not None:
+                        state = True
+
+            # the end with active save with force hit db and return state
+            if state is True:
+                if force_save is True:
+                    self.save_permissions(['permission_by_id'])
+                return True
+        return False
+
+    @staticmethod
+    def check_perm_option(data: PermOption) -> bool:
+        if isinstance(data, dict):
+            if 'option' in data:
+                if data['option'] in [x[0] for x in PERMISSION_OPTION]:
+                    return True
+        return False
+
+    def force_permission_by_configured(
+            self,
+            code_perm: str, action: Literal['update', 'override', 'drop'],
+            data: PermOption = None,
+            force_fetch: bool = False,
+            force_save: bool = False,
+    ) -> bool:
+        if code_perm and self.check_perm_code(code_perm) and action and action in ['update', 'override', 'drop']:
+            # active force fetch real-data from db
+            if force_fetch is True:
+                self.refresh_from_db()
+
+            # handle data
+            state = False
+            match action:
+                case 'update':
+                    if self.check_perm_option(data):
+                        data_configured = self.permission_by_configured.get(  # pylint: disable=E1101
+                            code_perm, {}
+                        )
+                        data_configured.update(data)
+                        self.permission_by_configured[code_perm] = data_configured  # pylint: disable=E1101,E1137
+                        state = True
+                case 'override':
+                    if self.check_perm_option(data):
+                        self.permission_by_configured[code_perm] = data  # pylint: disable=E1101,E1137
+                        state = True
+                case 'drop':
+                    data_configured = self.permission_by_configured.pop(  # pylint: disable=E1101
+                        code_perm, None
+                    )
+                    if data_configured is not None:
+                        state = True
+
+            # the end with active save with force hit db and return state
+            if state is True:
+                if force_save is True:
+                    self.save_permissions(['permission_by_id'])
+                return True
+        return False
+
+
+class Employee(TenantAbstractModel, PermissionAbstractModel):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(max_length=150)
@@ -105,7 +271,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
     def check_change_user(self):
-        original_fields_old = self.get_old_value(
+        original_fields_old = self.object(
             field_name_list=['user_id'],
         )
         original_fields_new = {
@@ -115,8 +281,8 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
 
     def increment_code(self):
         if not self.code:
-            counter = self.__class__.object_global.filter(is_delete=False).count() + 1
-            temper = "%04d" % counter   # pylint: disable=C0209
+            counter = self.__class__.object.filter(is_delete=False).count() + 1
+            temper = "%04d" % counter  # pylint: disable=C0209
             self.code = f"EMP{temper}"
             return True
         return False
@@ -126,7 +292,7 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        employee = Employee.object_global.filter(is_delete=False).count()
+        employee = Employee.object.filter(is_delete=False).count()
         char = "EMP"
         if not self.code:
             temper = "%04d" % (employee + 1)  # pylint: disable=C0209
@@ -167,14 +333,15 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
         )
 
     def get_detail(self, excludes=None):
-        result = super()._get_detail(excludes=['tenant', 'company'])
-        result['first_name'] = self.first_name
-        result['last_name'] = self.last_name
-        result['email'] = self.email
-        result['phone'] = self.phone
-        result['is_delete'] = self.is_delete
-        result['avatar'] = self.avatar
-        return result
+        return {
+            'id': self.id,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email,
+            'phone': self.phone,
+            'is_delete': self.is_delete,
+            'avatar': self.avatar,
+        }
 
     def get_full_name(self, order_arrange=2):
         """
@@ -198,24 +365,12 @@ class Employee(TenantCoreModel, PermissionCoreModel, CacheCoreModel):
     def employee_of_group(cls, group_id):
         if group_id and TypeCheck.check_uuid(group_id):
             return [
-                str(x) for x in cls.object_normal.filter(group_id=group_id).values_list('id', flat=True)
+                str(x) for x in cls.objects.filter(group_id=group_id).values_list('id', flat=True)
             ]
         return []
 
-    @property
-    def data_cache(self):
-        return {
-            'id': str(self.id),
-            'first_name': self.first_name,
-            'last_name': self.last_name,
-            'email': self.email,
-            'user_id': str(self.user_id),
-            'group_id': str(self.group_id),
-            'groups_my_manager': Group.groups_my_manager(employee_id=self.id),
-        }
 
-
-class SpaceEmployee(M2MModel):
+class SpaceEmployee(SimpleAbstractModel):
     space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
     application = JSONField(default=[])
@@ -223,12 +378,11 @@ class SpaceEmployee(M2MModel):
     class Meta:
         verbose_name = 'Space of Employee'
         verbose_name_plural = 'Space of Employee'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
 
-class PlanEmployee(M2MModel):
+class PlanEmployee(SimpleAbstractModel):
     plan = models.ForeignKey(
         'base.SubscriptionPlan',
         on_delete=models.CASCADE
@@ -242,12 +396,11 @@ class PlanEmployee(M2MModel):
     class Meta:
         verbose_name = 'Plan of Employee'
         verbose_name_plural = 'Plan of Employee'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
 
-class Role(TenantCoreModel, PermissionCoreModel):
+class Role(TenantAbstractModel, PermissionAbstractModel):
     abbreviation = models.CharField(
         verbose_name='abbreviation of role (Business analysis -> BA)',
         max_length=10,
@@ -270,7 +423,7 @@ class Role(TenantCoreModel, PermissionCoreModel):
         permissions = ()
 
 
-class RoleHolder(M2MModel):
+class RoleHolder(SimpleAbstractModel):
     employee = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
@@ -285,7 +438,7 @@ class RoleHolder(M2MModel):
 
 
 # Group Level
-class GroupLevel(TenantCoreModel):
+class GroupLevel(TenantAbstractModel):
     level = models.IntegerField(
         verbose_name='group level',
         null=True
@@ -318,7 +471,7 @@ class GroupLevel(TenantCoreModel):
 
 
 # group
-class Group(TenantCoreModel, CacheCoreModel):
+class Group(TenantAbstractModel):
     group_level = models.ForeignKey(
         'hr.GroupLevel',
         on_delete=models.CASCADE,
@@ -384,7 +537,7 @@ class Group(TenantCoreModel, CacheCoreModel):
 
     @classmethod
     def groups_my_manager(cls, employee_id: Union[UUID, str]) -> list[str]:
-        return [str(x) for x in cls.object_normal.filter(first_manager_id=employee_id).values_list('id', flat=True)]
+        return [str(x) for x in cls.objects.filter(first_manager_id=employee_id).values_list('id', flat=True)]
 
     @property
     def data_cache(self):

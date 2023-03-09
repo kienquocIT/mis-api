@@ -43,14 +43,14 @@ class RoleCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        if Role.object_global.filter(code=value).exclude(code=value).exists():
+        if Role.object.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
 
     def create(self, validated_data):
         if 'employees' in validated_data:
             data_bulk = validated_data.pop('employees')
-            role = Role.object_global.create(**validated_data)
+            role = Role.object.create(**validated_data)
             if data_bulk:
                 bulk_info = []
                 for employee in data_bulk:
@@ -84,7 +84,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        if Role.object_global.filter(code=value).exclude(code=value).exists():
+        if Role.object.filter(code=value).exclude(code=value).exists():
             raise serializers.ValidationError("Code is exist.")
         return value
 

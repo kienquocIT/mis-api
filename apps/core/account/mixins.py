@@ -62,8 +62,8 @@ class AccountCreateMixin(BaseCreateMixin):
                 )
                 if instance.company_current_id:
                     company_added_id = instance.company_current_id
-                    company = Company.object_normal.get(id=company_added_id)
-                    company.total_user = CompanyUserEmployee.object_normal.filter(
+                    company = Company.objects.get(id=company_added_id)
+                    company.total_user = CompanyUserEmployee.objects.filter(
                         company_id=company_added_id
                     ).count() + 1
                     company.save()
@@ -87,6 +87,6 @@ class AccountDestroyMixin(BaseDestroyMixin):
 
             instance.delete()
 
-            company = Company.object_normal.get(id=company_current_id)
+            company = Company.objects.get(id=company_current_id)
             company.total_user = User.objects.filter(company_current=company_current_id).count()
             company.save()
