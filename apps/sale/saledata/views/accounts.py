@@ -17,18 +17,10 @@ from apps.sale.saledata.serializers.accounts import (
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
     AccountUpdateSerializer, EmployeeMapAccountListSerializer, AccountTypeUpdateSerializer,
 )
-from apps.sale.saledata.mixins.accounts import (
-    SalutationCreateMixin, SalutationUpdateMixin,
-    InterestCreateMixin, InterestUpdateMixin,
-    AccountTypeCreateMixin, AccountTypeUpdateMixin,
-    IndustryCreateMixin, IndustryUpdateMixin,
-    AccountCreateMixin,
-    ContactCreateMixin, ContactUpdateMixin
-)
 
 
 # Create your views here.
-class SalutationList(BaseListMixin, SalutationCreateMixin):
+class SalutationList(BaseListMixin, BaseCreateMixin):
     queryset = Salutation.object_normal
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
@@ -54,7 +46,7 @@ class SalutationList(BaseListMixin, SalutationCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class SalutationDetail(BaseRetrieveMixin, SalutationUpdateMixin):
+class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Salutation.object_normal
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
@@ -74,7 +66,7 @@ class SalutationDetail(BaseRetrieveMixin, SalutationUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class InterestsList(BaseListMixin, InterestCreateMixin):
+class InterestsList(BaseListMixin, BaseCreateMixin):
     queryset = Interest.object_normal
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
@@ -100,7 +92,7 @@ class InterestsList(BaseListMixin, InterestCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class InterestsDetail(BaseRetrieveMixin, InterestUpdateMixin):
+class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Interest.object_normal
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
@@ -120,7 +112,7 @@ class InterestsDetail(BaseRetrieveMixin, InterestUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class AccountTypeList(BaseListMixin, AccountTypeCreateMixin):
+class AccountTypeList(BaseListMixin, BaseCreateMixin):
     queryset = AccountType.object_normal
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
@@ -146,7 +138,7 @@ class AccountTypeList(BaseListMixin, AccountTypeCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class AccountTypeDetail(BaseRetrieveMixin, AccountTypeUpdateMixin):
+class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AccountType.object_normal
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
@@ -166,7 +158,7 @@ class AccountTypeDetail(BaseRetrieveMixin, AccountTypeUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class IndustryList(BaseListMixin, IndustryCreateMixin):
+class IndustryList(BaseListMixin, BaseCreateMixin):
     queryset = Industry.object_normal
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
@@ -192,7 +184,7 @@ class IndustryList(BaseListMixin, IndustryCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class IndustryDetail(BaseRetrieveMixin, IndustryUpdateMixin):
+class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Industry.object_normal
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
@@ -213,7 +205,7 @@ class IndustryDetail(BaseRetrieveMixin, IndustryUpdateMixin):
 
 
 # Contact
-class ContactList(BaseListMixin, ContactCreateMixin):
+class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.object_normal
     serializer_list = ContactListSerializer
@@ -240,7 +232,7 @@ class ContactList(BaseListMixin, ContactCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class ContactDetail(BaseRetrieveMixin, ContactUpdateMixin):
+class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
@@ -277,7 +269,7 @@ class ContactListNotMapAccount(BaseListMixin):
 
 
 # Account
-class AccountList(BaseListMixin, AccountCreateMixin):
+class AccountList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Account.object_normal
     serializer_list = AccountListSerializer
