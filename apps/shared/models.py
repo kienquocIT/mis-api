@@ -35,7 +35,7 @@ class SimpleAbstractModel(models.Model):
 
     @classmethod
     def key_cache(cls):
-        return str(f'{cls.__class__._meta.app_label}.{cls.__class__.__name__}_filter').lower()
+        return str(f'{cls._meta.app_label}.{cls.__name__}_filter').lower()
 
     @classmethod
     def data_list_filter(cls, filter_kwargs: dict = None, get_first: bool = False):
