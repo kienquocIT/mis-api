@@ -10,29 +10,15 @@ from apps.shared.translations.accounts import AccountsMsg
 
 # Salutation
 class SalutationListSerializer(serializers.ModelSerializer):  # noqa
-
     class Meta:
         model = Salutation
         fields = ('id', 'title', 'code', 'description')
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Salutation
         fields = ('code', 'title', 'description')
-
-    @classmethod
-    def validate_code(cls, value):
-        if Salutation.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    @classmethod
-    def validate_title(cls, value):
-        if Salutation.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
 
 
 class SalutationDetailSerializer(serializers.ModelSerializer): # noqa
@@ -45,16 +31,6 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Salutation
         fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        if value != self.instance.code and Salutation.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    def validate_title(self, value):
-        if value != self.instance.title and Salutation.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
 
 
 # Interest
@@ -69,18 +45,6 @@ class InterestsCreateSerializer(serializers.ModelSerializer): # noqa
         model = Interest
         fields = ('code', 'title', 'description')
 
-    @classmethod
-    def validate_code(cls, value):
-        if Interest.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    @classmethod
-    def validate_title(cls, value):
-        if Interest.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
-
 
 class InterestsDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -92,16 +56,6 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Interest
         fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        if value != self.instance.code and Interest.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    def validate_title(self, value):
-        if value != self.instance.title and Interest.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
 
 
 # Account Type
@@ -116,18 +70,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer): # noqa
         model = AccountType
         fields = ('code', 'title', 'description')
 
-    @classmethod
-    def validate_code(cls, value):
-        if AccountType.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    @classmethod
-    def validate_title(cls, value):
-        if AccountType.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
-
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -139,16 +81,6 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccountType
         fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        if value != self.instance.code and AccountType.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    def validate_title(self, value):
-        if value != self.instance.title and AccountType.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
 
 
 # Industry
@@ -163,18 +95,6 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
         model = Industry
         fields = ('code', 'title', 'description')
 
-    @classmethod
-    def validate_code(cls, value):
-        if Industry.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    @classmethod
-    def validate_title(cls, value):
-        if Industry.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
-
 
 class IndustryDetailsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -186,16 +106,6 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Industry
         fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        if value != self.instance.code and Industry.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
-
-    def validate_title(self, value):
-        if value != self.instance.title and Industry.object_normal.filter(title=value).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
-        return value
 
 
 # Contact
@@ -269,22 +179,6 @@ class ContactCreateSerializer(serializers.ModelSerializer):
                 return Account.object_normal.get(id=attrs)
         except Account.DoesNotExist as exc:
             raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
-        return None
-
-    @classmethod
-    def validate_email(cls, attrs):
-        if attrs is not None:
-            if Contact.object_normal.filter(email=attrs).exists():
-                raise serializers.ValidationError(AccountsMsg.EMAIL_EXIST)
-            return attrs
-        return None
-
-    @classmethod
-    def validate_mobile(cls, attrs):
-        if attrs is not None:
-            if Contact.object_normal.filter(mobile=attrs).exists():
-                raise serializers.ValidationError(AccountsMsg.MOBILE_EXIST)
-            return attrs
         return None
 
 
@@ -565,12 +459,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'contact_create_list',
             'contact_primary'
         )
-
-    @classmethod
-    def validate_code(cls, value):
-        if Account.object_normal.filter(code=value).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
 
     def validate(self, validate_data):
         account_type = []
