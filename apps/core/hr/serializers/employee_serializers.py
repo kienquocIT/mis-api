@@ -58,11 +58,20 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
         raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
 
 
+class RoleOfEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ('id', 'title', 'code')
+
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
-    user = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.role_ids = []
 
     class Meta:
         model = Employee
@@ -79,7 +88,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'is_active',
             'group',
             'role',
-            'user'
         )
 
     @classmethod
@@ -100,20 +108,11 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_role(cls, obj):
         return [
             {
-                'id': x['id'],
-                'title': x['title'],
-                'code': x['code'],
-            } for x in obj.role.all().values('id', 'title', 'code')
+                'id': x.id,
+                'title': x.title,
+                'code': x.code,
+            } for x in obj.role.all()
         ]
-
-    @classmethod
-    def get_user(cls, obj):
-        if obj.user_id:
-            return {
-                'id': obj.user_id,
-                'username': obj.user.username,
-            }
-        return {}
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):

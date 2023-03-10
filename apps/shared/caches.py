@@ -36,10 +36,13 @@ class CacheController:
         key = str(f'{cls.KEY_CACHE_PREFIX}_{key.lower()}')
         return key
 
-    def get(self, key) -> Union[any, None]:
+    def get(self, key, many=False) -> Union[any, None]:
         """
         Get data cache by key | Key is not exist return None
         """
+        if many is True:
+            if isinstance(key, list):
+                return {k: self.get(k) for k in key}
         if not key.startswith(self.KEY_CACHE_PREFIX):
             key = self.append_prefix_key_cache(key)
         self.make_decision_check_timeout()
@@ -61,10 +64,19 @@ class CacheController:
         """
         return self.set(key, value, None)
 
-    def destroy(self, key):
+    def destroy(self, key: Union[str, list[str]], many=False):
         """
         Destroy cache data by key | return True(key is exist) or False (key isn't exist)
         """
+        if many is True:
+            if isinstance(key, list):
+                states = []
+                for k in key:
+                    states.append(
+                        self.destroy(k, many=False)
+                    )
+                return all(states)
+            return False
         if not key.startswith(self.KEY_CACHE_PREFIX):
             key = self.append_prefix_key_cache(key)
         state_destroy = self.sv.delete(key)
