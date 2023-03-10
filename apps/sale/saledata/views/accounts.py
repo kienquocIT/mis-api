@@ -34,6 +34,7 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -80,6 +81,7 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -126,6 +128,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -172,6 +175,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -220,6 +224,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -264,6 +269,7 @@ class ContactListNotMapAccount(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         kwargs.update({'account_name': None})
         return self.list(request, *args, **kwargs)
 
@@ -293,6 +299,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.create(request, *args, **kwargs)
 
 
@@ -332,4 +339,5 @@ class EmployeeMapAccountList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)

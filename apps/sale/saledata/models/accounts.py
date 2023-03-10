@@ -132,6 +132,8 @@ class Account(DataAbstractModel):
         default=list,
         null=True
     )
+    user_created = models.UUIDField(null=True)
+    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Account'
@@ -212,6 +214,8 @@ class Contact(DataAbstractModel):
         null=True
     )
     is_primary = models.BooleanField(default=False)
+    user_created = models.UUIDField(null=True)
+    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Contact'
