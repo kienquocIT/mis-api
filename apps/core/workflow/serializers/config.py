@@ -203,6 +203,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         model = Workflow
         fields = (
             'id',
+            'title',
+            'code',
             'application',
             'is_multi_company',
             'is_define_zone',
