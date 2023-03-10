@@ -21,7 +21,7 @@ from apps.sale.saledata.serializers.accounts import (
 
 # Create your views here.
 class SalutationList(BaseListMixin, BaseCreateMixin):
-    queryset = Salutation.object_normal
+    queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
@@ -47,7 +47,7 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
 
 
 class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Salutation.object_normal
+    queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
@@ -67,7 +67,7 @@ class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class InterestsList(BaseListMixin, BaseCreateMixin):
-    queryset = Interest.object_normal
+    queryset = Interest.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
@@ -93,7 +93,7 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
 
 
 class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Interest.object_normal
+    queryset = Interest.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
@@ -113,7 +113,7 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class AccountTypeList(BaseListMixin, BaseCreateMixin):
-    queryset = AccountType.object_normal
+    queryset = AccountType.objects
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
@@ -139,7 +139,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
 
 
 class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = AccountType.object_normal
+    queryset = AccountType.objects
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
@@ -159,7 +159,7 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class IndustryList(BaseListMixin, BaseCreateMixin):
-    queryset = Industry.object_normal
+    queryset = Industry.objects
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
@@ -185,7 +185,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
 
 
 class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Industry.object_normal
+    queryset = Industry.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
@@ -207,7 +207,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.object_normal
+    queryset = Contact.objects
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
@@ -253,7 +253,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class ContactListNotMapAccount(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.object_normal
+    queryset = Contact.objects
     serializer_list = ContactListNotMapAccountSerializer
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
@@ -271,7 +271,7 @@ class ContactListNotMapAccount(BaseListMixin):
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Account.object_normal
+    queryset = Account.objects
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
@@ -317,7 +317,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class EmployeeMapAccountList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_global
+    queryset = Employee.object
     search_fields = ["search_content"]
     list_hidden_field = ['tenant_id', 'company_id']
 

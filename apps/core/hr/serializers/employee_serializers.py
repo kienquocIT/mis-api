@@ -2,9 +2,9 @@ from rest_framework import serializers
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
-from apps.core.base.models import SubscriptionPlan, Application
+from apps.core.base.models import SubscriptionPlan, Application, PermissionApplication
 from apps.core.tenant.models import TenantPlan
-from apps.shared import HRMsg, BaseMsg, AccountMsg
+from apps.shared import HRMsg, BaseMsg, AccountMsg, PERMISSION_OPTION
 
 
 class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
@@ -32,7 +32,7 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
         raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
 
 
-class EmployeePlanAppUpdateSerializer(serializers.Serializer): # noqa
+class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
     plan = serializers.UUIDField(required=False)
     application = serializers.ListSerializer(
         child=serializers.UUIDField(required=False),
@@ -88,7 +88,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group(cls, obj):
-        if obj.group:
+        if obj.group_id:
             return {
                 'id': obj.group_id,
                 'title': obj.group.title,
@@ -98,24 +98,17 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_role(cls, obj):
-        result = []
-        role_list = obj.role.all().values(
-            'id',
-            'title',
-        )
-        if role_list:
-            for role in role_list:
-                result.append(
-                    {
-                        'id': role['id'],
-                        'title': role['title'],
-                    }
-                )
-        return result
+        return [
+            {
+                'id': x['id'],
+                'title': x['title'],
+                'code': x['code'],
+            } for x in obj.role.all().values('id', 'title', 'code')
+        ]
 
     @classmethod
     def get_user(cls, obj):
-        if obj.user:
+        if obj.user_id:
             return {
                 'id': obj.user_id,
                 'username': obj.user.username,
@@ -129,6 +122,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    permission_by_configured = serializers.JSONField()
 
     class Meta:
         model = Employee
@@ -145,7 +139,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'group',
             'dob',
             'date_joined',
-            'role'
+            'role',
+            'permission_by_configured',
         )
 
     @classmethod
@@ -155,7 +150,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_app(cls, obj):
         result = []
-        employee_plan = PlanEmployee.object_normal.select_related('plan').filter(
+        employee_plan = PlanEmployee.objects.select_related('plan').filter(
             employee=obj
         )
         if employee_plan:
@@ -235,9 +230,11 @@ def validate_employee_create_update(validate_data):
                     if plan_app['license_used'] > plan_app['license_quantity']:
                         plan_license_check += plan_app['plan'].title + ", "
     if plan_license_check:
-        raise serializers.ValidationError({
-            'detail': HRMsg.EMPLOYEE_PLAN_APP_CHECK.format(plan_license_check)
-        })
+        raise serializers.ValidationError(
+            {
+                'detail': HRMsg.EMPLOYEE_PLAN_APP_CHECK.format(plan_license_check)
+            }
+        )
     return validate_data
 
 
@@ -258,10 +255,14 @@ def set_up_data_plan_app(validated_data):
                 app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
             if plan_code and app_code_list:
                 plan_application_dict.update({plan_code: app_code_list})
-                bulk_info.append(PlanEmployee(**{
-                    'plan': plan_app['plan'],
-                    'application': [app.id for app in plan_app['application']]
-                }))
+                bulk_info.append(
+                    PlanEmployee(
+                        **{
+                            'plan': plan_app['plan'],
+                            'application': [app.id for app in plan_app['application']]
+                        }
+                    )
+                )
     return plan_application_dict, plan_app_data, bulk_info
 
 
@@ -274,11 +275,11 @@ def create_plan_employee_update_tenant_plan(
         # create M2M PlanEmployee
         for info in bulk_info:
             info.employee = employee
-        PlanEmployee.object_normal.bulk_create(bulk_info)
+        PlanEmployee.objects.bulk_create(bulk_info)
         # update TenantPlan
         for plan_data in plan_app_data:
             if 'plan' in plan_data and 'license_used' in plan_data:
-                tenant_plan = TenantPlan.object_normal.filter(
+                tenant_plan = TenantPlan.objects.filter(
                     tenant=employee.tenant,
                     plan=plan_data['plan']
                 ).first()
@@ -290,7 +291,7 @@ def create_plan_employee_update_tenant_plan(
 
 def validate_role_for_employee(value):
     if value and isinstance(value, list):
-        role_list = Role.object_global.filter(id__in=value).count()
+        role_list = Role.object.filter(id__in=value).count()
         if role_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.ROLES_NOT_EXIST})
@@ -335,7 +336,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_group(cls, value):
         try:
-            return Group.object_global.get(id=value)
+            return Group.object.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
@@ -376,11 +377,15 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
         if role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(RoleHolder(**{
-                    'employee': employee,
-                    'role_id': role,
-                }))
-            RoleHolder.object_normal.bulk_create(bulk_info)
+                bulk_info.append(
+                    RoleHolder(
+                        **{
+                            'employee': employee,
+                            'role_id': role,
+                        }
+                    )
+                )
+            RoleHolder.objects.bulk_create(bulk_info)
         return employee
 
 
@@ -412,6 +417,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
 
+    permission_by_configured = serializers.JSONField(
+        required=False,
+        help_text=str(Employee.permission_by_configured_sample)
+    )
+
     class Meta:
         model = Employee
         fields = (
@@ -425,12 +435,13 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             'plan_app',
             'group',
             'role',
+            'permission_by_configured',
         )
 
     @classmethod
     def validate_group(cls, value):
         try:
-            return Group.object_global.get(id=value)
+            return Group.object.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
@@ -468,9 +479,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if 'permission_by_configured' in validated_data.keys():
+            instance.save_permissions(field_name=['permission_by_configured'])
 
         # delete old M2M PlanEmployee
-        plan_employee_old = PlanEmployee.object_normal.filter(employee=instance)
+        plan_employee_old = PlanEmployee.objects.filter(employee=instance)
         if plan_employee_old:
             plan_employee_old.delete()
 
@@ -482,7 +495,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         )
 
         # delete old M2M RoleEmployee
-        role_employee_old = RoleHolder.object_normal.filter(employee=instance)
+        role_employee_old = RoleHolder.objects.filter(employee=instance)
         if role_employee_old:
             role_employee_old.delete()
 
@@ -490,10 +503,42 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         if instance and role_list:
             bulk_info = []
             for role in role_list:
-                bulk_info.append(RoleHolder(**{
-                    'employee': instance,
-                    'role_id': role,
-                }))
-            RoleHolder.object_normal.bulk_create(bulk_info)
+                bulk_info.append(
+                    RoleHolder(
+                        **{
+                            'employee': instance,
+                            'role_id': role,
+                        }
+                    )
+                )
+            RoleHolder.objects.bulk_create(bulk_info)
 
         return instance
+
+    @classmethod
+    def validate_permission_by_configured(cls, attrs):
+        """
+        Permissions By Configured format should a dictionary:
+            key: '{code}__{app_label}__{model}'
+            value: {'option': PERMISSION_OPTION}
+
+        Code_name in models PermissionApplication (cached 14 days)
+        Config_data must be required "option" name key and value exist in PERMISSION_OPTION.
+        """
+        if isinstance(attrs, dict):
+            option_choices = [x[0] for x in PERMISSION_OPTION]
+            permission_choices = {x['permission']: x for x in PermissionApplication.data_list_filter(None)}
+            for code_name, config_data in attrs.items():
+                # check code_name exist
+                if not (code_name and code_name in permission_choices):
+                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
+
+                # check config_data
+                if config_data and isinstance(config_data, dict) and 'option' in config_data:
+                    option = config_data['option']
+                    if option not in option_choices:
+                        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
+                else:
+                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
+            return attrs
+        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)

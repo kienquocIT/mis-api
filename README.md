@@ -155,11 +155,11 @@ b. Sử dụng command: python manage.py runserver 8000
 1. **Thiết kế DB luôn phải được LEADER review và duyệt trước khi được apply vào sử dụng**
 2. Thiết kế models cho chức năng phải theo nguyên tắc tối ưu truy vấn và ràng buộc dữ liệu tốt
 3. Luôn sử dụng UUID4 cho ID của từng bảng
-4. Kế thừa từ các lớp model abstract trong apps.shared.models: BaseModel, TenantModel, TenantCoreModel, M2MModel
-5. BaseModel: sử dụng cho các models dùng chung không có filter mặc định theo tenant như user, plan, country,...
+4. Kế thừa từ các lớp model abstract trong apps.shared.models: MasterDataAbstractModel
+5. *deleted* BaseModel: sử dụng cho các models dùng chung không có filter mặc định theo tenant như user, plan, country,...
 6. TenantModel: Sử dụng cho các models dùng trong hệ thống ngoài thư mục apps/core có chứa filter mặc định tenant và
    mode
-7. TenantCoreModel: Sử dụng cho các models nằm trong thư mục core, có chứa filter mặc định theo tenant
+7. *deleted* TenantCoreModel: Sử dụng cho các models nằm trong thư mục core, có chứa filter mặc định theo tenant
 8. M2MModel: Sử dụng cho các models Many To Many.
 9. Trong từng models được kế thừa từ shared.models sẽ có các manager truy vấn dữ liệu khác nhau: objects, object_normal,
    object_global, object_private, object_team tùy theo từng yêu cầu mà sử dụng
@@ -219,7 +219,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.all()  # required | query hỗ trợ truy vấn dữ liệu
+    queryset = Company.objects.all()  # required | query hỗ trợ truy vấn dữ liệu
     serializer_list = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu GET danh sách
     serializer_create = CompanyCreateSerializer  # required | serializer hỗ trợ tạo dữ liệu POST tạo
     serializer_detail = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu sau khi tạo thành công

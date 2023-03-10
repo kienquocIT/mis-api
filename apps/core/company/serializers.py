@@ -91,7 +91,7 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
     def get_license_used(cls, obj):
         result = []
         data_dict = {}
-        company_employee_plan = PlanEmployee.object_normal.select_related(
+        company_employee_plan = PlanEmployee.objects.select_related(
             'plan'
         ).filter(
             employee__company=obj
@@ -114,7 +114,7 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
     @classmethod
     def get_power_user(cls, obj):
         cnt_power_user = 0
-        for item in CompanyUserEmployee.object_normal.filter(company_id=obj.id):
+        for item in CompanyUserEmployee.objects.filter(company_id=obj.id):
             user = User.objects.filter(pk=item.user_id).first()
             if item.user_id and user.is_superuser and user:
                 cnt_power_user += 1
@@ -122,7 +122,7 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee(cls, obj):
-        return Employee.object_normal.filter(company=obj.id).count()
+        return Employee.objects.filter(company=obj.id).count()
 
     @classmethod
     def get_total_user_summary(cls, obj):
@@ -134,7 +134,7 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee_linked_user(cls, obj):
-        return CompanyUserEmployee.object_normal.filter(company=obj).exclude(user_id__isnull=True).exclude(
+        return CompanyUserEmployee.objects.filter(company=obj).exclude(user_id__isnull=True).exclude(
             employee_id__isnull=True
         ).count()
 
@@ -200,7 +200,7 @@ class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
     def get_user(cls, obj):
         company_list = []
         if obj.user:
-            company_user_list = CompanyUserEmployee.object_normal.select_related('company').filter(
+            company_user_list = CompanyUserEmployee.objects.select_related('company').filter(
                 user=obj.user
             )
             if company_user_list:
@@ -234,7 +234,7 @@ class CompanyOverviewDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_company_data(cls, obj):
         return CompanyOverviewDetailDataSerializer(
-            CompanyUserEmployee.object_normal.select_related(
+            CompanyUserEmployee.objects.select_related(
                 'user',
                 'employee'
             ).filter(company=obj),
@@ -257,7 +257,7 @@ class CompanyOverviewConnectedSerializer(serializers.ModelSerializer):
     @classmethod
     def get_company_data(cls, obj):
         return CompanyOverviewDetailDataSerializer(
-            CompanyUserEmployee.object_normal.select_related(
+            CompanyUserEmployee.objects.select_related(
                 'user',
                 'employee'
             ).filter(

@@ -44,7 +44,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if 'employees' in validated_data:
             data_bulk = validated_data.pop('employees')
-            role = Role.object_global.create(**validated_data)
+            role = Role.object.create(**validated_data)
             if data_bulk:
                 bulk_info = []
                 for employee in data_bulk:
