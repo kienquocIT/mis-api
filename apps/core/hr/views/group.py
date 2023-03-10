@@ -19,7 +19,7 @@ class GroupLevelList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = GroupLevel.object_global
+    queryset = GroupLevel.object
     search_fields = [
         "description",
         "first_manager_description",
@@ -54,7 +54,7 @@ class GroupLevelDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = GroupLevel.object_global
+    queryset = GroupLevel.object
     serializer_detail = GroupLevelDetailSerializer
     serializer_update = GroupLevelUpdateSerializer
 
@@ -82,7 +82,7 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.object
     search_fields = [
         "title",
         "code",
@@ -128,7 +128,7 @@ class GroupDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.object
     serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
 
@@ -161,7 +161,7 @@ class GroupParentList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.object
     search_fields = []
     ordering = ['group_level__level']
 
