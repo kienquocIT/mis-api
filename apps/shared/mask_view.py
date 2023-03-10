@@ -64,7 +64,7 @@ def mask_view(**parent_kwargs):
                 login_require = True
 
             # check login_require | check user in request is exist and not Anonymous
-            if login_require and (not user or user.is_authenticated is False or user.is_anonymous is False):
+            if login_require and (not user or user.is_authenticated is False or user.is_anonymous is True):
                 return ResponseController.unauthorized_401()
 
             # check auth permission require | verify from data input

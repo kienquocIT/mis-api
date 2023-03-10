@@ -92,6 +92,6 @@ class AliveCheckView(APIView):
     @swagger_auto_schema(operation_summary='Check session is alive')
     def get(self, request, *args, **kwargs):
         user = request.user
-        if not user or user.is_authenticated is False or user.is_anonymous is False:
+        if not user or user.is_authenticated is False or user.is_anonymous is True:
             return ResponseController.unauthorized_401()
         return ResponseController.success_200(data={'state': 'You are still alive.'}, key_data='result')
