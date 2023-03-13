@@ -21,11 +21,7 @@ cache:
   paths:
     - ~/.cache/pip
   untracked: true
-  policy:
-    push:
-      paths:
-        - "~/gitlab-ci-cache/pip"
-    pull: false
+  policy: "push"
 
 stages:
   - pylint_check
