@@ -520,7 +520,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         """
         if isinstance(attrs, dict):
             option_choices = [x[0] for x in PERMISSION_OPTION]
-            permission_choices = {x['permission']: x for x in PermissionApplication.data_list_filter(None)}
+            permission_choices = {x['permission']: x for x in PermissionApplication.objects.filter(None)}
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):

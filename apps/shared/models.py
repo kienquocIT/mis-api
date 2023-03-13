@@ -1,16 +1,15 @@
-import json
 from copy import deepcopy
+from typing import Union
 from uuid import uuid4
 
+from crum import get_current_user
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
-from .utils import CustomizeEncoder
 from .managers import NormalManager
 from .constant import SYSTEM_STATUS
-from .caches import CacheController
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
@@ -30,44 +29,6 @@ class SimpleAbstractModel(models.Model):
         abstract = True
         default_permissions = ()
         permissions = ()
-
-    FIELD_SELECT_RELATED = []  # field name list that you want select_related data.
-
-    @classmethod
-    def key_cache(cls):
-        return str(f'{cls._meta.app_label}.{cls.__name__}_filter').lower()
-
-    @classmethod
-    def data_list_filter(cls, filter_kwargs: dict = None, get_first: bool = False):
-        """
-        Get data from cache if exists else hit db and save to cache
-
-        Key cache: Base.PermissionApplication__filter
-        Value: {
-                    '': {...data...},
-                    'app_id__xxxx': {...data_filtered...},
-                    ...
-                }
-        """
-
-        if not filter_kwargs:
-            filter_kwargs = {}
-
-        key__child = '.'.join([f"{k}___{v}" for k, v in filter_kwargs.items()])
-        data = CacheController().get(key__child)
-        if not data or (data and isinstance(data, dict) and key__child not in data):
-            data__child = [
-                x.parse_obj() for x in cls.objects.select_related(*cls.FIELD_SELECT_RELATED).filter(**filter_kwargs)
-            ]
-            data__child = json.loads(json.dumps(data__child, cls=CustomizeEncoder))
-            if isinstance(data, dict):
-                data[key__child] = data__child
-            else:
-                data = {key__child: data__child}
-            CacheController().set(key=cls.key_cache(), value=data, expires=60 * 24 * 30)  # 30 days
-        if get_first is True:
-            return data[key__child][0] if len(data[key__child]) > 0 else {}
-        return data[key__child]
 
     def get_old_value(self, field_name_list: list):
         """
@@ -94,14 +55,13 @@ class SimpleAbstractModel(models.Model):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        if hasattr(self, 'parse_obj'):
-            CacheController().destroy(self.key_cache())
 
 
 class MasterDataAbstractModel(SimpleAbstractModel):
     """
     Abstract model for table data that had used by all user of company
     """
+
     # object_data = MasterDataManager()
 
     class Meta:
@@ -152,6 +112,7 @@ class DataAbstractModel(SimpleAbstractModel):
     """
     Abstract model for table data that have a lot flag for all case.
     """
+
     class Meta:
         abstract = True
         default_permissions = ()

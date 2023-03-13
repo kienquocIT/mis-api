@@ -281,6 +281,18 @@ SWAGGER_SETTINGS = {
 SWAGGER_URL = 'http://127.0.0.1:8000/api'
 FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 
+#
+CLEAN_MODEL_CACHE_FOREGROUND = True
+CACHE_DATA_CONFIG = {
+    'account.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'base.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'company.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'hr.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'space.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'tenant.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+    'workflow.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+}
+
 # option account user create
 
 ENABLE_TURN_ON_IS_EMAIL = False

@@ -1,4 +1,4 @@
-from .caches import CacheController
+from .caches import *
 from .controllers import RequestController, ResponseController
 from .constant import *
 from .exceptions import custom_exception_handler

@@ -1,5 +1,6 @@
 import json
 import random
+import re
 import string
 from datetime import datetime
 from typing import Union
@@ -42,6 +43,16 @@ class StringHandler:
     @staticmethod
     def random_str(length):
         return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
+
+    @staticmethod
+    def remove_special_characters_regex(s):
+        """Fast with short string"""
+        return re.sub(r'[^\w\s]', '', s)
+
+    @staticmethod
+    def remove_special_characters_translate(s):
+        """Fast with string too long"""
+        return s.translate(str.maketrans('', '', string.punctuation)).replace(' ', '.')
 
 
 class CustomizeEncoder(json.JSONEncoder):
