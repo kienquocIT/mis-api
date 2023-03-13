@@ -510,7 +510,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         if obj.id:
             try:
-                owner = Contact.objects.filter(account_name_id=obj.id).get(is_primary=True)
+                owner = Contact.objects.filter(account_name=obj.id).get(is_primary=True)
                 return {
                     'id': owner.id,
                     'fullname': owner.fullname
