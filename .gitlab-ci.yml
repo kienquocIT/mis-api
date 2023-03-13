@@ -14,10 +14,8 @@ before_script:
   - pip install -r req.txt
 
 
-#cache:
-#  key: python_n_package
 cache:
-  key: "$CI_COMMIT_REF_SLUG"
+  key: python_n_package
   untracked: false
   policy: "push"
 
