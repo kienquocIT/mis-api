@@ -5,8 +5,6 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel
 # Create your models here.
 class Salutation(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Salutation'
@@ -18,8 +16,6 @@ class Salutation(MasterDataAbstractModel):
 
 class Interest(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Interest'
@@ -31,8 +27,6 @@ class Interest(MasterDataAbstractModel):
 
 class AccountType(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'AccountType'
@@ -44,8 +38,6 @@ class AccountType(MasterDataAbstractModel):
 
 class Industry(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Industry'
