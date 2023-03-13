@@ -14,12 +14,9 @@ before_script:
   - pip install -r req.txt
 
 
-#cache:
-#  key: python_n_package
-#  paths:
-#    - usr/local/bin/python
-#    - usr/local/lib/python/site-packages/
-#  untracked: true
+cache:
+  key: python_n_package
+
 
 stages:
   - pylint_check
@@ -36,9 +33,9 @@ migrations_init:
   stage: migrations_init
   script:
     - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
-        python manage.py makemigrations --check --dry-run --noinput;
-        python manage.py migrate;
-        python manage.py init_data;
+      python manage.py makemigrations --check --dry-run --noinput;
+      python manage.py migrate;
+      python manage.py init_data;
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
@@ -47,5 +44,6 @@ run_testcase:
   stage: run_testcase
   script:
     - python manage.py test
+    - rm -rf *.sqlite3
   after_script:
     - exit
