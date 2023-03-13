@@ -14,11 +14,11 @@ before_script:
   - pip install -r req.txt
 
 
-#cache:
-#  key: python_n_package
-#  paths:
-#    - usr/local/bin/python
-#    - usr/local/lib/python/site-packages/
+cache:
+  key: python_n_package
+  paths:
+    - usr/local/bin/python
+    - usr/local/lib/python/site-packages/
 #  untracked: true
 
 stages:
