@@ -6,7 +6,7 @@ from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer, UserListSerializer
+    CompanyUserDetailSerializer, UserListSerializer,
 )
 from .models import User
 
@@ -17,7 +17,7 @@ class UserList(AccountListMixin, AccountCreateMixin):
             GET: List
             POST: Create a new
         """
-    queryset = User.objects.select_related('tenant_current')
+    queryset = User.objects
     serializer_list = UserListSerializer
     serializer_create = UserCreateSerializer
     serializer_detail = UserDetailSerializer

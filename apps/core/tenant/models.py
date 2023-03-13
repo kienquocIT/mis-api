@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import BaseModel
+from apps.core.models import CoreAbstractModel
 
 TENANT_KIND = (
     (0, 'Cloud'),
@@ -19,7 +19,7 @@ LICENSE_BUY_TYPE = (
 )
 
 
-class Tenant(BaseModel):
+class Tenant(CoreAbstractModel):
     # override field from BASE MODEL
     code = models.CharField(max_length=10, unique=True)
 
@@ -71,6 +71,23 @@ class Tenant(BaseModel):
         default_permissions = ()
         permissions = ()
 
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'kind': self.kind,
+            'private_block': self.private_block,
+            'sub_domain': self.sub_domain,
+            'sub_domain_suffix': self.sub_domain_suffix,
+            'representative_fullname': self.sub_domain,
+            'representative_phone_number': self.sub_domain,
+            'plan': self.plan,
+            'auto_create_company': self.auto_create_company,
+            'company_quality_max': self.company_quality_max,
+            'company_total': self.company_total,
+        }
+
     def get_old_value(self, field_name_list: list):
         _original_fields_old = {field: None for field in field_name_list}
         if field_name_list and isinstance(field_name_list, list):
@@ -98,7 +115,7 @@ class Tenant(BaseModel):
                 user.save()  # auto convert username auth when save user object.
 
 
-class TenantPlan(BaseModel):
+class TenantPlan(CoreAbstractModel):
     tenant = models.ForeignKey(
         Tenant,
         on_delete=models.CASCADE,
@@ -131,6 +148,23 @@ class TenantPlan(BaseModel):
         help_text='Choose in (0, "Auto Renew"), (1, "One Time")',
         default=0,
     )
+
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'tenant_id': str(self.tenant_id),
+            'plan_id': str(self.plan_id),
+            'purchase_order': self.purchase_order,
+            'date_active': self.date_active,
+            'date_end': self.date_end,
+            'is_limited': self.date_end,
+            'license_quantity': self.license_quantity,
+            'license_used': self.license_used,
+            'is_expired': self.is_expired,
+            'license_buy_type': self.license_buy_type,
+        }
 
     class Meta:
         verbose_name = 'Tenant Plan'

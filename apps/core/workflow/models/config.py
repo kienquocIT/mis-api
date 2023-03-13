@@ -1,10 +1,10 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel, OPTION_COLLABORATOR
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR
 
 
-class Workflow(TenantCoreModel):
+class Workflow(MasterDataAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
@@ -48,7 +48,7 @@ class Workflow(TenantCoreModel):
         permissions = ()
 
 
-class Zone(TenantCoreModel):
+class Zone(MasterDataAbstractModel):
     workflow = models.ForeignKey(
         'workflow.Workflow',
         on_delete=models.CASCADE,
@@ -76,7 +76,7 @@ class Zone(TenantCoreModel):
         permissions = ()
 
 
-class Node(TenantCoreModel):
+class Node(MasterDataAbstractModel):
     workflow = models.ForeignKey(
         'workflow.Workflow',
         on_delete=models.CASCADE,
@@ -165,7 +165,7 @@ class Node(TenantCoreModel):
         permissions = ()
 
 
-class Collaborator(TenantCoreModel):
+class Collaborator(MasterDataAbstractModel):
     node = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
@@ -194,7 +194,7 @@ class Collaborator(TenantCoreModel):
         permissions = ()
 
 
-class Association(TenantCoreModel):
+class Association(MasterDataAbstractModel):
     workflow = models.ForeignKey(
         'workflow.Workflow',
         on_delete=models.CASCADE,

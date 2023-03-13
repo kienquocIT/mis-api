@@ -69,7 +69,9 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223
     def validate(self, attrs):
         try:
             username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
-            user_obj = User.objects.get(**{User.USERNAME_FIELD: username_value})
+            user_obj = User.objects.select_related(
+                'tenant_current', 'company_current', 'employee_current', 'space_current',
+            ).get(**{User.USERNAME_FIELD: username_value})
             if user_obj:
                 if user_obj.check_password(attrs['password']):
                     return user_obj
