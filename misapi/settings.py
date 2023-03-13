@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import sys
+import socket
 import os
 from datetime import timedelta
 
@@ -52,7 +53,9 @@ INSTALLED_APPS = \
         'compressor',  # Compress Assets File
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
+        'debug_toolbar',  # debug toolbar support check API
     ] + [  # integrate some service management or tracing
+        'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
     ] + [  # application
         'apps.core.base',
@@ -62,7 +65,9 @@ INSTALLED_APPS = \
         'apps.core.company',
         'apps.core.space',
 
-        'apps.core.workflow'
+        'apps.core.workflow',
+        'apps.core.process',
+        'apps.sale.saledata',
     ]
 
 MIDDLEWARE = [
@@ -86,6 +91,13 @@ MIDDLEWARE += ['apps.shared.AllowCIDRAndProvisioningMiddleware']
 # Home Page: https://django-crum.readthedocs.io/en/latest/
 # Package Health Score: https://snyk.io/advisor/python/django-crum
 MIDDLEWARE += ['crum.CurrentRequestUserMiddleware']
+# debug toolbar middleware
+MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware', ]
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 ROOT_URLCONF = 'misapi.urls'
 
@@ -339,10 +351,25 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # import local_settings
+LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
 try:
     from .local_settings import *
 except ImportError:
     pass
+
+# change log config
+if LOG_ENABLE is False:
+    LOGGING['loggers'] = {}
+if LOG_BACKUP_ENABLE is False:
+    if 'handlers' in LOGGING:
+        for _key, handler in LOGGING['handlers'].items():
+            handler['backupCount'] = 1
+
+# debug toolbar IP Internal
+
+if DEBUG:
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
 # Celery configurations
 if not CELERY_BROKER_URL:
@@ -405,7 +432,8 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
 if DEBUG is True:
     from colorama import Fore
 
-    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 else 'DB SERVICE'
+    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
+        else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
     match USE_DATABASE_CONFIG_OPTION:
         case 1:

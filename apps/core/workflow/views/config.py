@@ -12,7 +12,7 @@ class WorkflowList(
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Workflow.object_global
+    queryset = Workflow.objects
     serializer_list = WorkflowListSerializer
     serializer_create = WorkflowCreateSerializer
     serializer_detail = WorkflowListSerializer
@@ -47,7 +47,7 @@ class WorkflowDetail(
     BaseRetrieveMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Workflow.object_global.all()
+    queryset = Workflow.objects
     serializer_detail = WorkflowDetailSerializer
 
     @swagger_auto_schema(

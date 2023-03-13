@@ -5,7 +5,7 @@ from apps.core.tenant.models import TenantPlan, Tenant
 
 
 def update_company_created_user():
-    company_user_emp = CompanyUserEmployee.object_normal.filter(user__isnull=False)
+    company_user_emp = CompanyUserEmployee.objects.filter(user__isnull=False)
     if company_user_emp:
         for item in company_user_emp:
             item.is_created_company = True
@@ -85,8 +85,8 @@ def mapping_user_to_company_user_employee():
     )
     if user_list:
         for user in user_list:
-            if not CompanyUserEmployee.object_normal.filter(user_id=user.id).exists():
-                CompanyUserEmployee.object_normal.create(
+            if not CompanyUserEmployee.objects.filter(user_id=user.id).exists():
+                CompanyUserEmployee.objects.create(
                     user_id=user.id,
                     company_id=user.company_current_id
                 )
@@ -96,7 +96,7 @@ def mapping_user_to_company_user_employee():
 
 
 def update_data_company_license_tracking():
-    plan_employee = PlanEmployee.object_normal.all()
+    plan_employee = PlanEmployee.objects.all()
     if plan_employee:
         plan_employee.delete()
     tenant_list = Tenant.objects.all()

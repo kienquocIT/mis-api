@@ -11,6 +11,7 @@ django-background-tasks==1.2.5
 django-celery-results==2.4.0
 django-compressor==4.1
 django-crum==0.7.9
+django-debug-toolbar==3.8.1
 django-filter==22.1
 django-phonenumber-field==7.0.0
 django-phonenumbers==1.0.1
@@ -27,6 +28,7 @@ MarkupSafe==2.1.1
 mysqlclient==2.1.1
 packaging==21.3
 phonenumbers==8.13.1
+pip-cache==0.0.6
 PyJWT==2.6.0
 pyparsing==3.0.9
 pylint==2.16.3
