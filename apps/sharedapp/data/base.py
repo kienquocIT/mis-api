@@ -207,6 +207,13 @@ ApplicationProperty_data = {
         'code': 'user',
         'type': 5,
         'content_type': 'account_User',
+        'properties': {
+            "dropdown_list": {
+                "url": "/account/users/api",
+                "prefix": "user_list",
+                "multiple": "false"
+            }
+        },
     },
     'ab9e114a-47ed-4cc4-9a4e-89ffa54afa07': {
         'application_id': '50348927-2c4f-4023-b638-445469c66953',
@@ -214,6 +221,13 @@ ApplicationProperty_data = {
         'code': 'group',
         'type': 5,
         'content_type': 'hr_Group',
+        'properties': {
+            "dropdown_list": {
+                "url": "/hr/group/api",
+                "prefix": "group_list",
+                "multiple": "false"
+            }
+        },
     },
     'f205394a-8bc2-4d43-8d14-78524d1fae56': {
         'application_id': '50348927-2c4f-4023-b638-445469c66953',
@@ -221,6 +235,13 @@ ApplicationProperty_data = {
         'code': 'employee_inherit',
         'type': 5,
         'content_type': 'hr_Employee',
+        'properties': {
+            "dropdown_list": {
+                "url": "/hr/employee/api",
+                "prefix": "employee_list",
+                "multiple": "false"
+            }
+        },
     },
     '1497e99f-89e2-4632-b698-cd4ab3f22d19': {
         'application_id': '50348927-2c4f-4023-b638-445469c66953',
