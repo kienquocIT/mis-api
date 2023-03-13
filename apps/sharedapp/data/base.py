@@ -3,6 +3,7 @@ __all__ = [
     'Application_data',
     'PlanApplication_data',
     'PermissionApplication_data',
+    'ApplicationProperty_data'
 ]
 
 SubscriptionPlan_data = {
@@ -167,3 +168,70 @@ PlanApplication_data = {
 }
 
 PermissionApplication_data = {}
+
+ApplicationProperty_data = {
+    # Employee
+    'fc7fcfcc-5294-4c2f-bdcb-fa0d8076d211': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'first name',
+        'code': 'first_name',
+        'type': 1,
+    },
+    '9a17bbfa-f555-4996-957c-e2437ecc41ab': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'last name',
+        'code': 'last_name',
+        'type': 1,
+    },
+    'e35a0c33-0482-486a-b45d-0eacde759242': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'email',
+        'code': 'email',
+        'type': 1,
+    },
+    '3358a14e-12c6-417b-bc7e-bce1538cd83f': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'phone',
+        'code': 'phone',
+        'type': 1,
+    },
+    '6b6713e1-3d0b-415e-ba91-4cdcf12ec2db': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'code',
+        'code': 'code',
+        'type': 1,
+    },
+    '757f8311-793c-4e41-a24b-d1651354ae9a': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'user',
+        'code': 'user',
+        'type': 5,
+        'content_type': 'account_User',
+    },
+    'ab9e114a-47ed-4cc4-9a4e-89ffa54afa07': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'group',
+        'code': 'group',
+        'type': 5,
+        'content_type': 'hr_Group',
+    },
+    'f205394a-8bc2-4d43-8d14-78524d1fae56': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'employee inherit',
+        'code': 'employee_inherit',
+        'type': 5,
+        'content_type': 'hr_Employee',
+    },
+    '1497e99f-89e2-4632-b698-cd4ab3f22d19': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'date joined',
+        'code': 'date_joined',
+        'type': 2,
+    },
+    '3d8ea97e-6b9c-43e3-a584-369cfe4bdfaf': {
+        'application_id': '50348927-2c4f-4023-b638-445469c66953',
+        'title': 'date of birth',
+        'code': 'dob',
+        'type': 2,
+    },
+}
