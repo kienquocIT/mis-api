@@ -13,19 +13,11 @@ before_script:
   - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
   - pip install -r req.txt
 
-#cache:
-#  key: python_n_package_1
-#  paths:
-#    - .cache/pip
-#    - venv/
-
 
 cache:
   key: python_n_package
-  paths:
-    - usr/local/bin/python
-    - usr/local/lib/python/site-packages/
-  untracked: true
+  untracked: false
+  policy: "push"
 
 stages:
   - pylint_check
@@ -42,9 +34,9 @@ migrations_init:
   stage: migrations_init
   script:
     - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
-        python manage.py makemigrations --check --dry-run --noinput;
-        python manage.py migrate;
-        python manage.py init_data;
+      python manage.py makemigrations --check --dry-run --noinput;
+      python manage.py migrate;
+      python manage.py init_data;
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
