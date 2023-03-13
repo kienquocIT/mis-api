@@ -13,7 +13,7 @@ class ApplicationListMixin(BaseListMixin):
             'plan__id',
             flat=True
         )
-        plan_application_id_list = PlanApplication.object_normal.filter(
+        plan_application_id_list = PlanApplication.objects.filter(
             plan_id__in=tenant_plan_id_list
         ).values_list(
             'application__id',
