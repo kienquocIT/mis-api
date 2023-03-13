@@ -11,11 +11,10 @@ variables:
 
 before_script:
   - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
-  - pip install -r req.txt
+  - pip install --cache-dir ~/.cache/pip -r req.txt
 
 
 cache:
-  key: v1-{{ .Branch }}-{{ checksum "req.txt" }}
   paths:
     - ~/.cache/pip
 #  key: python_n_package
