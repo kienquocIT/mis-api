@@ -33,7 +33,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def application_of_plan(plan_id):
-        plan_app_list = DisperseModel(app_model='base.PlanApplication').get_model().object_normal.select_related(
+        plan_app_list = DisperseModel(app_model='base.PlanApplication').get_model().objects.select_related(
             'application'
         ).filter(plan_id=plan_id)
         if plan_app_list:

@@ -9,7 +9,7 @@ from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, B
 class CompanyCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         tenant_current_id = request.user.tenant_current_id
-        current_tenant = Tenant.object_normal.get(id=tenant_current_id)
+        current_tenant = Tenant.objects.get(id=tenant_current_id)
         company_quantity_max = current_tenant.company_quality_max
         current_company_quantity = current_tenant.company_total
 

@@ -142,17 +142,17 @@ class CompanyUserEmployee(SimpleAbstractModel):
                     'Remaining argument must be is None'
                 )
             if employee_id:
-                emp_map = cls.object_normal.filter(company_id=company_id, employee_id=employee_id)
+                emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
                 if emp_map:
                     return cls.check_obj_map(emp_map, 'employee')
-                return cls.object_normal.create(
+                return cls.objects.create(
                     company_id=company_id, employee_id=employee_id, user_id=None
                 )
             if user_id:
-                user_map = cls.object_normal.filter(company_id=company_id, user_id=user_id)
+                user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
                 if user_map:
                     return cls.check_obj_map(user_map, 'user')
-                return cls.object_normal.create(
+                return cls.objects.create(
                     company_id=company_id, employee_id=None, user_id=user_id,
                     is_created_company=True,
                 )
@@ -161,7 +161,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
     @classmethod
     def remove_map(cls, company_id, employee_id, user_id) -> (models.Model, models.Model) or Exception:
         if company_id and employee_id and user_id:
-            objs = cls.object_normal.filter(company_id=company_id, employee_id=employee_id, user_id=user_id)
+            objs = cls.objects.filter(company_id=company_id, employee_id=employee_id, user_id=user_id)
             if objs.count() <= 1:
                 obj_user = objs.first()
                 if obj_user:
@@ -178,8 +178,8 @@ class CompanyUserEmployee(SimpleAbstractModel):
     @classmethod
     def assign_map(cls, company_id, employee_id, user_id):
         if company_id and employee_id and user_id:
-            user_map = cls.object_normal.filter(company_id=company_id, user_id=user_id)
-            emp_map = cls.object_normal.filter(company_id=company_id, employee_id=employee_id)
+            user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
+            emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
             if user_map and emp_map:
                 user_map = cls.check_obj_map(user_map, 'user')
                 emp_map = cls.check_obj_map(emp_map, 'employee')
