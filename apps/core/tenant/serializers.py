@@ -22,12 +22,12 @@ class TenantPlanSerializer(serializers.ModelSerializer):
     @classmethod
     def get_tenant(cls, obj):
         if obj.tenant_id:
-            data = Tenant.data_list_filter({'id': obj.tenant_id}, get_first=True)
+            data = Tenant.objects.filter(id=obj.tenant_id).first()
             if data:
                 return {
-                    'id': data['id'],
-                    'title': data['title'],
-                    'code': data['code'],
+                    'id': data.id,
+                    'title': data.title,
+                    'code': data.code,
                 }
         return {}
 
@@ -35,9 +35,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
     def application_of_plan(plan_id):
         plan_app_list = DisperseModel(app_model='base.PlanApplication').get_model().object_normal.select_related(
             'application'
-        ).filter(
-            plan_id=plan_id
-        )
+        ).filter(plan_id=plan_id)
         if plan_app_list:
             return [
                 {
@@ -51,21 +49,26 @@ class TenantPlanSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan(cls, obj):
         if obj.plan_id:
-            data = DisperseModel(app_model='base.SubscriptionPlan').get_model().data_list_filter(
-                {'id': obj.plan_id}, get_first=True
-            )
-            if data and isinstance(data, dict):
-                if 'application' in data:
-                    data['application'] = [
+            data = DisperseModel(app_model='base.SubscriptionPlan').get_model().objects.filter(
+                id=obj.plan_id
+            ).first()
+            if data:
+                plan = {
+                    'id': data.id,
+                    'title': data.title,
+                    'code': data.code,
+                }
+                if hasattr(data, 'application'):
+                    plan['application'] = [
                         {
                             'id': item['id'],
                             'title': item['title'],
                             'code': item['code'],
-                        } for item in data['application']
+                        } for item in data.application
                     ]
                 else:
-                    data['application'] = cls.application_of_plan(obj.plan_id)
-                return data
+                    plan['application'] = cls.application_of_plan(obj.plan_id)
+                return plan
         return {}
 
     @classmethod
