@@ -14,11 +14,18 @@ before_script:
   - pip install -r req.txt
 
 
+#cache:
+#  key: python_n_package
 cache:
-  key: python_n_package
+  key: "$CI_COMMIT_REF_SLUG"
   paths:
     - ~/.cache/pip
-    - usr/local/lib/python3.11
+  untracked: true
+  policy:
+    push:
+      paths:
+        - "~/gitlab-ci-cache/pip"
+    pull: false
 
 stages:
   - pylint_check
