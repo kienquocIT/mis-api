@@ -120,7 +120,7 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
     def get_property_list(cls, obj):
         result = []
         if obj.property_list and isinstance(obj.property_list, list):
-            property_list = ApplicationProperty.object_normal.filter(
+            property_list = ApplicationProperty.objects.filter(
                 id__in=obj.property_list
             ).values(
                 'id',
@@ -227,7 +227,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_zone(cls, obj):
         return ZoneDetailSerializer(
-            Zone.object_global.filter(workflow=obj).order_by('order'),
+            Zone.objects.filter(workflow=obj).order_by('order'),
             many=True
         ).data
 
@@ -235,7 +235,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     def node_zone_data(cls, node):
         zone_data = []
         if node.zone:
-            node_zone_list = Zone.object_global.filter(id__in=node.zone)
+            node_zone_list = Zone.objects.filter(id__in=node.zone)
             if node_zone_list:
                 for node_zone in node_zone_list:
                     zone_data.append({
@@ -302,14 +302,14 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def node_in_workflow(cls, node, result):
         collaborator_data = []
-        in_workflow_collaborator = Collaborator.object_global.filter(
+        in_workflow_collaborator = Collaborator.objects.filter(
             node=node
         ).select_related('employee')
         if in_workflow_collaborator:
             for collaborator in in_workflow_collaborator:
                 zone_in_workflow_data = []
                 if collaborator.zone:
-                    zone_list = Zone.object_global.filter(id__in=collaborator.zone)
+                    zone_list = Zone.objects.filter(id__in=collaborator.zone)
                     if zone_list:
                         for zone in zone_list:
                             zone_in_workflow_data.append({
@@ -339,7 +339,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_node(cls, obj):
         result = []
-        node_list = Node.object_global.filter(workflow=obj).order_by('order')
+        node_list = Node.objects.filter(workflow=obj).order_by('order')
         if node_list:
             for node in node_list:
                 if node.option_collaborator or node.option_collaborator == 0:
@@ -375,7 +375,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_association(cls, obj):
         result = []
-        association_list = Association.object_global.filter(
+        association_list = Association.objects.filter(
             workflow=obj
         ).select_related(
             'node_in',
@@ -469,7 +469,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             for zone in zone_list:
                 if 'order' in zone:
                     order = zone['order']
-                    zone = Zone.object_global.create(
+                    zone = Zone.objects.create(
                         **zone,
                         workflow=workflow,
                         tenant_id=workflow.tenant_id,
@@ -504,7 +504,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                                 company_id=workflow.company_id
                             ))
                 if bulk_info:
-                    Association.object_global.bulk_create(bulk_info)
+                    Association.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
@@ -514,7 +514,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             workflow,
             node_created_data
     ):
-        node_create = Node.object_global.create(
+        node_create = Node.objects.create(
             **node,
             workflow=workflow,
             tenant_id=workflow.tenant_id,
@@ -531,7 +531,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             workflow,
             node_created_data
     ):
-        node_create = Node.object_global.create(
+        node_create = Node.objects.create(
             **node,
             workflow=workflow,
             tenant_id=workflow.tenant_id,
@@ -550,7 +550,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             collaborator_list,
             zone_created_data
     ):
-        node_create = Node.object_global.create(
+        node_create = Node.objects.create(
             **node,
             workflow=workflow,
             tenant_id=workflow.tenant_id,
@@ -574,7 +574,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                     company_id=workflow.company_id,
                 ))
             if bulk_info:
-                Collaborator.object_global.bulk_create(bulk_info)
+                Collaborator.objects.bulk_create(bulk_info)
         return True
 
     @classmethod
@@ -663,7 +663,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             del validated_data['association']
 
         # create workflow
-        workflow = Workflow.object_global.create(**validated_data)
+        workflow = Workflow.objects.create(**validated_data)
 
         # create zone for workflow
         self.create_zone_for_workflow(
