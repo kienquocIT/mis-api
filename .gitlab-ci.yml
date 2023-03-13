@@ -15,11 +15,13 @@ before_script:
 
 
 cache:
-  key: python_n_package
+  key: v1-{{ .Branch }}-{{ checksum "req.txt" }}
   paths:
-    - usr/local/bin/python
-    - usr/local/lib/python/site-packages/
-#  untracked: true
+    - ~/.cache/pip
+#  key: python_n_package
+#  paths:
+#    - usr/local/bin/python
+#    - usr/local/lib/python/site-packages/
 
 stages:
   - pylint_check
