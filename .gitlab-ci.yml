@@ -15,9 +15,9 @@ before_script:
 
 
 cache:
-  key: python-3.11
+  key: python_n_package
   paths:
-    - ~/.cache/pip
+    - /usr/local/bin/python
     - /usr/local/lib/python3.11/site-packages/
   policy: push
 #  key: python_n_package
