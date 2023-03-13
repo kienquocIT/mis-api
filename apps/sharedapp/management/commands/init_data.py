@@ -4,9 +4,11 @@ from colorama import Fore
 from django.core.management.base import BaseCommand
 from django.db.models import Model
 
-from apps.core.base.models import SubscriptionPlan, Application, PlanApplication, PermissionApplication
+from apps.core.base.models import SubscriptionPlan, Application, PlanApplication, PermissionApplication, \
+    ApplicationProperty
 from apps.core.workflow.models import Node
-from ...data.base import SubscriptionPlan_data, Application_data, PlanApplication_data, PermissionApplication_data
+from ...data.base import SubscriptionPlan_data, Application_data, PlanApplication_data, PermissionApplication_data, \
+    ApplicationProperty_data
 from ...data.workflow import Node_data
 
 
@@ -30,6 +32,7 @@ class InitialsData:
         (Application, Application_data),
         (PlanApplication, PlanApplication_data),
         (PermissionApplication, PermissionApplication_data),
+        (ApplicationProperty, ApplicationProperty_data),
         (Node, Node_data),
     )
 
