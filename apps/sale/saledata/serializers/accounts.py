@@ -604,6 +604,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         if contact_primary:
             contact_select_list.append(contact_primary)
+
         # update contact select
         if contact_select_list:
             contact_list = Contact.objects.filter(id__in=contact_select_list)
