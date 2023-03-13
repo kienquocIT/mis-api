@@ -2,14 +2,13 @@ import json
 import random
 import re
 import string
-from datetime import datetime
+from datetime import datetime, date
 from typing import Union
-
 from uuid import UUID
 
-__all__ = [
-    'LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck',
-]
+from django.conf import settings
+
+__all__ = ['LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
 
 
 class LinkListHandler:
@@ -100,3 +99,21 @@ class TypeCheck:
         if len(result) == len(data) and all(result) is True:
             return True
         return False
+
+
+class FORMATTING:
+    DATETIME = settings.REST_FRAMEWORK['DATETIME_FORMAT']
+    DATE = settings.REST_FRAMEWORK['DATE_FORMAT']
+    PAGE_SIZE = settings.REST_FRAMEWORK['PAGE_SIZE']
+
+    @classmethod
+    def parse_datetime(cls, value):
+        if isinstance(value, datetime):
+            return datetime.strftime(value, cls.DATETIME) if value else None
+        return str(value)
+
+    @classmethod
+    def parse_date(cls, value):
+        if isinstance(value, date):
+            return datetime.strftime(value, cls.DATE) if value else None
+        return str(value)

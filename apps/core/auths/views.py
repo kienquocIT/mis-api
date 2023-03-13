@@ -5,10 +5,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 from apps.core.account.models import User
-from apps.shared import mask_view
-from apps.shared.controllers import ResponseController
 from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer
-from apps.shared.translations import AuthMsg
+from apps.shared import mask_view, ResponseController, AuthMsg
 
 
 # LOGIN:

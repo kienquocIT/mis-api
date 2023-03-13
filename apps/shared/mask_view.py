@@ -8,12 +8,10 @@ from django.http import HttpResponse
 from rest_framework import status, serializers
 from rest_framework.response import Response
 
-from .controllers import ResponseController
+from .extends.controllers import ResponseController
 from .translations import ServerMsg
 
-__all__ = [
-    'mask_view'
-]
+__all__ = ['mask_view']
 
 
 class AuthPermission:

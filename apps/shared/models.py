@@ -8,7 +8,7 @@ from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
-from .managers import NormalManager
+from .extends.managers import NormalManager
 from .constant import SYSTEM_STATUS
 
 __all__ = [

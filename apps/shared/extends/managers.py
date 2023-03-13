@@ -1,6 +1,5 @@
 from django.db import models
 from django.conf import settings
-from .utils import StringHandler
 
 __all__ = [
     'NormalManager'
