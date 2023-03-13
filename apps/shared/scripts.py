@@ -102,7 +102,7 @@ def update_data_company_license_tracking():
     tenant_list = Tenant.objects.all()
     if tenant_list:
         for tenant in tenant_list:
-            tenant_plan_list = TenantPlan.object_normal.filter(tenant=tenant)
+            tenant_plan_list = TenantPlan.objects.filter(tenant=tenant)
             tenant_company_list = Company.objects.filter(tenant=tenant)
             if tenant_company_list:
                 for company in tenant_company_list:
@@ -118,7 +118,7 @@ def update_data_company_license_tracking():
                             )
                         )
                     if bulk_info:
-                        CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
+                        CompanyLicenseTracking.objects.bulk_create(bulk_info)
 
     print('update done.')
     return True
