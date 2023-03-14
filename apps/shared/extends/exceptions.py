@@ -1,6 +1,6 @@
 from rest_framework.views import exception_handler
 
-from .extends import convert_errors
+from .response import convert_errors
 
 
 def custom_exception_handler(exc, context):

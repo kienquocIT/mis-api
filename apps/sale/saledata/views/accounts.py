@@ -324,7 +324,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class EmployeeMapAccountList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object
+    queryset = Employee.objects
     search_fields = ["search_content"]
     list_hidden_field = ['tenant_id', 'company_id']
 

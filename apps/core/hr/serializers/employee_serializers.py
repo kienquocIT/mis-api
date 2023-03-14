@@ -100,10 +100,10 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     def get_role(cls, obj):
         return [
             {
-                'id': x['id'],
-                'title': x['title'],
-                'code': x['code'],
-            } for x in obj.role.all().values('id', 'title', 'code')
+                'id': x.id,
+                'title': x.title,
+                'code': x.code,
+            } for x in obj.role.all()
         ]
 
     @classmethod
@@ -114,6 +114,23 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                 'username': obj.user.username,
             }
         return {}
+
+
+class EmployeeListMinimalSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Employee
+        fields = (
+            'id',
+            'code',
+            'first_name',
+            'last_name',
+            'full_name',
+        )
+
+    def get_full_name(self, obj):
+        return obj.get_full_name(2)
 
 
 class EmployeeDetailSerializer(serializers.ModelSerializer):
@@ -527,7 +544,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         """
         if isinstance(attrs, dict):
             option_choices = [x[0] for x in PERMISSION_OPTION]
-            permission_choices = {x['permission']: x for x in PermissionApplication.data_list_filter(None)}
+            permission_choices = {x['permission']: x for x in PermissionApplication.objects.filter(None)}
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):
