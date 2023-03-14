@@ -8,10 +8,6 @@ from apps.sale.saledata.views.accounts import (
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
 
-from apps.sale.saledata.views.product import (
-    ProductTypeList
-)
-
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
     path('salutation/<str:pk>', SalutationDetail.as_view(), name='SalutationDetail'),
@@ -31,8 +27,4 @@ urlpatterns = [
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('employee_map_account_list', EmployeeMapAccountList.as_view(), name='EmployeeMapAccountList'),
-]
-
-urlpatterns += [
-    path('product-types', ProductTypeList.as_view(), name='ProductTypeList'),
 ]
