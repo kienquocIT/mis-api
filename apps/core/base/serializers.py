@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.base.models import (
-    SubscriptionPlan, PlanApplication, Application, ApplicationProperty, PermissionApplication,
+    SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
 )
 
 
