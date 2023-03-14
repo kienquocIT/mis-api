@@ -1,3 +1,5 @@
+__all__ = ['ApplicationProperty_data']
+
 ApplicationProperty_data = {
     'fc7fcfcc-5294-4c2f-bdcb-fa0d8076d211': {
         'id': 'fc7fcfcc-5294-4c2f-bdcb-fa0d8076d211',
