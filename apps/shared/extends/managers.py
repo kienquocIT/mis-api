@@ -25,25 +25,25 @@ class EntryQuerySet(models.query.QuerySet):
         return str(self.model._meta.db_table)  # pylint: disable=protected-access / W0212
 
     @staticmethod
-    def append_filter_currently(sql_query, filter_kwargs):
+    def append_filter_currently(sql_query, fill__tenant, fill__company, fill__space, filter_kwargs):
         """
         Put key=value to filter or get for auto append currently data user to filter.
         Args:
+            fill__space:
+            fill__company:
+            fill__tenant:
             sql_query:
             filter_kwargs:
 
         Returns:
             Dictionary from filter_kwargs
         """
-        is__tenant = filter_kwargs.pop('is__tenant', False)
-        is__company = filter_kwargs.pop('is__company', False)
-        is__space = filter_kwargs.pop('is__space', False)
         sql_query = str(sql_query)
         user_obj = get_current_user()
         if user_obj:
             # append tenant_id if not exist in query
             if (
-                    is__tenant and
+                    fill__tenant and
                     user_obj.tenant_current_id and
                     f'tenant_id` = {user_obj.tenant_current_id.hex}' not in sql_query
             ):
@@ -51,7 +51,7 @@ class EntryQuerySet(models.query.QuerySet):
 
             # append company_id if not exist in query
             if (
-                    is__company and
+                    fill__company and
                     user_obj.company_current_id and
                     f'company_id` = {user_obj.company_current_id.hex}' not in sql_query
             ):
@@ -59,24 +59,30 @@ class EntryQuerySet(models.query.QuerySet):
 
             # append space_id if not exist in query
             if (
-                    is__space and
+                    fill__space and
                     user_obj.space_current_id and
                     f'space_id` = {user_obj.space_current_id.hex}' not in sql_query
             ):
-                filter_kwargs['space_id'] = user_obj.space_current_id.pop('is__tenant', False)
+                filter_kwargs['space_id'] = user_obj.space_current_id
         return filter_kwargs
 
-    def filter_current(self, *args, **kwargs):
+    def filter_current(self, *args, fill__tenant=False, fill__company=False, fill__space=False, **kwargs):
         """
         Support call append currently user data from QuerySet then call self.filter()
         Args:
+            fill__space:
+            fill__company:
+            fill__tenant:
             *args:
             **kwargs:
 
         Returns:
             return self.filter()
         """
-        kwargs_converted = self.append_filter_currently(self.query, kwargs)
+        kwargs_converted = self.append_filter_currently(
+            self.query, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
+            filter_kwargs=kwargs
+        )
         return self.filter(*args, **kwargs_converted)
 
     def cache(self, timeout=None):
@@ -103,17 +109,23 @@ class EntryQuerySet(models.query.QuerySet):
         Caching().set(key, data, timeout=timeout)
         return data
 
-    def get_current(self, *args, **kwargs):
+    def get_current(self, *args, fill__tenant, fill__company, fill__space, **kwargs):
         """
         Support call append currently user data from QuerySet then call self.get()
         Args:
+            fill__space:
+            fill__company:
+            fill__tenant:
             *args:
             **kwargs:
 
         Returns:
             self.get()
         """
-        kwargs_converted = self.append_filter_currently(self.query, kwargs)
+        kwargs_converted = self.append_filter_currently(
+            self.query, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
+            filter_kwargs=kwargs
+        )
         return super().get(*args, **kwargs_converted)
 
 
@@ -130,3 +142,28 @@ class NormalManager(models.Manager):
             Customize Queryset
         """
         return EntryQuerySet(self.model, using=self._db)
+
+    def filter_current(self, *args, **kwargs):
+        fill__tenant = kwargs.pop('fill__tenant', False)
+        fill__company = kwargs.pop('fill__company', False)
+        fill__space = kwargs.pop('fill__space', False)
+        return EntryQuerySet(self.model, using=self._db).filter_current(
+            *args, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space, **kwargs
+        )
+
+    def get_current(self, *args, **kwargs):
+        """
+        Support call append currently user data from QuerySet then call self.get()
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+            self.get()
+        """
+        fill__tenant = kwargs.pop('fill__tenant', False)
+        fill__company = kwargs.pop('fill__company', False)
+        fill__space = kwargs.pop('fill__space', False)
+        return EntryQuerySet(self.model, using=self._db).get_current(
+            *args, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space, **kwargs
+        )
