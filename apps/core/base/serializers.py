@@ -22,12 +22,10 @@ class PlanListSerializer(serializers.ModelSerializer):
     def get_application(cls, obj):
         return [
             {
-                'id': x['application__id'],
-                'title': x['application__title'],
-                'code': x['application__code'],
-            } for x in PlanApplication.objects.filter(plan=obj).values(
-                'application__id', 'application__title', 'application__code'
-            )
+                'id': x.id,
+                'title': x.title,
+                'code': x.code,
+            } for x in obj.applications.all()
         ]
 
 

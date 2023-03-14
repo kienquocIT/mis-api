@@ -1,15 +1,14 @@
 from copy import deepcopy
-from typing import Union
 from uuid import uuid4
 
-from crum import get_current_user
 from django.apps import apps
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
 
-from .extends.managers import NormalManager
-from .constant import SYSTEM_STATUS
+from .caching import Caching
+from .managers import NormalManager
+from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
@@ -17,7 +16,20 @@ __all__ = [
 ]
 
 
-class SimpleAbstractModel(models.Model):
+class SignalRegisterMetaClass(models.base.ModelBase, type):
+    def register_signals(cls):
+        models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+
+    def post_save_handler(cls, sender, **kwargs):
+        table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
+        Caching().clean_by_prefix(table_name)
+
+    def __init__(cls, name, bases, attrs):
+        super().__init__(name, bases, attrs)
+        cls.register_signals()  # pylint: disable=E1120
+
+
+class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
     """
     Bastion for all models in Prj and use to M2M
     """

@@ -257,7 +257,8 @@ SIMPLE_JWT = {
 # page API documentations
 
 SHOW_API_DOCS = False
-
+HEADER_MINIMAL_CODE = 'SuaD2m'
+HEADER_SKIP_AUTH_CODE = 'Wl46tj'
 SWAGGER_SETTINGS = {
     'LOGIN_URL': '/',
     'LOGOUT_URL': '/logout',
@@ -266,9 +267,19 @@ SWAGGER_SETTINGS = {
     'SHOW_COMMON_EXTENSIONS': False,
     'SECURITY_DEFINITIONS': {
         'Bearer': {'type': 'apiKey', 'name': 'Authorization', 'in': 'header'},
-        'Provisioning: P7UqtC7fkE6TZ9wW448JREyamUmht79Bj6eGKjmcxn5xV4UgTZVw8vuKtcYRJnWY': {
+        f'Provisioning: {PROVISIONING_ACCESS_VALUE}': {
             'type': 'apiKey',
             'name': 'PROVISION',
+            'in': 'header',
+        },
+        f'Minimal: {HEADER_MINIMAL_CODE}': {
+            'type': 'apiKey',
+            'name': 'DATAISMINIMAL',
+            'in': 'header',
+        },
+        f'SKIP AUTH: {HEADER_SKIP_AUTH_CODE}': {
+            'type': 'apiKey',
+            'name': 'DATAISSKIPAUTH',
             'in': 'header',
         },
     },
@@ -282,17 +293,12 @@ SWAGGER_URL = 'http://127.0.0.1:8000/api'
 FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 
 #
-CACHE_KEY_PREFIX = 'MiS'
-CLEAN_MODEL_CACHE_FOREGROUND = True
-CACHE_DATA_CONFIG = {
-    'account.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'base.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'company.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'hr.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'space.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'tenant.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
-    'workflow.*': {'timeout': 60 * 60 * 24 * 1, 'group': 'core'},  # 1 days
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
 }
+CACHE_KEY_PREFIX = 'MiS'
 
 # option account user create
 

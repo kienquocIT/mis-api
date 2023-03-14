@@ -1,11 +1,15 @@
-from django.conf import settings
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+from django.conf import settings
 from django.core.cache import cache
 from django.utils import translation
 
 
 class MyCustomJWTAuthenticate(JWTAuthentication):
+    @staticmethod
+    def generate_key_cache(special_data):
+        return f"{settings.CACHE_KEY_PREFIX}_auth_{special_data}"
+
     def authenticate(self, request):
         # data = super().authenticate(request)
         # if data and isinstance(data, tuple) and isinstance(data[0], self.user_model):
@@ -22,7 +26,7 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
 
         user = None
         token = self.get_validated_token(raw_token)
-        key_cache = f"{settings.CACHE_KEY_PREFIX}_{token['jti']}"
+        key_cache = self.generate_key_cache(token['jti'])
         if token is not None:
             user = cache.get(key_cache)
 
@@ -34,4 +38,3 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         if user and token and isinstance(user, self.user_model):
             translation.activate(user.language if user.language else 'vi')
         return user, token
-

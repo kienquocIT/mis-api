@@ -1,26 +1,9 @@
-from crum import get_current_user
-from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.utils import timezone
 
 from apps.shared import SimpleAbstractModel, FORMATTING
 
 __all__ = ['CoreAbstractModel', 'TenantAbstractModel']
-
-
-class TenantAbstractManager(models.Manager):
-    def get_queryset(self):
-        """
-        Auto filter tenant_id and company_current of request user
-        Returns:
-            super().get_queryset()
-        """
-        user_obj = get_current_user()
-        if user_obj and not isinstance(user_obj, AnonymousUser):
-            return super().get_queryset().filter(
-                tenant_id=user_obj.tenant_current_id, company_id=user_obj.company_current_id
-            )
-        return super().get_queryset().filter()
 
 
 # account, plan, app, tenant, company --> move to core models.py
@@ -60,8 +43,6 @@ class CoreAbstractModel(SimpleAbstractModel):
 
 # employee, role, group  --> move to core models.py
 class TenantAbstractModel(SimpleAbstractModel):
-    object = TenantAbstractManager()
-
     class Meta:
         abstract = True
         default_permissions = ()

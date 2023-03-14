@@ -44,14 +44,14 @@ class StringHandler:
         return ''.join([random.choice(string.ascii_letters) for _ in range(length)])
 
     @staticmethod
-    def remove_special_characters_regex(s):
+    def remove_special_characters_regex(text):
         """Fast with short string"""
-        return re.sub(r'[^\w\s]', '', s)
+        return re.sub(r'[^\w\s]', '', text)
 
     @staticmethod
-    def remove_special_characters_translate(s):
+    def remove_special_characters_translate(text):
         """Fast with string too long"""
-        return s.translate(str.maketrans('', '', string.punctuation)).replace(' ', '.')
+        return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
 
 
 class CustomizeEncoder(json.JSONEncoder):
