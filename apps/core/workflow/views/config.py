@@ -13,6 +13,7 @@ class WorkflowList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Workflow.objects
+    filterset_fields = ['application']
     serializer_list = WorkflowListSerializer
     serializer_create = WorkflowCreateSerializer
     serializer_detail = WorkflowListSerializer
@@ -21,7 +22,6 @@ class WorkflowList(
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "company",
             "application"
         )
 
@@ -49,6 +49,11 @@ class WorkflowDetail(
     permission_classes = [IsAuthenticated]
     queryset = Workflow.objects
     serializer_detail = WorkflowDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "application"
+        )
 
     @swagger_auto_schema(
         operation_summary="Workflow detail",

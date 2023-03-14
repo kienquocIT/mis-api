@@ -35,9 +35,13 @@ class Workflow(MasterDataAbstractModel):
         default=[],
         help_text="use for show rename of actions in specific workflow"
     )
-    is_in_use = models.BooleanField(
+    is_applied = models.BooleanField(
+        default=False,
+        help_text="to know what workflow is currently applied for application"
+    )
+    date_applied = models.DateField(
         null=True,
-        help_text="to know what workflow is currently config for application"
+        help_text="date applied this workflow for application"
     )
 
     class Meta:
