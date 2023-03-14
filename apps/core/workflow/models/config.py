@@ -111,45 +111,67 @@ class Node(MasterDataAbstractModel):
         default=0,
         help_text="option choose collaborator: In form, Out form, In workflow"
     )
-    # use for option_collaborator In form
-    field_select_collaborator = models.CharField(
-        max_length=550,
-        blank=True,
-        null=True,
-        help_text="field has data employees in document, option 1"
+
+    # data collab_in_form
+    # {
+    #     'employee_field': 'employee_inherit',
+    #     'zone': ['zoneID1', 'zoneID2']
+    # }
+    collab_in_form = JSONField(
+        default={},
+        help_text="use for option in form"
     )
-    # use for option_collaborator Out form
-    collaborator_list = JSONField(
-        verbose_name="employees",
+
+    # data collab_out_form
+    # {
+    #     'employee_list': ['empID1', 'empID2'],
+    #     'zone': ['zoneID1', 'zoneID2']
+    # }
+    collab_out_form = JSONField(
+        default={},
+        help_text="use for option out form"
+    )
+
+    # data collab_in_workflow
+    # [
+    #     {
+    #         'employee': 'empID1',
+    #         'zone': ['zoneID1', 'zoneID2']
+    #     },
+    #     {
+    #         'employee': 'empID2',
+    #         'zone': ['zoneID3', 'zoneID4']
+    #     }
+    # ]
+    collab_in_workflow = JSONField(
         default=[],
-        help_text="list employees, option 2"
+        help_text="use for option in workflow"
     )
-    zone = JSONField(
+    zone_initial_node = JSONField(
         verbose_name="zone",
         default=[],
-        help_text="list zones of collaborator"
+        help_text="list zones of initial node"
     )
+
     order = models.IntegerField(
         null=True
     )
 
-    """
-    data of field condition:
-        [
-            {
-                'action': 1,
-                'min_collaborator': 2
-            },
-            {
-                'action': 2,
-                'min_collaborator': 1
-            },
-            {
-                'action': 3,
-                'min_collaborator': 'else'
-            }
-        ]
-    """
+    # data of condition:
+    #     [
+    #         {
+    #             'action': 1,
+    #             'min_collaborator': 2
+    #         },
+    #         {
+    #             'action': 2,
+    #             'min_collaborator': 1
+    #         },
+    #         {
+    #             'action': 3,
+    #             'min_collaborator': 'else'
+    #         }
+    #     ]
     condition = JSONField(
         verbose_name="Condition",
         blank=True,
