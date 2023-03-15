@@ -1,21 +1,33 @@
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.exceptions import AuthenticationFailed, InvalidToken
+from rest_framework_simplejwt.settings import api_settings
 
-from django.conf import settings
-from django.core.cache import cache
 from django.utils import translation
 
 
 class MyCustomJWTAuthenticate(JWTAuthentication):
-    @staticmethod
-    def generate_key_cache(special_data):
-        return f"{settings.CACHE_KEY_PREFIX}_auth_{special_data}"
+    def get_user(self, validated_token):
+        """
+        Attempts to find and return a user using the given validated token.
+        """
+        try:
+            user_id = validated_token[api_settings.USER_ID_CLAIM]
+        except KeyError:
+            raise InvalidToken("Token contained no recognizable user identification")
+
+        try:
+            user = self.user_model.objects.get(
+                **{api_settings.USER_ID_FIELD: user_id}, force_cache=True, cache_timeout=60 * 60  # 1 hours
+            )
+        except self.user_model.DoesNotExist:
+            raise AuthenticationFailed("User not found", code="user_not_found")
+
+        if not user.is_active:
+            raise AuthenticationFailed("User is inactive", code="user_inactive")
+
+        return user
 
     def authenticate(self, request):
-        # data = super().authenticate(request)
-        # if data and isinstance(data, tuple) and isinstance(data[0], self.user_model):
-        #     translation.activate(data[0].language if data[0].language else 'vi')
-        # return data
-
         header = self.get_header(request)
         if header is None:
             return None
@@ -24,16 +36,8 @@ class MyCustomJWTAuthenticate(JWTAuthentication):
         if raw_token is None:
             return None
 
-        user = None
         token = self.get_validated_token(raw_token)
-        key_cache = self.generate_key_cache(token['jti'])
-        if token is not None:
-            user = cache.get(key_cache)
-
-        if user is None:
-            user = self.get_user(token)
-            if user is not None and user.is_active:
-                cache.set(key_cache, user, timeout=600)  # cache user for 10 minutes
+        user = self.get_user(token)
 
         if user and token and isinstance(user, self.user_model):
             translation.activate(user.language if user.language else 'vi')

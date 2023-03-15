@@ -279,7 +279,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
 
     def increment_code(self):
         if not self.code:
-            counter = self.__class__.object.filter(is_delete=False).count() + 1
+            counter = self.__class__.objects.filter(is_delete=False).count() + 1
             temper = "%04d" % counter  # pylint: disable=C0209
             self.code = f"EMP{temper}"
             return True
@@ -290,7 +290,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        employee = Employee.object.filter(is_delete=False).count()
+        employee = Employee.objects.filter(is_delete=False).count()
         char = "EMP"
         if not self.code:
             temper = "%04d" % (employee + 1)  # pylint: disable=C0209

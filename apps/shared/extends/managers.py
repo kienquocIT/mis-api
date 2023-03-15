@@ -1,9 +1,5 @@
-import hashlib
-
 from django.db import models
 from crum import get_current_user
-
-from .utils import StringHandler
 
 __all__ = ['NormalManager']
 
@@ -95,12 +91,7 @@ class EntryQuerySet(models.query.QuerySet):
             *** DON'T SHOULD use it for QUERYSET have SELECT_RELATED or PREFETCH_RELATED ***
         """
         sql_split = str(self.query).rsplit('FROM', maxsplit=1)[-1]
-        key = StringHandler.remove_special_characters_translate(sql_split)
-        # [SHA256] hash: 30M/s, collision: 1/2^128 (10^-38)
-        # [MD5] [FAST, NOT SECURE] hash: 120M/s, collision 1/70M
-        # ==> TOTAL KEY CACHE: 0 ~ 1M ==> USE MD5 ==> OK
-        key = self.table_name + '-' + hashlib.md5(key.encode('utf-8')).hexdigest()
-
+        key = Caching.key_cache_table(self.table_name, sql_split)
         data = Caching().get(key)
         if data:
             return data
@@ -127,6 +118,23 @@ class EntryQuerySet(models.query.QuerySet):
             filter_kwargs=kwargs
         )
         return super().get(*args, **kwargs_converted)
+
+    def get(self, *args, **kwargs):
+        force_cache = kwargs.pop('force_cache', False)
+        cache_timeout = kwargs.pop('cache_timeout', None)
+        if force_cache and not args and kwargs:
+            key = Caching.key_cache_table(
+                self.table_name, "".join([f"{k}{v}" for k, v in kwargs.items()]),
+                hash_key=False,
+                replace_pk_to_id=True,
+            )
+            data = Caching().get(key)
+            if data:
+                return data
+            data = super().get(*args, **kwargs)
+            Caching().set(key, data, cache_timeout)
+            return data
+        return super().get(*args, **kwargs)
 
 
 class NormalManager(models.Manager):

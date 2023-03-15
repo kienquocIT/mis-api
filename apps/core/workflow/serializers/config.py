@@ -278,7 +278,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     def node_out_form(cls, node, result, zone_data):
         employee_data = []
         if node.collaborator_list:
-            employee_list = Employee.object.filter(id__in=node.collaborator_list)
+            employee_list = Employee.objects.filter(id__in=node.collaborator_list)
             if employee_list:
                 for employee in employee_list:
                     employee_data.append({
