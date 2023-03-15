@@ -24,8 +24,9 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
+
     serializer_detail = SalutationDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
