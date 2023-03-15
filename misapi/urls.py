@@ -26,3 +26,8 @@ if getattr(settings, 'SHOW_API_DOCS', False):
         path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-json'),
         path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
     ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if settings.DEBUG is True:
+    urlpatterns.append(
+        path('__debug__/', include('debug_toolbar.urls')),
+    )

@@ -7,3 +7,7 @@ class AccountsMsg:
     CONTACT_NOT_EXIST = _('Contact does not exist.')
     ACCOUNTTYPE_NOT_EXIST = _('Account type does not exist.')
     INDUSTRY_NOT_EXIST = _('Industry does not exist.')
+    CODE_EXIST = _('Code is already exist.')
+    MOBILE_EXIST = _('Mobile is already exist.')
+    NAME_EXIST = _('Name is already exist.')
+    EMAIL_EXIST = _('Email is already exist.')

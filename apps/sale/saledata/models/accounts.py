@@ -75,7 +75,8 @@ class Account(TenantModel):
     )
     name = models.CharField(
         verbose_name='account_name',
-        null=False,
+        blank=True,
+        null=True,
         max_length=150
     )
     code = models.CharField(
