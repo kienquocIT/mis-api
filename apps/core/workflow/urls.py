@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.core.workflow.views.config import WorkflowList, NodeSystemList, WorkflowDetail
+from .views import WorkflowList, NodeSystemList, WorkflowDetail # pylint: disable-msg=E0611
 
 urlpatterns = [
     path('lists', WorkflowList.as_view(), name='WorkflowList'),

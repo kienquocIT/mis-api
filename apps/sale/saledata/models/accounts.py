@@ -1,12 +1,10 @@
 from django.db import models
-from apps.shared.models import MasterDataModel, TenantModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
 
 # Create your models here.
-class Salutation(MasterDataModel):
+class Salutation(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Salutation'
@@ -15,14 +13,9 @@ class Salutation(MasterDataModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
-
-class Interest(MasterDataModel):
+class Interest(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Interest'
@@ -31,14 +24,9 @@ class Interest(MasterDataModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
-
-class AccountType(MasterDataModel):
+class AccountType(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'AccountType'
@@ -47,14 +35,9 @@ class AccountType(MasterDataModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
-
-class Industry(MasterDataModel):
+class Industry(MasterDataAbstractModel):
     description = models.CharField(verbose_name='description', blank=True, max_length=200)
-    user_created = models.UUIDField(null=True)
-    user_modified = models.UUIDField(null=True)
 
     class Meta:
         verbose_name = 'Industry'
@@ -63,12 +46,9 @@ class Industry(MasterDataModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
 
 # Accounts
-class Account(TenantModel):
+class Account(DataAbstractModel):
     avatar = models.TextField(
         null=True,
         verbose_name='avatar path'
@@ -152,12 +132,9 @@ class Account(TenantModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
 
 # Contact
-class Contact(TenantModel):
+class Contact(DataAbstractModel):
     owner = models.UUIDField(
         help_text='employee'
     )
@@ -234,6 +211,3 @@ class Contact(TenantModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)

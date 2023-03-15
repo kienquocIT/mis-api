@@ -21,13 +21,13 @@ from apps.sale.saledata.serializers.accounts import (
 
 # Create your views here.
 class SalutationList(BaseListMixin, BaseCreateMixin):
-    queryset = Salutation.object_normal
+    queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
 
     serializer_detail = SalutationDetailSerializer
     list_hidden_field = ['tenant_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Salutation list",
@@ -35,6 +35,7 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -48,12 +49,12 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
 
 
 class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Salutation.object_normal
+    queryset = Salutation.objects
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Salutation')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -68,12 +69,12 @@ class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class InterestsList(BaseListMixin, BaseCreateMixin):
-    queryset = Interest.object_normal
+    queryset = Interest.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Interests list",
@@ -81,6 +82,7 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -94,12 +96,12 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
 
 
 class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Interest.object_normal
+    queryset = Interest.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Interest')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -114,12 +116,12 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class AccountTypeList(BaseListMixin, BaseCreateMixin):
-    queryset = AccountType.object_normal
+    queryset = AccountType.objects
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="AccountType list",
@@ -127,6 +129,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -140,12 +143,12 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
 
 
 class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = AccountType.object_normal
+    queryset = AccountType.objects
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail AccountType')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -160,12 +163,12 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class IndustryList(BaseListMixin, BaseCreateMixin):
-    queryset = Industry.object_normal
+    queryset = Industry.objects
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Industry list",
@@ -173,6 +176,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -186,12 +190,12 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
 
 
 class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Industry.object_normal
+    queryset = Industry.objects
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Industry')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -208,12 +212,12 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.object_normal
+    queryset = Contact.objects
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Contact list",
@@ -221,6 +225,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -238,7 +243,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -254,7 +259,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class ContactListNotMapAccount(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.object_normal
+    queryset = Contact.objects
     serializer_list = ContactListNotMapAccountSerializer
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
@@ -265,6 +270,7 @@ class ContactListNotMapAccount(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         kwargs.update({'account_name': None})
         return self.list(request, *args, **kwargs)
 
@@ -272,12 +278,12 @@ class ContactListNotMapAccount(BaseListMixin):
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Account.object_normal
+    queryset = Account.objects
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Account list",
@@ -294,6 +300,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.create(request, *args, **kwargs)
 
 
@@ -302,7 +309,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -318,7 +325,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class EmployeeMapAccountList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object_global
+    queryset = Employee.object
     search_fields = ["search_content"]
     list_hidden_field = ['tenant_id', 'company_id']
 
@@ -333,4 +340,5 @@ class EmployeeMapAccountList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)

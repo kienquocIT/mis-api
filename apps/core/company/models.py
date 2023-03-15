@@ -2,10 +2,12 @@ from typing import Literal
 from jsonfield import JSONField
 from django.db import models
 
-from apps.shared import BaseModel, M2MModel
+from apps.shared import SimpleAbstractModel
+
+from apps.core.models import CoreAbstractModel
 
 
-class Company(BaseModel):
+class Company(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
 
     # license used
@@ -57,7 +59,7 @@ class Company(BaseModel):
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
 
-class CompanyLicenseTracking(M2MModel):
+class CompanyLicenseTracking(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     # User
@@ -76,12 +78,11 @@ class CompanyLicenseTracking(M2MModel):
     class Meta:
         verbose_name = 'Company License Tracking'
         verbose_name_plural = 'Company License Tracking'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
 
-class CompanyUserEmployee(M2MModel):
+class CompanyUserEmployee(SimpleAbstractModel):
     """
     Case 1: Tao moi user (employee=null) --> Create new
     Case 2: Tap moi employee:
@@ -107,7 +108,6 @@ class CompanyUserEmployee(M2MModel):
     class Meta:
         verbose_name = 'Company Map Employee Map User'
         verbose_name_plural = 'Company Map Employee Map User'
-        ordering = ('-date_created',)
         unique_together = ('company', 'user', 'employee')
         default_permissions = ()
         permissions = ()

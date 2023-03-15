@@ -1,20 +1,25 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.views import APIView
 
 from apps.core.base.mixins import ApplicationListMixin
-from apps.shared import ResponseController, BaseListMixin
-from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty
+from apps.shared import ResponseController, BaseListMixin, mask_view
+from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty, PermissionApplication
 
-from apps.core.base.serializers import PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer
+from apps.core.base.serializers import (
+    PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
+    PermissionApplicationListSerializer,
+)
 
 
-# Subscription Plan
 class PlanList(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = SubscriptionPlan.objects
-    search_fields = []
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "id": ["in"],
+        "code": ["exact", "in"],
+    }
 
     serializer_class = PlanListSerializer
 
@@ -22,15 +27,11 @@ class PlanList(generics.GenericAPIView):
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
+    @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        if hasattr(request, "user"):
-            queryset = self.filter_queryset(
-                self.get_queryset()
-                .filter(**kwargs)
-            )
-            serializer = self.serializer_class(queryset, many=True)
-            return ResponseController.success_200(serializer.data, key_data='result')
-        return ResponseController.unauthorized_401()
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
 
 
 class TenantApplicationList(
@@ -52,24 +53,86 @@ class TenantApplicationList(
 
 
 class ApplicationPropertyList(
-    generics.GenericAPIView
+    BaseListMixin,
 ):
     permission_classes = [IsAuthenticated]
     queryset = ApplicationProperty.objects
     search_fields = []
-    filterset_fields = ['application']
-    serializer_class = ApplicationPropertyListSerializer
+    filterset_fields = ['application', 'type']
+    serializer_list = ApplicationPropertyListSerializer
 
     @swagger_auto_schema(
         operation_summary="Application Property list",
         operation_description="Get application property list",
     )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        code_perm=''
+    )
     def get(self, request, *args, **kwargs):
-        if hasattr(request, "user"):
-            queryset = self.filter_queryset(
-                self.get_queryset()
-                .filter(**kwargs)
-            )
-            serializer = self.serializer_class(queryset, many=True)
-            return ResponseController.success_200(serializer.data, key_data='result')
-        return ResponseController.unauthorized_401()
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyEmployeeList(
+    BaseListMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = ApplicationProperty.objects
+    serializer_list = ApplicationPropertyListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            content_type="hr_employee"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Property list have employee data",
+        operation_description="Property list have employee data",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        code_perm=''
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationList(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Application.objects
+    search_fields = ('title', 'code',)
+    serializer_class = ApplicationListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
+
+
+class PermissionApplicationList(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = PermissionApplication.objects
+    search_fields = ('permission', 'app__title', 'app__code',)
+    filterset_fields = {
+        'app_id': ['exact', 'in'],
+        'app__code': ['exact', 'in'],
+    }
+    serializer_class = PermissionApplicationListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("app")
+
+    @swagger_auto_schema(
+        operation_summary="Plan list",
+        operation_description="Get plan list",
+    )
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter())
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')

@@ -1,19 +1,10 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import TenantCoreModel
-
-WORKFLOW_ACTION = (
-    (0, "Create"),
-    (1, "Approve"),
-    (2, "Reject"),
-    (3, "Return"),
-    (4, "Receive"),
-    (5, "To do"),
-)
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR
 
 
-class Workflow(TenantCoreModel):
+class Workflow(MasterDataAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
@@ -57,7 +48,7 @@ class Workflow(TenantCoreModel):
         permissions = ()
 
 
-class Zone(TenantCoreModel):
+class Zone(MasterDataAbstractModel):
     workflow = models.ForeignKey(
         'workflow.Workflow',
         on_delete=models.CASCADE,
@@ -85,7 +76,7 @@ class Zone(TenantCoreModel):
         permissions = ()
 
 
-class Node(TenantCoreModel):
+class Node(MasterDataAbstractModel):
     workflow = models.ForeignKey(
         'workflow.Workflow',
         on_delete=models.CASCADE,
@@ -116,6 +107,7 @@ class Node(TenantCoreModel):
     )
     option_collaborator = models.SmallIntegerField(
         verbose_name="collaborator options",
+        choices=OPTION_COLLABORATOR,
         default=0,
         help_text="option choose collaborator: In form, Out form, In workflow"
     )
@@ -141,6 +133,30 @@ class Node(TenantCoreModel):
         null=True
     )
 
+    """
+    data of field condition:
+        [
+            {
+                'action': 1,
+                'min_collaborator': 2
+            },
+            {
+                'action': 2,
+                'min_collaborator': 1
+            },
+            {
+                'action': 3,
+                'min_collaborator': 'else'
+            }
+        ]
+    """
+    condition = JSONField(
+        verbose_name="Condition",
+        blank=True,
+        null=True,
+        default=[]
+    )
+
     class Meta:
         verbose_name = 'Node'
         verbose_name_plural = 'Nodes'
@@ -149,7 +165,7 @@ class Node(TenantCoreModel):
         permissions = ()
 
 
-class Collaborator(TenantCoreModel):
+class Collaborator(MasterDataAbstractModel):
     node = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
@@ -178,21 +194,50 @@ class Collaborator(TenantCoreModel):
         permissions = ()
 
 
-class Association(TenantCoreModel):
+class Association(MasterDataAbstractModel):
+    workflow = models.ForeignKey(
+        'workflow.Workflow',
+        on_delete=models.CASCADE,
+        verbose_name="workflow",
+        related_name="association_workflow",
+        null=True
+    )
     node_in = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node input",
         related_name="transition_node_input",
-        null=True
     )
     node_out = models.ForeignKey(
         'workflow.Node',
         on_delete=models.CASCADE,
         verbose_name="node output",
         related_name="transition_node_output",
-        null=True
     )
+
+    """
+    data of field condition:
+        [
+            {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
+            'AND',
+            {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
+            'AND',
+            [
+                {'left': 'b', 'math': '=', 'right': 1, 'type': 'number'},
+                'OR',
+                {'left': 'b', 'math': '=', 'right': 0, 'type': 'number'},
+                'OR',
+            ],
+            'AND',
+            [
+                {'left': 'c', 'math': 'is', 'right': True, 'type': 'boolean'},
+                'AND',
+                {'left': 'c', 'math': 'is', 'right': False, 'type': 'boolean'},
+                'AND',
+            ],
+            'AND',
+        ]
+    """
     condition = JSONField(
         verbose_name="Condition",
         blank=True,

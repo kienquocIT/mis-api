@@ -2,11 +2,10 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
-from apps.core.workflow.models import Node
 
 
 def update_company_created_user():
-    company_user_emp = CompanyUserEmployee.object_normal.filter(user__isnull=False)
+    company_user_emp = CompanyUserEmployee.objects.filter(user__isnull=False)
     if company_user_emp:
         for item in company_user_emp:
             item.is_created_company = True
@@ -86,8 +85,8 @@ def mapping_user_to_company_user_employee():
     )
     if user_list:
         for user in user_list:
-            if not CompanyUserEmployee.object_normal.filter(user_id=user.id).exists():
-                CompanyUserEmployee.object_normal.create(
+            if not CompanyUserEmployee.objects.filter(user_id=user.id).exists():
+                CompanyUserEmployee.objects.create(
                     user_id=user.id,
                     company_id=user.company_current_id
                 )
@@ -97,7 +96,7 @@ def mapping_user_to_company_user_employee():
 
 
 def update_data_company_license_tracking():
-    plan_employee = PlanEmployee.object_normal.all()
+    plan_employee = PlanEmployee.objects.all()
     if plan_employee:
         plan_employee.delete()
     tenant_list = Tenant.objects.all()
@@ -109,42 +108,17 @@ def update_data_company_license_tracking():
                 for company in tenant_company_list:
                     bulk_info = []
                     for tenant_plan in tenant_plan_list:
-                        bulk_info.append(CompanyLicenseTracking(**{
-                            'company_id': company.id,
-                            'license_plan': tenant_plan.plan.code,
-                            'license_use_count': 0
-                        }))
+                        bulk_info.append(
+                            CompanyLicenseTracking(
+                                **{
+                                    'company_id': company.id,
+                                    'license_plan': tenant_plan.plan.code,
+                                    'license_use_count': 0
+                                }
+                            )
+                        )
                     if bulk_info:
                         CompanyLicenseTracking.object_normal.bulk_create(bulk_info)
 
     print('update done.')
-    return True
-
-
-def create_initial_node():
-    data = [
-        Node(**{
-            'id': 'abccf657-7dce-4a14-9601-f6c4c4f2722a',
-            'title': 'Initial Node',
-            'code': 'Initial',
-            'is_system': True,
-            'order': 1,
-        }),
-        Node(**{
-            'id': '1fbb680e-3521-424a-8523-9f7a34ce867e',
-            'title': 'Approved Node',
-            'code': 'Approved',
-            'is_system': True,
-            'order': 2,
-        }),
-        Node(**{
-            'id': '580f887c-1280-44ea-b275-8cb916543b10',
-            'title': 'Completed Node',
-            'code': 'Completed',
-            'is_system': True,
-            'order': 3,
-        })
-    ]
-    Node.object_global.bulk_create(data)
-
     return True

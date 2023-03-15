@@ -81,6 +81,6 @@ class AccountDestroyMixin(BaseDestroyMixin):
 
             instance.delete()
 
-            company = Company.object_normal.get(id=company_current_id)
+            company = Company.objects.get(id=company_current_id)
             company.total_user = User.objects.filter(company_current=company_current_id).count()
             company.save()

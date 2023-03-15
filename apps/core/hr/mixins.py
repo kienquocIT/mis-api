@@ -1,7 +1,7 @@
 from django.db import transaction
 
 from apps.shared import (
-    ResponseController, BaseCreateMixin, BaseDestroyMixin, BaseListMixin
+    ResponseController, BaseDestroyMixin, BaseListMixin
 )
 from apps.core.hr.models import RoleHolder
 

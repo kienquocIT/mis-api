@@ -10,6 +10,8 @@ python manage.py makemigrations --check --dry-run --noinput
 
 python manage.py migrate
 
+python manage.py init_data
+
 echo "yes" | python manage.py collectstatic
 
 celery -A misapi worker -l info &

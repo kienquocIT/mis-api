@@ -34,7 +34,7 @@ class AccountTestCase(APITestCase):
 
     def test_create_new_account(self):
         data = {
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
+            'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
             'tax_code': '81H1',
@@ -56,7 +56,7 @@ class AccountTestCase(APITestCase):
     def test_create_account_duplicate_code(self):
         self.test_create_new_account()
         data = {
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
+            'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
             'tax_code': '81H1',
@@ -96,7 +96,7 @@ class AccountTestCase(APITestCase):
 
     def test_data_not_UUID(self):
         data = {
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
+            'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
             'tax_code': '81H1',
