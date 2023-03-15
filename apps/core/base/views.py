@@ -39,8 +39,8 @@ class TenantApplicationList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Application.objects.all()
-
+    queryset = Application.objects
+    search_fields = ('title', 'code',)
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
 
@@ -98,21 +98,6 @@ class ApplicationPropertyEmployeeList(
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
-
-
-class ApplicationList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
-    queryset = Application.objects
-    search_fields = ('title', 'code',)
-    serializer_class = ApplicationListSerializer
-
-    @swagger_auto_schema()
-    @mask_view(login_require=True)
-    def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
-        ser = self.serializer_class(queryset, many=True)
-        return ResponseController.success_200(ser.data, key_data='result')
-
 
 class PermissionApplicationList(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
