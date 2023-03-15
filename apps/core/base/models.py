@@ -15,6 +15,14 @@ def clear_cache_base_group():
 
 
 class SubscriptionPlan(CoreAbstractModel):
+    applications = models.ManyToManyField(
+        'Application',
+        through='PlanApplication',
+        symmetrical=False,
+        blank=True,
+        related_name='plan_map_application'
+    )
+
     class Meta:
         verbose_name = 'Subscription Plan'
         ordering = ('title',)
@@ -38,6 +46,14 @@ class SubscriptionPlan(CoreAbstractModel):
 
 
 class Application(CoreAbstractModel):
+    plans = models.ManyToManyField(
+        'SubscriptionPlan',
+        through='PlanApplication',
+        symmetrical=False,
+        blank=True,
+        related_name='application_map_plan'
+    )
+
     remarks = models.TextField(
         null=True,
         blank=True
@@ -79,8 +95,6 @@ class PlanApplication(SimpleAbstractModel):
         Application,
         on_delete=models.CASCADE
     )
-
-    FIELD_SELECT_RELATED = ['plan', 'application', ]
 
     class Meta:
         verbose_name = 'Plan Application'
@@ -142,8 +156,6 @@ class PermissionApplication(SimpleAbstractModel):
     permission = models.CharField(max_length=100, unique=True)
     app = models.ForeignKey(Application, on_delete=models.CASCADE)
     extras = JSONField(default={})
-
-    FIELD_SELECT_RELATED = ['app']
 
     def parse_obj(self):
         return {

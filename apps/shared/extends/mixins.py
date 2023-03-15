@@ -1,6 +1,9 @@
+from django.conf import settings
 from rest_framework.generics import GenericAPIView
 from .controllers import ResponseController
-from .translations import HttpMsg
+from ..translations import HttpMsg
+
+__all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
 
 class BaseMixin(GenericAPIView):
@@ -20,6 +23,15 @@ class BaseMixin(GenericAPIView):
 
     @staticmethod
     def setup_hidden(fields: list, user) -> dict:
+        """
+        Fill data of hidden_fields
+        Args:
+            fields:
+            user:
+
+        Returns:
+
+        """
         ctx = {}
         for key in fields:
             data = None
@@ -46,35 +58,115 @@ class BaseMixin(GenericAPIView):
                 ctx[key] = data
         return ctx
 
+    @staticmethod
+    def parse_header(request) -> tuple[bool, bool]:
+        """
+        Parse flag data in request header.
+        Args:
+            request: REQUEST OF VIEW
+
+        Returns:
+            bool(minimal), bool(skip_auth)
+        """
+        skip_auth = request.META.get(
+            'HTTP_DATAISSKIPAUTH',
+            None
+        ) == settings.HEADER_SKIP_AUTH_CODE if settings.HEADER_SKIP_AUTH_CODE else False
+        minimal = request.META.get(
+            'HTTP_DATAISMINIMAL',
+            None
+        ) == settings.HEADER_MINIMAL_CODE if settings.HEADER_MINIMAL_CODE else False
+
+        return minimal, skip_auth
+
     def setup_create_field_hidden(self, user) -> dict:
+        """
+        Fill data of hidden fields when create
+        Args:
+            user:
+
+        Returns:
+
+        """
         return self.setup_hidden(self.create_hidden_field, user)
 
     def setup_list_field_hidden(self, user) -> dict:
+        """
+        Fill data of hidden fields when list data
+        Args:
+            user:
+
+        Returns:
+
+        """
         return self.setup_hidden(self.list_hidden_field, user)
 
     def setup_retrieve_field_hidden(self, user) -> dict:
+        """
+        Fill data of hidden fields when retrieve data
+        Args:
+            user:
+
+        Returns:
+
+        """
         return self.setup_hidden(self.retrieve_hidden_field, user)
 
-    serializer_list = None
-    serializer_create = None
-    serializer_detail = None
-    list_hidden_field = []
-    create_hidden_field = []
-    retrieve_hidden_field = []
+    serializer_list = None  # Serializer Class for GET LIST
+    serializer_list_minimal = None  # Serializer Class for GET LIST with MINIMAL DATA **NOT APPLY FOR CASE HAD RELATE**
+    serializer_create = None  # Serializer Class for POST CREATE
+    serializer_detail = None  # Serializer Class for return data after call POST CREATE (object just created)
+    list_hidden_field = []  # Field list auto append to filter of current user request
+    create_hidden_field = []  # Field list was autofill data when POST CREATE
+    retrieve_hidden_field = []  # Field list auto append to filtering of current user request
+    use_cache_queryset = False  # Flag is enable cache queryset of view
+    use_cache_minimal = False  # Flag is enable cache queryset minimal view **NOT APPLY FOR CASE HAD RELATE**
 
     def get_serializer_list(self, *args, **kwargs):
-        tmp = getattr(self, 'serializer_list', None)
+        """
+        Get serializer class for list. Flexible with config view.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        is_minimal = kwargs.pop('is_minimal', None)
+        if is_minimal is True:
+            tmp = getattr(self, 'serializer_list_minimal', None)
+        else:
+            tmp = getattr(self, 'serializer_list', None)
+
         if tmp and callable(tmp):
             return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer list attribute in view must be implement.')
 
     def get_serializer_create(self, *args, **kwargs):
+        """
+        Get serializer class for create
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
         tmp = getattr(self, 'serializer_create', None)
         if tmp and callable(tmp):
             return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer create attribute in view must be implement.')
 
     def get_serializer_detail(self, *args, **kwargs):
+        """
+        Get serializer class for retrieve.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
         tmp = getattr(self, 'serializer_detail', None)
         if tmp and callable(tmp):
             return tmp(*args, **kwargs)  # pylint: disable=E1102
@@ -82,15 +174,58 @@ class BaseMixin(GenericAPIView):
 
 
 class BaseListMixin(BaseMixin):
-    def list(self, request, *args, **kwargs):
-        kwargs.update(self.setup_list_field_hidden(request.user))
-        queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))
+    def setup_filter_queryset(self, user, filter_kwargs, is_minial_queryset):
+        """
+        Get queryset switch any case of minimal and caching.
+        Args:
+            user: User Obj
+            filter_kwargs: kwargs of view mixin
+            is_minial_queryset: boolean | enable minimal queryset
+
+        Returns:
+            QuerySet, PageQuerySet
+        """
+        filter_kwargs.update(self.setup_list_field_hidden(user))
+
+        if is_minial_queryset is True:
+            if self.use_cache_minimal:
+                queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs)).cache()
+            else:
+                queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs))
+        else:
+            if self.use_cache_queryset:
+                queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs)).cache()
+            else:
+                queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs))
+
         page = self.paginate_queryset(queryset)
         if page is not None:
-            serializer = self.get_serializer_list(page, many=True)
+            return None, page
+        return queryset, None
+
+    def list(self, request, *args, **kwargs):
+        """
+        Support call get list data.
+        Args:
+            request:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+
+        is_minimal, _is_skip_auth = self.parse_header(request)
+        queryset, page = self.setup_filter_queryset(
+            user=request.user,
+            filter_kwargs=kwargs,
+            is_minial_queryset=is_minimal
+        )
+        if page is not None:
+            serializer = self.get_serializer_list(page, many=True, is_minimal=is_minimal)
             return self.get_paginated_response(serializer.data)
 
-        serializer = self.get_serializer_list(queryset, many=True)
+        serializer = self.get_serializer_list(queryset, many=True, is_minimal=is_minimal)
         return ResponseController.success_200(data=serializer.data, key_data='result')
 
 

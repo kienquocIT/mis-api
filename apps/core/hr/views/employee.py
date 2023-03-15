@@ -1,13 +1,13 @@
-from rest_framework import generics
+from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.hr.models import Employee
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
-    EmployeeDetailSerializer, EmployeeUpdateSerializer,
+    EmployeeDetailSerializer, EmployeeUpdateSerializer, EmployeeListMinimalSerializer,
 )
-from apps.shared import BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin
+from apps.shared import BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg
 
 
 class EmployeeList(
@@ -16,7 +16,7 @@ class EmployeeList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object
+    queryset = Employee.objects
     search_fields = ["search_content"]
 
     serializer_list = EmployeeListSerializer
@@ -52,7 +52,7 @@ class EmployeeDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object
+    queryset = Employee.objects
     serializer_detail = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
 
@@ -83,7 +83,7 @@ class EmployeeCompanyList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object
+    queryset = Employee.objects
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
@@ -101,3 +101,36 @@ class EmployeeCompanyList(
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class EmployeeTenantList(
+    BaseListMixin,
+    generics.GenericAPIView
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Employee.objects
+
+    serializer_list = EmployeeListSerializer
+    serializer_list_minimal = EmployeeListMinimalSerializer
+    use_cache_minimal = True
+    list_hidden_field = ['tenant_id']
+    filterset_fields = {
+        'company_id': ['exact', 'in'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'group',
+            'user'
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Employee Company list",
+        operation_description="Get employee Company list",
+    )
+    def get(self, request, *args, **kwargs):
+        if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
+            return self.list(request, *args, **kwargs)
+        raise serializers.ValidationError({
+            'detail': HRMsg.FILTER_COMPANY_ID_REQUIRED
+        })

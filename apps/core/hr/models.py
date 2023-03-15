@@ -269,7 +269,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
     def check_change_user(self):
-        original_fields_old = self.object(
+        original_fields_old = self.objects(
             field_name_list=['user_id'],
         )
         original_fields_new = {

@@ -23,13 +23,16 @@ class PlanList(generics.GenericAPIView):
 
     serializer_class = PlanListSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('applications')
+
     @swagger_auto_schema(
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -39,8 +42,8 @@ class TenantApplicationList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Application.objects
-    search_fields = ('title', 'code',)
+    queryset = Application.objects.all()
+
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
 
@@ -99,6 +102,21 @@ class ApplicationPropertyEmployeeList(
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
+
+class ApplicationList(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    queryset = Application.objects
+    search_fields = ('title', 'code',)
+    serializer_class = ApplicationListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
+
+
 class PermissionApplicationList(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = PermissionApplication.objects
@@ -118,6 +136,6 @@ class PermissionApplicationList(generics.GenericAPIView):
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
