@@ -280,7 +280,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_zone(cls, obj):
         return ZoneDetailSerializer(
-            Zone.objects.filter(workflow=obj).order_by('order'),
+            Zone.objects.filter(
+                workflow=obj
+            ),
             many=True
         ).data
 
@@ -325,7 +327,12 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return zone_data
 
     @classmethod
-    def node_system(cls, node, result, zone_data):
+    def node_system(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         result.append({
             'id': node.id,
             'title': node.title,
@@ -339,7 +346,12 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def node_in_form(cls, node, result, zone_data):
+    def node_in_form(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         collab_in_form = node.collab_in_form
         if collab_in_form:
             collab_in_form.update({'zone': zone_data})
@@ -357,9 +369,16 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def node_out_form(cls, node, result, zone_data):
+    def node_out_form(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         employee_data = []
-        employee_list = Employee.objects.filter(id__in=node.collab_out_form.get('employee_list', []))
+        employee_list = Employee.objects.filter(
+            id__in=node.collab_out_form.get('employee_list', [])
+        )
         if employee_list:
             for employee in employee_list:
                 employee_data.append({
@@ -395,7 +414,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             for collaborator in in_workflow_collaborator:
                 zone_in_workflow_data = []
                 if collaborator.zone:
-                    zone_list = Zone.objects.filter(id__in=collaborator.zone).values(
+                    zone_list = Zone.objects.filter(
+                        id__in=collaborator.zone
+                    ).values(
                         'id',
                         'title'
                     )
@@ -428,7 +449,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_node(cls, obj):
         result = []
-        node_list = Node.objects.filter(workflow=obj).order_by('order')
+        node_list = Node.objects.filter(
+            workflow=obj
+        )
         if node_list:
             for node in node_list:
                 if node.option_collaborator or node.option_collaborator == 0:

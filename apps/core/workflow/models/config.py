@@ -75,7 +75,7 @@ class Zone(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Zone in workflow'
         verbose_name_plural = 'Zone in workflow'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -188,7 +188,7 @@ class Node(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Node'
         verbose_name_plural = 'Nodes'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
