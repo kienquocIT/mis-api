@@ -44,7 +44,7 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
 
     @classmethod
     def validate_employee_list(cls, value):
-        employee_list = Employee.object.filter(id__in=value).count()
+        employee_list = Employee.objects.filter(id__in=value).count()
         if employee_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
@@ -62,7 +62,7 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
     @classmethod
     def validate_employee(cls, value):
         try:
-            Employee.object.get(id=value)
+            Employee.objects.get(id=value)
             return value
         except Employee.DoesNotExist as exc:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
@@ -359,7 +359,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def node_out_form(cls, node, result, zone_data):
         employee_data = []
-        employee_list = Employee.object.filter(id__in=node.collab_out_form.get('employee_list', []))
+        employee_list = Employee.objects.filter(id__in=node.collab_out_form.get('employee_list', []))
         if employee_list:
             for employee in employee_list:
                 employee_data.append({
