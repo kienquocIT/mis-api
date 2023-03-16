@@ -15,7 +15,9 @@ from apps.sale.saledata.serializers.accounts import (
     ContactUpdateSerializer, ContactListNotMapAccountSerializer,
 
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
-    AccountUpdateSerializer, EmployeeMapAccountListSerializer, AccountTypeUpdateSerializer,
+    AccountTypeUpdateSerializer,
+
+    AccountsMapEmloyeesListSerializer
 )
 
 
@@ -35,7 +37,6 @@ class SalutationList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -82,7 +83,6 @@ class InterestsList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -129,7 +129,6 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -176,7 +175,6 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -225,7 +223,6 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -270,7 +267,6 @@ class ContactListNotMapAccount(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         kwargs.update({'account_name': None})
         return self.list(request, *args, **kwargs)
 
@@ -300,7 +296,6 @@ class AccountList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.create(request, *args, **kwargs)
 
 
@@ -316,29 +311,17 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update Account", request_body=AccountUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        self.serializer_class = AccountUpdateSerializer
-        return self.update(request, *args, **kwargs)
 
-
-class EmployeeMapAccountList(BaseListMixin):
+class AccountsMapEmloyeesList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.object
-    search_fields = ["search_content"]
+    queryset = Employee.objects
+    serializer_list = AccountsMapEmloyeesListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
 
-    serializer_list = EmployeeMapAccountListSerializer
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('group', 'user')
-
     @swagger_auto_schema(
-        operation_summary="Account Map Employee list",
-        operation_description="Account Map Employee list",
+        operation_summary="Accounts map Employees list",
+        operation_description="Accounts map Employees list",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
