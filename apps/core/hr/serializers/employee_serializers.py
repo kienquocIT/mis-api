@@ -450,7 +450,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_group(cls, value):
         try:
-            return Group.object.get(id=value)
+            return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
@@ -536,7 +536,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         """
         if isinstance(attrs, dict):
             option_choices = [x[0] for x in PERMISSION_OPTION]
-            permission_choices = {x['permission']: x for x in PermissionApplication.objects.filter(None)}
+            permission_choices = {x.permission: x for x in PermissionApplication.objects.all()}
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):

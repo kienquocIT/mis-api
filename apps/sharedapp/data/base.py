@@ -166,4 +166,25 @@ PlanApplication_data = {
     }
 }
 
-PermissionApplication_data = {}
+PermissionApplication_data = {
+    '040818c3-a320-480b-b9bf-60f47dd52e19': {
+        'id': '040818c3-a320-480b-b9bf-60f47dd52e19',
+        'app_id': '50348927-2c4f-4023-b638-445469c66953',
+        'permission': 'create__employee__employee',
+    },
+    '0e6b741e-b886-47dd-92c5-1b3f59a68291': {
+        'id': '0e6b741e-b886-47dd-92c5-1b3f59a68291',
+        'app_id': '50348927-2c4f-4023-b638-445469c66953',
+        'permission': 'edit__employee__employee',
+    },
+    '97b92f5a-0a17-4091-8684-973f830a634a': {
+        'id': '97b92f5a-0a17-4091-8684-973f830a634a',
+        'app_id': '50348927-2c4f-4023-b638-445469c66953',
+        'permission': 'view__employee__employee',
+    },
+    '9cea8790-c8a9-4453-b73f-c11b55f53c68': {
+        'id': '9cea8790-c8a9-4453-b73f-c11b55f53c68',
+        'app_id': '50348927-2c4f-4023-b638-445469c66953',
+        'permission': 'delete__employee__employee',
+    }
+}
