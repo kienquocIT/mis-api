@@ -156,7 +156,7 @@ class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
-    queryset = UnitOfMeasureGroup.objects
+    queryset = UnitOfMeasureGroup.objects.select_related('referenced_unit')
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
@@ -228,7 +228,7 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
 
 
 class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = UnitOfMeasure.objects
+    queryset = UnitOfMeasure.objects.select_related('group')
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
