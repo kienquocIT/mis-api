@@ -219,7 +219,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -259,7 +259,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "report_to",
             "address_infor",
             "additional_infor",
-            'account_name',
+            'account_name'
         )
 
     @classmethod
@@ -331,7 +331,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -455,7 +455,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': owner.id,
                     'fullname': Employee.get_full_name(owner, 2)
@@ -501,8 +501,9 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_manager(cls, obj):
         if obj.manager:
-            all_managers = [Employee.object.get(id=employees_id).get_full_name() for employees_id in
-                            obj.manager]
+            all_managers = [
+                Employee.objects.get(id=employees_id).get_full_name() for employees_id in obj.manager
+            ]
             return all_managers
         return []
 
@@ -510,7 +511,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         if obj.id:
             try:
-                owner = Contact.objects.filter(account_name=obj.id).get(is_primary=True)
+                owner = Contact.objects.filter(account_name_id=obj.id).get(is_primary=True)
                 return {
                     'id': owner.id,
                     'fullname': owner.fullname
@@ -604,7 +605,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         if contact_primary:
             contact_select_list.append(contact_primary)
-
         # update contact select
         if contact_select_list:
             contact_list = Contact.objects.filter(id__in=contact_select_list)

@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import sys
 import socket
 import os
-from datetime import timedelta
 
+from colorama import Fore
+from datetime import timedelta
 from pathlib import Path
 
 sys.setrecursionlimit(10000)
@@ -80,7 +81,9 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-MIDDLEWARE += ['apps.shared.extends.middleware.customize.CustomizeMiddleware']
+# Allow Open Tracing all request.
+MIDDLEWARE += ['apps.shared.extends.middleware.customize.JaegerTracingMiddleware']
+#
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
@@ -307,6 +310,14 @@ ENABLE_TURN_ON_IS_EMAIL = False
 # DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
 DEBUG_HIT_DB = False
 
+# Tracing
+JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', '127.0.0.1')
+JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
+JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
+JAEGER_TRACING_ENABLE = os.environ.get('JAEGER_TRACING_ENABLE', False)
+JAEGER_TRACING_ENABLE = True if JAEGER_TRACING_ENABLE in ['True', 'true', '1'] else False
+JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
+
 # LOGGING
 
 LOG_DIR = os.path.join(BASE_DIR, "logs")
@@ -449,8 +460,6 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
             }
 
 if DEBUG is True:
-    from colorama import Fore
-
     db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
         else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
@@ -470,4 +479,13 @@ if DEBUG is True:
             print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
     print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
+    # START TRACING
+    if JAEGER_TRACING_ENABLE is True:
+        print(
+            Fore.LIGHTBLUE_EX,
+            '#  4. TRACING [JAEGER]:                          ',
+            f"{JAEGER_TRACING_HOST}:{JAEGER_TRACING_PORT} / {JAEGER_TRACING_PROJECT_NAME} \033[0m",
+        )
+    else:
+        print(Fore.LIGHTBLUE_EX, '#  4. TRACING [JAEGER]:                           Disable \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')

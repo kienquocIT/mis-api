@@ -1,55 +1,60 @@
 from django.conf import settings
-from django.db import connection
+from django.utils.deprecation import MiddlewareMixin
 
-counter_queries = 0  # pylint: disable=C0103
+from jaeger_client import Config
 
 
-class CustomizeMiddleware:
+class JaegerTracingMiddleware(MiddlewareMixin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tracer = None
+        if settings.JAEGER_TRACING_ENABLE is True:
+            config = Config(
+                config={
+                    "sampler": {"type": "const", "param": 1},
+                    "local_agent": {
+                        "reporting_host": settings.JAEGER_TRACING_HOST,
+                        "reporting_port": settings.JAEGER_TRACING_PORT,
+                    },
+                    "logging": True,
+                },
+                service_name=settings.JAEGER_TRACING_PROJECT_NAME,
+            )
+            self.tracer = config.initialize_tracer()
+
     @staticmethod
-    def cut_from(sql):
-        arr = []
-        arr_cut = sql.split("FROM")
-        if len(arr_cut) > 1:
-            for idx in range(1, len(arr_cut)):
-                arr.append(
-                    arr_cut[idx].split('WHERE')[0]
-                )
-        return arr
-
-    @staticmethod
-    def to_microseconds(sec, to_str=True):
-        result = float(sec) * 1000
-        if to_str is True:
-            return str(result)
-        return result
-
-    def __init__(self, get_response):
-        self.get_response = get_response
-        # One-time configuration and initialization.
+    def get_view_name(request):
+        _name = request.method + ' - '
+        if request and hasattr(request, 'resolver_match'):
+            resolver_match = request.resolver_match
+            if resolver_match and hasattr(resolver_match, 'view_name'):
+                return _name + resolver_match.view_name
+        return _name + 'GENERAL'
 
     def __call__(self, request):
-        # Code to be executed for each request before
-        # the view (and later middleware) are called.
-
         response = self.get_response(request)
+        if self.tracer:
+            if not request.path.startswith(settings.JAEGER_TRACING_EXCLUDE_LOG_PATH):
+                span_ctx = self.tracer.extract(
+                    format="http_headers", carrier=request.headers
+                )
+                view_name = self.get_view_name(request)
+                with self.tracer.start_active_span(
+                        view_name, child_of=span_ctx
+                ) as scope:
+                    scope.span.set_tag("http.method", request.method)
+                    scope.span.set_tag("http.url", request.build_absolute_uri())
+                    scope.span.set_tag("http.status_code", response.status_code)
+                    if response.status_code == 500:
+                        scope.span.set_tag('error', True)
 
-        # Code to be executed for each request/response after
-        # the view is called.
-
-        # show query db hit
-        if settings.DEBUG_HIT_DB:
-            global counter_queries  # pylint: disable=W0603
-            new_counter_queries = len(connection.queries)
-            for idx in range(counter_queries, new_counter_queries):
-                time_tmp = connection.queries[idx]["time"]
-                sql_tmp = connection.queries[idx]["sql"]
-                model_tmp = self.cut_from(sql_tmp)
-                msg = f'[{self.to_microseconds(time_tmp)} ms] {" | ".join(model_tmp)} {">>> " + sql_tmp}'
-                try:
-                    print(msg)
-                except Exception as err:
-                    print(err)
-                    print(str(msg.encode('utf-8')))
-            counter_queries = new_counter_queries
-
+                        # split Type Error and Message Error
+                        err_msg = str(response.content.decode('utf-8'))
+                        err_msg = err_msg.split('Request Method:', maxsplit=1)[0].replace("\n", " ")
+                        arr_tmp = err_msg.split(" at ")
+                        if len(arr_tmp) == 2:
+                            scope.span.set_tag('error.kind', arr_tmp[0])
+                            scope.span.set_tag('error.object	', arr_tmp[1])
+                        else:
+                            scope.span.set_tag('message', err_msg)
         return response
