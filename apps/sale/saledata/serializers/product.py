@@ -142,11 +142,8 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_referenced_unit(cls, obj):
-        try:
-            if obj.referenced_unit_id:
-                return {'id': obj.referenced_unit_id, 'title': obj.referenced_unit.title}
-        except UnitOfMeasure.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST) from exc
+        if obj.referenced_unit_id:
+            return {'id': obj.referenced_unit_id, 'title': obj.referenced_unit.title}
         return {}
 
 
