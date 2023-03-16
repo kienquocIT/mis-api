@@ -1,5 +1,4 @@
 from django.urls import path
-
 from apps.sale.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,
     ContactList, ContactDetail,
@@ -7,14 +6,13 @@ from apps.sale.saledata.views.accounts import (
     AccountList, AccountDetail, EmployeeMapAccountList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
-
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
-    ProductList, ProductDetail
+    # ProductList, ProductDetail
 )
 
 urlpatterns = [
@@ -52,6 +50,6 @@ urlpatterns += [
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
     path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
 
-    path('products', ProductList.as_view(), name='ProductList'),
-    path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+    # path('products', ProductList.as_view(), name='ProductList'),
+    # path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]

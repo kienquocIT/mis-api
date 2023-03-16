@@ -35,17 +35,17 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'code', 'description')
 
 
-class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = ProductType
-        fields = ('title', 'code', 'description')
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ProductType.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
-        return value
+# class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = ProductType
+#         fields = ('title', 'code', 'description')
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and ProductType.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
+#         return value
 
 
 # Product Category
@@ -77,17 +77,17 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'code', 'description')
 
 
-class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = ProductCategory
-        fields = ('title', 'code', 'description')
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ProductCategory.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
-        return value
+# class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = ProductCategory
+#         fields = ('title', 'code', 'description')
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and ProductCategory.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
+#         return value
 
 
 # Expense Type
@@ -119,17 +119,17 @@ class ExpenseTypeDetailSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'code', 'description')
 
 
-class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = ExpenseType
-        fields = ('title', 'code', 'description')
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ExpenseType.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-        return value
+# class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = ExpenseType
+#         fields = ('title', 'code', 'description')
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and ExpenseType.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
+#         return value
 
 
 # Unit Of Measure Group
@@ -171,17 +171,17 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'referenced_unit')
 
 
-class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = UnitOfMeasureGroup
-        fields = ('title', 'referenced_unit')
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and UnitOfMeasureGroup.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
-        return value
+# class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = UnitOfMeasureGroup
+#         fields = ('title', 'referenced_unit')
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and UnitOfMeasureGroup.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
+#         return value
 
 
 # Unit Of Measure
@@ -265,92 +265,92 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'code', 'title', 'group', 'ratio', 'rounding')
 
 
-class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
+# class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = UnitOfMeasure
+#         fields = ('title',)
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+#         return value
 
-    class Meta:
-        model = UnitOfMeasure
-        fields = ('title',)
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-        return value
-
-
-# Product
-class ProductListSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = Product
-        fields = (
-            'id',
-            'code',
-            'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
-            'purchase_information'
-        )
-
-
-class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = Product
-        fields = (
-            'code',
-            'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
-            'purchase_information'
-        )
-
-    @classmethod
-    def validate_code(cls, value):
-        value = value.strip()
-        if Product.objects.filter(code=value).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
-        return value
-
-    @classmethod
-    def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if Product.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
-        return value
-
-
-class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = Product
-        fields = (
-            'id',
-            'code',
-            'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
-            'purchase_information'
-        )
-
-
-class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = Product
-        fields = (
-            'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
-            'purchase_information'
-        )
-
-    def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and Product.objects.filter(title=value).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
-        return value
+#
+# # Product
+# class ProductListSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = Product
+#         fields = (
+#             'id',
+#             'code',
+#             'title',
+#             'general_information',
+#             'inventory_information',
+#             'sale_information',
+#             'purchase_information'
+#         )
+#
+#
+# class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = Product
+#         fields = (
+#             'code',
+#             'title',
+#             'general_information',
+#             'inventory_information',
+#             'sale_information',
+#             'purchase_information'
+#         )
+#
+#     @classmethod
+#     def validate_code(cls, value):
+#         value = value.strip()
+#         if Product.objects.filter(code=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_CODE_EXIST)
+#         return value
+#
+#     @classmethod
+#     def validate_title(cls, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if Product.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
+#         return value
+#
+#
+# class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = Product
+#         fields = (
+#             'id',
+#             'code',
+#             'title',
+#             'general_information',
+#             'inventory_information',
+#             'sale_information',
+#             'purchase_information'
+#         )
+#
+#
+# class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = Product
+#         fields = (
+#             'title',
+#             'general_information',
+#             'inventory_information',
+#             'sale_information',
+#             'purchase_information'
+#         )
+#
+#     def validate_title(self, value):
+#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+#         if value != self.instance.title and Product.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
+#         return value
