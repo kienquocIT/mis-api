@@ -377,7 +377,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                 )
             obj.additional_information['interests'] = interest_list
             return obj.additional_information
-        return []
+        return {}
 
     @classmethod
     def get_fullname(cls, obj):
@@ -519,23 +519,9 @@ class AccountListSerializer(serializers.ModelSerializer):
         return {}
 
 
-class ContactSubCreateSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Contact
-        fields = (
-            'owner',
-            'fullname'
-        )
-
-
 class AccountCreateSerializer(serializers.ModelSerializer):
     contact_select_list = serializers.ListField(
         child=serializers.UUIDField(required=False),
-        required=False
-    )
-    contact_create_list = ContactSubCreateSerializer(
-        many=True,
         required=False
     )
     contact_primary = serializers.UUIDField(required=False)
@@ -561,7 +547,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'shipping_address',
             'billing_address',
             'contact_select_list',
-            'contact_create_list',
             'contact_primary'
         )
 
@@ -638,9 +623,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
-            'contact_select_list',
-            'contact_create_list',
-            'contact_primary'
+            'owner'
         )
 
     @classmethod

@@ -210,7 +210,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.objects
+    queryset = Contact.objects.select_related('salutation', 'account_name')
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
@@ -237,7 +237,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
 
 class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.objects
+    queryset = Contact.objects.select_related('salutation', 'account_name')
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
@@ -274,7 +274,7 @@ class ContactListNotMapAccount(BaseListMixin):
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Account.objects
+    queryset = Account.objects.select_related('industry')
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
@@ -301,7 +301,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):
 
 class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Account.objects
+    queryset = Account.objects.select_related('industry')
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
