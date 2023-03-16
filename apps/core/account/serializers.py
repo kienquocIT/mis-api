@@ -144,17 +144,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_company(cls, obj):
-        return [
-            {
-                'id': x['company__id'],
-                'title': x['company__title'],
-                'code': x['company__code'],
-                'representative': x['company__representative_fullname'],
-
-            } for x in CompanyUserEmployee.objects.filter(user_id=obj.id).values(
-                'company__id', 'company__title', 'company__code', 'company__representative_fullname'
-            )
-        ]
+        # Reminds: Adding clean ref to TABLE_REF (apps.shared.Caching)
+        # When using prefetch_related in MAIN QUERY + CACHED IT
+        #   - Remarks: When on change CompanyUserEmployee then system clean cache of CompanyUserEmployee, auto clean
+        #   cache of ref table
+        # if we don't use prefetch_relate, we use query ModelM2M.objects.filter(...).cache()
+        #   --> This way is slow first time but so fast next time.
+        return [{
+            "id": x.id,
+            "title": x.title,
+            "code": x.code,
+            "representative": x.representative_fullname,
+        } for x in obj.companies.all()]
 
 
 class CompanyUserDetailSerializer(serializers.ModelSerializer):

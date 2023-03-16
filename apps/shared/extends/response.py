@@ -1,3 +1,5 @@
+from rest_framework.response import Response
+
 KEY_NOT_CONVERT_EXCEPTIONS = ['id_list']
 
 KEY_NOT_EXCEPTIONS = ['result', 'status', 'results', 'error_data']
@@ -51,3 +53,15 @@ def convert_list_error(error, key, tmp):
             tmp.update(convert_list_error(err, key, tmp))
         elif isinstance(err, dict):
             convert_dict_errors(err, tmp)
+
+
+def cus_response(data, status, is_errors=False):
+    if is_errors:
+        data = convert_errors(data, status_code=status)
+    else:
+        data.update({"status": status if status else status.HTTP_200_OK})
+        if "results" in data:
+            result = data["results"]
+            del data["results"]
+            data.update({"result": result})
+    return Response(data, status=status, content_type="application/json")

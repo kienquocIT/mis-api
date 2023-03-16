@@ -16,7 +16,7 @@ class RoleList(
     BaseCreateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object
+    queryset = Role.objects
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
@@ -50,7 +50,7 @@ class RoleDetail(
     RoleDestroyMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object
+    queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
 
