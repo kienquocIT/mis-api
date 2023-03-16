@@ -9,11 +9,9 @@ from rest_framework import status, serializers
 from rest_framework.response import Response
 
 from .controllers import ResponseController
-from .translations import ServerMsg
+from ..translations import ServerMsg
 
-__all__ = [
-    'mask_view'
-]
+__all__ = ['mask_view']
 
 
 class AuthPermission:

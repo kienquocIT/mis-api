@@ -23,13 +23,16 @@ class PlanList(generics.GenericAPIView):
 
     serializer_class = PlanListSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('applications')
+
     @swagger_auto_schema(
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -109,7 +112,7 @@ class ApplicationList(generics.GenericAPIView):
     @swagger_auto_schema()
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -133,6 +136,6 @@ class PermissionApplicationList(generics.GenericAPIView):
     )
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter())
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
