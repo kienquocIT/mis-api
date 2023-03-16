@@ -255,8 +255,12 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_group(cls, obj):
         if obj.group:
+            is_referenced_unit = 0
+            if obj.group.referenced_unit_id == obj.id:
+                is_referenced_unit = 1
             return {
                 'id': obj.group_id,
+                'is_referenced_unit': is_referenced_unit,
                 'referenced_unit_title': obj.group.referenced_unit.title,
             }
         return {}
