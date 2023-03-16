@@ -307,7 +307,7 @@ def create_plan_employee_update_tenant_plan(
 
 def validate_role_for_employee(value):
     if value and isinstance(value, list):
-        role_list = Role.object.filter(id__in=value).count()
+        role_list = Role.objects.filter(id__in=value).count()
         if role_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.ROLES_NOT_EXIST})
@@ -345,7 +345,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_group(cls, value):
         try:
-            return Group.object.get(id=value)
+            return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 

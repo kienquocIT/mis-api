@@ -2,6 +2,7 @@ from copy import deepcopy
 from uuid import uuid4
 
 from django.apps import apps
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from jsonfield import JSONField
@@ -12,17 +13,20 @@ from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
-    'DisperseModel',
+    'DisperseModel', 'SignalRegisterMetaClass',
 ]
 
 
 class SignalRegisterMetaClass(models.base.ModelBase, type):
     def register_signals(cls):
         models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+        models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
 
     def post_save_handler(cls, sender, **kwargs):
         table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
-        Caching().clean_by_prefix(table_name)
+        if settings.DEBUG:
+            print(f'Receive signal: {table_name}, ', kwargs)
+        Caching().clean_by_prefix(table_name=table_name)
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)

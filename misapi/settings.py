@@ -12,8 +12,9 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 import sys
 import socket
 import os
-from datetime import timedelta
 
+from colorama import Fore
+from datetime import timedelta
 from pathlib import Path
 
 sys.setrecursionlimit(10000)
@@ -68,6 +69,7 @@ INSTALLED_APPS = \
         'apps.core.workflow',
         'apps.core.process',
         'apps.sale.saledata',
+        # 'jaeger_client',
     ]
 
 MIDDLEWARE = [
@@ -80,7 +82,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-MIDDLEWARE += ['apps.shared.extends.middleware.customize.CustomizeMiddleware']
+# MIDDLEWARE += ['apps.shared.extends.middleware.customize.CustomMiddleware']
+#
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
@@ -307,6 +310,9 @@ ENABLE_TURN_ON_IS_EMAIL = False
 # DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
 DEBUG_HIT_DB = False
 
+# Tracing
+ENABLE_TRACING_JAEGER = False
+
 # LOGGING
 
 LOG_DIR = os.path.join(BASE_DIR, "logs")
@@ -449,8 +455,6 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
             }
 
 if DEBUG is True:
-    from colorama import Fore
-
     db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
         else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
@@ -470,4 +474,15 @@ if DEBUG is True:
             print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
     print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
+    # START TRACING
+    if ENABLE_TRACING_JAEGER is True:
+        print(
+            Fore.LIGHTBLUE_EX,
+            '#  4. TRACING [JAEGER]:                          ',
+            f"{'1'}:{'2'} - "
+            f"{PROJECT_NAME}",
+            '\033[0m'
+        )
+    else:
+        print(Fore.LIGHTBLUE_EX, '#  4. TRACING [JAEGER]:                           Disable \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')

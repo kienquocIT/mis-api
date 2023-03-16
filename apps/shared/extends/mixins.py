@@ -1,5 +1,7 @@
 from django.conf import settings
+from rest_framework import serializers
 from rest_framework.generics import GenericAPIView
+
 from .controllers import ResponseController
 from ..translations import HttpMsg
 
@@ -112,15 +114,26 @@ class BaseMixin(GenericAPIView):
         """
         return self.setup_hidden(self.retrieve_hidden_field, user)
 
-    serializer_list = None  # Serializer Class for GET LIST
-    serializer_list_minimal = None  # Serializer Class for GET LIST with MINIMAL DATA **NOT APPLY FOR CASE HAD RELATE**
-    serializer_create = None  # Serializer Class for POST CREATE
-    serializer_detail = None  # Serializer Class for return data after call POST CREATE (object just created)
-    list_hidden_field = []  # Field list auto append to filter of current user request
-    create_hidden_field = []  # Field list was autofill data when POST CREATE
-    retrieve_hidden_field = []  # Field list auto append to filtering of current user request
-    use_cache_queryset = False  # Flag is enable cache queryset of view
-    use_cache_minimal = False  # Flag is enable cache queryset minimal view **NOT APPLY FOR CASE HAD RELATE**
+    # Serializer Class for GET LIST
+    serializer_list: serializers.Serializer = None
+    # Serializer Class for GET LIST with MINIMAL DATA **NOT APPLY FOR CASE HAD RELATE**
+    serializer_list_minimal: serializers.Serializer = None
+    # Serializer Class for POST CREATE
+    serializer_create: serializers.Serializer = None
+    # Serializer Class for return data after call POST CREATE (object just created)
+    serializer_detail: serializers.Serializer = None
+    # Field list auto append to filter of current user request
+    list_hidden_field: list[str] = []
+    # Field list was autofill data when POST CREATE
+    create_hidden_field: list[str] = []
+    # Field list auto append to filtering of current user request
+    retrieve_hidden_field: list[str] = []
+    # Flag is enable cache queryset of view
+    use_cache_queryset: bool = False
+    # Flag is enable cache queryset minimal view **NOT APPLY FOR CASE HAD RELATE**
+    use_cache_minimal: bool = False
+    # Flag is enable cache get_object data
+    use_cache_object: bool = False
 
     def get_serializer_list(self, *args, **kwargs):
         """
@@ -172,8 +185,48 @@ class BaseMixin(GenericAPIView):
             return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer detail attribute in view must be implement.')
 
+    def get_object(self):
+        """
+        [OVERRODE from REST FRAMEWORK]
+        Returns the object the view is displaying.
+
+        You may want to override this if you need to provide non-standard
+        queryset lookups.  Eg if objects are referenced using multiple
+        keyword arguments in the url conf.
+        """
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
+            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.'
+        )
+
+        if not hasattr(queryset, "get"):
+            klass__name = (
+                queryset.__name__ if isinstance(queryset, type) else queryset.__class__.__name__
+            )
+            raise ValueError(
+                "First argument to get_object_or_404() must be a Model, Manager, "
+                f"or QuerySet, not '{klass__name}'."
+            )
+        try:
+            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+            obj = queryset.get(**filter_kwargs, force_cache=self.use_cache_object)
+            # May raise a permission denied
+            self.check_object_permissions(self.request, obj)
+            return obj
+        except queryset.model.DoesNotExist:
+            return ResponseController.notfound_404()
+
 
 class BaseListMixin(BaseMixin):
+    def get_object(self):
+        raise TypeError("Not allow use get_object() for List Mixin.")
+
     def setup_filter_queryset(self, user, filter_kwargs, is_minial_queryset):
         """
         Get queryset switch any case of minimal and caching.
