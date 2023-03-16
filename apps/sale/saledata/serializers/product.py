@@ -187,33 +187,26 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
 # Unit Of Measure
 class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.SerializerMethodField()
-    is_referenced_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
+        fields = ('id', 'code', 'title', 'group')
 
     @classmethod
     def get_group(cls, obj):
         try:
             if obj.group:
+                is_referenced_unit = 0
+                if obj.group.referenced_unit_id == obj.id:
+                    is_referenced_unit = 1
                 return {
-                    'id': obj.group.id,
-                    'title': obj.group.title
+                    'id': obj.group_id,
+                    'title': obj.group.title,
+                    'is_referenced_unit': is_referenced_unit
                 }
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return {}
-
-    @classmethod
-    def get_is_referenced_unit(cls, obj):
-        try:
-            is_referenced_unit = UnitOfMeasureGroup.objects.get(id=obj.group_id).referenced_unit_id
-            if is_referenced_unit == obj.id:
-                return 1
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
-        return 0
 
 
 class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -248,14 +241,14 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     def create(self, validated_data):
         # create account
-        account = UnitOfMeasure.objects.create(**validated_data)
+        obj = UnitOfMeasure.objects.create(**validated_data)
 
         # update referenced_unit for group
-        group = account.group
+        group = obj.group
         if not group.referenced_unit:
-            group.referenced_unit = account
+            group.referenced_unit = obj
             group.save()
-        return account
+        return obj
 
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
