@@ -16,6 +16,12 @@ TABLE_REF = {  # clean cache reference when system clean cache of model. Bad per
     ),
     'tenant_tenant': (
         'company_company', 'account_user', 'account_user', 'hr_employee', 'company_companyuseremployee'
+    ),
+    'hr_employee': (
+        'hr_group',
+    ),
+    'hr_group': (
+        'hr_employee',
     )
 }
 
