@@ -5,7 +5,16 @@ from apps.sale.saledata.views.accounts import (
     ContactList, ContactDetail,
     ContactListNotMapAccount,
     AccountList, AccountDetail, EmployeeMapAccountList,
-    SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail
+    SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
+)
+
+from apps.sale.saledata.views.product import (
+    ProductTypeList, ProductCategoryList,
+    ProductTypeDetail, ProductCategoryDetail,
+    ExpenseTypeList, ExpenseTypeDetail,
+    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail,
+    ProductList, ProductDetail
 )
 
 urlpatterns = [
@@ -21,10 +30,28 @@ urlpatterns = [
     # contact
     path('contacts', ContactList.as_view(), name='ContactList'),
     path('contact/<str:pk>', ContactDetail.as_view(), name='ContactDetail'),
-    path('listnotmapaccount', ContactListNotMapAccount.as_view(), name='ContactListNotMapAccount'),
+    path('contacts/not-map-account', ContactListNotMapAccount.as_view(), name='ContactListNotMapAccount'),
 
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
-    path('employee_map_account_list', EmployeeMapAccountList.as_view(), name='EmployeeMapAccountList'),
+    path('accounts/map-employee', EmployeeMapAccountList.as_view(), name='EmployeeMapAccountList'),
+]
+
+urlpatterns += [
+    path('product-types', ProductTypeList.as_view(), name='ProductTypeList'),
+    path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
+    path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
+    path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
+
+    path('expense-types', ExpenseTypeList.as_view(), name='ExpenseTypeList'),
+    path('expense-type/<str:pk>', ExpenseTypeDetail.as_view(), name='ExpenseTypeDetail'),
+
+    path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
+    path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
+    path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
+    path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
+
+    path('products', ProductList.as_view(), name='ProductList'),
+    path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]
