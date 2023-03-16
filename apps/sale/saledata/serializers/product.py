@@ -11,14 +11,14 @@ class ProductTypeListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductType
-        fields = ('title', 'code', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
@@ -32,14 +32,14 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 # class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 #
 #     class Meta:
 #         model = ProductType
-#         fields = ('title', 'code', 'description')
+#         fields = ('title', 'description')
 #
 #     def validate_title(self, value):
 #         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
@@ -53,14 +53,14 @@ class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductCategory
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductCategory
-        fields = ('title', 'code', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
@@ -74,14 +74,14 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductCategory
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 # class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
 #
 #     class Meta:
 #         model = ProductCategory
-#         fields = ('title', 'code', 'description')
+#         fields = ('title', 'description')
 #
 #     def validate_title(self, value):
 #         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
@@ -95,14 +95,14 @@ class ExpenseTypeListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ExpenseType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ExpenseType
-        fields = ('title', 'code', 'description')
+        fields = ('title', 'description')
 
     @classmethod
     def validate_title(cls, value):
@@ -116,14 +116,14 @@ class ExpenseTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ExpenseType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'description')
 
 
 # class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 #
 #     class Meta:
 #         model = ExpenseType
-#         fields = ('title', 'code', 'description')
+#         fields = ('title', 'description')
 #
 #     def validate_title(self, value):
 #         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
@@ -194,18 +194,15 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_group(cls, obj):
-        try:
-            if obj.group:
-                is_referenced_unit = 0
-                if obj.group.referenced_unit_id == obj.id:
-                    is_referenced_unit = 1
-                return {
-                    'id': obj.group_id,
-                    'title': obj.group.title,
-                    'is_referenced_unit': is_referenced_unit
-                }
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        if obj.group:
+            is_referenced_unit = 0
+            if obj.group.referenced_unit_id == obj.id:
+                is_referenced_unit = 1
+            return {
+                'id': obj.group_id,
+                'title': obj.group.title,
+                'is_referenced_unit': is_referenced_unit
+            }
         return {}
 
 
@@ -219,7 +216,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_code(cls, value):
         value = value.strip()
-        if Product.objects.filter(code=value).exists():
+        if UnitOfMeasure.objects.filter(code=value).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
