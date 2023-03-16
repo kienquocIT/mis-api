@@ -473,40 +473,6 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                         )
         return result
 
-    # @classmethod
-    # def get_association(cls, obj):
-    #     result = []
-    #     association_list = Association.objects.filter(
-    #         workflow=obj
-    #     ).select_related(
-    #         'node_in',
-    #         'node_out',
-    #     )
-    #     if association_list:
-    #         for association in association_list:
-    #             result.append({
-    #                 'node_in': {
-    #                     'id': association.node_in_id,
-    #                     'title': association.node_in.title,
-    #                     'code': association.node_in.code,
-    #                     'is_system': association.node_in.is_system,
-    #                     'code_node_system': association.node_in.code_node_system,
-    #                     'condition': association.node_in.condition,
-    #                     'order': association.node_in.order
-    #                 },
-    #                 'node_out': {
-    #                     'id': association.node_out_id,
-    #                     'title': association.node_out.title,
-    #                     'code': association.node_out.code,
-    #                     'is_system': association.node_out.is_system,
-    #                     'code_node_system': association.node_out.code_node_system,
-    #                     'condition': association.node_out.condition,
-    #                     'order': association.node_out.order
-    #                 },
-    #                 'condition': association.condition
-    #             })
-    #     return result
-
     @classmethod
     def get_association(cls, obj):
         result = []
@@ -840,7 +806,26 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         return True
 
     def create(self, validated_data):
-        # initial
+        """
+            step 1: set up data for create
+            step 2: create workflow
+            step 3: create zone for workflow (
+                function: create_zone_for_workflow()
+            )
+            ** when create success Zone will add to zone_created_data use for create Node
+                {1: 'zoneID1', 2: 'zoneID2', ...}
+            step 4: create node for workflow (
+                1/ function: create_node_for_workflow()
+                2/ function: create_node()
+                    (in create_node() have mapping_zone() & create_node_data())
+            )
+                ** when create success Node will add to node_created_data use for create Association
+                    {1: 'nodeID1', 2: 'nodeID2', ...}
+            step 5: create association for workflow (
+                function: create_association_for_workflow()
+            )
+        """
+        # set up data for create
         node_list = None
         zone_list = None
         association_list = None
