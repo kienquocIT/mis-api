@@ -134,10 +134,20 @@ class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 # Unit Of Measure Group
 class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):  # noqa
+    referenced_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasureGroup
         fields = ('id', 'title', 'referenced_unit')
+
+    @classmethod
+    def get_referenced_unit(cls, obj):
+        try:
+            if obj.referenced_unit_id:
+                return {'id': obj.referenced_unit_id, 'title': obj.referenced_unit.title}
+        except UnitOfMeasure.DoesNotExist as exc:
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST) from exc
+        return {}
 
 
 class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -177,10 +187,11 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
 # Unit Of Measure
 class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.SerializerMethodField()
+    is_referenced_unit = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group', 'ratio', 'rounding')
+        fields = ('id', 'code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
 
     @classmethod
     def get_group(cls, obj):
@@ -193,6 +204,16 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return {}
+
+    @classmethod
+    def get_is_referenced_unit(cls, obj):
+        try:
+            is_referenced_unit = UnitOfMeasureGroup.objects.get(id=obj.group_id).referenced_unit_id
+            if is_referenced_unit == obj.id:
+                return 1
+        except UnitOfMeasureGroup.DoesNotExist as exc:
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        return 0
 
 
 class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -224,6 +245,17 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return None
+
+    def create(self, validated_data):
+        # create account
+        account = UnitOfMeasure.objects.create(**validated_data)
+
+        # update referenced_unit for group
+        group = account.group
+        if not group.referenced_unit:
+            group.referenced_unit = account
+            group.save()
+        return account
 
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
