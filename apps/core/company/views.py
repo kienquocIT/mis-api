@@ -3,9 +3,9 @@ from rest_framework.permissions import IsAuthenticated
 
 
 from apps.core.company.models import CompanyUserEmployee
-from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin, CompanyListMixin
+from apps.core.company.mixins import CompanyDestroyMixin, CompanyListMixin
 from apps.core.company.models import Company
-from apps.shared import mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
     CompanyListSerializer,
@@ -16,7 +16,7 @@ from apps.core.company.serializers import (
 )
 
 
-class CompanyList(BaseListMixin, CompanyCreateMixin):
+class CompanyList(BaseListMixin, BaseCreateMixin):
     """
     Company List:
         GET: List
