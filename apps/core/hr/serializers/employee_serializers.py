@@ -175,14 +175,15 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                 if emp_plan.application and isinstance(emp_plan.application, list):
                     application_list = Application.objects.filter(
                         id__in=emp_plan.application
-                    ).values('id', 'title', 'code')
+                    ).values('id', 'title', 'code', 'app_label')
                     if application_list:
                         for application in application_list:
                             app_list.append(
                                 {
                                     'id': application['id'],
                                     'title': application['title'],
-                                    'code': application['code']
+                                    'code': application['code'],
+                                    'app_label': application['app_label']
                                 }
                             )
                 result.append(

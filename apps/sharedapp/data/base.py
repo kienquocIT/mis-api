@@ -28,70 +28,87 @@ Application_data = {
     "2204fbed-7c93-462c-9b7d-85e0a8574094": {
         "title": "Contract",
         "code": "contract",
+        "app_label": ''
     },
     "2d83c8bb-cf77-452f-af0b-fcab49b83527": {
         "title": "Sale Order",
         "code": "sale_order",
+        "app_label": ''
     },
     "48e995a6-cd8c-4aef-9a45-6b0ae9c500b2": {
         "title": "Task",
         "code": "task",
+        "app_label": 'timesheet'
     },
     "4cdaabcc-09ae-4c13-bb4e-c606eb335b11": {
         "title": "Role",
         "code": "role",
+        "app_label": 'hr'
     },
     "4e4c6574-e068-4a0d-94f2-4b89626676b4": {
         "title": "Over Time",
         "code": "OT",
+        "app_label": ''
     },
     "50348927-2c4f-4023-b638-445469c66953": {
         "title": "Employee",
         "code": "employee",
+        "app_label": 'hr'
     },
     "5b67fb7f-03e0-44ee-9df8-8cb0aae16d8f": {
         "title": "Document Management",
         "code": "edms",
+        "app_label": ''
     },
     "7d69e8df-7ff4-4230-897d-95e4521f055c": {
         "title": "Asset Management",
         "code": "eam",
+        "app_label": ''
     },
     "83de3e2e-d4d1-4864-ad48-fddd28da01df": {
         "title": "Annual Leave",
         "code": "leave",
+        "app_label": ''
     },
     "888c533e-4e87-480e-884b-6a23026e6c38": {
         "title": "Advance",
         "code": "advance",
+        "app_label": ''
     },
     "918de2cf-7416-4a24-85d1-100403fc025b": {
         "title": "Quotation",
         "code": "quotation",
+        "app_label": ''
     },
     "9b777adc-c8ce-4d43-a1d3-02f0434243ff": {
         "title": "Transportation",
         "code": "transportation",
+        "app_label": ''
     },
     "acf7c5ad-0f4b-49e2-9fbd-a6daa032efb6": {
         "title": "Payment",
         "code": "payment",
+        "app_label": ''
     },
     "b0a2d464-3dc9-450e-96cd-76db5c4b3d58": {
         "title": "Booking Room",
         "code": "booking",
+        "app_label": ''
     },
     "c5c22111-bda4-4935-8ea5-632e36554a5b": {
         "title": "Opportunity",
         "code": "opportunity",
+        "app_label": ''
     },
     "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {
         "title": "Group",
         "code": "group",
+        "app_label": 'hr'
     },
     "f18c9cb9-6bbc-4efc-af10-4f5e244ad66e": {
         "title": "Contract Lock",
         "code": "lock",
+        "app_label": ''
     },
 }
 
@@ -170,21 +187,21 @@ PermissionApplication_data = {
     '040818c3-a320-480b-b9bf-60f47dd52e19': {
         'id': '040818c3-a320-480b-b9bf-60f47dd52e19',
         'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'create__employee__employee',
+        'permission': 'create__hr__employee',
     },
     '0e6b741e-b886-47dd-92c5-1b3f59a68291': {
         'id': '0e6b741e-b886-47dd-92c5-1b3f59a68291',
         'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'edit__employee__employee',
+        'permission': 'edit__hr__employee',
     },
     '97b92f5a-0a17-4091-8684-973f830a634a': {
         'id': '97b92f5a-0a17-4091-8684-973f830a634a',
         'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'view__employee__employee',
+        'permission': 'view__hr__employee',
     },
     '9cea8790-c8a9-4453-b73f-c11b55f53c68': {
         'id': '9cea8790-c8a9-4453-b73f-c11b55f53c68',
         'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'delete__employee__employee',
+        'permission': 'delete__hr__employee',
     }
 }

@@ -39,7 +39,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
         if plan_app_list:
             return [
                 {
-                    'id': plan_app.application.id,
+                    'id': plan_app.application_id,
                     'title': plan_app.application.title,
                     'code': plan_app.application.code,
                 } for plan_app in plan_app_list
