@@ -260,6 +260,7 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
                 is_referenced_unit = 1
             return {
                 'id': obj.group_id,
+                'title': obj.group.title,
                 'is_referenced_unit': is_referenced_unit,
                 'referenced_unit_title': obj.group.referenced_unit.title,
             }
@@ -297,14 +298,23 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     def update(self, instance, validated_data):
         is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
+        if is_referenced_unit and is_referenced_unit == 'on':
+            group = UnitOfMeasureGroup.objects.get(id=self.initial_data.get('group', None))
+            group.referenced_unit = instance
+            group.save()
+
+            old_ratio = instance.ratio
+            for item in UnitOfMeasure.objects.filter(group=instance.group_id):
+                if item != instance:
+                    if instance.rounding != 0:
+                        item.ratio = round(item.ratio / old_ratio, int(instance.rounding))
+                    else:
+                        item.ratio = item.ratio / old_ratio
+                    item.save()
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        if is_referenced_unit and is_referenced_unit == 'on':
-            group = UnitOfMeasureGroup.objects.get(id=instance.group_id)
-            group.referenced_unit = instance
-            group.save()
 
         return instance
 
