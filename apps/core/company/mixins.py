@@ -1,55 +1,6 @@
-from django.db import transaction
-from rest_framework.exceptions import ValidationError
-
 from apps.core.company.models import Company
 from apps.core.tenant.models import Tenant
-from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, BaseListMixin
-
-
-class CompanyCreateMixin(BaseCreateMixin):
-    def create(self, request, *args, **kwargs):
-        tenant_current_id = request.user.tenant_current_id
-        current_tenant = Tenant.objects.get(id=tenant_current_id)
-        company_quantity_max = current_tenant.company_quality_max
-        current_company_quantity = current_tenant.company_total
-
-        if company_quantity_max > current_company_quantity:
-            serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
-            if hasattr(serializer, 'is_valid'):
-                serializer.is_valid(raise_exception=True)
-            instance = self.perform_create(serializer, request.user)
-            if not isinstance(instance, Exception):
-                return ResponseController.created_201(
-                    getattr(
-                        self.serializer_class(instance),  # pylint: disable=not-callable / E1102
-                        'data',
-                        None
-                    )
-                )
-            if isinstance(instance, ValidationError):
-                return ResponseController.internal_server_error_500()
-        return ResponseController.forbidden_403(msg='Maximum 5 companies only')
-
-    @classmethod
-    def perform_create(cls, serializer, user):  # pylint: disable=W0237
-        try:
-            with transaction.atomic():
-                if user.tenant_current_id:
-                    tenant_current_id = user.tenant_current_id
-
-                    instance = serializer.save(
-                        tenant_id=tenant_current_id,
-                        user_created=user.id,
-                        user_modified=user.id,
-                    )
-
-                    tenant = Tenant.objects.get(id=tenant_current_id)
-                    tenant.company_total = Company.objects.filter(tenant_id=tenant_current_id).count()
-                    tenant.save()
-            return instance
-        except Exception as exc:
-            print(exc)
-            return exc
+from apps.shared import ResponseController, BaseDestroyMixin, BaseListMixin
 
 
 class CompanyDestroyMixin(BaseDestroyMixin):
