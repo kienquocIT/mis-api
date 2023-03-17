@@ -60,18 +60,19 @@ class PermissionAbstractModel(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        update_fields = kwargs.get('update_fields', None)
-        if isinstance(update_fields, list):
-            for key in self.permission_keys:
-                if key in update_fields:
-                    update_fields.remove(key)
-        else:
-            update_fields = []
-            for f_cls in self.__class__._meta.get_fields():
-                if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
-                    if f_cls.many_to_many is False:
-                        update_fields.append(f_cls.name)
-        kwargs['update_fields'] = update_fields
+        if kwargs.get('force_update', False):
+            update_fields = kwargs.get('update_fields', None)
+            if isinstance(update_fields, list):
+                for key in self.permission_keys:
+                    if key in update_fields:
+                        update_fields.remove(key)
+            else:
+                update_fields = []
+                for f_cls in self.__class__._meta.get_fields():
+                    if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
+                        if f_cls.many_to_many is False:
+                            update_fields.append(f_cls.name)
+            kwargs['update_fields'] = update_fields
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -311,6 +312,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
+            'full_name': self.get_full_name(),
             'email': self.email,
             'phone': self.phone,
             'is_delete': self.is_delete,
