@@ -129,7 +129,8 @@ class EmployeeListMinimalSerializer(serializers.ModelSerializer):
             'full_name',
         )
 
-    def get_full_name(self, obj):
+    @classmethod
+    def get_full_name(cls, obj):
         return obj.get_full_name(2)
 
 
@@ -255,13 +256,18 @@ def validate_employee_create_update(validate_data):
     return validate_data
 
 
-def set_up_data_plan_app(validated_data):
+def set_up_data_plan_app(validated_data, instance=None):
     plan_application_dict = {}
     plan_app_data = []
     bulk_info = []
     if 'plan_app' in validated_data:
         plan_app_data = validated_data['plan_app']
         del validated_data['plan_app']
+        if instance:
+            # delete old M2M PlanEmployee
+            plan_employee_old = PlanEmployee.objects.filter(employee=instance)
+            if plan_employee_old:
+                plan_employee_old.delete()
     if plan_app_data:
         for plan_app in plan_app_data:
             plan_code = None
@@ -307,11 +313,13 @@ def create_plan_employee_update_tenant_plan(
 
 
 def validate_role_for_employee(value):
-    if value and isinstance(value, list):
-        role_list = Role.objects.filter(id__in=value).count()
-        if role_list == len(value):
-            return value
-        raise serializers.ValidationError({'detail': HRMsg.ROLES_NOT_EXIST})
+    if isinstance(value, list):
+        if value:
+            role_list = Role.objects.filter(id__in=value).count()
+            if role_list == len(value):
+                return value
+            raise serializers.ValidationError({'detail': HRMsg.ROLES_NOT_EXIST})
+        return value
     raise serializers.ValidationError({'detail': HRMsg.ROLE_IS_ARRAY})
 
 
@@ -483,14 +491,21 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             step 3: delete old M2M PlanEmployee + create new M2M PlanEmployee + update TenantPlan
             step 4: delete old M2M RoleEmployee + create new M2M RoleEmployee
         """
-        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(validated_data)
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(
+            validated_data,
+            instance=instance
+        )
         if plan_application_dict:
             validated_data.update({'plan_application': plan_application_dict})
 
-        role_list = None
+        role_list = []
         if 'role' in validated_data:
             role_list = validated_data['role']
             del validated_data['role']
+            # delete old M2M RoleEmployee
+            role_employee_old = RoleHolder.objects.filter(employee=instance)
+            if role_employee_old:
+                role_employee_old.delete()
 
         # update employee
         for key, value in validated_data.items():
@@ -499,36 +514,27 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         if 'permission_by_configured' in validated_data.keys():
             instance.save_permissions(field_name=['permission_by_configured'])
 
-        # delete old M2M PlanEmployee
-        plan_employee_old = PlanEmployee.objects.filter(employee=instance)
-        if plan_employee_old:
-            plan_employee_old.delete()
+        if instance:
+            # create M2M PlanEmployee + update TenantPlan
+            create_plan_employee_update_tenant_plan(
+                employee=instance,
+                plan_app_data=plan_app_data,
+                bulk_info=bulk_info
+            )
 
-        # create M2M PlanEmployee + update TenantPlan
-        create_plan_employee_update_tenant_plan(
-            employee=instance,
-            plan_app_data=plan_app_data,
-            bulk_info=bulk_info
-        )
-
-        # delete old M2M RoleEmployee
-        role_employee_old = RoleHolder.objects.filter(employee=instance)
-        if role_employee_old:
-            role_employee_old.delete()
-
-        # create M2M RoleEmployee
-        if instance and role_list:
-            bulk_info = []
-            for role in role_list:
-                bulk_info.append(
-                    RoleHolder(
-                        **{
-                            'employee': instance,
-                            'role_id': role,
-                        }
+            # create M2M RoleEmployee
+            if role_list:
+                bulk_info = []
+                for role in role_list:
+                    bulk_info.append(
+                        RoleHolder(
+                            **{
+                                'employee': instance,
+                                'role_id': role,
+                            }
+                        )
                     )
-                )
-            RoleHolder.objects.bulk_create(bulk_info)
+                RoleHolder.objects.bulk_create(bulk_info)
 
         return instance
 
