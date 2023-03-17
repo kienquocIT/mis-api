@@ -22,7 +22,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
     @classmethod
     def get_tenant(cls, obj):
         if obj.tenant_id:
-            data = Tenant.objects.filter({'id': obj.tenant_id}, get_first=True)
+            data = Tenant.objects.filter(id=obj.tenant_id)
             if data:
                 return {
                     'id': data['id'],
@@ -51,9 +51,7 @@ class TenantPlanSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan(cls, obj):
         if obj.plan_id:
-            data = DisperseModel(app_model='base.SubscriptionPlan').get_model().objects.filter(
-                {'id': obj.plan_id}, get_first=True
-            )
+            data = DisperseModel(app_model='base.SubscriptionPlan').get_model().objects.filter(id=obj.plan_id)
             if data and isinstance(data, dict):
                 if 'application' in data:
                     data['application'] = [
