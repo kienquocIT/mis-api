@@ -9,7 +9,7 @@ from apps.sale.saledata.serializers.product import (
     ProductCategoryDetailSerializer,
     ExpenseTypeListSerializer, ExpenseTypeCreateSerializer, ExpenseTypeDetailSerializer,
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
-    UnitOfMeasureGroupDetailSerializer,
+    UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureDetailSerializer,
 )
@@ -240,11 +240,11 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    # @swagger_auto_schema(operation_summary="Update UnitOfMeasure", request_body=UnitOfMeasureUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=True, code_perm='')
-    # def put(self, request, *args, **kwargs):
-    #     self.serializer_class = UnitOfMeasureUpdateSerializer
-    #     return self.update(request, *args, **kwargs)
+    @swagger_auto_schema(operation_summary="Update UnitOfMeasure", request_body=UnitOfMeasureUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = UnitOfMeasureUpdateSerializer
+        return self.update(request, *args, **kwargs)
 
 # class ProductList(BaseListMixin, BaseCreateMixin):
 #     queryset = Product.objects

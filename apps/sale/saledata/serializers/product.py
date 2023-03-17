@@ -266,17 +266,17 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
         return {}
 
 
-# class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
-#
-#     class Meta:
-#         model = UnitOfMeasure
-#         fields = ('title',)
-#
-#     def validate_title(self, value):
-#         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-#         if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
-#             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-#         return value
+class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = UnitOfMeasure
+        fields = ('title',)
+
+    def validate_title(self, value):
+        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+        if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+        return value
 
 #
 # # Product
