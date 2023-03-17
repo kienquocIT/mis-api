@@ -267,16 +267,46 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
+    group = serializers.UUIDField(required=True, allow_null=False)
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('title',)
+        fields = ('title', 'group', 'ratio', 'rounding')
+
+    @classmethod
+    def validate_code(cls, value):
+        value = value.strip()
+        if UnitOfMeasure.objects.filter(code=value).exists():
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
+        return value
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
         return value
+
+    @classmethod
+    def validate_group(cls, attrs):
+        try:
+            if attrs is not None:
+                return UnitOfMeasureGroup.objects.get(id=attrs)
+        except UnitOfMeasureGroup.DoesNotExist as exc:
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        return None
+
+    def update(self, instance, validated_data):
+        is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        if is_referenced_unit and is_referenced_unit == 'on':
+            group = UnitOfMeasureGroup.objects.get(id=instance.group_id)
+            group.referenced_unit = instance
+            group.save()
+
+        return instance
 
 #
 # # Product
