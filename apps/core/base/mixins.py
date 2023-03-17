@@ -1,7 +1,6 @@
 from apps.core.base.models import PlanApplication
 from apps.core.tenant.models import TenantPlan
-from apps.shared import ResponseController
-from apps.shared.mixins import BaseListMixin
+from apps.shared import ResponseController, BaseListMixin
 
 
 class ApplicationListMixin(BaseListMixin):
@@ -13,7 +12,7 @@ class ApplicationListMixin(BaseListMixin):
             'plan__id',
             flat=True
         )
-        plan_application_id_list = PlanApplication.object_normal.filter(
+        plan_application_id_list = PlanApplication.objects.filter(
             plan_id__in=tenant_plan_id_list
         ).values_list(
             'application__id',

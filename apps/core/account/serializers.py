@@ -54,7 +54,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
-                co_user_emp = list(CompanyUserEmployee.object_normal.select_related('employee').filter(user=instance))
+                co_user_emp = list(CompanyUserEmployee.objects.select_related('employee').filter(user=instance))
                 if len(co_user_emp) == 1:
                     if co_user_emp[0].employee:
                         co_user_emp[0].employee.company = data_bulk
@@ -109,7 +109,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         obj = User.objects.create(**validated_data)
         company = validated_data['company_current']
-        company.total_user = CompanyUserEmployee.object_normal.filter(
+        company.total_user = CompanyUserEmployee.objects.filter(
             company_id=validated_data['company_current']
         ).count() + 1
         company.save()
@@ -144,21 +144,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_company(cls, obj):
-        companies = []
-        company = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
-        for item in company:
-            try:
-                comp_obj = Company.object_normal.get(pk=item.company_id)
-                companies.append(
-                    {
-                        'code': comp_obj.code,
-                        'title': comp_obj.title,
-                        'representative': comp_obj.representative_fullname,
-                    }
-                )
-            except Company.DoesNotExist as exc:
-                raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST) from exc
-        return companies
+        # Reminds: Adding clean ref to TABLE_REF (apps.shared.Caching)
+        # When using prefetch_related in MAIN QUERY + CACHED IT
+        #   - Remarks: When on change CompanyUserEmployee then system clean cache of CompanyUserEmployee, auto clean
+        #   cache of ref table
+        # if we don't use prefetch_relate, we use query ModelM2M.objects.filter(...).cache()
+        #   --> This way is slow first time but so fast next time.
+        return [{
+            "id": x.id,
+            "title": x.title,
+            "code": x.code,
+            "representative": x.representative_fullname,
+        } for x in obj.companies.all()]
 
 
 class CompanyUserDetailSerializer(serializers.ModelSerializer):
@@ -174,11 +171,11 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_companies(cls, obj):
-        company_user = CompanyUserEmployee.object_normal.filter(user_id=obj.id)
+        company_user = CompanyUserEmployee.objects.filter(user_id=obj.id)
         companies = []
         for item in company_user:
             try:
-                company = Company.object_normal.get(id=item.company_id)
+                company = Company.objects.get(id=item.company_id)
                 companies.append(
                     {
                         'id': company.id,
@@ -219,7 +216,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def add_company(cls, bulk_info_add):
         if bulk_info_add:
-            company_user_add = CompanyUserEmployee.object_normal.bulk_create(bulk_info_add)
+            company_user_add = CompanyUserEmployee.objects.bulk_create(bulk_info_add)
             if company_user_add:
                 for company_add in company_user_add:
                     company_add.company.total_user += 1
@@ -236,7 +233,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def delete_user(cls, instance, remove_list):
         if remove_list:
-            company_user_remove = CompanyUserEmployee.object_normal.filter(
+            company_user_remove = CompanyUserEmployee.objects.filter(
                 company_id__in=remove_list,
                 user=instance
             ).select_related(
@@ -262,7 +259,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):  # pylint: disable=R0912
         if 'companies' in validated_data:  # pylint: disable=R1702
             company_id_list = validated_data['companies']
-            company_old_id_list = CompanyUserEmployee.object_normal.filter(
+            company_old_id_list = CompanyUserEmployee.objects.filter(
                 user=instance
             ).exclude(
                 company_id=instance.company_current_id

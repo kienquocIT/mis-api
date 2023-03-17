@@ -1,10 +1,10 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import BaseModel
+from apps.core.models import CoreAbstractModel
 
 
-class Space(BaseModel):
+class Space(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
     company = models.ForeignKey('company.Company', on_delete=models.CASCADE)
     application = JSONField(default=[])

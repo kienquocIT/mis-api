@@ -9,19 +9,19 @@ from apps.shared import ResponseController, BaseDestroyMixin, BaseCreateMixin, B
 class CompanyCreateMixin(BaseCreateMixin):
     def create(self, request, *args, **kwargs):
         tenant_current_id = request.user.tenant_current_id
-        current_tenant = Tenant.object_normal.get(id=tenant_current_id)
+        current_tenant = Tenant.objects.get(id=tenant_current_id)
         company_quantity_max = current_tenant.company_quality_max
         current_company_quantity = current_tenant.company_total
 
         if company_quantity_max > current_company_quantity:
-            serializer = self.serializer_create.__class__(data=request.data)
+            serializer = self.serializer_create(data=request.data)  # pylint: disable=not-callable / E1102
             if hasattr(serializer, 'is_valid'):
                 serializer.is_valid(raise_exception=True)
             instance = self.perform_create(serializer, request.user)
             if not isinstance(instance, Exception):
                 return ResponseController.created_201(
                     getattr(
-                        self.serializer_class.__class__(instance),
+                        self.serializer_class(instance),  # pylint: disable=not-callable / E1102
                         'data',
                         None
                     )
@@ -43,8 +43,8 @@ class CompanyCreateMixin(BaseCreateMixin):
                         user_modified=user.id,
                     )
 
-                    tenant = Tenant.object_normal.get(id=tenant_current_id)
-                    tenant.company_total = Company.object_normal.filter(tenant_id=tenant_current_id).count()
+                    tenant = Tenant.objects.get(id=tenant_current_id)
+                    tenant.company_total = Company.objects.filter(tenant_id=tenant_current_id).count()
                     tenant.save()
             return instance
         except Exception as exc:
@@ -59,8 +59,8 @@ class CompanyDestroyMixin(BaseDestroyMixin):
             instance.delete()
 
             tenant_current_id = request.user.tenant_current_id
-            tenant = Tenant.object_normal.get(id=tenant_current_id)
-            tenant.company_total = Company.object_normal.filter(tenant_id=tenant_current_id).count()
+            tenant = Tenant.objects.get(id=tenant_current_id)
+            tenant.company_total = Company.objects.filter(tenant_id=tenant_current_id).count()
             tenant.save()
 
             return ResponseController.success_200({}, key_data='result')

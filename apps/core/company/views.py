@@ -22,7 +22,7 @@ class CompanyList(BaseListMixin, CompanyCreateMixin):
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal
+    queryset = Company.objects
     serializer_list = CompanyListSerializer
     serializer_create = CompanyCreateSerializer
     serializer_detail = CompanyDetailSerializer
@@ -77,7 +77,7 @@ class CompanyListOverview(BaseListMixin):
     Company Overview:
         GET: /company/list/overview
     """
-    queryset = Company.object_normal
+    queryset = Company.objects
     serializer_list = CompanyOverviewSerializer
     list_hidden_field = ['tenant_id']
 
@@ -91,7 +91,7 @@ class CompanyListOverview(BaseListMixin):
 
 
 class CompanyUserNotMapEmployeeList(CompanyListMixin):
-    queryset = CompanyUserEmployee.object_normal.select_related(
+    queryset = CompanyUserEmployee.objects.select_related(
         'user'
     ).filter(
         employee=None

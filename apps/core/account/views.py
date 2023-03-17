@@ -6,7 +6,7 @@ from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer, UserListSerializer
+    CompanyUserDetailSerializer, UserListSerializer,
 )
 from .models import User
 
@@ -17,8 +17,11 @@ class UserList(AccountListMixin, AccountCreateMixin):
             GET: List
             POST: Create a new
         """
-    queryset = User.objects.select_related('tenant_current')
+    queryset = User.objects
     serializer_list = UserListSerializer
+    serializer_list_minimal = UserListSerializer
+    use_cache_queryset = True
+    use_cache_minimal = True
     serializer_create = UserCreateSerializer
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
@@ -47,9 +50,12 @@ class UserList(AccountListMixin, AccountCreateMixin):
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.select_related('tenant_current', 'company_current')
+    queryset = User.objects
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('tenant_current', 'company_current').prefetch_related('companies')
 
     @swagger_auto_schema(operation_summary='Detail User')
     @mask_view(login_require=True, auth_require=True, code_perm='')

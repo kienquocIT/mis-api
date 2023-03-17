@@ -10,11 +10,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'misapi.settings')
 app = Celery('misapi')
 
 
-@setup_logging.connect
-def config_loggers(*args, **kwargs):
-    from logging.config import dictConfig
-    from django.conf import settings
-    dictConfig(settings.LOGGING)
+# @setup_logging.connect
+# def config_loggers(*args, **kwargs):
+#     from logging.config import dictConfig
+#     from django.conf import settings
+#     dictConfig(settings.LOGGING)
 
 
 # Using a string here means the worker doesn't have to serialize

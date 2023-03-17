@@ -3,8 +3,11 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.core.hr.mixins import RoleDestroyMixin
 from apps.core.hr.models import Role
-from apps.core.hr.serializers.role_serializers import RoleUpdateSerializer, RoleDetailSerializer, RoleCreateSerializer,\
-    RoleListSerializer
+from apps.core.hr.serializers.role_serializers import (
+    RoleUpdateSerializer, RoleDetailSerializer,
+    RoleCreateSerializer,
+    RoleListSerializer,
+)
 from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin, BaseCreateMixin
 
 
@@ -13,12 +16,15 @@ class RoleList(
     BaseCreateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object_global.select_related("company")
+    queryset = Role.objects
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id', 'tenant_id', 'user_created']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('company')
 
     @swagger_auto_schema(
         operation_summary="Role List",
@@ -44,7 +50,7 @@ class RoleDetail(
     RoleDestroyMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object_global
+    queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
 

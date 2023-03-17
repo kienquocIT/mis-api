@@ -155,11 +155,11 @@ b. Sử dụng command: python manage.py runserver 8000
 1. **Thiết kế DB luôn phải được LEADER review và duyệt trước khi được apply vào sử dụng**
 2. Thiết kế models cho chức năng phải theo nguyên tắc tối ưu truy vấn và ràng buộc dữ liệu tốt
 3. Luôn sử dụng UUID4 cho ID của từng bảng
-4. Kế thừa từ các lớp model abstract trong apps.shared.models: BaseModel, TenantModel, TenantCoreModel, M2MModel
-5. BaseModel: sử dụng cho các models dùng chung không có filter mặc định theo tenant như user, plan, country,...
+4. Kế thừa từ các lớp model abstract trong apps.shared.models: MasterDataAbstractModel
+5. *deleted* BaseModel: sử dụng cho các models dùng chung không có filter mặc định theo tenant như user, plan, country,...
 6. TenantModel: Sử dụng cho các models dùng trong hệ thống ngoài thư mục apps/core có chứa filter mặc định tenant và
    mode
-7. TenantCoreModel: Sử dụng cho các models nằm trong thư mục core, có chứa filter mặc định theo tenant
+7. *deleted* TenantCoreModel: Sử dụng cho các models nằm trong thư mục core, có chứa filter mặc định theo tenant
 8. M2MModel: Sử dụng cho các models Many To Many.
 9. Trong từng models được kế thừa từ shared.models sẽ có các manager truy vấn dữ liệu khác nhau: objects, object_normal,
    object_global, object_private, object_team tùy theo từng yêu cầu mà sử dụng
@@ -219,7 +219,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         GET: List
         POST: Create a new
     """
-    queryset = Company.object_normal.all()  # required | query hỗ trợ truy vấn dữ liệu
+    queryset = Company.objects.all()  # required | query hỗ trợ truy vấn dữ liệu
     serializer_list = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu GET danh sách
     serializer_create = CompanyCreateSerializer  # required | serializer hỗ trợ tạo dữ liệu POST tạo
     serializer_detail = CompanyListSerializer  # required | serializer hỗ trợ phân tích dữ liệu sau khi tạo thành công
@@ -386,5 +386,64 @@ CACHES = {
 
 4.~~ 
 
+
+---
+# UNITTEST
+
+Để hiểu rõ hơn về việc sử dụng Unittest trong Django REST Framework (DRF), ta có thể xem xét ví dụ sau:
+
+Giả sử ta có một ứng dụng DRF đơn giản để quản lý danh sách sản phẩm, trong đó có một model Product và một serializer tương ứng để chuyển đổi giữa đối tượng Product và các định dạng dữ liệu như JSON. Ta muốn viết các test để đảm bảo rằng serializer hoạt động đúng và API endpoint trả về đúng dữ liệu.
+
+Trước tiên, ta cần khai báo một số package và import các thư viện cần thiết:
+
+```python
+from django.test import TestCase
+from rest_framework.test import APIClient
+from rest_framework import status
+from .models import Product
+from .serializers import ProductSerializer
+```
+
+Sau đó, ta có thể viết các test như sau:
+```python
+class ProductTestCase(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.product_data = {'name': 'Product 1', 'description': 'This is product 1', 'price': 10.0}
+        self.response = self.client.post('/products/', self.product_data, format='json')
+
+    def test_create_product(self):
+        self.assertEqual(self.response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Product.objects.count(), 1)
+        self.assertEqual(Product.objects.get().name, self.product_data['name'])
+
+    def test_get_product_list(self):
+        response = self.client.get('/products/', format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_single_product(self):
+        product = Product.objects.get()
+        response = self.client.get('/products/{}/'.format(product.id), format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_product(self):
+        product = Product.objects.get()
+        new_data = {'name': 'Product 1 - updated', 'description': 'This is an updated product', 'price': 20.0}
+        response = self.client.put('/products/{}/'.format(product.id), new_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(Product.objects.get().name, new_data['name'])
+
+    def test_delete_product(self):
+        product = Product.objects.get()
+        response = self.client.delete('/products/{}/'.format(product.id), format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Product.objects.count(), 0)
+```
+
+Trong ví dụ này, ta đã tạo ra một APIClient để gửi các request HTTP đến API endpoint của ứng dụng, sau đó sử dụng các phương thức của TestCase như setUp() và assertEqual() để thực hiện các test.
+
+Trong setUp(), ta đã tạo một đối tượng sản phẩm Product mới bằng cách gọi phương thức POST đến API endpoint /products/, và lưu lại response để kiểm tra xem sản phẩm đã được tạo thành công hay chưa.
+
+Trong các phương thức test, ta sử dụng các phương thức khác của APIClient như `get
 
 ---

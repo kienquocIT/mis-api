@@ -74,7 +74,7 @@ class RoleDestroyMixin(BaseDestroyMixin):
         try:
             with transaction.atomic():
                 if purge:
-                    role_holder = RoleHolder.object_normal.filter(role=instance)
+                    role_holder = RoleHolder.objects.filter(role=instance)
                     if role_holder:
                         role_holder.delete()
                     instance.delete()

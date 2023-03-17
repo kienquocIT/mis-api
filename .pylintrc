@@ -1,4 +1,5 @@
 [TYPECHECK]
+recursive=y
 ignored-argument-names=kwargs,args
 
 [FORMAT]

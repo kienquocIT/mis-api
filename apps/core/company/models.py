@@ -2,10 +2,12 @@ from typing import Literal
 from jsonfield import JSONField
 from django.db import models
 
-from apps.shared import BaseModel, M2MModel
+from apps.shared import SimpleAbstractModel
+
+from apps.core.models import CoreAbstractModel
 
 
-class Company(BaseModel):
+class Company(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
 
     # license used
@@ -57,7 +59,7 @@ class Company(BaseModel):
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
 
-class CompanyLicenseTracking(M2MModel):
+class CompanyLicenseTracking(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
 
     # User
@@ -76,12 +78,11 @@ class CompanyLicenseTracking(M2MModel):
     class Meta:
         verbose_name = 'Company License Tracking'
         verbose_name_plural = 'Company License Tracking'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
 
-class CompanyUserEmployee(M2MModel):
+class CompanyUserEmployee(SimpleAbstractModel):
     """
     Case 1: Tao moi user (employee=null) --> Create new
     Case 2: Tap moi employee:
@@ -107,7 +108,6 @@ class CompanyUserEmployee(M2MModel):
     class Meta:
         verbose_name = 'Company Map Employee Map User'
         verbose_name_plural = 'Company Map Employee Map User'
-        ordering = ('-date_created',)
         unique_together = ('company', 'user', 'employee')
         default_permissions = ()
         permissions = ()
@@ -142,17 +142,17 @@ class CompanyUserEmployee(M2MModel):
                     'Remaining argument must be is None'
                 )
             if employee_id:
-                emp_map = cls.object_normal.filter(company_id=company_id, employee_id=employee_id)
+                emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
                 if emp_map:
                     return cls.check_obj_map(emp_map, 'employee')
-                return cls.object_normal.create(
+                return cls.objects.create(
                     company_id=company_id, employee_id=employee_id, user_id=None
                 )
             if user_id:
-                user_map = cls.object_normal.filter(company_id=company_id, user_id=user_id)
+                user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
                 if user_map:
                     return cls.check_obj_map(user_map, 'user')
-                return cls.object_normal.create(
+                return cls.objects.create(
                     company_id=company_id, employee_id=None, user_id=user_id,
                     is_created_company=True,
                 )
@@ -161,7 +161,7 @@ class CompanyUserEmployee(M2MModel):
     @classmethod
     def remove_map(cls, company_id, employee_id, user_id) -> (models.Model, models.Model) or Exception:
         if company_id and employee_id and user_id:
-            objs = cls.object_normal.filter(company_id=company_id, employee_id=employee_id, user_id=user_id)
+            objs = cls.objects.filter(company_id=company_id, employee_id=employee_id, user_id=user_id)
             if objs.count() <= 1:
                 obj_user = objs.first()
                 if obj_user:
@@ -178,8 +178,8 @@ class CompanyUserEmployee(M2MModel):
     @classmethod
     def assign_map(cls, company_id, employee_id, user_id):
         if company_id and employee_id and user_id:
-            user_map = cls.object_normal.filter(company_id=company_id, user_id=user_id)
-            emp_map = cls.object_normal.filter(company_id=company_id, employee_id=employee_id)
+            user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
+            emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
             if user_map and emp_map:
                 user_map = cls.check_obj_map(user_map, 'user')
                 emp_map = cls.check_obj_map(emp_map, 'employee')

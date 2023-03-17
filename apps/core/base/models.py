@@ -1,17 +1,59 @@
 from django.db import models
+from jsonfield import JSONField
 
-from apps.shared import BaseModel, M2MModel
+from apps.shared import SimpleAbstractModel
+
+from apps.core.models import CoreAbstractModel
 
 
-class SubscriptionPlan(BaseModel):
+def clear_cache_base_group():
+    # SubscriptionPlan.destroy_cache()
+    # Application.destroy_cache()
+    # PlanApplication.destroy_cache()
+    # PermissionApplication.destroy_cache()
+    return True
+
+
+class SubscriptionPlan(CoreAbstractModel):
+    applications = models.ManyToManyField(
+        'Application',
+        through='PlanApplication',
+        symmetrical=False,
+        blank=True,
+        related_name='plan_map_application'
+    )
+
     class Meta:
         verbose_name = 'Subscription Plan'
         ordering = ('title',)
         default_permissions = ()
         permissions = ()
 
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'application': [
+                x.application.parse_obj()
+                for x in PlanApplication.objects.select_related('application').filter(plan__id=self.id)
+            ]
+        }
 
-class Application(BaseModel):
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_cache_base_group()
+
+
+class Application(CoreAbstractModel):
+    plans = models.ManyToManyField(
+        'SubscriptionPlan',
+        through='PlanApplication',
+        symmetrical=False,
+        blank=True,
+        related_name='application_map_plan'
+    )
+
     remarks = models.TextField(
         null=True,
         blank=True
@@ -23,21 +65,40 @@ class Application(BaseModel):
         default_permissions = ()
         permissions = ()
 
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'title': self.title,
+            'code': self.code,
+            'remarks': self.remarks,
+            'plan': [
+                {
+                    "id": str(x.plan.id),
+                    "title": x.plan.title,
+                    "code": x.plan.code,
+                }
+                for x in PlanApplication.objects.select_related('plan').filter(application__id=self.id)
+            ]
+        }
 
-class PlanApplication(M2MModel):
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_cache_base_group()
+
+
+class PlanApplication(SimpleAbstractModel):
     plan = models.ForeignKey(
-        'base.SubscriptionPlan',
+        SubscriptionPlan,
         on_delete=models.CASCADE
     )
     application = models.ForeignKey(
-        'base.Application',
+        Application,
         on_delete=models.CASCADE
     )
 
     class Meta:
         verbose_name = 'Plan Application'
         verbose_name_plural = 'Plan Applications'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -52,7 +113,7 @@ PROPERTIES_TYPE = (
 )
 
 
-class ApplicationProperty(BaseModel):
+class ApplicationProperty(CoreAbstractModel):
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE
@@ -85,3 +146,37 @@ class ApplicationProperty(BaseModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_cache_base_group()
+
+
+class PermissionApplication(SimpleAbstractModel):
+    permission = models.CharField(max_length=100, unique=True)
+    app = models.ForeignKey(Application, on_delete=models.CASCADE)
+    extras = JSONField(default={})
+
+    def parse_obj(self):
+        return {
+            'id': str(self.id),
+            'permission': self.permission,
+            'app_id': str(self.app_id),
+            'app': {
+                'id': str(self.app_id),
+                'title': self.app.title,
+                'code': self.app.code,
+                'remarks': self.app.remarks,
+            } if self.app else {},
+            'extras': self.extras
+        }
+
+    class Meta:
+        verbose_name = 'Permission of Application'
+        verbose_name_plural = 'Permission of Application'
+        default_permissions = ()
+        permissions = ()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        clear_cache_base_group()

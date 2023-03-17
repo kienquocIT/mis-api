@@ -19,7 +19,7 @@ class GroupLevelList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = GroupLevel.object_global
+    queryset = GroupLevel.objects
     search_fields = [
         "description",
         "first_manager_description",
@@ -31,6 +31,7 @@ class GroupLevelList(
     serializer_create = GroupLevelMainCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    use_cache_queryset = True
 
     @swagger_auto_schema(
         operation_summary="Group Level list",
@@ -54,7 +55,7 @@ class GroupLevelDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = GroupLevel.object_global
+    queryset = GroupLevel.objects
     serializer_detail = GroupLevelDetailSerializer
     serializer_update = GroupLevelUpdateSerializer
 
@@ -82,7 +83,7 @@ class GroupList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.objects
     search_fields = [
         "title",
         "code",
@@ -128,7 +129,7 @@ class GroupDetail(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.objects
     serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
 
@@ -161,7 +162,7 @@ class GroupParentList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Group.object_global
+    queryset = Group.objects
     search_fields = []
     ordering = ['group_level__level']
 

@@ -10,9 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import sys
+import socket
 import os
-from datetime import timedelta
 
+from colorama import Fore
+from datetime import timedelta
 from pathlib import Path
 
 sys.setrecursionlimit(10000)
@@ -52,7 +54,9 @@ INSTALLED_APPS = \
         'compressor',  # Compress Assets File
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
+        'debug_toolbar',  # debug toolbar support check API
     ] + [  # integrate some service management or tracing
+        'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
     ] + [  # application
         'apps.core.base',
@@ -63,7 +67,7 @@ INSTALLED_APPS = \
         'apps.core.space',
 
         'apps.core.workflow',
-
+        'apps.core.process',
         'apps.sale.saledata',
     ]
 
@@ -77,17 +81,26 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-MIDDLEWARE += ['apps.shared.middleware.CustomizeMiddleware']
+# Allow Open Tracing all request.
+MIDDLEWARE += ['apps.shared.extends.middleware.customize.JaegerTracingMiddleware']
+#
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
 # Home Page: https://github.com/mozmeao/django-allow-cidr
 # Package Healthy Score: https://snyk.io/advisor/python/django-allow-cidr
-MIDDLEWARE += ['apps.shared.AllowCIDRAndProvisioningMiddleware']
+MIDDLEWARE += ['apps.shared.extends.middleware.cidr_provisioning.AllowCIDRAndProvisioningMiddleware']
 # Author: ©2018, Nine More Minutes, Inc.. | Powered by Sphinx 1.8.5 & Alabaster 0.7.12 | Page source
 # Package: CRUM - Current Request User Middleware
 # Home Page: https://django-crum.readthedocs.io/en/latest/
 # Package Health Score: https://snyk.io/advisor/python/django-crum
 MIDDLEWARE += ['crum.CurrentRequestUserMiddleware']
+# debug toolbar middleware
+MIDDLEWARE += ['debug_toolbar.middleware.DebugToolbarMiddleware', ]
+INTERNAL_IPS = [
+    # ...
+    "127.0.0.1",
+    # ...
+]
 
 ROOT_URLCONF = 'misapi.urls'
 
@@ -190,7 +203,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # REST API
 REST_FRAMEWORK = {
-    'EXCEPTION_HANDLER': 'apps.shared.custom_exception_handler',
+    'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # 'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -205,7 +218,7 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
         'rest_framework.filters.SearchFilter',
     ),
-    'DEFAULT_PAGINATION_CLASS': 'apps.shared.CustomPagination',
+    'DEFAULT_PAGINATION_CLASS': 'apps.shared.extends.pagination.CustomResultsSetPagination',
     'PAGE_SIZE': 100,
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
@@ -247,7 +260,8 @@ SIMPLE_JWT = {
 # page API documentations
 
 SHOW_API_DOCS = False
-
+HEADER_MINIMAL_CODE = 'SuaD2m'
+HEADER_SKIP_AUTH_CODE = 'Wl46tj'
 SWAGGER_SETTINGS = {
     'LOGIN_URL': '/',
     'LOGOUT_URL': '/logout',
@@ -256,9 +270,19 @@ SWAGGER_SETTINGS = {
     'SHOW_COMMON_EXTENSIONS': False,
     'SECURITY_DEFINITIONS': {
         'Bearer': {'type': 'apiKey', 'name': 'Authorization', 'in': 'header'},
-        'Provisioning: P7UqtC7fkE6TZ9wW448JREyamUmht79Bj6eGKjmcxn5xV4UgTZVw8vuKtcYRJnWY': {
+        f'Provisioning: {PROVISIONING_ACCESS_VALUE}': {
             'type': 'apiKey',
             'name': 'PROVISION',
+            'in': 'header',
+        },
+        f'Minimal: {HEADER_MINIMAL_CODE}': {
+            'type': 'apiKey',
+            'name': 'DATAISMINIMAL',
+            'in': 'header',
+        },
+        f'SKIP AUTH: {HEADER_SKIP_AUTH_CODE}': {
+            'type': 'apiKey',
+            'name': 'DATAISSKIPAUTH',
             'in': 'header',
         },
     },
@@ -271,12 +295,28 @@ SWAGGER_SETTINGS = {
 SWAGGER_URL = 'http://127.0.0.1:8000/api'
 FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 
+#
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+    }
+}
+CACHE_KEY_PREFIX = 'MiS'
+
 # option account user create
 
 ENABLE_TURN_ON_IS_EMAIL = False
 
 # DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
 DEBUG_HIT_DB = False
+
+# Tracing
+JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', '127.0.0.1')
+JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
+JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
+JAEGER_TRACING_ENABLE = os.environ.get('JAEGER_TRACING_ENABLE', False)
+JAEGER_TRACING_ENABLE = True if JAEGER_TRACING_ENABLE in ['True', 'true', '1'] else False
+JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
 
 # LOGGING
 
@@ -341,10 +381,25 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # import local_settings
+LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
 try:
     from .local_settings import *
 except ImportError:
     pass
+
+# change log config
+if LOG_ENABLE is False:
+    LOGGING['loggers'] = {}
+if LOG_BACKUP_ENABLE is False:
+    if 'handlers' in LOGGING:
+        for _key, handler in LOGGING['handlers'].items():
+            handler['backupCount'] = 1
+
+# debug toolbar IP Internal
+
+if DEBUG:
+    hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
+    INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
 # Celery configurations
 if not CELERY_BROKER_URL:
@@ -405,9 +460,8 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
             }
 
 if DEBUG is True:
-    from colorama import Fore
-
-    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 else 'DB SERVICE'
+    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
+        else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
     match USE_DATABASE_CONFIG_OPTION:
         case 1:
@@ -425,4 +479,13 @@ if DEBUG is True:
             print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
     print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
+    # START TRACING
+    if JAEGER_TRACING_ENABLE is True:
+        print(
+            Fore.LIGHTBLUE_EX,
+            '#  4. TRACING [JAEGER]:                          ',
+            f"{JAEGER_TRACING_HOST}:{JAEGER_TRACING_PORT} / {JAEGER_TRACING_PROJECT_NAME} \033[0m",
+        )
+    else:
+        print(Fore.LIGHTBLUE_EX, '#  4. TRACING [JAEGER]:                           Disable \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')

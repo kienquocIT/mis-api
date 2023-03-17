@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from apps.core.base.models import SubscriptionPlan, PlanApplication, Application, ApplicationProperty
+from apps.core.base.models import (
+    SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
+)
 
 
 # Subscription Plan
@@ -18,18 +20,13 @@ class PlanListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_application(cls, obj):
-        result = []
-        plan_app_list = PlanApplication.object_normal.select_related('application').filter(
-            plan=obj
-        )
-        if plan_app_list:
-            for plan_app in plan_app_list:
-                result.append({
-                    'id': plan_app.application.id,
-                    'title': plan_app.application.title,
-                    'code': plan_app.application.code,
-                })
-        return result
+        return [
+            {
+                'id': x.id,
+                'title': x.title,
+                'code': x.code,
+            } for x in obj.applications.all()
+        ]
 
 
 class ApplicationListSerializer(serializers.ModelSerializer):
@@ -54,3 +51,23 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'content_type',
             'properties'
         )
+
+
+class PermissionApplicationListSerializer(serializers.ModelSerializer):
+    extras = serializers.JSONField()
+    app = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_app(cls, obj):
+        if obj.app:
+            return {
+                "id": obj.app_id,
+                "title": obj.app.title,
+                "code": obj.app.code,
+                "remarks": obj.app.remarks,
+            }
+        return {}
+
+    class Meta:
+        model = PermissionApplication
+        fields = ('permission', 'app', 'extras')

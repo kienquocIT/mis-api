@@ -4,9 +4,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
-from apps.shared.controllers import ResponseController
+from apps.core.account.models import User
 from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer
-from apps.shared.translations import AuthMsg
+from apps.shared import mask_view, ResponseController, AuthMsg
 
 
 # LOGIN:
@@ -76,5 +76,20 @@ class MyProfile(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(operation_summary='Get My Profile')
+    @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
-        return ResponseController.success_200(data={'data': request.user.get_detail()}, key_data='result')
+        obj = User.objects.select_related(
+            'tenant_current', 'company_current', 'space_current', 'employee_current',
+        ).get(pk=request.user.id)
+        return ResponseController.success_200(data={'data': obj.get_detail()}, key_data='result')
+
+
+class AliveCheckView(APIView):
+    permission_classes = [AllowAny]
+
+    @swagger_auto_schema(operation_summary='Check session is alive')
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if not user or user.is_authenticated is False or user.is_anonymous is True:
+            return ResponseController.unauthorized_401()
+        return ResponseController.success_200(data={'state': 'You are still alive.'}, key_data='result')
