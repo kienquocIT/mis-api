@@ -30,14 +30,18 @@ class Workflow(MasterDataAbstractModel):
         default=False
     )
 
-    # [{0: "rename1"}, {1: "rename2"}, ....]
+    # [{0: "rename1"}, {1: "rename2"}, ....] (0, 1, 2... is option actions)
     actions_rename = JSONField(
         default=[],
         help_text="use for show rename of actions in specific workflow"
     )
-    is_in_use = models.BooleanField(
+    is_applied = models.BooleanField(
+        default=False,
+        help_text="to know what workflow is currently applied for application"
+    )
+    date_applied = models.DateField(
         null=True,
-        help_text="to know what workflow is currently config for application"
+        help_text="date applied this workflow for application"
     )
 
     class Meta:
@@ -71,7 +75,7 @@ class Zone(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Zone in workflow'
         verbose_name_plural = 'Zone in workflow'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -147,6 +151,8 @@ class Node(MasterDataAbstractModel):
         default=[],
         help_text="use for option in workflow"
     )
+
+    # ['zoneID1', 'zoneID2', ....]
     zone_initial_node = JSONField(
         verbose_name="zone",
         default=[],
@@ -182,7 +188,7 @@ class Node(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Node'
         verbose_name_plural = 'Nodes'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -237,29 +243,27 @@ class Association(MasterDataAbstractModel):
         related_name="transition_node_output",
     )
 
-    """
-    data of field condition:
-        [
-            {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
-            'AND',
-            {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
-            'AND',
-            [
-                {'left': 'b', 'math': '=', 'right': 1, 'type': 'number'},
-                'OR',
-                {'left': 'b', 'math': '=', 'right': 0, 'type': 'number'},
-                'OR',
-            ],
-            'AND',
-            [
-                {'left': 'c', 'math': 'is', 'right': True, 'type': 'boolean'},
-                'AND',
-                {'left': 'c', 'math': 'is', 'right': False, 'type': 'boolean'},
-                'AND',
-            ],
-            'AND',
-        ]
-    """
+    # data of field condition:
+    #     [
+    #         {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
+    #         'AND',
+    #         {'left': 'a', 'math': 'is', 'right': 'b', 'type': 'string'},
+    #         'AND',
+    #         [
+    #             {'left': 'b', 'math': '=', 'right': 1, 'type': 'number'},
+    #             'OR',
+    #             {'left': 'b', 'math': '=', 'right': 0, 'type': 'number'},
+    #             'OR',
+    #         ],
+    #         'AND',
+    #         [
+    #             {'left': 'c', 'math': 'is', 'right': True, 'type': 'boolean'},
+    #             'AND',
+    #             {'left': 'c', 'math': 'is', 'right': False, 'type': 'boolean'},
+    #             'AND',
+    #         ],
+    #         'AND',
+    #     ]
     condition = JSONField(
         verbose_name="Condition",
         blank=True,

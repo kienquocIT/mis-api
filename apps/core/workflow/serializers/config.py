@@ -44,7 +44,7 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
 
     @classmethod
     def validate_employee_list(cls, value):
-        employee_list = Employee.object.filter(id__in=value).count()
+        employee_list = Employee.objects.filter(id__in=value).count()
         if employee_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
@@ -62,7 +62,7 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
     @classmethod
     def validate_employee(cls, value):
         try:
-            Employee.object.get(id=value)
+            Employee.objects.get(id=value)
             return value
         except Employee.DoesNotExist as exc:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
@@ -231,6 +231,8 @@ class WorkflowListSerializer(serializers.ModelSerializer):
             'application',
             'code',
             'is_active',
+            'is_applied',
+            'date_applied',
         )
 
     @classmethod
@@ -278,7 +280,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_zone(cls, obj):
         return ZoneDetailSerializer(
-            Zone.objects.filter(workflow=obj).order_by('order'),
+            Zone.objects.filter(
+                workflow=obj
+            ),
             many=True
         ).data
 
@@ -293,22 +297,42 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         node_zone_list = None
         if is_initial:
             if node.zone_initial_node:
-                node_zone_list = Zone.objects.filter(id__in=node.zone_initial_node)
+                node_zone_list = Zone.objects.filter(
+                    id__in=node.zone_initial_node
+                ).values(
+                    'id',
+                    'title'
+                )
         else:
             if option == 0:
-                node_zone_list = Zone.objects.filter(id__in=node.collab_in_form.get('zone', []))
+                node_zone_list = Zone.objects.filter(
+                    id__in=node.collab_in_form.get('zone', [])
+                ).values(
+                    'id',
+                    'title'
+                )
             elif option == 1:
-                node_zone_list = Zone.objects.filter(id__in=node.collab_out_form.get('zone', []))
+                node_zone_list = Zone.objects.filter(
+                    id__in=node.collab_out_form.get('zone', [])
+                ).values(
+                    'id',
+                    'title'
+                )
         if node_zone_list:
             for node_zone in node_zone_list:
                 zone_data.append({
-                    'id': node_zone.id,
-                    'title': node_zone.title
+                    'id': node_zone['id'],
+                    'title': node_zone['title']
                 })
         return zone_data
 
     @classmethod
-    def node_system(cls, node, result, zone_data):
+    def node_system(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         result.append({
             'id': node.id,
             'title': node.title,
@@ -322,7 +346,12 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def node_in_form(cls, node, result, zone_data):
+    def node_in_form(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         collab_in_form = node.collab_in_form
         if collab_in_form:
             collab_in_form.update({'zone': zone_data})
@@ -340,9 +369,16 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def node_out_form(cls, node, result, zone_data):
+    def node_out_form(
+            cls,
+            node,
+            result,
+            zone_data
+    ):
         employee_data = []
-        employee_list = Employee.object.filter(id__in=node.collab_out_form.get('employee_list', []))
+        employee_list = Employee.objects.filter(
+            id__in=node.collab_out_form.get('employee_list', [])
+        )
         if employee_list:
             for employee in employee_list:
                 employee_data.append({
@@ -378,12 +414,17 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             for collaborator in in_workflow_collaborator:
                 zone_in_workflow_data = []
                 if collaborator.zone:
-                    zone_list = Zone.objects.filter(id__in=collaborator.zone)
+                    zone_list = Zone.objects.filter(
+                        id__in=collaborator.zone
+                    ).values(
+                        'id',
+                        'title'
+                    )
                     if zone_list:
                         for zone in zone_list:
                             zone_in_workflow_data.append({
-                                'id': zone.id,
-                                'title': zone.title
+                                'id': zone['id'],
+                                'title': zone['title']
                             })
                 collaborator_data.append({
                     'employee': {
@@ -408,7 +449,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_node(cls, obj):
         result = []
-        node_list = Node.objects.filter(workflow=obj).order_by('order')
+        node_list = Node.objects.filter(
+            workflow=obj
+        )
         if node_list:
             for node in node_list:
                 if node.option_collaborator or node.option_collaborator == 0:
@@ -458,32 +501,43 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result = []
         association_list = Association.objects.filter(
             workflow=obj
-        ).select_related(
-            'node_in',
-            'node_out',
+        ).values(
+            'condition',
+
+            'node_in_id',
+            'node_in__title',
+            'node_in__is_system',
+            'node_in__code_node_system',
+            'node_in__condition',
+            'node_in__order',
+
+            'node_out_id',
+            'node_out__title',
+            'node_out__is_system',
+            'node_out__code_node_system',
+            'node_out__condition',
+            'node_out__order',
         )
         if association_list:
             for association in association_list:
                 result.append({
                     'node_in': {
-                        'id': association.node_in_id,
-                        'title': association.node_in.title,
-                        'code': association.node_in.code,
-                        'is_system': association.node_in.is_system,
-                        'code_node_system': association.node_in.code_node_system,
-                        'condition': association.node_in.condition,
-                        'order': association.node_in.order
+                        'id': association['node_in_id'],
+                        'title': association['node_in__title'],
+                        'is_system': association['node_in__is_system'],
+                        'code_node_system': association['node_in__code_node_system'],
+                        'condition': association['node_in__condition'],
+                        'order': association['node_in__order']
                     },
                     'node_out': {
-                        'id': association.node_out_id,
-                        'title': association.node_out.title,
-                        'code': association.node_out.code,
-                        'is_system': association.node_out.is_system,
-                        'code_node_system': association.node_out.code_node_system,
-                        'condition': association.node_out.condition,
-                        'order': association.node_out.order
+                        'id': association['node_out_id'],
+                        'title': association['node_out__title'],
+                        'is_system': association['node_out__is_system'],
+                        'code_node_system': association['node_out__code_node_system'],
+                        'condition': association['node_out__condition'],
+                        'order': association['node_out__order'],
                     },
-                    'condition': association.condition
+                    'condition': association['condition']
                 })
         return result
 
@@ -775,7 +829,26 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         return True
 
     def create(self, validated_data):
-        # initial
+        """
+            step 1: set up data for create
+            step 2: create workflow
+            step 3: create zone for workflow (
+                function: create_zone_for_workflow()
+            )
+            ** when create success Zone will add to zone_created_data use for create Node
+                {1: 'zoneID1', 2: 'zoneID2', ...}
+            step 4: create node for workflow (
+                1/ function: create_node_for_workflow()
+                2/ function: create_node()
+                    (in create_node() have mapping_zone() & create_node_data())
+            )
+                ** when create success Node will add to node_created_data use for create Association
+                    {1: 'nodeID1', 2: 'nodeID2', ...}
+            step 5: create association for workflow (
+                function: create_association_for_workflow()
+            )
+        """
+        # set up data for create
         node_list = None
         zone_list = None
         association_list = None
