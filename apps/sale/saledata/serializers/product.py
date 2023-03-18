@@ -155,7 +155,7 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+        value = value.translate(str.maketrans('', '', string.punctuation)).upper().strip()
         if UnitOfMeasureGroup.objects.filter(title=value).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
         return value
@@ -175,7 +175,7 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = ('title',)
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
+        value = value.translate(str.maketrans('', '', string.punctuation)).upper().strip()
         if value != self.instance.title and UnitOfMeasureGroup.objects.filter(title=value).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
         return value
