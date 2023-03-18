@@ -205,6 +205,8 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
 
 class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.UUIDField(required=True, allow_null=False)
+    code = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasure
@@ -232,6 +234,12 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return None
+
+    @classmethod
+    def validate_ratio(cls, attrs):
+        if attrs is not None and attrs > 0:
+            return attrs
+        raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def create(self, validated_data):
         # create account
@@ -295,6 +303,12 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return None
+
+    @classmethod
+    def validate_ratio(cls, attrs):
+        if attrs is not None and attrs > 0:
+            return attrs
+        raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def update(self, instance, validated_data):
         is_referenced_unit = self.initial_data.get('is_referenced_unit', None)

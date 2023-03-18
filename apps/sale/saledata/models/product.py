@@ -52,7 +52,7 @@ class UnitOfMeasure(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'UnitOfMeasure'
         verbose_name_plural = 'UnitsOfMeasure'
-        ordering = ('-group', '-date_created')
+        ordering = ('-group', '-ratio')
         default_permissions = ()
         permissions = ()
 
