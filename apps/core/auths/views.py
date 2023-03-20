@@ -6,7 +6,7 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 from apps.core.account.models import User
 from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer
-from apps.shared import mask_view, ResponseController, AuthMsg
+from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg
 
 
 # LOGIN:
@@ -98,7 +98,7 @@ class AliveCheckView(APIView):
 class SwitchCompanyView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(operation_summary='Get My Profile')
+    @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
     @mask_view(login_require=True)
     def put(self, request, *args, **kwargs):
         user_obj = request.user
@@ -107,5 +107,9 @@ class SwitchCompanyView(APIView):
             body_data['user_id'] = request.user.id
             ser = SwitchCompanySerializer(data=request.data)
             ser.is_valid(raise_exception=True)
-            user_obj.switch_company()
-        raise ResponseController.unauthorized_401()
+            user_obj.switch_company(ser.validated_data['company_user_employee'])
+            return ResponseController.success_200(
+                {'detail': f'{HttpMsg.SUCCESSFULLY}. {HttpMsg.GOTO_LOGIN}'},
+                key_data='result'
+            )
+        return ResponseController.unauthorized_401()
