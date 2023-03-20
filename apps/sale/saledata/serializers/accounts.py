@@ -3,7 +3,7 @@ from django.db.models import Q
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
 from apps.shared import HRMsg
 from apps.shared.translations.accounts import AccountsMsg
@@ -38,7 +38,7 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
         return value
 
 
-class SalutationDetailSerializer(serializers.ModelSerializer): # noqa
+class SalutationDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Salutation
         fields = ('id', 'title', 'code', 'description')
@@ -63,13 +63,13 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
 
 
 # Interest
-class InterestsListSerializer(serializers.ModelSerializer): # noqa
+class InterestsListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Interest
         fields = ('id', 'title', 'code', 'description')
 
 
-class InterestsCreateSerializer(serializers.ModelSerializer): # noqa
+class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Interest
         fields = ('code', 'title', 'description')
@@ -114,13 +114,13 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 
 
 # Account Type
-class AccountTypeListSerializer(serializers.ModelSerializer): # noqa
+class AccountTypeListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code', 'description')
 
 
-class AccountTypeCreateSerializer(serializers.ModelSerializer): # noqa
+class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = AccountType
         fields = ('code', 'title', 'description')
@@ -587,10 +587,25 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         # create account
         account = Account.objects.create(**validated_data)
 
+        # create in AccountEmployee
+        bulk_info = []
+        get_employees = Employee.object.filter(id__in=account.manager)
+        for employee in get_employees:
+            bulk_info.append(
+                AccountEmployee(
+                    **{
+                        'account': account,
+                        'employee': employee,
+                    }
+                )
+            )
+
+        AccountEmployee.objects.bulk_create(bulk_info)
+
+        # update contact select
         if contact_primary:
             contact_select_list.append(contact_primary)
 
-        # update contact select
         if contact_select_list:
             contact_list = Contact.objects.filter(id__in=contact_select_list)
             if contact_list:
@@ -644,33 +659,27 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
 
 class AccountsMapEmloyeesListSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
+    employee = serializers.SerializerMethodField()
     account = serializers.SerializerMethodField()
 
     class Meta:
-        model = Employee
+        model = AccountEmployee
         fields = (
             'id',
-            'full_name',
+            'employee',
             'account',
         )
 
     @classmethod
-    def get_full_name(cls, obj):
-        return Employee.get_full_name(obj, 2)
+    def get_employee(cls, obj):
+        return {
+            'id': obj.employee_id,
+            'full_name': obj.employee.get_full_name(2)
+        }
 
     @classmethod
     def get_account(cls, obj):
-        try:
-            account_list = list(Account.objects.filter(Q(manager__contains=[str(obj.id)])).values_list('id', 'name'))
-            id_list = []
-            name_list = []
-            for account in account_list:
-                id_list.append(account[0])
-                name_list.append(account[1])
-            return {
-                'name': name_list,
-                'id': id_list
-            }
-        except Account.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
+        return {
+            'id': obj.account_id,
+            'name': obj.account.name
+        }

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import DataAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 
 # Create your models here.
@@ -82,6 +82,13 @@ class Account(DataAbstractModel):
     manager = models.JSONField(
         default=list
     )
+    employee = models.ManyToManyField(
+        'hr.Employee',
+        through='AccountEmployee',
+        symmetrical=False,
+        blank=True,
+        related_name='account_map_employee'
+    )
     parent_account = models.CharField(
         verbose_name='parent account',
         null=True,
@@ -146,6 +153,12 @@ class Account(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# AccountEmployee
+class AccountEmployee(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
 
 
 # Contact

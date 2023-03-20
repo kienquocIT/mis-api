@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
 from apps.sale.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer, SalutationUpdateSerializer,
@@ -312,11 +312,24 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.retrieve(request, *args, **kwargs)
 
 
+# class AccountsMapEmloyeesList(BaseListMixin):
+#     permission_classes = [IsAuthenticated]
+#     queryset = Employee.objects
+#     serializer_list = AccountsMapEmloyeesListSerializer
+#     list_hidden_field = ['tenant_id', 'company_id']
+#
+#     @swagger_auto_schema(
+#         operation_summary="Accounts map Employees list",
+#         operation_description="Accounts map Employees list",
+#     )
+#     @mask_view(login_require=True, auth_require=True, code_perm='')
+#     def get(self, request, *args, **kwargs):
+#         return self.list(request, *args, **kwargs)
+
 class AccountsMapEmloyeesList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Employee.objects
+    queryset = AccountEmployee.objects.select_related('account', 'employee')
     serializer_list = AccountsMapEmloyeesListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Accounts map Employees list",
