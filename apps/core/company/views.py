@@ -96,21 +96,10 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     queryset = CompanyUserEmployee.objects
     serializer_list = CompanyUserNotMapEmployeeSerializer
     ordering = ['-employee']
+    list_hidden_field = ['company']
 
     def get_queryset(self):
         return super().get_queryset().select_related('user').filter(employee__isnull=True)
-
-    def list_company_user_employee(self, request, *args, **kwargs):
-        kwargs.update(self.setup_list_field_hidden(request.user))
-        kwargs.update({'company_id': request.user.company_current_id})
-        queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer_list(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer_list(queryset, many=True)
-        return ResponseController.success_200(data=serializer.data, key_data='result')
 
     @swagger_auto_schema(
         operation_summary="Company User Not Map Employee list",
@@ -118,8 +107,7 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        print('request.user.company_current_id: ', request.user.company_current_id)
-        return self.list_company_user_employee(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
 
 class CompanyOverviewDetail(BaseRetrieveMixin):
