@@ -62,7 +62,6 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
             if data['level'] not in group_level_old_level:
                 bulk_info.append(GroupLevel(
                     **data,
-                    user_created=validated_data.get('user_created', None),
                     tenant_id=validated_data.get('tenant_id', None),
                     company_id=validated_data.get('company_id', None),
                 ))
