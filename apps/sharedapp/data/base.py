@@ -203,5 +203,25 @@ PermissionApplication_data = {
         'id': '9cea8790-c8a9-4453-b73f-c11b55f53c68',
         'app_id': '50348927-2c4f-4023-b638-445469c66953',
         'permission': 'delete__hr__employee',
+    },
+    'f3f3ae17-4510-46d9-9564-f4144fe10331': {
+        'id': 'f3f3ae17-4510-46d9-9564-f4144fe10331',
+        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
+        'permission': 'create__hr__role',
+    },
+    'b0e3aafd-2c1a-4e79-857b-30da8a9f377d': {
+        'id': 'b0e3aafd-2c1a-4e79-857b-30da8a9f377d',
+        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
+        'permission': 'edit__hr__role',
+    },
+    'de830f40-c9a6-4d50-b8de-3caddd5e8308': {
+        'id': 'de830f40-c9a6-4d50-b8de-3caddd5e8308',
+        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
+        'permission': 'view__hr__role',
+    },
+    '0cf5ba77-8ab4-4b91-b516-a95e47c6ef2c': {
+        'id': '0cf5ba77-8ab4-4b91-b516-a95e47c6ef2c',
+        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
+        'permission': 'delete__hr__role',
     }
 }
