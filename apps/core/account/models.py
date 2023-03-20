@@ -192,9 +192,22 @@ class User(AuthUser):
                     'company_current': self.company_current.get_detail() if self.company_current else {},
                     'space_current': self.space_current.get_detail() if self.space_current else {},
                     'employee_current': self.employee_current.get_detail() if self.employee_current else {},
+                    'companies': [x.get_detail() for x in self.companies.all()],
                 }
             )
         return data
+
+    def switch_company(self, company_user_employee_obj: models.Model):
+        if company_user_employee_obj and hasattr(company_user_employee_obj, 'company') and hasattr(
+                company_user_employee_obj, 'employee'
+        ):
+            self.company_current = company_user_employee_obj.company
+            self.employee_current = company_user_employee_obj.employee
+            self.space_current = DisperseModel(app_model='space.Space').get_model().objects.filter(
+                company=company_user_employee_obj.company, is_system=True
+            ).first()
+            self.save(update_fields=['company_current', 'employee_current', 'space_current'])
+        return False
 
 
 class VerifyContact(models.Model):

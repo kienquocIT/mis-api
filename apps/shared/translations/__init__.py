@@ -8,3 +8,4 @@ from .base import BaseMsg
 from .account import AccountMsg
 from .workflow import WorkflowMsg
 from .core import *
+from .company import *

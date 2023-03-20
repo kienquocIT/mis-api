@@ -1,7 +1,10 @@
+from crum import get_current_user
 from rest_framework import serializers
+
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
+from apps.shared.translations.company import CompanyMsg
 
 
 # Company Serializer
@@ -49,6 +52,18 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'email',
             'phone',
         )
+
+    def validate(self, attrs):
+        user_obj = get_current_user()
+        if user_obj and hasattr(user_obj, 'tenant_current'):
+            company_quantity_max = user_obj.tenant_current.company_quality_max
+            current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
+            if current_company_quantity <= company_quantity_max:
+                return attrs
+            raise serializers.ValidationError(
+                {'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))}
+            )
+        raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
@@ -104,10 +119,12 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
                     data_dict[employee_plan.plan.code] += 1
         if data_dict:
             for key, value in data_dict.items():
-                result.append({
-                    'key': key,
-                    'quantity': value
-                })
+                result.append(
+                    {
+                        'key': key,
+                        'quantity': value
+                    }
+                )
 
         return result
 
@@ -183,11 +200,13 @@ class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
             plan_list = obj.employee.plan.all()
             if plan_list:
                 for plan in plan_list:
-                    license_list.append({
-                        'id': plan.id,
-                        'title': plan.title,
-                        'code': plan.code
-                    })
+                    license_list.append(
+                        {
+                            'id': plan.id,
+                            'title': plan.title,
+                            'code': plan.code
+                        }
+                    )
             return {
                 'id': obj.employee.id,
                 'full_name': Employee.get_full_name(obj.employee, 2),
@@ -205,12 +224,14 @@ class CompanyOverviewDetailDataSerializer(serializers.ModelSerializer):
             )
             if company_user_list:
                 for company_user in company_user_list:
-                    company_list.append({
-                        'id': company_user.company.id,
-                        'title': company_user.company.title,
-                        'code': company_user.company.code,
-                        'is_created_company': company_user.is_created_company
-                    })
+                    company_list.append(
+                        {
+                            'id': company_user.company.id,
+                            'title': company_user.company.title,
+                            'code': company_user.company.code,
+                            'is_created_company': company_user.is_created_company
+                        }
+                    )
             return {
                 'id': obj.user.id,
                 'full_name': User.get_full_name(obj.user, 2),
