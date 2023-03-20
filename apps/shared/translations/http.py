@@ -8,3 +8,4 @@ class HttpMsg:
     FORBIDDEN = _("Don't have permission.")
     NOT_FOUND = _("Not found")
     SUCCESSFULLY = _("Successfully")
+    GOTO_LOGIN = _('Redirect to the Login page.')

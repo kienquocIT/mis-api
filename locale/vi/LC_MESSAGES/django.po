@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-03-17 15:43+0700\n"
+"POT-Creation-Date: 2023-03-20 16:25+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -155,7 +155,7 @@ msgid "Group does not exist."
 msgstr "Nhóm Không tồn tại."
 
 #: .\apps\shared\translations\hr.py:8
-    msgid "Some roles do not exist."
+msgid "Some roles do not exist."
 msgstr "Một số vai trò không tồn tại."
 
 #: .\apps\shared\translations\hr.py:9
@@ -218,6 +218,10 @@ msgstr "Không Tìm Thấy."
 msgid "Successfully"
 msgstr "Thành công"
 
+#: .\apps\shared\translations\http.py:11
+msgid "Redirect to the Login page."
+msgstr "Đang chuyển hướng đến trang đăng nhập."
+
 #: .\apps\shared\translations\provisioning.py:5
 msgid "Tenant code \"{}\" was ready, process canceling..."
 msgstr "Mã tenant \"{}\" đã tồn tại. Quy trình tạo tenant đang được hủy."
@@ -233,7 +237,9 @@ msgstr "Công ty và thông tin người quản trị được yêu cầu."
 #: .\apps\shared\translations\provisioning.py:8
 msgid ""
 "The process was canceled because we found more than one tenant have code {}."
-msgstr "Quá trình này đã bị hủy vì chúng tôi nhận thấy có nhiều đối tượng thuê có mã {}."
+msgstr ""
+"Quá trình này đã bị hủy vì chúng tôi nhận thấy có nhiều đối tượng thuê có mã "
+"{}."
 
 #: .\apps\shared\translations\provisioning.py:9
 msgid "Please, contact Admin MIS to be helped."
@@ -258,7 +264,9 @@ msgstr "Dữ liệu yêu cầu là danh sách."
 #: .\apps\shared\translations\server.py:8
 msgid ""
 "Can't check permission of the user if verify user identity don't required."
-msgstr "Không thể kiểm tra quyền của người dùng nếu tắt tính năng kểm tra định danh người dùng"
+msgstr ""
+"Không thể kiểm tra quyền của người dùng nếu tắt tính năng kểm tra định danh "
+"người dùng"
 
 #: .\apps\shared\translations\workflow.py:5
 msgid "Create"
