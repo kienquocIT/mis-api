@@ -30,7 +30,7 @@ class GroupLevelList(
     serializer_detail = GroupLevelListSerializer
     serializer_create = GroupLevelMainCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
     use_cache_queryset = True
 
     @swagger_auto_schema(
@@ -97,7 +97,7 @@ class GroupList(
     serializer_detail = GroupListSerializer
     serializer_create = GroupCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'user_created']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

@@ -15,7 +15,6 @@ class HRListMixin(BaseListMixin):
                 queryset = self.filter_queryset(
                     self.get_queryset()
                     .filter(
-                        mode=0,
                         tenant_id=request.user.tenant_current_id,
                         group_level__level__lt=level,
                         **kwargs
