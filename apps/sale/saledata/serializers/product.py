@@ -237,12 +237,12 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_ratio(cls, attrs):
-        if attrs is not None and attrs > 0:
+        if attrs is not None and attrs >= 0:
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def create(self, validated_data):
-        # create account
+        # create UoM
         obj = UnitOfMeasure.objects.create(**validated_data)
 
         # update referenced_unit for group
@@ -255,6 +255,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.SerializerMethodField()
+    ratio = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasure
@@ -273,6 +274,10 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
                 'referenced_unit_title': obj.group.referenced_unit.title,
             }
         return {}
+
+    @classmethod
+    def get_ratio(cls, obj):
+        return round(obj.ratio, int(obj.rounding))
 
 
 class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -306,7 +311,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_ratio(cls, attrs):
-        if attrs is not None and attrs > 0:
+        if attrs is not None and attrs >= 0:
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
@@ -320,10 +325,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
             old_ratio = instance.ratio
             for item in UnitOfMeasure.objects.filter(group=instance.group_id):
                 if item != instance:
-                    if instance.rounding != 0:
-                        item.ratio = round(item.ratio / old_ratio, int(instance.rounding))
-                    else:
-                        item.ratio = item.ratio / old_ratio
+                    item.ratio = item.ratio / old_ratio
                     item.save()
 
         for key, value in validated_data.items():
