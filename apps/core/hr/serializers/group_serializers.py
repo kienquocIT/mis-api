@@ -289,7 +289,11 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
 def validate_employee_for_group(value):
     if isinstance(value, list):
-        employee_list = Employee.objects.filter(id__in=value).count()
+        employee_list = Employee.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id__in=value
+        ).count()
         if employee_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
@@ -326,7 +330,11 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        if Group.objects.filter(code=value).exists():
+        if Group.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
             raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
         return value
 
@@ -367,7 +375,9 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         group = Group.objects.create(**validated_data)
         # create Group Employee
         if 'group_employee' in validated_data:
-            employee_list = Employee.objects.filter(
+            employee_list = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
                 id__in=validated_data['group_employee']
             )
             if employee_list:
@@ -402,6 +412,16 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
             'second_manager',
             'second_manager_title'
         )
+
+    @classmethod
+    def validate_code(cls, value):
+        if Group.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exclude(cls.initial.id).exists():
+            raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
+        return value
 
     @classmethod
     def validate_group_level(cls, value):
@@ -451,7 +471,9 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
                     emp_group_old.group = None
                     emp_group_old.save()
 
-            employee_list = Employee.objects.filter(
+            employee_list = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
                 id__in=validated_data['group_employee']
             )
             if employee_list:
