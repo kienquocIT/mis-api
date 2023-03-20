@@ -73,6 +73,7 @@ class GroupLevelDetail(
         request_body=GroupLevelUpdateSerializer,
     )
     def put(self, request, *args, **kwargs):
+        self.serializer_class = GroupLevelUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -147,6 +148,7 @@ class GroupDetail(
         request_body=GroupUpdateSerializer,
     )
     def put(self, request, *args, **kwargs):
+        self.serializer_class = GroupUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(

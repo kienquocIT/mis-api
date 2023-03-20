@@ -414,16 +414,6 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_code(cls, value):
-        if Group.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exclude(cls.initial.id).exists():
-            raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
-        return value
-
-    @classmethod
     def validate_group_level(cls, value):
         try:
             return GroupLevel.objects.get(id=value)
