@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
+from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, ResponseController
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
@@ -9,6 +9,7 @@ from .serializers import (
     CompanyUserDetailSerializer, UserListSerializer,
 )
 from .models import User
+from apps.core.company.models import CompanyUserEmployee
 
 
 class UserList(AccountListMixin, AccountCreateMixin):
@@ -26,6 +27,11 @@ class UserList(AccountListMixin, AccountCreateMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+
+    def setup_list_field_hidden(self, user, **kwargs):
+        data = super().setup_list_field_hidden(user)
+        data['id__in'] = CompanyUserEmployee.all_user_of_company(user.company_current_id)
+        return data
 
     @swagger_auto_schema(
         operation_summary="User list",
