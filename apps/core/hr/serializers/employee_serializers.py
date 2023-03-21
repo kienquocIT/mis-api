@@ -58,11 +58,20 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
         raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
 
 
+class RoleOfEmployeeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = ('id', 'title', 'code')
+
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
-    user = serializers.SerializerMethodField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.role_ids = []
 
     class Meta:
         model = Employee
@@ -79,7 +88,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'is_active',
             'group',
             'role',
-            'user'
         )
 
     @classmethod
@@ -105,15 +113,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
                 'code': x.code,
             } for x in obj.role.all()
         ]
-
-    @classmethod
-    def get_user(cls, obj):
-        if obj.user_id:
-            return {
-                'id': obj.user_id,
-                'username': obj.user.username,
-            }
-        return {}
 
 
 class EmployeeListMinimalSerializer(serializers.ModelSerializer):
@@ -177,14 +176,15 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                 if emp_plan.application and isinstance(emp_plan.application, list):
                     application_list = Application.objects.filter(
                         id__in=emp_plan.application
-                    ).values('id', 'title', 'code')
+                    ).values('id', 'title', 'code', 'app_label')
                     if application_list:
                         for application in application_list:
                             app_list.append(
                                 {
                                     'id': application['id'],
                                     'title': application['title'],
-                                    'code': application['code']
+                                    'code': application['code'],
+                                    'app_label': application['app_label']
                                 }
                             )
                 result.append(
@@ -550,7 +550,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         """
         if isinstance(attrs, dict):
             option_choices = [x[0] for x in PERMISSION_OPTION]
-            permission_choices = {x['permission']: x for x in PermissionApplication.objects.filter(None)}
+            permission_choices = {x.permission: x for x in PermissionApplication.objects.all()}
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):

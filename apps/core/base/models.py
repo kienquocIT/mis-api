@@ -59,6 +59,13 @@ class Application(CoreAbstractModel):
         blank=True
     )
 
+    app_label = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        help_text="application label ex. hr_employee"
+    )
+
     class Meta:
         verbose_name = 'Application'
         ordering = ('-date_created',)
