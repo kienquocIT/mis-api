@@ -671,10 +671,7 @@ class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_employee(cls, obj):
-        return {
-            'id': obj.employee_id,
-            'full_name': obj.employee.get_full_name(2)
-        }
+        return obj.employee_id
 
     @classmethod
     def get_account(cls, obj):
