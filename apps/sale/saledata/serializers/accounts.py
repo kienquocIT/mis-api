@@ -1,5 +1,4 @@
 import string
-from django.db.models import Q
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
@@ -658,7 +657,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
 
 
-class AccountsMapEmloyeesListSerializer(serializers.ModelSerializer):
+class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
     employee = serializers.SerializerMethodField()
     account = serializers.SerializerMethodField()
 

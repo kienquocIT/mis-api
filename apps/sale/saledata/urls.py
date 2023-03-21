@@ -4,7 +4,7 @@ from apps.sale.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,
     ContactList, ContactDetail,
     ContactListNotMapAccount,
-    AccountList, AccountDetail, AccountsMapEmloyeesList,
+    AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
 
@@ -26,6 +26,6 @@ urlpatterns = [
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
-    path('accounts-map-employees', AccountsMapEmloyeesList.as_view(), name='AccountsMapEmloyeesList'),
+    path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
 
 ]
