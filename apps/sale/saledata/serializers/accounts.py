@@ -440,19 +440,20 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_additional_information(cls, obj):
         if obj.additional_information:
             interest_list = []
-            interest_id_list = [i for i in obj.additional_information.get('interests', None)]
+            interest_id_list = list(obj.additional_information.get('interests', None))
             interest = Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 id__in=interest_id_list
             )
-            for item in interest:
-                interest_list.append(
-                    {
-                        'id': item.id,
-                        'title': item.title
-                    }
-                )
+            if interest:
+                for item in interest:
+                    interest_list.append(
+                        {
+                            'id': item.id,
+                            'title': item.title
+                        }
+                    )
             obj.additional_information['interests'] = interest_list
             return obj.additional_information
         return {}
