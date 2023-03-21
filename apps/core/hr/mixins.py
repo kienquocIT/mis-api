@@ -1,29 +1,9 @@
 from django.db import transaction
 
 from apps.shared import (
-    ResponseController, BaseDestroyMixin, BaseListMixin
+    ResponseController, BaseDestroyMixin
 )
 from apps.core.hr.models import RoleHolder
-
-
-class HRListMixin(BaseListMixin):
-    def list_group_parent(self, request, **kwargs):
-        if hasattr(request, "user"):
-            if 'level' in kwargs:
-                level = int(kwargs['level'])
-                del kwargs['level']
-                queryset = self.filter_queryset(
-                    self.get_queryset()
-                    .filter(
-                        mode=0,
-                        tenant_id=request.user.tenant_current_id,
-                        group_level__level__lt=level,
-                        **kwargs
-                    )
-                )
-                serializer = self.get_serializer_list(queryset, many=True)
-                return ResponseController.success_200(serializer.data, key_data='result')
-        return ResponseController.unauthorized_401()
 
 
 class HRDestroyMixin(BaseDestroyMixin):

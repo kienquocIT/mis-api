@@ -21,7 +21,7 @@ class RoleList(
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id', 'tenant_id', 'user_created']
+    create_hidden_field = ['company_id', 'tenant_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related('company')
