@@ -502,8 +502,8 @@ class AccountListSerializer(serializers.ModelSerializer):
         if obj.manager:
             employees = Employee.object.filter(id__in=obj.manager)
             all_managers = []
-            for e in employees:
-                all_managers.append(e.get_full_name(2))
+            for employee in employees:
+                all_managers.append(employee.get_full_name(2))
             return all_managers
         return []
 
