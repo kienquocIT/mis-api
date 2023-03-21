@@ -9,9 +9,7 @@ from apps.shared import (
     SimpleAbstractModel, PERMISSION_OPTION,
     DisperseModel,
     GENDER_CHOICE, TypeCheck,
-    call_task_background,
 )
-from .tasks import reset_cache_employee_n_group
 
 
 class PermOption(TypedDict, total=False):
@@ -62,18 +60,19 @@ class PermissionAbstractModel(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        update_fields = kwargs.get('update_fields', None)
-        if isinstance(update_fields, list):
-            for key in self.permission_keys:
-                if key in update_fields:
-                    update_fields.remove(key)
-        else:
-            update_fields = []
-            for f_cls in self.__class__._meta.get_fields():
-                if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
-                    if f_cls.many_to_many is False:
-                        update_fields.append(f_cls.name)
-        kwargs['update_fields'] = update_fields
+        if kwargs.get('force_update', False):
+            update_fields = kwargs.get('update_fields', None)
+            if isinstance(update_fields, list):
+                for key in self.permission_keys:
+                    if key in update_fields:
+                        update_fields.remove(key)
+            else:
+                update_fields = []
+                for f_cls in self.__class__._meta.get_fields():
+                    if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
+                        if f_cls.many_to_many is False:
+                            update_fields.append(f_cls.name)
+            kwargs['update_fields'] = update_fields
         super().save(*args, **kwargs)
 
     @staticmethod
@@ -269,7 +268,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         raise AttributeError('Sync employee to company was raise errors because employee not reference to company.')
 
     def check_change_user(self):
-        original_fields_old = self.object(
+        original_fields_old = self.get_old_value(
             field_name_list=['user_id'],
         )
         original_fields_new = {
@@ -279,7 +278,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
 
     def increment_code(self):
         if not self.code:
-            counter = self.__class__.object.filter(is_delete=False).count() + 1
+            counter = self.__class__.objects.filter(is_delete=False).count() + 1
             temper = "%04d" % counter  # pylint: disable=C0209
             self.code = f"EMP{temper}"
             return True
@@ -290,7 +289,11 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        employee = Employee.object.filter(is_delete=False).count()
+        employee = Employee.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
         char = "EMP"
         if not self.code:
             temper = "%04d" % (employee + 1)  # pylint: disable=C0209
@@ -302,39 +305,18 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         if not kwargs.get('force_insert', False):
             user_id_old, user_id_new = self.check_change_user()
 
-        # get old group and new group
-        group_id_old = self.get_old_value(
-            field_name_list=['group_id'],
-        )['group_id']
-
         # hit DB
         super().save(*args, **kwargs)
 
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
-        self.call_reset_cache(group_id_old)
-
-    def call_reset_cache(self, group_id_old):
-        group_id_list = []
-        if str(self.group_id) != str(group_id_old):
-            if self.group_id:
-                group_id_list.append(str(self.group_id))
-            if group_id_old:
-                group_id_list.append(str(group_id_old))
-        elif self.group_id:
-            group_id_list.append(str(self.group_id))
-        call_task_background(
-            reset_cache_employee_n_group,
-            [str(self.id)],
-            group_id_list,
-            countdown=10
-        )
 
     def get_detail(self, *args):
         return {
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
+            'full_name': self.get_full_name(),
             'email': self.email,
             'phone': self.phone,
             'is_delete': self.is_delete,
@@ -536,44 +518,3 @@ class Group(TenantAbstractModel):
     @classmethod
     def groups_my_manager(cls, employee_id: Union[UUID, str]) -> list[str]:
         return [str(x) for x in cls.objects.filter(first_manager_id=employee_id).values_list('id', flat=True)]
-
-    @property
-    def data_cache(self):
-        return {
-            'id': str(self.id),
-            'group_level_id': str(self.group_level_id),
-            'parent_n_id': str(self.parent_n_id),
-            'description': self.description,
-            'group_employee': self.group_employee,
-            'first_manager_id': self.first_manager_id,
-            'first_manager_title': self.first_manager_title,
-            'second_manager_id': self.second_manager_id,
-            'second_manager_title': self.second_manager_title,
-            'is_active': self.is_active,
-            'is_delete': self.is_delete,
-            'all_staff': Employee.employee_of_group(group_id=self.id),
-        }
-
-    def save(self, *args, **kwargs):
-        # get old group and new group
-        manager_1st_id_old = self.get_old_value(
-            field_name_list=['first_manager_id'],
-        )['first_manager_id']
-        super().save(*args, **kwargs)
-        self.call_reset_cache(manager_1st_id_old)
-
-    def call_reset_cache(self, manager_1st_id_old):
-        employee_id_list = []
-        if str(self.first_manager_id) != str(manager_1st_id_old):
-            if self.first_manager_id:
-                employee_id_list.append(str(self.first_manager_id))
-            if manager_1st_id_old:
-                employee_id_list.append(str(manager_1st_id_old))
-        elif self.first_manager_id:
-            employee_id_list.append(str(self.first_manager_id))
-        call_task_background(
-            reset_cache_employee_n_group,
-            employee_id_list,
-            [str(self.id)],
-            countdown=10
-        )

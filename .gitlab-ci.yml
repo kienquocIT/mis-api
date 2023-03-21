@@ -16,8 +16,7 @@ before_script:
 
 cache:
   key: python_n_package
-  untracked: false
-  policy: "push"
+
 
 stages:
   - pylint_check
@@ -45,5 +44,6 @@ run_testcase:
   stage: run_testcase
   script:
     - python manage.py test
+    - rm -rf *.sqlite3
   after_script:
     - exit

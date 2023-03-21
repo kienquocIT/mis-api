@@ -9,7 +9,7 @@ class AuthTestCase(APITestCase):
     def call_login(self):
         new_tenant = {
             "tenant_data": {
-                "title": "CÃ´ng ty TÃ i ChÃ­nh F88",
+                "title": "Công ty Tài Chính F88",
                 "code": "F88",
                 "sub_domain": "F88",
                 "representative_fullname": "string",

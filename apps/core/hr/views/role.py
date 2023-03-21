@@ -16,12 +16,12 @@ class RoleList(
     BaseCreateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object
+    queryset = Role.objects
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id', 'tenant_id', 'user_created']
+    create_hidden_field = ['company_id', 'tenant_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related('company')
@@ -50,7 +50,7 @@ class RoleDetail(
     RoleDestroyMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Role.object
+    queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
 

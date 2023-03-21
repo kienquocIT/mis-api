@@ -44,7 +44,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         if 'employees' in validated_data:
             data_bulk = validated_data.pop('employees')
-            role = Role.object.create(**validated_data)
+            role = Role.objects.create(**validated_data)
             if data_bulk:
                 bulk_info = []
                 for employee in data_bulk:
@@ -55,7 +55,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
                         )
                     )
                 if bulk_info:
-                    RoleHolder.object_normal.bulk_create(bulk_info)
+                    RoleHolder.objects.bulk_create(bulk_info)
             return role
         raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
 
@@ -80,7 +80,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         if 'employees' in validated_data:
-            employees_old = RoleHolder.object_normal.filter(role=instance)
+            employees_old = RoleHolder.objects.filter(role=instance)
             if employees_old:
                 employees_old.delete()
             data_bulk = validated_data.pop('employees')
@@ -94,7 +94,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
                         )
                     )
                 if bulk_info:
-                    RoleHolder.object_normal.bulk_create(bulk_info)
+                    RoleHolder.objects.bulk_create(bulk_info)
             return instance
         raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
 
