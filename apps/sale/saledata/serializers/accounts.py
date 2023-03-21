@@ -602,7 +602,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         owner = Contact.objects.filter(
-            account_name=obj.id,
+            account_name=obj,
             is_primary=True
         ).first()
         if owner:
