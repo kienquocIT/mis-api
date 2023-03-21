@@ -71,29 +71,3 @@ class UnitOfMeasureGroup(MasterDataAbstractModel):
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
-
-
-class Product(DataAbstractModel):
-    avatar = models.TextField(
-        null=True,
-        verbose_name='avatar path'
-    )
-    general_information = models.JSONField(
-        default=dict,
-    )
-    inventory_information = models.JSONField(
-        default=dict,
-    )
-    sale_infor = models.JSONField(
-        default=dict,
-    )
-    purchase_infor = models.JSONField(
-        default=dict,
-    )
-
-    class Meta:
-        verbose_name = 'Product'
-        verbose_name_plural = 'Products'
-        ordering = ('code',)
-        default_permissions = ()
-        permissions = ()
