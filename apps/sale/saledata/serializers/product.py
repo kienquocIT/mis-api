@@ -1,7 +1,8 @@
 import string
 from rest_framework import serializers
 from apps.sale.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
+    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure,
+    # Product
 )
 from apps.shared.translations.product import ProductMsg
 
