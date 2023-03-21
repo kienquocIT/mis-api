@@ -9,7 +9,7 @@ from apps.core.hr.serializers.group_serializers import (
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
     GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer,
 )
-from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
 
 
 # Group Level
@@ -37,6 +37,7 @@ class GroupLevelList(
         operation_summary="Group Level list",
         operation_description="Get group level list",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -45,6 +46,7 @@ class GroupLevelList(
         operation_description="Create new group level",
         request_body=GroupLevelMainCreateSerializer,
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -63,6 +65,7 @@ class GroupLevelDetail(
         operation_summary="Group Level detail",
         operation_description="Get Group level detail by ID",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         self.serializer_class = GroupLevelDetailSerializer
         return self.retrieve(request, *args, **kwargs)
@@ -72,6 +75,7 @@ class GroupLevelDetail(
         operation_description="Update Group Level by ID",
         request_body=GroupLevelUpdateSerializer,
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = GroupLevelUpdateSerializer
         return self.update(request, *args, **kwargs)
@@ -111,6 +115,7 @@ class GroupList(
         operation_summary="Group list",
         operation_description="Get group list",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -119,6 +124,7 @@ class GroupList(
         operation_description="Create new group",
         request_body=GroupCreateSerializer,
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -138,6 +144,7 @@ class GroupDetail(
         operation_summary="Group detail",
         operation_description="Get Group detail by ID",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         self.serializer_class = GroupDetailSerializer
         return self.retrieve(request, *args, **kwargs)
@@ -147,6 +154,7 @@ class GroupDetail(
         operation_description="Update Group by ID",
         request_body=GroupUpdateSerializer,
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = GroupUpdateSerializer
         return self.update(request, *args, **kwargs)
@@ -155,12 +163,13 @@ class GroupDetail(
         operation_summary="Delete Group",
         operation_description="Delete Group by ID",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
 
 class GroupParentList(
-    HRListMixin,
+    BaseListMixin,
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
@@ -169,13 +178,26 @@ class GroupParentList(
     ordering = ['group_level__level']
 
     serializer_list = GroupParentListSerializer
+    serializer_detail = GroupParentListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().filter(is_delete=False)
+
+    def setup_list_field_hidden(self, user, **kwargs):
+        data = super().setup_list_field_hidden(user)
+        if 'level' in self.kwargs:
+            level = int(self.kwargs['level'])
+            del self.kwargs['level']
+            data['group_level__level__lt'] = level
+        return data
 
     @swagger_auto_schema(
         operation_summary="Group parent list",
         operation_description="Get group parent list",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        return self.list_group_parent(request, **kwargs)
+        if 'level' in kwargs:
+            del kwargs['level']
+        return self.list(request, **kwargs)
