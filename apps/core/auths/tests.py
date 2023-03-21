@@ -33,11 +33,11 @@ class AuthTestCase(APITestCase):
                 "password": "111111"
             },
             "create_admin": True,
-            "create_employee": True,
+            "create_employee": False,
             "plan_data": {}
         }
         url_tenant = reverse('NewTenant')
-        self.client.post(url_tenant, new_tenant, format='json')
+        a = self.client.post(url_tenant, new_tenant, format='json')
 
         # login
         url_login = reverse('AuthLogin')
