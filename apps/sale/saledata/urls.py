@@ -3,7 +3,7 @@ from apps.sale.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,
     ContactList, ContactDetail,
     ContactListNotMapAccount,
-    AccountList, AccountDetail, EmployeeMapAccountList,
+    AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
 from apps.sale.saledata.views.product import (
@@ -12,7 +12,7 @@ from apps.sale.saledata.views.product import (
     ExpenseTypeList, ExpenseTypeDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
-    # ProductList, ProductDetail
+    ProductList, ProductDetail
 )
 
 urlpatterns = [
@@ -33,7 +33,7 @@ urlpatterns = [
     # account
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
-    path('accounts-map-employee', EmployeeMapAccountList.as_view(), name='EmployeeMapAccountList'),
+    path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
 ]
 
 urlpatterns += [
@@ -50,6 +50,6 @@ urlpatterns += [
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
     path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
 
-    # path('products', ProductList.as_view(), name='ProductList'),
-    # path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+    path('products', ProductList.as_view(), name='ProductList'),
+    path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]
