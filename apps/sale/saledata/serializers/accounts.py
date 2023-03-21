@@ -440,7 +440,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_additional_information(cls, obj):
         if obj.additional_information:
             interest_list = []
-            interest_id_list = [i for i in obj.additional_information.get('interests', None)]
+            interest_id_list = list(obj.additional_information.get('interests', None))
             interest = Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,

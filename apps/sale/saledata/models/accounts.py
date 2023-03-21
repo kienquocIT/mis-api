@@ -1,5 +1,7 @@
 from django.db import models
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import (
+    DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+)
 
 
 # Create your models here.
