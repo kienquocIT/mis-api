@@ -381,9 +381,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
                 id__in=validated_data['group_employee']
             )
             if employee_list:
-                for employee in employee_list:
-                    employee.group = group
-                    employee.save()
+                employee_list.update(group=group)
 
         return group
 
@@ -467,8 +465,6 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
                 id__in=validated_data['group_employee']
             )
             if employee_list:
-                for employee in employee_list:
-                    employee.group = instance
-                    employee.save()
+                employee_list.update(group=instance)
 
         return instance
