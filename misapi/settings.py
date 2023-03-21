@@ -69,7 +69,6 @@ INSTALLED_APPS = \
         'apps.core.workflow',
         'apps.core.process',
         'apps.sale.saledata',
-        # 'jaeger_client',
     ]
 
 MIDDLEWARE = [
@@ -82,7 +81,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 #
-# MIDDLEWARE += ['apps.shared.extends.middleware.customize.CustomMiddleware']
+# Allow Open Tracing all request.
+MIDDLEWARE += ['apps.shared.extends.middleware.customize.JaegerTracingMiddleware']
 #
 # Author: Paul McLanahan <pmac@mozilla.com>
 # Package: Allow range IP or switch path view from request key (customize)
@@ -311,7 +311,12 @@ ENABLE_TURN_ON_IS_EMAIL = False
 DEBUG_HIT_DB = False
 
 # Tracing
-ENABLE_TRACING_JAEGER = False
+JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', '127.0.0.1')
+JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
+JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
+JAEGER_TRACING_ENABLE = os.environ.get('JAEGER_TRACING_ENABLE', False)
+JAEGER_TRACING_ENABLE = True if JAEGER_TRACING_ENABLE in ['True', 'true', '1'] else False
+JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
 
 # LOGGING
 
@@ -475,13 +480,11 @@ if DEBUG is True:
     print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
     print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
     # START TRACING
-    if ENABLE_TRACING_JAEGER is True:
+    if JAEGER_TRACING_ENABLE is True:
         print(
             Fore.LIGHTBLUE_EX,
             '#  4. TRACING [JAEGER]:                          ',
-            f"{'1'}:{'2'} - "
-            f"{PROJECT_NAME}",
-            '\033[0m'
+            f"{JAEGER_TRACING_HOST}:{JAEGER_TRACING_PORT} / {JAEGER_TRACING_PROJECT_NAME} \033[0m",
         )
     else:
         print(Fore.LIGHTBLUE_EX, '#  4. TRACING [JAEGER]:                           Disable \033[0m')

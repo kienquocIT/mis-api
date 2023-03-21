@@ -1,11 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-
 from apps.core.company.models import CompanyUserEmployee
-from apps.core.company.mixins import CompanyDestroyMixin, CompanyCreateMixin, CompanyListMixin
+from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
-from apps.shared import mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import (
+    mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin,
+    ResponseController,
+)
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
     CompanyListSerializer,
@@ -16,7 +18,7 @@ from apps.core.company.serializers import (
 )
 
 
-class CompanyList(BaseListMixin, CompanyCreateMixin):
+class CompanyList(BaseListMixin, BaseCreateMixin):
     """
     Company List:
         GET: List
@@ -90,13 +92,14 @@ class CompanyListOverview(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class CompanyUserNotMapEmployeeList(CompanyListMixin):
-    queryset = CompanyUserEmployee.objects.select_related(
-        'user'
-    ).filter(
-        employee=None
-    )
+class CompanyUserNotMapEmployeeList(BaseListMixin):
+    queryset = CompanyUserEmployee.objects
     serializer_list = CompanyUserNotMapEmployeeSerializer
+    ordering = ['-employee']
+    list_hidden_field = ['company']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('user').filter(employee__isnull=True)
 
     @swagger_auto_schema(
         operation_summary="Company User Not Map Employee list",
@@ -104,7 +107,7 @@ class CompanyUserNotMapEmployeeList(CompanyListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        return self.list_company_user_employee(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
 
 class CompanyOverviewDetail(BaseRetrieveMixin):

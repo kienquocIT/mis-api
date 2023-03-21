@@ -24,9 +24,19 @@ class SignalRegisterMetaClass(models.base.ModelBase, type):
 
     def post_save_handler(cls, sender, **kwargs):
         table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
-        if settings.DEBUG:
-            print(f'Receive signal: {table_name}, ', kwargs)
-        Caching().clean_by_prefix(table_name=table_name)
+        update_fields = kwargs.get('update_fields', None)
+        update_fields = list(update_fields) if update_fields else []
+        if not (
+                table_name == 'account_user' and
+                update_fields and
+                isinstance(update_fields, list) and
+                len(update_fields) == 1 and
+                'last_login' in update_fields
+        ):
+            # don't clean cache when update last_login
+            Caching().clean_by_prefix(table_name=table_name)
+            if settings.DEBUG:
+                print(f'Receive signal: {table_name}, ', kwargs)
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
