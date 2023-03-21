@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.tenant.models import TenantPlan, Tenant
-from apps.shared import DisperseModel
+from apps.core.tenant.models import TenantPlan
 
 
 class TenantPlanSerializer(serializers.ModelSerializer):

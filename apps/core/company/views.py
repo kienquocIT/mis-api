@@ -6,7 +6,6 @@ from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
 from apps.shared import (
     mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin,
-    ResponseController,
 )
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
