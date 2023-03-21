@@ -40,6 +40,7 @@ class AccountCreateMixin(BaseCreateMixin):
         raise NotImplementedError
 
     def create(self, request, *args, **kwargs):
+        request.data['tenant_current'] = request.user['tenant_current']
         serializer = self.get_serializer_create(data=request.data)
         if hasattr(serializer, 'is_valid'):
             serializer.is_valid(raise_exception=True)
