@@ -1,6 +1,8 @@
 from django.db import models
 from apps.shared import (
-    DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+    DataAbstractModel,
+    MasterDataAbstractModel,
+    SimpleAbstractModel,
 )
 
 
