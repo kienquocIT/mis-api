@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
+from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, ResponseController
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
@@ -9,6 +9,7 @@ from .serializers import (
     CompanyUserDetailSerializer, UserListSerializer,
 )
 from .models import User
+from apps.core.company.models import CompanyUserEmployee
 
 
 class UserList(AccountListMixin, AccountCreateMixin):
@@ -19,10 +20,18 @@ class UserList(AccountListMixin, AccountCreateMixin):
         """
     queryset = User.objects
     serializer_list = UserListSerializer
+    serializer_list_minimal = UserListSerializer
+    use_cache_queryset = True
+    use_cache_minimal = True
     serializer_create = UserCreateSerializer
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+
+    def setup_list_field_hidden(self, user, **kwargs):
+        data = super().setup_list_field_hidden(user)
+        data['id__in'] = CompanyUserEmployee.all_user_of_company(user.company_current_id)
+        return data
 
     @swagger_auto_schema(
         operation_summary="User list",
@@ -47,9 +56,12 @@ class UserList(AccountListMixin, AccountCreateMixin):
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
     permission_classes = [IsAuthenticated]
-    queryset = User.objects.select_related('tenant_current', 'company_current')
+    queryset = User.objects
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('tenant_current', 'company_current').prefetch_related('companies')
 
     @swagger_auto_schema(operation_summary='Detail User')
     @mask_view(login_require=True, auth_require=True, code_perm='')

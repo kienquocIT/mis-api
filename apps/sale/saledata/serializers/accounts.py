@@ -235,7 +235,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
@@ -341,7 +341,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
@@ -462,7 +462,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.object.get(id=obj.owner)
+                owner = Employee.objects.get(id=obj.owner)
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)

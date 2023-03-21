@@ -21,11 +21,13 @@ drf-yasg==1.21.4
 idna==3.4
 inflection==0.5.1
 itypes==1.2.0
+jaeger-client==4.6.0
 Jinja2==3.1.2
 jsonfield==3.1.0
 gunicorn==20.1.0
 MarkupSafe==2.1.1
 mysqlclient==2.1.1
+opentracing==2.4.0
 packaging==21.3
 phonenumbers==8.13.1
 pip-cache==0.0.6

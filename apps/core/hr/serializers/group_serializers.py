@@ -51,7 +51,7 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
 
     @classmethod
     def create_new_update_old_group_level(cls, validated_data, group_level_old_level_list, bulk_info):
-        group_level_old_level = GroupLevel.object.filter(
+        group_level_old_level = GroupLevel.objects.filter(
             tenant_id=validated_data.get('tenant_id', None),
             company_id=validated_data.get('company_id', None),
         ).values_list('level', flat=True)
@@ -68,7 +68,7 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
                 ))
             # update old
             else:
-                group_level_instance = GroupLevel.object.filter(level=data['level']).first()
+                group_level_instance = GroupLevel.objects.filter(level=data['level']).first()
                 if group_level_instance:
                     for key, value in data.items():
                         setattr(group_level_instance, key, value)
@@ -90,7 +90,7 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
                     )
                 # delete all group level if data from UI == []
                 else:
-                    group_level_old_level = GroupLevel.object.filter(
+                    group_level_old_level = GroupLevel.objects.filter(
                         tenant_id=validated_data.get('tenant_id', None),
                         company_id=validated_data.get('company_id', None),
                     )
@@ -98,14 +98,14 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
                         group_level_old_level.delete()
         # delete group level
         if group_level_old_level_list:
-            group_level_delete = GroupLevel.object.filter(
+            group_level_delete = GroupLevel.objects.filter(
                 tenant_id=validated_data.get('tenant_id', None),
                 company_id=validated_data.get('company_id', None),
                 level__in=group_level_old_level_list
             )
             if group_level_delete:
                 group_level_delete.delete()
-        group_level = GroupLevel.object.bulk_create(bulk_info)
+        group_level = GroupLevel.objects.bulk_create(bulk_info)
         return group_level
 
 
@@ -267,7 +267,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_group_employee(cls, obj):
         result = []
-        group_employee = Employee.object.filter(group=obj)
+        group_employee = Employee.objects.filter(group=obj)
         if group_employee:
             for employee in group_employee:
                 role_list = []
@@ -290,7 +290,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
 def validate_employee_for_group(value):
     if isinstance(value, list):
-        employee_list = Employee.object.filter(id__in=value).count()
+        employee_list = Employee.objects.filter(id__in=value).count()
         if employee_list == len(value):
             return value
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
@@ -307,6 +307,8 @@ class GroupCreateSerializer(serializers.ModelSerializer):
     first_manager = serializers.UUIDField()
     second_manager = serializers.UUIDField(required=False)
     first_manager_title = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
+    code = serializers.CharField(max_length=100)
 
     class Meta:
         model = Group
@@ -325,21 +327,21 @@ class GroupCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        if Group.object.filter(code=value).exists():
+        if Group.objects.filter(code=value).exists():
             raise serializers.ValidationError({'detail': HRMsg.GROUP_CODE_EXIST})
         return value
 
     @classmethod
     def validate_group_level(cls, value):
         try:
-            return GroupLevel.object.get(id=value)
+            return GroupLevel.objects.get(id=value)
         except GroupLevel.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_NOT_EXIST})
 
     @classmethod
     def validate_parent_n(cls, value):
         try:
-            return Group.object.get(id=value)
+            return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
@@ -350,14 +352,14 @@ class GroupCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_first_manager(cls, value):
         try:
-            return Employee.object.get(id=value)
+            return Employee.objects.get(id=value)
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
         try:
-            return Employee.object.get(id=value)
+            return Employee.objects.get(id=value)
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
@@ -366,7 +368,7 @@ class GroupCreateSerializer(serializers.ModelSerializer):
         group = Group.objects.create(**validated_data)
         # create Group Employee
         if 'group_employee' in validated_data:
-            employee_list = Employee.object.filter(
+            employee_list = Employee.objects.filter(
                 id__in=validated_data['group_employee']
             )
             if employee_list:
@@ -405,14 +407,14 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_group_level(cls, value):
         try:
-            return GroupLevel.object.get(id=value)
+            return GroupLevel.objects.get(id=value)
         except GroupLevel.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_NOT_EXIST})
 
     @classmethod
     def validate_parent_n(cls, value):
         try:
-            return Group.object.get(id=value)
+            return Group.objects.get(id=value)
         except Group.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
 
@@ -423,14 +425,14 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_first_manager(cls, value):
         try:
-            return Employee.object.get(id=value)
+            return Employee.objects.get(id=value)
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     @classmethod
     def validate_second_manager(cls, value):
         try:
-            return Employee.object.get(id=value)
+            return Employee.objects.get(id=value)
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
@@ -442,7 +444,7 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
 
         # update Group for Employee
         if 'group_employee' in validated_data:
-            employee_group_old = Employee.object.filter(
+            employee_group_old = Employee.objects.filter(
                 group=instance
             )
             for emp_group_old in employee_group_old:
@@ -450,7 +452,7 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
                     emp_group_old.group = None
                     emp_group_old.save()
 
-            employee_list = Employee.object.filter(
+            employee_list = Employee.objects.filter(
                 id__in=validated_data['group_employee']
             )
             if employee_list:

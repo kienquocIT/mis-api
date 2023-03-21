@@ -34,7 +34,7 @@ from apps.core.auths.tests import AuthTestCase
 #
 #     def test_create_new_account(self):
 #         data = {
-#             'name': 'Công Ty H?t Gi?ng Trúc Phu?ng',
+#             'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
 #             'code': 'PM002',
 #             'website': 'trucphuong.com.vn',
 #             'tax_code': '81H1',
@@ -56,7 +56,7 @@ from apps.core.auths.tests import AuthTestCase
 #     def test_create_account_duplicate_code(self):
 #         self.test_create_new_account()
 #         data = {
-#             'name': 'Công Ty H?t Gi?ng Trúc Phu?ng',
+#             'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
 #             'code': 'PM002',
 #             'website': 'trucphuong.com.vn',
 #             'tax_code': '81H1',
@@ -96,7 +96,7 @@ from apps.core.auths.tests import AuthTestCase
 #
 #     def test_data_not_UUID(self):
 #         data = {
-#             'name': 'Công Ty H?t Gi?ng Trúc Phu?ng',
+#             'name': 'C�ng Ty H?t Gi?ng Tr�c Phu?ng',
 #             'code': 'PM002',
 #             'website': 'trucphuong.com.vn',
 #             'tax_code': '81H1',
@@ -157,7 +157,7 @@ class ContactTest(APITestCase):
             'mobile': '0123456789',
             'email': 'nguyenthihong@gmail.com',
             'job_title': 'Manager',
-            'address_infor': {"home_address": "Số 10/67, Xã Ðức Lân, Huyện Mộ Đức, Tỉnh Quảng Ngãi", "work_address": "Số 22/20, Thị Trấn Bồng Son, Huyện Hoài Nhon, Tỉnh Bình Ðịnh"},
+            'address_infor': {"home_address": "S? 10/67, X� �?c L�n, Huy?n M? �?c, T?nh Qu?ng Ng�i", "work_address": "S? 22/20, Th? Tr?n B?ng Son, Huy?n Ho�i Nhon, T?nh B�nh �?nh"},
             'additional_infor': {"tags": "tag", "gmail": "nth@gmail.com", "twitter": "nth.twitter", "facebook": "nth.facebook", "linkedln": "nth.linkedln", "interests": [self.interest['id']]}
         }
 
