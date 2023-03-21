@@ -23,7 +23,11 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if ProductType.objects.filter(title=value.title()).exists():
+        if ProductType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value.title()
+        ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
         return value
 
@@ -43,7 +47,11 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ProductType.objects.filter(title=value).exists():
+        if value != self.instance.title and ProductType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
         return value
 
@@ -65,7 +73,11 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if ProductCategory.objects.filter(title=value).exists():
+        if ProductCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
         return value
 
@@ -85,7 +97,11 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ProductCategory.objects.filter(title=value).exists():
+        if value != self.instance.title and ProductCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
         return value
 
@@ -107,7 +123,11 @@ class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if ExpenseType.objects.filter(title=value).exists():
+        if ExpenseType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
         return value
 
@@ -127,7 +147,11 @@ class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and ExpenseType.objects.filter(title=value).exists():
+        if value != self.instance.title and ExpenseType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
         return value
 
@@ -156,7 +180,11 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if UnitOfMeasureGroup.objects.filter(title=value).exists():
+        if UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
         return value
 
@@ -176,7 +204,11 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and UnitOfMeasureGroup.objects.filter(title=value).exists():
+        if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
         return value
 
@@ -215,14 +247,22 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_code(cls, value):
         value = value.strip()
-        if UnitOfMeasure.objects.filter(code=value).exists():
+        if UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
     @classmethod
     def validate_title(cls, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if UnitOfMeasure.objects.filter(title=value).exists():
+        if UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
         return value
 
@@ -230,7 +270,11 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
     def validate_group(cls, attrs):
         try:
             if attrs is not None:
-                return UnitOfMeasureGroup.objects.get(id=attrs)
+                return UnitOfMeasureGroup.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=attrs
+                )
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return None
@@ -290,13 +334,21 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_code(cls, value):
         value = value.strip()
-        if UnitOfMeasure.objects.filter(code=value).exists():
+        if UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
     def validate_title(self, value):
         value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
-        if value != self.instance.title and UnitOfMeasure.objects.filter(title=value).exists():
+        if value != self.instance.title and UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
         return value
 
@@ -304,7 +356,11 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
     def validate_group(cls, attrs):
         try:
             if attrs is not None:
-                return UnitOfMeasureGroup.objects.get(id=attrs)
+                return UnitOfMeasureGroup.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=attrs
+                )
         except UnitOfMeasureGroup.DoesNotExist as exc:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
         return None
@@ -318,12 +374,20 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
     def update(self, instance, validated_data):
         is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
         if is_referenced_unit and is_referenced_unit == 'on':
-            group = UnitOfMeasureGroup.objects.get(id=self.initial_data.get('group', None))
+            group = UnitOfMeasureGroup.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=self.initial_data.get('group', None)
+            )
             group.referenced_unit = instance
             group.save()
 
             old_ratio = instance.ratio
-            for item in UnitOfMeasure.objects.filter(group=instance.group_id):
+            for item in UnitOfMeasure.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    group=instance.group_id
+            ):
                 if item != instance:
                     item.ratio = item.ratio / old_ratio
                     item.save()
