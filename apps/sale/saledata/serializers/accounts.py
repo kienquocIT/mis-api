@@ -658,7 +658,6 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
-    employee = serializers.SerializerMethodField()
     account = serializers.SerializerMethodField()
 
     class Meta:
@@ -668,10 +667,6 @@ class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
             'employee',
             'account',
         )
-
-    @classmethod
-    def get_employee(cls, obj):
-        return obj.employee_id
 
     @classmethod
     def get_account(cls, obj):
