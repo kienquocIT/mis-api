@@ -12,4 +12,4 @@ class ProductMsg:
     UNIT_OF_MEASURE_CODE_EXIST = _('Unit of measure code is already exist.')
     PRODUCT_EXIST = _('Product is already exist.')
     PRODUCT_CODE_EXIST = _('Product code is already exist.')
-    RATIO_MUST_BE_GREATER_THAN_ZERO = _('Ratio value must be >= 0.')
+    RATIO_MUST_BE_GREATER_THAN_ZERO = _('Ratio value must be > 0.')

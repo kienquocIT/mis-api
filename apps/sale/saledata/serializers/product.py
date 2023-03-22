@@ -26,7 +26,7 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
         if ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                title=value.title()
+                title=value
         ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
         return value
@@ -166,8 +166,15 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_referenced_unit(cls, obj):
-        if obj.referenced_unit_id:
-            return {'id': obj.referenced_unit_id, 'title': obj.referenced_unit.title}
+        uom_obj = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            group=obj,
+            is_referenced_unit=True
+        ).first()
+
+        if uom_obj:
+            return {'id': uom_obj.id, 'title': uom_obj.title}
         return {}
 
 
@@ -175,7 +182,7 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('title', 'referenced_unit')
+        fields = ('title',)
 
     @classmethod
     def validate_title(cls, value):
@@ -193,7 +200,7 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('id', 'title', 'referenced_unit')
+        fields = ('id', 'title',)
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -224,13 +231,10 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_group(cls, obj):
         if obj.group:
-            is_referenced_unit = 0
-            if obj.group.referenced_unit_id == obj.id:
-                is_referenced_unit = 1
             return {
                 'id': obj.group_id,
                 'title': obj.group.title,
-                'is_referenced_unit': is_referenced_unit
+                'is_referenced_unit': obj.is_referenced_unit
             }
         return {}
 
@@ -242,7 +246,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('code', 'title', 'group', 'ratio', 'rounding')
+        fields = ('code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
 
     @classmethod
     def validate_code(cls, value):
@@ -270,7 +274,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
     def validate_group(cls, attrs):
         try:
             if attrs is not None:
-                return UnitOfMeasureGroup.objects.filter_current(
+                return UnitOfMeasureGroup.objects.get_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=attrs
@@ -281,20 +285,9 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_ratio(cls, attrs):
-        if attrs is not None and attrs >= 0:
+        if attrs is not None and attrs > 0:
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
-
-    def create(self, validated_data):
-        # create UoM
-        obj = UnitOfMeasure.objects.create(**validated_data)
-
-        # update referenced_unit for group
-        group = obj.group
-        if not group.referenced_unit:
-            group.referenced_unit = obj
-            group.save()
-        return obj
 
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
@@ -308,14 +301,16 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_group(cls, obj):
         if obj.group:
-            is_referenced_unit = 0
-            if obj.group.referenced_unit_id == obj.id:
-                is_referenced_unit = 1
             return {
                 'id': obj.group_id,
                 'title': obj.group.title,
-                'is_referenced_unit': is_referenced_unit,
-                'referenced_unit_title': obj.group.referenced_unit.title,
+                'is_referenced_unit': obj.is_referenced_unit,
+                'referenced_unit_title': UnitOfMeasure.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    group=obj.group,
+                    is_referenced_unit=True
+                ).title,
             }
         return {}
 
@@ -329,7 +324,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('title', 'group', 'ratio', 'rounding')
+        fields = ('title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
 
     @classmethod
     def validate_code(cls, value):
@@ -367,20 +362,21 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_ratio(cls, attrs):
-        if attrs is not None and attrs >= 0:
+        if attrs is not None and attrs > 0:
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     def update(self, instance, validated_data):
         is_referenced_unit = self.initial_data.get('is_referenced_unit', None)
-        if is_referenced_unit and is_referenced_unit == 'on':
-            group = UnitOfMeasureGroup.objects.get_current(
+        if is_referenced_unit:
+            old_unit = UnitOfMeasure.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=self.initial_data.get('group', None)
+                group=self.initial_data.get('group', None),
+                is_referenced_unit=True
             )
-            group.referenced_unit = instance
-            group.save()
+            old_unit.is_referenced_unit = False
+            old_unit.save()
 
             old_ratio = instance.ratio
             for item in UnitOfMeasure.objects.filter_current(

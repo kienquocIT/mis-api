@@ -48,22 +48,17 @@ class UnitOfMeasure(MasterDataAbstractModel):
     )
     ratio = models.FloatField(default=1.0)
     rounding = models.IntegerField(default=0)
+    is_referenced_unit = models.BooleanField(default=False, help_text='UoM Group Referenced Unit')
 
     class Meta:
         verbose_name = 'UnitOfMeasure'
         verbose_name_plural = 'UnitsOfMeasure'
-        ordering = ('-group', '-ratio')
+        ordering = ('-group',)
         default_permissions = ()
         permissions = ()
 
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
-    referenced_unit = models.ForeignKey(
-        UnitOfMeasure,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name='unitofmeasuregroup_referenced_unit'
-    )
 
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'
