@@ -34,7 +34,6 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.queryset = self.get_queryset().filter(tenant=request.user.tenant_current_id)
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(

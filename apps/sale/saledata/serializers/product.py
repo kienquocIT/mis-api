@@ -1,4 +1,3 @@
-import string
 from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure,
@@ -15,6 +14,7 @@ class ProductTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductType
@@ -22,7 +22,6 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -40,13 +39,13 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductType
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -65,6 +64,7 @@ class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductCategory
@@ -72,7 +72,6 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ProductCategory.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -90,13 +89,13 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductCategory
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ProductCategory.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -115,6 +114,7 @@ class ExpenseTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ExpenseType
@@ -122,7 +122,6 @@ class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ExpenseType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -140,13 +139,13 @@ class ExpenseTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ExpenseType
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ExpenseType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -179,6 +178,7 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasureGroup
@@ -186,7 +186,6 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if UnitOfMeasureGroup.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -204,13 +203,13 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasureGroup
         fields = ('title',)
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -250,7 +249,6 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -261,7 +259,6 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -321,6 +318,7 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
 
 class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.UUIDField(required=True, allow_null=False)
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasure
@@ -328,7 +326,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -338,7 +335,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
