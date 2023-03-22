@@ -7,5 +7,5 @@ urlpatterns = [
     path('switch-company', SwitchCompanyView.as_view(), name='SwitchCompanyView'),
     path('token-refresh', AuthRefreshLogin.as_view(), name='AuthRefreshLogin'),
     path('profile', MyProfile.as_view(), name='MyProfile'),
-    path('alive-check', AliveCheckView.as_view(), name='MyProfile'),
+    path('alive-check', AliveCheckView.as_view(), name='AliveCheck'),
 ]

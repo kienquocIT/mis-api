@@ -81,7 +81,7 @@ class AuthUser(AbstractBaseUser, PermissionsMixin, metaclass=SignalRegisterMetaC
         permissions = ()
 
 
-class User(AuthUser):
+class User(AuthUser):   # pylint: disable=R0902
     REQUIRED_FIELDS = ["phone", "email"]
 
     is_delete = models.BooleanField(verbose_name='delete', default=False)

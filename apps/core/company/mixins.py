@@ -1,6 +1,6 @@
 from apps.core.company.models import Company
 from apps.core.tenant.models import Tenant
-from apps.shared import ResponseController, BaseDestroyMixin, BaseListMixin
+from apps.shared import ResponseController, BaseDestroyMixin
 
 
 class CompanyDestroyMixin(BaseDestroyMixin):
