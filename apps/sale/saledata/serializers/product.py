@@ -22,7 +22,6 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -46,7 +45,6 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -72,7 +70,6 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ProductCategory.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -96,7 +93,6 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ProductCategory.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -122,7 +118,6 @@ class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if ExpenseType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -146,7 +141,6 @@ class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and ExpenseType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -186,7 +180,6 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if UnitOfMeasureGroup.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -210,7 +203,6 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = ('title',)
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -261,7 +253,6 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -338,7 +329,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
