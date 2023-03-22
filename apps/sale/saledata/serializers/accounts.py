@@ -1,4 +1,3 @@
-import string
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
@@ -17,6 +16,7 @@ class SalutationListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class SalutationCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = Salutation
@@ -24,7 +24,6 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -35,7 +34,6 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -52,22 +50,13 @@ class SalutationDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class SalutationUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = Salutation
-        fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
-        if value != self.instance.code and Salutation.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
+        fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -85,13 +74,14 @@ class InterestsListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = Interest
         fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -102,7 +92,6 @@ class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -119,22 +108,13 @@ class InterestsDetailsSerializer(serializers.ModelSerializer):
 
 
 class InterestsUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = Interest
-        fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
-        if value != self.instance.code and Interest.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
+        fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -152,13 +132,14 @@ class AccountTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = AccountType
         fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -169,7 +150,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -180,29 +160,20 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code', 'description')
 
 
 class AccountTypeUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = AccountType
-        fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
-        if value != self.instance.code and AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
+        fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -220,13 +191,14 @@ class IndustryListSerializer(serializers.ModelSerializer):
 
 
 class IndustryCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = Industry
         fields = ('code', 'title', 'description')
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -237,7 +209,6 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -254,22 +225,13 @@ class IndustryDetailsSerializer(serializers.ModelSerializer):
 
 
 class IndustryUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = Industry
-        fields = ('title', 'code', 'description')
-
-    def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
-        if value != self.instance.code and Industry.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
-        return value
+        fields = ('title', 'description')
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -646,7 +608,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Account.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
