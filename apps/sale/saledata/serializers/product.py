@@ -1,4 +1,3 @@
-import string
 from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure,
@@ -15,6 +14,7 @@ class ProductTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductType
@@ -39,6 +39,7 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductType
@@ -63,6 +64,7 @@ class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductCategory
@@ -87,6 +89,7 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductCategory
@@ -111,6 +114,7 @@ class ExpenseTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ExpenseTypeCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ExpenseType
@@ -135,6 +139,7 @@ class ExpenseTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ExpenseType
@@ -173,6 +178,7 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasureGroup
@@ -197,6 +203,7 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasureGroup
@@ -311,6 +318,7 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
 
 class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
     group = serializers.UUIDField(required=True, allow_null=False)
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = UnitOfMeasure
