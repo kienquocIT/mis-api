@@ -96,10 +96,12 @@ Application_data = {
     "828b785a-8f57-4a03-9f90-e0edf96560d7": {
         "title": "Contact",
         "code": "contact",
+        'app_label': 'saledata',
     },
     "4e48c863-861b-475a-aa5e-97a4ed26f294": {
         "title": "Account",
         "code": "account",
+        'app_label': 'saledata',
     },
 }
 
