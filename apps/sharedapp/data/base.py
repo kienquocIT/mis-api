@@ -93,6 +93,14 @@ Application_data = {
         "title": "Contract Lock",
         "code": "lock",
     },
+    "828b785a-8f57-4a03-9f90-e0edf96560d7": {
+        "title": "Contact",
+        "code": "contact",
+    },
+    "4e48c863-861b-475a-aa5e-97a4ed26f294": {
+        "title": "Account",
+        "code": "account",
+    },
 }
 
 PlanApplication_data = {
@@ -166,4 +174,45 @@ PlanApplication_data = {
     }
 }
 
-PermissionApplication_data = {}
+PermissionApplication_data = {
+    '61acb5ee-cf53-4dec-b476-9635ae002075': {
+        'id': '61acb5ee-cf53-4dec-b476-9635ae002075',
+        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'permission': 'create__saledata__contact',
+    },
+    '87158af6-e829-4550-96d9-dafadeab71d5': {
+        'id': '87158af6-e829-4550-96d9-dafadeab71d5',
+        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'permission': 'view__saledata__contact',
+    },
+    '0e77a049-d9c3-4253-89d2-7df8fc9438ac': {
+        'id': '0e77a049-d9c3-4253-89d2-7df8fc9438ac',
+        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'permission': 'edit__saledata__contact',
+    },
+    '29cc98c0-cd5a-4232-b852-5b057206bf6a': {
+        'id': '29cc98c0-cd5a-4232-b852-5b057206bf6a',
+        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'permission': 'delete__saledata__contact',
+    },
+    '584b6eb9-02fa-4c3d-aae4-3d69e9dc88db': {
+        'id': '584b6eb9-02fa-4c3d-aae4-3d69e9dc88db',
+        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
+        'permission': 'view__saledata__account',
+    },
+    '4715941a-fc6c-480f-9d8d-e39a189e86b7': {
+        'id': '4715941a-fc6c-480f-9d8d-e39a189e86b7',
+        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
+        'permission': 'create__saledata__account',
+    },
+    'fb9f971b-7f08-4322-8753-fadd3e3fa2fd': {
+        'id': 'fb9f971b-7f08-4322-8753-fadd3e3fa2fd',
+        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
+        'permission': 'edit__saledata__account',
+    },
+    '56d8ffcc-5438-4376-8665-f7370417eb1b': {
+        'id': '56d8ffcc-5438-4376-8665-f7370417eb1b',
+        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
+        'permission': 'delete__saledata__account',
+    },
+}
