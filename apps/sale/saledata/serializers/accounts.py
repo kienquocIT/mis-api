@@ -24,7 +24,6 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -35,7 +34,6 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -57,7 +55,6 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if value != self.instance.code and Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -67,7 +64,6 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Salutation.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -91,7 +87,6 @@ class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -102,7 +97,6 @@ class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -124,7 +118,6 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if value != self.instance.code and Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -134,7 +127,6 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Interest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -158,7 +150,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -169,7 +160,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -192,7 +182,6 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if value != self.instance.code and AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -202,7 +191,6 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -226,7 +214,6 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -237,7 +224,6 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_title(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -259,7 +245,6 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
         fields = ('title', 'code', 'description')
 
     def validate_code(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if value != self.instance.code and Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -269,7 +254,6 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
         return value
 
     def validate_title(self, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).title().strip()
         if value != self.instance.title and Industry.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -645,7 +629,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        value = value.translate(str.maketrans('', '', string.punctuation)).strip()
         if Account.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,

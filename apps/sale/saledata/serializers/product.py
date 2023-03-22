@@ -242,7 +242,6 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -319,7 +318,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        value = value.strip()
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
