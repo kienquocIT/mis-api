@@ -1,11 +1,17 @@
 from django.urls import path
-
 from apps.sale.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,
     ContactList, ContactDetail,
     ContactListNotMapAccount,
     AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
+)
+from apps.sale.saledata.views.product import (
+    ProductTypeList, ProductCategoryList,
+    ProductTypeDetail, ProductCategoryDetail,
+    ExpenseTypeList, ExpenseTypeDetail,
+    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail,
 )
 
 urlpatterns = [
@@ -28,4 +34,19 @@ urlpatterns = [
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
 
+]
+
+urlpatterns += [
+    path('product-types', ProductTypeList.as_view(), name='ProductTypeList'),
+    path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
+    path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
+    path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
+
+    path('expense-types', ExpenseTypeList.as_view(), name='ExpenseTypeList'),
+    path('expense-type/<str:pk>', ExpenseTypeDetail.as_view(), name='ExpenseTypeDetail'),
+
+    path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
+    path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
+    path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
+    path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
 ]

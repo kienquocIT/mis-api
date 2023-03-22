@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from crum import get_current_user
 
@@ -36,7 +37,7 @@ class EntryQuerySet(models.query.QuerySet):
         """
         sql_query = str(sql_query)
         user_obj = get_current_user()
-        if user_obj:
+        if user_obj and not isinstance(user_obj, AnonymousUser):
             # append tenant_id if not exist in query
             if (
                     fill__tenant and
