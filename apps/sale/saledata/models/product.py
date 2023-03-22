@@ -38,9 +38,19 @@ class ExpenseType(MasterDataAbstractModel):
         permissions = ()
 
 
+class UnitOfMeasureGroup(MasterDataAbstractModel):
+
+    class Meta:
+        verbose_name = 'UnitOfMeasureGroup'
+        verbose_name_plural = 'UnitsOfMeasureGroup'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
 class UnitOfMeasure(MasterDataAbstractModel):
     group = models.ForeignKey(
-        'saledata.UnitOfMeasureGroup',
+        UnitOfMeasureGroup,
         verbose_name='unit of measure group',
         on_delete=models.CASCADE,
         null=False,
@@ -54,15 +64,5 @@ class UnitOfMeasure(MasterDataAbstractModel):
         verbose_name = 'UnitOfMeasure'
         verbose_name_plural = 'UnitsOfMeasure'
         ordering = ('-group',)
-        default_permissions = ()
-        permissions = ()
-
-
-class UnitOfMeasureGroup(MasterDataAbstractModel):
-
-    class Meta:
-        verbose_name = 'UnitOfMeasureGroup'
-        verbose_name_plural = 'UnitsOfMeasureGroup'
-        ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
