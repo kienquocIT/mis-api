@@ -6,12 +6,13 @@ from rest_framework.serializers import Serializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from apps.core.tenant.models import Tenant
-from apps.shared import ServerMsg
+from apps.core.company.models import Company, CompanyUserEmployee
+from apps.shared import ServerMsg, AccountMsg
 from apps.core.account.models import User
 from apps.shared.translations import AuthMsg
 
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):   # pylint: disable=W0223
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):  # pylint: disable=W0223  # noqa
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -38,7 +39,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):   # pylint: disabl
         return data
 
 
-class AuthLoginSerializer(Serializer):  # pylint: disable=W0223
+class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
     tenant_code = serializers.CharField(max_length=15)
     username = serializers.SlugField(max_length=100)
     password = serializers.CharField(max_length=None)
@@ -81,3 +82,26 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223
             raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT}) from exc
         except Exception as exc:
             raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR}) from exc
+
+
+class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
+    user_id = serializers.UUIDField(read_only=True)
+    company = serializers.UUIDField()
+
+    @classmethod
+    def validate_company(cls, attrs):
+        if attrs:
+            try:
+                company_obj = Company.objects.get(pk=attrs)
+                return company_obj
+            except Company.DoesNotExist:
+                pass
+        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
+
+    def validate(self, attrs):
+        user_id = attrs.get('user_id', None)
+        company_obj = attrs['company']
+        if user_id and company_obj:
+            if CompanyUserEmployee.objects.filter(company=company_obj, user_id=user_id).exists():
+                return attrs
+        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)

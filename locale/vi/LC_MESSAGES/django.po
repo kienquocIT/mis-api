@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-12-08 16:49+0700\n"
+"POT-Creation-Date: 2023-03-17 15:43+0700\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,62 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
+
+#: .\apps\shared\translations\account.py:5
+msgid "User does not exist."
+msgstr "Người dùng không tồn tại."
+
+#: .\apps\shared\translations\account.py:6
+msgid "Phone number can not contain characters"
+msgstr "Số điện thoại không chính xác."
+
+#: .\apps\shared\translations\account.py:7 .\apps\shared\translations\hr.py:15
+msgid "Data is not valid"
+msgstr "Dữ liệu không hợp lệ"
+
+#: .\apps\shared\translations\account.py:8
+msgid "Password must contain both numbers and letters"
+msgstr "Mật khẩu phải bao gồm số và chữ."
+
+#: .\apps\shared\translations\account.py:9
+msgid "Company is not exist"
+msgstr "Công ty không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:5
+msgid "Account does not exist."
+msgstr "Tài khoản không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:6
+msgid "Salutation does not exist."
+msgstr "Danh xưng không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:7
+msgid "Contact does not exist."
+msgstr "Liên lạc không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:8
+msgid "Account type does not exist."
+msgstr "Kiểu tài khoản không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:9
+msgid "Industry does not exist."
+msgstr "Ngành không tồn tại."
+
+#: .\apps\shared\translations\accounts.py:10
+msgid "Code is already exist."
+msgstr "Mã đã tồn tại."
+
+#: .\apps\shared\translations\accounts.py:11
+msgid "Mobile is already exist."
+msgstr "Số điện thoại đã tồn tại."
+
+#: .\apps\shared\translations\accounts.py:12
+msgid "Name is already exist."
+msgstr "Tên đã tồn tại."
+
+#: .\apps\shared\translations\accounts.py:13
+msgid "Email is already exist."
+msgstr "Email đã tồn tại."
 
 #: .\apps\shared\translations\api.py:5
 msgid "This field is required"
@@ -46,6 +102,98 @@ msgstr "Không tìm thấy tenant có mã \"{}\"."
 msgid "The tenant \"{}\" was found return more than one records."
 msgstr "Không thể xác minh vì đã tìm thấy nhiều hơn một tenant có mã \"{}\"."
 
+#: .\apps\shared\translations\base.py:5
+msgid "Plan does not exist."
+msgstr "Plan không tồn tại."
+
+#: .\apps\shared\translations\base.py:6
+msgid "Some applications do not exist."
+msgstr "Một số apps không tồn tại."
+
+#: .\apps\shared\translations\base.py:7
+msgid "Application must be array."
+msgstr "Apps bắt buộc là danh sách."
+
+#: .\apps\shared\translations\company.py:7
+msgid "Valid company maximum raise errors."
+msgstr "Xác thực giới hạn trên của số công ty xảy ra lỗi."
+
+#: .\apps\shared\translations\company.py:8
+msgid "Maximum company is {} companies."
+msgstr "Tối đa {} công ty."
+
+#: .\apps\shared\translations\core\hr.py:7
+msgid "Licenses used of {} plan is over total licenses."
+msgstr "Giấy phép sử dụng của Plan vượt tổng số giấy phép."
+
+#: .\apps\shared\translations\core\hr.py:9
+msgid "Permissions type is incorrect."
+msgstr "Kiểu quyền không chính xác."
+
+#: .\apps\shared\translations\core\hr.py:10
+msgid "Permissions item configurations is incorrect."
+msgstr "Cấu hình quyền không chính xác."
+
+#: .\apps\shared\translations\core\hr.py:11
+msgid "Permissions item option is incorrect."
+msgstr "Cấu hình quyền không chính xác."
+
+#: .\apps\shared\translations\core\hr.py:12
+msgid "Permissions does not exist."
+msgstr "Quyền không tồn tại."
+
+#: .\apps\shared\translations\hr.py:5
+msgid "Group level does not exist."
+msgstr "Cấp nhóm không tồn tại."
+
+#: .\apps\shared\translations\hr.py:6
+msgid "Group code is exist."
+msgstr "Mã nhóm không tồn tại."
+
+#: .\apps\shared\translations\hr.py:7
+msgid "Group does not exist."
+msgstr "Nhóm Không tồn tại."
+
+#: .\apps\shared\translations\hr.py:8
+    msgid "Some roles do not exist."
+msgstr "Một số vai trò không tồn tại."
+
+#: .\apps\shared\translations\hr.py:9
+msgid "Role must be array."
+msgstr "Vai trò bắt buộc là danh sách."
+
+#: .\apps\shared\translations\hr.py:10
+msgid "Licenses used of \"{}\" plan is over total licenses."
+msgstr "Giấy phép sử dụng của \"{}\" đã đạt tổng giấp phép."
+
+#: .\apps\shared\translations\hr.py:11
+msgid "Employee does not exist."
+msgstr "Nhân viên không tồn tại."
+
+#: .\apps\shared\translations\hr.py:12
+msgid "Employees do not exist."
+msgstr "Nhân viên không tồn tại."
+
+#: .\apps\shared\translations\hr.py:13
+msgid "Employee must be array."
+msgstr "Nhân viên bắt buộc là danh sách."
+
+#: .\apps\shared\translations\hr.py:14
+msgid "Role code is exist."
+msgstr "Mã vai trò không tồn tại."
+
+#: .\apps\shared\translations\hr.py:17
+msgid "Permissions is incorrect."
+msgstr "Dữ liệu quyền không chính xác."
+
+#: .\apps\shared\translations\hr.py:18
+msgid "Permission item is incorrect."
+msgstr "Dữ liệu quyền không chính xác."
+
+#: .\apps\shared\translations\hr.py:20
+msgid "The data must be filter by company."
+msgstr "Bắt buộc phải lọc theo công ty."
+
 #: .\apps\shared\translations\http.py:5
 msgid "The information was successfully deleted."
 msgstr "Thông tin được xóa thành công."
@@ -66,9 +214,34 @@ msgstr "Không được cấp quyền."
 msgid "Not found"
 msgstr "Không Tìm Thấy."
 
+#: .\apps\shared\translations\http.py:10
+msgid "Successfully"
+msgstr "Thành công"
+
 #: .\apps\shared\translations\provisioning.py:5
 msgid "Tenant code \"{}\" was ready, process canceling..."
 msgstr "Mã tenant \"{}\" đã tồn tại. Quy trình tạo tenant đang được hủy."
+
+#: .\apps\shared\translations\provisioning.py:6
+msgid "Tenant have \"{}\" code that was not found."
+msgstr "Không tìm thấy tenant có mã \"{}\"."
+
+#: .\apps\shared\translations\provisioning.py:7
+msgid "Option does not supported. Company and Admin is required."
+msgstr "Công ty và thông tin người quản trị được yêu cầu."
+
+#: .\apps\shared\translations\provisioning.py:8
+msgid ""
+"The process was canceled because we found more than one tenant have code {}."
+msgstr "Quá trình này đã bị hủy vì chúng tôi nhận thấy có nhiều đối tượng thuê có mã {}."
+
+#: .\apps\shared\translations\provisioning.py:9
+msgid "Please, contact Admin MIS to be helped."
+msgstr "Liên hệ quản trị MiS để được trợ giúp."
+
+#: .\apps\shared\translations\provisioning.py:10
+msgid "Tenant's admin was ready."
+msgstr "Quản trị viên Tenant đã tồn tại."
 
 #: .\apps\shared\translations\server.py:5
 msgid "Undefined error raises."
@@ -80,4 +253,45 @@ msgstr "Lỗi Máy Chủ"
 
 #: .\apps\shared\translations\server.py:7
 msgid "key_data == '' must be require data is dictionary."
-msgstr ""
+msgstr "Dữ liệu yêu cầu là danh sách."
+
+#: .\apps\shared\translations\server.py:8
+msgid ""
+"Can't check permission of the user if verify user identity don't required."
+msgstr "Không thể kiểm tra quyền của người dùng nếu tắt tính năng kểm tra định danh người dùng"
+
+#: .\apps\shared\translations\workflow.py:5
+msgid "Create"
+msgstr "Tạo"
+
+#: .\apps\shared\translations\workflow.py:6
+msgid "Approve"
+msgstr "Phê Duyệt"
+
+#: .\apps\shared\translations\workflow.py:7
+msgid "Reject"
+msgstr "Từ Chối"
+
+#: .\apps\shared\translations\workflow.py:8
+msgid "Return"
+msgstr "Trả Về"
+
+#: .\apps\shared\translations\workflow.py:9
+msgid "Receive"
+msgstr "Tiếp Nhận"
+
+#: .\apps\shared\translations\workflow.py:10
+msgid "To do"
+msgstr "To do"
+
+#: .\apps\shared\translations\workflow.py:11
+msgid "In form"
+msgstr "In form"
+
+#: .\apps\shared\translations\workflow.py:12
+msgid "Out form"
+msgstr "Out form"
+
+#: .\apps\shared\translations\workflow.py:13
+msgid "In workflow"
+msgstr "In workflow"
