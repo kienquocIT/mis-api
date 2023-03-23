@@ -213,7 +213,8 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
         for item in uom:
             uom_list.append({
                 'uom_id': item.id,
-                'uom_title': item.title
+                'uom_title': item.title,
+                'uom_code': item.code
             })
         return uom_list
 
