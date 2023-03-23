@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, DataAbstractModel
 
 
 # Create your models here.
@@ -64,5 +64,52 @@ class UnitOfMeasure(MasterDataAbstractModel):
         verbose_name = 'UnitOfMeasure'
         verbose_name_plural = 'UnitsOfMeasure'
         ordering = ('-group',)
+        default_permissions = ()
+        permissions = ()
+
+
+class Product(DataAbstractModel):
+    avatar = models.TextField(
+        null=True,
+        verbose_name='avatar path'
+    )
+
+    # {
+    #     'product_type': 'f417bdf6f4db41aea4f69fc5da4573b5',
+    #     'product_category': '7e31d31e17594a4fb06295a6c17579f3',
+    #     'uom_group': '933e642d8c584349b406942d2cc6697c',
+    #     ...
+    # }
+    general_information = models.JSONField(
+        default=dict,
+    )
+
+    # {
+    #     'default_uom': 'ac19200a6ab84a30aef14dd213ee4716',
+    #     ...
+    # }
+    sale_information = models.JSONField(
+        default=dict,
+    )
+
+    # {
+    #     'uom': 'ac19200a6ab84a30aef14dd213ee4446',
+    #     'inventory_level_min': 100,
+    #     'inventory_level_max': 500,
+    #     ...
+    # }
+    inventory_information = models.JSONField(
+        default=dict,
+    )
+
+    # have not developed yet
+    purchase_information = models.JSONField(
+        default=dict,
+    )
+
+    class Meta:
+        verbose_name = 'Product'
+        verbose_name_plural = 'Products'
+        ordering = ('date_created',)
         default_permissions = ()
         permissions = ()

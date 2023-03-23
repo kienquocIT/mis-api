@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sale.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure,
+    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
 from apps.shared.translations.product import ProductMsg
 
@@ -196,10 +196,27 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('id', 'title',)
+        fields = ('id', 'title', 'uom')
+
+    @classmethod
+    def get_uom(cls, obj):
+        uom = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            group=obj,
+        )
+        uom_list = []
+        for item in uom:
+            uom_list.append({
+                'uom_id': item.id,
+                'uom_title': item.title
+            })
+        return uom_list
+
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -389,3 +406,71 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         instance.save()
 
         return instance
+
+
+# Product
+class ProductListSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+
+class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Product
+        fields = (
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+    @classmethod
+    def validate_title(cls, value):
+        if Product.objects.filter(title=value).exists():
+            raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
+        return value
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+
+# class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
+#
+#     class Meta:
+#         model = Product
+#         fields = (
+#             'title',
+#             'general_information',
+#             'inventory_information',
+#             'sale_information',
+#             'purchase_information'
+#         )
+#
+#     def validate_title(self, value):
+#         if value != self.instance.title and Product.objects.filter(title=value).exists():
+#             raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
+#         return value

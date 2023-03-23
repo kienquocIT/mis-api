@@ -12,6 +12,8 @@ from apps.sale.saledata.views.product import (
     ExpenseTypeList, ExpenseTypeDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
+
+    ProductList, ProductDetail
 )
 
 urlpatterns = [
@@ -48,4 +50,9 @@ urlpatterns += [
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
     path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
+]
+
+urlpatterns += [
+    path('products', ProductList.as_view(), name='ProductList'),
+    path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]

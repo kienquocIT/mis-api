@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sale.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure
+    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
 from apps.sale.saledata.serializers.product import (
     ProductTypeListSerializer, ProductTypeCreateSerializer, ProductTypeDetailSerializer, ProductTypeUpdateSerializer,
@@ -16,6 +16,8 @@ from apps.sale.saledata.serializers.product import (
 
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
+
+    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer,
 )
 
 
@@ -248,3 +250,49 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = UnitOfMeasureUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class ProductList(BaseListMixin, BaseCreateMixin):
+    queryset = Product.objects
+    serializer_list = ProductListSerializer
+    serializer_create = ProductCreateSerializer
+    serializer_detail = ProductDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Product list",
+        operation_description="Product list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Product",
+        operation_description="Create new Product",
+        request_body=ProductCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = Product.objects
+    serializer_list = ProductListSerializer
+    serializer_create = ProductCreateSerializer
+    serializer_detail = ProductDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(operation_summary='Detail Product')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    # @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
+    # @mask_view(login_require=True, auth_require=True, code_perm='')
+    # def put(self, request, *args, **kwargs):
+    #     self.serializer_class = ProductUpdateSerializer
+    #     return self.update(request, *args, **kwargs)
