@@ -426,6 +426,7 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = Product
@@ -439,7 +440,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_title(cls, value):
-        if Product.objects.filter(title=value).exists():
+        if Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
             raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
         return value
 
