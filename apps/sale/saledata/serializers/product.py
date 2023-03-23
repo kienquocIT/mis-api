@@ -211,13 +211,14 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
         )
         uom_list = []
         for item in uom:
-            uom_list.append({
-                'uom_id': item.id,
-                'uom_title': item.title,
-                'uom_code': item.code
-            })
+            uom_list.append(
+                {
+                    'uom_id': item.id,
+                    'uom_title': item.title,
+                    'uom_code': item.code
+                }
+            )
         return uom_list
-
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -411,6 +412,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 # Product
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
+    general_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -419,18 +421,52 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
             'code',
             'title',
             'general_information',
-            'inventory_information',
-            'sale_information',
-            'purchase_information'
+            # 'inventory_information',
+            # 'sale_information',
+            # 'purchase_information'
         )
+
+    @classmethod
+    def get_general_information(cls, obj):
+        if obj.general_information:
+            general_information = obj.general_information
+
+            product_type_title = ProductType.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=general_information.get('product_type', None)
+            ).title
+            product_category_title = ProductCategory.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=general_information.get('product_category', None)
+            ).title
+
+            return {
+                'uom_group': general_information.get('uom_group', None),
+                'product_type': {
+                    'id': general_information.get('product_type', None), 'title': product_type_title
+                },
+                'product_category': {
+                    'id': general_information.get('product_category', None), 'title': product_category_title
+                }
+            }
+
+        return {}
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
+    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
+    general_information = serializers.JSONField(required=True)
+    inventory_information = serializers.JSONField(required=False)
+    sale_information = serializers.JSONField(required=False)
+    purchase_information = serializers.JSONField(required=False)
 
     class Meta:
         model = Product
         fields = (
+            'code',
             'title',
             'general_information',
             'inventory_information',
@@ -439,13 +475,34 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         )
 
     @classmethod
-    def validate_title(cls, value):
+    def validate_code(cls, value):
         if Product.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                title=value
+                code=value
         ).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
+            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_general_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_sale_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
         return value
 
 
@@ -462,7 +519,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'sale_information',
             'purchase_information'
         )
-
 
 # class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 #
