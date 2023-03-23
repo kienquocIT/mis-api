@@ -432,22 +432,23 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
             product_type_id = obj.general_information.get('product_type', None)
             product_category_id = obj.general_information.get('product_category', None)
 
-            product_type_title = ProductType.objects.get_current(
+            product_type_title = ProductType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=product_type_id
-            ).title
-            product_category_title = ProductCategory.objects.get_current(
+            ).first()
+            product_category_title = ProductCategory.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=product_category_id
-            ).title
+            ).first()
 
-            return {
-                'uom_group': obj.general_information.get('uom_group', None),
-                'product_type': {'id': product_type_id, 'title': product_type_title},
-                'product_category': {'id': product_category_id, 'title': product_category_title}
-            }
+            if product_type_title and product_category_title:
+                return {
+                    'uom_group': obj.general_information.get('uom_group', None),
+                    'product_type': {'id': product_type_id, 'title': product_type_title.title},
+                    'product_category': {'id': product_category_id, 'title': product_category_title.title}
+                }
         return {}
 
 
