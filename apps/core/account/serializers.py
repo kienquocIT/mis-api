@@ -1,3 +1,4 @@
+from crum import get_current_user
 from rest_framework import serializers
 
 from apps.core.account.models import User
@@ -107,6 +108,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        user_obj = get_current_user()
+        if user_obj and getattr(user_obj, 'tenant_current_id', None):
+            validated_data['tenant_current_id'] = user_obj.tenant_current_id
         obj = User.objects.create(**validated_data)
         company = validated_data['company_current']
         company.total_user = CompanyUserEmployee.objects.filter(
