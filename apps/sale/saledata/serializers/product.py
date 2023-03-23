@@ -429,27 +429,24 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_general_information(cls, obj):
         if obj.general_information:
-            general_information = obj.general_information
+            product_type_id = obj.general_information.get('product_type', None)
+            product_category_id = obj.general_information.get('product_category', None)
 
             product_type_title = ProductType.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=general_information.get('product_type', None)
+                id=product_type_id
             ).title
             product_category_title = ProductCategory.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=general_information.get('product_category', None)
+                id=product_category_id
             ).title
 
             return {
-                'uom_group': general_information.get('uom_group', None),
-                'product_type': {
-                    'id': general_information.get('product_type', None), 'title': product_type_title
-                },
-                'product_category': {
-                    'id': general_information.get('product_category', None), 'title': product_category_title
-                }
+                'uom_group': obj.general_information.get('uom_group', None),
+                'product_type': {'id': product_type_id, 'title': product_type_title},
+                'product_category': {'id': product_category_id, 'title': product_category_title}
             }
 
         return {}
