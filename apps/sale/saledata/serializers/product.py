@@ -448,7 +448,6 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
                 'product_type': {'id': product_type_id, 'title': product_type_title},
                 'product_category': {'id': product_category_id, 'title': product_category_title}
             }
-
         return {}
 
 
