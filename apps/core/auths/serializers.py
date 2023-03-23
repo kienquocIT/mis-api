@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
+from crum import get_current_user
 from slugify import slugify
 from rest_framework import serializers
 from rest_framework.serializers import Serializer
@@ -85,7 +86,6 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
 
 
 class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
-    user_id = serializers.UUIDField(read_only=True)
     company = serializers.UUIDField()
 
     @classmethod
@@ -99,9 +99,14 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
         raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
 
     def validate(self, attrs):
-        user_id = attrs.get('user_id', None)
+        user_obj = get_current_user()
         company_obj = attrs['company']
-        if user_id and company_obj:
-            if CompanyUserEmployee.objects.filter(company=company_obj, user_id=user_id).exists():
+        if user_obj and company_obj:
+            try:
+                obj = CompanyUserEmployee.objects.get(company=company_obj, user=user_obj)
+                attrs['user'] = user_obj
+                attrs['company_user_employee'] = obj
                 return attrs
+            except CompanyUserEmployee.DoesNotExist:
+                pass
         raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
