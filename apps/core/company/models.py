@@ -1,4 +1,6 @@
-from typing import Literal
+from typing import Literal, Union
+from uuid import UUID
+
 from jsonfield import JSONField
 from django.db import models
 
@@ -195,3 +197,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
         raise RuntimeError(
             '[CompanyUserEmployee.assign_map] Data argument check is incorrect so assign returned failure.'
         )
+
+    @classmethod
+    def all_user_of_company(cls, company_id: Union[UUID, str]):
+        return list(set(cls.objects.filter(company_id=company_id).cache().values_list('user_id', flat=True)))
