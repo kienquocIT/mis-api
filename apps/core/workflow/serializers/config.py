@@ -542,44 +542,46 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         return result
 
 
-class WorkflowCreateSerializer(serializers.ModelSerializer):
-    application = serializers.UUIDField()
-    node = NodeCreateSerializer(
-        many=True,
-        required=False
-    )
-    zone = ZoneCreateSerializer(
-        many=True,
-        required=False
-    )
-    actions_rename = serializers.ListField(
-        child=serializers.JSONField(required=False),
-        required=False
-    )
-    association = AssociationCreateSerializer(
-        many=True,
-        required=False
-    )
-
-    class Meta:
-        model = Workflow
-        fields = (
-            'title',
-            'application',
-            'node',
-            'zone',
-            'is_multi_company',
-            'is_define_zone',
-            'actions_rename',
-            'association'
-        )
+# common class for create/ update workflow
+class CommonCreateUpdate:
 
     @classmethod
-    def validate_application(cls, value):
-        try:
-            return Application.objects.get(id=value)
-        except Application.DoesNotExist as exc:
-            raise serializers.ValidationError("Application does not exist.") from exc
+    def set_up_data(
+            cls,
+            validated_data,
+            instance=None
+    ):
+        node_list = None
+        zone_list = None
+        association_list = None
+        zone_created_data = {}
+        node_created_data = {}
+        if 'association' in validated_data:
+            association_list = validated_data['association']
+            del validated_data['association']
+            # delete old association when update WF
+            if instance:
+                old_association = Association.objects.filter(workflow=instance)
+                if old_association:
+                    old_association.delete()
+        if 'node' in validated_data:
+            node_list = validated_data['node']
+            del validated_data['node']
+            # delete old node when update WF
+            if instance:
+                old_node = Node.objects.filter(workflow=instance)
+                if old_node:
+                    old_node.delete()
+        if 'zone' in validated_data:
+            zone_list = validated_data['zone']
+            del validated_data['zone']
+            # delete old zone when update WF
+            if instance:
+                old_zone = Zone.objects.filter(workflow=instance)
+                if old_zone:
+                    old_zone.delete()
+
+        return node_list, zone_list, association_list, zone_created_data, node_created_data
 
     @classmethod
     def mapping_zone_detail(
@@ -828,6 +830,46 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                     )
         return True
 
+
+class WorkflowCreateSerializer(serializers.ModelSerializer):
+    application = serializers.UUIDField()
+    node = NodeCreateSerializer(
+        many=True,
+        required=False
+    )
+    zone = ZoneCreateSerializer(
+        many=True,
+        required=False
+    )
+    actions_rename = serializers.ListField(
+        child=serializers.JSONField(required=False),
+        required=False
+    )
+    association = AssociationCreateSerializer(
+        many=True,
+        required=False
+    )
+
+    class Meta:
+        model = Workflow
+        fields = (
+            'title',
+            'application',
+            'node',
+            'zone',
+            'is_multi_company',
+            'is_define_zone',
+            'actions_rename',
+            'association'
+        )
+
+    @classmethod
+    def validate_application(cls, value):
+        try:
+            return Application.objects.get(id=value)
+        except Application.DoesNotExist as exc:
+            raise serializers.ValidationError("Application does not exist.") from exc
+
     def create(self, validated_data):
         """
             step 1: set up data for create
@@ -849,33 +891,22 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             )
         """
         # set up data for create
-        node_list = None
-        zone_list = None
-        association_list = None
-        zone_created_data = {}
-        node_created_data = {}
-        if 'node' in validated_data:
-            node_list = validated_data['node']
-            del validated_data['node']
-        if 'zone' in validated_data:
-            zone_list = validated_data['zone']
-            del validated_data['zone']
-        if 'association' in validated_data:
-            association_list = validated_data['association']
-            del validated_data['association']
+        node_list, zone_list, association_list, zone_created_data, node_created_data = CommonCreateUpdate().set_up_data(
+            validated_data=validated_data
+        )
 
         # create workflow
         workflow = Workflow.objects.create(**validated_data)
 
         # create zone for workflow
-        self.create_zone_for_workflow(
+        CommonCreateUpdate().create_zone_for_workflow(
             workflow=workflow,
             zone_list=zone_list,
             zone_created_data=zone_created_data
         )
 
         # create node for workflow
-        self.create_node_for_workflow(
+        CommonCreateUpdate().create_node_for_workflow(
             workflow=workflow,
             node_list=node_list,
             zone_created_data=zone_created_data,
@@ -883,7 +914,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         )
 
         # create association for workflow
-        self.create_association_for_workflow(
+        CommonCreateUpdate().create_association_for_workflow(
             workflow=workflow,
             node_list=node_list,
             association_list=association_list,
@@ -891,3 +922,103 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         )
 
         return workflow
+
+
+class WorkflowUpdateSerializer(serializers.ModelSerializer):
+    application = serializers.UUIDField(required=False)
+    node = NodeCreateSerializer(
+        many=True,
+        required=False
+    )
+    zone = ZoneCreateSerializer(
+        many=True,
+        required=False
+    )
+    actions_rename = serializers.ListField(
+        child=serializers.JSONField(required=False),
+        required=False
+    )
+    association = AssociationCreateSerializer(
+        many=True,
+        required=False
+    )
+
+    class Meta:
+        model = Workflow
+        fields = (
+            'title',
+            'application',
+            'node',
+            'zone',
+            'is_multi_company',
+            'is_define_zone',
+            'actions_rename',
+            'association'
+        )
+
+    @classmethod
+    def validate_application(cls, value):
+        try:
+            return Application.objects.get(id=value)
+        except Application.DoesNotExist as exc:
+            raise serializers.ValidationError("Application does not exist.") from exc
+
+    def update(self, instance, validated_data):
+        """
+            step 1: set up data for update
+            step 2: delete old data:
+                    - delete old data Zone
+                    - delete old data Node
+                    - delete old data Association
+            step 2: create workflow
+            step 3: create zone for workflow (
+                function: create_zone_for_workflow()
+            )
+            ** when create success Zone will add to zone_created_data use for create Node
+                {1: 'zoneID1', 2: 'zoneID2', ...}
+            step 4: create node for workflow (
+                1/ function: create_node_for_workflow()
+                2/ function: create_node()
+                    (in create_node() have mapping_zone() & create_node_data())
+            )
+                ** when create success Node will add to node_created_data use for create Association
+                    {1: 'nodeID1', 2: 'nodeID2', ...}
+            step 5: create association for workflow (
+                function: create_association_for_workflow()
+            )
+        """
+        # set up data for update
+        node_list, zone_list, association_list, zone_created_data, node_created_data = CommonCreateUpdate().set_up_data(
+            validated_data=validated_data,
+            instance=instance
+        )
+
+        # update workflow
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        # create zone for workflow
+        CommonCreateUpdate().create_zone_for_workflow(
+            workflow=instance,
+            zone_list=zone_list,
+            zone_created_data=zone_created_data
+        )
+
+        # create node for workflow
+        CommonCreateUpdate().create_node_for_workflow(
+            workflow=instance,
+            node_list=node_list,
+            zone_created_data=zone_created_data,
+            node_created_data=node_created_data
+        )
+
+        # create association for workflow
+        CommonCreateUpdate().create_association_for_workflow(
+            workflow=instance,
+            node_list=node_list,
+            association_list=association_list,
+            node_created_data=node_created_data
+        )
+
+        return instance
