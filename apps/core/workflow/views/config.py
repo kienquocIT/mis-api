@@ -3,8 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.core.workflow.models import Workflow, Node  # pylint: disable-msg=E0611
 from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, \
-    NodeListSerializer, WorkflowDetailSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin
+    NodeListSerializer, WorkflowDetailSerializer, WorkflowUpdateSerializer
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class WorkflowList(
@@ -45,10 +45,12 @@ class WorkflowList(
 
 class WorkflowDetail(
     BaseRetrieveMixin,
+    BaseUpdateMixin,
 ):
     permission_classes = [IsAuthenticated]
     queryset = Workflow.objects
     serializer_detail = WorkflowDetailSerializer
+    serializer_update = WorkflowUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -63,6 +65,16 @@ class WorkflowDetail(
     def get(self, request, *args, **kwargs):
         self.serializer_class = WorkflowDetailSerializer
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update workflow",
+        operation_description="Update workflow by ID",
+        request_body=WorkflowUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = WorkflowUpdateSerializer
+        return self.update(request, *args, **kwargs)
 
 
 class NodeSystemList(
