@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.shared.translations.product import ProductMsg
+from apps.shared import ProductMsg
 
 
 # Product Type
@@ -317,17 +317,19 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_group(cls, obj):
         if obj.group:
-            return {
-                'id': obj.group_id,
-                'title': obj.group.title,
-                'is_referenced_unit': obj.is_referenced_unit,
-                'referenced_unit_title': UnitOfMeasure.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=obj.group,
-                    is_referenced_unit=True
-                ).title,
-            }
+            uom = UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                group=obj.group,
+                is_referenced_unit=True
+            ).first()
+            if uom:
+                return {
+                    'id': obj.group_id,
+                    'title': obj.group.title,
+                    'is_referenced_unit': obj.is_referenced_unit,
+                    'referenced_unit_title': uom.title,
+                }
         return {}
 
     @classmethod

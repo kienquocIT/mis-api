@@ -9,3 +9,5 @@ from .account import AccountMsg
 from .workflow import WorkflowMsg
 from .core import *
 from .company import *
+from .accounts import AccountsMsg
+from .product import ProductMsg
