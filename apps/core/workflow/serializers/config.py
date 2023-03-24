@@ -622,7 +622,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         else:
             if option == 0:
                 collab = data_dict.get('collab_in_form', {})
-                zone_list = collab.get('zone')
+                zone_list = collab.get('zone', [])
                 cls.mapping_zone_detail(
                     zone_list=zone_list,
                     zone_created_data=zone_created_data,
@@ -631,7 +631,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                 )
             elif option == 1:
                 collab = data_dict.get('collab_out_form', {})
-                zone_list = collab.get('zone')
+                zone_list = collab.get('zone', [])
                 cls.mapping_zone_detail(
                     zone_list=zone_list,
                     zone_created_data=zone_created_data,
@@ -642,7 +642,7 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
                 collab_list = data_dict.get('collab_in_workflow', [])
                 for collab in collab_list:
                     result = []
-                    zone_list = collab.get('zone')
+                    zone_list = collab.get('zone', [])
                     cls.mapping_zone_detail(
                         zone_list=zone_list,
                         zone_created_data=zone_created_data,

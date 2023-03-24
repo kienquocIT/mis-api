@@ -59,6 +59,7 @@ class WorkflowDetail(
         operation_summary="Workflow detail",
         operation_description="Get workflow detail by ID",
     )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         self.serializer_class = WorkflowDetailSerializer
         return self.retrieve(request, *args, **kwargs)
