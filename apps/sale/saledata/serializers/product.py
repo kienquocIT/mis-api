@@ -517,19 +517,41 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'purchase_information'
         )
 
-# class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
-#
-#     class Meta:
-#         model = Product
-#         fields = (
-#             'title',
-#             'general_information',
-#             'inventory_information',
-#             'sale_information',
-#             'purchase_information'
-#         )
-#
-#     def validate_title(self, value):
-#         if value != self.instance.title and Product.objects.filter(title=value).exists():
-#             raise serializers.ValidationError(ProductMsg.PRODUCT_EXIST)
-#         return value
+
+class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+    general_information = serializers.JSONField(required=True)
+    inventory_information = serializers.JSONField(required=False)
+    sale_information = serializers.JSONField(required=False)
+    purchase_information = serializers.JSONField(required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+    @classmethod
+    def validate_general_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_sale_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+        return value

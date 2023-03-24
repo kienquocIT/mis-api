@@ -17,7 +17,7 @@ from apps.sale.saledata.serializers.product import (
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
 
-    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer,
+    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer
 )
 
 
@@ -291,8 +291,8 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    # @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=True, code_perm='')
-    # def put(self, request, *args, **kwargs):
-    #     self.serializer_class = ProductUpdateSerializer
-    #     return self.update(request, *args, **kwargs)
+    @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = ProductUpdateSerializer
+        return self.update(request, *args, **kwargs)
