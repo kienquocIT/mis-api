@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from apps.sale.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure,
+    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.shared.translations.product import ProductMsg
+from apps.shared import ProductMsg
 
 
 # Product Type
@@ -196,10 +196,29 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):  # noqa
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('id', 'title',)
+        fields = ('id', 'title', 'uom')
+
+    @classmethod
+    def get_uom(cls, obj):
+        uom = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            group=obj,
+        )
+        uom_list = []
+        for item in uom:
+            uom_list.append(
+                {
+                    'uom_id': item.id,
+                    'uom_title': item.title,
+                    'uom_code': item.code
+                }
+            )
+        return uom_list
 
 
 class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -298,17 +317,19 @@ class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_group(cls, obj):
         if obj.group:
-            return {
-                'id': obj.group_id,
-                'title': obj.group.title,
-                'is_referenced_unit': obj.is_referenced_unit,
-                'referenced_unit_title': UnitOfMeasure.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=obj.group,
-                    is_referenced_unit=True
-                ).title,
-            }
+            uom = UnitOfMeasure.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                group=obj.group,
+                is_referenced_unit=True
+            ).first()
+            if uom:
+                return {
+                    'id': obj.group_id,
+                    'title': obj.group.title,
+                    'is_referenced_unit': obj.is_referenced_unit,
+                    'referenced_unit_title': uom.title,
+                }
         return {}
 
     @classmethod
@@ -389,3 +410,150 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         instance.save()
 
         return instance
+
+
+# Product
+class ProductListSerializer(serializers.ModelSerializer):  # noqa
+    general_information = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            # 'inventory_information',
+            # 'sale_information',
+            # 'purchase_information'
+        )
+
+    @classmethod
+    def get_general_information(cls, obj):
+        if obj.general_information:
+            product_type_id = obj.general_information.get('product_type', None)
+            product_category_id = obj.general_information.get('product_category', None)
+
+            product_type_title = ProductType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=product_type_id
+            ).first()
+            product_category_title = ProductCategory.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=product_category_id
+            ).first()
+
+            if product_type_title and product_category_title:
+                return {
+                    'uom_group': obj.general_information.get('uom_group', None),
+                    'product_type': {'id': product_type_id, 'title': product_type_title.title},
+                    'product_category': {'id': product_category_id, 'title': product_category_title.title}
+                }
+        return {}
+
+
+class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
+    code = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=150)
+    general_information = serializers.JSONField(required=True)
+    inventory_information = serializers.JSONField(required=False)
+    sale_information = serializers.JSONField(required=False)
+    purchase_information = serializers.JSONField(required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            'code',
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+    @classmethod
+    def validate_code(cls, value):
+        if Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
+            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_general_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_sale_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+        return value
+
+
+class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+
+class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+    general_information = serializers.JSONField(required=True)
+    inventory_information = serializers.JSONField(required=False)
+    sale_information = serializers.JSONField(required=False)
+    purchase_information = serializers.JSONField(required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+    @classmethod
+    def validate_general_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        return value
+
+    @classmethod
+    def validate_sale_information(cls, value):
+        for key in value:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+        return value

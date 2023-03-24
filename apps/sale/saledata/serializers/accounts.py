@@ -3,8 +3,7 @@ from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
     Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
-from apps.shared import HRMsg
-from apps.shared.translations.accounts import AccountsMsg
+from apps.shared import HRMsg, AccountsMsg
 
 
 # Salutation
