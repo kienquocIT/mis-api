@@ -379,6 +379,14 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # DATABASE CONFIG
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
+USE_MYSQL_POOL = False
+MYSQL_POOL_CONFIG = {
+    'POOL_OPTIONS': {
+        'POOL_SIZE': 10,
+        'MAX_OVERFLOW': 10,
+        'RECYCLE': 1 * 60 * 60,  # recycle every one hour
+    }
+}
 
 # import local_settings
 LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
@@ -459,6 +467,14 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
                 'NAME': BASE_DIR / 'db.sqlite3',
             }
 
+# Change to connection pool MySQL
+if USE_MYSQL_POOL is True:
+    for site, config in DATABASES.items():
+        if config['ENGINE'] == 'django.db.backends.mysql':
+            config['ENGINE'] = 'dj_db_conn_pool.backends.mysql'
+            config.update(MYSQL_POOL_CONFIG)
+
+# Display config about DB, Cache, CELERY,...
 if DEBUG is True:
     db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
         else 'DB SERVICE'
