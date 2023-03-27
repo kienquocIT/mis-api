@@ -5,14 +5,17 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from apps.core.company.models import Company
-from apps.sale.saledata.models import Salutation
+from apps.sale.saledata.models.product import ProductType
 
 logger = logging.getLogger(__name__)
 
 
 class SaleDefaultData:
-    Salutation_data = [
-        {},
+    ProductType_data = [
+        {'title': 'Sản phẩm', 'is_default': 1},
+        {'title': 'Bán thành phẩm', 'is_default': 1},
+        {'title': 'Nguyên vật liệu', 'is_default': 1},
+        {'title': 'Dịch vụ', 'is_default': 1},
     ]
 
     def __init__(self, company_obj):
@@ -21,7 +24,7 @@ class SaleDefaultData:
     def __call__(self, *args, **kwargs):
         try:
             with transaction.atomic():
-                self.create_salutation()
+                self.create_product_type()
             return True
         except Exception as err:
             logger.error(
@@ -30,12 +33,12 @@ class SaleDefaultData:
             )
         return False
 
-    def create_salutation(self):
+    def create_product_type(self):
         objs = [
-            Salutation(tenant=self.company_obj.tenant, company=self.company_obj, **sal_item)
-            for sal_item in self.Salutation_data
+            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **sal_item)
+            for sal_item in self.ProductType_data
         ]
-        Salutation.objects.bulk_create(objs)
+        ProductType.objects.bulk_create(objs)
         return True
 
 
