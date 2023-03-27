@@ -6,4 +6,5 @@ class CompanyConfig(AppConfig):
     name = 'apps.core.company'
 
     def ready(self):
+        # noinspection PyUnresolvedReferences
         import apps.shared.extends.signals
