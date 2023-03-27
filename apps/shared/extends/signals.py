@@ -1,11 +1,11 @@
+import logging
+
 from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from apps.core.company.models import Company
 from apps.sale.saledata.models import Salutation
-
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,8 @@ class SaleDefaultData:
             return True
         except Exception as err:
             logger.error(
-                f'[ERROR][SaleDefaultData]: Company ID={self.company_obj.id}, Error={str(err)}'
+                '[ERROR][SaleDefaultData]: Company ID=%s, Error=%s',
+                str(self.company_obj.id), str(err)
             )
         return False
 
@@ -39,5 +40,5 @@ class SaleDefaultData:
 
 
 @receiver(post_save, sender=Company)
-def update_stock(_sender, instance, **_kwargs):
+def update_stock(sender, instance, **kwargs):  # pylint: disable=W0613
     SaleDefaultData(company_obj=instance)()
