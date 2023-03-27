@@ -136,23 +136,6 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         )
 
 
-class NodeUpdateSerializer(serializers.ModelSerializer):
-    collaborator = CollaboratorCreateSerializer(
-        many=True,
-        required=False
-    )
-
-    class Meta:
-        model = Node
-        fields = (
-            'workflow',
-            'title',
-            'remark',
-            'actions',
-            'collaborator'
-        )
-
-
 # Zone
 class ZoneDetailSerializer(serializers.ModelSerializer):
     property_list = serializers.SerializerMethodField()
@@ -503,14 +486,12 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             workflow=obj
         ).values(
             'condition',
-
             'node_in_id',
             'node_in__title',
             'node_in__is_system',
             'node_in__code_node_system',
             'node_in__condition',
             'node_in__order',
-
             'node_out_id',
             'node_out__title',
             'node_out__is_system',
@@ -580,7 +561,6 @@ class CommonCreateUpdate:
                 old_zone = Zone.objects.filter(workflow=instance)
                 if old_zone:
                     old_zone.delete()
-
         return node_list, zone_list, association_list, zone_created_data, node_created_data
 
     @classmethod
@@ -894,17 +874,14 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         node_list, zone_list, association_list, zone_created_data, node_created_data = CommonCreateUpdate().set_up_data(
             validated_data=validated_data
         )
-
         # create workflow
         workflow = Workflow.objects.create(**validated_data)
-
         # create zone for workflow
         CommonCreateUpdate().create_zone_for_workflow(
             workflow=workflow,
             zone_list=zone_list,
             zone_created_data=zone_created_data
         )
-
         # create node for workflow
         CommonCreateUpdate().create_node_for_workflow(
             workflow=workflow,
@@ -912,7 +889,6 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             zone_created_data=zone_created_data,
             node_created_data=node_created_data
         )
-
         # create association for workflow
         CommonCreateUpdate().create_association_for_workflow(
             workflow=workflow,
@@ -920,7 +896,6 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
             association_list=association_list,
             node_created_data=node_created_data
         )
-
         return workflow
 
 
@@ -992,19 +967,16 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=instance
         )
-
         # update workflow
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
         # create zone for workflow
         CommonCreateUpdate().create_zone_for_workflow(
             workflow=instance,
             zone_list=zone_list,
             zone_created_data=zone_created_data
         )
-
         # create node for workflow
         CommonCreateUpdate().create_node_for_workflow(
             workflow=instance,
@@ -1012,7 +984,6 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
             zone_created_data=zone_created_data,
             node_created_data=node_created_data
         )
-
         # create association for workflow
         CommonCreateUpdate().create_association_for_workflow(
             workflow=instance,
@@ -1020,5 +991,4 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
             association_list=association_list,
             node_created_data=node_created_data
         )
-
         return instance
