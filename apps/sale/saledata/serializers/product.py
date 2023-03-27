@@ -10,7 +10,7 @@ class ProductTypeListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'description')
+        fields = ('id', 'title', 'description', 'is_default')
 
 
 class ProductTypeCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -35,7 +35,7 @@ class ProductTypeDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductType
-        fields = ('id', 'title', 'description')
+        fields = ('id', 'title', 'description', 'is_default')
 
 
 class ProductTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
