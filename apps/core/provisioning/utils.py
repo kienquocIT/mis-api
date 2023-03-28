@@ -65,20 +65,36 @@ class TenantController:
 
                     # create Company
                     self.company_obj, self.space_obj = None, None
-                    if create_company is True:
-                        self.company_obj = self.create_company(
+                    # if create_company is True:
+                    #     self.company_obj = self.create_company(
+                    #         title=self.tenant_obj.title,
+                    #         code=f'{self.tenant_obj.code}01',
+                    #         tenant=self.tenant_obj.id,
+                    #         total_user=1,
+                    #     )
+                    #     self.space_obj = self.create_space(
+                    #         title='Global',
+                    #         code=f'{tenant_code.upper()} Global',
+                    #         tenant=self.tenant_obj.id,
+                    #         company=self.company_obj.id,
+                    #         is_system=True,
+                    #     )
+                    self.company_obj = self.create_company(
                             title=self.tenant_obj.title,
                             code=f'{self.tenant_obj.code}01',
                             tenant=self.tenant_obj.id,
                             total_user=1,
                         )
-                        self.space_obj = self.create_space(
+                    self.space_obj = self.create_space(
                             title='Global',
                             code=f'{tenant_code.upper()} Global',
                             tenant=self.tenant_obj.id,
                             company=self.company_obj.id,
                             is_system=True,
                         )
+                    if create_company is False:
+                        self.tenant_obj.company_quality_max = 1
+                        self.tenant_obj.save()
 
                     # create employee & create User
                     if self.tenant_obj and user_data:
