@@ -6,4 +6,4 @@ class CompanyConfig(AppConfig):
     name = 'apps.core.company'
 
     def ready(self):
-        import apps.shared.extends.signals
+        from apps.shared.extends import signals

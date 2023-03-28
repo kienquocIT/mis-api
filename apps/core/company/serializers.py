@@ -5,7 +5,6 @@ from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.shared.translations.company import CompanyMsg
-from apps.shared.extends.signals import update_stock
 
 
 # Company Serializer
