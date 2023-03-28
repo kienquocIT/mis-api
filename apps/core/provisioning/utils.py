@@ -81,7 +81,7 @@ class TenantController:
                     #     )
                     self.company_obj = self.create_company(
                             title=self.tenant_obj.title,
-                            code=f'{self.tenant_obj.code}01',
+                            code=f'{self.tenant_obj.code}',
                             tenant=self.tenant_obj.id,
                             total_user=1,
                         )

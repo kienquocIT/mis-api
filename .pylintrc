@@ -9,7 +9,7 @@ max-line-length=120 # max line length map to Pycharm
 load-plugins=pylint_django
 django-settings-module=misapi.settings
 init-hook='import sys; sys.path.append("./")'
-ignore=migrations,builder,locale,statics,routers,misapi,logs,build.sh,manage.py,.pylintrc,tests.py,tests,admin.py
+ignore=migrations,builder,locale,statics,routers,misapi,logs,build.sh,manage.py,.pylintrc,tests.py,tests,admin.py,mockup_data.py
 ignore-paths: apps\core\account\views.py
 disable=
     C0114, # missing-module-docstring
