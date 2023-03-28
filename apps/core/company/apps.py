@@ -1,4 +1,5 @@
 from django.apps import AppConfig
+from django.db.models.signals import post_save
 
 
 class CompanyConfig(AppConfig):
@@ -6,5 +7,5 @@ class CompanyConfig(AppConfig):
     name = 'apps.core.company'
 
     def ready(self):
-        # noinspection PyUnresolvedReferences
-        import apps.shared.extends.signals
+        from apps.shared.extends.signals import update_stock
+        post_save.connect(update_stock, sender=self.get_model('Company'))
