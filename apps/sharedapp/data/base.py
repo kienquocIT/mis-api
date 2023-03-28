@@ -26,90 +26,25 @@ SubscriptionPlan_data = {
 }
 
 Application_data = {
-    "2204fbed-7c93-462c-9b7d-85e0a8574094": {
-        "title": "Contract",
-        "code": "contract",
-        "app_label": ''
-    },
-    "2d83c8bb-cf77-452f-af0b-fcab49b83527": {
-        "title": "Sale Order",
-        "code": "sale_order",
-        "app_label": ''
-    },
-    "48e995a6-cd8c-4aef-9a45-6b0ae9c500b2": {
-        "title": "Task",
-        "code": "task",
-        "app_label": 'timesheet'
+    "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a": {
+        "title": "User",
+        "code": "user",
+        "app_label": "account",
     },
     "4cdaabcc-09ae-4c13-bb4e-c606eb335b11": {
         "title": "Role",
         "code": "role",
         "app_label": 'hr'
     },
-    "4e4c6574-e068-4a0d-94f2-4b89626676b4": {
-        "title": "Over Time",
-        "code": "OT",
-        "app_label": ''
-    },
     "50348927-2c4f-4023-b638-445469c66953": {
         "title": "Employee",
         "code": "employee",
         "app_label": 'hr'
     },
-    "5b67fb7f-03e0-44ee-9df8-8cb0aae16d8f": {
-        "title": "Document Management",
-        "code": "edms",
-        "app_label": ''
-    },
-    "7d69e8df-7ff4-4230-897d-95e4521f055c": {
-        "title": "Asset Management",
-        "code": "eam",
-        "app_label": ''
-    },
-    "83de3e2e-d4d1-4864-ad48-fddd28da01df": {
-        "title": "Annual Leave",
-        "code": "leave",
-        "app_label": ''
-    },
-    "888c533e-4e87-480e-884b-6a23026e6c38": {
-        "title": "Advance",
-        "code": "advance",
-        "app_label": ''
-    },
-    "918de2cf-7416-4a24-85d1-100403fc025b": {
-        "title": "Quotation",
-        "code": "quotation",
-        "app_label": ''
-    },
-    "9b777adc-c8ce-4d43-a1d3-02f0434243ff": {
-        "title": "Transportation",
-        "code": "transportation",
-        "app_label": ''
-    },
-    "acf7c5ad-0f4b-49e2-9fbd-a6daa032efb6": {
-        "title": "Payment",
-        "code": "payment",
-        "app_label": ''
-    },
-    "b0a2d464-3dc9-450e-96cd-76db5c4b3d58": {
-        "title": "Booking Room",
-        "code": "booking",
-        "app_label": ''
-    },
-    "c5c22111-bda4-4935-8ea5-632e36554a5b": {
-        "title": "Opportunity",
-        "code": "opportunity",
-        "app_label": ''
-    },
     "e17b9123-8002-4c9b-921b-7722c3c9e3a5": {
         "title": "Group",
         "code": "group",
         "app_label": 'hr'
-    },
-    "f18c9cb9-6bbc-4efc-af10-4f5e244ad66e": {
-        "title": "Contract Lock",
-        "code": "lock",
-        "app_label": ''
     },
     "828b785a-8f57-4a03-9f90-e0edf96560d7": {
         "title": "Contact",
@@ -124,157 +59,133 @@ Application_data = {
 }
 
 PlanApplication_data = {
-    "016028a0-e056-44f5-97d2-a412c2b041c5": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "4e4c6574-e068-4a0d-94f2-4b89626676b4"
+    "284ff7a6-78f2-452e-9826-c2d852a83f81": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11",  # Role
     },
-    "0d9be30c-23c8-440b-b85c-65b18e951dd6": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "acf7c5ad-0f4b-49e2-9fbd-a6daa032efb6"
+    "499bbc78-ea45-4f2a-b97b-d38ee9e82a9b": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "50348927-2c4f-4023-b638-445469c66953",  # Employee
     },
-    "2ca2388e-c749-4eb0-9437-7a185c851f5e": {
-        "plan_id": "a939c80b-6cb6-422c-bd42-34e0adf91802",
-        "application_id": "48e995a6-cd8c-4aef-9a45-6b0ae9c500b2"
+    "65eed348-50d7-4707-857f-1e644e9f549d": {
+        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",  # HRM
+        "application_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",  # Group
     },
-    "4268109f-48a0-458f-ad28-f23691b9045d": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "83de3e2e-d4d1-4864-ad48-fddd28da01df"
+    "6ea04af3-4dda-4da4-9a27-05ef90928176": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
     },
-    "4370bd1f-07c0-4027-bcd5-137f06138010": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",
-        "application_id": "f18c9cb9-6bbc-4efc-af10-4f5e244ad66e"
+    "f1aeea57-85e2-4349-9eb9-cc14aa4c74fd": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
     },
-    "4c291776-976e-474c-afd9-a71c88553fc8": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "888c533e-4e87-480e-884b-6a23026e6c38"
-    },
-    "58167f93-388e-4b29-83de-73d63e77c211": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "9b777adc-c8ce-4d43-a1d3-02f0434243ff"
-    },
-    "a516bb35-29b5-4f24-b7e0-337dd581d377": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "5b67fb7f-03e0-44ee-9df8-8cb0aae16d8f"
-    },
-    "afa1d93f-3df1-4d68-bf5f-9bc8f5309d9e": {
-        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
-        "application_id": "50348927-2c4f-4023-b638-445469c66953"
-    },
-    "b1b5d3e0-2b7b-48bf-a4f4-631cafc6c85d": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "b0a2d464-3dc9-450e-96cd-76db5c4b3d58"
-    },
-    "d29309ce-f613-4fa8-beb1-872cd1df61df": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",
-        "application_id": "2d83c8bb-cf77-452f-af0b-fcab49b83527"
-    },
-    "e541229e-62f7-4842-aa57-fcd38b307664": {
-        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",
-        "application_id": "7d69e8df-7ff4-4230-897d-95e4521f055c"
-    },
-    "f02aa96c-e160-49c9-b910-232d88a7d579": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",
-        "application_id": "918de2cf-7416-4a24-85d1-100403fc025b"
-    },
-    "f06c4bfa-29b4-4039-b4c6-94304ae5c0ae": {
-        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
-        "application_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11"
-    },
-    "f1493708-4e14-472e-9374-081a3505210f": {
-        "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
-        "application_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5"
-    },
-    "fb58072a-ddc5-4463-9fa9-2c683856f580": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",
-        "application_id": "c5c22111-bda4-4935-8ea5-632e36554a5b"
-    },
-    "fd64cdca-7005-4545-ad74-2978cd12d7e7": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",
-        "application_id": "2204fbed-7c93-462c-9b7d-85e0a8574094"
-    }
+
 }
 
-PermissionApplication_data = {
-    '040818c3-a320-480b-b9bf-60f47dd52e19': {
-        'id': '040818c3-a320-480b-b9bf-60f47dd52e19',
-        'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'create__hr__employee',
+PermissionApplication_data = {  # create & view & edit & delete
+    # Account - User
+    "a279829a-b842-4bdc-8c2f-edf56e055396": {
+        "app_id": "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a",
+        "permission": "create__account__user",
     },
-    '0e6b741e-b886-47dd-92c5-1b3f59a68291': {
-        'id': '0e6b741e-b886-47dd-92c5-1b3f59a68291',
-        'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'edit__hr__employee',
+    "dcf98d80-bd8f-41d7-a925-3e29e6a4e322": {
+        "app_id": "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a",
+        "permission": "view__account__user",
     },
-    '97b92f5a-0a17-4091-8684-973f830a634a': {
-        'id': '97b92f5a-0a17-4091-8684-973f830a634a',
-        'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'view__hr__employee',
+    "99e45cf5-47b7-42d4-9514-a53464686187": {
+        "app_id": "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a",
+        "permission": "edit__account__user",
     },
-    '9cea8790-c8a9-4453-b73f-c11b55f53c68': {
-        'id': '9cea8790-c8a9-4453-b73f-c11b55f53c68',
-        'app_id': '50348927-2c4f-4023-b638-445469c66953',
-        'permission': 'delete__hr__employee',
+    "3df85cdd-8254-46a4-9d73-ad15f40938f7": {
+        "app_id": "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a",
+        "permission": "delete__account__user",
     },
-    'f3f3ae17-4510-46d9-9564-f4144fe10331': {
-        'id': 'f3f3ae17-4510-46d9-9564-f4144fe10331',
-        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
-        'permission': 'create__hr__role',
+    # HR - Role
+    "dbd24785-7ff3-4e81-beb2-ad7f6eee8df9": {
+        "app_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11",
+        "permission": "create__hr__role",
     },
-    'b0e3aafd-2c1a-4e79-857b-30da8a9f377d': {
-        'id': 'b0e3aafd-2c1a-4e79-857b-30da8a9f377d',
-        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
-        'permission': 'edit__hr__role',
+    "43703e75-bd16-4e65-97e5-a90998e0a94d": {
+        "app_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11",
+        "permission": "view__hr__role",
     },
-    'de830f40-c9a6-4d50-b8de-3caddd5e8308': {
-        'id': 'de830f40-c9a6-4d50-b8de-3caddd5e8308',
-        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
-        'permission': 'view__hr__role',
+    "c3232101-9853-4706-8100-5b11ace1c145": {
+        "app_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11",
+        "permission": "edit__hr__role",
     },
-    '0cf5ba77-8ab4-4b91-b516-a95e47c6ef2c': {
-        'id': '0cf5ba77-8ab4-4b91-b516-a95e47c6ef2c',
-        'app_id': '4cdaabcc-09ae-4c13-bb4e-c606eb335b11',
-        'permission': 'delete__hr__role',
+    "67278d3f-0ff5-40dd-b150-e579764311a6": {
+        "app_id": "4cdaabcc-09ae-4c13-bb4e-c606eb335b11",
+        "permission": "delete__hr__role",
     },
-    '61acb5ee-cf53-4dec-b476-9635ae002075': {
-        'id': '61acb5ee-cf53-4dec-b476-9635ae002075',
-        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
-        'permission': 'create__saledata__contact',
+    # HR - Employee
+    "71f2eeaf-55f7-4516-b470-ece3c0dab0c6": {
+        "app_id": "50348927-2c4f-4023-b638-445469c66953",
+        "permission": "create__hr__employee",
     },
-    '87158af6-e829-4550-96d9-dafadeab71d5': {
-        'id': '87158af6-e829-4550-96d9-dafadeab71d5',
-        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
-        'permission': 'view__saledata__contact',
+    "2417e931-4912-4ab7-b5c5-6e0655beada2": {
+        "app_id": "50348927-2c4f-4023-b638-445469c66953",
+        "permission": "view__hr__employee",
     },
-    '0e77a049-d9c3-4253-89d2-7df8fc9438ac': {
-        'id': '0e77a049-d9c3-4253-89d2-7df8fc9438ac',
-        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
-        'permission': 'edit__saledata__contact',
+    "00af7c1b-803b-4322-b2b6-18998268285b": {
+        "app_id": "50348927-2c4f-4023-b638-445469c66953",
+        "permission": "edit__hr__employee",
     },
-    '29cc98c0-cd5a-4232-b852-5b057206bf6a': {
-        'id': '29cc98c0-cd5a-4232-b852-5b057206bf6a',
-        'app_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
-        'permission': 'delete__saledata__contact',
+    "425ea59f-1fb2-4165-90fe-1f1707687cba": {
+        "app_id": "50348927-2c4f-4023-b638-445469c66953",
+        "permission": "delete__hr__employee",
     },
-    '584b6eb9-02fa-4c3d-aae4-3d69e9dc88db': {
-        'id': '584b6eb9-02fa-4c3d-aae4-3d69e9dc88db',
-        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
-        'permission': 'view__saledata__account',
+    # HR - Group
+    "26b7fb28-cd37-41f6-9147-1f270851f04f": {
+        "app_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",
+        "permission": "create__hr__group",
     },
-    '4715941a-fc6c-480f-9d8d-e39a189e86b7': {
-        'id': '4715941a-fc6c-480f-9d8d-e39a189e86b7',
-        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
-        'permission': 'create__saledata__account',
+    "5aa1af15-34b8-4871-8c90-611b7fca9314": {
+        "app_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",
+        "permission": "view__hr__group",
     },
-    'fb9f971b-7f08-4322-8753-fadd3e3fa2fd': {
-        'id': 'fb9f971b-7f08-4322-8753-fadd3e3fa2fd',
-        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
-        'permission': 'edit__saledata__account',
+    "8c603c9a-69d7-40c5-83a0-54025971926e": {
+        "app_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",
+        "permission": "edit__hr__group",
     },
-    '56d8ffcc-5438-4376-8665-f7370417eb1b': {
-        'id': '56d8ffcc-5438-4376-8665-f7370417eb1b',
-        'app_id': '4e48c863-861b-475a-aa5e-97a4ed26f294',
-        'permission': 'delete__saledata__account',
+    "0a7e66a0-48e0-4b9d-9484-c2170b02b7f2": {
+        "app_id": "e17b9123-8002-4c9b-921b-7722c3c9e3a5",
+        "permission": "delete__hr__group",
     },
+    # SaleData - Contact
+    "54c8fbf9-4a53-413f-8cd6-c2a54636c6e3": {
+        "app_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
+        "permission": "create__saledata__contact",
+    },
+    "7ec11953-9c52-4128-bb9a-36b932444a48": {
+        "app_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
+        "permission": "view__saledata__contact",
+    },
+    "ae61b6ed-4142-49e6-89a1-187efcdcd5dd": {
+        "app_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
+        "permission": "edit__saledata__contact",
+    },
+    "c3c509d9-cdd5-42c5-b60b-54567f980dee": {
+        "app_id": "828b785a-8f57-4a03-9f90-e0edf96560d7",
+        "permission": "delete__saledata__contact",
+    },
+    # SaleData - Account
+    "e40ce783-5909-4967-bcd5-0f1bf4d3e6e8": {
+        "app_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "permission": "create__saledata__account",
+    },
+    "f5e366d2-0e17-4096-863e-b8960271da06": {
+        "app_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "permission": "view__saledata__account",
+    },
+    "87bc9689-febf-446d-a607-7dfb2ae1ec06": {
+        "app_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "permission": "edit__saledata__account",
+    },
+    "57e0fef9-2fd9-4a3d-8d12-aee15a6b03e4": {
+        "app_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "permission": "delete__saledata__account",
+    },
+    #
 }
 
 ApplicationProperty_data = {
