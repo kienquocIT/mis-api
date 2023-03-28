@@ -2,6 +2,9 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
+from apps.sale.saledata.models.product import ProductType
+
+from .extends.signals import SaleDefaultData
 
 
 def update_company_created_user():
@@ -122,3 +125,13 @@ def update_data_company_license_tracking():
 
     print('update done.')
     return True
+
+
+def update_sale_default_data_old_company():
+    for company_obj in Company.objects.all():
+        SaleDefaultData(company_obj=company_obj)()
+
+
+def delete_all_product_type():
+    for product_type_obj in ProductType.objects.all():
+        product_type_obj.delete()
