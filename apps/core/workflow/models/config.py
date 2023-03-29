@@ -1,5 +1,4 @@
 from django.db import models
-from jsonfield import JSONField
 
 from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR
 
@@ -31,8 +30,8 @@ class Workflow(MasterDataAbstractModel):
     )
 
     # [{0: "rename1"}, {1: "rename2"}, ....] (0, 1, 2... is option actions)
-    actions_rename = JSONField(
-        default=[],
+    actions_rename = models.JSONField(
+        default=list,
         help_text="use for show rename of actions in specific workflow"
     )
     is_applied = models.BooleanField(
@@ -64,9 +63,9 @@ class Zone(MasterDataAbstractModel):
         blank=True,
         null=True
     )
-    property_list = JSONField(
+    property_list = models.JSONField(
         verbose_name="property list",
-        default=[]
+        default=list
     )
     order = models.IntegerField(
         null=True
@@ -93,9 +92,9 @@ class Node(MasterDataAbstractModel):
         null=True,
         blank=True
     )
-    actions = JSONField(
+    actions = models.JSONField(
         verbose_name="actions",
-        default=[],
+        default=list,
         help_text="actions of node"
     )
     is_system = models.BooleanField(
@@ -121,8 +120,8 @@ class Node(MasterDataAbstractModel):
     #     'employee_field': 'employee_inherit',
     #     'zone': ['zoneID1', 'zoneID2']
     # }
-    collab_in_form = JSONField(
-        default={},
+    collab_in_form = models.JSONField(
+        default=dict,
         help_text="use for option in form"
     )
 
@@ -131,8 +130,8 @@ class Node(MasterDataAbstractModel):
     #     'employee_list': ['empID1', 'empID2'],
     #     'zone': ['zoneID1', 'zoneID2']
     # }
-    collab_out_form = JSONField(
-        default={},
+    collab_out_form = models.JSONField(
+        default=dict,
         help_text="use for option out form"
     )
 
@@ -147,15 +146,15 @@ class Node(MasterDataAbstractModel):
     #         'zone': ['zoneID3', 'zoneID4']
     #     }
     # ]
-    collab_in_workflow = JSONField(
-        default=[],
+    collab_in_workflow = models.JSONField(
+        default=list,
         help_text="use for option in workflow"
     )
 
     # ['zoneID1', 'zoneID2', ....]
-    zone_initial_node = JSONField(
+    zone_initial_node = models.JSONField(
         verbose_name="zone",
-        default=[],
+        default=list,
         help_text="list zones of initial node"
     )
 
@@ -178,11 +177,17 @@ class Node(MasterDataAbstractModel):
     #             'min_collaborator': 'else'
     #         }
     #     ]
-    condition = JSONField(
+    condition = models.JSONField(
         verbose_name="Condition",
         blank=True,
         null=True,
-        default=[]
+        default=list
+    )
+    # data of coordinates:
+    # {"top": 1231.5, "left": 1234.5}
+    coordinates = models.JSONField(
+        verbose_name="coordinates",
+        default=dict
     )
 
     class Meta:
@@ -208,9 +213,9 @@ class Collaborator(MasterDataAbstractModel):
         related_name="collaborator_employee",
         null=True
     )
-    zone = JSONField(
+    zone = models.JSONField(
         verbose_name="zone",
-        default=[],
+        default=list,
         help_text="list zones of collaborator"
     )
 
@@ -264,11 +269,11 @@ class Association(MasterDataAbstractModel):
     #         ],
     #         'AND',
     #     ]
-    condition = JSONField(
+    condition = models.JSONField(
         verbose_name="Condition",
         blank=True,
         null=True,
-        default=[]
+        default=list
     )
 
     class Meta:

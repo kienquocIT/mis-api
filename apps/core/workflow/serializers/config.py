@@ -34,7 +34,7 @@ class CollabInFormSerializer(serializers.Serializer):  # noqa
 
 class CollabOutFormSerializer(serializers.Serializer):  # noqa
     employee_list = serializers.ListField(
-        child=serializers.UUIDField(required=False),
+        child=serializers.CharField(required=False),
         required=False
     )
     zone = serializers.ListField(
@@ -51,7 +51,7 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
 
 
 class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
-    employee = serializers.UUIDField(
+    employee = serializers.CharField(
         required=False
     )
     zone = serializers.ListField(
@@ -116,6 +116,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
     )
     condition = serializers.JSONField(required=False)
     zone_initial_node = serializers.JSONField(required=False)
+    coordinates = serializers.JSONField(required=False)
 
     class Meta:
         model = Node
@@ -132,7 +133,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'condition',
             'collab_in_form',
             'collab_out_form',
-            'collab_in_workflow'
+            'collab_in_workflow',
+            'coordinates'
         )
 
 
@@ -284,7 +286,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                     id__in=node.zone_initial_node
                 ).values(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
         else:
             if option == 0:
@@ -292,20 +295,23 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                     id__in=node.collab_in_form.get('zone', [])
                 ).values(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
             elif option == 1:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.collab_out_form.get('zone', [])
                 ).values(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
         if node_zone_list:
             for node_zone in node_zone_list:
                 zone_data.append({
                     'id': node_zone['id'],
-                    'title': node_zone['title']
+                    'title': node_zone['title'],
+                    'order': node_zone['order'],
                 })
         return zone_data
 
@@ -325,6 +331,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'code_node_system': node.code_node_system,
             'zone': zone_data,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -348,6 +355,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_in_form': collab_in_form,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -384,6 +392,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_out_form': collab_out_form,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -426,6 +435,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_in_workflow': collaborator_data,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -651,7 +661,7 @@ class CommonCreateUpdate:
                         company_id=workflow.company_id,
                     )
                     if zone:
-                        zone_created_data.update({order: zone.id})
+                        zone_created_data.update({order: str(zone.id)})
         return True
 
     @classmethod
