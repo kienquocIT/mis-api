@@ -13,7 +13,10 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
         child=serializers.UUIDField(required=False)
     )
     license_used = serializers.IntegerField(required=False)
-    license_quantity = serializers.IntegerField(required=False)
+    license_quantity = serializers.IntegerField(
+        required=False,
+        allow_null=True
+    )
 
     @classmethod
     def validate_plan(cls, value):
@@ -39,7 +42,10 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
         required=False
     )
     license_used = serializers.IntegerField(required=False)
-    license_quantity = serializers.IntegerField(required=False)
+    license_quantity = serializers.IntegerField(
+        required=False,
+        allow_null=True
+    )
 
     @classmethod
     def validate_plan(cls, value):
@@ -245,8 +251,9 @@ def validate_employee_create_update(validate_data):
         if 'plan_app' in validate_data:
             for plan_app in validate_data['plan_app']:
                 if 'plan' in plan_app and 'license_used' in plan_app and 'license_quantity' in plan_app:
-                    if plan_app['license_used'] > plan_app['license_quantity']:
-                        plan_license_check += plan_app['plan'].title + ", "
+                    if plan_app['license_quantity']:
+                        if plan_app['license_used'] > plan_app['license_quantity']:
+                            plan_license_check += plan_app['plan'].title + ", "
     if plan_license_check:
         raise serializers.ValidationError(
             {
