@@ -499,8 +499,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                 if not value.get(key, None):
                     raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
             else:
-                inventory_level_min = value.get('inventory_level_min', None)
-                inventory_level_max = value.get('inventory_level_max', None)
+                inventory_level_min = int(value.get('inventory_level_min', None))
+                inventory_level_max = int(value.get('inventory_level_max', None))
         if (inventory_level_min > 0) and (inventory_level_max > 0):
             if inventory_level_min > inventory_level_max:
                 raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
@@ -564,8 +564,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
                 if not value.get(key, None):
                     raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
             else:
-                inventory_level_min = value.get('inventory_level_min', None)
-                inventory_level_max = value.get('inventory_level_max', None)
+                inventory_level_min = int(value.get('inventory_level_min', None))
+                inventory_level_max = int(value.get('inventory_level_max', None))
         if (inventory_level_min > 0) and (inventory_level_max > 0):
             if inventory_level_min > inventory_level_max:
                 raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
