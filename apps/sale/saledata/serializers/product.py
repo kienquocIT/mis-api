@@ -492,8 +492,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        inventory_level_min = 0
-        inventory_level_max = 0
+        inventory_level_min = None
+        inventory_level_max = None
         for key in value:
             if key not in ['inventory_level_min', 'inventory_level_max']:
                 if not value.get(key, None):
@@ -557,8 +557,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        inventory_level_min = 0
-        inventory_level_max = 0
+        inventory_level_min = None
+        inventory_level_max = None
         for key in value:
             if key not in ['inventory_level_min', 'inventory_level_max']:
                 if not value.get(key, None):
