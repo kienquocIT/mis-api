@@ -388,7 +388,7 @@ class ProductTestCase(AdvanceTestCase):
             "sale_information": {
                 'default_uom': unit_of_measure['id']
             },
-            "inventory_information":{
+            "inventory_information": {
                 'uom': unit_of_measure['id'],
                 'inventory_level_min': 5,
                 'inventory_level_max': 20
