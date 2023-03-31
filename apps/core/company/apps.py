@@ -6,4 +6,5 @@ class CompanyConfig(AppConfig):
     name = 'apps.core.company'
 
     def ready(self):
-        from apps.shared.extends import signals
+        # pylint: disable=import-outside-toplevel / C0415, unused-import / W0611
+        from apps.shared.extends.signals import update_stock
