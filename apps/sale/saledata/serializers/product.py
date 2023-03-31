@@ -492,9 +492,20 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
+        inventory_level_min = None
+        inventory_level_max = None
         for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+            else:
+                inventory_level_min = int(value.get('inventory_level_min', None))
+                inventory_level_max = int(value.get('inventory_level_max', None))
+        if (inventory_level_min > 0) and (inventory_level_max > 0):
+            if inventory_level_min > inventory_level_max:
+                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+        else:
+            raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
         return value
 
     @classmethod
@@ -546,9 +557,20 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
+        inventory_level_min = None
+        inventory_level_max = None
         for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+            else:
+                inventory_level_min = int(value.get('inventory_level_min', None))
+                inventory_level_max = int(value.get('inventory_level_max', None))
+        if (inventory_level_min > 0) and (inventory_level_max > 0):
+            if inventory_level_min > inventory_level_max:
+                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+        else:
+            raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
         return value
 
     @classmethod
