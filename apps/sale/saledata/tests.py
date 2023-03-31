@@ -237,7 +237,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
-                'title': 'Sản phẩm',
+                'title': 'San pham 1',
                 'description': '',
             },
             format='json'
@@ -320,11 +320,10 @@ class ProductTestCase(AdvanceTestCase):
             data2,
             format='json'
         )
-        self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
         return True
 
     def test_create_product_missing_title(self):
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "general_information": {
@@ -338,10 +337,9 @@ class ProductTestCase(AdvanceTestCase):
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        url = reverse("ProductList")
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
@@ -372,14 +370,13 @@ class ProductTestCase(AdvanceTestCase):
             data2,
             format='json'
         )
-        self.assertEqual(response2.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
         return False
 
     def test_create_product_not_UUID(self):
         product_type = self.create_product_type()
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
