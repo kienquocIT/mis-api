@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.core.workflow.models import Workflow, Node  # pylint: disable-msg=E0611
 from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, \
-    NodeListSerializer, WorkflowDetailSerializer, WorkflowUpdateSerializer
+    WorkflowDetailSerializer, WorkflowUpdateSerializer
+from apps.core.workflow.serializers.config_sub import NodeListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
