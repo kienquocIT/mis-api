@@ -3,7 +3,7 @@ from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicens
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.sale.saledata.models.product import ProductType
-from apps.sale.saledata.models.price import TaxCategory, Currency
+from apps.sale.saledata.models.price import TaxCategory, Currency, Price
 from apps.sale.saledata.models.accounts import Contact
 
 from .extends.signals import SaleDefaultData
@@ -149,6 +149,11 @@ def delete_all_currency():
         currency_obj.delete()
 
 
+def delete_all_price():
+    for price_obj in Price.objects.all():
+        price_obj.delete()
+
+
 def delete_wrong_contact():
     try:
         obj = Contact.objects.get(id='44dfcf1c06924e348819df692a11206a')
@@ -162,3 +167,4 @@ def delete_data_old():
     delete_all_product_type()
     delete_all_tax_category()
     delete_all_currency()
+    delete_all_price()
