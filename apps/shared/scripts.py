@@ -153,7 +153,6 @@ def delete_wrong_contact():
     try:
         obj = Contact.objects.get(id='44dfcf1c06924e348819df692a11206a')
         obj.delete()
-        return obj
     except Contact.DoesNotExist:
         pass
 
