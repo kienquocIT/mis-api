@@ -229,10 +229,21 @@ class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
 
 
 class PriceListSerializer(serializers.ModelSerializer):  # noqa
+    price_list_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
         fields = ('id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type', 'is_default')
+
+    @classmethod
+    def get_price_list_type(cls, obj):
+        if obj.price_list_type == 0:
+            return {'value': obj.price_list_type, 'name': 'For Sale'}
+        elif obj.price_list_type == 1:
+            return {'value': obj.price_list_type, 'name': 'For Purchase'}
+        elif obj.price_list_type == 2:
+            return {'value': obj.price_list_type, 'name': 'For Expense'}
+        return {}
 
 
 class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
