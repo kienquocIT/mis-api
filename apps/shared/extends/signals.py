@@ -6,6 +6,7 @@ from django.dispatch import receiver
 
 from apps.core.company.models import Company
 from apps.sale.saledata.models.product import ProductType
+from apps.sale.saledata.models.price import TaxCategory, Currency
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,19 @@ class SaleDefaultData:
         {'title': 'Nguyên vật liệu', 'is_default': 1},
         {'title': 'Dịch vụ', 'is_default': 1},
     ]
+    TaxCategory_data = [
+        {'title': 'Thuế GTGT', 'is_default': 1},
+        {'title': 'Thuế xuất khẩu', 'is_default': 1},
+        {'title': 'Thuế nhập khẩu', 'is_default': 1},
+        {'title': 'Thuế tiêu thụ đặt biệt', 'is_default': 1},
+        {'title': 'Thuế nhà thầu', 'is_default': 1},
+    ]
+    Currency_data = [
+        {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
+        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0},
+        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0},
+        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0},
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -25,6 +39,8 @@ class SaleDefaultData:
         try:
             with transaction.atomic():
                 self.create_product_type()
+                self.create_tax_category()
+                self.create_currency()
             return True
         except Exception as err:
             logger.error(
@@ -35,10 +51,26 @@ class SaleDefaultData:
 
     def create_product_type(self):
         objs = [
-            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **sal_item)
-            for sal_item in self.ProductType_data
+            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
+            for pt_item in self.ProductType_data
         ]
         ProductType.objects.bulk_create(objs)
+        return True
+
+    def create_tax_category(self):
+        objs = [
+            TaxCategory(tenant=self.company_obj.tenant, company=self.company_obj, **tc_item)
+            for tc_item in self.TaxCategory_data
+        ]
+        TaxCategory.objects.bulk_create(objs)
+        return True
+
+    def create_currency(self):
+        objs = [
+            Currency(tenant=self.company_obj.tenant, company=self.company_obj, **c_item)
+            for c_item in self.Currency_data
+        ]
+        Currency.objects.bulk_create(objs)
         return True
 
 

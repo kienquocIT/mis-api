@@ -3,6 +3,7 @@ from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicens
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.sale.saledata.models.product import ProductType
+from apps.sale.saledata.models.price import TaxCategory, Currency
 
 from .extends.signals import SaleDefaultData
 
@@ -135,3 +136,19 @@ def update_sale_default_data_old_company():
 def delete_all_product_type():
     for product_type_obj in ProductType.objects.all():
         product_type_obj.delete()
+
+
+def delete_all_tax_category():
+    for tax_category_obj in TaxCategory.objects.all():
+        tax_category_obj.delete()
+
+
+def delete_all_currency():
+    for currency_obj in Currency.objects.all():
+        currency_obj.delete()
+
+
+def delete_data_old():
+    delete_all_product_type()
+    delete_all_tax_category()
+    delete_all_currency()
