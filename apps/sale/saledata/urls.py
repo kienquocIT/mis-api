@@ -15,6 +15,12 @@ from apps.sale.saledata.views.product import (
 
     ProductList, ProductDetail
 )
+from apps.sale.saledata.views.price import (
+    TaxCategoryList, TaxCategoryDetail,
+    TaxList, TaxDetail,
+    CurrencyList, CurrencyDetail, SyncWithVCB
+)
+
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -56,4 +62,14 @@ urlpatterns += [
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+]
+
+urlpatterns += [
+    path('tax-categories', TaxCategoryList.as_view(), name='TaxCategoryList'),
+    path('tax-category/<str:pk>', TaxCategoryDetail.as_view(), name='TaxCategoryDetail'),
+    path('taxes', TaxList.as_view(), name='TaxList'),
+    path('tax/<str:pk>', TaxDetail.as_view(), name='TaxDetail'),
+    path('currencies', CurrencyList.as_view(), name='CurrencyList'),
+    path('currency/<str:pk>', CurrencyDetail.as_view(), name='CurrencyDetail'),
+    path('sync-selling-rate-with-VCB/<str:pk>', SyncWithVCB.as_view(), name='SyncWithVCB'),
 ]

@@ -11,3 +11,4 @@ from .core import *
 from .company import *
 from .accounts import AccountsMsg
 from .product import ProductMsg
+from .price import PriceMsg
