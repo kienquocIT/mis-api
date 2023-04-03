@@ -22,7 +22,7 @@ class Tax(MasterDataAbstractModel):
         verbose_name='category of tax',
         on_delete=models.CASCADE,
         null=False,
-        related_name='taxcategory_category'
+        related_name='tax_category'
     )
     # type = 0 is Sale
     # type = 1 is Purchase
