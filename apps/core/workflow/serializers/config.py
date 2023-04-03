@@ -128,6 +128,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -151,6 +152,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -188,6 +190,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -243,6 +246,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
