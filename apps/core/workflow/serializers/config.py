@@ -227,13 +227,15 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                         id__in=collaborator.zone
                     ).values(
                         'id',
-                        'title'
+                        'title',
+                        'order',
                     )
                     if zone_list:
                         for zone in zone_list:
                             zone_in_workflow_data.append({
                                 'id': zone['id'],
-                                'title': zone['title']
+                                'title': zone['title'],
+                                'order': zone['order'],
                             })
                 collaborator_data.append({
                     'employee': {
