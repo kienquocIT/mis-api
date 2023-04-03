@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sale.saledata.models.price import (
-    TaxCategory, Tax, Currency
+    TaxCategory, Tax, Currency, Price
 )
 from apps.shared import PriceMsg
 
@@ -225,4 +225,68 @@ class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
             if attrs > 0:
                 return attrs
             raise serializers.ValidationError(PriceMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
+        return None
+
+
+class PriceListSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Price
+        fields = ('id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type', 'is_default')
+
+
+class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = Price
+        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type')
+
+    @classmethod
+    def validate_title(cls, value):
+        if Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
+            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+        return value
+
+    @classmethod
+    def validate_factor(cls, attrs):
+        if attrs is not None:
+            if attrs > 0:
+                return attrs
+            raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
+        return None
+
+class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Price
+        fields = ('id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type', 'is_default')
+
+
+class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = Price
+        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type')
+
+    def validate_title(self, value):
+        if value != self.instance.title and Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value
+        ).exists():
+            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+        return value
+
+    @classmethod
+    def validate_rate(cls, attrs):
+        if attrs is not None:
+            if attrs > 0:
+                return attrs
+            raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
         return None

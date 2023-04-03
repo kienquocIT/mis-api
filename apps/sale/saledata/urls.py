@@ -18,7 +18,8 @@ from apps.sale.saledata.views.product import (
 from apps.sale.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail,
     TaxList, TaxDetail,
-    CurrencyList, CurrencyDetail, SyncWithVCB
+    CurrencyList, CurrencyDetail, SyncWithVCB,
+    PriceList, PriceDetail
 )
 
 
@@ -72,4 +73,9 @@ urlpatterns += [
     path('currencies', CurrencyList.as_view(), name='CurrencyList'),
     path('currency/<str:pk>', CurrencyDetail.as_view(), name='CurrencyDetail'),
     path('sync-selling-rate-with-VCB/<str:pk>', SyncWithVCB.as_view(), name='SyncWithVCB'),
+]
+
+urlpatterns += [
+    path('prices', PriceList.as_view(), name='PriceList'),
+    path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
 ]
