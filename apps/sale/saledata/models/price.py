@@ -66,3 +66,10 @@ class Price(DataAbstractModel):
     # price_list_type = 2 is 'For Expense'
     price_list_type = models.IntegerField()
     is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Price'
+        verbose_name_plural = 'Prices'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()

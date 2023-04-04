@@ -271,6 +271,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
         return None
 
+
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
