@@ -87,7 +87,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             if node.zone_initial_node:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.zone_initial_node
-                ).values(
+                ).values_list(
                     'id',
                     'title',
                     'order',
@@ -96,7 +96,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             if option == 0:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.collab_in_form.get('zone', [])
-                ).values(
+                ).values_list(
                     'id',
                     'title',
                     'order',
@@ -104,7 +104,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             elif option == 1:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.collab_out_form.get('zone', [])
-                ).values(
+                ).values_list(
                     'id',
                     'title',
                     'order',
@@ -112,9 +112,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         if node_zone_list:
             for node_zone in node_zone_list:
                 zone_data.append({
-                    'id': node_zone['id'],
-                    'title': node_zone['title'],
-                    'order': node_zone['order'],
+                    'id': node_zone[0],
+                    'title': node_zone[1],
+                    'order': node_zone[2],
                 })
         return zone_data
 
@@ -205,45 +205,39 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def node_in_workflow(cls, node, result):
         collaborator_data = []
-        in_workflow_collaborator = Collaborator.objects.filter(
+        in_workflow_collaborator = Collaborator.objects.select_related(
+            'employee'
+        ).prefetch_related(
+            'employee__role',
+        ).filter(
             node=node
         )
         if in_workflow_collaborator:
             for collaborator in in_workflow_collaborator:
-                role_data = []
-                role_list = collaborator.employee.role.all().values(
-                    'id',
-                    'title'
-                )
-                if role_list:
-                    for role in role_list:
-                        role_data.append({
-                                'id': role['id'],
-                                'title': role['title'],
-                            })
-                zone_in_workflow_data = []
-                if collaborator.zone:
-                    zone_list = Zone.objects.filter(
+                role_data = [
+                    {'id': role[0], 'title': role[1]}
+                    for role in collaborator.employee.role.values_list(
+                        'id',
+                        'title'
+                    )
+                ]
+                zone_in_workflow_data = [
+                    {'id': zone[0], 'title': zone[1], 'order': zone[2]}
+                    for zone in Zone.objects.filter(
                         id__in=collaborator.zone
-                    ).values(
+                    ).values_list(
                         'id',
                         'title',
                         'order',
                     )
-                    if zone_list:
-                        for zone in zone_list:
-                            zone_in_workflow_data.append({
-                                'id': zone['id'],
-                                'title': zone['title'],
-                                'order': zone['order'],
-                            })
+                ]
                 collaborator_data.append({
                     'employee': {
                         'id': collaborator.employee_id,
                         'full_name': collaborator.employee.get_full_name(2),
-                        'role': role_data
+                        'role': role_data,
                     },
-                    'zone': zone_in_workflow_data
+                    'zone': zone_in_workflow_data,
                 })
         result.append({
             'id': node.id,
@@ -313,7 +307,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_association(cls, obj):
         result = []
-        association_list = Association.objects.filter(
+        association_list = Association.objects.select_related('node_in', 'node_out').filter(
             workflow=obj
         ).values(
             'condition',
