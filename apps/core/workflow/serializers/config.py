@@ -1,205 +1,10 @@
 from rest_framework import serializers
 
-from apps.core.base.models import Application, ApplicationProperty
+from apps.core.base.models import Application
 from apps.core.hr.models import Employee
 from apps.core.workflow.models import Workflow, Node, Collaborator, Zone, Association  # pylint: disable-msg=E0611
-from apps.shared import HRMsg
-
-
-# Collaborator
-class CollaboratorCreateSerializer(serializers.ModelSerializer):
-    collaborator_zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    class Meta:
-        model = Collaborator
-        fields = (
-            'employee',
-            'collaborator_zone'
-        )
-
-
-class CollabInFormSerializer(serializers.Serializer):  # noqa
-    employee_field = serializers.CharField(
-        max_length=550,
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-
-class CollabOutFormSerializer(serializers.Serializer):  # noqa
-    employee_list = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    @classmethod
-    def validate_employee_list(cls, value):
-        employee_list = Employee.objects.filter(id__in=value).count()
-        if employee_list == len(value):
-            return value
-        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
-
-
-class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
-    employee = serializers.UUIDField(
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    @classmethod
-    def validate_employee(cls, value):
-        try:
-            Employee.objects.get(id=value)
-            return value
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
-
-
-# Node
-class NodeListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Node
-        fields = (
-            'id',
-            'title',
-            'code',
-            'remark',
-            'is_system',
-            'order'
-        )
-
-
-class NodeDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Node
-        fields = (
-            'id',
-            'title',
-            'code',
-            'remark',
-            'is_system',
-            'order'
-        )
-
-
-class NodeCreateSerializer(serializers.ModelSerializer):
-    collab_in_form = CollabInFormSerializer(
-        required=False
-    )
-    collab_out_form = CollabOutFormSerializer(
-        required=False
-    )
-    collab_in_workflow = CollabInWorkflowSerializer(
-        many=True,
-        required=False
-    )
-    collaborator = CollaboratorCreateSerializer(
-        many=True,
-        required=False
-    )
-    actions = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-    condition = serializers.JSONField(required=False)
-    zone_initial_node = serializers.JSONField(required=False)
-
-    class Meta:
-        model = Node
-        fields = (
-            'title',
-            'remark',
-            'actions',
-            'option_collaborator',
-            'collaborator',
-            'zone_initial_node',
-            'order',
-            'is_system',
-            'code_node_system',
-            'condition',
-            'collab_in_form',
-            'collab_out_form',
-            'collab_in_workflow'
-        )
-
-
-# Zone
-class ZoneDetailSerializer(serializers.ModelSerializer):
-    property_list = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Zone
-        fields = (
-            'id',
-            'title',
-            'remark',
-            'property_list',
-            'order'
-        )
-
-    @classmethod
-    def get_property_list(cls, obj):
-        result = []
-        if obj.property_list and isinstance(obj.property_list, list):
-            property_list = ApplicationProperty.objects.filter(
-                id__in=obj.property_list
-            ).values(
-                'id',
-                'title',
-                'code'
-            )
-            if property_list:
-                for proper in property_list:
-                    result.append({
-                        'id': proper['id'],
-                        'title': proper['title'],
-                        'code': proper['code'],
-                    })
-        return result
-
-
-class ZoneCreateSerializer(serializers.ModelSerializer):
-    property_list = serializers.ListField(
-        child=serializers.CharField(required=True),
-        required=True,
-    )
-
-    class Meta:
-        model = Zone
-        fields = (
-            'title',
-            'remark',
-            'property_list',
-            'order'
-        )
-
-
-# Association
-class AssociationCreateSerializer(serializers.ModelSerializer):
-    node_in = serializers.IntegerField()
-    node_out = serializers.IntegerField()
-    condition = serializers.JSONField()
-
-    class Meta:
-        model = Association
-        fields = (
-            'node_in',
-            'node_out',
-            'condition'
-        )
+from apps.core.workflow.serializers.config_sub import NodeCreateSerializer, ZoneDetailSerializer, \
+    ZoneCreateSerializer, AssociationCreateSerializer
 
 
 # Workflow
@@ -282,30 +87,34 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             if node.zone_initial_node:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.zone_initial_node
-                ).values(
+                ).values_list(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
         else:
             if option == 0:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.collab_in_form.get('zone', [])
-                ).values(
+                ).values_list(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
             elif option == 1:
                 node_zone_list = Zone.objects.filter(
                     id__in=node.collab_out_form.get('zone', [])
-                ).values(
+                ).values_list(
                     'id',
-                    'title'
+                    'title',
+                    'order',
                 )
         if node_zone_list:
             for node_zone in node_zone_list:
                 zone_data.append({
-                    'id': node_zone['id'],
-                    'title': node_zone['title']
+                    'id': node_zone[0],
+                    'title': node_zone[1],
+                    'order': node_zone[2],
                 })
         return zone_data
 
@@ -319,12 +128,14 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
             'code_node_system': node.code_node_system,
             'zone': zone_data,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -341,6 +152,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -348,6 +160,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_in_form': collab_in_form,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -377,6 +190,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -384,41 +198,51 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_out_form': collab_out_form,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
     @classmethod
     def node_in_workflow(cls, node, result):
         collaborator_data = []
-        in_workflow_collaborator = Collaborator.objects.filter(
+        in_workflow_collaborator = Collaborator.objects.select_related(
+            'employee'
+        ).prefetch_related(
+            'employee__role',
+        ).filter(
             node=node
         )
         if in_workflow_collaborator:
             for collaborator in in_workflow_collaborator:
-                zone_in_workflow_data = []
-                if collaborator.zone:
-                    zone_list = Zone.objects.filter(
-                        id__in=collaborator.zone
-                    ).values(
+                role_data = [
+                    {'id': role[0], 'title': role[1]}
+                    for role in collaborator.employee.role.values_list(
                         'id',
                         'title'
                     )
-                    if zone_list:
-                        for zone in zone_list:
-                            zone_in_workflow_data.append({
-                                'id': zone['id'],
-                                'title': zone['title']
-                            })
+                ]
+                zone_in_workflow_data = [
+                    {'id': zone[0], 'title': zone[1], 'order': zone[2]}
+                    for zone in Zone.objects.filter(
+                        id__in=collaborator.zone
+                    ).values_list(
+                        'id',
+                        'title',
+                        'order',
+                    )
+                ]
                 collaborator_data.append({
                     'employee': {
                         'id': collaborator.employee_id,
-                        'full_name': collaborator.employee.get_full_name(2)
+                        'full_name': collaborator.employee.get_full_name(2),
+                        'role': role_data,
                     },
-                    'zone': zone_in_workflow_data
+                    'zone': zone_in_workflow_data,
                 })
         result.append({
             'id': node.id,
             'title': node.title,
+            'code': node.code,
             'remark': node.remark,
             'actions': node.actions,
             'is_system': node.is_system,
@@ -426,6 +250,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             'option_collaborator': node.option_collaborator,
             'collab_in_workflow': collaborator_data,
             'order': node.order,
+            'coordinates': node.coordinates
         })
         return True
 
@@ -482,7 +307,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_association(cls, obj):
         result = []
-        association_list = Association.objects.filter(
+        association_list = Association.objects.select_related('node_in', 'node_out').filter(
             workflow=obj
         ).values(
             'condition',
@@ -651,7 +476,7 @@ class CommonCreateUpdate:
                         company_id=workflow.company_id,
                     )
                     if zone:
-                        zone_created_data.update({order: zone.id})
+                        zone_created_data.update({order: str(zone.id)})
         return True
 
     @classmethod
