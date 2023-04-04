@@ -158,7 +158,7 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
         if obj.property_list and isinstance(obj.property_list, list):
             property_list = ApplicationProperty.objects.filter(
                 id__in=obj.property_list
-            ).values(
+            ).values_list(
                 'id',
                 'title',
                 'code'
@@ -166,9 +166,9 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
             if property_list:
                 for proper in property_list:
                     result.append({
-                        'id': proper['id'],
-                        'title': proper['title'],
-                        'code': proper['code'],
+                        'id': proper[0],
+                        'title': proper[1],
+                        'code': proper[2],
                     })
         return result
 
