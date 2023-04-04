@@ -135,3 +135,12 @@ def update_sale_default_data_old_company():
 def delete_all_product_type():
     for product_type_obj in ProductType.objects.all():
         product_type_obj.delete()
+
+
+def update_is_super_user():
+    users = User.objects.all()
+    for user in users:
+        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
+            user.save(is_superuser=True)
+    print('update done.')
+    return True
