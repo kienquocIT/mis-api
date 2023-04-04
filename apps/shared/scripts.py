@@ -162,3 +162,12 @@ def delete_data_old():
     delete_all_product_type()
     delete_all_tax_category()
     delete_all_currency()
+
+
+def update_is_super_user():
+    users = User.objects.all()
+    for user in users:
+        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
+            user.save(is_superuser=True)
+    print('update done.')
+    return True

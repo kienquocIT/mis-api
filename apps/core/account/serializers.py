@@ -47,16 +47,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        """
-            if user is employee and only in 1 company (line 57)
-            -> move employee + user in new company
-        """
-
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
-                co_user_emp = list(CompanyUserEmployee.objects.select_related('employee').filter(user=instance))
-                if len(co_user_emp) == 1:
+                co_user_emp = CompanyUserEmployee.objects.select_related(
+                    'employee'
+                ).filter(
+                    user=instance
+                )
+                if co_user_emp.exclude(
+                    employee=None
+                ) == 1:
                     if co_user_emp[0].employee:
                         co_user_emp[0].employee.company = data_bulk
                         co_user_emp[0].employee.save()
@@ -64,15 +65,17 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     co_user_emp[0].company = data_bulk
                     co_user_emp[0].save()
 
-                    instance.company_current.total_user -= 1
-                    instance.company_current.save()
+                    if len(co_user_emp) == 1:
+                        instance.company_current.total_user -= 1
+                        instance.company_current.save()
 
-                    data_bulk.total_user += 1
-                    data_bulk.save()
+                        data_bulk.total_user += 1
+                        data_bulk.save()
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
             return instance
+
         raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
 
 
@@ -260,8 +263,8 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                             data_remove.company.save()
                         data_remove.delete()
 
-    def update(self, instance, validated_data):  # pylint: disable=R0912
-        if 'companies' in validated_data:  # pylint: disable=R1702
+    def update(self, instance, validated_data):
+        if 'companies' in validated_data:
             company_id_list = validated_data['companies']
             company_old_id_list = CompanyUserEmployee.objects.filter(
                 user=instance
@@ -278,12 +281,12 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
             remove_list = self.get_company_list_delete(company_id_list, company_old_id_list)
             self.delete_user(instance, remove_list)
 
-            if len(company_old_id_list) != 0:
-                if len(company_old_id_list) == len(remove_list):
-                    instance.save()
+            num_company = CompanyUserEmployee.objects.filter(user=instance).count()
+
+            if num_company > 1:
+                instance.save(is_superuser=True)
             else:
-                if len(bulk_info_add) > 0:
-                    instance.save(is_superuser=True)
+                instance.save()
 
             return instance
         raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
