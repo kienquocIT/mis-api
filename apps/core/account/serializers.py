@@ -47,11 +47,6 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        """
-            if user is employee and only in 1 company (line 57)
-            -> move employee + user in new company
-        """
-
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
