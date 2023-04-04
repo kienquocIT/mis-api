@@ -65,12 +65,12 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                     co_user_emp[0].company = data_bulk
                     co_user_emp[0].save()
 
-                if len(co_user_emp) == 1:
-                    instance.company_current.total_user -= 1
-                    instance.company_current.save()
+                    if len(co_user_emp) == 1:
+                        instance.company_current.total_user -= 1
+                        instance.company_current.save()
 
-                    data_bulk.total_user += 1
-                    data_bulk.save()
+                        data_bulk.total_user += 1
+                        data_bulk.save()
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
