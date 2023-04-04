@@ -55,7 +55,13 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
-                co_user_emp = list(CompanyUserEmployee.objects.select_related('employee').filter(user=instance))
+                co_user_emp = CompanyUserEmployee.objects.select_related(
+                    'employee'
+                ).filter(
+                    user=instance
+                ).exclude(
+                    employee=None
+                )
                 if len(co_user_emp) == 1:
                     if co_user_emp[0].employee:
                         co_user_emp[0].employee.company = data_bulk
@@ -73,6 +79,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
                 setattr(instance, key, value)
             instance.save()
             return instance
+
         raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
 
 
