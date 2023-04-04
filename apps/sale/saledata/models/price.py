@@ -1,5 +1,6 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
+from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
+from apps.sale.saledata.models.product import Product
 
 
 # Create your models here.
@@ -65,6 +66,14 @@ class Price(DataAbstractModel):
     # price_list_type = 1 is 'For Purchase'
     # price_list_type = 2 is 'For Expense'
     price_list_type = models.IntegerField()
+    price_list_mapped = models.UUIDField(null=True)
+    product = models.ManyToManyField(
+        Product,
+        through='ProductPriceList',
+        symmetrical=False,
+        blank=True,
+        related_name='price_map_product'
+    )
     is_default = models.BooleanField(default=False)
 
     class Meta:
@@ -73,3 +82,9 @@ class Price(DataAbstractModel):
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# ProductPriceList
+class ProductPriceList(SimpleAbstractModel):
+    price_list = models.ForeignKey(Price, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)

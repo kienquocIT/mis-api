@@ -78,9 +78,8 @@ class SaleDefaultData:
         return True
 
     def create_price_default(self):
-        primary_current = Currency.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
+        primary_current = Currency.objects.filter(
+            company=self.company_obj,
             is_primary=True
         ).first()
         if primary_current:

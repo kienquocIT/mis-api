@@ -2,7 +2,8 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.shared import ProductMsg
+from apps.sale.saledata.models.price import ProductPriceList, Price
+from apps.shared import ProductMsg, PriceMsg
 
 
 # Product Type
@@ -504,6 +505,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                 raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
         return value
 
+    def create(self, validated_data):
+        product = Product.objects.create(**validated_data)
+        if 'sale_information' in validated_data.keys():
+            price_list_general_current = Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_default=True
+            ).first()
+            if price_list_general_current:
+                ProductPriceList.objects.create(price_list=price_list_general_current, product=product)
+            else:
+                raise serializers.ValidationError(PriceMsg.GENERAL_PRICE_LIST_NOT_EXIST)
+        return product
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
 
