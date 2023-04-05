@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel
 
 
 class Workflow(MasterDataAbstractModel):
@@ -63,6 +63,12 @@ class Zone(MasterDataAbstractModel):
         blank=True,
         null=True
     )
+    properties = models.ManyToManyField(
+        'base.ApplicationProperty',
+        through='ZoneProperties',
+        symmetrical=False,
+        related_name='zones_map_properties',
+    )
     property_list = models.JSONField(
         verbose_name="property list",
         default=list
@@ -75,6 +81,23 @@ class Zone(MasterDataAbstractModel):
         verbose_name = 'Zone in workflow'
         verbose_name_plural = 'Zone in workflow'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ZoneProperties(SimpleAbstractModel):
+    app_property = models.ForeignKey(
+        'base.ApplicationProperty',
+        on_delete=models.CASCADE
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Zone Property'
+        verbose_name_plural = 'Zones Properties'
         default_permissions = ()
         permissions = ()
 
@@ -117,7 +140,7 @@ class Node(MasterDataAbstractModel):
 
     # data collab_in_form
     # {
-    #     'employee_field': 'employee_inherit',
+    #     'property': 'propertyID',
     #     'zone': ['zoneID1', 'zoneID2']
     # }
     collab_in_form = models.JSONField(
@@ -151,6 +174,12 @@ class Node(MasterDataAbstractModel):
         help_text="use for option in workflow"
     )
 
+    zones_initial_node = models.ManyToManyField(
+        Zone,
+        through='InitialNodeZone',
+        symmetrical=False,
+        related_name='initial_node_map_zones',
+    )
     # ['zoneID1', 'zoneID2', ....]
     zone_initial_node = models.JSONField(
         verbose_name="zone",
@@ -194,35 +223,6 @@ class Node(MasterDataAbstractModel):
         verbose_name = 'Node'
         verbose_name_plural = 'Nodes'
         ordering = ('order',)
-        default_permissions = ()
-        permissions = ()
-
-
-class Collaborator(MasterDataAbstractModel):
-    node = models.ForeignKey(
-        'workflow.Node',
-        on_delete=models.CASCADE,
-        verbose_name="node",
-        related_name="collaborator_node",
-        null=True
-    )
-    employee = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        verbose_name="employee",
-        related_name="collaborator_employee",
-        null=True
-    )
-    zone = models.JSONField(
-        verbose_name="zone",
-        default=list,
-        help_text="list zones of collaborator"
-    )
-
-    class Meta:
-        verbose_name = 'Collaborator'
-        verbose_name_plural = 'Collaborators'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -280,5 +280,165 @@ class Association(MasterDataAbstractModel):
         verbose_name = 'Association'
         verbose_name_plural = 'Associations'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT INITIAL NODE
+class InitialNodeZone(SimpleAbstractModel):
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE,
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Initial Node Zone'
+        verbose_name_plural = 'Initial Node Zones'
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT IN FORM
+class CollaborationInForm(MasterDataAbstractModel):
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE,
+    )
+    app_property = models.ForeignKey(
+        'base.ApplicationProperty',
+        on_delete=models.CASCADE
+    )
+    zone = models.ManyToManyField(
+        Zone,
+        through='CollaborationInFormZone',
+        symmetrical=False,
+        related_name='collab_in_forms_map_zones'
+    )
+
+    class Meta:
+        verbose_name = 'Collab in form'
+        verbose_name_plural = 'Collab in form'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class CollaborationInFormZone(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollaborationInForm,
+        on_delete=models.CASCADE
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Collab in form zone'
+        verbose_name_plural = 'Collab in form zones'
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT OUT FORM
+class CollaborationOutForm(MasterDataAbstractModel):
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE,
+    )
+    employees = models.ManyToManyField(
+        'hr.Employee',
+        through='CollaborationOutFormEmployee',
+        related_name='collab_out_forms_map_employees'
+    )
+    zone = models.ManyToManyField(
+        Zone,
+        through='CollaborationOutFormZone',
+        related_name='collab_out_forms_map_zones'
+    )
+
+    class Meta:
+        verbose_name = 'Collab out form'
+        verbose_name_plural = 'Collab out form'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class CollaborationOutFormEmployee(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollaborationOutForm,
+        on_delete=models.CASCADE
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Collab out form employee'
+        verbose_name_plural = 'Collab out form employees'
+        default_permissions = ()
+        permissions = ()
+
+
+class CollaborationOutFormZone(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollaborationOutForm,
+        on_delete=models.CASCADE
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Collab out form zone'
+        verbose_name_plural = 'Collab out form zones'
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT IN WORKFLOW
+class CollabInWorkflow(MasterDataAbstractModel):
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE
+    )
+    zone = models.ManyToManyField(
+        Zone,
+        through='CollabInWorkflowZone',
+        related_name='collab_in_workflows_map_zones'
+    )
+
+    class Meta:
+        verbose_name = 'Collab in workflow'
+        verbose_name_plural = 'Collab in workflow'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class CollabInWorkflowZone(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollabInWorkflow,
+        on_delete=models.CASCADE
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        verbose_name = 'Collab in workflow zone'
+        verbose_name_plural = 'Collab in workflow zones'
         default_permissions = ()
         permissions = ()

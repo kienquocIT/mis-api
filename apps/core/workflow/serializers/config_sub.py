@@ -1,28 +1,13 @@
 from rest_framework import serializers
 
-from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
-from apps.core.workflow.models import Node, Collaborator, Zone, Association  # pylint: disable-msg=E0611
+from apps.core.workflow.models import Node, Zone, Association  # pylint: disable-msg=E0611
 from apps.shared import HRMsg
 
 
 # Collaborator
-class CollaboratorCreateSerializer(serializers.ModelSerializer):
-    collaborator_zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    class Meta:
-        model = Collaborator
-        fields = (
-            'employee',
-            'collaborator_zone'
-        )
-
-
 class CollabInFormSerializer(serializers.Serializer):  # noqa
-    employee_field = serializers.CharField(
+    property = serializers.CharField(
         max_length=550,
         required=False
     )
@@ -106,10 +91,6 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
-    collaborator = CollaboratorCreateSerializer(
-        many=True,
-        required=False
-    )
     actions = serializers.ListField(
         child=serializers.IntegerField(required=False),
         required=False
@@ -125,7 +106,6 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'remark',
             'actions',
             'option_collaborator',
-            'collaborator',
             'zone_initial_node',
             'order',
             'is_system',
@@ -154,23 +134,14 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_property_list(cls, obj):
-        result = []
-        if obj.property_list and isinstance(obj.property_list, list):
-            property_list = ApplicationProperty.objects.filter(
-                id__in=obj.property_list
-            ).values_list(
+        return [
+            {'id': proper[0], 'title': proper[1], 'code': proper[2]}
+            for proper in obj.properties.values_list(
                 'id',
                 'title',
                 'code'
             )
-            if property_list:
-                for proper in property_list:
-                    result.append({
-                        'id': proper[0],
-                        'title': proper[1],
-                        'code': proper[2],
-                    })
-        return result
+        ]
 
 
 class ZoneCreateSerializer(serializers.ModelSerializer):
