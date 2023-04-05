@@ -83,9 +83,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     ):
         node_zone_list = []
         if is_initial:
-            if node.zone_initial_node:
+            if node['zone_initial_node']:
                 node_zone_list = Zone.objects.filter(
-                    id__in=node.zone_initial_node
+                    id__in=node['zone_initial_node']
                 ).values_list(
                     'id',
                     'title',
@@ -94,7 +94,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         else:
             if option == 0:
                 node_zone_list = Zone.objects.filter(
-                    id__in=node.collab_in_form.get('zone', [])
+                    id__in=node['collab_in_form'].get('zone', [])
                 ).values_list(
                     'id',
                     'title',
@@ -102,7 +102,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                 )
             elif option == 1:
                 node_zone_list = Zone.objects.filter(
-                    id__in=node.collab_out_form.get('zone', [])
+                    id__in=node['collab_out_form'].get('zone', [])
                 ).values_list(
                     'id',
                     'title',
@@ -121,18 +121,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             result,
             zone_data
     ):
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'code': node.code,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'zone': zone_data,
-            'order': node.order,
-            'coordinates': node.coordinates
-        })
+        node.update({'zone': zone_data})
+        result.append(node)
         return True
 
     @classmethod
@@ -142,22 +132,9 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             result,
             zone_data
     ):
-        collab_in_form = node.collab_in_form
-        if collab_in_form:
-            collab_in_form.update({'zone': zone_data})
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'code': node.code,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_in_form': collab_in_form,
-            'order': node.order,
-            'coordinates': node.coordinates
-        })
+        if node['collab_in_form']:
+            node['collab_in_form'].update({'zone': zone_data})
+        result.append(node)
         return True
 
     @classmethod
@@ -168,31 +145,18 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             zone_data
     ):
         employee_list = Employee.objects.filter(
-            id__in=node.collab_out_form.get('employee_list', [])
+            id__in=node['collab_out_form'].get('employee_list', [])
         )
         employee_data = [
             {'id': employee.id, 'full_name': employee.get_full_name(2)}
             for employee in employee_list
         ]
-        collab_out_form = node.collab_out_form
-        if collab_out_form:
-            collab_out_form.update({
+        if node['collab_out_form']:
+            node['collab_out_form'] = {
                 'employee_list': employee_data,
                 'zone': zone_data
-            })
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'code': node.code,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_out_form': collab_out_form,
-            'order': node.order,
-            'coordinates': node.coordinates
-        })
+            }
+        result.append(node)
         return True
 
     @classmethod
@@ -203,7 +167,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         ).prefetch_related(
             'employee__role',
         ).filter(
-            node=node
+            node_id=node['id']
         )
         if in_workflow_collaborator:
             for collaborator in in_workflow_collaborator:
@@ -232,19 +196,8 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                     },
                     'zone': zone_in_workflow_data,
                 })
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'code': node.code,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_in_workflow': collaborator_data,
-            'order': node.order,
-            'coordinates': node.coordinates
-        })
+        node['collab_in_workflow'] = collaborator_data
+        result.append(node)
         return True
 
     @classmethod
@@ -252,49 +205,63 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
         result = []
         node_list = Node.objects.filter(
             workflow=obj
+        ).values(
+            'id',
+            'title',
+            'code',
+            'remark',
+            'actions',
+            'is_system',
+            'code_node_system',
+            'zone_initial_node',
+            'option_collaborator',
+            'collab_in_form',
+            'collab_out_form',
+            'collab_in_workflow',
+            'order',
+            'coordinates'
         )
-        if node_list:
-            for node in node_list:
-                if node.option_collaborator or node.option_collaborator == 0:
-                    if node.option_collaborator == 0 and node.is_system is True:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=0,
-                            is_initial=True
-                        )
-                        cls.node_system(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option in form
-                    elif node.option_collaborator == 0 and node.is_system is False:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=0,
-                        )
-                        cls.node_in_form(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option out form
-                    elif node.option_collaborator == 1:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=1,
-                        )
-                        cls.node_out_form(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option in workflow
-                    elif node.option_collaborator == 2:
-                        cls.node_in_workflow(
-                            node=node,
-                            result=result,
-                        )
+        for node in node_list:
+            if node['option_collaborator'] or node['option_collaborator'] == 0:
+                if node['option_collaborator'] == 0 and node['is_system'] is True:
+                    zone_data = cls.node_zone_data(
+                        node=node,
+                        option=0,
+                        is_initial=True
+                    )
+                    cls.node_system(
+                        node=node,
+                        result=result,
+                        zone_data=zone_data
+                    )
+                # option in form
+                elif node['option_collaborator'] == 0 and node['is_system'] is False:
+                    zone_data = cls.node_zone_data(
+                        node=node,
+                        option=0,
+                    )
+                    cls.node_in_form(
+                        node=node,
+                        result=result,
+                        zone_data=zone_data
+                    )
+                # option out form
+                elif node['option_collaborator'] == 1:
+                    zone_data = cls.node_zone_data(
+                        node=node,
+                        option=1,
+                    )
+                    cls.node_out_form(
+                        node=node,
+                        result=result,
+                        zone_data=zone_data
+                    )
+                # option in workflow
+                elif node['option_collaborator'] == 2:
+                    cls.node_in_workflow(
+                        node=node,
+                        result=result,
+                    )
         return result
 
     @classmethod
