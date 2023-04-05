@@ -326,6 +326,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
+    products_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
@@ -338,8 +339,39 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'currency',
             'price_list_type',
             'price_list_mapped',
-            'is_default'
+            'is_default',
+            'products_mapped'
         )
+
+    @classmethod
+    def get_products_mapped(cls, obj):
+        products = ProductPriceList.objects.filter(
+            price_list=obj.id
+        )
+        all_products = []
+        for p in products:
+            uom_group = UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.product.general_information['uom_group']
+            ).first()
+            uom = UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.product.general_information['default_uom']
+            ).first()
+
+            if uom and uom_group:
+                product_information = {
+                    'id': p.product_id,
+                    'title': p.product.title,
+                    'uom_group': uom_group.title,
+                    'uom': uom.title
+                }
+                all_products.append(product_information)
+            else:
+                return []
+        return all_products
 
 
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -378,37 +410,3 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-
-class ProductPricelistListSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ProductPriceList
-        fields = (
-            'id',
-            'product',
-            'price',
-        )
-
-    @classmethod
-    def get_product(cls, obj):
-        uom_group = UnitOfMeasureGroup.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id=obj.product.general_information['uom_group']
-        ).first()
-        uom = UnitOfMeasureGroup.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id=obj.product.general_information['default_uom']
-        ).first()
-
-        if uom and uom_group:
-            return {
-                'id': obj.product_id,
-                'title': obj.product.title,
-                'uom_group': uom_group,
-                'uom': uom,
-            }
-        else:
-            return {}

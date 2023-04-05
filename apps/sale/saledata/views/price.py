@@ -9,7 +9,6 @@ from apps.sale.saledata.serializers.price import (
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
     CurrencySyncWithVCBSerializer,
     PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer,
-    ProductPricelistListSerializer
 )
 
 
@@ -206,16 +205,3 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = PriceUpdateSerializer
         return self.update(request, *args, **kwargs)
-
-
-class ProductMapPricelistList(BaseListMixin, BaseCreateMixin):
-    queryset = ProductPriceList.objects.select_related('product', 'price_list', 'currency_using')
-    serializer_list = ProductPricelistListSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Product PriceLis list",
-        operation_description="Product PriceLis list",
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
