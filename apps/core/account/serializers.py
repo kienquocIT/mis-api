@@ -50,32 +50,49 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         if 'company_current' in validated_data:
             data_bulk = validated_data['company_current']
             if data_bulk != instance.company_current:
-                co_user_emp = CompanyUserEmployee.objects.select_related(
-                    'employee'
+                list_company_user_emp = CompanyUserEmployee.objects.select_related(
+                    'employee', 'company'
                 ).filter(
                     user=instance
                 )
-                if co_user_emp.exclude(
-                    employee=None
-                ) == 1:
-                    if co_user_emp[0].employee:
-                        co_user_emp[0].employee.company = data_bulk
-                        co_user_emp[0].employee.save()
+                company_user_bulk = list_company_user_emp.filter(company=data_bulk).first()
+                company_user_instance = list_company_user_emp.filter(company=instance.company_current).first()
 
-                    co_user_emp[0].company = data_bulk
-                    co_user_emp[0].save()
+                if company_user_bulk:
+                    if company_user_bulk.employee is None:
+                        if company_user_instance.employee is not None:
+                            company_user_instance.employee.company = data_bulk
+                            company_user_instance.employee.save()
 
-                    if len(co_user_emp) == 1:
-                        instance.company_current.total_user -= 1
-                        instance.company_current.save()
+                            company_user_bulk.employee = company_user_instance.employee
+                            company_user_instance.employee = None
 
-                        data_bulk.total_user += 1
-                        data_bulk.save()
+                    company_user_bulk.is_created_company = True
+                    company_user_bulk.save()
+
+                    company_user_instance.is_created_company = False
+                    company_user_instance.save()
+                else:
+                    if company_user_instance.employee:
+                        company_user_instance.employee.company = data_bulk
+                        company_user_instance.employee.save()
+
+                    company_user_instance.company = data_bulk
+                    company_user_instance.save()
+
+                    instance.company_current.total_user -= 1
+                    instance.company_current.save()
+
+                    data_bulk.total_user += 1
+                    data_bulk.save()
+
             for key, value in validated_data.items():
                 setattr(instance, key, value)
-            instance.save()
+            if instance.is_superuser:
+                instance.save(is_superuser=True)
+            else:
+                instance.save()
             return instance
-
         raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
 
 
