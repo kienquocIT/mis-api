@@ -81,8 +81,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             option,
             is_initial=False
     ):
-        zone_data = []
-        node_zone_list = None
+        node_zone_list = []
         if is_initial:
             if node.zone_initial_node:
                 node_zone_list = Zone.objects.filter(
@@ -109,13 +108,10 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
                     'title',
                     'order',
                 )
-        if node_zone_list:
-            for node_zone in node_zone_list:
-                zone_data.append({
-                    'id': node_zone[0],
-                    'title': node_zone[1],
-                    'order': node_zone[2],
-                })
+        zone_data = [
+            {'id': node_zone[0], 'title': node_zone[1], 'order': node_zone[2]}
+            for node_zone in node_zone_list
+        ]
         return zone_data
 
     @classmethod
@@ -171,16 +167,13 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
             result,
             zone_data
     ):
-        employee_data = []
         employee_list = Employee.objects.filter(
             id__in=node.collab_out_form.get('employee_list', [])
         )
-        if employee_list:
-            for employee in employee_list:
-                employee_data.append({
-                    'id': employee.id,
-                    'full_name': employee.get_full_name(2)
-                })
+        employee_data = [
+            {'id': employee.id, 'full_name': employee.get_full_name(2)}
+            for employee in employee_list
+        ]
         collab_out_form = node.collab_out_form
         if collab_out_form:
             collab_out_form.update({
