@@ -88,5 +88,7 @@ class Price(DataAbstractModel):
 class ProductPriceList(SimpleAbstractModel):
     price_list = models.ForeignKey(Price, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    price = models.FloatField()
+    currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)

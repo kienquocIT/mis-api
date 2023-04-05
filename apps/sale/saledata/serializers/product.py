@@ -508,15 +508,22 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
     def create(self, validated_data):
         product = Product.objects.create(**validated_data)
         if 'sale_information' in validated_data.keys():
-            price_list_general_current = Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_default=True
-            ).first()
-            if price_list_general_current:
-                ProductPriceList.objects.create(price_list=price_list_general_current, product=product)
+            if 'price_list' in validated_data['sale_information']:
+                objs = []
+                for item in validated_data['sale_information']['price_list']:
+                    price_list_item = Price.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        id=item['id']
+                    ).first()
+                    if price_list_item:
+                        objs.append(ProductPriceList(price_list=price_list_item, product=product))
+                    else:
+                        raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
+                if len(objs) > 0:
+                    ProductPriceList.objects.bulk_create(objs)
             else:
-                raise serializers.ValidationError(PriceMsg.GENERAL_PRICE_LIST_NOT_EXIST)
+                raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
         return product
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
