@@ -509,8 +509,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         price_list_information = validated_data['sale_information'].get('price_list', None)
         del validated_data['sale_information']['price_list']
         product = Product.objects.create(**validated_data)
+
+        # gán product với price list
         if price_list_information:
             objs = []
+            objs_for_mapped = []
             for item in price_list_information:
                 price_list_item = Price.objects.filter_current(
                     fill__tenant=True,
@@ -531,8 +534,31 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     ))
                 else:
                     raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
+
+                # nếu có price list source -> tạo dữ liệu copy
+                price_list_mapped = Price.objects.filter(
+                    price_list_mapped=item['id']
+                ).first()
+                print(price_list_mapped)
+                if price_list_mapped:
+                    price_list_item_mapped = Price.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        id=item['id']
+                    ).first()
+                    objs_for_mapped.append(
+                        ProductPriceList(
+                            price_list=price_list_item_mapped,
+                            product=product,
+                            price=float(item['price']),
+                            currency_using=currency_using_item
+                        )
+                    )
+
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
+            if len(objs_for_mapped) > 0:
+                ProductPriceList.objects.bulk_create(objs_for_mapped)
         else:
             raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
         return product
