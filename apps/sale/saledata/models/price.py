@@ -92,3 +92,10 @@ class ProductPriceList(SimpleAbstractModel):
     currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'ProductPriceList'
+        verbose_name_plural = 'ProductsPriceList'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
