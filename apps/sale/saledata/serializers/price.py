@@ -360,13 +360,20 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 id=p.product.general_information['default_uom']
             ).first()
+            currency_using = Currency.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.currency_using
+            ).first()
 
-            if uom and uom_group:
+            if uom and uom_group and currency_using:
                 product_information = {
                     'id': p.product_id,
                     'title': p.product.title,
                     'uom_group': uom_group.title,
-                    'uom': uom.title
+                    'uom': uom.title,
+                    'price': p.price,
+                    'currency_using': currency_using.abbreviation
                 }
                 all_products.append(product_information)
             else:
