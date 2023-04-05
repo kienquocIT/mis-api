@@ -2,6 +2,9 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
+from apps.sale.saledata.models.product import (
+    UnitOfMeasure, UnitOfMeasureGroup
+)
 from apps.shared import PriceMsg
 
 
@@ -375,3 +378,37 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+
+
+class ProductPricelistListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProductPriceList
+        fields = (
+            'id',
+            'product',
+            'price',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        uom_group = UnitOfMeasureGroup.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=obj.product.general_information['uom_group']
+        ).first()
+        uom = UnitOfMeasureGroup.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=obj.product.general_information['default_uom']
+        ).first()
+
+        if uom and uom_group:
+            return {
+                'id': obj.product_id,
+                'title': obj.product.title,
+                'uom_group': uom_group,
+                'uom': uom,
+            }
+        else:
+            return {}

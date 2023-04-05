@@ -1,14 +1,15 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sale.saledata.models.price import (
-    TaxCategory, Tax, Currency, Price
+    TaxCategory, Tax, Currency, Price, ProductPriceList
 )
 from apps.sale.saledata.serializers.price import (
     TaxCategoryListSerializer, TaxCategoryCreateSerializer, TaxCategoryDetailSerializer, TaxCategoryUpdateSerializer,
     TaxListSerializer, TaxCreateSerializer, TaxDetailSerializer, TaxUpdateSerializer,
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
     CurrencySyncWithVCBSerializer,
-    PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer
+    PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer,
+    ProductPricelistListSerializer
 )
 
 
@@ -205,3 +206,16 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = PriceUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class ProductMapPricelistList(BaseListMixin, BaseCreateMixin):
+    queryset = ProductPriceList.objects.select_related('product', 'price_list', 'currency_using')
+    serializer_list = ProductPricelistListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Product PriceLis list",
+        operation_description="Product PriceLis list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
