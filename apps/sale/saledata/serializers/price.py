@@ -261,7 +261,15 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Price
-        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type', 'price_list_mapped')
+        fields = (
+            'title',
+            'auto_update',
+            'can_delete',
+            'factor',
+            'currency',
+            'price_list_type',
+            'price_list_mapped'
+        )
 
     @classmethod
     def validate_title(cls, value):
@@ -281,6 +289,15 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
         return None
 
+    @classmethod
+    def validate_price(cls, attrs):
+        attrs = float(attrs)
+        if attrs is not None:
+            if attrs > 0:
+                return attrs
+            raise serializers.ValidationError(PriceMsg.PRICE_MUST_BE_GREATER_THAN_ZERO)
+        return None
+
     def create(self, validated_data):
         price_list = Price.objects.create(**validated_data)
         if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
@@ -292,7 +309,12 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             if price_list_mapped:
                 products_source = ProductPriceList.objects.filter(price_list=price_list_mapped)
                 objs = [
-                    ProductPriceList(price_list=price_list, product=p.product) for p in products_source
+                    ProductPriceList(
+                        price_list=price_list,
+                        product=p.product,
+                        price=p.price,
+                        currency_using=p.currency_using
+                    ) for p in products_source
                 ]
                 ProductPriceList.objects.bulk_create(objs)
             else:
@@ -322,7 +344,15 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Price
-        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_mapped', 'price_list_type')
+        fields = (
+            'title',
+            'auto_update',
+            'can_delete',
+            'factor',
+            'currency',
+            'price_list_mapped',
+            'price_list_type'
+        )
 
     def validate_title(self, value):
         if value != self.instance.title and Price.objects.filter_current(

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.sale.saledata.models.price import ProductPriceList, Price
+from apps.sale.saledata.models.price import ProductPriceList, Price, Currency
 from apps.shared import ProductMsg, PriceMsg
 
 
@@ -506,24 +506,35 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def create(self, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)
+        del validated_data['sale_information']['price_list']
         product = Product.objects.create(**validated_data)
-        if 'sale_information' in validated_data.keys():
-            if 'price_list' in validated_data['sale_information']:
-                objs = []
-                for item in validated_data['sale_information']['price_list']:
-                    price_list_item = Price.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        id=item['id']
-                    ).first()
-                    if price_list_item:
-                        objs.append(ProductPriceList(price_list=price_list_item, product=product))
-                    else:
-                        raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
-                if len(objs) > 0:
-                    ProductPriceList.objects.bulk_create(objs)
-            else:
-                raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+        if price_list_information:
+            objs = []
+            for item in price_list_information:
+                price_list_item = Price.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=item['id']
+                ).first()
+                currency_using_item = Currency.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=item['currency_using']
+                ).first()
+                if price_list_item and currency_using_item:
+                    objs.append(ProductPriceList(
+                        price_list=price_list_item,
+                        product=product,
+                        price=float(item['price']),
+                        currency_using=currency_using_item
+                    ))
+                else:
+                    raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+        else:
+            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
         return product
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
