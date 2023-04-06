@@ -497,27 +497,23 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
             if key not in ['inventory_level_min', 'inventory_level_max']:
                 if not value.get(key, None):
                     raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
-
         inventory_level_min = value.get('inventory_level_min', None)
-        if inventory_level_min == '':
-            inventory_level_min = None
-
         inventory_level_max = value.get('inventory_level_max', None)
-        if inventory_level_max == '':
-            inventory_level_max = None
-
         if inventory_level_min and inventory_level_max:
-            inventory_level_min = int(inventory_level_min)
-            inventory_level_max = int(inventory_level_max)
-
-            if (inventory_level_min > 0) and (inventory_level_max > 0):
-                if inventory_level_min > inventory_level_max:
+            if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                if value['inventory_level_min'] > value['inventory_level_max']:
                     raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
             else:
                 raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
-
-        value['inventory_level_min'] = inventory_level_min
-        value['inventory_level_max'] = inventory_level_max
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            else:
+                del value['inventory_level_min']
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
+            else:
+                del value['inventory_level_max']
         return value
 
     @classmethod
@@ -657,27 +653,23 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
             if key not in ['inventory_level_min', 'inventory_level_max']:
                 if not value.get(key, None):
                     raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
-
         inventory_level_min = value.get('inventory_level_min', None)
-        if inventory_level_min == '':
-            inventory_level_min = None
-
         inventory_level_max = value.get('inventory_level_max', None)
-        if inventory_level_max == '':
-            inventory_level_max = None
-
         if inventory_level_min and inventory_level_max:
-            inventory_level_min = int(inventory_level_min)
-            inventory_level_max = int(inventory_level_max)
-
-            if (inventory_level_min > 0) and (inventory_level_max > 0):
-                if inventory_level_min > inventory_level_max:
+            if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                if value['inventory_level_min'] > value['inventory_level_max']:
                     raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
             else:
                 raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
-
-        value['inventory_level_min'] = inventory_level_min
-        value['inventory_level_max'] = inventory_level_max
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            else:
+                del value['inventory_level_min']
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
+            else:
+                del value['inventory_level_max']
         return value
 
     @classmethod
