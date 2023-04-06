@@ -1,6 +1,7 @@
 from django.db import models
 from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
 from apps.sale.saledata.models.product import Product
+from django.utils import timezone
 
 
 # Create your models here.
@@ -90,6 +91,14 @@ class ProductPriceList(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.FloatField()
     currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    date_modified = models.DateTimeField(
+        auto_now_add=True,
+        help_text='Date modified this record in last',
+    )
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)
 
