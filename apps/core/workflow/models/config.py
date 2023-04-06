@@ -140,8 +140,8 @@ class Node(MasterDataAbstractModel):
 
     # data collab_in_form
     # {
-    #     'property': 'propertyID',
-    #     'zone': ['zoneID1', 'zoneID2']
+    #     'property': {'id', 'title', 'code'},
+    #     'zone': [{'id', 'title', 'order'}]
     # }
     collab_in_form = models.JSONField(
         default=dict,
@@ -150,8 +150,8 @@ class Node(MasterDataAbstractModel):
 
     # data collab_out_form
     # {
-    #     'employee_list': ['empID1', 'empID2'],
-    #     'zone': ['zoneID1', 'zoneID2']
+    #     'employee_list': [{'id', 'full_name'}],
+    #     'zone': [{'id', 'title', 'order'}]
     # }
     collab_out_form = models.JSONField(
         default=dict,
@@ -161,12 +161,12 @@ class Node(MasterDataAbstractModel):
     # data collab_in_workflow
     # [
     #     {
-    #         'employee': 'empID1',
-    #         'zone': ['zoneID1', 'zoneID2']
+    #         'employee': {'id', 'full_name', 'role'},
+    #         'zone': [{'id', 'title', 'order'}]
     #     },
     #     {
-    #         'employee': 'empID2',
-    #         'zone': ['zoneID3', 'zoneID4']
+    #         'employee': {'id', 'full_name', 'role'},
+    #         'zone': [{'id', 'title', 'order'}]
     #     }
     # ]
     collab_in_workflow = models.JSONField(
@@ -246,6 +246,12 @@ class Association(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="node output",
         related_name="transition_node_output",
+    )
+    node_in_data = models.JSONField(
+        default=dict,
+    )
+    node_out_data = models.JSONField(
+        default=dict,
     )
 
     # data of field condition:
