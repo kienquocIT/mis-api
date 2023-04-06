@@ -2,27 +2,13 @@ from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
-from apps.core.workflow.models import Node, Collaborator, Zone, Association  # pylint: disable-msg=E0611
-from apps.shared import HRMsg
+from apps.core.workflow.models import Node, Zone, Association  # pylint: disable-msg=E0611
+from apps.shared import HRMsg, BaseMsg
 
 
 # Collaborator
-class CollaboratorCreateSerializer(serializers.ModelSerializer):
-    collaborator_zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    class Meta:
-        model = Collaborator
-        fields = (
-            'employee',
-            'collaborator_zone'
-        )
-
-
 class CollabInFormSerializer(serializers.Serializer):  # noqa
-    employee_field = serializers.CharField(
+    property = serializers.CharField(
         max_length=550,
         required=False
     )
@@ -30,6 +16,18 @@ class CollabInFormSerializer(serializers.Serializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+
+    @classmethod
+    def validate_property(cls, value):
+        try:
+            proper = ApplicationProperty.objects.get(id=value)
+            return {
+                'id': str(proper.id),
+                'title': proper.title,
+                'code': proper.code
+            }
+        except ApplicationProperty.DoesNotExist:
+            raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_NOT_EXIST})
 
 
 class CollabOutFormSerializer(serializers.Serializer):  # noqa
@@ -44,9 +42,16 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
 
     @classmethod
     def validate_employee_list(cls, value):
-        employee_list = Employee.objects.filter(id__in=value).count()
-        if employee_list == len(value):
-            return value
+        employee_list = Employee.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id__in=value
+        )
+        if employee_list.count() == len(value):
+            return [
+                {'id': str(employee.id), 'full_name': employee.get_full_name(2)}
+                for employee in employee_list
+            ]
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
 
 
@@ -62,8 +67,18 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
     @classmethod
     def validate_employee(cls, value):
         try:
-            Employee.objects.get(id=value)
-            return value
+            employee = Employee.objects.prefetch_related('role').get(id=value)
+            return {
+                'id': str(employee.id),
+                'full_name': employee.get_full_name(2),
+                'role': [
+                    {'id': str(role[0]), 'title': role[1]}
+                    for role in employee.role.values_list(
+                        'id',
+                        'title'
+                    )
+                ]
+            }
         except Employee.DoesNotExist as exc:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
 
@@ -83,6 +98,12 @@ class NodeListSerializer(serializers.ModelSerializer):
 
 
 class NodeDetailSerializer(serializers.ModelSerializer):
+    actions = serializers.JSONField()
+    zone_initial_node = serializers.JSONField()
+    collab_in_form = serializers.JSONField()
+    collab_out_form = serializers.JSONField()
+    collab_in_workflow = serializers.JSONField()
+
     class Meta:
         model = Node
         fields = (
@@ -90,8 +111,16 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'remark',
+            'actions',
             'is_system',
-            'order'
+            'code_node_system',
+            'zone_initial_node',
+            'option_collaborator',
+            'collab_in_form',
+            'collab_out_form',
+            'collab_in_workflow',
+            'order',
+            'coordinates'
         )
 
 
@@ -103,10 +132,6 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     collab_in_workflow = CollabInWorkflowSerializer(
-        many=True,
-        required=False
-    )
-    collaborator = CollaboratorCreateSerializer(
         many=True,
         required=False
     )
@@ -125,7 +150,6 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'remark',
             'actions',
             'option_collaborator',
-            'collaborator',
             'zone_initial_node',
             'order',
             'is_system',
@@ -154,23 +178,14 @@ class ZoneDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_property_list(cls, obj):
-        result = []
-        if obj.property_list and isinstance(obj.property_list, list):
-            property_list = ApplicationProperty.objects.filter(
-                id__in=obj.property_list
-            ).values_list(
+        return [
+            {'id': proper[0], 'title': proper[1], 'code': proper[2]}
+            for proper in obj.properties.values_list(
                 'id',
                 'title',
                 'code'
             )
-            if property_list:
-                for proper in property_list:
-                    result.append({
-                        'id': proper[0],
-                        'title': proper[1],
-                        'code': proper[2],
-                    })
-        return result
+        ]
 
 
 class ZoneCreateSerializer(serializers.ModelSerializer):
