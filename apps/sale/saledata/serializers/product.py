@@ -551,7 +551,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
 
                 # nếu có price list source -> tạo dữ liệu copy
-                price_list_mapped = Price.objects.filter(
+                price_list_mapped = Price.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
                     price_list_mapped=item['id']
                 ).first()
                 if price_list_mapped:
@@ -573,6 +575,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+    sale_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -585,6 +588,19 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'sale_information',
             'purchase_information',
         )
+
+    @classmethod
+    def get_sale_information(cls, obj):
+        product_price_list = ProductPriceList.objects.filter(product=obj).select_related('currency_using')
+        price_list_detail = []
+        for item in product_price_list:
+            price_list_detail.append({
+                'id': item.price_list_id,
+                'price': item.price,
+                'currency_using': item.currency_using.abbreviation
+            })
+        obj.sale_information['price_list'] = price_list_detail
+        return obj.sale_information
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
