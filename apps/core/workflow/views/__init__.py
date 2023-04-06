@@ -1,1 +1,1 @@
-from .config import WorkflowList, NodeSystemList, WorkflowDetail
+from .config import WorkflowList, WorkflowDetail
