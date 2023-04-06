@@ -568,7 +568,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'general_information',
             'inventory_information',
             'sale_information',
-            'purchase_information'
+            'purchase_information',
         )
 
 

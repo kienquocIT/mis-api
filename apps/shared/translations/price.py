@@ -13,3 +13,4 @@ class PriceMsg:
     GENERAL_PRICE_LIST_NOT_EXIST = _('General price list does not exist.')
     PRICE_LIST_OR_CURRENCY_NOT_EXIST = _('Price or Currency list does not exist.')
     CURRENCY_NOT_EXIST = _('Currency does not exist.')
+    PRICE_LIST_NOT_EXIST = _('Price list does not exist.')
