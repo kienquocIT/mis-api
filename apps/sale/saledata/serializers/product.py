@@ -507,7 +507,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     def create(self, validated_data):
         price_list_information = validated_data['sale_information'].get('price_list', None)
-        del validated_data['sale_information']['price_list']
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
         product = Product.objects.create(**validated_data)
 
         # gán product với price list
@@ -539,16 +540,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                 price_list_mapped = Price.objects.filter(
                     price_list_mapped=item['id']
                 ).first()
-                print(price_list_mapped)
                 if price_list_mapped:
-                    price_list_item_mapped = Price.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        id=item['id']
-                    ).first()
                     objs_for_mapped.append(
                         ProductPriceList(
-                            price_list=price_list_item_mapped,
+                            price_list=price_list_mapped,
                             product=product,
                             price=float(item['price']),
                             currency_using=currency_using_item
@@ -559,9 +554,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList.objects.bulk_create(objs)
             if len(objs_for_mapped) > 0:
                 ProductPriceList.objects.bulk_create(objs_for_mapped)
-        else:
-            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
         return product
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
 
