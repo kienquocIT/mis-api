@@ -2,6 +2,9 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
+from apps.sale.saledata.models.product import (
+    UnitOfMeasure, UnitOfMeasureGroup
+)
 from apps.shared import PriceMsg
 
 
@@ -261,7 +264,15 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Price
-        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type', 'price_list_mapped')
+        fields = (
+            'title',
+            'auto_update',
+            'can_delete',
+            'factor',
+            'currency',
+            'price_list_type',
+            'price_list_mapped'
+        )
 
     @classmethod
     def validate_title(cls, value):
@@ -281,6 +292,15 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
         return None
 
+    @classmethod
+    def validate_price(cls, attrs):
+        attrs = float(attrs)
+        if attrs is not None:
+            if attrs > 0:
+                return attrs
+            raise serializers.ValidationError(PriceMsg.PRICE_MUST_BE_GREATER_THAN_ZERO)
+        return None
+
     def create(self, validated_data):
         price_list = Price.objects.create(**validated_data)
         if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
@@ -292,7 +312,12 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             if price_list_mapped:
                 products_source = ProductPriceList.objects.filter(price_list=price_list_mapped)
                 objs = [
-                    ProductPriceList(price_list=price_list, product=p.product) for p in products_source
+                    ProductPriceList(
+                        price_list=price_list,
+                        product=p.product,
+                        price=p.price,
+                        currency_using=p.currency_using
+                    ) for p in products_source
                 ]
                 ProductPriceList.objects.bulk_create(objs)
             else:
@@ -301,6 +326,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
+    products_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
@@ -313,8 +339,46 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'currency',
             'price_list_type',
             'price_list_mapped',
-            'is_default'
+            'is_default',
+            'products_mapped'
         )
+
+    @classmethod
+    def get_products_mapped(cls, obj):
+        products = ProductPriceList.objects.filter(
+            price_list=obj.id
+        )
+        all_products = []
+        for p in products:
+            uom_group = UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.product.general_information['uom_group']
+            ).first()
+            uom = UnitOfMeasureGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.product.general_information['default_uom']
+            ).first()
+            currency_using = Currency.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=p.currency_using
+            ).first()
+
+            if uom and uom_group and currency_using:
+                product_information = {
+                    'id': p.product_id,
+                    'title': p.product.title,
+                    'uom_group': uom_group.title,
+                    'uom': uom.title,
+                    'price': p.price,
+                    'currency_using': currency_using.abbreviation
+                }
+                all_products.append(product_information)
+            else:
+                return []
+        return all_products
 
 
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -322,7 +386,15 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Price
-        fields = ('title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_mapped', 'price_list_type')
+        fields = (
+            'title',
+            'auto_update',
+            'can_delete',
+            'factor',
+            'currency',
+            'price_list_mapped',
+            'price_list_type'
+        )
 
     def validate_title(self, value):
         if value != self.instance.title and Price.objects.filter_current(

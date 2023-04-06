@@ -54,42 +54,54 @@ class SaleDefaultData:
         return False
 
     def create_product_type(self):
-        objs = [
-            ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
-            for pt_item in self.ProductType_data
-        ]
-        ProductType.objects.bulk_create(objs)
-        return True
+        if ProductType.objects.filter(company=self.company_obj).exists():
+            return False
+        else:
+            objs = [
+                ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
+                for pt_item in self.ProductType_data
+            ]
+            ProductType.objects.bulk_create(objs)
+            return True
 
     def create_tax_category(self):
-        objs = [
-            TaxCategory(tenant=self.company_obj.tenant, company=self.company_obj, **tc_item)
-            for tc_item in self.TaxCategory_data
-        ]
-        TaxCategory.objects.bulk_create(objs)
-        return True
+        if TaxCategory.objects.filter(company=self.company_obj).exists():
+            return False
+        else:
+            objs = [
+                TaxCategory(tenant=self.company_obj.tenant, company=self.company_obj, **tc_item)
+                for tc_item in self.TaxCategory_data
+            ]
+            TaxCategory.objects.bulk_create(objs)
+            return True
 
     def create_currency(self):
-        objs = [
-            Currency(tenant=self.company_obj.tenant, company=self.company_obj, **c_item)
-            for c_item in self.Currency_data
-        ]
-        Currency.objects.bulk_create(objs)
-        return True
+        if Currency.objects.filter(company=self.company_obj).exists():
+            return False
+        else:
+            objs = [
+                Currency(tenant=self.company_obj.tenant, company=self.company_obj, **c_item)
+                for c_item in self.Currency_data
+            ]
+            Currency.objects.bulk_create(objs)
+            return True
 
     def create_price_default(self):
-        primary_current = Currency.objects.filter(
-            company=self.company_obj,
-            is_primary=True
-        ).first()
-        if primary_current:
-            primary_current_id = str(primary_current.id)
-            objs = [
-                Price(tenant=self.company_obj.tenant, company=self.company_obj, currency=[primary_current_id], **p_item)
-                for p_item in self.Price_general_data
-            ]
-            Price.objects.bulk_create(objs)
-            return True
+        if Price.objects.filter(company=self.company_obj).exists():
+            return False
+        else:
+            primary_current = Currency.objects.filter(
+                company=self.company_obj,
+                is_primary=True
+            ).first()
+            if primary_current:
+                primary_current_id = str(primary_current.id)
+                objs = [
+                    Price(tenant=self.company_obj.tenant, company=self.company_obj, currency=[primary_current_id], **p_item)
+                    for p_item in self.Price_general_data
+                ]
+                Price.objects.bulk_create(objs)
+                return True
 
 
 @receiver(post_save, sender=Company)

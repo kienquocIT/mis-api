@@ -13,13 +13,13 @@ from apps.sale.saledata.views.product import (
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
 
-    ProductList, ProductDetail
+    ProductList, ProductDetail,
 )
 from apps.sale.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail,
     TaxList, TaxDetail,
     CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail
+    PriceList, PriceDetail,
 )
 
 
