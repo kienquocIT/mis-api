@@ -75,5 +75,6 @@ class SaleDefaultData:
 
 
 @receiver(post_save, sender=Company)
-def update_stock(sender, instance, **kwargs):  # pylint: disable=W0613
-    SaleDefaultData(company_obj=instance)()
+def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    if created is True:
+        SaleDefaultData(company_obj=instance)()
