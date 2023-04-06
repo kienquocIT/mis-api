@@ -245,7 +245,7 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             'currency',
             'price_list_type',
             'price_list_mapped',
-            'is_default'
+            'is_default',
         )
 
     @classmethod
@@ -347,7 +347,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     def get_products_mapped(cls, obj):
         products = ProductPriceList.objects.filter(
             price_list_id=obj.id
-        )
+        ).select_related('product', 'currency_using')
         all_products = []
         for p in products:
             uom_group = UnitOfMeasureGroup.objects.filter_current(
