@@ -316,7 +316,9 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                         price_list=price_list,
                         product=p.product,
                         price=p.price,
-                        currency_using=p.currency_using
+                        currency_using=p.currency_using,
+                        uom_using=p.uom_using,
+                        uom_group_using=p.uom_group_using,
                     ) for p in products_source
                 ]
                 ProductPriceList.objects.bulk_create(objs)
