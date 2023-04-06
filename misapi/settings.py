@@ -201,6 +201,9 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# test runner override | runner for command: python manage.py test
+TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+
 # REST API
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
@@ -381,10 +384,13 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 USE_MYSQL_POOL = False
 MYSQL_POOL_CONFIG = {
+    # (Lưu lượng truy cập đồng thời / Thời gian xử lý trung bình) + Số lượng kết nối dự phòng
     'POOL_OPTIONS': {
-        'POOL_SIZE': 10,
-        'MAX_OVERFLOW': 10,
-        'RECYCLE': 1 * 60 * 60,  # recycle every one hour
+        'POOL_SIZE': 100,   # size connection current in pool
+        'MAX_OVERFLOW': 200,  # x2 pool size
+        'POOL_TIME': 30,    # seconds: wait connection return from pool storage -> reject get connection when timeout
+        'RECYCLE': 0.5 * 60 * 60,  # recycle every a half-hourly
+        'REUSE': 0.5 * 60 * 60 * 5,  # max times reuse connections: x5 recycle
     }
 }
 
