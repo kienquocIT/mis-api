@@ -35,7 +35,6 @@ class InitialsData:
         (Application, Application_data),
         (PlanApplication, PlanApplication_data),
         (PermissionApplication, PermissionApplication_data),
-        (WFNode, WF_Node_data),
         (ApplicationProperty, ApplicationProperty_data),
     )
 
