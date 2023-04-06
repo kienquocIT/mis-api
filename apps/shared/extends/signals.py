@@ -27,9 +27,9 @@ class SaleDefaultData:
     ]
     Currency_data = [
         {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
-        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0},
-        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0},
-        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0},
+        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0, 'rate': None},
     ]
 
     def __init__(self, company_obj):
