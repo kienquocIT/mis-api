@@ -1,11 +1,10 @@
-from random import random, shuffle, randint
+import time
+import requests
+
+from random import randint
 from unidecode import unidecode
 from typing import Union
 from uuid import UUID
-
-import requests
-from django.urls import reverse
-from django.db import connection
 
 
 class RandomNameVietnamese:
@@ -109,10 +108,9 @@ class RandomNameVietnamese:
                 result += full_name[idx][0]
         return unidecode(result)
 
-    def create_user_data(self, company_current):
+    def create_user_data(self, company_current, tenant_code):
         self.get_gender()
         first_name, middle_name, last_name = self.generate_full_name_split()
-        print(first_name, ' - ', middle_name, ' - ', last_name)
         if middle_name:
             last_name += ' ' + middle_name
         username = self.username_from_full_name(first_name + ' ' + last_name)
@@ -123,15 +121,15 @@ class RandomNameVietnamese:
             "password": "AD111111",
             "phone": "0987654321",
             "company_current": company_current,
-            "email": "username@example.com"
+            "email": f"{username}@{tenant_code}.com".lower()
         }
 
-    def create_list_user(self, length, company_current):
+    def create_list_user(self, length, company_current, tenant_code='mts'):
         username_exist = []
         result = []
         for idx in range(0, length):
             while True:
-                data = self.create_user_data(company_current)
+                data = self.create_user_data(company_current, tenant_code=tenant_code)
                 if data['username'] not in username_exist:
                     result.append(data)
                     username_exist.append(data['username'])
@@ -343,6 +341,156 @@ class RandomPosition:
         return self.position_list[randint(0, len(self.position_list) - 1)]
 
 
+class RandomCompanyName:
+    data = [
+        "Vingroup",
+        "Viettel",
+        "PetroVietnam",
+        "Saigon Beer Alcohol Beverage Corporation (SABECO)",
+        "Vietnam Airlines",
+        "Masan Group",
+        "BIDV - Bank for Investment and Development of Vietnam",
+        "Military Commercial Joint Stock Bank (MBBank)",
+        "Hoang Anh Gia Lai Group",
+        "FPT Corporation",
+        "Vincom Retail",
+        "Vietcombank",
+        "PV Gas",
+        "Novaland Group",
+        "Vietnam National Petroleum Group (Petrolimex)",
+        "HDBank",
+        "VNPT Group",
+        "Vietnam Technological and Commercial Joint Stock Bank (Techcombank)",
+        "Phu Nhuan Jewelry",
+        "Tien Phong Commercial Joint Stock Bank (TPBank)",
+        "Sabeco",
+        "The Gioi Di Dong",
+        "Sai Gon Thuong Tin Commercial Joint Stock Bank (Sacombank)",
+        "VietinBank",
+        "Coteccons Construction Joint Stock Corporation",
+        "Thai Nguyen Iron and Steel Joint Stock Corporation (TISCO)",
+        "CJ Group",
+        "Gemadept Corporation",
+        "DongA Bank",
+        "PNJ - Phu Nhuan Jewelry Joint Stock Company",
+        "Hoa Phat Group",
+        "Asia Commercial Joint Stock Bank (ACB)",
+        "Hoa Sen Group",
+        "VinFast",
+        "Dien Quang Lamp Joint Stock Company",
+        "Mobile World Investment Corporation (MWG)",
+        "The PAN Group",
+        "Saigon Securities Incorporation (SSI)",
+        "PouYuen Vietnam",
+        "Tan Cang - Cai Mep International Terminal (TCIT)",
+        "Phat Dat Real Estate Development Corporation",
+        "Saigon Co.op",
+        "Nam Long Investment Corporation",
+        "Dat Xanh Group",
+        "HAGL Agrico",
+        "Refrigeration Electrical Engineering Corporation (REE)",
+        "Tien Len Steel Corporation",
+        "Sao Mai Group Corporation",
+        "Hau Giang Pharmaceutical Joint Stock Company",
+        "Bao Viet Holdings",
+        "Vietnam Prosperity Joint Stock Commercial Bank (VPBank)",
+        "Vietjet Aviation Joint Stock Company",
+        "Nam Kim Steel Joint Stock Company",
+        "Interfood Shareholding Company",
+        "Hoang Huy Investment Financial Services Joint Stock Company",
+        "Bao Viet Securities Joint Stock Company",
+        "Binh Minh Plastic Joint Stock Company",
+        "VICOSTONE Joint Stock Company",
+        "Petroleum Technical Services Corporation (PTSC)",
+        "FLC Group",
+        "Vietnamese Dairy Products Joint Stock Company (Vinamilk)",
+        "Saigon Newport Corporation",
+        "Hoa Binh Construction Group Joint Stock Company",
+        "VinaCapital Group",
+        "Hapaco Group Joint Stock Company",
+        "Vietnam Dairy Products Joint Stock Company (Vinamilk)",
+        "IDICO - Investment and Construction Joint Stock Company",
+        "Pomina Steel Joint Stock Company",
+        "Tan Tao Group",
+        "Central Group Vietnam",
+        "Dat Xanh Real Estate Service and Construction Corporation",
+        "Traphaco Joint Stock Company",
+        "Binh Son Refining and Petrochemical Joint Stock Company",
+        "Binh Tien Imex Corp., Pte., Ltd",
+        "Cuu Long Petro Urban Development and Investment Corporation (Cuu Long PUDIC)",
+        "FPT Retail",
+        "Hai Phong Thermal Power Joint",
+        "Song Da Corporation",
+        "Trung Nguyen Group",
+        "Vietnam Construction and Import-Export Joint Stock Corporation (Vinaconex)",
+        "Vung Tau Import Export Joint Stock Company (Vimexco)",
+        "Vissan Joint Stock Company",
+        "Da Nang Rubber Joint Stock Company",
+        "Vietnam Electrical Equipment Joint Stock Corporation (Gelex)",
+        "Vietnam Maritime Corporation (VIMC)",
+        "Vietnam Posts and Telecommunications Group (VNPT)",
+        "Pha Lai Thermal Power Joint Stock Company",
+        "PV Drilling",
+        "Vietnam Joint Stock Commercial Bank for Industry and Trade (VietinBank)",
+        "Vietnam Joint Stock Commercial Bank for Private Enterprises (VPBank)",
+        "Vietnam Rubber Group",
+        "Coteccons Group",
+        "Tan Hoa Water Supply Corporation",
+        "Vietnam Trading Engineering Construction Joint Stock Corporation (Vietracimex)",
+        "Vietnam Vegetable Oils Industry Corporation (Vocarimex)",
+        "Vinh Hoan Corporation",
+        "Binh Duong Water Supply Sewerage and Environment Joint Stock Company",
+        "FPT Telecom",
+        "HCM City Securities Corporation (HSC)",
+        "Hoa Phat Trading Joint Stock Company",
+        "PetroVietnam Gas Joint Stock Corporation (PV Gas)",
+        "PetroVietnam Oil Corporation (PV Oil)",
+        "Petrolimex Group Commercial Joint Stock Bank",
+        "PetroVietnam Transportation Corporation (PVTrans)",
+        "Quang Trung Software City Development Company Limited",
+        "Saigon Joint Stock Commercial Bank (SCB)",
+        "Saigon Securities Investment Fund Management Joint Stock Company",
+        "Sao Bac Dau Technologies Corporation",
+        "Savico Joint Stock Company",
+        "Sonadezi Corporation",
+        "Southern Airports Services Joint Stock Company",
+        "State Capital Investment Corporation (SCIC)",
+        "Thang Long Construction Group",
+        "Vietnam Aviation Corporation (Vietnam Airlines)",
+        "Vietnam Bank for Agriculture and Rural Development (Agribank)",
+        "Vietnam Electric Cable Corporation (Cadivi)",
+        "Vietnam Engine and Agricultural Machinery Corporation (VEAM)",
+        "Vietnam National Chemical Group (Vinachem)",
+        "Vietnam National Coffee Corporation (Vinacafe)",
+        "Vietnam National Coal and Mineral Industries Group (Vinacomin)",
+        "Vietnam National Oil and Gas Group (PetroVietnam)",
+        "Vietnam Northern Food Corporation",
+        "Vietnam Oil and Gas Group (PetroVietnam)",
+        "Vietnam Paper Corporation",
+        "Vietnam Railways Corporation",
+        "Vietnam Rubber Corporation",
+        "Vietnam Sea Transport and Chartering Joint Stock Company (VSTC)",
+        "Vietnam Shipbuilding Industry Corporation (Vinashin)",
+        "Vietnam Southern Food Corporation",
+        "Vietnam Steel Corporation",
+        "Vietnam Vegetable and Fruit Corporation",
+        "Vietsovpetro Joint Venture",
+        "Vinaconex Trading and Import-Export Joint Stock Company",
+        "Vinafco Joint Stock Company",
+        "Vinaphone",
+        "Vinasun Corporation",
+        "Vingroup Joint Stock Company",
+        "Vissan Joint Stock Company",
+        "Vivablast Co., Ltd.",
+        "VNTT Company",
+        "Xuan Thanh Cement Joint Stock Company",
+    ]
+
+    def generate(self, suffix_code="") -> dict:
+        name = self.data[randint(0, len(self.data) - 1)]
+        return {"title": name, "code": "".join([x[0] for x in name.split()]).lower() + suffix_code}
+
+
 class MockupDataDB:
     account_id_list: list[Union[UUID, str]] = []
     account_data: dict = {}
@@ -351,9 +499,19 @@ class MockupDataDB:
     level_group_data: dict = {}
     group_id_list: list[Union[UUID, str]] = []
     employee_data: dict = {}
+    company_id_list = []
+
+    tenant_title = 'Cong Ty TNHH Minh Tam Solution'
+    tenant_code = 'MTS'
+    username = 'admin'
+    password = '111111'
+    login_data = {}
+    token_access = None
 
     def parse_url(self, url):
-        return f'http://{self.host}:{self.port}/{url}'
+        if self.port:
+            return f'http://{self.host}:{self.port}/api/{url}'
+        return f'http://{self.host}/api/{url}'
 
     def __init__(self, host, port, tenant_id=None, company_id=None):
         self.host = host
@@ -361,29 +519,59 @@ class MockupDataDB:
         self.tenant_id = tenant_id
         self.company_id = company_id
 
-        self.tenant_code = 'MTS4'
-        self.username = 'admin'
-        self.password = '111111'
-        self.login_data = {}
-        self.token_access = None
-
     @property
     def headers(self):
         return {'Authorization': 'Bearer ' + self.token_access}
 
     def __call__(self, *args, **kwargs):
+        random_length_zero = randint(2, 6)
+        company_list = [
+            RandomCompanyName().generate("0" * random_length_zero + str(0)),
+        ]
+        self.generate_data_tenant(company_another=company_list)
+
+    def generate_data_tenant(self, company_another=[]):
         id_new_tenant = self.call_new_tenant()
         print('id_new_tenant:', id_new_tenant)
-        if id_new_tenant:
-            login_data = self.call_login()
-            print('login_data: ', login_data)
-            if login_data:
-                print('call_create_account: ', self.call_create_account(15))
-                print('call_create_role: ', self.call_create_role(5))
-                print('call_create_level_group: ', self.call_create_level_group(5))
-                print('call_create_group: ', self.call_create_group())
-                print('call_create_employee: ', self.call_create_employee())
-        connection.close()
+        login_data = self.call_login()
+        self.generate_all_data_company()
+        for item in company_another:
+            time.sleep(3)
+            self.generate_data_company(title=item['title'], code=item['code'])
+
+    def generate_data_company(self, title, code):
+        if self.login_data:
+            new_company = self.call_create_company(title, code)
+            time.sleep(1)
+            if new_company:
+                self.company_id_list.append(new_company['id'])
+                add_user_to_company = self.call_add_user_to_company(self.company_id_list)
+                time.sleep(1)
+                if add_user_to_company:
+                    switch_state = self.call_switch_company(new_company['id'])
+                    time.sleep(1)
+                    if switch_state:
+                        self.company_id = new_company['id']
+                        time.sleep(1)
+                        self.generate_all_data_company()
+
+    def generate_all_data_company(self):
+        self.account_id_list = []
+        self.account_data = {}
+        print('call_create_account: ', self.call_create_account(randint(10, 30)))
+        time.sleep(1)
+        self.role_id_list = []
+        self.role_data = {}
+        print('call_create_role: ', self.call_create_role(randint(5, 10)))
+        time.sleep(1)
+        self.level_group_data = {}
+        print('call_create_level_group: ', self.call_create_level_group(5))
+        time.sleep(1)
+        self.group_id_list = []
+        print('call_create_group: ', self.call_create_group())
+        time.sleep(1)
+        self.employee_data = {}
+        print('call_create_employee: ', self.call_create_employee())
 
     def call_new_tenant(self):
         if not self.tenant_id:
@@ -391,10 +579,10 @@ class MockupDataDB:
             if admin_middle:
                 admin_last_name = f'{admin_last_name} {admin_middle}'
             resp = requests.post(
-                url=self.parse_url(reverse('NewTenant')),
+                url=self.parse_url('provisioning/tenants'),
                 json={
                     'tenant_data': {
-                        'title': 'Cong Ty TNHH Minh Tam Solution',
+                        'title': self.tenant_title,
                         'code': self.tenant_code,
                         'sub_domain': self.tenant_code.lower(),
                         'representative_fullname': admin_last_name + ' ' + admin_first_name,
@@ -454,7 +642,7 @@ class MockupDataDB:
     def call_login(self):
         if self.tenant_id:
             resp = requests.post(
-                url=self.parse_url(reverse('AuthLogin')),
+                url=self.parse_url('auth/sign-in'),
                 json={'username': self.username, 'password': self.password, 'tenant_code': self.tenant_code}
             )
             if resp.status_code == 200:
@@ -464,17 +652,58 @@ class MockupDataDB:
                 return self.login_data
         return None
 
-    def call_create_company(self):
-        if not self.company_id:
-            if self.tenant_id and self.login_data:
-                ...
-            return None
-        return self.company_id
+    def call_create_company(self, title, code):
+        if self.login_data:
+            data = {
+                "title": title,
+                "code": code,
+                "representative_fullname": RandomNameVietnamese().generate_full_name(),
+                "address": "No 20, 22 Street",
+                "email": "string@example.com",
+                "phone": "0987654321"
+            }
+            resp = requests.post(
+                url=self.parse_url('company/list'),
+                json=data,
+                headers=self.headers
+            )
+            print(resp.status_code, resp.json())
+            if resp.status_code == 201:
+                return resp.json()['result']
+        return {}
+
+    def call_add_user_to_company(self, company_id_list):
+        data = {
+            "companies": company_id_list
+        }
+        resp = requests.put(
+            url=self.parse_url('account/user-company/' + self.login_data['id']),
+            json=data,
+            headers=self.headers
+        )
+        print(resp.status_code, resp.json())
+        if resp.status_code == 200:
+            return True
+        return False
+
+    def call_switch_company(self, company_id):
+        data = {"company": company_id}
+        resp = requests.put(
+            url=self.parse_url('auth/switch-company'),
+            json=data,
+            headers=self.headers,
+        )
+        print('call_switch_company: ', resp.status_code, resp.json())
+        if resp.status_code == 200:
+            return True
+        return False
 
     def call_create_account(self, length):
-        for user_data in RandomNameVietnamese().create_list_user(length, company_current=self.company_id):
+        for user_data in RandomNameVietnamese().create_list_user(
+                length, company_current=self.company_id, tenant_code=self.tenant_code
+        ):
             resp = requests.post(
-                url=self.parse_url(reverse('UserList')),
+                url=self.parse_url('account/users'),
                 json=user_data,
                 headers=self.headers
             )
@@ -495,7 +724,7 @@ class MockupDataDB:
                             "employees": []
                         }
                         resp = requests.post(
-                            url=self.parse_url(reverse('RoleList')),
+                            url=self.parse_url('hr/roles'),
                             json=data,
                             headers=self.headers
                         )
@@ -521,13 +750,13 @@ class MockupDataDB:
                     }
                 )
             resp = requests.post(
-                url=self.parse_url(reverse('GroupLevelList')),
+                url=self.parse_url('hr/levels'),
                 json={'group_level_data': result},
                 headers=self.headers
             )
             if resp.status_code == 201:
                 resp = requests.get(
-                    url=self.parse_url(reverse('GroupLevelList')),
+                    url=self.parse_url('hr/levels'),
                     headers=self.headers
                 )
                 if resp.status_code == 200:
@@ -551,7 +780,7 @@ class MockupDataDB:
                 "second_manager_title": data_level['second_manager_description']
             }
             resp = requests.post(
-                url=self.parse_url(reverse('GroupList')),
+                url=self.parse_url('hr/groups'),
                 json=data,
                 headers=self.headers
             )
@@ -588,10 +817,13 @@ class MockupDataDB:
                 ] if len(self.role_id_list) > 0 else []
             }
             resp = requests.post(
-                url=self.parse_url(reverse('EmployeeList')),
+                url=self.parse_url('hr/employees'),
                 json=data,
                 headers=self.headers,
             )
             if resp.status_code == 201:
                 self.employee_data[resp.json()['result']['id']] = resp.json()['result']
         return self.employee_data
+
+
+MockupDataDB('api.sit.mtsolution.com.vn', None)()
