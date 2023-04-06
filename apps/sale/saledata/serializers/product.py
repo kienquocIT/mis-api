@@ -507,12 +507,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     def create(self, validated_data):
         price_list_information = validated_data['sale_information'].get('price_list', None)
+        uom_using = validated_data['sale_information'].get('default_uom', None)
+        uom_group_using = validated_data['general_information'].get('uom_group', None)
         if price_list_information:
             del validated_data['sale_information']['price_list']
         product = Product.objects.create(**validated_data)
 
         # gán product với price list
-        if price_list_information:
+        if price_list_information and uom_using and uom_group_using:
             objs = []
             objs_for_mapped = []
             for item in price_list_information:
@@ -526,12 +528,24 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     fill__company=True,
                     id=item['currency_using']
                 ).first()
-                if price_list_item and currency_using_item:
+                uom_group_using_item = UnitOfMeasureGroup.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=uom_group_using
+                ).first()
+                uom_using_item = UnitOfMeasure.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=uom_using
+                ).first()
+                if price_list_item and currency_using_item and uom_using_item and uom_group_using_item:
                     objs.append(ProductPriceList(
                         price_list=price_list_item,
                         product=product,
                         price=float(item['price']),
-                        currency_using=currency_using_item
+                        currency_using=currency_using_item,
+                        uom_using=uom_using_item,
+                        uom_group_using=uom_group_using_item
                     ))
                 else:
                     raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
@@ -546,10 +560,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                             price_list=price_list_mapped,
                             product=product,
                             price=float(item['price']),
-                            currency_using=currency_using_item
+                            currency_using=currency_using_item,
+                            uom_using=uom_using_item,
+                            uom_group_using=uom_group_using_item
                         )
                     )
-
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
             if len(objs_for_mapped) > 0:
