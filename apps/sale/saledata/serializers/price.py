@@ -347,33 +347,19 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     def get_products_mapped(cls, obj):
         products = ProductPriceList.objects.filter(
             price_list_id=obj.id
-        ).select_related('product', 'currency_using')
+        ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
         all_products = []
         for p in products:
-            uom_group = UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=p.product.general_information['uom_group']
-            ).first()
-            uom = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=p.product.sale_information['default_uom']
-            ).first()
-
-            if uom and uom_group and p.currency_using:
-                product_information = {
-                    'id': p.product_id,
-                    'code': p.product.code,
-                    'title': p.product.title,
-                    'uom_group': uom_group.title,
-                    'uom': uom.title,
-                    'price': p.price,
-                    'currency_using': p.currency_using.abbreviation
-                }
-                all_products.append(product_information)
-            else:
-                return []
+            product_information = {
+                'id': p.product_id,
+                'code': p.product.code,
+                'title': p.product.title,
+                'uom_group': p.uom_group_using.title,
+                'uom': p.uom_using.title,
+                'price': p.price,
+                'currency_using': p.currency_using.abbreviation
+            }
+            all_products.append(product_information)
         return all_products
 
 

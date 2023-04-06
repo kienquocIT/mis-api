@@ -1,6 +1,6 @@
 from django.db import models
 from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
-from apps.sale.saledata.models.product import Product
+from apps.sale.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from django.utils import timezone
 
 
@@ -91,6 +91,8 @@ class ProductPriceList(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.FloatField()
     currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
+    uom_using = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
+    uom_group_using = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
         help_text='The record created at value',
