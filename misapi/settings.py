@@ -201,6 +201,9 @@ MEDIA_URL = '/media/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# test runner override | runner for command: python manage.py test
+TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+
 # REST API
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
