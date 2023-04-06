@@ -364,6 +364,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             if uom and uom_group and p.currency_using:
                 product_information = {
                     'id': p.product_id,
+                    'code': p.product.code,
                     'title': p.product.title,
                     'uom_group': uom_group.title,
                     'uom': uom.title,
