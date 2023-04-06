@@ -89,22 +89,16 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_association(cls, obj):
-        result = []
-        association_list = Association.objects.filter(
-            workflow=obj
-        ).values_list(
-            'node_in_data',
-            'node_out_data',
-            'condition',
-        )
-        if association_list:
-            for association in association_list:
-                result.append({
-                    'node_in': association[0],
-                    'node_out': association[1],
-                    'condition': association[2]
-                })
-        return result
+        return [
+            {'node_in': association[0], 'node_out': association[1], 'condition': association[2]}
+            for association in Association.objects.filter(
+                workflow=obj
+            ).values_list(
+                'node_in_data',
+                'node_out_data',
+                'condition',
+            )
+        ]
 
 
 # common class for create/ update workflow
