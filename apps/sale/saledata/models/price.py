@@ -90,6 +90,7 @@ class ProductPriceList(SimpleAbstractModel):
     price_list = models.ForeignKey(Price, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     price = models.FloatField()
+    get_price_from_source = models.BooleanField(default=False)  # True nếu lấy giá từ 1 price_list khác, else False
     currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
     uom_using = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
     uom_group_using = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)

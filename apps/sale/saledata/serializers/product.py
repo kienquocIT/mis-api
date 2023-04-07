@@ -580,7 +580,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     fill__tenant=True,
                     fill__company=True,
                     price_list_mapped=item['id'],
-                    auto_update=True
+                    auto_update=True,
                 )
                 if len(price_list_mapped) > 0:
                     for i in price_list_mapped:
@@ -591,7 +591,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                                 price=float(item['price'])*i.factor,
                                 currency_using=currency_using_item,
                                 uom_using=uom_using_item,
-                                uom_group_using=uom_group_using_item
+                                uom_group_using=uom_group_using_item,
+                                get_price_from_source=True
                             )
                         )
             if len(objs) > 0:
