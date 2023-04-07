@@ -414,6 +414,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 
 # Product
+count = 0
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
