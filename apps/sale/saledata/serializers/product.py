@@ -512,20 +512,16 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         else:
             if inventory_level_min:
                 value['inventory_level_min'] = int(inventory_level_min)
-            else:
-                del value['inventory_level_min']
             if inventory_level_max:
                 value['inventory_level_max'] = int(inventory_level_max)
-            else:
-                del value['inventory_level_max']
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
         for key in value:
-            if key not in ['price_list']:
-                if not value.get(key, None):
-                    raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+            # if key not in ['price_list']:
+            if not value.get(key, None):
+                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
         return value
 
     def create(self, validated_data):
@@ -565,7 +561,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     objs.append(ProductPriceList(
                         price_list=price_list_item,
                         product=product,
-                        price=float(item['price']),
+                        price=float(item['price'])*price_list_item.factor,
                         currency_using=currency_using_item,
                         uom_using=uom_using_item,
                         uom_group_using=uom_group_using_item
@@ -578,18 +574,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     fill__tenant=True,
                     fill__company=True,
                     price_list_mapped=item['id']
-                ).first()
-                if price_list_mapped:
-                    objs_for_mapped.append(
-                        ProductPriceList(
-                            price_list=price_list_mapped,
-                            product=product,
-                            price=float(item['price']),
-                            currency_using=currency_using_item,
-                            uom_using=uom_using_item,
-                            uom_group_using=uom_group_using_item
+                )
+                if len(price_list_mapped) > 0:
+                    for i in price_list_mapped:
+                        objs_for_mapped.append(
+                            ProductPriceList(
+                                price_list=i,
+                                product=product,
+                                price=float(item['price'])*i.factor,
+                                currency_using=currency_using_item,
+                                uom_using=uom_using_item,
+                                uom_group_using=uom_group_using_item
+                            )
                         )
-                    )
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
             if len(objs_for_mapped) > 0:
@@ -672,12 +669,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
         else:
             if inventory_level_min:
                 value['inventory_level_min'] = int(inventory_level_min)
-            else:
-                del value['inventory_level_min']
             if inventory_level_max:
                 value['inventory_level_max'] = int(inventory_level_max)
-            else:
-                del value['inventory_level_max']
         return value
 
     @classmethod
