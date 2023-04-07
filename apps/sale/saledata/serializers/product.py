@@ -493,14 +493,33 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        for key in value:  # noqa
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        inventory_level_min = value.get('inventory_level_min', None)
+        inventory_level_max = value.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            inventory_level_min = int(inventory_level_min)
+            inventory_level_max = int(inventory_level_max)
+            value['inventory_level_min'] = int(inventory_level_min)
+            value['inventory_level_max'] = int(inventory_level_max)
+            if (inventory_level_min > 0) and (inventory_level_max > 0):
+                if inventory_level_min > inventory_level_max:
+                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+            else:
+                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
         for key in value:
+            # if key not in ['price_list']:
             if not value.get(key, None):
                 raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
         return value
@@ -542,7 +561,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     objs.append(ProductPriceList(
                         price_list=price_list_item,
                         product=product,
-                        price=float(item['price']),
+                        price=float(item['price'])*price_list_item.factor,
                         currency_using=currency_using_item,
                         uom_using=uom_using_item,
                         uom_group_using=uom_group_using_item
@@ -555,18 +574,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                     fill__tenant=True,
                     fill__company=True,
                     price_list_mapped=item['id']
-                ).first()
-                if price_list_mapped:
-                    objs_for_mapped.append(
-                        ProductPriceList(
-                            price_list=price_list_mapped,
-                            product=product,
-                            price=float(item['price']),
-                            currency_using=currency_using_item,
-                            uom_using=uom_using_item,
-                            uom_group_using=uom_group_using_item
+                )
+                if len(price_list_mapped) > 0:
+                    for i in price_list_mapped:
+                        objs_for_mapped.append(
+                            ProductPriceList(
+                                price_list=i,
+                                product=product,
+                                price=float(item['price'])*i.factor,
+                                currency_using=currency_using_item,
+                                uom_using=uom_using_item,
+                                uom_group_using=uom_group_using_item
+                            )
                         )
-                    )
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
             if len(objs_for_mapped) > 0:
@@ -599,7 +619,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
                 'price': item.price,
                 'currency_using': item.currency_using.abbreviation
             })
-        obj.sale_information['price_list'] = price_list_detail
+        if len(price_list_detail) > 0:
+            obj.sale_information['price_list'] = price_list_detail
         return obj.sale_information
 
 
@@ -629,9 +650,27 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        for key in value:  # noqa
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        inventory_level_min = value.get('inventory_level_min', None)
+        inventory_level_max = value.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            inventory_level_min = int(inventory_level_min)
+            inventory_level_max = int(inventory_level_max)
+            value['inventory_level_min'] = int(inventory_level_min)
+            value['inventory_level_max'] = int(inventory_level_max)
+            if (inventory_level_min > 0) and (inventory_level_max > 0):
+                if inventory_level_min > inventory_level_max:
+                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+            else:
+                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
         return value
 
     @classmethod
