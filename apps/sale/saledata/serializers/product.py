@@ -414,6 +414,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 
 # Product
+count = 0
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
@@ -525,38 +526,43 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def create(self, validated_data):
+        # lấy price_list
         price_list_information = validated_data['sale_information'].get('price_list', None)
+        # lấy uom
         uom_using = validated_data['sale_information'].get('default_uom', None)
+        # lấy uom_group
         uom_group_using = validated_data['general_information'].get('uom_group', None)
+
         if price_list_information:
             del validated_data['sale_information']['price_list']
         product = Product.objects.create(**validated_data)
 
-        # gán product với price list
+        # gán product vừa tạo với các price_list (luôn đưa vào general_price_list)
         if price_list_information and uom_using and uom_group_using:
             objs = []
             objs_for_mapped = []
-            for item in price_list_information:
+            for item in price_list_information:  # cho mỗi price_list trong [price_list]
                 price_list_item = Price.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=item['id']
-                ).first()
+                ).first()  # lấy price_list
                 currency_using_item = Currency.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=item['currency_using']
-                ).first()
+                ).first()  # lấy currency
                 uom_group_using_item = UnitOfMeasureGroup.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=uom_group_using
-                ).first()
+                ).first()  # lấy uom
                 uom_using_item = UnitOfMeasure.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
                     id=uom_using
-                ).first()
+                ).first()  # lấy uom_group
+
                 if price_list_item and currency_using_item and uom_using_item and uom_group_using_item:
                     objs.append(ProductPriceList(
                         price_list=price_list_item,
@@ -565,15 +571,16 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                         currency_using=currency_using_item,
                         uom_using=uom_using_item,
                         uom_group_using=uom_group_using_item
-                    ))
+                    ))  # tạo các objs price_list
                 else:
                     raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
 
-                # nếu có price list source -> tạo dữ liệu copy
+                # nếu có price_list source và auto_update=True -> tạo dữ liệu copy
                 price_list_mapped = Price.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
-                    price_list_mapped=item['id']
+                    price_list_mapped=item['id'],
+                    auto_update=True
                 )
                 if len(price_list_mapped) > 0:
                     for i in price_list_mapped:
