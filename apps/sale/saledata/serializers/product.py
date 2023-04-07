@@ -2,7 +2,8 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.shared import ProductMsg
+from apps.sale.saledata.models.price import ProductPriceList, Price, Currency
+from apps.shared import ProductMsg, PriceMsg
 
 
 # Product Type
@@ -413,6 +414,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 
 # Product
+count = 0
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
@@ -492,20 +494,115 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        for key in value:  # noqa
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        inventory_level_min = value.get('inventory_level_min', None)
+        inventory_level_max = value.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            inventory_level_min = int(inventory_level_min)
+            inventory_level_max = int(inventory_level_max)
+            value['inventory_level_min'] = int(inventory_level_min)
+            value['inventory_level_max'] = int(inventory_level_max)
+            if (inventory_level_min > 0) and (inventory_level_max > 0):
+                if inventory_level_min > inventory_level_max:
+                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+            else:
+                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
         for key in value:
+            # if key not in ['price_list']:
             if not value.get(key, None):
                 raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
         return value
 
+    def create(self, validated_data):
+        # lấy price_list
+        price_list_information = validated_data['sale_information'].get('price_list', None)
+        # lấy uom
+        uom_using = validated_data['sale_information'].get('default_uom', None)
+        # lấy uom_group
+        uom_group_using = validated_data['general_information'].get('uom_group', None)
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        product = Product.objects.create(**validated_data)
+
+        # gán product vừa tạo với các price_list (luôn đưa vào general_price_list)
+        if price_list_information and uom_using and uom_group_using:
+            objs = []
+            objs_for_mapped = []
+            for item in price_list_information:  # cho mỗi price_list trong [price_list]
+                price_list_item = Price.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=item['id']
+                ).first()  # lấy price_list
+                currency_using_item = Currency.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=item['currency_using']
+                ).first()  # lấy currency
+                uom_group_using_item = UnitOfMeasureGroup.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=uom_group_using
+                ).first()  # lấy uom
+                uom_using_item = UnitOfMeasure.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=uom_using
+                ).first()  # lấy uom_group
+
+                if price_list_item and currency_using_item and uom_using_item and uom_group_using_item:
+                    objs.append(ProductPriceList(
+                        price_list=price_list_item,
+                        product=product,
+                        price=float(item['price'])*price_list_item.factor,
+                        currency_using=currency_using_item,
+                        uom_using=uom_using_item,
+                        uom_group_using=uom_group_using_item
+                    ))  # tạo các objs price_list
+                else:
+                    raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
+
+                # nếu có price_list source và auto_update=True -> tạo dữ liệu copy
+                price_list_mapped = Price.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    price_list_mapped=item['id'],
+                    auto_update=True
+                )
+                if len(price_list_mapped) > 0:
+                    for i in price_list_mapped:
+                        objs_for_mapped.append(
+                            ProductPriceList(
+                                price_list=i,
+                                product=product,
+                                price=float(item['price'])*i.factor,
+                                currency_using=currency_using_item,
+                                uom_using=uom_using_item,
+                                uom_group_using=uom_group_using_item
+                            )
+                        )
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+            if len(objs_for_mapped) > 0:
+                ProductPriceList.objects.bulk_create(objs_for_mapped)
+        return product
+
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+    sale_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -516,8 +613,22 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'general_information',
             'inventory_information',
             'sale_information',
-            'purchase_information'
+            'purchase_information',
         )
+
+    @classmethod
+    def get_sale_information(cls, obj):
+        product_price_list = ProductPriceList.objects.filter(product=obj).select_related('currency_using')
+        price_list_detail = []
+        for item in product_price_list:
+            price_list_detail.append({
+                'id': item.price_list_id,
+                'price': item.price,
+                'currency_using': item.currency_using.abbreviation
+            })
+        if len(price_list_detail) > 0:
+            obj.sale_information['price_list'] = price_list_detail
+        return obj.sale_information
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -546,9 +657,27 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        for key in value:  # noqa
+            if key not in ['inventory_level_min', 'inventory_level_max']:
+                if not value.get(key, None):
+                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        inventory_level_min = value.get('inventory_level_min', None)
+        inventory_level_max = value.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            inventory_level_min = int(inventory_level_min)
+            inventory_level_max = int(inventory_level_max)
+            value['inventory_level_min'] = int(inventory_level_min)
+            value['inventory_level_max'] = int(inventory_level_max)
+            if (inventory_level_min > 0) and (inventory_level_max > 0):
+                if inventory_level_min > inventory_level_max:
+                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+            else:
+                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+        else:
+            if inventory_level_min:
+                value['inventory_level_min'] = int(inventory_level_min)
+            if inventory_level_max:
+                value['inventory_level_max'] = int(inventory_level_max)
         return value
 
     @classmethod

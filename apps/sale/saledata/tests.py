@@ -1,7 +1,6 @@
 from django.urls import reverse
 from rest_framework import status
 
-from rest_framework.test import APITestCase
 from apps.core.auths.tests import TestCaseAuth
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
@@ -137,7 +136,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
-                'title': 'Type 1',
+                'title': 'San pham 1',
                 'description': '',
             },
             format='json'
@@ -224,7 +223,6 @@ class ProductTestCase(AdvanceTestCase):
         return True
 
     def test_create_product_missing_title(self):
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "general_information": {
@@ -241,7 +239,6 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        url = reverse("ProductList")
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
@@ -279,7 +276,6 @@ class ProductTestCase(AdvanceTestCase):
         product_type = self.create_product_type()
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
