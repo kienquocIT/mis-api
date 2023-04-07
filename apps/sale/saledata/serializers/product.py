@@ -588,13 +588,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                             ProductPriceList(
                                 price_list=i,
                                 product=product,
-                                price=float(item['price'])*i.factor,
+                                price=float(item['price']) * i.factor,
                                 currency_using=currency_using_item,
                                 uom_using=uom_using_item,
                                 uom_group_using=uom_group_using_item,
                                 get_price_from_source=True
                             )
                         )
+
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
             if len(objs_for_mapped) > 0:
