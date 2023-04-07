@@ -61,7 +61,11 @@ class ApplicationPropertyList(
     permission_classes = [IsAuthenticated]
     queryset = ApplicationProperty.objects
     search_fields = []
-    filterset_fields = ['application', 'type']
+    filterset_fields = {
+        'application': ['exact'],
+        'type': ['exact'],
+        'id': ['in']
+    }
     serializer_list = ApplicationPropertyListSerializer
 
     @swagger_auto_schema(
