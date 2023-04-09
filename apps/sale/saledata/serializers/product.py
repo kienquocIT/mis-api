@@ -526,14 +526,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def create(self, validated_data):
-        # lấy price_list
-        price_list_information = validated_data['sale_information'].get('price_list', None)
-        # lấy uom
-        uom_using = validated_data['sale_information'].get('default_uom', None)
-        # lấy uom_group
-        uom_group_using = validated_data['general_information'].get('uom_group', None)
-        # lấy currency
-        currency_using = validated_data['sale_information'].get('currency_using', None)
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        uom_using = validated_data['sale_information'].get('default_uom', None)  # lấy uom
+        uom_group_using = validated_data['general_information'].get('uom_group', None)  # lấy uom_group
+        currency_using = validated_data['sale_information'].get('currency_using', None)  # lấy currency
 
         if price_list_information:
             del validated_data['sale_information']['price_list']
