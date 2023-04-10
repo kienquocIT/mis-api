@@ -237,7 +237,6 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'title',
             'auto_update',
-            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -264,7 +263,6 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
         fields = (
             'title',
             'auto_update',
-            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -325,7 +323,6 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'title',
             'auto_update',
-            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -355,28 +352,12 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = Price
         fields = (
-            'title',
             'auto_update',
-            'can_delete',
-            'factor',
-            'currency',
-            'price_list_mapped',
-            'price_list_type'
         )
-
-    def validate_title(self, value):
-        if value != self.instance.title and Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
-        return value
 
     @classmethod
     def validate_rate(cls, attrs):
@@ -387,6 +368,8 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
+        if 'auto_update' not in validated_data.keys():
+            instance.auto_update = False
+            instance.price_list_mapped = None
         instance.save()
+        return instance
