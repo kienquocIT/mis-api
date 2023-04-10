@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.sale.saledata.models.price import ProductPriceList, Price, Currency
+from apps.sale.saledata.models.price import ProductPriceList
 from apps.shared import ProductMsg, PriceMsg
 
 
@@ -415,6 +415,8 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 # Product
 count = 0
+
+
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
@@ -501,12 +503,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         inventory_level_min = value.get('inventory_level_min', None)
         inventory_level_max = value.get('inventory_level_max', None)
         if inventory_level_min and inventory_level_max:
-            inventory_level_min = int(inventory_level_min)
-            inventory_level_max = int(inventory_level_max)
             value['inventory_level_min'] = int(inventory_level_min)
             value['inventory_level_max'] = int(inventory_level_max)
-            if (inventory_level_min > 0) and (inventory_level_max > 0):
-                if inventory_level_min > inventory_level_max:
+            if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                if value['inventory_level_min'] > value['inventory_level_max']:
                     raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
             else:
                 raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
@@ -520,66 +520,51 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_sale_information(cls, value):
         for key in value:
-            # if key not in ['price_list']:
             if not value.get(key, None):
                 raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+
+        price_list = value.get('price_list', None)
+        if price_list:
+            for item in price_list:
+                for item_key in item:
+                    if not item.get(item_key, None):
+                        raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+        else:
+            raise serializers.ValidationError(PriceMsg.SALE_INFORMATION_MISSING_PRICE_LIST)
         return value
 
     def create(self, validated_data):
-        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
-        uom_using = validated_data['sale_information'].get('default_uom', None)  # lấy uom
-        uom_group_using = validated_data['general_information'].get('uom_group', None)  # lấy uom_group
-        currency_using = validated_data['sale_information'].get('currency_using', None)  # lấy currency
-
-        if price_list_information:
-            del validated_data['sale_information']['price_list']
-
-        currency_using_item = None
-        if currency_using:
-            del validated_data['sale_information']['currency_using']
-            currency_using_item = Currency.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=currency_using
-            ).first()  # lấy currency
+        price_list_information = validated_data['sale_information']['price_list']  # lấy price_list
+        currency_using_id = validated_data['sale_information']['currency_using']  # lấy currency_using
+        del validated_data['sale_information']['price_list']
+        del validated_data['sale_information']['currency_using']
 
         product = Product.objects.create(**validated_data)
 
-        # gán product vừa tạo với các price_list (luôn đưa vào general_price_list)
-        if price_list_information and uom_using and uom_group_using:
-            objs = []
-            uom_group_using_item = UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=uom_group_using
-            ).first()  # lấy uom
-            uom_using_item = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=uom_using
-            ).first()  # lấy uom_group
+        # gắn product vừa tạo với các price_list (đưa vào general_price_list)
+        objs = []
+        for item in price_list_information:
+            price_value = item['price_value']
+            price_list_id = item['price_list_id']
 
-            for item in price_list_information:  # cho mỗi price_list trong [price_list]
-                price_list_item = Price.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=item['price_list_id']
-                ).first()  # lấy price_list
-
-                if price_list_item and currency_using_item and uom_using_item and uom_group_using_item:
-                    objs.append(ProductPriceList(
-                        price_list=price_list_item,
+            if price_value and price_list_id and item['is_auto_update']:
+                is_auto_update = True if item['is_auto_update'] == '1' else False
+                objs.append(
+                    ProductPriceList(
+                        price_list_id=price_list_id,
                         product=product,
-                        price=float(item['price_value']),
-                        currency_using=currency_using_item,
-                        uom_using=uom_using_item,
-                        uom_group_using=uom_group_using_item
-                    ))  # tạo các objs price_list
-                else:
-                    raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
+                        price=float(price_value),
+                        currency_using_id=currency_using_id,
+                        uom_using_id=validated_data['sale_information']['default_uom'],
+                        uom_group_using_id=validated_data['general_information']['uom_group'],
+                        get_price_from_source=is_auto_update
+                    )
+                )  # tạo các objs price_list
+            else:
+                raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
 
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
+        if len(objs) > 0:
+            ProductPriceList.objects.bulk_create(objs)
         return product
 
 
@@ -603,11 +588,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
         product_price_list = ProductPriceList.objects.filter(product=obj).select_related('currency_using')
         price_list_detail = []
         for item in product_price_list:
-            price_list_detail.append({
-                'id': item.price_list_id,
-                'price': item.price,
-                'currency_using': item.currency_using.abbreviation
-            })
+            price_list_detail.append(
+                {
+                    'id': item.price_list_id,
+                    'price': item.price,
+                    'currency_using': item.currency_using.abbreviation
+                }
+            )
         if len(price_list_detail) > 0:
             obj.sale_information['price_list'] = price_list_detail
         return obj.sale_information

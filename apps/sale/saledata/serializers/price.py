@@ -301,26 +301,18 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     def create(self, validated_data):
         price_list = Price.objects.create(**validated_data)
         if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
-            price_list_mapped = Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=validated_data['price_list_mapped']
-            ).first()
-            if price_list_mapped:
-                products_source = ProductPriceList.objects.filter(price_list=price_list_mapped)
-                objs = [
-                    ProductPriceList(
-                        price_list=price_list,
-                        product=p.product,
-                        price=p.price,
-                        currency_using=p.currency_using,
-                        uom_using=p.uom_using,
-                        uom_group_using=p.uom_group_using,
-                    ) for p in products_source
-                ]
-                ProductPriceList.objects.bulk_create(objs)
-            else:
-                raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
+            products_source = ProductPriceList.objects.filter(price_list_id=validated_data['price_list_mapped'])
+            objs = [
+                ProductPriceList(
+                    price_list=price_list,
+                    product=p.product,
+                    price=p.price,
+                    currency_using=p.currency_using,
+                    uom_using=p.uom_using,
+                    uom_group_using=p.uom_group_using,
+                ) for p in products_source
+            ]
+            ProductPriceList.objects.bulk_create(objs)
         return price_list
 
 
