@@ -544,20 +544,16 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         # gắn product vừa tạo với các price_list (đưa vào general_price_list)
         objs = []
         for item in price_list_information:
-            price_value = item['price_value']
-            price_list_id = item['price_list_id']
-
-            if price_value and price_list_id and item['is_auto_update']:
-                is_auto_update = True if item['is_auto_update'] == '1' else False
+            if item['price_value'] and item['price_list_id'] and item['is_auto_update']:
                 objs.append(
                     ProductPriceList(
-                        price_list_id=price_list_id,
+                        price_list_id=item['price_list_id'],
                         product=product,
-                        price=float(price_value),
+                        price=float(item['price_value']),
                         currency_using_id=currency_using_id,
                         uom_using_id=validated_data['sale_information']['default_uom'],
                         uom_group_using_id=validated_data['general_information']['uom_group'],
-                        get_price_from_source=is_auto_update
+                        get_price_from_source=True if item['is_auto_update'] == '1' else False
                     )
                 )  # tạo các objs price_list
             else:
