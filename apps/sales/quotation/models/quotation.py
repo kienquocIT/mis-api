@@ -152,11 +152,14 @@ class QuotationProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    order = models.IntegerField(
+        default=1
+    )
 
     class Meta:
         verbose_name = 'Quotation Product'
         verbose_name_plural = 'Quotation Products'
-        ordering = ('-date_created',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -255,3 +258,150 @@ class QuotationLogistic(SimpleAbstractModel):
 
 
 # SUPPORT COST
+class QuotationCost(SimpleAbstractModel):
+    quotation = models.ForeignKey(
+        Quotation,
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_cost_quotation",
+        null=True
+    )
+    product = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_cost_product",
+        null=True
+    )
+    unit_of_measure = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="quotation_cost_uom",
+        null=True
+    )
+    tax = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="quotation_cost_tax",
+        null=True
+    )
+    # cost information
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_uom_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_uom_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_quantity = models.IntegerField(
+        default=0
+    )
+    product_cost_price = models.FloatField(
+        default=0
+    )
+    product_tax_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_tax_value = models.FloatField(
+        default=0
+    )
+    product_subtotal_price = models.FloatField(
+        default=0
+    )
+    order = models.IntegerField(
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Cost'
+        verbose_name_plural = 'Quotation Costs'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT EXPENSE
+class QuotationExpense(SimpleAbstractModel):
+    quotation = models.ForeignKey(
+        Quotation,
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_expense_quotation",
+        null=True
+    )
+    expense = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="quotation",
+        related_name="quotation_expense_expense",
+        null=True
+    )
+    unit_of_measure = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="quotation_expense_uom",
+        null=True
+    )
+    tax = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="unit",
+        related_name="quotation_expense_tax",
+        null=True
+    )
+    # cost information
+    expense_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    expense_uom_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    expense_uom_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    expense_quantity = models.IntegerField(
+        default=0
+    )
+    expense_price = models.FloatField(
+        default=0
+    )
+    expense_tax_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    expense_tax_value = models.FloatField(
+        default=0
+    )
+    expense_subtotal_price = models.FloatField(
+        default=0
+    )
+    order = models.IntegerField(
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Expense'
+        verbose_name_plural = 'Quotation Expenses'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
