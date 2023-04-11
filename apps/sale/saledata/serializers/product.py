@@ -435,16 +435,11 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_general_information(cls, obj):
         if obj.general_information:
-            product_type_id = obj.general_information.get('product_type', None)
-            product_category_id = obj.general_information.get('product_category', None)
-
-            if product_type_id and product_category_id:
-                return {
-                    'uom_group': obj.general_information.get('uom_group', None),
-                    'product_type': product_type_id,
-                    'product_category': product_category_id,
-                }
-        return {}
+            return {
+                'uom_group': obj.general_information.get('uom_group', None),
+                'product_type': obj.general_information.get('product_type', None),
+                'product_category': obj.general_information.get('product_category', None),
+            }
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):  # noqa

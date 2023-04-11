@@ -304,7 +304,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList(
                     price_list=price_list,
                     product=p.product,
-                    price=p.price,
+                    price=float(p.price)*float(price_list.factor),
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
