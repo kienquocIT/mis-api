@@ -489,62 +489,64 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_general_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
-        return value
-
-    @classmethod
-    def validate_inventory_information(cls, value):
-        for key in value:  # noqa
-            if key not in ['inventory_level_min', 'inventory_level_max']:
-                if not value.get(key, None):
-                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
-        inventory_level_min = value.get('inventory_level_min', None)
-        inventory_level_max = value.get('inventory_level_max', None)
-        if inventory_level_min and inventory_level_max:
-            value['inventory_level_min'] = int(inventory_level_min)
-            value['inventory_level_max'] = int(inventory_level_max)
-            if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
-                if value['inventory_level_min'] > value['inventory_level_max']:
-                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            else:
-                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
-        else:
-            if inventory_level_min:
-                value['inventory_level_min'] = int(inventory_level_min)
-            if inventory_level_max:
-                value['inventory_level_max'] = int(inventory_level_max)
+        if not value.get('uom_group', None):
+            raise serializers.ValidationError(ProductMsg.UOM_MISSING)
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+        if value != {}:
+            if not value.get('default_uom', None):
+                raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
 
-        price_list = value.get('price_list', None)
-        if price_list:
-            for item in price_list:
-                for item_key in item:
-                    if not item.get(item_key, None):
-                        raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
-        else:
-            raise serializers.ValidationError(PriceMsg.SALE_INFORMATION_MISSING_PRICE_LIST)
-        return value
+            price_list = value.get('price_list', None)
+            if price_list:
+                for item in price_list:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                        if not item.get(key, None):
+                            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+                if not value.get('currency_using', None):
+                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
+            return value
+        return {}
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        if value != {}:
+            if not value.get('uom', None):
+                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+            inventory_level_min = value.get('inventory_level_min', None)
+            inventory_level_max = value.get('inventory_level_max', None)
+            if inventory_level_min and inventory_level_max:
+                value['inventory_level_min'] = int(inventory_level_min)
+                value['inventory_level_max'] = int(inventory_level_max)
+                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                    if value['inventory_level_min'] > value['inventory_level_max']:
+                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+                else:
+                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+            else:
+                if inventory_level_min:
+                    value['inventory_level_min'] = int(inventory_level_min)
+                if inventory_level_max:
+                    value['inventory_level_max'] = int(inventory_level_max)
+            return value
+        return {}
 
     def create(self, validated_data):
-        price_list_information = validated_data['sale_information']['price_list']  # lấy price_list
-        currency_using_id = validated_data['sale_information']['currency_using']  # lấy currency_using
-        del validated_data['sale_information']['price_list']
-        del validated_data['sale_information']['currency_using']
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        currency_using_id = validated_data['sale_information'].get('currency_using', None)  # lấy currency_using
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        if currency_using_id:
+            del validated_data['sale_information']['currency_using']
 
         product = Product.objects.create(**validated_data)
 
-        # gắn product vừa tạo với các price_list (đưa vào general_price_list)
-        objs = []
-        for item in price_list_information:
-            if item['price_value'] and item['price_list_id'] and item['is_auto_update']:
+        if price_list_information and currency_using_id:
+            objs = []
+            for item in price_list_information:
                 objs.append(
                     ProductPriceList(
                         price_list_id=item['price_list_id'],
@@ -555,12 +557,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                         uom_group_using_id=validated_data['general_information']['uom_group'],
                         get_price_from_source=True if item['is_auto_update'] == '1' else False
                     )
-                )  # tạo các objs price_list
-            else:
-                raise serializers.ValidationError(PriceMsg.PRICE_LIST_OR_CURRENCY_NOT_EXIST)
-
-        if len(objs) > 0:
-            ProductPriceList.objects.bulk_create(objs)
+                )  # tạo các objs price_list (luôn đưa vào general_price_list)
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
         return product
 
 
@@ -616,9 +615,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_general_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
+        if not value.get('uom_group', None):
+            raise serializers.ValidationError(ProductMsg.UOM_MISSING)
         return value
 
     @classmethod
@@ -648,7 +646,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_sale_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+        if not value.get('default_uom', None):
+            raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
         return value
