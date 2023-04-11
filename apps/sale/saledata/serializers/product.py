@@ -588,7 +588,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
                 {
                     'id': item.price_list_id,
                     'price': item.price,
-                    'currency_using': item.currency_using.abbreviation
+                    'currency_using': item.currency_using.abbreviation,
+                    'is_auto_update': item.get_price_from_source
                 }
             )
         if len(price_list_detail) > 0:
