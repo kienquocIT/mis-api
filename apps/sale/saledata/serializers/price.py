@@ -370,6 +370,7 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
     def update(self, instance, validated_data):
         if 'auto_update' not in validated_data.keys():
             instance.auto_update = False
-            instance.price_list_mapped = None
+        else:
+            instance.auto_update = True
         instance.save()
         return instance
