@@ -344,10 +344,10 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                 'id': p.product_id,
                 'code': p.product.code,
                 'title': p.product.title,
-                'uom_group': p.uom_group_using.title,
-                'uom': p.uom_using.title,
+                'uom_group': {'id': p.uom_group_using_id, 'title': p.uom_group_using.title},
+                'uom': {'id': p.uom_using_id, 'title': p.uom_using.title},
                 'price': p.price,
-                'currency_using': p.currency_using.abbreviation
+                'currency_using': {'id': p.currency_using.id, 'abbreviation': p.currency_using.abbreviation}
             }
             all_products.append(product_information)
         return all_products
