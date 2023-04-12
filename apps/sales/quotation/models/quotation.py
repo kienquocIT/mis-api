@@ -32,6 +32,7 @@ class Quotation(DataAbstractModel):
         related_name="quotation_sale_person",
         null=True
     )
+    # quotation tabs
     quotation_products = models.ManyToManyField(
         '',
         through='QuotationProduct',
@@ -42,19 +43,31 @@ class Quotation(DataAbstractModel):
         default=list,
         help_text="read data products, use for get list or detail quotation"
     )
-    quotation_terms_data = models.JSONField(
+    quotation_term_data = models.JSONField(
         default=dict,
         help_text="read data terms, use for get list or detail quotation"
     )
-    quotation_logistics_data = models.JSONField(
+    quotation_logistic_data = models.JSONField(
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
     )
-    quotation_cost_data = models.JSONField(
+    quotation_costs = models.ManyToManyField(
+        '',
+        through='QuotationCost',
+        symmetrical=False,
+        related_name='quotations_map_costs',
+    )
+    quotation_costs_data = models.JSONField(
         default=list,
         help_text="read data cost, use for get list or detail quotation"
     )
-    quotation_expense_data = models.JSONField(
+    quotation_expenses = models.ManyToManyField(
+        '',
+        through='QuotationExpense',
+        symmetrical=False,
+        related_name='quotations_map_expenses',
+    )
+    quotation_expenses_data = models.JSONField(
         default=list,
         help_text="read data expense, use for get list or detail quotation"
     )
@@ -182,7 +195,7 @@ class QuotationTerm(SimpleAbstractModel):
         symmetrical=False,
         related_name='quotation_term_map_discounts',
     )
-    payment_terms = models.ForeignKey(
+    payment_term = models.ForeignKey(
         '',
         on_delete=models.CASCADE,
         verbose_name="payment terms",
@@ -240,19 +253,62 @@ class QuotationLogistic(SimpleAbstractModel):
         Quotation,
         on_delete=models.CASCADE,
     )
-    shipping_address = models.TextField(
-        blank=True,
-        null=True
+    shipping_address_list = models.ManyToManyField(
+        '',
+        through='',
+        symmetrical=False,
+        related_name='quotation_logistic_map_shipping',
     )
-    billing_address = models.TextField(
-        blank=True,
-        null=True
+    billing_address_list = models.ManyToManyField(
+        '',
+        through='',
+        symmetrical=False,
+        related_name='quotation_logistic_map_billing',
     )
 
     class Meta:
         verbose_name = 'Quotation Logistic'
         verbose_name_plural = 'Quotation Logistics'
-        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class QuotationLogisticShipping(SimpleAbstractModel):
+    quotation_logistic = models.ForeignKey(
+        QuotationLogistic,
+        on_delete=models.CASCADE,
+    )
+    shipping_address = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="shipping address",
+        related_name="quotation_logistic_shipping",
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Logistic Shipping'
+        verbose_name_plural = 'Quotation Logistic Shipping'
+        default_permissions = ()
+        permissions = ()
+
+
+class QuotationLogisticBilling(SimpleAbstractModel):
+    quotation_logistic = models.ForeignKey(
+        QuotationLogistic,
+        on_delete=models.CASCADE,
+    )
+    billing_address = models.ForeignKey(
+        '',
+        on_delete=models.CASCADE,
+        verbose_name="billing address",
+        related_name="quotation_logistic_billing",
+        null=True
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Logistic Billing'
+        verbose_name_plural = 'Quotation Logistic Billing'
         default_permissions = ()
         permissions = ()
 
@@ -289,6 +345,11 @@ class QuotationCost(SimpleAbstractModel):
     )
     # cost information
     product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
         max_length=100,
         blank=True,
         null=True
@@ -364,6 +425,11 @@ class QuotationExpense(SimpleAbstractModel):
     )
     # cost information
     expense_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    expense_code = models.CharField(
         max_length=100,
         blank=True,
         null=True
