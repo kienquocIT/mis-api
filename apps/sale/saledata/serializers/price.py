@@ -319,6 +319,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     products_mapped = serializers.SerializerMethodField()
+    price_list_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
@@ -355,6 +356,20 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             all_products.append(product_information)
         return all_products
 
+    @classmethod
+    def get_price_list_mapped(cls, obj):
+        price_list_mapped = Price.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=obj.price_list_mapped,
+        ).first()
+        if price_list_mapped:
+            return {
+                'id': obj.price_list_mapped,
+                'title': price_list_mapped.title
+            }
+        return {}
+
 
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
@@ -377,7 +392,7 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'delete_product_id' in validated_data.keys():
+        if 'delete_product_id' in validated_data.keys():  # update price_list
             product_deleted = ProductPriceList.objects.filter(
                 price_list=instance,
                 product_id=validated_data['delete_product_id']
@@ -385,7 +400,7 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
             product_deleted.is_delete = True
             product_deleted.is_active = False
             product_deleted.save()
-        else:
+        else:  # update setting
             if 'auto_update' not in validated_data.keys():  # update auto_update
                 instance.auto_update = False
             else:
