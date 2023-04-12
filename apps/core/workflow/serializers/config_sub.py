@@ -103,6 +103,7 @@ class NodeDetailSerializer(serializers.ModelSerializer):
     collab_in_form = serializers.JSONField()
     collab_out_form = serializers.JSONField()
     collab_in_workflow = serializers.JSONField()
+    condition = serializers.JSONField()
 
     class Meta:
         model = Node
@@ -120,7 +121,8 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'collab_out_form',
             'collab_in_workflow',
             'order',
-            'coordinates'
+            'coordinates',
+            'condition'
         )
 
 
