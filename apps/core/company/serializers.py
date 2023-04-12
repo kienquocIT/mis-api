@@ -1,5 +1,6 @@
 from crum import get_current_user
 from rest_framework import serializers
+from django.db.models import Count, Subquery
 
 from apps.core.company.models import Company, CompanyUserEmployee
 from apps.core.account.models import User
@@ -82,9 +83,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
 class CompanyOverviewSerializer(serializers.ModelSerializer):
     license_used = serializers.SerializerMethodField()
     power_user = serializers.SerializerMethodField()
-    power_user_summary = serializers.SerializerMethodField()
     employee = serializers.SerializerMethodField()
-    total_user_summary = serializers.SerializerMethodField()
     employee_linked_user = serializers.SerializerMethodField()
 
     class Meta:
@@ -95,9 +94,7 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
             'code',
             'license_used',
             'total_user',
-            'total_user_summary',
             'power_user',
-            'power_user_summary',
             'employee',
             'employee_linked_user',
         )
@@ -130,29 +127,25 @@ class CompanyOverviewSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_power_user(cls, obj):
-        cnt_power_user = 0
-        for item in CompanyUserEmployee.objects.filter(company_id=obj.id):
-            user = User.objects.filter(pk=item.user_id).first()
-            if item.user_id and user.is_superuser and user:
-                cnt_power_user += 1
-        return cnt_power_user
+        objs = CompanyUserEmployee.objects.filter(
+            user_id__in=Subquery(
+                CompanyUserEmployee.objects.filter(company_id=obj.id).values_list('user_id', flat=True)
+            )
+        ).values('user_id').annotate(
+            num_companies=Count('company_id', distinct=True)
+        ).filter(num_companies__gte=2)
+        return objs.count()
 
     @classmethod
     def get_employee(cls, obj):
-        return Employee.objects.filter(company=obj.id).count()
-
-    @classmethod
-    def get_total_user_summary(cls, obj):
-        return User.objects.filter(tenant_current=obj.tenant).count()
-
-    @classmethod
-    def get_power_user_summary(cls, obj):
-        return User.objects.filter(tenant_current=obj.tenant, is_superuser=True).count()
+        return obj.hr_employee_belong_to_company.count()
 
     @classmethod
     def get_employee_linked_user(cls, obj):
-        return CompanyUserEmployee.objects.filter(company=obj).exclude(user_id__isnull=True).exclude(
-            employee_id__isnull=True
+        return CompanyUserEmployee.objects.filter(
+            company=obj,
+            user_id__isnull=False,
+            employee_id__isnull=False
         ).count()
 
 

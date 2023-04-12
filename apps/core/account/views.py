@@ -7,7 +7,8 @@ from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer, UserListSerializer,
+    CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
+    CompanyUserEmployeeUpdateSerializer,
 )
 from .models import User
 from apps.core.company.models import CompanyUserEmployee
@@ -110,9 +111,28 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Add Or Delete User For Company",
         operation_description="Add Or Delete User For Company",
-        request_body=CompanyUserUpdateSerializer,
+        request_body=CompanyUserEmployeeUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUserUpdateSerializer
+        self.serializer_class = CompanyUserEmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class UserOfTenantList(AccountListMixin):
+    queryset = User.objects
+    serializer_list = UserListTenantOverviewSerializer
+    serializer_list_minimal = UserListSerializer
+    use_cache_queryset = True
+    use_cache_minimal = True
+    serializer_create = UserCreateSerializer
+    serializer_detail = UserDetailSerializer
+    list_hidden_field = ['tenant_current_id']
+    create_hidden_field = ['tenant_current_id']
+
+    def get_queryset(self):
+        return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')
+
+    @swagger_auto_schema()
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

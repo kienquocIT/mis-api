@@ -47,20 +47,22 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
 
     @classmethod
     def validate_tenant_code(cls, attrs):
-        tenant = Tenant.objects.filter(code=attrs)
+        code = attrs.lower()
+        tenant = Tenant.objects.filter(code=code)
         match tenant.count():
             case 0:
-                err_msg = AuthMsg.TENANT_NOT_FOUND.format(attrs)
+                err_msg = AuthMsg.TENANT_NOT_FOUND.format(code)
             case 1:
                 return tenant.first()
             case _:
-                err_msg = AuthMsg.TENANT_RETURN_MULTIPLE.format(attrs)
+                err_msg = AuthMsg.TENANT_RETURN_MULTIPLE.format(code)
         raise serializers.ValidationError({'tenant_code': err_msg})
 
     @classmethod
     def validate_username(cls, attrs):
-        username_slugify = slugify(attrs)
-        if username_slugify == attrs:
+        username = attrs.lower()
+        username_slugify = slugify(username)
+        if username_slugify == username:
             return username_slugify
         raise serializers.ValidationError(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
 
@@ -70,7 +72,7 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
 
     def validate(self, attrs):
         try:
-            username_value = User.convert_username_field_data(attrs['username'], attrs['tenant_code'])
+            username_value = User.convert_username_field_data(attrs['username'].lower(), attrs['tenant_code'])
             user_obj = User.objects.select_related(
                 'tenant_current', 'company_current', 'employee_current', 'space_current',
             ).get(**{User.USERNAME_FIELD: username_value})

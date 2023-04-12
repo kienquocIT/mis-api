@@ -1,3 +1,5 @@
+import time
+
 from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
@@ -5,7 +7,8 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.core.hr.models import Employee
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
-    EmployeeDetailSerializer, EmployeeUpdateSerializer, EmployeeListMinimalSerializer,
+    EmployeeDetailSerializer, EmployeeUpdateSerializer,
+    EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
 )
 from apps.shared import BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg
 
@@ -110,19 +113,19 @@ class EmployeeTenantList(
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
 
-    serializer_list = EmployeeListSerializer
-    serializer_list_minimal = EmployeeListMinimalSerializer
+    serializer_list = EmployeeListByOverviewTenantSerializer
+    serializer_list_minimal = EmployeeListMinimalByOverviewTenantSerializer
     use_cache_minimal = True
     list_hidden_field = ['tenant_id']
     filterset_fields = {
         'company_id': ['exact', 'in'],
+        'user': ['isnull'],
     }
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'group',
             'user'
-        )
+        ).order_by('first_name')
 
     @swagger_auto_schema(
         operation_summary="Employee Company list",
@@ -130,6 +133,7 @@ class EmployeeTenantList(
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
+            time.sleep(1)
             return self.list(request, *args, **kwargs)
         raise serializers.ValidationError({
             'detail': HRMsg.FILTER_COMPANY_ID_REQUIRED

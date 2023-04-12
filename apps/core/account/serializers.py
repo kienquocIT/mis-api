@@ -6,6 +6,39 @@ from apps.core.company.models import Company, CompanyUserEmployee
 from apps.shared import AccountMsg
 
 
+class UserListTenantOverviewSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    company_list = serializers.SerializerMethodField()
+    employee_mapped = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'full_name',
+            'company_list',
+            'employee_mapped',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return User.get_full_name(obj, 2)
+
+    @classmethod
+    def get_company_list(cls, obj):
+        return [
+            str(x.company_id) for x in obj.company_user_employee_set_user.all()
+        ]
+
+    @classmethod
+    def get_employee_mapped(cls, obj):
+        return {
+            str(x.company_id): (str(x.employee_id) if x.employee_id else None)
+            for x in obj.company_user_employee_set_user.all()
+        }
+
+
 class UserListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 
@@ -307,3 +340,60 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
 
             return instance
         raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
+
+
+class CompanyUserEmployeeUpdateSerializer(serializers.ModelSerializer):
+    companies = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False,
+    )
+
+    def validate_companies(self, attrs):
+        if self.instance and isinstance(attrs, list):
+            objs = Company.objects.filter(id__in=attrs)
+            if len(objs) == len(attrs):
+                return objs
+            raise serializers.ValidationError({'companies': AccountMsg.COMPANY_NOT_EXIST})
+        raise serializers.ValidationError({'companies': AccountMsg.USER_DATA_VALID})
+
+    class Meta:
+        model = User
+        fields = (
+            'companies',
+        )
+
+    @classmethod
+    def get_change_companies(cls, objs_old, objs_new):
+        ids_old = {str(x) for x in objs_old.values_list('id', flat=True)}
+        ids_new = {str(x) for x in objs_new.values_list('id', flat=True)}
+        # return (remove, add)
+        return list(ids_old - ids_new), list(ids_new - ids_old), list(ids_old & ids_new)
+
+    @classmethod
+    def get_objs(cls, ids, objs):
+        result = []
+        for obj in objs:
+            if str(obj.id) in ids:
+                result.append(obj)
+        return result
+
+    def update(self, instance, validated_data):
+        # update CompanyUserEmployee
+        companies_old = self.instance.companies.all()
+        companies_new = validated_data['companies']
+        ids_remove, ids_add, ids_same = self.get_change_companies(companies_old, companies_new)
+
+        CompanyUserEmployee.remove_company_from_user(instance.id, company_ids=ids_remove)
+        CompanyUserEmployee.add_company_to_user(instance.id, company_ids=ids_add)
+
+        # update total user of company
+        Company.refresh_total_user(ids_remove + ids_add)
+
+        # update company_current of user if process need
+        if instance.company_current_id in ids_remove:
+            if ids_same:
+                instance.company_current_id = ids_same[0]
+                instance.save(update_fields=['company_current_id'])
+
+        # return user obj
+        return instance

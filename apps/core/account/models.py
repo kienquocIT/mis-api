@@ -149,7 +149,8 @@ class User(AuthUser):   # pylint: disable=R0902
 
     def save(self, *args, is_superuser=False, **kwargs):
         # generate username for login
-        self.username_auth = self.convert_username_field_data(self.username, self.tenant_current)
+        self.username = self.username.lower()
+        self.username_auth = self.convert_username_field_data(self.username, self.tenant_current).lower()
 
         # syn verify contact
         self.sync_verify_contact()
