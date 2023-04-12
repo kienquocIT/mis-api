@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import Product, ProductCategory
+from apps.sale.saledata.models.product import Product
 from apps.shared import PriceMsg
 
 
@@ -456,3 +456,10 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
                 if len(objs) > 0:
                     ProductPriceList.objects.bulk_create(objs)
             return instance
+
+
+class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Price
+        fields = ()
