@@ -324,6 +324,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'title',
             'auto_update',
+            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -347,6 +348,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                 'uom_group': {'id': p.uom_group_using_id, 'title': p.uom_group_using.title},
                 'uom': {'id': p.uom_using_id, 'title': p.uom_using.title},
                 'price': p.price,
+                'is_auto_update': p.get_price_from_source,
                 'currency_using': {'id': p.currency_using.id, 'abbreviation': p.currency_using.abbreviation}
             }
             all_products.append(product_information)
