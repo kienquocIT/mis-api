@@ -238,6 +238,7 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'title',
             'auto_update',
+            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -264,6 +265,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
         fields = (
             'title',
             'auto_update',
+            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -324,6 +326,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'title',
             'auto_update',
+            'can_delete',
             'factor',
             'currency',
             'price_list_type',
@@ -359,6 +362,7 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         model = Price
         fields = (
             'auto_update',
+            'can_delete',
             'price_list_type',
             'factor',
             'currency'
@@ -386,6 +390,10 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
                 instance.auto_update = False
             else:
                 instance.auto_update = True
+            if 'can_delete' not in validated_data.keys():  # update can_delete
+                instance.can_delete = False
+            else:
+                instance.can_delete = True
 
             instance.price_list_type = validated_data['price_list_type']  # update price_list_type
 
