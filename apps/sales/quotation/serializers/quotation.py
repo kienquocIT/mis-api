@@ -64,7 +64,6 @@ class QuotationTermSerializer(serializers.ModelSerializer):
 
 
 class QuotationLogisticSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = QuotationLogistic
         fields = (
@@ -132,6 +131,27 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
             'expense_tax_value',
             'expense_subtotal_price',
             'order',
+        )
+
+
+# QUOTATION BEGIN
+class QuotationListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code'
+        )
+
+
+class QuotationDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code'
         )
 
 
@@ -272,7 +292,8 @@ class QuotationCommon:
 # Quotation
 class QuotationCreateSerializer(serializers.ModelSerializer):
     opportunity = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
     customer = serializers.CharField(
         max_length=550
@@ -347,3 +368,90 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
                 quotation=quotation
             )
         return quotation
+
+
+class QuotationUpdateSerializer(serializers.ModelSerializer):
+    opportunity = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    customer = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    contact = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    sale_person = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    # quotation tabs
+    quotation_products_data = QuotationProductSerializer(
+        many=True,
+        required=False
+    )
+    quotation_term_data = QuotationTermSerializer(required=False)
+    quotation_logistic_data = QuotationLogisticSerializer(required=False)
+    quotation_costs_data = QuotationCostSerializer(
+        many=True,
+        required=False
+    )
+    quotation_expenses_data = QuotationExpenseSerializer(
+        many=True,
+        required=False
+    )
+
+    class Meta:
+        model = Quotation
+        fields = (
+            'title',
+            'opportunity',
+            'customer',
+            'contact',
+            'sale_person',
+            'total_pretax_revenue',
+            'total_tax',
+            'total',
+            'is_customer_confirm',
+            # quotation tabs
+            'quotation_products_data',
+            'quotation_term_data',
+            'quotation_logistic_data',
+            'quotation_costs_data',
+            'quotation_expenses_data'
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        # delete all data
+
+        if 'quotation_products_data' in validated_data:
+            QuotationCommon().create_product(
+                validated_data=validated_data,
+                quotation=instance
+            )
+        if 'quotation_term_data' in validated_data:
+            QuotationCommon().create_term(
+                validated_data=validated_data,
+                quotation=instance
+            )
+        if 'quotation_logistic_data' in validated_data:
+            QuotationCommon().create_logistic(
+                validated_data=validated_data,
+                quotation=instance
+            )
+        if 'quotation_costs_data' in validated_data:
+            QuotationCommon().create_cost(
+                validated_data=validated_data,
+                quotation=instance
+            )
+        if 'quotation_expenses_data' in validated_data:
+            QuotationCommon().create_expense(
+                validated_data=validated_data,
+                quotation=instance
+            )
+        return instance

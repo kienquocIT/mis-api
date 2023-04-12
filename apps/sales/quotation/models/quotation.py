@@ -1,25 +1,26 @@
 from django.db import models
 
+from apps.sales.opportunity.models.opportunity import Opportunity
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class Quotation(DataAbstractModel):
     opportunity = models.ForeignKey(
-        '',
+        Opportunity,
         on_delete=models.CASCADE,
         verbose_name="opportunity",
         related_name="quotation_opportunity",
         null=True
     )
     customer = models.ForeignKey(
-        '',
+        'saledata.Account',
         on_delete=models.CASCADE,
         verbose_name="customer",
         related_name="quotation_customer",
         null=True
     )
     contact = models.ForeignKey(
-        '',
+        'saledata.Contact',
         on_delete=models.CASCADE,
         verbose_name="customer",
         related_name="quotation_contact",
@@ -33,12 +34,6 @@ class Quotation(DataAbstractModel):
         null=True
     )
     # quotation tabs
-    quotation_products = models.ManyToManyField(
-        '',
-        through='QuotationProduct',
-        symmetrical=False,
-        related_name='quotations_map_products',
-    )
     quotation_products_data = models.JSONField(
         default=list,
         help_text="read data products, use for get list or detail quotation"
@@ -51,21 +46,9 @@ class Quotation(DataAbstractModel):
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
     )
-    quotation_costs = models.ManyToManyField(
-        '',
-        through='QuotationCost',
-        symmetrical=False,
-        related_name='quotations_map_costs',
-    )
     quotation_costs_data = models.JSONField(
         default=list,
         help_text="read data cost, use for get list or detail quotation"
-    )
-    quotation_expenses = models.ManyToManyField(
-        '',
-        through='QuotationExpense',
-        symmetrical=False,
-        related_name='quotations_map_expenses',
     )
     quotation_expenses_data = models.JSONField(
         default=list,
@@ -103,21 +86,21 @@ class QuotationProduct(SimpleAbstractModel):
         null=True
     )
     product = models.ForeignKey(
-        '',
+        'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_product_product",
         null=True
     )
     unit_of_measure = models.ForeignKey(
-        '',
+        'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_product_uom",
         null=True
     )
     tax = models.ForeignKey(
-        '',
+        'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_product_tax",
@@ -206,7 +189,6 @@ class QuotationTerm(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Quotation Term'
         verbose_name_plural = 'Quotation Terms'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -224,7 +206,6 @@ class QuotationTermPrice(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Quotation Term Price'
         verbose_name_plural = 'Quotation Term Prices'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -242,7 +223,6 @@ class QuotationTermDiscount(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Quotation Term Discount'
         verbose_name_plural = 'Quotation Term Discounts'
-        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -323,21 +303,21 @@ class QuotationCost(SimpleAbstractModel):
         null=True
     )
     product = models.ForeignKey(
-        '',
+        'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_cost_product",
         null=True
     )
     unit_of_measure = models.ForeignKey(
-        '',
+        'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_cost_uom",
         null=True
     )
     tax = models.ForeignKey(
-        '',
+        'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_cost_tax",
@@ -410,14 +390,14 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     unit_of_measure = models.ForeignKey(
-        '',
+        'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_expense_uom",
         null=True
     )
     tax = models.ForeignKey(
-        '',
+        'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name="unit",
         related_name="quotation_expense_tax",

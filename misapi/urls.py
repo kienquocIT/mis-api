@@ -9,6 +9,7 @@ from rest_framework import permissions
 urlpatterns = [
     path('api/', include('apps.core.urls')),
     path('api/', include('apps.sale.urls')),
+    path('api/', include('apps.sales.urls')),
     path('django-admin/', admin.site.urls),
 ]
 
