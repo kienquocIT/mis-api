@@ -119,7 +119,7 @@ class User(AuthUser):   # pylint: disable=R0902
 
     @staticmethod
     def convert_username_field_data(username, tenant_obj):
-        return f'{username}-{tenant_obj.code.upper()}'
+        return f'{username}-{tenant_obj.code}'.lower()
 
     def sync_verify_contact(self):
         if settings.ENABLE_TURN_ON_IS_EMAIL:

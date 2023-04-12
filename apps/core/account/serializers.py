@@ -147,6 +147,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def validate_username(cls, attrs):
+        if User.objects.filter_current(username=attrs, fill__tenant=True).exists():
+            raise serializers.ValidationError({'username': ''})
+        return attrs
+
+    @classmethod
     def validate_password(cls, attrs):
         num_count = sum(1 for char in attrs if char.isnumeric())
         alpha_count = sum(1 for char in attrs if char.isalpha())
