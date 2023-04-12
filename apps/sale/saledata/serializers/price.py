@@ -2,6 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
+from apps.sale.saledata.models.product import Product, ProductCategory
 from apps.shared import PriceMsg
 
 
@@ -272,9 +273,9 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         if Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
+            fill__tenant=True,
+            fill__company=True,
+            title=value
         ).exists():
             raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
         return value
@@ -357,10 +358,13 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         model = Price
         fields = (
             'auto_update',
+            'price_list_type',
+            'factor',
+            'currency'
         )
 
     @classmethod
-    def validate_rate(cls, attrs):
+    def validate_factor(cls, attrs):
         if attrs is not None:
             if attrs > 0:
                 return attrs
@@ -368,10 +372,58 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'auto_update' not in validated_data.keys():
+        if 'auto_update' not in validated_data.keys():  # update auto_update
             instance.auto_update = False
-            instance.factor = 1
         else:
             instance.auto_update = True
+
+        instance.price_list_type = validated_data['price_list_type']  # update price_list_type
+
+        old_factor = instance.factor
+        instance.factor = validated_data['factor']  # update factor
+
+        all_items = ProductPriceList.objects.filter(
+            price_list=instance,
+            get_price_from_source=1
+        )
+        for item in all_items:  # update lại giá đã map theo factor mới
+            item.price = float(item.price) * float(instance.factor) / float(old_factor)
+            item.save()
+
+        instance.currency = validated_data['currency']  # update currency
         instance.save()
+
+        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
+            products_of_category = Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                general_information__product_category=self.initial_data['apply_for']
+            )
+            current_general_price_list = Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_default=True
+            ).first()
+            products_of_this_price_list = ProductPriceList.objects.filter(price_list=instance)
+
+            objs = []
+            for product in products_of_category:
+                if product not in products_of_this_price_list:
+                    product_price_list = ProductPriceList.objects.filter(
+                        product=product,
+                        price_list=current_general_price_list
+                    ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
+                    if product_price_list:
+                        objs.append(ProductPriceList(
+                            price_list=instance,
+                            product=product,
+                            price=0.0,
+                            currency_using=product_price_list.currency_using,
+                            uom_using=product_price_list.uom_using,
+                            uom_group_using=product_price_list.uom_group_using,
+                        ))
+
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+
         return instance
