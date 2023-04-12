@@ -459,7 +459,43 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
+    list_price = serializers.ListField(required=True)
+    list_item = serializers.ListField(required=True)
 
     class Meta:
         model = Price
-        fields = ()
+        fields = (
+            'list_price',
+            'list_item',
+        )
+
+    @classmethod
+    def validate_list_price(cls, value):
+        for item in value:
+            if item['factor'] < 0:
+                raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
+        return value
+
+    def update(self, instance, validated_data):
+        for price in self.initial_data['list_price']:
+            objs = []
+            for item in self.initial_data['list_item']:
+                product_price_list_obj = ProductPriceList.objects.filter(
+                    product_id=item['product_id'],
+                    price_list=instance
+                ).first()
+                if product_price_list_obj:
+                    objs.append(
+                        ProductPriceList(
+                            price_list=instance,
+                            product_id=item['product_id'],
+                            price=float(item['price']) * float(instance.factor),
+                            currency_using_id=item['currency'],
+                            uom_using=item['uom_id'],
+                            uom_group_using=item['uom_group_id'],
+                            get_price_from_source=item['is_auto_update']
+                        )
+                    )
+
+                    // chuwa taoj ?????
+        return instance
