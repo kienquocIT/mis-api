@@ -167,7 +167,7 @@ class QuotationTerm(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     price_list = models.ManyToManyField(
-        '',
+        'saledata.Price',
         through='',
         symmetrical=False,
         related_name='quotation_term_map_prices',
@@ -179,7 +179,7 @@ class QuotationTerm(SimpleAbstractModel):
         related_name='quotation_term_map_discounts',
     )
     payment_term = models.ForeignKey(
-        '',
+        'saledata.PaymentTerm',
         on_delete=models.CASCADE,
         verbose_name="payment terms",
         related_name="quotation_term_payment_term",
@@ -199,7 +199,7 @@ class QuotationTermPrice(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     price = models.ForeignKey(
-        '',
+        'saledata.Price',
         on_delete=models.CASCADE,
     )
 
