@@ -1,5 +1,3 @@
-import time
-
 from rest_framework import generics, serializers
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
@@ -133,7 +131,6 @@ class EmployeeTenantList(
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
-            time.sleep(1)
             return self.list(request, *args, **kwargs)
         raise serializers.ValidationError({
             'detail': HRMsg.FILTER_COMPANY_ID_REQUIRED

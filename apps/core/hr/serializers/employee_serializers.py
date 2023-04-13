@@ -559,6 +559,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
 class EmployeeListByOverviewTenantSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
+    license = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -573,6 +574,7 @@ class EmployeeListByOverviewTenantSerializer(serializers.ModelSerializer):
             'date_joined',
             'is_active',
             'user',
+            'license',
         )
 
     @classmethod
@@ -589,6 +591,16 @@ class EmployeeListByOverviewTenantSerializer(serializers.ModelSerializer):
                 'full_name': str(obj.user.get_full_name())
             }
         return {}
+
+    @classmethod
+    def get_license(cls, obj):
+        return [
+            {
+                'id': x.id,
+                'title': x.title,
+                'code': x.code
+            } for x in obj.plan.all()
+        ]
 
 
 class EmployeeListMinimalByOverviewTenantSerializer(serializers.ModelSerializer):
