@@ -394,69 +394,60 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'delete_product_id' in validated_data.keys():  # update price_list
-            product_deleted = ProductPriceList.objects.filter(
-                price_list=instance,
-                product_id=validated_data['delete_product_id']
-            ).first()
-            product_deleted.is_delete = True
-            product_deleted.is_active = False
-            product_deleted.save()
-        else:  # update setting
-            if 'auto_update' not in validated_data.keys():  # update auto_update
-                instance.auto_update = False
-            else:
-                instance.auto_update = True
-            if 'can_delete' not in validated_data.keys():  # update can_delete
-                instance.can_delete = False
-            else:
-                instance.can_delete = True
+        if 'auto_update' not in validated_data.keys():  # update auto_update
+            instance.auto_update = False
+        else:
+            instance.auto_update = True
+        if 'can_delete' not in validated_data.keys():  # update can_delete
+            instance.can_delete = False
+        else:
+            instance.can_delete = True
 
-            instance.price_list_type = validated_data['price_list_type']  # update price_list_type
+        instance.price_list_type = validated_data['price_list_type']  # update price_list_type
 
-            old_factor = instance.factor
-            instance.factor = validated_data['factor']  # update factor
+        old_factor = instance.factor
+        instance.factor = validated_data['factor']  # update factor
 
-            all_items = ProductPriceList.objects.filter(
-                price_list=instance,
-                get_price_from_source=1
+        all_items = ProductPriceList.objects.filter(
+            price_list=instance,
+            get_price_from_source=1
+        )
+        for item in all_items:  # update lại giá đã map theo factor mới
+            item.price = float(item.price) * float(instance.factor) / float(old_factor)
+            item.save()
+        instance.currency = validated_data['currency']  # update currency
+        instance.save()
+        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
+            products_of_category = Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                general_information__product_category=self.initial_data['apply_for']
             )
-            for item in all_items:  # update lại giá đã map theo factor mới
-                item.price = float(item.price) * float(instance.factor) / float(old_factor)
-                item.save()
-            instance.currency = validated_data['currency']  # update currency
-            instance.save()
-            if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-                products_of_category = Product.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    general_information__product_category=self.initial_data['apply_for']
-                )
-                current_general_price_list = Price.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    is_default=True
-                ).first()
-                products_of_this_price_list = ProductPriceList.objects.filter(price_list=instance)
-                objs = []
-                for product in products_of_category:
-                    if product not in products_of_this_price_list:
-                        product_price_list = ProductPriceList.objects.filter(
+            current_general_price_list = Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_default=True
+            ).first()
+            products_of_this_price_list = ProductPriceList.objects.filter(price_list=instance)
+            objs = []
+            for product in products_of_category:
+                if product not in products_of_this_price_list:
+                    product_price_list = ProductPriceList.objects.filter(
+                        product=product,
+                        price_list=current_general_price_list
+                    ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
+                    if product_price_list:
+                        objs.append(ProductPriceList(
+                            price_list=instance,
                             product=product,
-                            price_list=current_general_price_list
-                        ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
-                        if product_price_list:
-                            objs.append(ProductPriceList(
-                                price_list=instance,
-                                product=product,
-                                price=0.0,
-                                currency_using=product_price_list.currency_using,
-                                uom_using=product_price_list.uom_using,
-                                uom_group_using=product_price_list.uom_group_using,
-                            ))
-                if len(objs) > 0:
-                    ProductPriceList.objects.bulk_create(objs)
-            return instance
+                            price=0.0,
+                            currency_using=product_price_list.currency_using,
+                            uom_using=product_price_list.uom_using,
+                            uom_group_using=product_price_list.uom_group_using,
+                        ))
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+        return instance
 
 
 class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
