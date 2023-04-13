@@ -250,9 +250,9 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
     def get_price_list_type(cls, obj):
         if obj.price_list_type == 0:
             return {'value': obj.price_list_type, 'name': 'For Sale'}
-        elif obj.price_list_type == 1:
+        if obj.price_list_type == 1:
             return {'value': obj.price_list_type, 'name': 'For Purchase'}
-        elif obj.price_list_type == 2:
+        if obj.price_list_type == 2:
             return {'value': obj.price_list_type, 'name': 'For Expense'}
         return {}
 
@@ -344,16 +344,16 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             is_delete=False
         ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
         all_products = []
-        for p in products:
+        for product in products:
             product_information = {
-                'id': p.product_id,
-                'code': p.product.code,
-                'title': p.product.title,
-                'uom_group': {'id': p.uom_group_using_id, 'title': p.uom_group_using.title},
-                'uom': {'id': p.uom_using_id, 'title': p.uom_using.title},
-                'price': p.price,
-                'is_auto_update': p.get_price_from_source,
-                'currency_using': {'id': p.currency_using.id, 'abbreviation': p.currency_using.abbreviation}
+                'id': product.product_id,
+                'code': product.product.code,
+                'title': product.product.title,
+                'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
+                'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
+                'price': product.price,
+                'is_auto_update': product.get_price_from_source,
+                'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
             }
             all_products.append(product_information)
         return all_products
@@ -394,14 +394,6 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'delete_product_id' in validated_data.keys():  # update price_list
-            product_deleted = ProductPriceList.objects.filter(
-                price_list=instance,
-                product_id=validated_data['delete_product_id']
-            ).first()
-            product_deleted.is_delete = True
-            product_deleted.is_active = False
-            product_deleted.save()
         else:  # update setting
             if 'auto_update' not in validated_data.keys():  # update auto_update
                 instance.auto_update = False
