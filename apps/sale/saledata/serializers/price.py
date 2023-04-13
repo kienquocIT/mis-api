@@ -469,13 +469,4 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def update(self, instance, validated_data):
-        objs = []
-        for price in self.initial_data['list_price']:
-            for item in self.initial_data['list_item']:
-                product_price_list_obj = ProductPriceList.objects.filter(
-                    product_id=item['product_id'],
-                    price_list_id=price['id']
-                ).first()
-                if product_price_list_obj:
-                    print(product_price_list_obj.title)
         return instance
