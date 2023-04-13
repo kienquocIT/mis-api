@@ -311,6 +311,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
+                    get_price_from_source=True
                 ) for p in products_source
             ]
             ProductPriceList.objects.bulk_create(objs)
@@ -482,23 +483,27 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
         objs = []
         list_price_list_delete = []
         for price in self.initial_data['list_price']:
+            list_price_list_delete.append(price['id'])
             for item in self.initial_data['list_item']:
+                found = True
                 product_price_list_obj = ProductPriceList.objects.filter(
                     product_id=item['product_id'],
                     price_list_id=price['id'],
                     currency_using_id=item['currency'],
                 ).first()
                 if product_price_list_obj:
+                    print(product_price_list_obj.get_price_from_source)
                     is_auto_update = product_price_list_obj.get_price_from_source
                     value_price = product_price_list_obj.price
-                    list_price_list_delete.append(product_price_list_obj)
                 else:
                     product_price_list_old = ProductPriceList.objects.filter(
                         product_id=item['product_id'],
                         price_list_id=price['id'],
                     ).first()
-                    is_auto_update = product_price_list_old.get_price_from_source
-                    value_price = 0
+                    if product_price_list_old:
+                        is_auto_update = product_price_list_old.get_price_from_source
+                        value_price = 0
+                        found = False
 
                 if item['price'] == '':
                     result_price = 0
@@ -507,19 +512,20 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                 if price['id'] != str(instance.id):
                     if is_auto_update is False:
                         result_price = value_price
-                objs.append(
-                    ProductPriceList(
-                        price_list_id=price['id'],
-                        product_id=item['product_id'],
-                        price=result_price,
-                        currency_using_id=item['currency'],
-                        uom_using_id=item['uom_id'],
-                        uom_group_using_id=item['uom_group_id'],
-                        get_price_from_source=is_auto_update
+                if found:
+                    objs.append(
+                        ProductPriceList(
+                            price_list_id=price['id'],
+                            product_id=item['product_id'],
+                            price=result_price,
+                            currency_using_id=item['currency'],
+                            uom_using_id=item['uom_id'],
+                            uom_group_using_id=item['uom_group_id'],
+                            get_price_from_source=is_auto_update
+                        )
                     )
-                )
         for item in list_price_list_delete:
-            item.delete()
+            ProductPriceList.objects.filter(price_list_id=item).delete()
         if len(objs) > 0:
             ProductPriceList.objects.bulk_create(objs)
         return instance
