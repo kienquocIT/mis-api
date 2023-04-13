@@ -311,6 +311,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
+                    get_price_from_source=True
                 ) for p in products_source
             ]
             ProductPriceList.objects.bulk_create(objs)
@@ -485,18 +486,5 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                     price_list_id=price['id']
                 ).first()
                 if product_price_list_obj:
-                    product_price_list_obj.delete()
-                objs.append(
-                    ProductPriceList(
-                        price_list_id=price['id'],
-                        product_id=item['product_id'],
-                        price=float(item['price']) * float(price['factor']),
-                        currency_using_id=item['currency'],
-                        uom_using_id=item['uom_id'],
-                        uom_group_using_id=item['uom_group_id'],
-                        get_price_from_source=item['is_auto_update']
-                    )
-                )
-        if len(objs) > 0:
-            ProductPriceList.objects.bulk_create(objs)
+                    print(product_price_list_obj.title)
         return instance
