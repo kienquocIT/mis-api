@@ -398,9 +398,9 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
             old_ratio = instance.ratio
             for item in UnitOfMeasure.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=instance.group_id
+                fill__tenant=True,
+                fill__company=True,
+                group=instance.group_id
             ):
                 if item != instance:
                     item.ratio = item.ratio / old_ratio
@@ -642,3 +642,24 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
                     value['inventory_level_max'] = int(inventory_level_max)
             return value
         return {}
+
+    def update(self, instance, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        currency_using_id = validated_data['sale_information'].get('currency_using', None)  # lấy currency_using
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        if currency_using_id:
+            del validated_data['sale_information']['currency_using']
+
+        if price_list_information and currency_using_id:
+            for item in price_list_information:
+                obj = ProductPriceList.objects.filter(
+                    product=instance,
+                    price_list_id=item['price_list_id'],
+                    currency_using_id=currency_using_id
+                ).first()
+                if obj:
+                    obj.price = float(item['price_value'])
+                    obj.save()
+        return instance
