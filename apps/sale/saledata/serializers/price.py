@@ -275,9 +275,9 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_title(cls, value):
         if Price.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            title=value
+                fill__tenant=True,
+                fill__company=True,
+                title=value
         ).exists():
             raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
         return value
@@ -307,7 +307,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList(
                     price_list=price_list,
                     product=p.product,
-                    price=float(p.price)*float(price_list.factor),
+                    price=float(p.price) * float(price_list.factor),
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
@@ -445,14 +445,16 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
                             price_list=current_general_price_list
                         ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
                         if product_price_list:
-                            objs.append(ProductPriceList(
-                                price_list=instance,
-                                product=product,
-                                price=0.0,
-                                currency_using=product_price_list.currency_using,
-                                uom_using=product_price_list.uom_using,
-                                uom_group_using=product_price_list.uom_group_using,
-                            ))
+                            objs.append(
+                                ProductPriceList(
+                                    price_list=instance,
+                                    product=product,
+                                    price=0.0,
+                                    currency_using=product_price_list.currency_using,
+                                    uom_using=product_price_list.uom_using,
+                                    uom_group_using=product_price_list.uom_group_using,
+                                )
+                            )
                 if len(objs) > 0:
                     ProductPriceList.objects.bulk_create(objs)
             return instance
@@ -478,25 +480,46 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
 
     def update(self, instance, validated_data):
         objs = []
+        list_price_list_delete = []
         for price in self.initial_data['list_price']:
             for item in self.initial_data['list_item']:
                 product_price_list_obj = ProductPriceList.objects.filter(
                     product_id=item['product_id'],
-                    price_list_id=price['id']
+                    price_list_id=price['id'],
+                    currency_using_id=item['currency'],
                 ).first()
                 if product_price_list_obj:
-                    product_price_list_obj.delete()
+                    is_auto_update = product_price_list_obj.get_price_from_source
+                    value_price = product_price_list_obj.price
+                    list_price_list_delete.append(product_price_list_obj)
+                else:
+                    product_price_list_old = ProductPriceList.objects.filter(
+                        product_id=item['product_id'],
+                        price_list_id=price['id'],
+                    ).first()
+                    is_auto_update = product_price_list_old.get_price_from_source
+                    value_price = 0
+
+                if item['price'] == '':
+                    result_price = 0
+                else:
+                    result_price = float(item['price']) * float(price['factor'])
+                if price['id'] != str(instance.id):
+                    if is_auto_update is False:
+                        result_price = value_price
                 objs.append(
                     ProductPriceList(
                         price_list_id=price['id'],
                         product_id=item['product_id'],
-                        price=float(item['price']) * float(price['factor']),
+                        price=result_price,
                         currency_using_id=item['currency'],
                         uom_using_id=item['uom_id'],
                         uom_group_using_id=item['uom_group_id'],
-                        get_price_from_source=item['is_auto_update']
+                        get_price_from_source=is_auto_update
                     )
                 )
+        for item in list_price_list_delete:
+            item.delete()
         if len(objs) > 0:
             ProductPriceList.objects.bulk_create(objs)
         return instance
