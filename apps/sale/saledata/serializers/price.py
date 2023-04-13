@@ -477,13 +477,15 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
             list_price_list_delete.append(price['id'])
             for item in self.initial_data['list_item']:
                 found = True
+                value_price = 0
+                is_auto_update = True
+
                 product_price_list_obj = ProductPriceList.objects.filter(
                     product_id=item['product_id'],
                     price_list_id=price['id'],
                     currency_using_id=item['currency'],
                 ).first()
                 if product_price_list_obj:
-                    print(product_price_list_obj.get_price_from_source)
                     is_auto_update = product_price_list_obj.get_price_from_source
                     value_price = product_price_list_obj.price
                 else:
@@ -494,6 +496,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                     if product_price_list_old:
                         is_auto_update = product_price_list_old.get_price_from_source
                         value_price = 0
+                    else:
                         found = False
 
                 if item['price'] == '':
