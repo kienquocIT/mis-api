@@ -6,6 +6,7 @@ from apps.sale.saledata.views.accounts import (
     AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
+from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
@@ -85,4 +86,13 @@ urlpatterns += [
         'delete-products-for-price-list/<str:pk>', DeleteProductsForPriceList.as_view(),
         name='DeleteProductsForPriceList'
     )
+]
+
+urlpatterns += [
+    path('masterdata/config/payment-term', ConfigPaymentTermList.as_view(), name='ConfigPaymentTermList'),
+    path(
+        'masterdata/config/payment-term/<str:pk>',
+        ConfigPaymentTermDetail.as_view(),
+        name='ConfigPaymentTermDetail'
+    ),
 ]

@@ -567,3 +567,68 @@ class UoMTestCase(AdvanceTestCase):
         )
         self.assertEqual(response.status_code, 201)
         return response
+
+
+class ConfigPaymentTermTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+
+    def test_create_config_payment_term(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD',
+                    "unit_type": 1,
+                    "day_type": 1,
+                    "no_of_days": "1",
+                    "after": 1
+                }
+            ],
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_missing_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_create_empty_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            "term": []
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_get_list(self):
+        self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
