@@ -78,8 +78,6 @@ class SaleDefaultData:
         return True
 
     def create_price_default(self):
-        if Price.objects.filter(company=self.company_obj).exists():
-            return False
         primary_current = Currency.objects.filter(
             company=self.company_obj,
             is_primary=True
@@ -94,7 +92,8 @@ class SaleDefaultData:
                 for p_item in self.Price_general_data
             ]
             Price.objects.bulk_create(objs)
-        return True
+            return True
+        return False
 
 
 @receiver(post_save, sender=Company)
