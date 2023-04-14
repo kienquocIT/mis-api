@@ -22,7 +22,7 @@ class SaleDefaultData:
         {'title': 'Thuế GTGT', 'is_default': 1},
         {'title': 'Thuế xuất khẩu', 'is_default': 1},
         {'title': 'Thuế nhập khẩu', 'is_default': 1},
-        {'title': 'Thuế tiêu thụ đặt biệt', 'is_default': 1},
+        {'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
         {'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
     Currency_data = [
