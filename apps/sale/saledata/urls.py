@@ -19,7 +19,7 @@ from apps.sale.saledata.views.price import (
     TaxList, TaxDetail,
     CurrencyList, CurrencyDetail, SyncWithVCB,
     PriceList, PriceDetail,
-    UpdateProductsForPriceList,
+    UpdateProductsForPriceList, DeleteProductsForPriceList
 )
 
 urlpatterns = [
@@ -80,5 +80,9 @@ urlpatterns += [
     path(
         'update-products-for-price-list/<str:pk>', UpdateProductsForPriceList.as_view(),
         name='UpdateProductsForPriceList'
+    ),
+    path(
+        'delete-products-for-price-list/<str:pk>', DeleteProductsForPriceList.as_view(),
+        name='DeleteProductsForPriceList'
     )
 ]

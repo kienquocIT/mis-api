@@ -523,3 +523,20 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
         if len(objs) > 0:
             ProductPriceList.objects.bulk_create(objs)
         return instance
+
+
+class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
+    class Meta:
+        model = Price
+        fields = ()
+
+    def update(self, instance, validated_data):
+        obj = ProductPriceList.objects.filter(
+            product_id=validated_data.get('product_id', None),
+            price_list=instance
+        )
+        if obj:
+            obj.delete()
+        else:
+            raise serializers.ValidationError(PriceMsg.PRODUCT_NOT_EXIST_IN_THIS_PRICE_LIST)
+        return instance
