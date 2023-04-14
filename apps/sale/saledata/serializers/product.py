@@ -532,9 +532,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                 get_price_from_source = False
                 if item.get('is_auto_update', None) == '1':
                     get_price_from_source = True
-                auto = False
-                if item['is_auto_update'] == '1':
-                    auto = False
                 objs.append(
                     ProductPriceList(
                         price_list_id=item.get('price_list_id', None),
