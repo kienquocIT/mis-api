@@ -530,8 +530,8 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.assertResponseList(
             response,
             status_code=status.HTTP_200_OK,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
             all_key_from=response.data,
-            type_match={'result': list, 'status': int},
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
