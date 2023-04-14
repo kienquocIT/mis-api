@@ -22,14 +22,14 @@ class SaleDefaultData:
         {'title': 'Thuế GTGT', 'is_default': 1},
         {'title': 'Thuế xuất khẩu', 'is_default': 1},
         {'title': 'Thuế nhập khẩu', 'is_default': 1},
-        {'title': 'Thuế tiêu thụ đặc biệt', 'is_default': 1},
+        {'title': 'Thuế tiêu thụ đặt biệt', 'is_default': 1},
         {'title': 'Thuế nhà thầu', 'is_default': 1},
     ]
     Currency_data = [
         {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
-        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0},
-        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0},
-        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0},
+        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0, 'rate': None},
     ]
     Price_general_data = [
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
@@ -54,8 +54,6 @@ class SaleDefaultData:
         return False
 
     def create_product_type(self):
-        if ProductType.objects.filter(company=self.company_obj).exists():
-            return False
         objs = [
             ProductType(tenant=self.company_obj.tenant, company=self.company_obj, **pt_item)
             for pt_item in self.ProductType_data
@@ -64,8 +62,6 @@ class SaleDefaultData:
         return True
 
     def create_tax_category(self):
-        if TaxCategory.objects.filter(company=self.company_obj).exists():
-            return False
         objs = [
             TaxCategory(tenant=self.company_obj.tenant, company=self.company_obj, **tc_item)
             for tc_item in self.TaxCategory_data
@@ -74,8 +70,6 @@ class SaleDefaultData:
         return True
 
     def create_currency(self):
-        if Currency.objects.filter(company=self.company_obj).exists():
-            return False
         objs = [
             Currency(tenant=self.company_obj.tenant, company=self.company_obj, **c_item)
             for c_item in self.Currency_data
@@ -84,8 +78,6 @@ class SaleDefaultData:
         return True
 
     def create_price_default(self):
-        if Price.objects.filter(company=self.company_obj).exists():
-            return False
         primary_current = Currency.objects.filter(
             company=self.company_obj,
             is_primary=True
@@ -101,9 +93,10 @@ class SaleDefaultData:
             ]
             Price.objects.bulk_create(objs)
             return True
-        return None
+        return False
 
 
 @receiver(post_save, sender=Company)
-def update_stock(sender, instance, **kwargs):  # pylint: disable=W0613
-    SaleDefaultData(company_obj=instance)()
+def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    if created is True:
+        SaleDefaultData(company_obj=instance)()

@@ -15,3 +15,4 @@ class PriceMsg:
     PRICE_LIST_NOT_EXIST = _('Price list does not exist.')
     SALE_INFORMATION_MISSING_PRICE_LIST = _('Sale information is missing price list.')
     PRICE_LIST_IS_MISSING_VALUE = _('Price list is missing value.')
+    PRODUCT_NOT_EXIST_IN_THIS_PRICE_LIST = _('Product does not exist in this Price List.')
