@@ -529,7 +529,7 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
 
     def update(self, instance, validated_data):
         obj = ProductPriceList.objects.filter(
-            product_id=validated_data.get('product_id', None),
+            product_id=self.initial_data.get('product_id', None),
             price_list=instance
         )
         if obj:
