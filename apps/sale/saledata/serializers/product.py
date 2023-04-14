@@ -398,9 +398,9 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
             old_ratio = instance.ratio
             for item in UnitOfMeasure.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=instance.group_id
+                fill__tenant=True,
+                fill__company=True,
+                group=instance.group_id
             ):
                 if item != instance:
                     item.ratio = item.ratio / old_ratio
@@ -479,7 +479,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_sale_information(cls, value):
-        if value != {}:
+        if value != {}: # noqa
             if not value.get('default_uom', None):
                 raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
 
@@ -496,7 +496,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_inventory_information(cls, value):
-        if value != {}:
+        if value != {}: # noqa
             if not value.get('uom', None):
                 raise serializers.ValidationError(ProductMsg.UOM_MISSING)
             inventory_level_min = value.get('inventory_level_min', None)
@@ -604,32 +604,62 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     @classmethod
-    def validate_inventory_information(cls, value):
-        for key in value:  # noqa
-            if key not in ['inventory_level_min', 'inventory_level_max']:
-                if not value.get(key, None):
-                    raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
-        inventory_level_min = value.get('inventory_level_min', None)
-        inventory_level_max = value.get('inventory_level_max', None)
-        if inventory_level_min and inventory_level_max:
-            inventory_level_min = int(inventory_level_min)
-            inventory_level_max = int(inventory_level_max)
-            value['inventory_level_min'] = int(inventory_level_min)
-            value['inventory_level_max'] = int(inventory_level_max)
-            if (inventory_level_min > 0) and (inventory_level_max > 0):
-                if inventory_level_min > inventory_level_max:
-                    raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            else:
-                raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
-        else:
-            if inventory_level_min:
-                value['inventory_level_min'] = int(inventory_level_min)
-            if inventory_level_max:
-                value['inventory_level_max'] = int(inventory_level_max)
-        return value
+    def validate_sale_information(cls, value):
+        if value != {}:  # noqa
+            if not value.get('default_uom', None):
+                raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
+
+            price_list = value.get('price_list', None)
+            if price_list:
+                for item in price_list:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                        if not item.get(key, None):
+                            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+                if not value.get('currency_using', None):
+                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
+            return value
+        return {}
 
     @classmethod
-    def validate_sale_information(cls, value):
-        if not value.get('default_uom', None):
-            raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
-        return value
+    def validate_inventory_information(cls, value):
+        if value != {}:  # noqa
+            if not value.get('uom', None):
+                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+            inventory_level_min = value.get('inventory_level_min', None)
+            inventory_level_max = value.get('inventory_level_max', None)
+            if inventory_level_min and inventory_level_max:
+                value['inventory_level_min'] = int(inventory_level_min)
+                value['inventory_level_max'] = int(inventory_level_max)
+                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                    if value['inventory_level_min'] > value['inventory_level_max']:
+                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+                else:
+                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+            else:
+                if inventory_level_min:
+                    value['inventory_level_min'] = int(inventory_level_min)
+                if inventory_level_max:
+                    value['inventory_level_max'] = int(inventory_level_max)
+            return value
+        return {}
+
+    def update(self, instance, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        currency_using_id = validated_data['sale_information'].get('currency_using', None)  # lấy currency_using
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        if currency_using_id:
+            del validated_data['sale_information']['currency_using']
+
+        if price_list_information and currency_using_id:
+            for item in price_list_information:
+                obj = ProductPriceList.objects.filter(
+                    product=instance,
+                    price_list_id=item['price_list_id'],
+                    currency_using_id=currency_using_id
+                ).first()
+                if obj:
+                    obj.price = float(item['price_value'])
+                    obj.save()
+        return instance
