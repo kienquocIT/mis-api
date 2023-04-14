@@ -668,3 +668,108 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
         instance.inventory_information = validated_data['inventory_information']
         instance.save()
         return instance
+
+
+class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
+    code = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=150)
+    general_information = serializers.JSONField(required=True)
+    inventory_information = serializers.JSONField(required=False)
+    sale_information = serializers.JSONField(required=False)
+    purchase_information = serializers.JSONField(required=False)
+
+    class Meta:
+        model = Product
+        fields = (
+            'code',
+            'title',
+            'general_information',
+            'inventory_information',
+            'sale_information',
+            'purchase_information'
+        )
+
+    @classmethod
+    def validate_code(cls, value):
+        if Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
+            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
+        return value
+
+    @classmethod
+    def validate_general_information(cls, value):
+        if not value.get('uom_group', None):
+            raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+        return value
+
+    @classmethod
+    def validate_sale_information(cls, value):
+        if value != {}: # noqa
+            if not value.get('default_uom', None):
+                raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
+
+            price_list = value.get('price_list', None)
+            if price_list:
+                for item in price_list:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                        if not item.get(key, None):
+                            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+                if not value.get('currency_using', None):
+                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
+            return value
+        return {}
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        if value != {}: # noqa
+            if not value.get('uom', None):
+                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+            inventory_level_min = value.get('inventory_level_min', None)
+            inventory_level_max = value.get('inventory_level_max', None)
+            if inventory_level_min and inventory_level_max:
+                value['inventory_level_min'] = int(inventory_level_min)
+                value['inventory_level_max'] = int(inventory_level_max)
+                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                    if value['inventory_level_min'] > value['inventory_level_max']:
+                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+                else:
+                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+            else:
+                if inventory_level_min:
+                    value['inventory_level_min'] = int(inventory_level_min)
+                if inventory_level_max:
+                    value['inventory_level_max'] = int(inventory_level_max)
+            return value
+        return {}
+
+    def create(self, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+
+        product = Product.objects.create(**validated_data)
+
+        if price_list_information:
+            objs = []
+            for item in price_list_information:
+                get_price_from_source = False
+                if item.get('is_auto_update', None) == '1':
+                    get_price_from_source = True
+                objs.append(
+                    ProductPriceList(
+                        price_list_id=item.get('price_list_id', None),
+                        product=product,
+                        price=float(item.get('price_value', None)),
+                        currency_using_id=item.get('currency_id', None),
+                        uom_using_id=validated_data['sale_information']['default_uom'],
+                        uom_group_using_id=validated_data['general_information']['uom_group'],
+                        get_price_from_source=get_price_from_source
+                    )
+                )  # tạo các objs price_list (luôn đưa vào general_price_list)
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+        return product

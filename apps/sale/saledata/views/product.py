@@ -17,7 +17,8 @@ from apps.sale.saledata.serializers.product import (
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
 
-    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer
+    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
+    ProductCreateInPriceListSerializer
 )
 
 
@@ -296,3 +297,21 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = ProductUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class ProductAddFromPriceList(BaseListMixin, BaseCreateMixin):
+    queryset = Product.objects
+    serializer_list = ProductListSerializer
+    serializer_create = ProductCreateInPriceListSerializer
+    serializer_detail = ProductDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Create Product from Price List",
+        operation_description="Create new Product from Price List",
+        request_body=ProductCreateInPriceListSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
