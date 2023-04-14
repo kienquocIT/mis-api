@@ -6,7 +6,7 @@ from django.dispatch import receiver
 
 from apps.core.company.models import Company
 from apps.sale.saledata.models.product import ProductType
-from apps.sale.saledata.models.price import TaxCategory, Currency
+from apps.sale.saledata.models.price import TaxCategory, Currency, Price
 
 logger = logging.getLogger(__name__)
 
@@ -27,9 +27,12 @@ class SaleDefaultData:
     ]
     Currency_data = [
         {'title': 'VIETNAM DONG', 'abbreviation': 'VND', 'is_default': 1, 'is_primary': 1, 'rate': 1.0},
-        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0},
-        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0},
-        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0},
+        {'title': 'US DOLLAR', 'abbreviation': 'USD', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'YEN', 'abbreviation': 'JPY', 'is_default': 1, 'is_primary': 0, 'rate': None},
+        {'title': 'EURO', 'abbreviation': 'EUR', 'is_default': 1, 'is_primary': 0, 'rate': None},
+    ]
+    Price_general_data = [
+        {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
     ]
 
     def __init__(self, company_obj):
@@ -41,6 +44,7 @@ class SaleDefaultData:
                 self.create_product_type()
                 self.create_tax_category()
                 self.create_currency()
+                self.create_price_default()
             return True
         except Exception as err:
             logger.error(
@@ -72,6 +76,24 @@ class SaleDefaultData:
         ]
         Currency.objects.bulk_create(objs)
         return True
+
+    def create_price_default(self):
+        primary_current = Currency.objects.filter(
+            company=self.company_obj,
+            is_primary=True
+        ).first()
+        if primary_current:
+            primary_current_id = str(primary_current.id)
+            objs = [
+                Price(
+                    tenant=self.company_obj.tenant, company=self.company_obj, currency=[primary_current_id],
+                    **p_item
+                )
+                for p_item in self.Price_general_data
+            ]
+            Price.objects.bulk_create(objs)
+            return True
+        return False
 
 
 @receiver(post_save, sender=Company)
