@@ -414,9 +414,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 
 # Product
-count = 0
-
-
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
@@ -440,6 +437,7 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
                 'product_type': obj.general_information.get('product_type', None),
                 'product_category': obj.general_information.get('product_category', None),
             }
+        return {}
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -531,15 +529,18 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         if price_list_information and currency_using_id:
             objs = []
             for item in price_list_information:
+                get_price_from_source = False
+                if item.get('is_auto_update', None) == '1':
+                    get_price_from_source = True
                 objs.append(
                     ProductPriceList(
-                        price_list_id=item['price_list_id'],
+                        price_list_id=item.get('price_list_id', None),
                         product=product,
-                        price=float(item['price_value']),
+                        price=float(item.get('price_value', None)),
                         currency_using_id=currency_using_id,
                         uom_using_id=validated_data['sale_information']['default_uom'],
                         uom_group_using_id=validated_data['general_information']['uom_group'],
-                        get_price_from_source=True if item['is_auto_update'] == '1' else False
+                        get_price_from_source=get_price_from_source
                     )
                 )  # tạo các objs price_list (luôn đưa vào general_price_list)
             if len(objs) > 0:
@@ -662,4 +663,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
                 if obj:
                     obj.price = float(item['price_value'])
                     obj.save()
+        instance.general_information = validated_data['general_information']
+        instance.sale_information = validated_data['sale_information']
+        instance.inventory_information = validated_data['inventory_information']
+        instance.save()
         return instance
