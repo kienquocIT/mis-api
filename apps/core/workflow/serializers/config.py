@@ -1,205 +1,12 @@
 from rest_framework import serializers
 
-from apps.core.base.models import Application, ApplicationProperty
-from apps.core.hr.models import Employee
-from apps.core.workflow.models import Workflow, Node, Collaborator, Zone, Association  # pylint: disable-msg=E0611
-from apps.shared import HRMsg
-
-
-# Collaborator
-class CollaboratorCreateSerializer(serializers.ModelSerializer):
-    collaborator_zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    class Meta:
-        model = Collaborator
-        fields = (
-            'employee',
-            'collaborator_zone'
-        )
-
-
-class CollabInFormSerializer(serializers.Serializer):  # noqa
-    employee_field = serializers.CharField(
-        max_length=550,
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-
-class CollabOutFormSerializer(serializers.Serializer):  # noqa
-    employee_list = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    @classmethod
-    def validate_employee_list(cls, value):
-        employee_list = Employee.objects.filter(id__in=value).count()
-        if employee_list == len(value):
-            return value
-        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
-
-
-class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
-    employee = serializers.UUIDField(
-        required=False
-    )
-    zone = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-
-    @classmethod
-    def validate_employee(cls, value):
-        try:
-            Employee.objects.get(id=value)
-            return value
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
-
-
-# Node
-class NodeListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Node
-        fields = (
-            'id',
-            'title',
-            'code',
-            'remark',
-            'is_system',
-            'order'
-        )
-
-
-class NodeDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Node
-        fields = (
-            'id',
-            'title',
-            'code',
-            'remark',
-            'is_system',
-            'order'
-        )
-
-
-class NodeCreateSerializer(serializers.ModelSerializer):
-    collab_in_form = CollabInFormSerializer(
-        required=False
-    )
-    collab_out_form = CollabOutFormSerializer(
-        required=False
-    )
-    collab_in_workflow = CollabInWorkflowSerializer(
-        many=True,
-        required=False
-    )
-    collaborator = CollaboratorCreateSerializer(
-        many=True,
-        required=False
-    )
-    actions = serializers.ListField(
-        child=serializers.IntegerField(required=False),
-        required=False
-    )
-    condition = serializers.JSONField(required=False)
-    zone_initial_node = serializers.JSONField(required=False)
-
-    class Meta:
-        model = Node
-        fields = (
-            'title',
-            'remark',
-            'actions',
-            'option_collaborator',
-            'collaborator',
-            'zone_initial_node',
-            'order',
-            'is_system',
-            'code_node_system',
-            'condition',
-            'collab_in_form',
-            'collab_out_form',
-            'collab_in_workflow'
-        )
-
-
-# Zone
-class ZoneDetailSerializer(serializers.ModelSerializer):
-    property_list = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Zone
-        fields = (
-            'id',
-            'title',
-            'remark',
-            'property_list',
-            'order'
-        )
-
-    @classmethod
-    def get_property_list(cls, obj):
-        result = []
-        if obj.property_list and isinstance(obj.property_list, list):
-            property_list = ApplicationProperty.objects.filter(
-                id__in=obj.property_list
-            ).values(
-                'id',
-                'title',
-                'code'
-            )
-            if property_list:
-                for proper in property_list:
-                    result.append({
-                        'id': proper['id'],
-                        'title': proper['title'],
-                        'code': proper['code'],
-                    })
-        return result
-
-
-class ZoneCreateSerializer(serializers.ModelSerializer):
-    property_list = serializers.ListField(
-        child=serializers.CharField(required=True),
-        required=True,
-    )
-
-    class Meta:
-        model = Zone
-        fields = (
-            'title',
-            'remark',
-            'property_list',
-            'order'
-        )
-
-
-# Association
-class AssociationCreateSerializer(serializers.ModelSerializer):
-    node_in = serializers.IntegerField()
-    node_out = serializers.IntegerField()
-    condition = serializers.JSONField()
-
-    class Meta:
-        model = Association
-        fields = (
-            'node_in',
-            'node_out',
-            'condition'
-        )
+from apps.core.base.models import Application
+from apps.core.workflow.models import Workflow, Node, Zone, Association, \
+    ZoneProperties, CollaborationInForm, CollaborationInFormZone, CollaborationOutForm, \
+    CollaborationOutFormEmployee, CollaborationOutFormZone, CollabInWorkflow, \
+    CollabInWorkflowZone, InitialNodeZone  # pylint: disable-msg=E0611
+from apps.core.workflow.serializers.config_sub import NodeCreateSerializer, ZoneDetailSerializer, \
+    ZoneCreateSerializer, AssociationCreateSerializer, NodeDetailSerializer
 
 
 # Workflow
@@ -263,268 +70,118 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_zone(cls, obj):
         return ZoneDetailSerializer(
-            Zone.objects.filter(
+            Zone.objects.prefetch_related(
+                'properties'
+            ).filter(
                 workflow=obj
             ),
             many=True
         ).data
 
     @classmethod
-    def node_zone_data(
-            cls,
-            node,
-            option,
-            is_initial=False
-    ):
-        zone_data = []
-        node_zone_list = None
-        if is_initial:
-            if node.zone_initial_node:
-                node_zone_list = Zone.objects.filter(
-                    id__in=node.zone_initial_node
-                ).values(
-                    'id',
-                    'title'
-                )
-        else:
-            if option == 0:
-                node_zone_list = Zone.objects.filter(
-                    id__in=node.collab_in_form.get('zone', [])
-                ).values(
-                    'id',
-                    'title'
-                )
-            elif option == 1:
-                node_zone_list = Zone.objects.filter(
-                    id__in=node.collab_out_form.get('zone', [])
-                ).values(
-                    'id',
-                    'title'
-                )
-        if node_zone_list:
-            for node_zone in node_zone_list:
-                zone_data.append({
-                    'id': node_zone['id'],
-                    'title': node_zone['title']
-                })
-        return zone_data
-
-    @classmethod
-    def node_system(
-            cls,
-            node,
-            result,
-            zone_data
-    ):
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'zone': zone_data,
-            'order': node.order,
-        })
-        return True
-
-    @classmethod
-    def node_in_form(
-            cls,
-            node,
-            result,
-            zone_data
-    ):
-        collab_in_form = node.collab_in_form
-        if collab_in_form:
-            collab_in_form.update({'zone': zone_data})
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_in_form': collab_in_form,
-            'order': node.order,
-        })
-        return True
-
-    @classmethod
-    def node_out_form(
-            cls,
-            node,
-            result,
-            zone_data
-    ):
-        employee_data = []
-        employee_list = Employee.objects.filter(
-            id__in=node.collab_out_form.get('employee_list', [])
-        )
-        if employee_list:
-            for employee in employee_list:
-                employee_data.append({
-                    'id': employee.id,
-                    'full_name': employee.get_full_name(2)
-                })
-        collab_out_form = node.collab_out_form
-        if collab_out_form:
-            collab_out_form.update({
-                'employee_list': employee_data,
-                'zone': zone_data
-            })
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_out_form': collab_out_form,
-            'order': node.order,
-        })
-        return True
-
-    @classmethod
-    def node_in_workflow(cls, node, result):
-        collaborator_data = []
-        in_workflow_collaborator = Collaborator.objects.filter(
-            node=node
-        )
-        if in_workflow_collaborator:
-            for collaborator in in_workflow_collaborator:
-                zone_in_workflow_data = []
-                if collaborator.zone:
-                    zone_list = Zone.objects.filter(
-                        id__in=collaborator.zone
-                    ).values(
-                        'id',
-                        'title'
-                    )
-                    if zone_list:
-                        for zone in zone_list:
-                            zone_in_workflow_data.append({
-                                'id': zone['id'],
-                                'title': zone['title']
-                            })
-                collaborator_data.append({
-                    'employee': {
-                        'id': collaborator.employee_id,
-                        'full_name': collaborator.employee.get_full_name(2)
-                    },
-                    'zone': zone_in_workflow_data
-                })
-        result.append({
-            'id': node.id,
-            'title': node.title,
-            'remark': node.remark,
-            'actions': node.actions,
-            'is_system': node.is_system,
-            'code_node_system': node.code_node_system,
-            'option_collaborator': node.option_collaborator,
-            'collab_in_workflow': collaborator_data,
-            'order': node.order,
-        })
-        return True
-
-    @classmethod
     def get_node(cls, obj):
-        result = []
-        node_list = Node.objects.filter(
-            workflow=obj
-        )
-        if node_list:
-            for node in node_list:
-                if node.option_collaborator or node.option_collaborator == 0:
-                    if node.option_collaborator == 0 and node.is_system is True:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=0,
-                            is_initial=True
-                        )
-                        cls.node_system(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option in form
-                    elif node.option_collaborator == 0 and node.is_system is False:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=0,
-                        )
-                        cls.node_in_form(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option out form
-                    elif node.option_collaborator == 1:
-                        zone_data = cls.node_zone_data(
-                            node=node,
-                            option=1,
-                        )
-                        cls.node_out_form(
-                            node=node,
-                            result=result,
-                            zone_data=zone_data
-                        )
-                    # option in workflow
-                    elif node.option_collaborator == 2:
-                        cls.node_in_workflow(
-                            node=node,
-                            result=result,
-                        )
-        return result
+        return NodeDetailSerializer(
+            Node.objects.filter(
+                workflow=obj
+            ),
+            many=True
+        ).data
 
     @classmethod
     def get_association(cls, obj):
-        result = []
-        association_list = Association.objects.filter(
-            workflow=obj
-        ).values(
-            'condition',
-            'node_in_id',
-            'node_in__title',
-            'node_in__is_system',
-            'node_in__code_node_system',
-            'node_in__condition',
-            'node_in__order',
-            'node_out_id',
-            'node_out__title',
-            'node_out__is_system',
-            'node_out__code_node_system',
-            'node_out__condition',
-            'node_out__order',
-        )
-        if association_list:
-            for association in association_list:
-                result.append({
-                    'node_in': {
-                        'id': association['node_in_id'],
-                        'title': association['node_in__title'],
-                        'is_system': association['node_in__is_system'],
-                        'code_node_system': association['node_in__code_node_system'],
-                        'condition': association['node_in__condition'],
-                        'order': association['node_in__order']
-                    },
-                    'node_out': {
-                        'id': association['node_out_id'],
-                        'title': association['node_out__title'],
-                        'is_system': association['node_out__is_system'],
-                        'code_node_system': association['node_out__code_node_system'],
-                        'condition': association['node_out__condition'],
-                        'order': association['node_out__order'],
-                    },
-                    'condition': association['condition']
-                })
-        return result
+        return [
+            {'node_in': association[0], 'node_out': association[1], 'condition': association[2]}
+            for association in Association.objects.filter(
+                workflow=obj
+            ).values_list(
+                'node_in_data',
+                'node_out_data',
+                'condition',
+            )
+        ]
 
 
 # common class for create/ update workflow
 class CommonCreateUpdate:
+
+    @classmethod
+    def delete_old_association(
+            cls,
+            instance
+    ):
+        old_association = Association.objects.filter(workflow=instance)
+        if old_association:
+            old_association.delete()
+        return True
+
+    @classmethod
+    def delete_old_node(
+            cls,
+            instance
+    ):
+        old_node = Node.objects.filter(workflow=instance)
+        if old_node:
+            # initial
+            old_initial_node_zone = InitialNodeZone.objects.filter(
+                node__in=old_node
+            )
+            if old_initial_node_zone:
+                old_initial_node_zone.delete()
+            # in form
+            old_collaboration_in_form = CollaborationInForm.objects.filter(
+                node__in=old_node
+            )
+            old_collaboration_in_form_zone = CollaborationInFormZone.objects.filter(
+                collab__in=old_collaboration_in_form
+            )
+            if old_collaboration_in_form_zone:
+                old_collaboration_in_form_zone.delete()
+            if old_collaboration_in_form:
+                old_collaboration_in_form.delete()
+            # out form
+            old_collaboration_out_form = CollaborationOutForm.objects.filter(
+                node__in=old_node
+            )
+            old_collaboration_out_form_employee = CollaborationOutFormEmployee.objects.filter(
+                collab__in=old_collaboration_out_form
+            )
+            old_collaboration_out_form_zone = CollaborationOutFormZone.objects.filter(
+                collab__in=old_collaboration_out_form
+            )
+            if old_collaboration_out_form_zone:
+                old_collaboration_out_form_zone.delete()
+            if old_collaboration_out_form_employee:
+                old_collaboration_out_form_employee.delete()
+            if old_collaboration_out_form:
+                old_collaboration_out_form.delete()
+            # in workflow
+            old_collab_in_workflow = CollabInWorkflow.objects.filter(
+                node__in=old_node
+            )
+            old_collab_in_workflow_zone = CollabInWorkflowZone.objects.filter(
+                collab__in=old_collab_in_workflow
+            )
+            if old_collab_in_workflow_zone:
+                old_collab_in_workflow_zone.delete()
+            if old_collab_in_workflow:
+                old_collab_in_workflow.delete()
+        old_node.delete()
+        return True
+
+    @classmethod
+    def delete_old_zone(
+            cls,
+            instance
+    ):
+        old_zone = Zone.objects.filter(workflow=instance)
+        if old_zone:
+            old_zone_properties = ZoneProperties.objects.filter(
+                zone__in=old_zone
+            )
+            if old_zone_properties:
+                old_zone_properties.delete()
+            old_zone.delete()
+        return True
 
     @classmethod
     def set_up_data(
@@ -542,25 +199,23 @@ class CommonCreateUpdate:
             del validated_data['association']
             # delete old association when update WF
             if instance:
-                old_association = Association.objects.filter(workflow=instance)
-                if old_association:
-                    old_association.delete()
+                cls.delete_old_association(
+                    instance=instance
+                )
         if 'node' in validated_data:
             node_list = validated_data['node']
             del validated_data['node']
             # delete old node when update WF
             if instance:
-                old_node = Node.objects.filter(workflow=instance)
-                if old_node:
-                    old_node.delete()
+                cls.delete_old_node(instance=instance)
         if 'zone' in validated_data:
             zone_list = validated_data['zone']
             del validated_data['zone']
             # delete old zone when update WF
             if instance:
-                old_zone = Zone.objects.filter(workflow=instance)
-                if old_zone:
-                    old_zone.delete()
+                cls.delete_old_zone(
+                    instance=instance
+                )
         return node_list, zone_list, association_list, zone_created_data, node_created_data
 
     @classmethod
@@ -651,7 +306,13 @@ class CommonCreateUpdate:
                         company_id=workflow.company_id,
                     )
                     if zone:
-                        zone_created_data.update({order: zone.id})
+                        zone_created_data.update({
+                            order: {'id': str(zone.id), 'title': zone.title, 'order': order}
+                        })
+                        ZoneProperties.objects.bulk_create([
+                            (ZoneProperties(zone=zone, app_property_id=proper))
+                            for proper in zone.property_list
+                        ])
         return True
 
     @classmethod
@@ -671,6 +332,22 @@ class CommonCreateUpdate:
                             association.update({
                                 'node_in': node_created_data[association['node_in']],
                                 'node_out': node_created_data[association['node_out']],
+                                'node_in_data': {
+                                    'id': str(node_created_data[association['node_in']].id),
+                                    'title': node_created_data[association['node_in']].title,
+                                    'is_system': node_created_data[association['node_in']].is_system,
+                                    'code_node_system': node_created_data[association['node_in']].code_node_system,
+                                    'condition': node_created_data[association['node_in']].condition,
+                                    'order': node_created_data[association['node_in']].order
+                                },
+                                'node_out_data': {
+                                    'id': str(node_created_data[association['node_out']].id),
+                                    'title': node_created_data[association['node_out']].title,
+                                    'is_system': node_created_data[association['node_out']].is_system,
+                                    'code_node_system': node_created_data[association['node_out']].code_node_system,
+                                    'condition': node_created_data[association['node_out']].condition,
+                                    'order': node_created_data[association['node_out']].order
+                                }
                             })
                             bulk_info.append(Association(
                                 **association,
@@ -683,11 +360,81 @@ class CommonCreateUpdate:
         return True
 
     @classmethod
+    def create_models_support_initial_node(
+            cls,
+            node_create,
+            zone_data_list
+    ):
+        InitialNodeZone.objects.bulk_create([
+            InitialNodeZone(
+                node=node_create,
+                zone_id=zone.get('id', None)
+            )
+            for zone in zone_data_list
+        ])
+        return True
+
+    @classmethod
+    def create_models_support_in_form(
+            cls,
+            node_create,
+            collab_in_form
+    ):
+        collab_in_forms = CollaborationInForm.objects.create(
+            node=node_create,
+            app_property_id=collab_in_form.get('property', {}).get('id', None)
+        )
+        if collab_in_forms:
+            CollaborationInFormZone.objects.bulk_create([
+                CollaborationInFormZone(collab=collab_in_forms, zone_id=zone.get('id', None))
+                for zone in collab_in_form.get('zone', [])
+            ])
+        return True
+
+    @classmethod
+    def create_models_support_out_form(
+            cls,
+            node_create,
+            collab_out_form
+    ):
+        collab_out_forms = CollaborationOutForm.objects.create(
+            node=node_create,
+        )
+        if collab_out_forms:
+            CollaborationOutFormEmployee.objects.bulk_create([
+                CollaborationOutFormEmployee(collab=collab_out_forms, employee_id=employee.get('id', None))
+                for employee in collab_out_form.get('employee_list', [])
+            ])
+            CollaborationOutFormZone.objects.bulk_create([
+                CollaborationOutFormZone(collab=collab_out_forms, zone_id=zone.get('id', None))
+                for zone in collab_out_form.get('zone', [])
+            ])
+        return True
+
+    @classmethod
+    def create_models_support_in_workflow(
+            cls,
+            node_create,
+            collab_in_workflow
+    ):
+        for data_in_workflow in collab_in_workflow:
+            collab_in_workflows = CollabInWorkflow.objects.create(
+                node=node_create,
+                employee_id=data_in_workflow.get('employee', {}).get('id', None)
+            )
+            if collab_in_workflows:
+                CollabInWorkflowZone.objects.bulk_create([
+                    CollabInWorkflowZone(collab=collab_in_workflows, zone_id=zone.get('id', None))
+                    for zone in data_in_workflow.get('zone', [])
+                ])
+        return True
+
+    @classmethod
     def create_node_data(
             cls,
             node,
             workflow,
-            node_created_data
+            node_created_data,
     ):
         node_create = Node.objects.create(
             **node,
@@ -697,35 +444,33 @@ class CommonCreateUpdate:
         )
         if node_create and 'order' in node:
             node_created_data.update({node['order']: node_create})
-        return node_create
-
-    @classmethod
-    def create_collaborator_in_workflow(
-            cls,
-            node,
-            workflow,
-            collaborator_list,
-            zone_created_data
-    ):
-        if collaborator_list:
-            bulk_info = []
-            for collaborator in collaborator_list:
-                # mapping zone
-                cls.mapping_zone(
-                    option=2,
-                    data_dict=collaborator,
-                    zone_created_data=zone_created_data,
-                    is_in_workflow=True
+            if node.get('is_system') is True and node.get('code_node_system') == 'initial':
+                zone_data_list = node.get('zone_initial_node')
+                cls.create_models_support_initial_node(
+                    node_create=node_create,
+                    zone_data_list=zone_data_list
                 )
-                bulk_info.append(Collaborator(
-                    **collaborator,
-                    node=node,
-                    tenant_id=workflow.tenant_id,
-                    company_id=workflow.company_id,
-                ))
-            if bulk_info:
-                Collaborator.objects.bulk_create(bulk_info)
-        return True
+            elif node.get('is_system') is False:
+                option = node.get('option_collaborator')
+                collab_in_form = node.get('collab_in_form', {})
+                collab_out_form = node.get('collab_out_form', {})
+                collab_in_workflow = node.get('collab_in_workflow', [])
+                if option == 0 and collab_in_form:
+                    cls.create_models_support_in_form(
+                        node_create=node_create,
+                        collab_in_form=collab_in_form
+                    )
+                elif option == 1 and collab_out_form:
+                    cls.create_models_support_out_form(
+                        node_create=node_create,
+                        collab_out_form=collab_out_form
+                    )
+                elif option == 2 and collab_in_workflow:
+                    cls.create_models_support_in_workflow(
+                        node_create=node_create,
+                        collab_in_workflow=collab_in_workflow
+                    )
+        return node_create
 
     @classmethod
     def create_node(
@@ -735,10 +480,6 @@ class CommonCreateUpdate:
             workflow,
             node_created_data
     ):
-        collaborator_list = None
-        if 'collaborator' in node:
-            collaborator_list = node['collaborator']
-            del node['collaborator']
         if node['is_system'] is True:
             # mapping zone
             cls.mapping_zone(
@@ -755,7 +496,6 @@ class CommonCreateUpdate:
         else:
             if 'option_collaborator' in node:
                 # check option & create node
-
                 if node['option_collaborator'] == 0:
                     # mapping zone
                     cls.mapping_zone(
@@ -777,18 +517,11 @@ class CommonCreateUpdate:
                         data_dict=node,
                         zone_created_data=zone_created_data
                     )
-                node_create = cls.create_node_data(
+                cls.create_node_data(
                     node=node,
                     workflow=workflow,
                     node_created_data=node_created_data
                 )
-                if node_create and node['option_collaborator'] == 2:
-                    cls.create_collaborator_in_workflow(
-                        node=node_create,
-                        workflow=workflow,
-                        collaborator_list=collaborator_list,
-                        zone_created_data=zone_created_data
-                    )
         return True
 
     @classmethod
@@ -854,21 +587,16 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
         """
             step 1: set up data for create
             step 2: create workflow
-            step 3: create zone for workflow (
-                function: create_zone_for_workflow()
-            )
+            step 3: create zone for workflow (function: create_zone_for_workflow())
             ** when create success Zone will add to zone_created_data use for create Node
                 {1: 'zoneID1', 2: 'zoneID2', ...}
             step 4: create node for workflow (
                 1/ function: create_node_for_workflow()
-                2/ function: create_node()
-                    (in create_node() have mapping_zone() & create_node_data())
+                2/ function: create_node() (in create_node() have mapping_zone() & create_node_data())
             )
                 ** when create success Node will add to node_created_data use for create Association
                     {1: 'nodeID1', 2: 'nodeID2', ...}
-            step 5: create association for workflow (
-                function: create_association_for_workflow()
-            )
+            step 5: create association for workflow (function: create_association_for_workflow())
         """
         # set up data for create
         node_list, zone_list, association_list, zone_created_data, node_created_data = CommonCreateUpdate().set_up_data(
@@ -921,13 +649,7 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workflow
         fields = (
-            'title',
-            'application',
-            'node',
-            'zone',
-            'is_multi_company',
-            'is_define_zone',
-            'actions_rename',
+            'title', 'application', 'node', 'zone', 'is_multi_company', 'is_define_zone', 'actions_rename',
             'association'
         )
 
@@ -941,26 +663,18 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """
             step 1: set up data for update
-            step 2: delete old data:
-                    - delete old data Zone
-                    - delete old data Node
-                    - delete old data Association
+            step 2: delete old data: \n- delete old data Zone \n- delete old data Node \n- delete old data Association
             step 2: create workflow
-            step 3: create zone for workflow (
-                function: create_zone_for_workflow()
-            )
+            step 3: create zone for workflow(function: create_zone_for_workflow())
             ** when create success Zone will add to zone_created_data use for create Node
                 {1: 'zoneID1', 2: 'zoneID2', ...}
             step 4: create node for workflow (
                 1/ function: create_node_for_workflow()
-                2/ function: create_node()
-                    (in create_node() have mapping_zone() & create_node_data())
+                2/ function: create_node() (in create_node() have mapping_zone() & create_node_data())
             )
                 ** when create success Node will add to node_created_data use for create Association
                     {1: 'nodeID1', 2: 'nodeID2', ...}
-            step 5: create association for workflow (
-                function: create_association_for_workflow()
-            )
+            step 5: create association for workflow (function: create_association_for_workflow())
         """
         # set up data for update
         node_list, zone_list, association_list, zone_created_data, node_created_data = CommonCreateUpdate().set_up_data(
