@@ -188,10 +188,16 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
+        product_type = self.create_product_type()
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
             "inventory_information": {},
             "sale_information": {},
@@ -208,6 +214,9 @@ class ProductTestCase(AdvanceTestCase):
             "code": "",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
             "inventory_information": {},
             "sale_information": {},
@@ -238,10 +247,16 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
+        product_type = self.create_product_type()
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
             "inventory_information": {},
             "sale_information": {},
@@ -258,6 +273,9 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
             "inventory_information": {},
             "sale_information": {},
@@ -409,3 +427,46 @@ class SalutationTestCase(AdvanceTestCase):
             check_sum_second=False,
         )
         return True
+
+
+class UoMTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+
+    def test_create_new_uom_group(self):
+        data = {
+            "title": "Unit"
+        }
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_new_uom(self):
+        uom_group = self.test_create_new_uom_group()
+        data = {
+            "code": "U01",
+            "title": "Unit",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'code', 'title', 'group', 'ratio', 'rounding'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
