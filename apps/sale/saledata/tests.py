@@ -188,7 +188,6 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
@@ -287,7 +286,7 @@ class ProductTestCase(AdvanceTestCase):
             "sale_information": {
                 'default_uom': unit_of_measure['id']
             },
-            "inventory_information":{
+            "inventory_information": {
                 'uom': unit_of_measure['id'],
                 'inventory_level_min': 5,
                 'inventory_level_max': 20
@@ -319,3 +318,94 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         return False
+
+
+class SalutationTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        # create industry
+
+    def test_create_new(self):
+        data = {
+            "code": "S01",
+            "title": "Mr",
+            "description": "A man"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_duplicate_code(self):
+        data1 = {  # noqa
+            "code": "S01",
+            "title": "Mr",
+            "description": "A man"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data1, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+        data2 = {  # noqa
+            "code": "S01",
+            "title": "Miss",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_missing_data(self):
+        data = {  # noqa
+            "code": "S01",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {  # noqa
+            "code": "S01",
+            "title": "Mr"
+        }
+        url = reverse('SalutationList')
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, 201)
+
+        data2 = {  # noqa
+            "title": "Miss",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, 201)
+        return True
+
+    def test_get_salutation(self):
+        salutation = self.test_create_new()
+        url = reverse('SalutationList')
+        url_detail = reverse('SalutationDetail', args=[salutation.data['result']['id']])
+
+        response = self.client.get(url)
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return True
