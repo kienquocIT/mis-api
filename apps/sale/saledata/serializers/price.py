@@ -470,12 +470,13 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                 raise serializers.ValidationError(PriceMsg.FACTOR_MUST_BE_GREATER_THAN_ZERO)
         return value
 
-    def update(self, instance, validated_data):
+    @classmethod
+    def update(cls, instance, validated_data):
         objs = []
         list_price_list_delete = []
-        for price in self.initial_data['list_price']:
+        for price in validated_data['list_price']:
             list_price_list_delete.append(price['id'])
-            for item in self.initial_data['list_item']:
+            for item in validated_data['list_item']:
                 found = True
                 value_price = 0
                 is_auto_update = True
