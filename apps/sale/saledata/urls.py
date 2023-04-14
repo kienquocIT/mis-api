@@ -6,6 +6,7 @@ from apps.sale.saledata.views.accounts import (
     AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
+from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
@@ -21,7 +22,6 @@ from apps.sale.saledata.views.price import (
     CurrencyList, CurrencyDetail, SyncWithVCB,
     PriceList, PriceDetail,
 )
-
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -78,4 +78,13 @@ urlpatterns += [
 urlpatterns += [
     path('prices', PriceList.as_view(), name='PriceList'),
     path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
+]
+
+urlpatterns += [
+    path('masterdata/config/payment-term', ConfigPaymentTermList.as_view(), name='ConfigPaymentTermList'),
+    path(
+        'masterdata/config/payment-term/<str:pk>',
+        ConfigPaymentTermDetail.as_view(),
+        name='ConfigPaymentTermDetail'
+    ),
 ]

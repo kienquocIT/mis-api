@@ -249,9 +249,9 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
     def get_price_list_type(cls, obj):
         if obj.price_list_type == 0:
             return {'value': obj.price_list_type, 'name': 'For Sale'}
-        elif obj.price_list_type == 1:
+        if obj.price_list_type == 1:
             return {'value': obj.price_list_type, 'name': 'For Purchase'}
-        elif obj.price_list_type == 2:
+        if obj.price_list_type == 2:
             return {'value': obj.price_list_type, 'name': 'For Expense'}
         return {}
 
@@ -340,15 +340,15 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             price_list_id=obj.id
         ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
         all_products = []
-        for p in products:
+        for item in products:
             product_information = {
-                'id': p.product_id,
-                'code': p.product.code,
-                'title': p.product.title,
-                'uom_group': p.uom_group_using.title,
-                'uom': p.uom_using.title,
-                'price': p.price,
-                'currency_using': p.currency_using.abbreviation
+                'id': item.product_id,
+                'code': item.product.code,
+                'title': item.product.title,
+                'uom_group': item.uom_group_using.title,
+                'uom': item.uom_using.title,
+                'price': item.price,
+                'currency_using': item.currency_using.abbreviation
             }
             all_products.append(product_information)
         return all_products

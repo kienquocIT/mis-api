@@ -413,10 +413,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
         return instance
 
 
-# Product
-count = 0
-
-
 class ProductListSerializer(serializers.ModelSerializer):  # noqa
     general_information = serializers.SerializerMethodField()
 
@@ -545,6 +541,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
         objs = []
         for item in price_list_information:
             if item['price_value'] and item['price_list_id'] and item['is_auto_update']:
+                auto = False
+                if item['is_auto_update'] == '1':
+                    auto = False
                 objs.append(
                     ProductPriceList(
                         price_list_id=item['price_list_id'],
@@ -553,7 +552,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
                         currency_using_id=currency_using_id,
                         uom_using_id=validated_data['sale_information']['default_uom'],
                         uom_group_using_id=validated_data['general_information']['uom_group'],
-                        get_price_from_source=True if item['is_auto_update'] == '1' else False
+                        get_price_from_source=auto
                     )
                 )  # tạo các objs price_list
             else:
