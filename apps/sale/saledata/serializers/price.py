@@ -474,7 +474,6 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
         objs = []
         list_price_list_delete = []
         for price in validated_data['list_price']:
-            list_price_list_delete.append(price['id'])
             for item in validated_data['list_item']:
                 found = True
                 value_price = 0
@@ -488,6 +487,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                 if product_price_list_obj:
                     is_auto_update = product_price_list_obj.get_price_from_source
                     value_price = product_price_list_obj.price
+                    list_price_list_delete.append(product_price_list_obj)
                 else:
                     product_price_list_old = ProductPriceList.objects.filter(
                         product_id=item['product_id'],
@@ -516,7 +516,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                         )
                     )
         for item in list_price_list_delete:
-            ProductPriceList.objects.filter(price_list_id=item).delete()
+            item.delete()
         if len(objs) > 0:
             ProductPriceList.objects.bulk_create(objs)
         return instance
