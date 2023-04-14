@@ -18,3 +18,5 @@ class ProductMsg:
     SALE_INFORMATION_MISSING = _('Sale information is missing field(s).')
     INVENTORY_INFORMATION_MISSING = _('Inventory information is missing field(s).')
     PURCHASE_INFORMATION_MISSING = _('Purchase information is missing field(s).')
+    WRONG_COMPARE = _('"Inventory Level Min" must be <= "Inventory Level Max".')
+    NEGATIVE_VALUE = _('"Inventory Level Min" and "Inventory Level Max" must be > 0.')

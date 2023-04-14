@@ -123,6 +123,106 @@ class AccountTestCase(AdvanceTestCase):
         return response
 
 
+# class ContactTestCase(AdvanceTestCase):
+#     def setUp(self):
+#         self.maxDiff = None
+#         self.client = APIClient()
+#
+#         login_data = TestCaseAuth.test_login(self)
+#         self.authenticated(login_data)
+#
+#         # create salutation
+#         url_create_salutation = reverse('SalutationList')
+#         response_salutation = self.client.post(
+#             url_create_salutation,
+#             {
+#                 'code': 'SA01',
+#                 'title': 'Mr',
+#             },
+#             format='json'
+#         )
+#
+#         # create salutation
+#         url_create_interest = reverse('InterestsList')
+#         response_interest = self.client.post(
+#             url_create_interest,
+#             {
+#                 'code': 'IN01',
+#                 'title': 'Traveling',
+#             },
+#             format='json'
+#         )
+#
+#         self.salutation = response_salutation.data['result']
+#         self.interest = response_interest.data['result']
+#
+#     def test_create_new_contact(self):
+#         data = {
+#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
+#             'fullname': 'Nguyễn Văn Thanh',
+#             'salutation': self.salutation['id'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 201)
+#         return response
+#
+#     def test_create_contact_with_numeric_fullname(self):
+#         data = {
+#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
+#             'fullname': '9876543210',
+#             'salutation': self.salutation['id'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 400)
+#         return response
+#
+#     def test_create_missing_owner(self):
+#         data = {
+#             'owner': None,
+#             'fullname': 'Nguyễn Văn Thanh',
+#             'salutation': self.salutation['id'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 400)
+#         return response
+#
+#     def test_create_missing_fullname(self):
+#         data = {
+#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
+#             'fullname': None,
+#             'salutation': self.salutation['id'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 400)
+#         return response
+#
+#     def test_data_not_owner_UUID(self):
+#         data = {
+#             'owner': '1',
+#             'fullname': 'Nguyễn Văn Nam',
+#             'salutation': self.salutation['id'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 400)
+#         return response
+#
+#     def test_data_not_salutation_UUID(self):
+#         data = {
+#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
+#             'fullname': 'Nguyễn Văn Nam',
+#             'salutation': self.salutation['title'],
+#         }
+#         url = reverse('ContactList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertEqual(response.status_code, 400)
+#         return response
+
+
 class ProductTestCase(AdvanceTestCase):
     def setUp(self):
         self.maxDiff = None
@@ -137,7 +237,7 @@ class ProductTestCase(AdvanceTestCase):
         response = self.client.post(
             url,
             {
-                'title': 'Type 1',
+                'title': 'San pham 1',
                 'description': '',
             },
             format='json'
@@ -194,10 +294,7 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response1 = self.client.post(
             self.url,
@@ -210,10 +307,7 @@ class ProductTestCase(AdvanceTestCase):
             "code": "",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response2 = self.client.post(
             self.url,
@@ -224,14 +318,10 @@ class ProductTestCase(AdvanceTestCase):
         return True
 
     def test_create_product_missing_title(self):
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "general_information": {
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response = self.client.post(
             self.url,
@@ -241,15 +331,11 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        url = reverse("ProductList")
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response1 = self.client.post(
             self.url,
@@ -262,10 +348,7 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response2 = self.client.post(
             self.url,
@@ -279,7 +362,6 @@ class ProductTestCase(AdvanceTestCase):
         product_type = self.create_product_type()
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
-        url = reverse("ProductList")
         data = {
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
@@ -291,7 +373,7 @@ class ProductTestCase(AdvanceTestCase):
             "sale_information": {
                 'default_uom': unit_of_measure['id']
             },
-            "inventory_information":{
+            "inventory_information": {
                 'uom': unit_of_measure['id'],
                 'inventory_level_min': 5,
                 'inventory_level_max': 20
@@ -311,10 +393,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_type': '1',
                 'product_category': '1',
                 'uom_group': '1'
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response1 = self.client.post(
             self.url,
