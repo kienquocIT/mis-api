@@ -68,7 +68,7 @@ class UnitOfMeasure(MasterDataAbstractModel):
         permissions = ()
 
 
-class Product(MasterDataAbstractModel):
+class Product(DataAbstractModel):
     avatar = models.TextField(
         null=True,
         verbose_name='avatar path'
