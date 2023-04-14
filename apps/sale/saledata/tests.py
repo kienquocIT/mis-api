@@ -327,7 +327,7 @@ class ProductTestCase(AdvanceTestCase):
             },
             "inventory_information": {},
             "sale_information": {},
-            "purchase_information": {}
+            "purchase_information": {},
         }
         response1 = self.client.post(
             self.url,
