@@ -289,7 +289,6 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
