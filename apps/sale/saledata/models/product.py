@@ -1,6 +1,8 @@
 from django.db import models
 from apps.shared import MasterDataAbstractModel, DataAbstractModel
 
+__all__ = ['ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', ]
+
 
 # Create your models here.
 class ProductType(MasterDataAbstractModel):

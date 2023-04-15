@@ -1,6 +1,8 @@
 from django.db import models
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
+__all__ = ['Salutation', 'Interest', 'AccountType', 'Industry', 'Account', 'AccountEmployee', 'Contact']
+
 
 # Create your models here.
 class Salutation(MasterDataAbstractModel):

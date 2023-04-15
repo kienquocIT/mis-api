@@ -1,6 +1,8 @@
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 from django.db import models
 
+__all__ = ['PaymentTerm', 'Term']
+
 
 class PaymentTerm(MasterDataAbstractModel):
     apply_for = models.IntegerField(default=0)
