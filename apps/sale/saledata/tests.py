@@ -1,8 +1,8 @@
 from django.urls import reverse
 from rest_framework import status
 
-from rest_framework.test import APITestCase
 from apps.core.auths.tests import TestCaseAuth
+from apps.sale.saledata.models.config import PaymentTerm
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
 
@@ -402,3 +402,107 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         return False
+
+
+class ConfigPaymentTermTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+
+    def test_create_config_payment_term(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD',
+                    "unit_type": 1,
+                    "day_type": 1,
+                    "no_of_days": "1",
+                    "after": 1
+                }
+            ],
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_missing_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_create_empty_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            "term": []
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_get_list(self):
+        self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+
+    def test_get_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result'].get('id', '')])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, res.data['result'].get('id', ''), None, response.status_code)
+        self.assertContains(response, res.data['result'].get('title', ''), None, response.status_code)
+
+    def test_update_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result'].get('id', '')])
+        data = {
+            'id': res.data['result'].get('id', ''),
+            'title': 'config payment term 01 edited',
+            'apply_for': 0,
+            'remark': 'lorem ipsum dolor sit amet...',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD edited',
+                    "unit_type": 0,
+                    "day_type": 0,
+                    "no_of_days": "15",
+                    "after": 3
+                }
+            ],
+        }
+        self.client.put(url, data, format='json')
+        response = self.client.get(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.data['result'], data)
+
+    def test_delete_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result']['id']])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(PaymentTerm.objects.filter(pk=res.data['result']['id']).exists())
