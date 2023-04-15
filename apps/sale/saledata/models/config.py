@@ -1,5 +1,6 @@
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 from django.db import models
+
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = ['PaymentTerm', 'Term']
 
