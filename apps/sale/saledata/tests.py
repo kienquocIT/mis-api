@@ -39,7 +39,7 @@ class AccountTestCase(AdvanceTestCase):
         self.account_type = response_account_type.data['result']
 
     def test_create_new_account(self):
-        data = {
+        data = { # noqa
             'name': 'Công Ty Hạt Giống Trúc Phượng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
@@ -61,7 +61,7 @@ class AccountTestCase(AdvanceTestCase):
 
     def test_create_account_duplicate_code(self):
         self.test_create_new_account()
-        data = {
+        data = { # noqa
             'name': 'Công Ty Hạt Giống Trúc Phượng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
@@ -288,7 +288,7 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type()
+        product_type = self.create_product_type() # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -344,7 +344,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type()
+        product_type = self.create_product_type() # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -442,10 +442,9 @@ class SalutationTestCase(AdvanceTestCase):
 
         login_data = TestCaseAuth.test_login(self)
         self.authenticated(login_data)
-        # create industry
 
     def test_create_new(self):
-        data = {
+        data = { # noqa
             "code": "S01",
             "title": "Mr",
             "description": "A man"
@@ -689,7 +688,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.test_create_config_payment_term()
         url = reverse('ConfigPaymentTermList')
         response = self.client.get(url, format='json')
-        self.assertResponseList(
+        self.assertResponseList( # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -867,7 +866,6 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         data2 = {
             "code": "VAT-5",
             "title": "Thuế bán hàng tư nhân VAT-5%",
-            "code": 'VAT-5',
             "rate": 10,
             "category": "",
             "type": 0
@@ -979,4 +977,262 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         #     list(response_detail.data['result'].keys()),
         #     check_sum_second=False,
         # )
+        return True
+
+
+class InterestTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url = reverse("InterestsList")
+
+    def test_create_new(self):
+        data = { # noqa
+            "code": "I01",
+            "title": "Yoga",
+            "description": "Tập yoga"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_duplicate_code(self):
+        data1 = {  # noqa
+            "code": "I01",
+            "title": "Travel",
+            "description": "Đi du lịch"
+        }
+        response = self.client.post(self.url, data1, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+        data2 = {  # noqa
+            "code": "I01",
+            "title": "Yoga",
+            "description": "Tập Yoga"
+        }
+        response2 = self.client.post(self.url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_missing_data(self):
+        data = {  # noqa
+            "code": "I01",
+            "description": "Tập Yoga"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {  # noqa
+            "code": "I01",
+            "title": "Yoga"
+        }
+
+        response1 = self.client.post(self.url, data1, format='json')
+        self.assertEqual(response1.status_code, 201)
+
+        data2 = {  # noqa
+            "title": "Yoga",
+            "description": "Tập Yoga"
+        }
+
+        response2 = self.client.post(self.url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_get_interest(self):
+        interest = self.test_create_new() # noqa
+        url_detail = reverse('InterestDetail', args=[interest.data['result']['id']])
+
+        response = self.client.get(self.url) # noqa
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return True
+
+
+class AccountTypeTestCase(AdvanceTestCase):
+    def setUp(self): # noqa
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url = reverse("AccountTypeList")
+
+    def test_create_new(self):
+        data = { # noqa
+            "title": "Customer",
+            "description": "Cho phép người dùng tự điều chỉnh"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_duplicate_code(self):
+        data1 = {  # noqa
+            "code": "AT01",
+            "title": "Customer",
+            "description": "Cho phép người dùng tự điều chỉnh"
+        }
+        response = self.client.post(self.url, data1, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+        data2 = {  # noqa
+            "code": "AT01",
+            "title": "Supplier",
+            "description": ""
+        }
+        response2 = self.client.post(self.url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_missing_data(self):
+        data = {  # noqa
+            "code": "AT01",
+            "description": "Customer"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {  # noqa
+            "title": "Supplier",
+            "description": "Supplier"
+        }
+
+        response1 = self.client.post(self.url, data1, format='json') # noqa
+        self.assertEqual(response1.status_code, 201)
+
+        data2 = {  # noqa
+            "code": "AT02",
+            "title": "Customer",
+        }
+
+        response2 = self.client.post(self.url, data2, format='json')  # noqa
+        self.assertEqual(response2.status_code, 201)
+
+        return True
+
+    def test_get_account_type(self):
+        account_type = self.test_create_new() # noqa
+        url_detail = reverse('AccountTypeDetail', args=[account_type.data['result']['id']])
+
+        response = self.client.get(self.url) # noqa
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return True
+
+
+class IndustryTestCase(AdvanceTestCase):
+    def setUp(self): # noqa
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url = reverse("IndustryList")
+
+    def test_create_new(self):
+        data = { # noqa
+            "title": "IT Service",
+            "description": "Dịch vụ"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_duplicate_code(self):
+        data1 = {  # noqa
+            "code": "I01",
+            "title": "Banking",
+            "description": "Ngân hàng"
+        }
+        response = self.client.post(self.url, data1, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+        data2 = {  # noqa
+            "code": "I01",
+            "title": "IT Service",
+            "description": ""
+        }
+        response2 = self.client.post(self.url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_missing_data(self):
+        data = {  # noqa
+            "code": "I01",
+            "description": "Dịch vụ"
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {  # noqa
+            "title": "IT Service",
+            "description": "Dịch vụ"
+        }
+
+        response1 = self.client.post(self.url, data1, format='json') # noqa
+        self.assertEqual(response1.status_code, 201)
+
+        data2 = {  # noqa
+            "code": "I02",
+            "title": "Internet Banking",
+        }
+
+        response2 = self.client.post(self.url, data2, format='json')  # noqa
+        self.assertEqual(response2.status_code, 201)
+
+        return True
+
+    def test_get_account_type(self):
+        industry = self.test_create_new() # noqa
+        url_detail = reverse('IndustryDetail', args=[industry.data['result']['id']])
+
+        response = self.client.get(self.url) # noqa
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
         return True
