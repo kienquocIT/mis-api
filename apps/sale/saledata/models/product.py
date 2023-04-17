@@ -74,24 +74,24 @@ class Product(DataAbstractModel):
     )
 
     # {
-    #     'product_type': 'Sản phẩm',
-    #     'product_category': 'Phần mềm',
-    #     'uom_group': 'Unit',
+    #     'product_type': {'id':..., 'title':..., 'code':...},
+    #     'product_category': {'id':..., 'title':..., 'code':...},
+    #     'uom_group': {'id':..., 'title':..., 'code':...},
     # }
     general_information = models.JSONField(
         default=dict,
     )
 
     # {
-    #     'default_uom': 'Cái',
-    #     'tax_code': 'VAT-10'
+    #     'default_uom': {'id':..., 'title':..., 'code':...},
+    #     'tax_code': {'id':..., 'title':..., 'code':...}
     # }
     sale_information = models.JSONField(
         default=dict,
     )
 
     # {
-    #     'uom': 'Chục',
+    #     'uom': {'id':..., 'title':..., 'code':...},
     #     'inventory_level_min': 100,
     #     'inventory_level_max': 500,
     # }
@@ -120,22 +120,21 @@ class ProductGeneral(SimpleAbstractModel):
     uom_group = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = 'ProductGeneral'
-        verbose_name_plural = 'ProductsGeneral'
+        verbose_name = 'Product General'
+        verbose_name_plural = 'Products General'
         default_permissions = ()
         permissions = ()
 
 
 # SUB-MODEL FOR PRODUCT SALE
 class ProductSale(SimpleAbstractModel):
-    from apps.sale.saledata.models.price import Tax
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    tax_code = models.ForeignKey(Tax, null=True, on_delete=models.CASCADE)
+    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = 'ProductSale'
-        verbose_name_plural = 'ProductsSale'
+        verbose_name = 'Product Sale'
+        verbose_name_plural = 'Products Sale'
         default_permissions = ()
         permissions = ()
 
@@ -148,7 +147,7 @@ class ProductInventory(SimpleAbstractModel):
     inventory_max = models.IntegerField(null=True)
 
     class Meta:
-        verbose_name = 'ProductInventory'
-        verbose_name_plural = 'ProductsInventory'
+        verbose_name = 'Product Inventory'
+        verbose_name_plural = 'Products Inventory'
         default_permissions = ()
         permissions = ()

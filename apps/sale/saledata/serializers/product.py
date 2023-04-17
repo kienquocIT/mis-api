@@ -857,10 +857,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 uom_group = uom_group['id']
 
             product_general_old = ProductGeneral.objects.get(product=instance)
-            product_general_old.product_type = product_type
-            product_general_old.product_category_id = product_category
-            product_general_old.uom_group_id = uom_group
-            product_general_old.save()
+            product_general_old.delete()
+            ProductGeneral.objects.create(
+                product=instance,
+                product_type_id=product_type,
+                product_category_id=product_category,
+                uom_group_id=uom_group,
+            )
 
         sale_information = validated_data['sale_information']
         if sale_information:
@@ -872,9 +875,12 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 tax_code = tax_code['id']
 
             product_sale_old = ProductSale.objects.get(product=instance)
-            product_sale_old.default_uom_id = default_uom
-            product_sale_old.tax_code_id = tax_code
-            product_sale_old.save()
+            product_sale_old.delete()
+            ProductSale.objects.create(
+                product=instance,
+                default_uom_id=default_uom,
+                tax_code_id=tax_code,
+            )
 
         inventory_information = validated_data['inventory_information']
         if inventory_information:
@@ -885,10 +891,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             inventory_level_max = inventory_information.get('inventory_level_max', None)
 
             product_inventory_old = ProductInventory.objects.get(product=instance)
-            product_inventory_old.uom_id = uom
-            product_inventory_old.inventory_min = inventory_level_min
-            product_inventory_old.inventory_max = inventory_level_max
-            product_inventory_old.save()
+            product_inventory_old.delete()
+            ProductInventory.objects.create(
+                product=instance,
+                uom_id=uom,
+                inventory_min=inventory_level_min,
+                inventory_max=inventory_level_max
+            )
 
         if price_list_information and currency_using:
             for item in price_list_information:
