@@ -856,14 +856,17 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             if uom_group:
                 uom_group = uom_group['id']
 
-            product_general_old = ProductGeneral.objects.get(product=instance)
-            product_general_old.delete()
-            ProductGeneral.objects.create(
-                product=instance,
-                product_type_id=product_type,
-                product_category_id=product_category,
-                uom_group_id=uom_group,
-            )
+            product_general_old = ProductGeneral.objects.filter(product=instance).first()
+            if product_general_old:
+                product_general_old.delete()
+                ProductGeneral.objects.create(
+                    product=instance,
+                    product_type_id=product_type,
+                    product_category_id=product_category,
+                    uom_group_id=uom_group,
+                )
+            else:
+                raise serializers.ValidationError(ProductMsg.PRODUCT_DOES_NOT_EXIST)
 
         sale_information = validated_data['sale_information']
         if sale_information:
@@ -874,13 +877,16 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             if tax_code:
                 tax_code = tax_code['id']
 
-            product_sale_old = ProductSale.objects.get(product=instance)
-            product_sale_old.delete()
-            ProductSale.objects.create(
-                product=instance,
-                default_uom_id=default_uom,
-                tax_code_id=tax_code,
-            )
+            product_sale_old = ProductSale.objects.filter(product=instance).first()
+            if product_sale_old:
+                product_sale_old.delete()
+                ProductSale.objects.create(
+                    product=instance,
+                    default_uom_id=default_uom,
+                    tax_code_id=tax_code,
+                )
+            else:
+                raise serializers.ValidationError(ProductMsg.PRODUCT_DOES_NOT_EXIST)
 
         inventory_information = validated_data['inventory_information']
         if inventory_information:
@@ -890,14 +896,17 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             inventory_level_min = inventory_information.get('inventory_level_min', None)
             inventory_level_max = inventory_information.get('inventory_level_max', None)
 
-            product_inventory_old = ProductInventory.objects.get(product=instance)
-            product_inventory_old.delete()
-            ProductInventory.objects.create(
-                product=instance,
-                uom_id=uom,
-                inventory_min=inventory_level_min,
-                inventory_max=inventory_level_max
-            )
+            product_inventory_old = ProductInventory.objects.filter(product=instance).first()
+            if product_inventory_old:
+                product_inventory_old.delete()
+                ProductInventory.objects.create(
+                    product=instance,
+                    uom_id=uom,
+                    inventory_min=inventory_level_min,
+                    inventory_max=inventory_level_max
+                )
+            else:
+                raise serializers.ValidationError(ProductMsg.PRODUCT_DOES_NOT_EXIST)
 
         if price_list_information and currency_using:
             for item in price_list_information:
