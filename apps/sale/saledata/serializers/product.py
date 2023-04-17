@@ -684,9 +684,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
             'code',
             'title',
             'general_information',
-            'inventory_information',
             'sale_information',
-            'purchase_information'
         )
 
     @classmethod
@@ -714,34 +712,9 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
             price_list = value.get('price_list', None)
             if price_list:
                 for item in price_list:
-                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update', 'currency_using']:
                         if not item.get(key, None):
                             raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
-                if not value.get('currency_using', None):
-                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
-            return value
-        return {}
-
-    @classmethod
-    def validate_inventory_information(cls, value):
-        if value != {}: # noqa
-            if not value.get('uom', None):
-                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
-            inventory_level_min = value.get('inventory_level_min', None)
-            inventory_level_max = value.get('inventory_level_max', None)
-            if inventory_level_min and inventory_level_max:
-                value['inventory_level_min'] = int(inventory_level_min)
-                value['inventory_level_max'] = int(inventory_level_max)
-                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
-                    if value['inventory_level_min'] > value['inventory_level_max']:
-                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-                else:
-                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
-            else:
-                if inventory_level_min:
-                    value['inventory_level_min'] = int(inventory_level_min)
-                if inventory_level_max:
-                    value['inventory_level_max'] = int(inventory_level_max)
             return value
         return {}
 
@@ -764,7 +737,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
                         price_list_id=item.get('price_list_id', None),
                         product=product,
                         price=float(item.get('price_value', None)),
-                        currency_using_id=item.get('currency_id', None),
+                        currency_using_id=item.get('currency_using', None),
                         uom_using_id=validated_data['sale_information']['default_uom'],
                         uom_group_using_id=validated_data['general_information']['uom_group'],
                         get_price_from_source=get_price_from_source
