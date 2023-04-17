@@ -1,3 +1,4 @@
+from django.conf import settings
 from rest_framework.pagination import PageNumberPagination
 from rest_framework import status
 
@@ -6,7 +7,9 @@ from .response import cus_response
 
 class CustomResultsSetPagination(PageNumberPagination):
     page_size_query_param = "pageSize"
-    page_size_query_description = ("page_size_query_description (value -1 with get not page).",)
+    page_size_query_description = ("page_size_query_description (value -1 with get not page, maximum: {}).".format(
+        settings.CUSTOM_PAGE_MAXIMUM_SIZE
+    ),)
 
     def get_page_size(self, request):
         page_size_int = self.page_size
@@ -16,7 +19,7 @@ class CustomResultsSetPagination(PageNumberPagination):
         except (KeyError, ValueError):
             pass
         if page_size_int == -1:
-            return None
+            page_size_str = str(settings.CUSTOM_PAGE_MAXIMUM_SIZE)
         return self.positive_int(page_size_str, strict=True, cutoff=self.max_page_size)
 
     def get_paginated_response(self, data):

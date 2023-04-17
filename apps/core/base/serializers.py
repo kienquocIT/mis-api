@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
+    Country, City, District, Ward,
 )
 
 
@@ -71,3 +72,27 @@ class PermissionApplicationListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermissionApplication
         fields = ('permission', 'app', 'extras')
+
+
+class CountryListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Country
+        fields = ('id', 'title', 'code_2', 'code_3', 'language')
+
+
+class CityListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = City
+        fields = ('id', 'title', 'zip_code', 'country_id')
+
+
+class DistrictListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ('id', 'title', 'city_id')
+
+
+class WardListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ward
+        fields = ('id', 'title', 'district_id')
