@@ -689,7 +689,6 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     general_information = serializers.JSONField(required=True)
-    inventory_information = serializers.JSONField(required=False)
     sale_information = serializers.JSONField(required=False)
     purchase_information = serializers.JSONField(required=False)
 
@@ -734,7 +733,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
         return {}
 
     def create(self, validated_data):
-        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        price_list_information = validated_data['sale_information'].get('price_list', None)
 
         if price_list_information:
             del validated_data['sale_information']['price_list']
@@ -757,7 +756,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
                         uom_group_using_id=validated_data['general_information']['uom_group'],
                         get_price_from_source=get_price_from_source
                     )
-                )  # tạo các objs price_list (luôn đưa vào general_price_list)
+                )
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
         return product

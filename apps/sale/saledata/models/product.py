@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
+from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
 
 
 # Create your models here.
@@ -75,7 +75,7 @@ class Product(DataAbstractModel):
     )
 
     # {
-    #     'product_type': 'f417bdf6f4db41aea4f69fc5da4573b5',
+    #     'product_type': {'id', 'title', 'code'}
     #     'product_category': '7e31d31e17594a4fb06295a6c17579f3',
     #     'uom_group': '933e642d8c584349b406942d2cc6697c',
     #     ...
