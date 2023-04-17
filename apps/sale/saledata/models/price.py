@@ -111,3 +111,13 @@ class ProductPriceList(SimpleAbstractModel):
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# Discount
+class Discount(MasterDataAbstractModel):
+    class Meta:
+        verbose_name = 'Discount'
+        verbose_name_plural = 'Discounts'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

@@ -168,13 +168,13 @@ class QuotationTerm(SimpleAbstractModel):
     )
     price_list = models.ManyToManyField(
         'saledata.Price',
-        through='',
+        through='QuotationTermPrice',
         symmetrical=False,
         related_name='quotation_term_map_prices',
     )
     discount_list = models.ManyToManyField(
-        '',
-        through='',
+        'saledata.Discount',
+        through='QuotationTermDiscount',
         symmetrical=False,
         related_name='quotation_term_map_discounts',
     )
@@ -216,7 +216,7 @@ class QuotationTermDiscount(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     discount = models.ForeignKey(
-        '',
+        'saledata.Discount',
         on_delete=models.CASCADE,
     )
 
@@ -234,14 +234,16 @@ class QuotationLogistic(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     shipping_address_list = models.ManyToManyField(
-        '',
-        through='',
+        # 'saledata.AccountShipping',
+        'saledata.Account',
+        through='QuotationLogisticShipping',
         symmetrical=False,
         related_name='quotation_logistic_map_shipping',
     )
     billing_address_list = models.ManyToManyField(
-        '',
-        through='',
+        # 'saledata.AccountBilling',
+        'saledata.Account',
+        through='QuotationLogisticBilling',
         symmetrical=False,
         related_name='quotation_logistic_map_billing',
     )
@@ -259,7 +261,8 @@ class QuotationLogisticShipping(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     shipping_address = models.ForeignKey(
-        '',
+        # 'saledata.AccountShipping',
+        'saledata.Account',
         on_delete=models.CASCADE,
         verbose_name="shipping address",
         related_name="quotation_logistic_shipping",
@@ -279,7 +282,8 @@ class QuotationLogisticBilling(SimpleAbstractModel):
         on_delete=models.CASCADE,
     )
     billing_address = models.ForeignKey(
-        '',
+        # 'saledata.AccountBilling',
+        'saledata.Account',
         on_delete=models.CASCADE,
         verbose_name="billing address",
         related_name="quotation_logistic_billing",
@@ -383,7 +387,7 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     expense = models.ForeignKey(
-        '',
+        'saledata.Expense',
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_expense_expense",
