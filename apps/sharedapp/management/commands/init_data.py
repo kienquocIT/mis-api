@@ -6,6 +6,7 @@ from django.db.models import Model
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, PlanApplication, PermissionApplication, ApplicationProperty,
+    Country, City, District, Ward,
 )
 from apps.core.workflow.models import Node as WFNode
 from ...data.base import (
@@ -13,6 +14,9 @@ from ...data.base import (
 )
 from ...data.workflow import Node_data as WF_Node_data
 from ...data.application_properties import ApplicationProperty_data
+from ...data.vietnam_info import (
+    Country_data, Cities_VN_data, Districts_VN_data, Wards_VN_data,
+)
 
 
 class Command(BaseCommand):
@@ -36,12 +40,23 @@ class InitialsData:
         (PlanApplication, PlanApplication_data),
         (PermissionApplication, PermissionApplication_data),
         (ApplicationProperty, ApplicationProperty_data),
+        (Country, Country_data),
+        (City, Cities_VN_data),
+        (District, Districts_VN_data),
+        (Ward, Wards_VN_data),
     )
 
     def loads(self):
         for cls_model, data in self.MAPPING:
             sys.stdout.write(cls_model.__name__ + "... " + Fore.CYAN + ' PROCESSING... ' + Fore.RESET)
-            self.active_loads(cls_model, data)
+            if cls_model == City:
+                self.active_load_cities()
+            elif cls_model == District:
+                self.active_load_district()
+            elif cls_model == Ward:
+                self.active_load_wards()
+            else:
+                self.active_loads(cls_model, data)
             sys.stdout.write("\n")
         return True
 
@@ -61,3 +76,69 @@ class InitialsData:
             f'{Fore.RED + str(count_diff) + " diff" + Fore.RESET}'
         )
         return True
+
+    @classmethod
+    def active_load_cities(cls):
+        # (City, Cities_VN_data),
+        city_ids = []
+        for city_data in Cities_VN_data:
+            city_ids.append(city_data['id'])
+            obj, created = City.objects.get_or_create(
+                id=city_data['id'],
+                defaults=city_data
+            )
+            if created is False:
+                for field, value in city_data.items():
+                    setattr(obj, field, value)
+                obj.save()
+        count_diff = City.objects.all().exclude(id__in=city_ids).count()
+        sys.stdout.write(
+            f'{Fore.CYAN + "DONE... " + Fore.RESET}'
+            f'{Fore.GREEN + str(len(city_ids)) + " loaded" + Fore.RESET}'
+            f' - '
+            f'{Fore.RED + str(count_diff) + " diff" + Fore.RESET}'
+        )
+
+    @classmethod
+    def active_load_district(cls):
+        # (District, Districts_VN_data),
+        district_ids = []
+        for district_data in Districts_VN_data:
+            district_ids.append(district_data['id'])
+            obj, created = District.objects.get_or_create(
+                id=district_data['id'],
+                defaults=district_data
+            )
+            if created is False:
+                for field, value in district_data.items():
+                    setattr(obj, field, value)
+                obj.save()
+        count_diff = District.objects.all().exclude(id__in=district_ids).count()
+        sys.stdout.write(
+            f'{Fore.CYAN + "DONE... " + Fore.RESET}'
+            f'{Fore.GREEN + str(len(district_ids)) + " loaded" + Fore.RESET}'
+            f' - '
+            f'{Fore.RED + str(count_diff) + " diff" + Fore.RESET}'
+        )
+
+    @classmethod
+    def active_load_wards(cls):
+        # (Ward, Wards_VN_data),
+        ward_ids = []
+        for ward_data in Wards_VN_data:
+            ward_ids.append(ward_data['id'])
+            obj, created = Ward.objects.get_or_create(
+                id=ward_data['id'],
+                defaults=ward_data
+            )
+            if created is False:
+                for field, value in ward_data.items():
+                    setattr(obj, field, value)
+                obj.save()
+        count_diff = Ward.objects.exclude(id__in=ward_ids).count()
+        sys.stdout.write(
+            f'{Fore.CYAN + "DONE... " + Fore.RESET}'
+            f'{Fore.GREEN + str(len(ward_ids)) + " loaded" + Fore.RESET}'
+            f' - '
+            f'{Fore.RED + str(count_diff) + " diff" + Fore.RESET}'
+        )

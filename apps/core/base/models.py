@@ -187,3 +187,112 @@ class PermissionApplication(SimpleAbstractModel):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         clear_cache_base_group()
+
+
+# Base Viet Nam info
+class Country(SimpleAbstractModel):
+    title = models.CharField(
+        max_length=100,
+        verbose_name='Name of Country'
+    )
+    code_2 = models.CharField(
+        max_length=2,
+        verbose_name='ISO Country Code: 2 letters'
+    )
+    code_3 = models.CharField(
+        max_length=3,
+        verbose_name='ISO Country Code: 3 letters'
+    )
+    language = models.CharField(
+        blank=True,
+        max_length=10,
+        verbose_name='Official Language of Country'
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        unique_together = ('code_2', 'code_3',)
+        verbose_name = 'Country'
+        verbose_name_plural = 'Country'
+
+    def save(self, *args, **kwargs):
+        self.code_2 = self.code_2.upper()
+        self.code_3 = self.code_3.upper()
+        self.language = self.language.lower()
+        return super().save(*args, **kwargs)
+
+
+class City(SimpleAbstractModel):
+    country = models.ForeignKey(
+        'Country',
+        on_delete=models.CASCADE,
+        related_name='cities_of_country',
+    )
+    title = models.CharField(
+        max_length=100,
+        verbose_name='City of Country'
+    )
+    id_crawler = models.SmallIntegerField(
+        verbose_name='ID of record in API Data'
+    )
+    zip_code = models.CharField(
+        blank=True,
+        verbose_name='Zip Code/Postal Code',
+        max_length=15
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        unique_together = ('country', 'id_crawler')
+        verbose_name = 'City'
+        verbose_name_plural = 'City'
+
+
+class District(SimpleAbstractModel):
+    city = models.ForeignKey(
+        'City',
+        on_delete=models.CASCADE,
+        related_name='districts_of_city'
+    )
+    title = models.CharField(
+        max_length=100,
+        verbose_name='District of City'
+    )
+    id_crawler = models.SmallIntegerField(
+        verbose_name='ID of record in API Data'
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        unique_together = ('city', 'id_crawler')
+        verbose_name = 'District'
+        verbose_name_plural = 'District'
+
+
+class Ward(SimpleAbstractModel):
+    district = models.ForeignKey(
+        'District',
+        on_delete=models.CASCADE,
+        related_name='wards_of_district'
+    )
+    title = models.CharField(
+        max_length=100,
+        verbose_name='Ward of District'
+    )
+    id_crawler = models.SmallIntegerField(
+        verbose_name='ID of record in API Data'
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        unique_together = ('district', 'id_crawler')
+        verbose_name = 'Ward'
+        verbose_name_plural = 'Ward'
