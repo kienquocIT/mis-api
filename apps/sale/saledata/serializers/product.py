@@ -1067,8 +1067,8 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
                         product=product,
                         price=float(item.get('price_value', None)),
                         currency_using_id=item.get('currency_using', None),
-                        uom_using_id=validated_data['sale_information']['default_uom'],
-                        uom_group_using_id=validated_data['general_information']['uom_group'],
+                        uom_using_id=validated_data['sale_information']['default_uom']['id'],
+                        uom_group_using_id=validated_data['general_information']['uom_group']['id'],
                         get_price_from_source=get_price_from_source
                     )
                 )
