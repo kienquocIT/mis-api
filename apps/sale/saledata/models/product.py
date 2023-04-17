@@ -1,5 +1,7 @@
-from django.db import models
-from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
+from . import models
+from . import MasterDataAbstractModel, SimpleAbstractModel
+
 
 # Create your models here.
 class ProductType(MasterDataAbstractModel):  # noqa

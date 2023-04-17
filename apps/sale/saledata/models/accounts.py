@@ -1,9 +1,9 @@
-from django.db import models
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from . import models
+from . import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 
 # Create your models here.
-class Salutation(MasterDataAbstractModel):
+class Salutation(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
 
     class Meta:
