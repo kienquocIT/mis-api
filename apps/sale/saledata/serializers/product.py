@@ -690,7 +690,6 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
     general_information = serializers.JSONField(required=True)
     sale_information = serializers.JSONField(required=False)
-    purchase_information = serializers.JSONField(required=False)
 
     class Meta:
         model = Product
