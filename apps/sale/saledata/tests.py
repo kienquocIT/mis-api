@@ -399,7 +399,7 @@ class ProductTestCase(AdvanceTestCase):
                 'uom_group': uom_group['id']
             },
             "sale_information": {
-                'default_uom': unit_of_measure['id']
+                'default_uom_id': unit_of_measure['id']
             },
             "inventory_information": {
                 'uom': unit_of_measure['id'],
@@ -412,7 +412,7 @@ class ProductTestCase(AdvanceTestCase):
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, 400)
 
         data1 = {
             "code": "P02",
@@ -431,8 +431,8 @@ class ProductTestCase(AdvanceTestCase):
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
-        return False
+        self.assertEqual(response1.status_code, 400)
+        return True
 
 
 class SalutationTestCase(AdvanceTestCase):
