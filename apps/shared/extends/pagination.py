@@ -7,9 +7,9 @@ from .response import cus_response
 
 class CustomResultsSetPagination(PageNumberPagination):
     page_size_query_param = "pageSize"
-    page_size_query_description = ("page_size_query_description (value -1 with get not page, maximum: {}).".format(
-        settings.CUSTOM_PAGE_MAXIMUM_SIZE
-    ),)
+    page_size_query_description = (
+        f"page_size_query_description (value -1 with get not page, maximum: {settings.CUSTOM_PAGE_MAXIMUM_SIZE}).",
+    )
 
     def get_page_size(self, request):
         page_size_int = self.page_size
