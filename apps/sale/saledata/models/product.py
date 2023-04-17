@@ -128,10 +128,9 @@ class ProductGeneral(SimpleAbstractModel):
 
 # SUB-MODEL FOR PRODUCT SALE
 class ProductSale(SimpleAbstractModel):
-    from apps.sale.saledata.models.price import Tax
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    tax_code = models.ForeignKey(Tax, null=True, on_delete=models.CASCADE)
+    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'ProductSale'
