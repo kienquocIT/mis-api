@@ -119,7 +119,7 @@ class User(AuthUser):   # pylint: disable=R0902
 
     @staticmethod
     def convert_username_field_data(username, tenant_obj):
-        return f'{username}-{tenant_obj.code.upper()}'
+        return f'{username}-{tenant_obj.code}'.lower()
 
     def sync_verify_contact(self):
         if settings.ENABLE_TURN_ON_IS_EMAIL:
@@ -149,7 +149,8 @@ class User(AuthUser):   # pylint: disable=R0902
 
     def save(self, *args, is_superuser=False, **kwargs):
         # generate username for login
-        self.username_auth = self.convert_username_field_data(self.username, self.tenant_current)
+        self.username = self.username.lower()
+        self.username_auth = self.convert_username_field_data(self.username, self.tenant_current).lower()
 
         # syn verify contact
         self.sync_verify_contact()

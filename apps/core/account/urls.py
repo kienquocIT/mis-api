@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.core.account.views import UserList, UserDetail, CompanyUserDetail
+from apps.core.account.views import UserList, UserDetail, CompanyUserDetail, UserOfTenantList
 
 urlpatterns = [
     path('users', UserList.as_view(), name='UserList'),
@@ -8,4 +8,5 @@ urlpatterns = [
 
     # update company of user
     path('user-company/<str:pk>', CompanyUserDetail.as_view(), name='CompanyUserDetail'),
+    path('user-tenant', UserOfTenantList.as_view(), name='UserOfTenantList'),
 ]

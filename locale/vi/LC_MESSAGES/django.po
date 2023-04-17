@@ -303,3 +303,7 @@ msgstr "Out form"
 #: .\apps\shared\translations\workflow.py:13
 msgid "In workflow"
 msgstr "In workflow"
+
+#
+msgid "Username is exist, please choose another user name"
+msgstr "Tên đăng nhập đã tồn tại, vui lòng chọn tên đăng nhập khác"

@@ -6,14 +6,21 @@ from apps.sale.saledata.views.accounts import (
     AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
+from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
-
-    ProductList, ProductDetail
+    ProductList, ProductDetail,
+)
+from apps.sale.saledata.views.price import (
+    TaxCategoryList, TaxCategoryDetail,
+    TaxList, TaxDetail,
+    CurrencyList, CurrencyDetail, SyncWithVCB,
+    PriceList, PriceDetail,
+    UpdateProductsForPriceList, DeleteProductsForPriceList
 )
 
 urlpatterns = [
@@ -56,4 +63,36 @@ urlpatterns += [
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+]
+
+urlpatterns += [
+    path('tax-categories', TaxCategoryList.as_view(), name='TaxCategoryList'),
+    path('tax-category/<str:pk>', TaxCategoryDetail.as_view(), name='TaxCategoryDetail'),
+    path('taxes', TaxList.as_view(), name='TaxList'),
+    path('tax/<str:pk>', TaxDetail.as_view(), name='TaxDetail'),
+    path('currencies', CurrencyList.as_view(), name='CurrencyList'),
+    path('currency/<str:pk>', CurrencyDetail.as_view(), name='CurrencyDetail'),
+    path('sync-selling-rate-with-VCB/<str:pk>', SyncWithVCB.as_view(), name='SyncWithVCB'),
+]
+
+urlpatterns += [
+    path('prices', PriceList.as_view(), name='PriceList'),
+    path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
+    path(
+        'update-products-for-price-list/<str:pk>', UpdateProductsForPriceList.as_view(),
+        name='UpdateProductsForPriceList'
+    ),
+    path(
+        'delete-products-for-price-list/<str:pk>', DeleteProductsForPriceList.as_view(),
+        name='DeleteProductsForPriceList'
+    )
+]
+
+urlpatterns += [
+    path('masterdata/config/payment-term', ConfigPaymentTermList.as_view(), name='ConfigPaymentTermList'),
+    path(
+        'masterdata/config/payment-term/<str:pk>',
+        ConfigPaymentTermDetail.as_view(),
+        name='ConfigPaymentTermDetail'
+    ),
 ]

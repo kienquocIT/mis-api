@@ -82,6 +82,9 @@ class CompanyListOverview(BaseListMixin):
     serializer_list = CompanyOverviewSerializer
     list_hidden_field = ['tenant_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('hr_employee_belong_to_company')
+
     @swagger_auto_schema(
         operation_summary="Company list",
         operation_description="Company list"

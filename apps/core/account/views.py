@@ -1,13 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.serializers import ValidationError
 
 from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, ResponseController
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
-    CompanyUserDetailSerializer, UserListSerializer,
+    CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
+    CompanyUserEmployeeUpdateSerializer,
 )
 from .models import User
 from apps.core.company.models import CompanyUserEmployee
@@ -45,19 +45,6 @@ class UserList(AccountListMixin, AccountCreateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer_create(data=request.data)
-        if hasattr(serializer, 'is_valid'):
-            serializer.is_valid(raise_exception=True)
-            instance = self.perform_create(serializer, request.user)
-            self.sync_new_user_to_map(instance, request.data.get('company_current', None))
-            if not isinstance(instance, Exception):
-                return ResponseController.created_201(self.get_serializer_detail(instance).data)
-            if isinstance(instance, ValidationError):
-                return ResponseController.internal_server_error_500()
-            return ResponseController.bad_request_400(instance.args[1])
-        return ResponseController.internal_server_error_500()
 
     @staticmethod
     def sync_new_user_to_map(user_obj, company_id):
@@ -110,9 +97,28 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Add Or Delete User For Company",
         operation_description="Add Or Delete User For Company",
-        request_body=CompanyUserUpdateSerializer,
+        request_body=CompanyUserEmployeeUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUserUpdateSerializer
+        self.serializer_class = CompanyUserEmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class UserOfTenantList(AccountListMixin):
+    queryset = User.objects
+    serializer_list = UserListTenantOverviewSerializer
+    serializer_list_minimal = UserListSerializer
+    use_cache_queryset = True
+    use_cache_minimal = True
+    serializer_create = UserCreateSerializer
+    serializer_detail = UserDetailSerializer
+    list_hidden_field = ['tenant_current_id']
+    create_hidden_field = ['tenant_current_id']
+
+    def get_queryset(self):
+        return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')
+
+    @swagger_auto_schema()
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

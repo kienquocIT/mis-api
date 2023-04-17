@@ -261,7 +261,11 @@ class ContactListSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.objects.get(id=obj.owner)
+                owner = Employee.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=obj.owner
+                )
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
@@ -305,7 +309,11 @@ class ContactCreateSerializer(serializers.ModelSerializer):
     def validate_account_name(cls, attrs):
         try:
             if attrs is not None:
-                return Account.objects.get(id=attrs)
+                return Account.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=attrs
+                )
         except Account.DoesNotExist as exc:
             raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
         return None
@@ -375,7 +383,11 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.objects.get(id=obj.owner)
+                owner = Employee.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=obj.owner
+                )
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
@@ -388,7 +400,11 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     def get_report_to(cls, obj):
         try:
             if obj.report_to:
-                owner = Contact.objects.get(id=obj.report_to)
+                owner = Contact.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=obj.report_to
+                )
                 return {
                     'id': obj.report_to,
                     'fullname': owner.fullname
@@ -464,7 +480,11 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
     def validate_account_name(cls, value):
         try:
             if value is not None:
-                return Account.objects.get(id=value)
+                return Account.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
         except Account.DoesNotExist as exc:
             raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
         return None
@@ -511,7 +531,11 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             if obj.owner:
-                owner = Employee.objects.get(id=obj.owner)
+                owner = Employee.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=obj.owner
+                )
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
@@ -562,7 +586,9 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        owner = Contact.objects.filter(
+        owner = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
             account_name=obj,
             is_primary=True
         ).first()
@@ -618,10 +644,26 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         account_type = []
         for item in validate_data.get('account_type', None):
-            title = AccountType.objects.get(id=item).title
+            title = AccountType.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=item
+            ).title
             detail = ''
+            tax_code = validate_data.get('tax_code', None)
             if title.lower() == 'customer':
                 detail = self.initial_data.get('customer_type', None)
+                if detail == 'organization':
+                    if tax_code is None:
+                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
+            if tax_code is not None:
+                account_map_tax_code = Account.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    tax_code=tax_code,
+                ).first()
+                if account_map_tax_code:
+                    raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
             account_type.append({'title': title, 'detail': detail})
         validate_data['account_type'] = account_type
         return validate_data
@@ -668,7 +710,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if contact_primary:
             contact_select_list.append(contact_primary)
         if contact_select_list:
-            contact_list = Contact.objects.filter(id__in=contact_select_list)
+            contact_list = Contact.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id__in=contact_select_list
+            )
             if contact_list:
                 for contact in contact_list:
                     if contact.id == contact_primary:
@@ -706,7 +752,11 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     def get_owner(cls, obj):
         try:
             list_owner = []
-            resp = Contact.objects.filter(account_name=obj)
+            resp = Contact.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                account_name=obj
+            )
             for item in resp:
                 list_owner.append(
                     {

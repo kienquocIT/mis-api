@@ -7,3 +7,4 @@ class AccountMsg:
     USER_DATA_VALID = _('Data is not valid')
     VALID_PASSWORD = _('Password must contain both numbers and letters')
     COMPANY_NOT_EXIST = _('Company is not exist')
+    USERNAME_EXISTS = _('Username is exist, please choose another user name')

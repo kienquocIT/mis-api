@@ -2,7 +2,8 @@ from rest_framework import serializers
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
 )
-from apps.shared import ProductMsg
+from apps.sale.saledata.models.price import ProductPriceList
+from apps.shared import ProductMsg, PriceMsg
 
 
 # Product Type
@@ -397,9 +398,9 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
 
             old_ratio = instance.ratio
             for item in UnitOfMeasure.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    group=instance.group_id
+                fill__tenant=True,
+                fill__company=True,
+                group=instance.group_id
             ):
                 if item != instance:
                     item.ratio = item.ratio / old_ratio
@@ -431,26 +432,11 @@ class ProductListSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def get_general_information(cls, obj):
         if obj.general_information:
-            product_type_id = obj.general_information.get('product_type', None)
-            product_category_id = obj.general_information.get('product_category', None)
-
-            product_type_title = ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=product_type_id
-            ).first()
-            product_category_title = ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=product_category_id
-            ).first()
-
-            if product_type_title and product_category_title:
-                return {
-                    'uom_group': obj.general_information.get('uom_group', None),
-                    'product_type': {'id': product_type_id, 'title': product_type_title.title},
-                    'product_category': {'id': product_category_id, 'title': product_category_title.title}
-                }
+            return {
+                'uom_group': obj.general_information.get('uom_group', None),
+                'product_type': obj.general_information.get('product_type', None),
+                'product_category': obj.general_information.get('product_category', None),
+            }
         return {}
 
 
@@ -485,27 +471,85 @@ class ProductCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_general_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
-        return value
-
-    @classmethod
-    def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        if not value.get('uom_group', None):
+            raise serializers.ValidationError(ProductMsg.UOM_MISSING)
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
-        return value
+        if value != {}: # noqa
+            if not value.get('default_uom', None):
+                raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
+
+            price_list = value.get('price_list', None)
+            if price_list:
+                for item in price_list:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                        if not item.get(key, None):
+                            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+                if not value.get('currency_using', None):
+                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
+            return value
+        return {}
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        if value != {}: # noqa
+            if not value.get('uom', None):
+                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+            inventory_level_min = value.get('inventory_level_min', None)
+            inventory_level_max = value.get('inventory_level_max', None)
+            if inventory_level_min and inventory_level_max:
+                value['inventory_level_min'] = int(inventory_level_min)
+                value['inventory_level_max'] = int(inventory_level_max)
+                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                    if value['inventory_level_min'] > value['inventory_level_max']:
+                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+                else:
+                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+            else:
+                if inventory_level_min:
+                    value['inventory_level_min'] = int(inventory_level_min)
+                if inventory_level_max:
+                    value['inventory_level_max'] = int(inventory_level_max)
+            return value
+        return {}
+
+    def create(self, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        currency_using_id = validated_data['sale_information'].get('currency_using', None)  # lấy currency_using
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        if currency_using_id:
+            del validated_data['sale_information']['currency_using']
+
+        product = Product.objects.create(**validated_data)
+
+        if price_list_information and currency_using_id:
+            objs = []
+            for item in price_list_information:
+                get_price_from_source = False
+                if item.get('is_auto_update', None) == '1':
+                    get_price_from_source = True
+                objs.append(
+                    ProductPriceList(
+                        price_list_id=item.get('price_list_id', None),
+                        product=product,
+                        price=float(item.get('price_value', None)),
+                        currency_using_id=currency_using_id,
+                        uom_using_id=validated_data['sale_information']['default_uom'],
+                        uom_group_using_id=validated_data['general_information']['uom_group'],
+                        get_price_from_source=get_price_from_source
+                    )
+                )  # tạo các objs price_list (luôn đưa vào general_price_list)
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+        return product
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
+    sale_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -516,8 +560,25 @@ class ProductDetailSerializer(serializers.ModelSerializer):  # noqa
             'general_information',
             'inventory_information',
             'sale_information',
-            'purchase_information'
+            'purchase_information',
         )
+
+    @classmethod
+    def get_sale_information(cls, obj):
+        product_price_list = ProductPriceList.objects.filter(product=obj).select_related('currency_using')
+        price_list_detail = []
+        for item in product_price_list:
+            price_list_detail.append(
+                {
+                    'id': item.price_list_id,
+                    'price': item.price,
+                    'currency_using': item.currency_using.abbreviation,
+                    'is_auto_update': item.get_price_from_source
+                }
+            )
+        if len(price_list_detail) > 0:
+            obj.sale_information['price_list'] = price_list_detail
+        return obj.sale_information
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -539,21 +600,71 @@ class ProductUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_general_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.GENERAL_INFORMATION_MISSING)
-        return value
-
-    @classmethod
-    def validate_inventory_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.INVENTORY_INFORMATION_MISSING)
+        if not value.get('uom_group', None):
+            raise serializers.ValidationError(ProductMsg.UOM_MISSING)
         return value
 
     @classmethod
     def validate_sale_information(cls, value):
-        for key in value:
-            if not value.get(key, None):
-                raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
-        return value
+        if value != {}:  # noqa
+            if not value.get('default_uom', None):
+                raise serializers.ValidationError(ProductMsg.DEFAULT_UOM_MISSING)
+
+            price_list = value.get('price_list', None)
+            if price_list:
+                for item in price_list:
+                    for key in ['price_value', 'price_list_id', 'is_auto_update']:
+                        if not item.get(key, None):
+                            raise serializers.ValidationError(PriceMsg.PRICE_LIST_IS_MISSING_VALUE)
+                if not value.get('currency_using', None):
+                    raise serializers.ValidationError(PriceMsg.CURRENCY_NOT_EXIST)
+            return value
+        return {}
+
+    @classmethod
+    def validate_inventory_information(cls, value):
+        if value != {}:  # noqa
+            if not value.get('uom', None):
+                raise serializers.ValidationError(ProductMsg.UOM_MISSING)
+            inventory_level_min = value.get('inventory_level_min', None)
+            inventory_level_max = value.get('inventory_level_max', None)
+            if inventory_level_min and inventory_level_max:
+                value['inventory_level_min'] = int(inventory_level_min)
+                value['inventory_level_max'] = int(inventory_level_max)
+                if (value['inventory_level_min'] > 0) and (value['inventory_level_max'] > 0):
+                    if value['inventory_level_min'] > value['inventory_level_max']:
+                        raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+                else:
+                    raise serializers.ValidationError(ProductMsg.NEGATIVE_VALUE)
+            else:
+                if inventory_level_min:
+                    value['inventory_level_min'] = int(inventory_level_min)
+                if inventory_level_max:
+                    value['inventory_level_max'] = int(inventory_level_max)
+            return value
+        return {}
+
+    def update(self, instance, validated_data):
+        price_list_information = validated_data['sale_information'].get('price_list', None)  # lấy price_list
+        currency_using_id = validated_data['sale_information'].get('currency_using', None)  # lấy currency_using
+
+        if price_list_information:
+            del validated_data['sale_information']['price_list']
+        if currency_using_id:
+            del validated_data['sale_information']['currency_using']
+
+        if price_list_information and currency_using_id:
+            for item in price_list_information:
+                obj = ProductPriceList.objects.filter(
+                    product=instance,
+                    price_list_id=item['price_list_id'],
+                    currency_using_id=currency_using_id
+                ).first()
+                if obj:
+                    obj.price = float(item['price_value'])
+                    obj.save()
+        instance.general_information = validated_data['general_information']
+        instance.sale_information = validated_data['sale_information']
+        instance.inventory_information = validated_data['inventory_information']
+        instance.save()
+        return instance

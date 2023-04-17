@@ -105,7 +105,7 @@ class Tenant(CoreAbstractModel):
         if kwargs.get('force_update', False):
             # get old code and new code
             old_code = self.get_old_value(field_name_list=['code'])['code']
-
+        self.code = self.code.lower()
         super().save(*args, **kwargs)
 
         # update username_auth for user when change tenant code

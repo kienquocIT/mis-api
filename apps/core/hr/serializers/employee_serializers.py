@@ -121,24 +121,6 @@ class EmployeeListSerializer(serializers.ModelSerializer):
         ]
 
 
-class EmployeeListMinimalSerializer(serializers.ModelSerializer):
-    full_name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = Employee
-        fields = (
-            'id',
-            'code',
-            'first_name',
-            'last_name',
-            'full_name',
-        )
-
-    @classmethod
-    def get_full_name(cls, obj):
-        return obj.get_full_name(2)
-
-
 class EmployeeDetailSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     plan_app = serializers.SerializerMethodField()
@@ -254,9 +236,11 @@ def validate_employee_create_update(validate_data):
                     if plan_app['license_used'] > plan_app['license_quantity']:
                         plan_license_check += plan_app['plan'].title + ", "
     if plan_license_check:
-        raise serializers.ValidationError({
+        raise serializers.ValidationError(
+            {
                 'detail': HRMsg.EMPLOYEE_PLAN_APP_CHECK.format(plan_license_check)
-            })
+            }
+        )
     return validate_data
 
 
@@ -569,3 +553,77 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
             return attrs
         raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
+
+
+# EMPLOYEE by overview Tenant
+class EmployeeListByOverviewTenantSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    user = serializers.SerializerMethodField()
+    license = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Employee
+        fields = (
+            'id',
+            'code',
+            'first_name',
+            'last_name',
+            'full_name',
+            'email',
+            'phone',
+            'date_joined',
+            'is_active',
+            'user',
+            'license',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name(2)
+
+    @classmethod
+    def get_user(cls, obj):
+        if obj.user_id:
+            return {
+                'id': str(obj.user_id),
+                'first_name': str(obj.user.first_name),
+                'last_name': str(obj.user.last_name),
+                'full_name': str(obj.user.get_full_name())
+            }
+        return {}
+
+    @classmethod
+    def get_license(cls, obj):
+        return [
+            {
+                'id': x.id,
+                'title': x.title,
+                'code': x.code
+            } for x in obj.plan.all()
+        ]
+
+
+class EmployeeListMinimalByOverviewTenantSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+    is_linked_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Employee
+        fields = (
+            'id',
+            'code',
+            'first_name',
+            'last_name',
+            'full_name',
+            'is_linked_user',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name(2)
+
+    @classmethod
+    def get_is_linked_user(cls, obj):
+        if obj.user_id:
+            return True
+        return False
