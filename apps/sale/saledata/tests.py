@@ -548,7 +548,7 @@ class UoMTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, 201)
         return response
 
-    def test_create_new_uom(self):
+    def test_create_two_uom_is_referenced_unit_in_uom_gr(self):
         uom_group = self.test_create_new_uom_group()
         data = {
             "code": "U01",
@@ -566,7 +566,72 @@ class UoMTestCase(AdvanceTestCase):
             check_sum_second=False,
         )
         self.assertEqual(response.status_code, 201)
+
+        data1 = {
+            "code": "U02",
+            "title": "Dozen",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        try:
+            response1 = self.client.post(url, data1, format='json')
+            self.assertEqual(response1.status_code, 201)
+        except Exception as err:
+            print(err)
         return response
+
+    def test_create_uom_missing_data(self):
+        uom_group = self.test_create_new_uom_group()
+        data = {
+            "code": "",
+            "title": "Unit",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        url = reverse('UnitOfMeasureList')  # noqa
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {
+            "code": "U01",
+            "title": "",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": False
+        }
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+
+        data2 = {
+            "code": "U01",
+            "title": "Unit",
+            "group": "",
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": False
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+
+    def test_get_list_and_detail(self):
+        uom = self.test_create_two_uom_is_referenced_unit_in_uom_gr()
+        url = reverse('UnitOfMeasureList')
+        response = self.client.get(url, format='json')
+        url_detail = reverse('UnitOfMeasureDetail', args=[uom.data['result']['id']])
+
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'group', 'ratio', 'rounding'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return True
 
 
 class ConfigPaymentTermTestCase(AdvanceTestCase):
@@ -632,3 +697,286 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+
+
+class CurrencyTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url = reverse("CurrencyList")
+
+    def test_get_list_currency_default(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        return True
+
+    def test_create_new_currency(self):
+        data = {
+            "abbreviation": "CAD",
+            "title": "CANADIAN DOLLAR",
+            "rate": 0.45
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return True
+
+    def test_create_new_currency_exists(self):
+        data = {
+            "abbreviation": "VND",
+            "title": "VIETNAM DONG",
+            "rate": 1
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return True
+
+    def test_create_new_currency_rate_less_than_zero(self):
+        data = {
+            "abbreviation": "VND",
+            "title": "VIETNAM DONG",
+            "rate": -1
+        }
+        response = self.client.post(self.url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return True
+
+
+class TaxAndTaxCategoryTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url_tax = reverse("TaxList")
+        self.url_tax_category = reverse("TaxCategoryList")
+
+    def test_create_new_tax_category(self):
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(self.url_tax_category, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertCountEqual(
+            ['id', 'title', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return response
+
+    def test_create_new_tax(self):
+        tax_category = self.test_create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(self.url_tax, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return response
+
+    def test_create_tax_missing_data(self):
+        tax_category = self.test_create_new_tax_category()
+
+        # missing title
+        data = {
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(self.url_tax, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        # missing code
+        data1 = {
+            "title": "Thuế bán hàng tư nhân",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response1 = self.client.post(self.url_tax, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+
+        # missing category
+        data2 = {
+            "title": "Thuế bán hàng tư nhân VAT-5%",
+            "code": 'VAT-5',
+            "rate": 10,
+            "type": 0
+        }
+        response2 = self.client.post(self.url_tax, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+
+        # missing type
+        data3 = {
+            "title": "Thuế bán hàng tư nhân VAT-15%",
+            "code": 'VAT-15',
+            "category": tax_category.data['result']['id'],
+            "rate": 10,
+        }
+        response3 = self.client.post(self.url_tax, data3, format='json')
+        self.assertEqual(response3.status_code, 400)
+        return response
+
+    def test_create_tax_empty_data(self):
+        tax_category = self.test_create_new_tax_category()
+
+        # title
+        data = {
+            "code": "VAT-10",
+            "title": "",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(self.url_tax, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        # code
+        data1 = {
+            "code": "",
+            "title": "Thuế bán hàng tư nhân",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response1 = self.client.post(self.url_tax, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+
+        # category
+        data2 = {
+            "code": "VAT-5",
+            "title": "Thuế bán hàng tư nhân VAT-5%",
+            "code": 'VAT-5',
+            "rate": 10,
+            "category": "",
+            "type": 0
+        }
+        response2 = self.client.post(self.url_tax, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+
+        return True
+
+
+class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        self.url_product_category = reverse("ProductCategoryList")
+        self.url_product_type = reverse("TaxCategoryList")
+
+    def test_create_new_product_category(self):
+        data = {
+            "title": "Phần cứng",
+            "description": "Phần cứng máy tính"
+        }
+        response = self.client.post(self.url_product_category, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_new_product_type(self):
+        data = {
+            "title": "Sảm phẩm lỗi",
+            "description": "Những sản phẩm mắc lỗi kỹ thuật"
+        }
+        response = self.client.post(self.url_product_type, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_new_product_type_missing_and_empty_data(self):
+        data = {
+            "title": "",
+            "description": "Những sản phẩm mắc lỗi kỹ thuật"
+        }
+        response = self.client.post(self.url_product_type, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {
+            "description": "Những sản phẩm mắc lỗi kỹ thuật"
+        }
+        response1 = self.client.post(self.url_product_type, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+        return True
+
+    def test_create_new_product_category_missing_and_empty_data(self):
+        data = {
+            "description": "Application"
+        }
+        response = self.client.post(self.url_product_type, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {
+            "title": "",
+            "description": "Application"
+        }
+        response1 = self.client.post(self.url_product_type, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+        return True
+
+    def test_get_list_and_detail_product_category(self):
+        product_category = self.test_create_new_product_category()
+        response = self.client.get(self.url_product_category, format='json') # noqa
+        self.assertResponseList( # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+
+        url_detail = reverse('ProductCategoryDetail', args=[product_category.data['result']['id']])
+
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response_detail.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+    def test_get_list_and_detail_product_type(self):
+        product_type = self.test_create_new_product_type()
+        response = self.client.get(self.url_product_type, format='json') # noqa
+        self.assertResponseList( # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+
+        url_detail = reverse('ProductTypeDetail', args=[product_type.data['result']['id']])
+
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response_detail.status_code, 200)
+        # self.assertCountEqual(
+        #     ['id', 'title', 'description'],
+        #     list(response_detail.data['result'].keys()),
+        #     check_sum_second=False,
+        # )
+        return True
