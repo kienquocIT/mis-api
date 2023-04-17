@@ -6,6 +6,7 @@ class ProductMsg:
     PRODUCT_CATEGORY_EXIST = _('Product category is already exist.')
     EXPENSE_TYPE_EXIST = _('Expense type is already exist.')
     UNIT_OF_MEASURE_GROUP_EXIST = _('Unit of measure group is already exist.')
+    UNIT_OF_MEASURE_GROUP_HAD_REFERENCE = _('Unit of measure group had reference unit.')
     UNIT_OF_MEASURE_GROUP_NOT_EXIST = _('Unit of measure group does not exist.')
     UNIT_OF_MEASURE_EXIST = _('Unit of measure is already exist.')
     UNIT_OF_MEASURE_NOT_EXIST = _('Unit of measure does not exist.')
