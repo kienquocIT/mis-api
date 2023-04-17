@@ -1,5 +1,5 @@
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 from django.db import models
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 
 class PaymentTerm(MasterDataAbstractModel):
