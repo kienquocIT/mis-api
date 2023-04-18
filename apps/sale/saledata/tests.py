@@ -298,10 +298,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response1 = self.client.post(
             self.url,
@@ -318,9 +315,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
@@ -351,13 +345,22 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'product_type': {
+                    'id': product_type['id'],
+                    'title': product_type['title'],
+                    'code': "",
+                },
+                'product_category': {
+                    'id': product_category['id'],
+                    'title': product_category['title'],
+                    'code': "",
+                },
+                'uom_group': {
+                    'id': uom_group['id'],
+                    'title': uom_group['title'],
+                    'code': "",
+                },
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response1 = self.client.post(
             self.url,
@@ -370,13 +373,20 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'product_type': {
+                    'id': product_type['id'],
+                    'title': product_type['title'],
+                    'code': "",
+                },
+                'product_category': {
+                    'id': product_category['id'],
+                    'title': product_category['title'],
+                },
+                'uom_group': {
+                    'id': uom_group['id'],
+                    'title': uom_group['title'],
+                },
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
@@ -394,9 +404,21 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'product_type': {
+                    'id': product_type['id'],
+                    'title': product_type['title'],
+                    'code': "",
+                },
+                'product_category': {
+                    'id': product_category['id'],
+                    'title': product_category['title'],
+                    'code': "",
+                },
+                'uom_group': {
+                    'id': uom_group['id'],
+                    'title': uom_group['title'],
+                    'code': "",
+                },
             },
             "sale_information": {
                 'default_uom_id': unit_of_measure['id']
