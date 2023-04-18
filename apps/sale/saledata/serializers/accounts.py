@@ -259,20 +259,18 @@ class ContactListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        try:
-            if obj.owner:
-                owner = Employee.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=obj.owner
-                )
+        if obj.owner:
+            owner = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=obj.owner
+            ).first()
+            if owner:
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
-        return {}
+        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
 
     @classmethod
     def get_account_name(cls, obj):
@@ -307,16 +305,15 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, attrs):
-        try:
-            if attrs is not None:
-                return Account.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=attrs
-                )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'account_name': AccountsMsg.ACCOUNT_NOT_EXIST})
-        return None
+        if attrs is not None:
+            account = Account.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=attrs
+            ).first()
+            if account:
+                return account
+        raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST)
 
     @classmethod
     def validate_email(cls, attrs):
@@ -381,37 +378,33 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        try:
-            if obj.owner:
-                owner = Employee.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=obj.owner
-                )
+        if obj.owner:
+            owner = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=obj.owner
+            ).first()
+            if owner:
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
-        return {}
+        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
 
     @classmethod
     def get_report_to(cls, obj):
-        try:
-            if obj.report_to:
-                owner = Contact.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=obj.report_to
-                )
+        if obj.report_to:
+            owner = Contact.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=obj.report_to
+            ).first()
+            if owner:
                 return {
                     'id': obj.report_to,
                     'fullname': owner.fullname
                 }
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'report_to': AccountsMsg.CONTACT_NOT_EXIST})
-        return {}
+        raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST)
 
     @classmethod
     def get_additional_information(cls, obj):
@@ -478,16 +471,15 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, value):
-        try:
-            if value is not None:
-                return Account.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=value
-                )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'account_name': AccountsMsg.ACCOUNT_NOT_EXIST})
-        return None
+        if value is not None:
+            account = Account.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            ).first()
+            if account:
+                return account
+        raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST)
 
     def validate_email(self, attrs):
         if attrs is not None:
@@ -529,20 +521,18 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        try:
-            if obj.owner:
-                owner = Employee.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=obj.owner
-                )
+        if obj.owner:
+            owner = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=obj.owner
+            ).first()
+            if owner:
                 return {
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
-        return {}
+        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
 
 
 # Account
@@ -642,30 +632,34 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, validate_data):
-        account_type = []
+        account_types = []
         for item in validate_data.get('account_type', None):
-            title = AccountType.objects.get_current(
+            account_type = AccountType.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=item
-            ).title
-            detail = ''
-            tax_code = validate_data.get('tax_code', None)
-            if title.lower() == 'customer':
-                detail = self.initial_data.get('customer_type', None)
-                if detail == 'organization':
-                    if tax_code is None:
-                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
-            if tax_code is not None:
-                account_map_tax_code = Account.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    tax_code=tax_code,
-                ).first()
-                if account_map_tax_code:
-                    raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
-            account_type.append({'title': title, 'detail': detail})
-        validate_data['account_type'] = account_type
+            ).first()
+            if account_type:
+                title = account_type.title
+                detail = ''
+                tax_code = validate_data.get('tax_code', None)
+                if title.lower() == 'customer':
+                    detail = self.initial_data.get('customer_type', None)
+                    if detail == 'organization':
+                        if tax_code is None:
+                            raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
+                if tax_code is not None:
+                    account_map_tax_code = Account.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        tax_code=tax_code,
+                    ).first()
+                    if account_map_tax_code:
+                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
+                account_types.append({'title': title, 'detail': detail})
+            else:
+                raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
+        validate_data['account_type'] = account_types
         return validate_data
 
     def create(self, validated_data):
