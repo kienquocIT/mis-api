@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views.quotation import QuotationList, QuotationDetail
+from .views import QuotationList, QuotationDetail
 
 urlpatterns = [
     path('lists', QuotationList.as_view(), name='QuotationList'),

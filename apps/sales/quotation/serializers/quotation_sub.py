@@ -1,4 +1,4 @@
-from apps.sales.quotation.models.quotation import QuotationProduct, QuotationTerm, QuotationTermPrice, \
+from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationLogisticShipping, QuotationLogisticBilling, QuotationCost, \
     QuotationExpense
 

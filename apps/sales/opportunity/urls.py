@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views.opportunity import OpportunityList, OpportunityDetail
+from .views import OpportunityList, OpportunityDetail
 
 urlpatterns = [
     path('lists', OpportunityList.as_view(), name='OpportunityList'),

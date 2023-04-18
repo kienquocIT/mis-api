@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.sales.opportunity.models.opportunity import Opportunity
+from apps.sales.opportunity.models import Opportunity
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 

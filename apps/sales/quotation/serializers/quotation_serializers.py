@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.sale.saledata.models.accounts import Account
-from apps.sales.quotation.models.quotation import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
+from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommon
 from apps.shared import AccountsMsg

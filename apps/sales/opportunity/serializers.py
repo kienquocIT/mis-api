@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.sale.saledata.models.accounts import Account
-from apps.sales.opportunity.models.opportunity import Opportunity
+from apps.sales.opportunity.models import Opportunity
 from apps.shared import AccountsMsg
 
 
