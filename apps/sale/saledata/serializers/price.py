@@ -537,3 +537,38 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
         else:
             raise serializers.ValidationError(PriceMsg.PRODUCT_NOT_EXIST_IN_THIS_PRICE_LIST)
         return instance
+
+
+class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Product
+        fields = ()
+
+    def update(self, instance, validated_data):
+        price_list_information = self.initial_data['list_price_list']
+        product = self.initial_data['product']
+        objs = []
+        if price_list_information and product:
+            for item in price_list_information:
+                get_price_from_source = False
+                if item.get('is_auto_update', None) == '1':
+                    get_price_from_source = True
+                if not ProductPriceList.objects.filter(
+                        price_list_id=item['price_list_id'],
+                        product_id=product['id']
+                ).exists():
+                    objs.append(
+                        ProductPriceList(
+                            price_list_id=item.get('price_list_id', None),
+                            product_id=product['id'],
+                            price=float(item.get('price_value', None)),
+                            currency_using_id=item.get('currency_using', None),
+                            uom_using_id=product['uom'],
+                            uom_group_using_id=product['uom_group'],
+                            get_price_from_source=get_price_from_source
+                        )
+                    )
+        if len(objs) > 0:
+            ProductPriceList.objects.bulk_create(objs)
+        return instance
