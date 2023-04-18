@@ -353,12 +353,12 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': {
                     'id': product_category['id'],
                     'title': product_category['title'],
-                    'code': product_category['code'],
+                    'code': "",
                 },
                 'uom_group': {
                     'id': uom_group['id'],
                     'title': uom_group['title'],
-                    'code': uom_group['code'],
+                    'code': "",
                 },
             },
         }
@@ -381,12 +381,10 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': {
                     'id': product_category['id'],
                     'title': product_category['title'],
-                    'code': product_category['code'],
                 },
                 'uom_group': {
                     'id': uom_group['id'],
                     'title': uom_group['title'],
-                    'code': uom_group['code'],
                 },
             },
         }
@@ -414,12 +412,12 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': {
                     'id': product_category['id'],
                     'title': product_category['title'],
-                    'code': product_category['code'],
+                    'code': "",
                 },
                 'uom_group': {
                     'id': uom_group['id'],
                     'title': uom_group['title'],
-                    'code': uom_group['code'],
+                    'code': "",
                 },
             },
             "sale_information": {
