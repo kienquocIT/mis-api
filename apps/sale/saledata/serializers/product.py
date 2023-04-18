@@ -918,6 +918,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 if obj:
                     obj.price = float(item['price_value'])
                     obj.save()
+        instance.title = validated_data['title']
         instance.general_information = validated_data['general_information']
         instance.sale_information = validated_data['sale_information']
         instance.inventory_information = validated_data['inventory_information']
