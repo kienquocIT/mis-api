@@ -313,7 +313,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             fill__company=True,
             group=validated_data['group'],
             is_referenced_unit=True
-        ).first()
+        ).exists()
         if has_referenced_unit and validated_data.get('is_referenced_unit', None):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE)
         return validated_data
