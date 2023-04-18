@@ -79,8 +79,8 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
                     )
                 ]
             }
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST}) from exc
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
 
 # Node

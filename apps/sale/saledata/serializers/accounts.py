@@ -270,8 +270,8 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
         return {}
 
     @classmethod
@@ -314,8 +314,8 @@ class ContactCreateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     id=attrs
                 )
-        except Account.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'account_name': AccountsMsg.ACCOUNT_NOT_EXIST})
         return None
 
     @classmethod
@@ -392,8 +392,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
         return {}
 
     @classmethod
@@ -409,8 +409,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.report_to,
                     'fullname': owner.fullname
                 }
-        except Contact.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'report_to': AccountsMsg.CONTACT_NOT_EXIST})
         return {}
 
     @classmethod
@@ -485,8 +485,8 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     id=value
                 )
-        except Account.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST) from exc
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'account_name': AccountsMsg.ACCOUNT_NOT_EXIST})
         return None
 
     def validate_email(self, attrs):
@@ -540,8 +540,8 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        except Employee.DoesNotExist as exc:
-            raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST) from exc
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'owner': HRMsg.EMPLOYEES_NOT_EXIST})
         return {}
 
 
@@ -765,8 +765,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                     }
                 )
             return list_owner
-        except Contact.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'owner': AccountsMsg.CONTACT_NOT_EXIST})
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):

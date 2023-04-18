@@ -296,8 +296,8 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):  # noqa
                     fill__company=True,
                     id=attrs
                 )
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
         return None
 
     @classmethod
@@ -374,8 +374,8 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):  # noqa
                     fill__company=True,
                     id=attrs
                 )
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
         return None
 
     @classmethod

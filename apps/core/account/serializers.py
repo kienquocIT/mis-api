@@ -245,8 +245,8 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
                         'name': company.title,
                     }
                 )
-            except Company.DoesNotExist as exc:
-                raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST) from exc
+            except Company.DoesNotExist:
+                raise serializers.ValidationError({'companies': AccountMsg.COMPANY_NOT_EXIST})
         return companies
 
 

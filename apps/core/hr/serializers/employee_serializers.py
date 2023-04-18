@@ -22,8 +22,8 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
     def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError({'plan': BaseMsg.PLAN_NOT_EXIST})
 
     @classmethod
     def validate_application(cls, value):
@@ -51,8 +51,8 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
     def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError({'plan': BaseMsg.PLAN_NOT_EXIST})
 
     @classmethod
     def validate_application(cls, value):
@@ -343,8 +343,8 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
-        except User.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST}) from exc
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
 
     @classmethod
     def validate_group(cls, value):

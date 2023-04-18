@@ -81,10 +81,11 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
                     return user_obj
                 raise User.DoesNotExist()
             raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
-        except User.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT}) from exc
-        except Exception as exc:
-            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR}) from exc
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+        except Exception as err:
+            print(err)
+            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
