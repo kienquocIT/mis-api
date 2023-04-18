@@ -116,9 +116,9 @@ class Product(DataAbstractModel):
 # SUB-MODEL FOR PRODUCT GENERAL
 class ProductGeneral(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
-    product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
-    uom_group = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
+    product_type = models.ForeignKey(ProductType, null=True, on_delete=models.CASCADE)
+    product_category = models.ForeignKey(ProductCategory, null=True, on_delete=models.CASCADE)
+    uom_group = models.ForeignKey(UnitOfMeasureGroup, null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Product General'
@@ -130,9 +130,9 @@ class ProductGeneral(SimpleAbstractModel):
 # SUB-MODEL FOR PRODUCT SALE
 class ProductSale(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    tax_code = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE)
-    currency_using = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
+    default_uom = models.ForeignKey(UnitOfMeasure, null=True, on_delete=models.CASCADE)
+    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    currency_using = models.ForeignKey('saledata.Currency', null=True, on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Product Sale'
@@ -144,7 +144,7 @@ class ProductSale(SimpleAbstractModel):
 # SUB-MODEL FOR PRODUCT INVENTORY
 class ProductInventory(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
+    uom = models.ForeignKey(UnitOfMeasure, null=True, on_delete=models.CASCADE)
     inventory_level_min = models.IntegerField(null=True)
     inventory_level_max = models.IntegerField(null=True)
 

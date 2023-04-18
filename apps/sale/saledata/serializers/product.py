@@ -307,16 +307,20 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
     @classmethod
-    def validate(cls, validated_data):
+    def validate(cls, validate_data):
         has_referenced_unit = UnitOfMeasure.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
-            group=validated_data['group'],
+            group=validate_data['group'],
             is_referenced_unit=True
         ).exists()
-        if has_referenced_unit and validated_data.get('is_referenced_unit', None):
+        if has_referenced_unit and validate_data.get('is_referenced_unit', None):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE)
-        return validated_data
+        return validate_data
+
+    def create(self, validated_data):
+        uom = UnitOfMeasure.objects.create(**validated_data)
+        return uom
 
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
@@ -427,6 +431,10 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
 
 # Product
 class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
+    product_type = serializers.JSONField(required=True)
+    product_category = serializers.JSONField(required=True)
+    uom_group = serializers.JSONField(required=True)
+
     class Meta:
         model = ProductGeneral
         fields = ('product_type', 'product_category', 'uom_group',)
@@ -451,6 +459,10 @@ class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
 
 
 class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
+    default_uom = serializers.JSONField(required=True)
+    tax_code = serializers.JSONField(required=True)
+    currency_using = serializers.JSONField(required=True)
+
     class Meta:
         model = ProductSale
         fields = ('default_uom', 'tax_code', 'currency_using')
@@ -475,6 +487,8 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
 
 
 class ProductInventoryInformationCreateSerializer(serializers.ModelSerializer):
+    uom = serializers.JSONField(required=True)
+
     class Meta:
         model = ProductInventory
         fields = ('uom', 'inventory_level_min', 'inventory_level_max',)
