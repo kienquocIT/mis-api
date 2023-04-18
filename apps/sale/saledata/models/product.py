@@ -1,9 +1,10 @@
-from django.db import models
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
+from apps.shared import DataAbstractModel
+from . import models
+from . import MasterDataAbstractModel, SimpleAbstractModel
 
 
 # Create your models here.
-class ProductType(MasterDataAbstractModel):
+class ProductType(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
 
@@ -75,28 +76,26 @@ class Product(DataAbstractModel):
     )
 
     # {
-    #     'product_type': 'f417bdf6f4db41aea4f69fc5da4573b5',
-    #     'product_category': '7e31d31e17594a4fb06295a6c17579f3',
-    #     'uom_group': '933e642d8c584349b406942d2cc6697c',
-    #     ...
+    #     'product_type': {'id':..., 'title':..., 'code':...},
+    #     'product_category': {'id':..., 'title':..., 'code':...},
+    #     'uom_group': {'id':..., 'title':..., 'code':...},
     # }
     general_information = models.JSONField(
         default=dict,
     )
 
     # {
-    #     'default_uom': 'ac19200a6ab84a30aef14dd213ee4716',
-    #     ...
+    #     'default_uom': {'id':..., 'title':..., 'code':...},
+    #     'tax_code': {'id':..., 'title':..., 'code':...}
     # }
     sale_information = models.JSONField(
         default=dict,
     )
 
     # {
-    #     'uom': 'ac19200a6ab84a30aef14dd213ee4446',
+    #     'uom': {'id':..., 'title':..., 'code':...},
     #     'inventory_level_min': 100,
     #     'inventory_level_max': 500,
-    #     ...
     # }
     inventory_information = models.JSONField(
         default=dict,
@@ -111,5 +110,46 @@ class Product(DataAbstractModel):
         verbose_name = 'Product'
         verbose_name_plural = 'Products'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+# SUB-MODEL FOR PRODUCT GENERAL
+class ProductGeneral(SimpleAbstractModel):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_type = models.ForeignKey(ProductType, null=True, on_delete=models.CASCADE)
+    product_category = models.ForeignKey(ProductCategory, null=True, on_delete=models.CASCADE)
+    uom_group = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Product General'
+        verbose_name_plural = 'Products General'
+        default_permissions = ()
+        permissions = ()
+
+
+# SUB-MODEL FOR PRODUCT SALE
+class ProductSale(SimpleAbstractModel):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
+    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Product Sale'
+        verbose_name_plural = 'Products Sale'
+        default_permissions = ()
+        permissions = ()
+
+
+# SUB-MODEL FOR PRODUCT INVENTORY
+class ProductInventory(SimpleAbstractModel):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
+    inventory_min = models.IntegerField(null=True)
+    inventory_max = models.IntegerField(null=True)
+
+    class Meta:
+        verbose_name = 'Product Inventory'
+        verbose_name_plural = 'Products Inventory'
         default_permissions = ()
         permissions = ()

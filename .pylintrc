@@ -24,3 +24,4 @@ disable=
     W0707, # raise-missing-from
     W0237, # arguments-renamed
     R0801, # duplicate-code
+    F0002, # astroid-error

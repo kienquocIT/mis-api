@@ -1,8 +1,8 @@
-from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
-from django.db import models
+from . import models
+from . import MasterDataAbstractModel, SimpleAbstractModel
 
 
-class PaymentTerm(MasterDataAbstractModel):
+class PaymentTerm(MasterDataAbstractModel):  # noqa
     apply_for = models.IntegerField(default=0)
     remark = models.CharField(verbose_name='Descriptions', max_length=250, blank=True, null=True)
     term = models.JSONField(
