@@ -57,7 +57,7 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):
 
 
 # Product Category
-class ProductCategoryListSerializer(serializers.ModelSerializer):
+class ProductCategoryListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ProductCategory
@@ -107,7 +107,7 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):
 
 
 # Expense Type
-class ExpenseTypeListSerializer(serializers.ModelSerializer):
+class ExpenseTypeListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = ExpenseType
@@ -435,13 +435,13 @@ class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
     def validate_product_type(cls, value):
         if value:
             return {'id': str(value.id), 'title': value.title, 'code': value.code}
-        return {}
+        raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_DOES_NOT_EXIST)
 
     @classmethod
     def validate_product_category(cls, value):
         if value:
             return {'id': str(value.id), 'title': value.title, 'code': value.code}
-        return {}
+        raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_DOES_NOT_EXIST)
 
     @classmethod
     def validate_uom_group(cls, value):
@@ -465,7 +465,7 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
     def validate_tax_code(cls, value):
         if value:
             return {'id': str(value.id), 'title': value.title, 'code': value.code}
-        return {}
+        raise serializers.ValidationError(ProductMsg.TAX_DOES_NOT_EXIST)
 
     @classmethod
     def validate_currency_using(cls, value):
@@ -532,6 +532,22 @@ def common_create_update_product(validated_data, instance):
             inventory_level_min=validated_data['inventory_information'].get('inventory_level_min', None),
             inventory_level_max=validated_data['inventory_information'].get('inventory_level_max', None)
         )
+    return True
+
+
+def common_delete_product_information(validated_data, instance):
+    if 'general_information' in validated_data.keys():
+        general_information_item = ProductGeneral.objects.filter(product=instance).first()
+        if general_information_item:
+            general_information_item.delete()
+    if 'sale_information' in validated_data.keys():
+        sale_information_item = ProductSale.objects.filter(product=instance).first()
+        if sale_information_item:
+            sale_information_item.delete()
+    if 'inventory_information' in validated_data.keys():
+        inventory_information = ProductInventory.objects.filter(product=instance).first()
+        if inventory_information:
+            inventory_information.delete()
     return True
 
 
@@ -656,23 +672,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        if 'general_information' in validated_data.keys():
-            general_information_item = ProductGeneral.objects.filter(product=instance).first()
-            if general_information_item:
-                general_information_item.delete()
-        if 'sale_information' in validated_data.keys():
-            sale_information_item = ProductSale.objects.filter(product=instance).first()
-            if sale_information_item:
-                sale_information_item.delete()
-        if 'inventory_information' in validated_data.keys():
-            inventory_information = ProductInventory.objects.filter(product=instance).first()
-            if inventory_information:
-                inventory_information.delete()
-
+        common_delete_product_information(validated_data=validated_data, instance=instance)
         common_create_update_product(validated_data=validated_data, instance=instance)
 
         price_list_information = self.initial_data.get('price_list', None)
-
         if price_list_information:
             objs = []
             for item in price_list_information:
@@ -687,14 +690,17 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 ).first()
                 if product_price_list_item:
                     product_price_list_item.delete()
+                    currency_using_id = validated_data['sale_information'].get('currency_using', {}).get('id', None)
+                    default_uom_id = validated_data['sale_information'].get('default_uom', {}).get('id', None)
+                    uom_group_id = validated_data['general_information'].get('uom_group', {}).get('id', None)
                     objs.append(
                         ProductPriceList(
                             price_list_id=item.get('price_list_id', None),
                             product=instance,
                             price=float(item.get('price_value', None)),
-                            currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
-                            uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
-                            uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
+                            currency_using_id=currency_using_id,
+                            uom_using_id=default_uom_id,
+                            uom_group_using_id=uom_group_id,
                             get_price_from_source=get_price_from_source
                         )
                     )

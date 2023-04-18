@@ -116,8 +116,8 @@ class Product(DataAbstractModel):
 # SUB-MODEL FOR PRODUCT GENERAL
 class ProductGeneral(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    product_type = models.ForeignKey(ProductType, null=True, on_delete=models.CASCADE)
-    product_category = models.ForeignKey(ProductCategory, null=True, on_delete=models.CASCADE)
+    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+    product_category = models.ForeignKey(ProductCategory, on_delete=models.CASCADE)
     uom_group = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
 
     class Meta:
@@ -131,7 +131,7 @@ class ProductGeneral(SimpleAbstractModel):
 class ProductSale(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    tax_code = models.ForeignKey('saledata.Tax', on_delete=models.CASCADE)
     currency_using = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
 
     class Meta:
