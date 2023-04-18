@@ -13,7 +13,7 @@ from apps.sale.saledata.views.product import (
     ExpenseTypeList, ExpenseTypeDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
-    ProductList, ProductDetail, ProductAddFromPriceList
+    ProductList, ProductDetail,
 )
 from apps.sale.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail,
@@ -62,7 +62,6 @@ urlpatterns += [
 
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
-    path('create-product-from-price-list', ProductAddFromPriceList.as_view(), name='ProductAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]
 
