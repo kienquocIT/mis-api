@@ -306,18 +306,17 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
-    def create(self, validated_data):
-        if validated_data['is_referenced_unit']:
-            has_referenced_unit = UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                group=validated_data['group'],
-                is_referenced_unit=True
-            ).first()
-            if has_referenced_unit:
-                raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE)
-        uom = UnitOfMeasure.objects.create(**validated_data)
-        return uom
+    @classmethod
+    def validate(cls, validated_data):
+        has_referenced_unit = UnitOfMeasure.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            group=validated_data['group'],
+            is_referenced_unit=True
+        ).first()
+        if has_referenced_unit and validated_data.get('is_referenced_unit', None):
+            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_HAD_REFERENCE)
+        return validated_data
 
 
 class UnitOfMeasureDetailSerializer(serializers.ModelSerializer):  # noqa
