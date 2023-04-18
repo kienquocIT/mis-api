@@ -1,80 +1,72 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.quotation.models.quotation import Quotation
-from apps.sales.quotation.serializers.quotation import QuotationListSerializer, QuotationCreateSerializer, \
-    QuotationDetailSerializer, QuotationUpdateSerializer
+from apps.sales.opportunity.models.opportunity import Opportunity
+from apps.sales.opportunity.serializers.opportunity import OpportunityListSerializer, OpportunityUpdateSerializer, \
+    OpportunityCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class QuotationList(
+class OpportunityList(
     BaseListMixin,
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Quotation.objects.all()
+    queryset = Opportunity.objects.all()
     filterset_fields = []
-    serializer_list = QuotationListSerializer
-    serializer_create = QuotationCreateSerializer
-    serializer_detail = QuotationListSerializer
+    serializer_list = OpportunityListSerializer
+    serializer_create = OpportunityCreateSerializer
+    serializer_detail = OpportunityListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
-    # def get_queryset(self):
-    #     return super().get_queryset().select_related(
-    #         "opportunity"
-    #     )
-
     @swagger_auto_schema(
-        operation_summary="Quotation List",
-        operation_description="Get Quotation List",
+        operation_summary="Opportunity List",
+        operation_description="Get Opportunity List",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Create Quotation",
-        operation_description="Create new Quotation",
-        request_body=QuotationCreateSerializer,
+        operation_summary="Create Opportunity",
+        operation_description="Create new Opportunity",
+        request_body=OpportunityCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class QuotationDetail(
+class OpportunityDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Quotation.objects
-    serializer_detail = QuotationDetailSerializer
-    serializer_update = QuotationUpdateSerializer
+    queryset = Opportunity.objects
+    serializer_detail = OpportunityListSerializer
+    serializer_update = OpportunityUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "opportunity",
             "customer",
-            "contact",
-            "sale_person"
         )
 
     @swagger_auto_schema(
-        operation_summary="Quotation detail",
-        operation_description="Get Quotation detail by ID",
+        operation_summary="Opportunity detail",
+        operation_description="Get Opportunity detail by ID",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = QuotationDetailSerializer
+        self.serializer_class = OpportunityListSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Update Quotation",
-        operation_description="Update Quotation by ID",
-        request_body=QuotationUpdateSerializer,
+        operation_summary="Update Opportunity",
+        operation_description="Update Opportunity by ID",
+        request_body=OpportunityUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = QuotationUpdateSerializer
+        self.serializer_class = OpportunityUpdateSerializer
         return self.update(request, *args, **kwargs)

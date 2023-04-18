@@ -1,8 +1,10 @@
 from rest_framework import serializers
 
+from apps.sale.saledata.models.accounts import Account
 from apps.sales.quotation.models.quotation import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
-    QuotationCost, QuotationExpense, QuotationTermPrice, QuotationTermDiscount, QuotationLogisticShipping, \
-    QuotationLogisticBilling
+    QuotationCost, QuotationExpense
+from apps.sales.quotation.serializers.quotation_sub import QuotationCommon
+from apps.shared import AccountsMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -67,8 +69,8 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuotationLogistic
         fields = (
-            'shipping_address',
-            'billing_address',
+            'shipping_address_list',
+            'billing_address_list',
         )
 
 
@@ -117,7 +119,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuotationExpense
         fields = (
-            'product',
+            'expense',
             'unit_of_measure',
             'tax',
             # expense information
@@ -153,140 +155,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'title',
             'code'
         )
-
-
-class QuotationCommon:
-
-    @classmethod
-    def validate_product_cost(cls, dict_data):
-        product_id = None
-        unit_of_measure_id = None
-        tax_id = None
-        if 'product' in dict_data:
-            product_id = dict_data['product']
-            del dict_data['product']
-        if 'unit_of_measure' in dict_data:
-            unit_of_measure_id = dict_data['unit_of_measure']
-            del dict_data['unit_of_measure']
-        if 'tax' in dict_data:
-            tax_id = dict_data['tax']
-            del dict_data['tax']
-        return product_id, unit_of_measure_id, tax_id
-
-    @classmethod
-    def create_product(cls, validated_data, quotation):
-        for quotation_product in validated_data['quotation_products_data']:
-            product_id, unit_of_measure_id, tax_id = cls.validate_product_cost(dict_data=quotation_product)
-            QuotationProduct.objects.create(
-                quotation=quotation,
-                product_id=product_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
-                **quotation_product
-            )
-        return True
-
-    @classmethod
-    def create_term(cls, validated_data, quotation):
-        price_list = []
-        discount_list = []
-        payment_term = {}
-        if 'price_list' in validated_data['quotation_term_data']:
-            price_list = validated_data['quotation_term_data']['price_list']
-            del validated_data['quotation_term_data']['price_list']
-        if 'discount_list' in validated_data['quotation_term_data']:
-            discount_list = validated_data['quotation_term_data']['discount_list']
-            del validated_data['quotation_term_data']['discount_list']
-        if 'payment_term' in validated_data['quotation_term_data']:
-            payment_term = validated_data['quotation_term_data']['payment_term']
-            del validated_data['quotation_term_data']['payment_term']
-        quotation_term = QuotationTerm.objects.create(
-            payment_term_id=payment_term.get('id', None),
-            quotation=quotation
-        )
-        if price_list:
-            QuotationTermPrice.objects.bulk_create([
-                QuotationTermPrice(
-                    price_id=price.get('id', None),
-                    quotation_term=quotation_term
-                )
-                for price in price_list
-            ])
-        if discount_list:
-            QuotationTermDiscount.objects.bulk_create([
-                QuotationTermDiscount(
-                    discount_id=discount.get('id', None),
-                    quotation_term=quotation_term
-                )
-                for discount in discount_list
-            ])
-        return True
-
-    @classmethod
-    def create_logistic(cls, validated_data, quotation):
-        shipping_address_list = []
-        billing_address_list = []
-        if 'shipping_address_list' in validated_data['quotation_logistic_data']:
-            shipping_address_list = validated_data['quotation_logistic_data']['shipping_address_list']
-            del validated_data['quotation_logistic_data']['shipping_address_list']
-        if 'billing_address_list' in validated_data['quotation_logistic_data']:
-            billing_address_list = validated_data['quotation_logistic_data']['billing_address_list']
-            del validated_data['quotation_logistic_data']['billing_address_list']
-        quotation_logistic = QuotationLogistic.objects.create(quotation=quotation)
-        if shipping_address_list:
-            QuotationLogisticShipping.objects.bulk_create([
-                QuotationLogisticShipping(
-                    shipping_address_id=shipping_address.get('id', None),
-                    quotation_logistic=quotation_logistic
-                )
-                for shipping_address in shipping_address_list
-            ])
-        if billing_address_list:
-            QuotationLogisticBilling.objects.bulk_create([
-                QuotationLogisticBilling(
-                    billing_address_id=billing_address.get('id', None),
-                    quotation_logistic=quotation_logistic
-                )
-                for billing_address in billing_address_list
-            ])
-        return True
-
-    @classmethod
-    def create_cost(cls, validated_data, quotation):
-        for quotation_cost in validated_data['quotation_costs_data']:
-            product_id, unit_of_measure_id, tax_id = cls.validate_product_cost(dict_data=quotation_cost)
-            QuotationCost.objects.create(
-                quotation=quotation,
-                product_id=product_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
-                **quotation_cost
-            )
-        return True
-
-    @classmethod
-    def create_expense(cls, validated_data, quotation):
-        for quotation_expense in validated_data['quotation_expenses_data']:
-            expense_id = None
-            unit_of_measure_id = None
-            tax_id = None
-            if 'expense' in quotation_expense:
-                expense_id = quotation_expense['expense']
-                del quotation_expense['expense']
-            if 'unit_of_measure' in quotation_expense:
-                unit_of_measure_id = quotation_expense['unit_of_measure']
-                del quotation_expense['unit_of_measure']
-            if 'tax' in quotation_expense:
-                tax_id = quotation_expense['tax']
-                del quotation_expense['tax']
-            QuotationExpense.objects.create(
-                quotation=quotation,
-                expense_id=expense_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
-                **quotation_expense
-            )
-        return True
 
 
 # Quotation
@@ -340,33 +208,23 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'quotation_expenses_data'
         )
 
+    @classmethod
+    def validate_customer(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
-        if 'quotation_products_data' in validated_data:
-            QuotationCommon().create_product(
-                validated_data=validated_data,
-                quotation=quotation
-            )
-        if 'quotation_term_data' in validated_data:
-            QuotationCommon().create_term(
-                validated_data=validated_data,
-                quotation=quotation
-            )
-        if 'quotation_logistic_data' in validated_data:
-            QuotationCommon().create_logistic(
-                validated_data=validated_data,
-                quotation=quotation
-            )
-        if 'quotation_costs_data' in validated_data:
-            QuotationCommon().create_cost(
-                validated_data=validated_data,
-                quotation=quotation
-            )
-        if 'quotation_expenses_data' in validated_data:
-            QuotationCommon().create_expense(
-                validated_data=validated_data,
-                quotation=quotation
-            )
+        QuotationCommon().create_quotation_sub_models(
+            validated_data=validated_data,
+            instance=quotation
+        )
         return quotation
 
 
@@ -423,35 +281,25 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'quotation_expenses_data'
         )
 
+    @classmethod
+    def validate_customer(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         # delete all data
 
-        if 'quotation_products_data' in validated_data:
-            QuotationCommon().create_product(
-                validated_data=validated_data,
-                quotation=instance
-            )
-        if 'quotation_term_data' in validated_data:
-            QuotationCommon().create_term(
-                validated_data=validated_data,
-                quotation=instance
-            )
-        if 'quotation_logistic_data' in validated_data:
-            QuotationCommon().create_logistic(
-                validated_data=validated_data,
-                quotation=instance
-            )
-        if 'quotation_costs_data' in validated_data:
-            QuotationCommon().create_cost(
-                validated_data=validated_data,
-                quotation=instance
-            )
-        if 'quotation_expenses_data' in validated_data:
-            QuotationCommon().create_expense(
-                validated_data=validated_data,
-                quotation=instance
-            )
+        QuotationCommon().create_quotation_sub_models(
+            validated_data=validated_data,
+            instance=instance
+        )
         return instance
