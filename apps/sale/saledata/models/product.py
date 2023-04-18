@@ -133,6 +133,7 @@ class ProductSale(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     default_uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
     tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    currency_using = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Product Sale'
@@ -145,8 +146,8 @@ class ProductSale(SimpleAbstractModel):
 class ProductInventory(SimpleAbstractModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     uom = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    inventory_min = models.IntegerField(null=True)
-    inventory_max = models.IntegerField(null=True)
+    inventory_level_min = models.IntegerField(null=True)
+    inventory_level_max = models.IntegerField(null=True)
 
     class Meta:
         verbose_name = 'Product Inventory'
