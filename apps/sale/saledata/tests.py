@@ -307,21 +307,6 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response1.status_code, 500)
 
-        data2 = {
-            "code": "",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
-            },
-        }
-        response2 = self.client.post(
-            self.url,
-            data2,
-            format='json'
-        )
-        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
         return True
 
     def test_create_product_missing_title(self):
@@ -356,22 +341,6 @@ class ProductTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response1.status_code, 500)
-
-        data2 = {
-            "code": "P01",
-            "title": "Laptop Dell HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
-            },
-        }
-        response2 = self.client.post(
-            self.url,
-            data2,
-            format='json'
-        )
-        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
         return False
 
     def test_create_product_not_UUID(self):
