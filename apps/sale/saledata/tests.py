@@ -298,10 +298,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
+            }
         }
         response1 = self.client.post(
             self.url,
@@ -318,9 +315,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
@@ -355,9 +349,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response1 = self.client.post(
             self.url,
@@ -374,9 +365,6 @@ class ProductTestCase(AdvanceTestCase):
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
             },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
