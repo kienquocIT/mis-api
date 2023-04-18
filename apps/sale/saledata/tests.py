@@ -298,7 +298,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
                 'uom_group': uom_group['id']
-            }
+            },
         }
         response1 = self.client.post(
             self.url,
@@ -345,21 +345,9 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-                'product_type': {
-                    'id': product_type['id'],
-                    'title': product_type['title'],
-                    'code': "",
-                },
-                'product_category': {
-                    'id': product_category['id'],
-                    'title': product_category['title'],
-                    'code': "",
-                },
-                'uom_group': {
-                    'id': uom_group['id'],
-                    'title': uom_group['title'],
-                    'code': "",
-                },
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
         }
         response1 = self.client.post(
@@ -373,19 +361,9 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
-                'product_type': {
-                    'id': product_type['id'],
-                    'title': product_type['title'],
-                    'code': "",
-                },
-                'product_category': {
-                    'id': product_category['id'],
-                    'title': product_category['title'],
-                },
-                'uom_group': {
-                    'id': uom_group['id'],
-                    'title': uom_group['title'],
-                },
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
             },
         }
         response2 = self.client.post(
