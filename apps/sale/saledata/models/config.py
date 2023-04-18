@@ -1,5 +1,5 @@
-from . import models
-from . import MasterDataAbstractModel, SimpleAbstractModel
+from . import models  # pylint: disable=C0413
+from . import MasterDataAbstractModel, SimpleAbstractModel  # pylint: disable=C0413
 
 
 class PaymentTerm(MasterDataAbstractModel):  # noqa
