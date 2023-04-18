@@ -545,6 +545,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'general_information',
+            'sale_information'
         )
 
 

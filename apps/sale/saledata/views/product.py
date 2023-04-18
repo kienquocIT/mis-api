@@ -1,4 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.sale.saledata.models.price import ProductPriceList
+from apps.sale.saledata.views.price import PriceList
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
