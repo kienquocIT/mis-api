@@ -1,5 +1,5 @@
-from . import models  # pylint: disable=C0413
-from . import MasterDataAbstractModel, SimpleAbstractModel  # pylint: disable=C0413
+from django.db import models
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 
 class PaymentTerm(MasterDataAbstractModel):  # noqa
