@@ -50,7 +50,7 @@ def mask_view(**parent_kwargs):
         parent_kwargs = {}
 
     def decorated(func_view):
-        def wrapper(self, request, *args, **kwargs):  # pylint: disable=R0911
+        def wrapper(self, request, *args, **kwargs):  # pylint: disable=R0911,R0912
             # check pk in url is UUID
             if 'pk' in self.kwargs and not TypeCheck.check_uuid(self.kwargs['pk']):
                 return ResponseController.notfound_404()
