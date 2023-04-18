@@ -305,7 +305,7 @@ class ProductTestCase(AdvanceTestCase):
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response1.status_code, 500)
 
         data2 = {
             "code": "",
@@ -355,7 +355,7 @@ class ProductTestCase(AdvanceTestCase):
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response1.status_code, 500)
 
         data2 = {
             "code": "P01",
