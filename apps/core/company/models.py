@@ -60,6 +60,13 @@ class Company(CoreAbstractModel):
         else:
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
+    @classmethod
+    def refresh_total_user(cls, ids):
+        for obj in cls.objects.filter(id__in=ids):
+            obj.total_user = CompanyUserEmployee.objects.filter(company_id=obj.id, user__isnull=False).count()
+            obj.save(update_fields=['total_user'])
+        return True
+
 
 class CompanyLicenseTracking(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
@@ -103,8 +110,18 @@ class CompanyUserEmployee(SimpleAbstractModel):
         Step 2: Goi Case 3 voi user moi
     """
     company = models.ForeignKey(Company, on_delete=models.CASCADE)
-    user = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True)
-    employee = models.ForeignKey('hr.Employee', on_delete=models.SET_NULL, null=True)
+    user = models.ForeignKey(
+        'account.User',
+        on_delete=models.SET_NULL,
+        related_name='company_user_employee_set_user',
+        null=True
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.SET_NULL,
+        related_name='company_user_employee_set_employee',
+        null=True
+    )
     is_created_company = models.BooleanField(verbose_name='company user created', default=False)
 
     class Meta:
@@ -135,7 +152,9 @@ class CompanyUserEmployee(SimpleAbstractModel):
         )
 
     @classmethod
-    def create_new(cls, company_id, employee_id=None, user_id=None) -> models.Model or Exception:
+    def create_new(
+            cls, company_id, employee_id=None, user_id=None, is_created_company=True
+    ) -> models.Model or Exception:
         # must be employee_id and user_id : one arg have data, remaining arg is None
         if company_id:
             if (employee_id and user_id) or (not employee_id and not user_id):
@@ -156,7 +175,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
                     return cls.check_obj_map(user_map, 'user')
                 return cls.objects.create(
                     company_id=company_id, employee_id=None, user_id=user_id,
-                    is_created_company=True,
+                    is_created_company=is_created_company,
                 )
         raise AttributeError('[CompanyUserEmployee.create_new] Company ID must be required.')
 
@@ -197,6 +216,26 @@ class CompanyUserEmployee(SimpleAbstractModel):
         raise RuntimeError(
             '[CompanyUserEmployee.assign_map] Data argument check is incorrect so assign returned failure.'
         )
+
+    @classmethod
+    def remove_company_from_user(cls, user_id, company_ids):
+        for obj in cls.objects.filter(company_id__in=company_ids, user_id=user_id):
+            if obj.employee_id:
+                employee_id = obj.employee_id
+                obj.employee.user = None
+                obj.employee.save(update_fields=['user'])
+                obj.delete()
+                cls.create_new(obj.company_id, employee_id, user_id=None, is_created_company=False)
+            else:
+                obj.delete()
+        return True
+
+    @classmethod
+    def add_company_to_user(cls, user_id, company_ids):
+        for _id in company_ids:
+            if not cls.objects.filter(company_id=_id, user_id=user_id).exists():
+                cls.create_new(_id, None, user_id=user_id, is_created_company=False)
+        return True
 
     @classmethod
     def all_user_of_company(cls, company_id: Union[UUID, str]):

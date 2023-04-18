@@ -97,6 +97,6 @@ class TestCaseProvisioning(AdvanceTestCase):
             type_match={'result': list, 'status': int},
         )
         self.assertCountEqual(
-            [{'title': 'Cong Ty TNHH MiS', 'code': 'MiS'}],
+            [{'title': 'Cong Ty TNHH MiS', 'code': 'mis'}],
             response_data['result']
         )

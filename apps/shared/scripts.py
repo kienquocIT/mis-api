@@ -3,6 +3,8 @@ from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicens
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.sale.saledata.models.product import ProductType
+from apps.sale.saledata.models.price import TaxCategory, Currency, Price
+from apps.sale.saledata.models.accounts import Contact
 
 from .extends.signals import SaleDefaultData
 
@@ -135,3 +137,43 @@ def update_sale_default_data_old_company():
 def delete_all_product_type():
     for product_type_obj in ProductType.objects.all():
         product_type_obj.delete()
+
+
+def delete_all_tax_category():
+    for tax_category_obj in TaxCategory.objects.all():
+        tax_category_obj.delete()
+
+
+def delete_all_currency():
+    for currency_obj in Currency.objects.all():
+        currency_obj.delete()
+
+
+def delete_all_price():
+    for price_obj in Price.objects.all():
+        price_obj.delete()
+
+
+def delete_wrong_contact():
+    try:
+        obj = Contact.objects.get(id='44dfcf1c06924e348819df692a11206a')
+        obj.delete()
+    except Contact.DoesNotExist:
+        pass
+
+
+def delete_data_old():
+    delete_wrong_contact()
+    delete_all_product_type()
+    delete_all_tax_category()
+    delete_all_currency()
+    delete_all_price()
+
+
+def update_is_super_user():
+    users = User.objects.all()
+    for user in users:
+        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
+            user.save(is_superuser=True)
+    print('update done.')
+    return True

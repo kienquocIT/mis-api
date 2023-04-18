@@ -1,7 +1,6 @@
 from django.urls import reverse
 from rest_framework import status
 
-from rest_framework.test import APITestCase
 from apps.core.auths.tests import TestCaseAuth
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
@@ -289,12 +288,20 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-
+        product_type = self.create_product_type()
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            }
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {}
         }
         response1 = self.client.post(
             self.url,
@@ -307,7 +314,13 @@ class ProductTestCase(AdvanceTestCase):
             "code": "",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            }
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
@@ -331,11 +344,20 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
+        product_type = self.create_product_type()
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
             "general_information": {
-            }
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {}
         }
         response1 = self.client.post(
             self.url,
@@ -348,7 +370,13 @@ class ProductTestCase(AdvanceTestCase):
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
             "general_information": {
-            }
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {}
         }
         response2 = self.client.post(
             self.url,
@@ -393,7 +421,10 @@ class ProductTestCase(AdvanceTestCase):
                 'product_type': '1',
                 'product_category': '1',
                 'uom_group': '1'
-            }
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {},
         }
         response1 = self.client.post(
             self.url,
@@ -402,3 +433,202 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
         return False
+
+
+class SalutationTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+        # create industry
+
+    def test_create_new(self):
+        data = {
+            "code": "S01",
+            "title": "Mr",
+            "description": "A man"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_duplicate_code(self):
+        data1 = {  # noqa
+            "code": "S01",
+            "title": "Mr",
+            "description": "A man"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data1, format='json')
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+
+        data2 = {  # noqa
+            "code": "S01",
+            "title": "Miss",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, 400)
+        return True
+
+    def test_missing_data(self):
+        data = {  # noqa
+            "code": "S01",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {  # noqa
+            "code": "S01",
+            "title": "Mr"
+        }
+        url = reverse('SalutationList')
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, 201)
+
+        data2 = {  # noqa
+            "title": "Miss",
+            "description": "A Human"
+        }
+        url = reverse('SalutationList')
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, 201)
+        return True
+
+    def test_get_salutation(self):
+        salutation = self.test_create_new()
+        url = reverse('SalutationList')
+        url_detail = reverse('SalutationDetail', args=[salutation.data['result']['id']])
+
+        response = self.client.get(url)
+        response_detail = self.client.get(url_detail)
+        self.assertEqual(response.status_code, 200)
+        self.assertCountEqual(
+            ['id', 'title', 'code', 'description'],
+            list(response_detail.data['result'].keys()),
+            check_sum_second=False,
+        )
+        return True
+
+
+class UoMTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+
+    def test_create_new_uom_group(self):
+        data = {
+            "title": "Unit"
+        }
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'title'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_new_uom(self):
+        uom_group = self.test_create_new_uom_group()
+        data = {
+            "code": "U01",
+            "title": "Unit",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(url, data, format='json')
+        self.assertCountEqual(
+            ['id', 'code', 'title', 'group', 'ratio', 'rounding'],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
+
+
+class ConfigPaymentTermTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        login_data = TestCaseAuth.test_login(self)
+        self.authenticated(login_data)
+
+    def test_create_config_payment_term(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD',
+                    "unit_type": 1,
+                    "day_type": 1,
+                    "no_of_days": "1",
+                    "after": 1
+                }
+            ],
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_missing_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_create_empty_data(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            "term": []
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        return response
+
+    def test_get_list(self):
+        self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )

@@ -19,7 +19,7 @@ class TestCaseAuth(AdvanceTestCase):
         )
         url = reverse('AuthLogin')
         data = {
-            'tenant_code': new_tenant['code'],
+            'tenant_code': new_tenant['code'].lower(),
             'username': 'queptl',
             'password': 'queptl@1234',
         }
