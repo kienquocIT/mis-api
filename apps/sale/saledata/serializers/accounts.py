@@ -304,9 +304,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_account_name(cls, attrs):
         if attrs is not None:
-            account = Account.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            account = Account.objects.filter(
                 id=attrs
             ).first()
             if account:
@@ -390,9 +388,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_report_to(cls, obj):
         if obj.report_to:
-            owner = Contact.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            owner = Contact.objects.filter(
                 id=obj.report_to
             ).first()
             if owner:
@@ -468,9 +464,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_account_name(cls, value):
         if value is not None:
-            account = Account.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            account = Account.objects.filter(
                 id=value
             ).first()
             if account:
@@ -628,9 +622,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         account_types = []
         for item in validate_data.get('account_type', None):
-            account_type = AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            account_type = AccountType.objects.filter(
                 id=item
             ).first()
             if account_type:
