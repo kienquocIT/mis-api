@@ -450,9 +450,6 @@ class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
             return {'id': str(value.id), 'title': value.title, 'code': value.code}
         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST)
 
-    def validate(self, validated_data):
-        return validated_data
-
 
 class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -476,9 +473,6 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
         if value:
             return {'id': str(value.id), 'title': value.title, 'code': value.code, 'abbreviation': value.abbreviation}
         raise serializers.ValidationError(ProductMsg.CURRENCY_DOES_NOT_EXIST)
-
-    def validate(self, validated_data):
-        return validated_data
 
 
 class ProductInventoryInformationCreateSerializer(serializers.ModelSerializer):
