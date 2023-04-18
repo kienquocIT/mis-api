@@ -260,9 +260,7 @@ class ContactListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            owner = Employee.objects.filter(
                 id=obj.owner
             ).first()
             if owner:
@@ -379,9 +377,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            owner = Employee.objects.filter(
                 id=obj.owner
             ).first()
             if owner:
@@ -522,9 +518,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
+            owner = Employee.objects.filter(
                 id=obj.owner
             ).first()
             if owner:
@@ -759,8 +753,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                     }
                 )
             return list_owner
-        except Contact.DoesNotExist as exc:
-            raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST) from exc
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'owner': AccountsMsg.CONTACT_NOT_EXIST})
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
