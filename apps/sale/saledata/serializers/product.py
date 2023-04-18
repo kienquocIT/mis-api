@@ -3,8 +3,8 @@ from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
     ProductGeneral, ProductSale, ProductInventory
 )
-from apps.sale.saledata.models.price import ProductPriceList, Tax, Currency
-from apps.shared import ProductMsg, PriceMsg
+from apps.sale.saledata.models.price import ProductPriceList
+from apps.shared import ProductMsg
 
 
 # Product Type
