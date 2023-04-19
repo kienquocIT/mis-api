@@ -54,13 +54,37 @@ class Quotation(DataAbstractModel):
         default=list,
         help_text="read data expense, use for get list or detail quotation"
     )
-    total_pretax_revenue = models.FloatField(
+    # total amount of products
+    total_product_pretax_revenue = models.FloatField(
         default=0
     )
-    total_tax = models.FloatField(
+    total_product_discount = models.FloatField(
         default=0
     )
-    total = models.FloatField(
+    total_product_tax = models.FloatField(
+        default=0
+    )
+    total_product = models.FloatField(
+        default=0
+    )
+    # total amount of costs
+    total_cost_pretax_revenue = models.FloatField(
+        default=0
+    )
+    total_cost_tax = models.FloatField(
+        default=0
+    )
+    total_cost = models.FloatField(
+        default=0
+    )
+    # total amount of expenses
+    total_expense_pretax_revenue = models.FloatField(
+        default=0
+    )
+    total_expense_tax = models.FloatField(
+        default=0
+    )
+    total_expense = models.FloatField(
         default=0
     )
     is_customer_confirm = models.BooleanField(
@@ -137,12 +161,21 @@ class QuotationProduct(SimpleAbstractModel):
     product_unit_price = models.FloatField(
         default=0
     )
+    product_discount_value = models.FloatField(
+        default=0
+    )
+    product_discount_amount = models.FloatField(
+        default=0
+    )
     product_tax_title = models.CharField(
         max_length=100,
         blank=True,
         null=True
     )
     product_tax_value = models.FloatField(
+        default=0
+    )
+    product_tax_amount = models.FloatField(
         default=0
     )
     product_subtotal_price = models.FloatField(
