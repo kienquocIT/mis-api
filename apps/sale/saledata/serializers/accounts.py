@@ -396,7 +396,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.report_to,
                     'fullname': owner.fullname
                 }
-        raise serializers.ValidationError({"report_to": AccountsMsg.CONTACT_NOT_EXIST})
+        return {}
 
     @classmethod
     def get_additional_information(cls, obj):
