@@ -3,7 +3,7 @@ from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
     ProductGeneral, ProductSale, ProductInventory
 )
-from apps.sale.saledata.models.price import ProductPriceList
+from apps.sale.saledata.models.price import ProductPriceList, Tax, Currency
 from apps.shared import ProductMsg
 
 
@@ -440,19 +440,25 @@ class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_product_type(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            product_type = ProductType.objects.filter(id=value).first()
+            if product_type:
+                return {'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code}
         raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_DOES_NOT_EXIST)
 
     @classmethod
     def validate_product_category(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            product_category = ProductCategory.objects.filter(id=value).first()
+            if product_category:
+                return {'id': str(product_category.id), 'title': product_category.title, 'code': product_category.code}
         raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_DOES_NOT_EXIST)
 
     @classmethod
     def validate_uom_group(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            uom_group = UnitOfMeasureGroup.objects.filter(id=value).first()
+            if uom_group:
+                return {'id': str(uom_group.id), 'title': uom_group.title, 'code': uom_group.code}
         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST)
 
 
@@ -468,19 +474,30 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_default_uom(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            default_uom = UnitOfMeasure.objects.filter(id=value).first()
+            if default_uom:
+                return {'id': str(default_uom.id), 'title': default_uom.title, 'code': default_uom.code}
         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
 
     @classmethod
     def validate_tax_code(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            tax_code = Tax.objects.filter(id=value).first()
+            if tax_code:
+                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code}
         raise serializers.ValidationError(ProductMsg.TAX_DOES_NOT_EXIST)
 
     @classmethod
     def validate_currency_using(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code, 'abbreviation': value.abbreviation}
+            currency_using = Currency.objects.filter(id=value).first()
+            if currency_using:
+                return {
+                    'id': str(currency_using.id),
+                    'title': currency_using.title,
+                    'code': currency_using.code,
+                    'abbreviation': currency_using.abbreviation
+                }
         raise serializers.ValidationError(ProductMsg.CURRENCY_DOES_NOT_EXIST)
 
 
@@ -494,7 +511,9 @@ class ProductInventoryInformationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_uom(cls, value):
         if value:
-            return {'id': str(value.id), 'title': value.title, 'code': value.code}
+            uom = UnitOfMeasure.objects.filter(id=value).first()
+            if uom:
+                return {'id': str(uom.id), 'title': uom.title, 'code': uom.code}
         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
 
     @classmethod
@@ -596,9 +615,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if Product.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
+            fill__tenant=True,
+            fill__company=True,
+            code=value
         ).exists():
             raise serializers.ValidationError(ProductMsg.CODE_EXIST)
         return value
