@@ -542,7 +542,7 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
 class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Product
+        model = Price
         fields = ()
 
     def update(self, instance, validated_data):
@@ -571,4 +571,25 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
                     )
         if len(objs) > 0:
             ProductPriceList.objects.bulk_create(objs)
+        return instance
+
+
+class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
+    currency_id = serializers.CharField()
+    class Meta:  # noqa
+        model = Price
+        fields = (
+            'currency_id',
+        )
+
+    @classmethod
+    def validate_currency_id(cls, value):
+        if value is None:
+            raise serializers.ValidationError(PriceMsg.CURRENCY_IS_NOT_NULL)
+        return value
+
+    def update(self, instance, validated_data):
+        ProductPriceList.objects.filter(
+            price_list_id=instance.id, currency_using_id=validated_data['currency_id']
+        ).delete()
         return instance
