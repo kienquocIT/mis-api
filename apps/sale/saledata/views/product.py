@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.sale.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product
@@ -17,7 +18,7 @@ from apps.sale.saledata.serializers.product import (
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
 
-    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer
+    ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
 )
 
 

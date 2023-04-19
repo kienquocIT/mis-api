@@ -3,9 +3,15 @@ from django.utils.translation import gettext_lazy as _
 
 class ProductMsg:
     PRODUCT_TYPE_EXIST = _('Product type is already exist.')
+    PRODUCT_TYPE_DOES_NOT_EXIST = _('Product type does not exist.')
+    PRODUCT_DOES_NOT_EXIST = _('Product does not exist.')
     PRODUCT_CATEGORY_EXIST = _('Product category is already exist.')
+    PRODUCT_CATEGORY_DOES_NOT_EXIST = _('Product category does not exist.')
+    CURRENCY_DOES_NOT_EXIST = _('Currency does not exist.')
+    TAX_DOES_NOT_EXIST = _('Tax does not exist.')
     EXPENSE_TYPE_EXIST = _('Expense type is already exist.')
     UNIT_OF_MEASURE_GROUP_EXIST = _('Unit of measure group is already exist.')
+    UNIT_OF_MEASURE_GROUP_HAD_REFERENCE = _('Unit of measure group had reference unit.')
     UNIT_OF_MEASURE_GROUP_NOT_EXIST = _('Unit of measure group does not exist.')
     UNIT_OF_MEASURE_EXIST = _('Unit of measure is already exist.')
     UNIT_OF_MEASURE_NOT_EXIST = _('Unit of measure does not exist.')
@@ -20,3 +26,4 @@ class ProductMsg:
     PURCHASE_INFORMATION_MISSING = _('Purchase information is missing field(s).')
     WRONG_COMPARE = _('"Inventory Level Min" must be <= "Inventory Level Max".')
     NEGATIVE_VALUE = _('"Inventory Level Min" and "Inventory Level Max" must be > 0.')
+    UOM_MISSING_REFERENCED_UNIT = _('Unit of Measure is missing referenced unit.')

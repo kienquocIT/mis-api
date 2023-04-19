@@ -1,5 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price
 )
@@ -9,7 +10,7 @@ from apps.sale.saledata.serializers.price import (
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
     CurrencySyncWithVCBSerializer,
     PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer,
-    PriceListUpdateProductsSerializer, PriceListDeleteProductsSerializer
+    PriceListUpdateProductsSerializer, PriceListDeleteProductsSerializer, ProductCreateInPriceListSerializer
 )
 
 
@@ -249,4 +250,22 @@ class DeleteProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = PriceListDeleteProductsSerializer
+        return self.update(request, *args, **kwargs)
+
+
+class ProductAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = Price.objects
+    serializer_list = PriceListSerializer
+    serializer_detail = PriceDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Create Product from Price List",
+        operation_description="Create new Product from Price List",
+        request_body=ProductCreateInPriceListSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = ProductCreateInPriceListSerializer
         return self.update(request, *args, **kwargs)

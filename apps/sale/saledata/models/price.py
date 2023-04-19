@@ -1,11 +1,11 @@
 from django.db import models
-from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
-from apps.sale.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from django.utils import timezone
+from apps.sale.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 
 # Create your models here.
-class TaxCategory(MasterDataAbstractModel):
+class TaxCategory(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
 

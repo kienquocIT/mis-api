@@ -3,7 +3,7 @@ from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstra
 
 
 # Create your models here.
-class Salutation(MasterDataAbstractModel):
+class Salutation(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
 
     class Meta:

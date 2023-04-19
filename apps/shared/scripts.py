@@ -2,7 +2,7 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
-from apps.sale.saledata.models.product import ProductType
+from apps.sale.saledata.models.product import ProductType, Product
 from apps.sale.saledata.models.price import TaxCategory, Currency, Price
 from apps.sale.saledata.models.accounts import Contact
 
@@ -154,6 +154,11 @@ def delete_all_price():
         price_obj.delete()
 
 
+def delete_all_product():
+    for product_obj in Product.objects.all():
+        product_obj.delete()
+
+
 def delete_wrong_contact():
     try:
         obj = Contact.objects.get(id='44dfcf1c06924e348819df692a11206a')
@@ -168,6 +173,7 @@ def delete_data_old():
     delete_all_tax_category()
     delete_all_currency()
     delete_all_price()
+    delete_all_product()
 
 
 def update_is_super_user():
