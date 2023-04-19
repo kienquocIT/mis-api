@@ -580,8 +580,8 @@ class WorkflowCreateSerializer(serializers.ModelSerializer):
     def validate_application(cls, value):
         try:
             return Application.objects.get(id=value)
-        except Application.DoesNotExist as exc:
-            raise serializers.ValidationError("Application does not exist.") from exc
+        except Application.DoesNotExist:
+            raise serializers.ValidationError({'application': "Application does not exist."})
 
     def create(self, validated_data):
         """
@@ -668,8 +668,8 @@ class WorkflowUpdateSerializer(serializers.ModelSerializer):
     def validate_application(cls, value):
         try:
             return Application.objects.get(id=value)
-        except Application.DoesNotExist as exc:
-            raise serializers.ValidationError("Application does not exist.") from exc
+        except Application.DoesNotExist:
+            raise serializers.ValidationError({'application': "Application does not exist."})
 
     def update(self, instance, validated_data):
         """

@@ -28,7 +28,7 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
+            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
         return value
 
 
@@ -52,7 +52,7 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_EXIST)
+            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
         return value
 
 
@@ -78,7 +78,7 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
+            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
         return value
 
 
@@ -102,7 +102,7 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_EXIST)
+            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
         return value
 
 
@@ -296,8 +296,8 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     id=attrs
                 )
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
         return None
 
     @classmethod
@@ -389,8 +389,8 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     id=attrs
                 )
-        except UnitOfMeasureGroup.DoesNotExist as exc:
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST) from exc
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'group': ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST})
         return None
 
     @classmethod

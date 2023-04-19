@@ -30,8 +30,8 @@ class HRDestroyMixin(BaseDestroyMixin):
                 instance.is_delete = True
                 instance.save()
             return True
-        except Exception as exc:
-            print(exc)
+        except Exception as err:
+            print(err)
         return False
 
 
@@ -62,6 +62,6 @@ class RoleDestroyMixin(BaseDestroyMixin):
                 instance.is_delete = True
                 instance.save()
             return True
-        except Exception as exc:
-            print(exc)
+        except Exception as err:
+            print(err)
         return False

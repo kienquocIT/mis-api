@@ -35,7 +35,7 @@ class SignalRegisterMetaClass(models.base.ModelBase, type):
         ):
             # don't clean cache when update last_login
             Caching().clean_by_prefix(table_name=table_name)
-            if settings.DEBUG:
+            if getattr(settings, 'DEBUG_SIGNAL_CHANGE', False):
                 print(f'Receive signal: {table_name}, ', kwargs)
 
     def __init__(cls, name, bases, attrs):

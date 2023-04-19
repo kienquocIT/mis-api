@@ -64,7 +64,7 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
         username_slugify = slugify(username)
         if username_slugify == username:
             return username_slugify
-        raise serializers.ValidationError(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
+        raise serializers.ValidationError({"username": AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
 
     @classmethod
     def validate_password(cls, attrs):
@@ -81,10 +81,11 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
                     return user_obj
                 raise User.DoesNotExist()
             raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
-        except User.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT}) from exc
-        except Exception as exc:
-            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR}) from exc
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'detail': AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
+        except Exception as err:
+            print(err)
+            raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
@@ -98,7 +99,7 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
                 return company_obj
             except Company.DoesNotExist:
                 pass
-        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
+        raise serializers.ValidationError({"company": AccountMsg.COMPANY_NOT_EXIST})
 
     def validate(self, attrs):
         user_obj = get_current_user()
@@ -111,4 +112,4 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
                 return attrs
             except CompanyUserEmployee.DoesNotExist:
                 pass
-        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
+        raise serializers.ValidationError({"detail": AccountMsg.COMPANY_NOT_EXIST})

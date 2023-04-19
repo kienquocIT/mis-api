@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from apps.core.auths.tests import TestCaseAuth
+from apps.sale.saledata.models.config import PaymentTerm
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
 
@@ -665,6 +666,45 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
         )
+
+    def test_get_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result'].get('id', '')])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, res.data['result'].get('id', ''), None, response.status_code)
+        self.assertContains(response, res.data['result'].get('title', ''), None, response.status_code)
+
+    def test_update_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result'].get('id', '')])
+        data = {
+            'id': res.data['result'].get('id', ''),
+            'title': 'config payment term 01 edited',
+            'apply_for': 0,
+            'remark': 'lorem ipsum dolor sit amet...',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD edited',
+                    "unit_type": 0,
+                    "day_type": 0,
+                    "no_of_days": "15",
+                    "after": 3
+                }
+            ],
+        }
+        self.client.put(url, data, format='json')
+        response = self.client.get(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.data['result'], data)
+
+    def test_delete_detail(self):
+        res = self.test_create_config_payment_term()
+        url = reverse('ConfigPaymentTermDetail', args=[res.data['result']['id']])
+
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(PaymentTerm.objects.filter(pk=res.data['result']['id']).exists())
 
 
 class CurrencyTestCase(AdvanceTestCase):

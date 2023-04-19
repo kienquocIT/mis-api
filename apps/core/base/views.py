@@ -4,11 +4,15 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
-from apps.core.base.models import SubscriptionPlan, Application, ApplicationProperty, PermissionApplication
+from apps.core.base.models import (
+    SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
+    Country, City, District, Ward,
+)
 
 from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
+    CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer,
 )
 
 
@@ -143,3 +147,61 @@ class PermissionApplicationList(generics.GenericAPIView):
         queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
+
+
+# Viet Nam data
+class CountryList(BaseListMixin):
+    queryset = Country.objects
+    search_fields = ['title', 'code_2', 'code_3']
+    use_cache_queryset = True
+    serializer_list = CountryListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class CityList(BaseListMixin):
+    queryset = City.objects
+    search_fields = ('title',)
+    filterset_fields = {
+        "country_id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = CityListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class DistrictList(BaseListMixin):
+    queryset = District.objects
+    search_fields = ('title',)
+    filterset_fields = {
+        "city_id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = DistrictListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WardList(BaseListMixin):
+    queryset = Ward.objects
+    search_fields = ('title',)
+    filterset_fields = {
+        "district_id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = WardListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

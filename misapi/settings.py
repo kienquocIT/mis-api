@@ -226,6 +226,7 @@ REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M:%S',
     'DATE_FORMAT': '%Y-%m-%d',
 }
+CUSTOM_PAGE_MAXIMUM_SIZE = 1500
 
 AUTH_USER_MODEL = 'account.User'
 

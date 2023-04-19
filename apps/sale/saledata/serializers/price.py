@@ -28,7 +28,7 @@ class TaxCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+            raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
 
@@ -52,7 +52,7 @@ class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+            raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
 
@@ -89,7 +89,7 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 code=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
         return value
 
 
@@ -130,7 +130,7 @@ class CurrencyCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 abbreviation=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.ABBREVIATION_EXIST)
+            raise serializers.ValidationError({"abbreviation": PriceMsg.ABBREVIATION_EXIST})
         return value
 
     @classmethod
