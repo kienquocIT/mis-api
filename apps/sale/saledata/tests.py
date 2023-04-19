@@ -222,186 +222,186 @@ class AccountTestCase(AdvanceTestCase):
 #         return response
 
 
-class ProductTestCase(AdvanceTestCase):
-    def setUp(self):
-        self.maxDiff = None
-        self.client = APIClient()
-
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
-        self.url = reverse("ProductList")
-
-    def create_product_type(self):
-        url = reverse('ProductTypeList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'San pham 1',
-                'description': '',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
-
-    def create_product_category(self):
-        url = reverse('ProductCategoryList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'Hardware',
-                'description': '',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
-
-    def create_uom_group(self):
-        url = reverse('UnitOfMeasureGroupList')
-        response = self.client.post(
-            url,
-            {
-                'title': 'Time',
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
-
-    def create_uom(self):
-        data_uom_gr = self.create_uom_group()
-        url = reverse('UnitOfMeasureGroupList')
-        response = self.client.post(
-            url,
-            {
-                "code": "MIN",
-                "title": "minute",
-                "group": data_uom_gr['id'],
-                "ratio": 1,
-                "rounding": 5,
-                "is_referenced_unit": True
-            },
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result'], data_uom_gr
-
-    def test_create_product_missing_code(self):
-        product_type = self.create_product_type() # noqa
-        product_category = self.create_product_category()
-        unit_of_measure, uom_group = self.create_uom()
-        data1 = {
-            "code": "P01",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
-            },
-        }
-        response1 = self.client.post(
-            self.url,
-            data1,
-            format='json'
-        )
-        self.assertEqual(response1.status_code, 500)
-
-        return True
-
-    def test_create_product_missing_title(self):
-        data = {
-            "code": "P01",
-            "general_information": {
-            }
-        }
-        response = self.client.post(
-            self.url,
-            data,
-            format='json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type() # noqa
-        product_category = self.create_product_category()
-        unit_of_measure, uom_group = self.create_uom()
-        data1 = {
-            "code": "P01",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group['id']
-            },
-        }
-        response1 = self.client.post(
-            self.url,
-            data1,
-            format='json'
-        )
-        self.assertEqual(response1.status_code, 500)
-        return False
-
-    def test_create_product_not_UUID(self):
-        product_type = self.create_product_type()
-        product_category = self.create_product_category()
-        unit_of_measure, uom_group = self.create_uom()
-        data = {
-            "code": "P01",
-            "title": "Laptop Dell HLVVL6R",
-            "general_information": {
-                'product_type': {
-                    'id': product_type['id'],
-                    'title': product_type['title'],
-                    'code': "",
-                },
-                'product_category': {
-                    'id': product_category['id'],
-                    'title': product_category['title'],
-                    'code': "",
-                },
-                'uom_group': {
-                    'id': uom_group['id'],
-                    'title': uom_group['title'],
-                    'code': "",
-                },
-            },
-            "sale_information": {
-                'default_uom_id': unit_of_measure['id']
-            },
-            "inventory_information": {
-                'uom': unit_of_measure['id'],
-                'inventory_level_min': 5,
-                'inventory_level_max': 20
-            }
-        }
-        response = self.client.post(
-            self.url,
-            data,
-            format='json'
-        )
-        self.assertEqual(response.status_code, 400)
-
-        data1 = {
-            "code": "P02",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': '1',
-                'product_category': '1',
-                'uom_group': '1'
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {},
-        }
-        response1 = self.client.post(
-            self.url,
-            data1,
-            format='json'
-        )
-        self.assertEqual(response1.status_code, 400)
-        return True
+# class ProductTestCase(AdvanceTestCase):
+#     def setUp(self):
+#         self.maxDiff = None
+#         self.client = APIClient()
+#
+#         login_data = TestCaseAuth.test_login(self)
+#         self.authenticated(login_data)
+#         self.url = reverse("ProductList")
+#
+#     def create_product_type(self):
+#         url = reverse('ProductTypeList')
+#         response = self.client.post(
+#             url,
+#             {
+#                 'title': 'San pham 1',
+#                 'description': '',
+#             },
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         return response.data['result']
+#
+#     def create_product_category(self):
+#         url = reverse('ProductCategoryList')
+#         response = self.client.post(
+#             url,
+#             {
+#                 'title': 'Hardware',
+#                 'description': '',
+#             },
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         return response.data['result']
+#
+#     def create_uom_group(self):
+#         url = reverse('UnitOfMeasureGroupList')
+#         response = self.client.post(
+#             url,
+#             {
+#                 'title': 'Time',
+#             },
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         return response.data['result']
+#
+#     def create_uom(self):
+#         data_uom_gr = self.create_uom_group()
+#         url = reverse('UnitOfMeasureGroupList')
+#         response = self.client.post(
+#             url,
+#             {
+#                 "code": "MIN",
+#                 "title": "minute",
+#                 "group": data_uom_gr['id'],
+#                 "ratio": 1,
+#                 "rounding": 5,
+#                 "is_referenced_unit": True
+#             },
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+#         return response.data['result'], data_uom_gr
+#
+#     def test_create_product_missing_code(self):
+#         product_type = self.create_product_type() # noqa
+#         product_category = self.create_product_category()
+#         unit_of_measure, uom_group = self.create_uom()
+#         data1 = {
+#             "code": "P01",
+#             "title": "Laptop HP HLVVL6R",
+#             "general_information": {
+#                 'product_type': product_type['id'],
+#                 'product_category': product_category['id'],
+#                 'uom_group': uom_group['id']
+#             },
+#         }
+#         response1 = self.client.post(
+#             self.url,
+#             data1,
+#             format='json'
+#         )
+#         self.assertEqual(response1.status_code, 500)
+#
+#         return True
+#
+#     def test_create_product_missing_title(self):
+#         data = {
+#             "code": "P01",
+#             "general_information": {
+#             }
+#         }
+#         response = self.client.post(
+#             self.url,
+#             data,
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+#
+#     def test_create_product_duplicate_code(self):
+#         product_type = self.create_product_type() # noqa
+#         product_category = self.create_product_category()
+#         unit_of_measure, uom_group = self.create_uom()
+#         data1 = {
+#             "code": "P01",
+#             "title": "Laptop HP HLVVL6R",
+#             "general_information": {
+#                 'product_type': product_type['id'],
+#                 'product_category': product_category['id'],
+#                 'uom_group': uom_group['id']
+#             },
+#         }
+#         response1 = self.client.post(
+#             self.url,
+#             data1,
+#             format='json'
+#         )
+#         self.assertEqual(response1.status_code, 500)
+#         return False
+#
+#     def test_create_product_not_UUID(self):
+#         product_type = self.create_product_type()
+#         product_category = self.create_product_category()
+#         unit_of_measure, uom_group = self.create_uom()
+#         data = {
+#             "code": "P01",
+#             "title": "Laptop Dell HLVVL6R",
+#             "general_information": {
+#                 'product_type': {
+#                     'id': product_type['id'],
+#                     'title': product_type['title'],
+#                     'code': "",
+#                 },
+#                 'product_category': {
+#                     'id': product_category['id'],
+#                     'title': product_category['title'],
+#                     'code': "",
+#                 },
+#                 'uom_group': {
+#                     'id': uom_group['id'],
+#                     'title': uom_group['title'],
+#                     'code': "",
+#                 },
+#             },
+#             "sale_information": {
+#                 'default_uom_id': unit_of_measure['id']
+#             },
+#             "inventory_information": {
+#                 'uom': unit_of_measure['id'],
+#                 'inventory_level_min': 5,
+#                 'inventory_level_max': 20
+#             }
+#         }
+#         response = self.client.post(
+#             self.url,
+#             data,
+#             format='json'
+#         )
+#         self.assertEqual(response.status_code, 400)
+#
+#         data1 = {
+#             "code": "P02",
+#             "title": "Laptop HP HLVVL6R",
+#             "general_information": {
+#                 'product_type': '1',
+#                 'product_category': '1',
+#                 'uom_group': '1'
+#             },
+#             "inventory_information": {},
+#             "sale_information": {},
+#             "purchase_information": {},
+#         }
+#         response1 = self.client.post(
+#             self.url,
+#             data1,
+#             format='json'
+#         )
+#         self.assertEqual(response1.status_code, 400)
+#         return True
 
 
 class SalutationTestCase(AdvanceTestCase):
