@@ -615,9 +615,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_code(cls, value):
         if Product.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
+            fill__tenant=True,
+            fill__company=True,
+            code=value
         ).exists():
             raise serializers.ValidationError(ProductMsg.CODE_EXIST)
         return value
