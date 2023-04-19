@@ -64,7 +64,7 @@ class AuthLoginSerializer(Serializer):  # pylint: disable=W0223 # noqa
         username_slugify = slugify(username)
         if username_slugify == username:
             return username_slugify
-        raise serializers.ValidationError(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
+        raise serializers.ValidationError({"username": AuthMsg.USERNAME_OR_PASSWORD_INCORRECT})
 
     @classmethod
     def validate_password(cls, attrs):
@@ -99,7 +99,7 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
                 return company_obj
             except Company.DoesNotExist:
                 pass
-        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
+        raise serializers.ValidationError({"company": AccountMsg.COMPANY_NOT_EXIST})
 
     def validate(self, attrs):
         user_obj = get_current_user()
@@ -112,4 +112,4 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
                 return attrs
             except CompanyUserEmployee.DoesNotExist:
                 pass
-        raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST)
+        raise serializers.ValidationError({"detail": AccountMsg.COMPANY_NOT_EXIST})

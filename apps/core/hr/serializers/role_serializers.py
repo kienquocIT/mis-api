@@ -57,7 +57,7 @@ class RoleCreateSerializer(serializers.ModelSerializer):
                 if bulk_info:
                     RoleHolder.objects.bulk_create(bulk_info)
             return role
-        raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
+        raise serializers.ValidationError({"detail": HRMsg.ROLE_DATA_VALID})
 
 
 class RoleUpdateSerializer(serializers.ModelSerializer):
@@ -96,7 +96,7 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
                 if bulk_info:
                     RoleHolder.objects.bulk_create(bulk_info)
             return instance
-        raise serializers.ValidationError(HRMsg.ROLE_DATA_VALID)
+        raise serializers.ValidationError({"detail": HRMsg.ROLE_DATA_VALID})
 
 
 class RoleDetailSerializer(serializers.ModelSerializer):

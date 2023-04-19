@@ -28,7 +28,7 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 code=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
 
     @classmethod
@@ -38,7 +38,7 @@ class SalutationCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -61,7 +61,7 @@ class SalutationUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -86,7 +86,7 @@ class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 code=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
 
     @classmethod
@@ -96,7 +96,7 @@ class InterestsCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -119,7 +119,7 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -144,7 +144,7 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 code=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
 
     @classmethod
@@ -154,7 +154,7 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -178,7 +178,7 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -203,7 +203,7 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 code=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
 
     @classmethod
@@ -213,7 +213,7 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -236,7 +236,7 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 title=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.NAME_EXIST)
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
         return value
 
 
@@ -268,7 +268,7 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
+        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def get_account_name(cls, obj):
@@ -309,7 +309,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             ).first()
             if account:
                 return account
-        raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST)
+        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
     def validate_email(cls, attrs):
@@ -319,7 +319,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     email=attrs,
             ).exists():
-                raise serializers.ValidationError(AccountsMsg.EMAIL_EXIST)
+                raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
             return attrs
         return None
 
@@ -331,7 +331,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     mobile=attrs,
             ).exists():
-                raise serializers.ValidationError(AccountsMsg.MOBILE_EXIST)
+                raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return attrs
         return None
 
@@ -383,7 +383,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
+        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def get_report_to(cls, obj):
@@ -396,7 +396,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.report_to,
                     'fullname': owner.fullname
                 }
-        raise serializers.ValidationError(AccountsMsg.CONTACT_NOT_EXIST)
+        raise serializers.ValidationError({"report_to": AccountsMsg.CONTACT_NOT_EXIST})
 
     @classmethod
     def get_additional_information(cls, obj):
@@ -469,7 +469,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             ).first()
             if account:
                 return account
-        raise serializers.ValidationError(AccountsMsg.ACCOUNT_NOT_EXIST)
+        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     def validate_email(self, attrs):
         if attrs is not None:
@@ -478,7 +478,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     email=attrs,
             ).exists():
-                raise serializers.ValidationError(AccountsMsg.EMAIL_EXIST)
+                raise serializers.ValidationError({"email": AccountsMsg.EMAIL_EXIST})
             return attrs
         return None
 
@@ -489,7 +489,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                     fill__company=True,
                     mobile=attrs,
             ).exists():
-                raise serializers.ValidationError(AccountsMsg.MOBILE_EXIST)
+                raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return attrs
         return None
 
@@ -520,7 +520,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError(HRMsg.EMPLOYEES_NOT_EXIST)
+        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
 
 
 # Account
@@ -616,7 +616,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 code=value,
         ).exists():
-            raise serializers.ValidationError(AccountsMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
 
     def validate(self, validate_data):
