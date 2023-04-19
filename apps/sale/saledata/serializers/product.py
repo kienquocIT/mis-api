@@ -306,8 +306,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError(ProductMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         has_referenced_unit = UnitOfMeasure.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -425,7 +424,6 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
         return instance
 
 
