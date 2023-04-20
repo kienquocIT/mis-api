@@ -320,7 +320,6 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     products_mapped = serializers.SerializerMethodField()
-    products_mapped = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
 
     class Meta:
@@ -529,14 +528,15 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
-        objs = ProductPriceList.objects.filter(
-            product_id=self.initial_data.get('product_id', None),
-            price_list=instance
-        )
-        if objs:
-            objs.delete()
-        else:
-            raise serializers.ValidationError(PriceMsg.PRODUCT_NOT_EXIST_IN_THIS_PRICE_LIST)
+        list_price = self.initial_data.get('list_price', None)
+        if list_price:
+            for item in list_price:
+                obj = ProductPriceList.objects.filter(
+                    product_id=self.initial_data.get('product_id', None),
+                    price_list=item.get('id', None)
+                )
+                if obj:
+                    obj.delete()
         return instance
 
 
