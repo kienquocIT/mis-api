@@ -8,3 +8,4 @@ class ProvisioningMsg:
     FOUND_MULTI_TENANT_ERR = _('The process was canceled because we found more than one tenant have code {}.')
     CONTACT_SUPPORT = _('Please, contact Admin MIS to be helped.')
     TENANT_ADMIN_READY = _("Tenant's admin was ready.")
+    SYNC_REQUIRED_USER_DATA = _('Tenant new must be required admin')

@@ -99,16 +99,10 @@ class ProvisioningCreateNewTenant(serializers.Serializer):  # noqa
     plan_data = serializers.JSONField(required=False)
 
     def validate(self, data):
-        if data['create_admin'] is True:
-            if not data.get('user_data', None):
-                raise serializers.ValidationError({'user_data': APIMsg.FIELD_REQUIRED})
-        else:
-            data.pop('user_data', None)
-
-        if data['create_employee'] is True and (
-                not data['tenant_data']['auto_create_company'] or not data['create_admin'] is True
-        ):
+        if data['create_employee'] is False or data['create_admin'] is False:
             raise serializers.ValidationError({'create_employee': ProvisioningMsg.EMPLOYEE_DEPENDENCIES_ON_COMPANY})
+        elif not data.get('user_data', None):
+            raise serializers.ValidationError({'user_data': ProvisioningMsg.SYNC_REQUIRED_USER_DATA})
         return data
 
 
