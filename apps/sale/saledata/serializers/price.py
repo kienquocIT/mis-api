@@ -307,7 +307,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList(
                     price_list=price_list,
                     product=p.product,
-                    price=float(p.price) * float(price_list.factor),
+                    price=round((float(p.price) * float(price_list.factor)), 2),
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
@@ -508,7 +508,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                         ProductPriceList(
                             price_list_id=price['id'],
                             product_id=item['product_id'],
-                            price=result_price,
+                            price=round(result_price, 2),
                             currency_using_id=item['currency'],
                             uom_using_id=item['uom_id'],
                             uom_group_using_id=item['uom_group_id'],
@@ -563,7 +563,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
                         ProductPriceList(
                             price_list_id=item.get('price_list_id', None),
                             product_id=product['id'],
-                            price=float(item.get('price_value', None)),
+                            price=round(float(item.get('price_value', None)), 2),
                             currency_using_id=item.get('currency_using', None),
                             uom_using_id=product['uom'],
                             uom_group_using_id=product['uom_group'],
