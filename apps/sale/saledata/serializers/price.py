@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import Product
+from apps.sale.saledata.models.product import Product, ProductGeneral, ProductSale, ProductInventory
 from apps.shared import PriceMsg
 
 
@@ -394,57 +394,43 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'auto_update' not in validated_data.keys():  # update auto_update
-            instance.auto_update = False
-        else:
-            instance.auto_update = True
-        if 'can_delete' not in validated_data.keys():  # update can_delete
-            instance.can_delete = False
-        else:
-            instance.can_delete = True
-
-        instance.price_list_type = validated_data['price_list_type']  # update price_list_type
-
-        old_factor = instance.factor
-        instance.factor = validated_data['factor']  # update factor
-
-        all_items = ProductPriceList.objects.filter(
-            price_list=instance,
-            get_price_from_source=1
-        )
-        for item in all_items:  # update lại giá đã map theo factor mới
-            item.price = float(item.price) * float(instance.factor) / float(old_factor)
-            item.save()
-        instance.currency = validated_data['currency']  # update currency
+        old_factor = None
+        for key, value in validated_data.items():
+            if key == 'factor':
+                old_factor = instance.factor
+            setattr(instance, key, value)
         instance.save()
-        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-            products_of_category = Product.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                general_information__product_category=self.initial_data['apply_for']
+
+        if old_factor:
+            all_items = ProductPriceList.objects.filter(
+                price_list=instance,
+                get_price_from_source=1
             )
-            current_general_price_list = Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_default=True
-            ).first()
-            products_of_this_price_list = ProductPriceList.objects.filter(price_list=instance)
+            for item in all_items:  # update lại giá đã map theo factor mới
+                item.price = round((float(item.price) * float(instance.factor) / float(old_factor)), 2)
+                item.save()
+
+        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
+            products_belong_to_this_category = ProductGeneral.objects.filter(
+                product_category_id=self.initial_data.get('apply_for', None)
+            ).select_related('product', 'uom_group')
+
             objs = []
-            for product in products_of_category:
-                if product not in products_of_this_price_list:
-                    product_price_list = ProductPriceList.objects.filter(
-                        product=product,
-                        price_list=current_general_price_list
-                    ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
-                    if product_price_list:
+            for item in products_belong_to_this_category:
+                if not ProductPriceList.objects.filter(product=item.product, price_list=instance).exists():
+                    package_information = ProductSale.objects.filter(product=item.product).select_related(
+                        'currency_using',
+                        'default_uom'
+                    ).first()
+                    if package_information:
                         objs.append(
                             ProductPriceList(
                                 price_list=instance,
-                                product=product,
+                                product=item.product,
                                 price=0.0,
-                                currency_using=product_price_list.currency_using,
-                                uom_using=product_price_list.uom_using,
-                                uom_group_using=product_price_list.uom_group_using,
+                                currency_using=package_information.currency_using,
+                                uom_using=package_information.default_uom,
+                                uom_group_using=item.uom_group,
                             )
                         )
             if len(objs) > 0:
