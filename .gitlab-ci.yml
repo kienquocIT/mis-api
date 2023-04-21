@@ -1,28 +1,23 @@
 # docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
 
-image: python:3.11
+image: localhost:5000/python3-11-gitlab-ci
 
 variables:
   MYSQL_DATABASE: $MYSQL_DB
   MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
   MYSQL_USER: $MYSQL_USER
   MYSQL_PASSWORD: $MYSQL_PASS
-  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 before_script:
-  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
+#  # uncomment below commented when change image to global hub "python:3.11"
+#  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
+#  - pip install --upgrade pip
   - pip install -r req.txt
-
-
-cache:
-  key: python_n_package
-
 
 stages:
   - pylint_check
   - migrations_init
   - run_testcase
-
 
 pylint_check:
   stage: pylint_check
@@ -44,6 +39,6 @@ run_testcase:
   stage: run_testcase
   script:
     - python manage.py test
-    - rm -rf *.sqlite3
   after_script:
+    - rm -rf *.sqlite3
     - exit

@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import Product
+from apps.sale.saledata.models.product import Product, ProductGeneral, ProductSale, ProductInventory
 from apps.shared import PriceMsg
 
 
@@ -28,7 +28,7 @@ class TaxCategoryCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+            raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
 
@@ -52,7 +52,7 @@ class TaxCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 title=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
+            raise serializers.ValidationError({"title": PriceMsg.TITLE_EXIST})
         return value
 
 
@@ -89,7 +89,7 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 code=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.CODE_EXIST)
+            raise serializers.ValidationError({"code": PriceMsg.CODE_EXIST})
         return value
 
 
@@ -130,7 +130,7 @@ class CurrencyCreateSerializer(serializers.ModelSerializer):  # noqa
                 fill__company=True,
                 abbreviation=value
         ).exists():
-            raise serializers.ValidationError(PriceMsg.ABBREVIATION_EXIST)
+            raise serializers.ValidationError({"abbreviation": PriceMsg.ABBREVIATION_EXIST})
         return value
 
     @classmethod
@@ -307,7 +307,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList(
                     price_list=price_list,
                     product=p.product,
-                    price=float(p.price) * float(price_list.factor),
+                    price=round((float(p.price) * float(price_list.factor)), 2),
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
@@ -394,57 +394,43 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        if 'auto_update' not in validated_data.keys():  # update auto_update
-            instance.auto_update = False
-        else:
-            instance.auto_update = True
-        if 'can_delete' not in validated_data.keys():  # update can_delete
-            instance.can_delete = False
-        else:
-            instance.can_delete = True
-
-        instance.price_list_type = validated_data['price_list_type']  # update price_list_type
-
-        old_factor = instance.factor
-        instance.factor = validated_data['factor']  # update factor
-
-        all_items = ProductPriceList.objects.filter(
-            price_list=instance,
-            get_price_from_source=1
-        )
-        for item in all_items:  # update lại giá đã map theo factor mới
-            item.price = float(item.price) * float(instance.factor) / float(old_factor)
-            item.save()
-        instance.currency = validated_data['currency']  # update currency
+        old_factor = None
+        for key, value in validated_data.items():
+            if key == 'factor':
+                old_factor = instance.factor
+            setattr(instance, key, value)
         instance.save()
-        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-            products_of_category = Product.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                general_information__product_category=self.initial_data['apply_for']
+
+        if old_factor:
+            all_items = ProductPriceList.objects.filter(
+                price_list=instance,
+                get_price_from_source=1
             )
-            current_general_price_list = Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_default=True
-            ).first()
-            products_of_this_price_list = ProductPriceList.objects.filter(price_list=instance)
+            for item in all_items:  # update lại giá đã map theo factor mới
+                item.price = round((float(item.price) * float(instance.factor) / float(old_factor)), 2)
+                item.save()
+
+        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
+            products_belong_to_this_category = ProductGeneral.objects.filter(
+                product_category_id=self.initial_data.get('apply_for', None)
+            ).select_related('product', 'uom_group')
+
             objs = []
-            for product in products_of_category:
-                if product not in products_of_this_price_list:
-                    product_price_list = ProductPriceList.objects.filter(
-                        product=product,
-                        price_list=current_general_price_list
-                    ).select_related('currency_using', 'uom_using', 'uom_group_using').first()
-                    if product_price_list:
+            for item in products_belong_to_this_category:
+                if not ProductPriceList.objects.filter(product=item.product, price_list=instance).exists():
+                    package_information = ProductSale.objects.filter(product=item.product).select_related(
+                        'currency_using',
+                        'default_uom'
+                    ).first()
+                    if package_information:
                         objs.append(
                             ProductPriceList(
                                 price_list=instance,
-                                product=product,
+                                product=item.product,
                                 price=0.0,
-                                currency_using=product_price_list.currency_using,
-                                uom_using=product_price_list.uom_using,
-                                uom_group_using=product_price_list.uom_group_using,
+                                currency_using=package_information.currency_using,
+                                uom_using=package_information.default_uom,
+                                uom_group_using=item.uom_group,
                             )
                         )
             if len(objs) > 0:
@@ -508,7 +494,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                         ProductPriceList(
                             price_list_id=price['id'],
                             product_id=item['product_id'],
-                            price=result_price,
+                            price=round(result_price, 2),
                             currency_using_id=item['currency'],
                             uom_using_id=item['uom_id'],
                             uom_group_using_id=item['uom_group_id'],
@@ -528,12 +514,69 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
-        obj = ProductPriceList.objects.filter(
-            product_id=self.initial_data.get('product_id', None),
-            price_list=instance
+        list_price = self.initial_data.get('list_price', None)
+        if list_price:
+            for item in list_price:
+                obj = ProductPriceList.objects.filter(
+                    product_id=self.initial_data.get('product_id', None),
+                    price_list=item.get('id', None)
+                )
+                if obj:
+                    obj.delete()
+        return instance
+
+
+class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Price
+        fields = ()
+
+    def update(self, instance, validated_data):
+        price_list_information = self.initial_data['list_price_list']
+        product = self.initial_data['product']
+        objs = []
+        if price_list_information and product:
+            for item in price_list_information:
+                get_price_from_source = False
+                if item.get('is_auto_update', None) == '1':
+                    get_price_from_source = True
+                if not ProductPriceList.objects.filter(
+                        price_list_id=item['price_list_id'],
+                        product_id=product['id']
+                ).exists():
+                    objs.append(
+                        ProductPriceList(
+                            price_list_id=item.get('price_list_id', None),
+                            product_id=product['id'],
+                            price=round(float(item.get('price_value', None)), 2),
+                            currency_using_id=item.get('currency_using', None),
+                            uom_using_id=product['uom'],
+                            uom_group_using_id=product['uom_group'],
+                            get_price_from_source=get_price_from_source
+                        )
+                    )
+        if len(objs) > 0:
+            ProductPriceList.objects.bulk_create(objs)
+        return instance
+
+
+class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
+    currency_id = serializers.CharField()
+    class Meta:  # noqa
+        model = Price
+        fields = (
+            'currency_id',
         )
-        if obj:
-            obj.delete()
-        else:
-            raise serializers.ValidationError(PriceMsg.PRODUCT_NOT_EXIST_IN_THIS_PRICE_LIST)
+
+    @classmethod
+    def validate_currency_id(cls, value):
+        if value is None:
+            raise serializers.ValidationError(PriceMsg.CURRENCY_IS_NOT_NULL)
+        return value
+
+    def update(self, instance, validated_data):
+        ProductPriceList.objects.filter(
+            price_list_id=instance.id, currency_using_id=validated_data['currency_id']
+        ).delete()
         return instance

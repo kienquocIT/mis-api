@@ -22,8 +22,8 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
     def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError({'plan': BaseMsg.PLAN_NOT_EXIST})
 
     @classmethod
     def validate_application(cls, value):
@@ -31,8 +31,8 @@ class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            raise serializers.ValidationError(BaseMsg.APPLICATIONS_NOT_EXIST)
-        raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
+            raise serializers.ValidationError({"application": BaseMsg.APPLICATIONS_NOT_EXIST})
+        raise serializers.ValidationError({"application": BaseMsg.APPLICATION_IS_ARRAY})
 
 
 class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
@@ -51,8 +51,8 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
     def validate_plan(cls, value):
         try:
             return SubscriptionPlan.objects.get(id=value)
-        except SubscriptionPlan.DoesNotExist as exc:
-            raise serializers.ValidationError(BaseMsg.PLAN_NOT_EXIST) from exc
+        except SubscriptionPlan.DoesNotExist:
+            raise serializers.ValidationError({'plan': BaseMsg.PLAN_NOT_EXIST})
 
     @classmethod
     def validate_application(cls, value):
@@ -60,8 +60,8 @@ class EmployeePlanAppUpdateSerializer(serializers.Serializer):  # noqa
             app_list = Application.objects.filter(id__in=value)
             if app_list.count() == len(value):
                 return app_list
-            raise serializers.ValidationError(BaseMsg.APPLICATIONS_NOT_EXIST)
-        raise serializers.ValidationError(BaseMsg.APPLICATION_IS_ARRAY)
+            raise serializers.ValidationError({"application": BaseMsg.APPLICATIONS_NOT_EXIST})
+        raise serializers.ValidationError({"application": BaseMsg.APPLICATION_IS_ARRAY})
 
 
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
@@ -343,8 +343,8 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
     def validate_user(cls, value):
         try:
             return User.objects.get(id=value)
-        except User.DoesNotExist as exc:
-            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST}) from exc
+        except User.DoesNotExist:
+            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
 
     @classmethod
     def validate_group(cls, value):
@@ -542,17 +542,33 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
             for code_name, config_data in attrs.items():
                 # check code_name exist
                 if not (code_name and code_name in permission_choices):
-                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
+                    raise serializers.ValidationError(
+                        {
+                            "permission_by_configured": HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT
+                        }
+                    )
 
                 # check config_data
                 if config_data and isinstance(config_data, dict) and 'option' in config_data:
                     option = config_data['option']
                     if option not in option_choices:
-                        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
+                        raise serializers.ValidationError(
+                            {
+                                "permission_by_configured": HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT
+                            }
+                        )
                 else:
-                    raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT)
+                    raise serializers.ValidationError(
+                        {
+                            "permission_by_configured": HRMsg.PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT
+                        }
+                    )
             return attrs
-        raise serializers.ValidationError(HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT)
+        raise serializers.ValidationError(
+            {
+                "permission_by_configured": HRMsg.PERMISSIONS_BY_CONFIGURED_INCORRECT
+            }
+        )
 
 
 # EMPLOYEE by overview Tenant

@@ -50,13 +50,13 @@ class PaymentTermCreateSerializer(serializers.ModelSerializer):
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError("Title is required")
+        raise serializers.ValidationError({"title": "Title is required"})
 
     @classmethod
     def validate_term(cls, value):
         if isinstance(value, list) and value:
             return value
-        raise serializers.ValidationError("Term must be at least one rows")
+        raise serializers.ValidationError({"term": "Term must be at least one rows"})
 
     def create(self, validated_data):
         pm_term = PaymentTerm.objects.create(**validated_data)
@@ -83,7 +83,7 @@ class PaymentTermDetailSerializer(serializers.ModelSerializer):
     def validate_term(cls, value):
         if isinstance(value, list) and value:
             return value
-        raise serializers.ValidationError("Term must be at least one rows")
+        raise serializers.ValidationError({"term": "Term must be at least one rows"})
 
     def update(self, instance, validated_data):
 

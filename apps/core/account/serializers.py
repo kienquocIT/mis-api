@@ -76,7 +76,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():
-            raise serializers.ValidationError(AccountMsg.PHONE_CONTAIN_CHARACTER)
+            raise serializers.ValidationError({"phone": AccountMsg.PHONE_CONTAIN_CHARACTER})
         return attrs
 
     def update(self, instance, validated_data):
@@ -126,7 +126,7 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             else:
                 instance.save()
             return instance
-        raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
+        raise serializers.ValidationError({"detail": AccountMsg.USER_DATA_VALID})
 
 
 class UserCreateSerializer(serializers.ModelSerializer):
@@ -149,7 +149,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_username(cls, attrs):
         if User.objects.filter_current(username=attrs, fill__tenant=True).exists():
-            raise serializers.ValidationError({'username': ''})
+            raise serializers.ValidationError({'username': AccountMsg.USERNAME_EXISTS})
         return attrs
 
     @classmethod
@@ -157,13 +157,13 @@ class UserCreateSerializer(serializers.ModelSerializer):
         num_count = sum(1 for char in attrs if char.isnumeric())
         alpha_count = sum(1 for char in attrs if char.isalpha())
         if num_count == 0 or alpha_count == 0:
-            raise serializers.ValidationError(AccountMsg.VALID_PASSWORD)
+            raise serializers.ValidationError({"password": AccountMsg.VALID_PASSWORD})
         return attrs
 
     @classmethod
     def validate_phone(cls, attrs):
         if not attrs.isnumeric():
-            raise serializers.ValidationError(AccountMsg.PHONE_CONTAIN_CHARACTER)
+            raise serializers.ValidationError({"phone": AccountMsg.PHONE_CONTAIN_CHARACTER})
         return attrs
 
     def create(self, validated_data):
@@ -245,8 +245,8 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
                         'name': company.title,
                     }
                 )
-            except Company.DoesNotExist as exc:
-                raise serializers.ValidationError(AccountMsg.COMPANY_NOT_EXIST) from exc
+            except Company.DoesNotExist:
+                raise serializers.ValidationError({'companies': AccountMsg.COMPANY_NOT_EXIST})
         return companies
 
 
@@ -345,7 +345,7 @@ class CompanyUserUpdateSerializer(serializers.ModelSerializer):
                 instance.save()
 
             return instance
-        raise serializers.ValidationError(AccountMsg.USER_DATA_VALID)
+        raise serializers.ValidationError({"detail": AccountMsg.USER_DATA_VALID})
 
 
 class CompanyUserEmployeeUpdateSerializer(serializers.ModelSerializer):

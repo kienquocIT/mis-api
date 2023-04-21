@@ -96,8 +96,8 @@ class Tenant(CoreAbstractModel):
                 self_fetch.refresh_from_db()
                 _original_fields_old = {field: getattr(self_fetch, field) for field in field_name_list}
                 return _original_fields_old
-            except Exception as exc:
-                print(exc)
+            except Exception as err:
+                print(err)
         return _original_fields_old
 
     def save(self, *args, **kwargs):
