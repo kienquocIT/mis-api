@@ -17,7 +17,8 @@ class Quotation(DataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="customer",
         related_name="quotation_customer",
-        null=True
+        null=True,
+        help_text="sale data Accounts have type customer"
     )
     contact = models.ForeignKey(
         'saledata.Contact',
@@ -55,37 +56,47 @@ class Quotation(DataAbstractModel):
         help_text="read data expense, use for get list or detail quotation"
     )
     # total amount of products
-    total_product_pretax_revenue = models.FloatField(
-        default=0
+    total_product_pretax_amount = models.FloatField(
+        default=0,
+        help_text="total pretax amount of tab product"
     )
     total_product_discount = models.FloatField(
-        default=0
+        default=0,
+        help_text="total discount of tab product"
     )
     total_product_tax = models.FloatField(
-        default=0
+        default=0,
+        help_text="total tax of tab product"
     )
     total_product = models.FloatField(
-        default=0
+        default=0,
+        help_text="total amount of tab product"
     )
     # total amount of costs
-    total_cost_pretax_revenue = models.FloatField(
-        default=0
+    total_cost_pretax_amount = models.FloatField(
+        default=0,
+        help_text="total pretax amount of tab cost"
     )
     total_cost_tax = models.FloatField(
-        default=0
+        default=0,
+        help_text="total tax of tab cost"
     )
     total_cost = models.FloatField(
-        default=0
+        default=0,
+        help_text="total amount of tab cost"
     )
     # total amount of expenses
-    total_expense_pretax_revenue = models.FloatField(
-        default=0
+    total_expense_pretax_amount = models.FloatField(
+        default=0,
+        help_text="total pretax amount of tab expense"
     )
     total_expense_tax = models.FloatField(
-        default=0
+        default=0,
+        help_text="total tax of tab expense"
     )
     total_expense = models.FloatField(
-        default=0
+        default=0,
+        help_text="total amount of tab expense"
     )
     is_customer_confirm = models.BooleanField(
         default=False,
@@ -440,7 +451,7 @@ class QuotationExpense(SimpleAbstractModel):
         related_name="quotation_expense_tax",
         null=True
     )
-    # cost information
+    # expense information
     expense_title = models.CharField(
         max_length=100,
         blank=True,
