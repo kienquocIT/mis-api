@@ -638,7 +638,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                     ProductPriceList(
                         price_list_id=item.get('price_list_id', None),
                         product=product,
-                        price=round(float(item.get('price_value', None)), 2),
+                        price=float(item.get('price_value', None)),
                         currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
                         uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
                         uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
@@ -728,7 +728,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                         ProductPriceList(
                             price_list_id=item.get('price_list_id', None),
                             product=instance,
-                            price=round(float(item.get('price_value', None)), 2),
+                            price=float(item.get('price_value', None)),
                             currency_using_id=currency_using_id,
                             uom_using_id=default_uom_id,
                             uom_group_using_id=uom_group_id,
