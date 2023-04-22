@@ -493,6 +493,16 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def update(self, instance, validated_data):
+        if 'account_name' not in validated_data.keys():
+            validated_data['account_name'] = None
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        return instance
+
 
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
@@ -706,6 +716,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 class AccountDetailSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
+    contact_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -725,28 +736,48 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
-            'owner'
+            'owner',
+            'contact_mapped'
         )
 
     @classmethod
     def get_owner(cls, obj):
-        try:
-            list_owner = []
-            resp = Contact.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                account_name=obj
-            )
-            for item in resp:
-                list_owner.append(
+        owner = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            account_name=obj
+        ).first()
+        if owner:
+            return {
+                'id': owner.id,
+                'fullname': owner.fullname,
+                'job_title': owner.job_title,
+                'email': owner.email,
+                'mobile': owner.mobile
+            }
+        return {}
+
+    @classmethod
+    def get_contact_mapped(cls, obj):
+        contact_mapped = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            account_name=obj
+        )
+        if len(contact_mapped) > 0:
+            list_contact_mapped = []
+            for i in contact_mapped:
+                list_contact_mapped.append(
                     {
-                        'id': item.id,
-                        'fullname': item.fullname,
+                        'id': i.id,
+                        'fullname': i.fullname,
+                        'job_title': i.job_title,
+                        'email': i.email,
+                        'mobile': i.mobile
                     }
                 )
-            return list_owner
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'owner': AccountsMsg.CONTACT_NOT_EXIST})
+            return list_contact_mapped
+        return []
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
