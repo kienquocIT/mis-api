@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import Product, ProductGeneral, ProductSale, ProductInventory
+from apps.sale.saledata.models.product import ProductGeneral, ProductSale
 from apps.shared import PriceMsg
 
 
