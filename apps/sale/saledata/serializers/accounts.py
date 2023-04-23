@@ -632,11 +632,14 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         account_types = []
         for item in validate_data.get('account_type', None):
-            account_type = AccountType.objects.filter(
+            account_type = AccountType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
                 id=item
             ).first()
             if account_type:
                 title = account_type.title
+                code = account_type.code
                 detail = ''
                 tax_code = validate_data.get('tax_code', None)
                 if title.lower() == 'customer':
@@ -652,7 +655,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                     ).first()
                     if account_map_tax_code:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
-                account_types.append({'title': title, 'detail': detail})
+                account_types.append({'id': str(item), 'code': code, 'title': title, 'detail': detail})
             else:
                 raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
         validate_data['account_type'] = account_types
