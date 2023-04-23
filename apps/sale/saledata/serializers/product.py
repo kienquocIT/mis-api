@@ -484,7 +484,7 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
         if value:
             tax_code = Tax.objects.filter(id=value).first()
             if tax_code:
-                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code}
+                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code, 'rate': tax_code.rate}
         raise serializers.ValidationError(ProductMsg.TAX_DOES_NOT_EXIST)
 
     @classmethod
