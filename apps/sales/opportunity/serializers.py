@@ -22,13 +22,15 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.customer:
             return {
                 'id': obj.customer_id,
-                'title': obj.customer.title,
+                'title': obj.customer.name,
                 'code': obj.customer.code
             }
         return {}
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
+    customer = serializers.UUIDField()
+
     class Meta:
         model = Opportunity
         fields = (
