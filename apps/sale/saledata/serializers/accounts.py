@@ -561,15 +561,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_manager(cls, obj):
         if obj.manager:
-            employees = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=obj.manager,
-            )
-            all_managers = []
-            for employee in employees:
-                all_managers.append(employee.get_full_name(2))
-            return all_managers
+            return obj.manager
         return []
 
     @classmethod
@@ -745,19 +737,29 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        owner = Contact.objects.filter_current(
+        account_owner = Contact.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
-            account_name=obj
+            account_name=obj,
+            is_primary=True
         ).first()
-        if owner:
-            return {
-                'id': owner.id,
-                'fullname': owner.fullname,
-                'job_title': owner.job_title,
-                'email': owner.email,
-                'mobile': owner.mobile
-            }
+        if account_owner:
+            contact_owner = Employee.objects.filter(
+                id=account_owner.owner
+            ).first()
+
+            if contact_owner:
+                contact_owner_information = {'id': str(account_owner.owner), 'fullname': contact_owner.get_full_name(2)}
+                return {
+                    'id': account_owner.id,
+                    'fullname': account_owner.fullname,
+                    'job_title': account_owner.job_title,
+                    'email': account_owner.email,
+                    'mobile': account_owner.mobile,
+                    'owner': contact_owner_information
+                }
+            else:
+                raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
         return {}
 
     @classmethod
