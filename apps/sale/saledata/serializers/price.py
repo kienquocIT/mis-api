@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import Product, ProductGeneral, ProductSale, ProductInventory
+from apps.sale.saledata.models.product import ProductGeneral, ProductSale
 from apps.shared import PriceMsg
 
 
@@ -307,7 +307,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ProductPriceList(
                     price_list=price_list,
                     product=p.product,
-                    price=round((float(p.price) * float(price_list.factor)), 2),
+                    price=float(p.price) * float(price_list.factor),
                     currency_using=p.currency_using,
                     uom_using=p.uom_using,
                     uom_group_using=p.uom_group_using,
@@ -373,6 +373,62 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
         return {}
 
 
+def get_product_when_turn_on_auto_update(instance):
+    # get all products of instance
+    items_id_of_instance = list(
+        ProductPriceList.objects.filter(price_list=instance).values_list('product', flat=True)
+    )
+    # get all products of source
+    items_of_source = ProductPriceList.objects.filter(price_list_id=instance.price_list_mapped)
+
+    new_list = []
+    for item in items_of_source:
+        if item.product_id in items_id_of_instance:
+            new_list.append(
+                ProductPriceList(
+                    price_list=instance,
+                    product=item.product,
+                    price=float(item.price) * float(instance.factor),
+                    currency_using=item.currency_using,
+                    uom_using=item.uom_using,
+                    uom_group_using=item.uom_group_using,
+                    get_price_from_source=True
+                )
+            )
+            ProductPriceList.objects.filter(product=item.product, price_list=instance).delete()
+    if len(new_list) > 0:
+        ProductPriceList.objects.bulk_create(new_list)
+    return True
+
+
+def price_list_apply_for(instance, product_category):
+    products_belong_to_this_category = ProductGeneral.objects.filter(
+        product_category_id=product_category
+    ).select_related('product', 'uom_group')
+
+    objs = []
+    for item in products_belong_to_this_category:
+        if not ProductPriceList.objects.filter(product=item.product, price_list=instance).exists():
+            package_information = ProductSale.objects.filter(product=item.product).select_related(
+                'currency_using',
+                'default_uom'
+            ).first()
+            if package_information:
+                objs.append(
+                    ProductPriceList(
+                        price_list=instance,
+                        product=item.product,
+                        price=0.0,
+                        currency_using=package_information.currency_using,
+                        uom_using=package_information.default_uom,
+                        uom_group_using=item.uom_group,
+                    )
+                )
+    if len(objs) > 0:
+        ProductPriceList.objects.bulk_create(objs)
+    return True
+
+
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
@@ -394,47 +450,17 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        old_factor = None
         for key, value in validated_data.items():
-            if key == 'factor':
-                old_factor = instance.factor
             setattr(instance, key, value)
         instance.save()
 
-        if old_factor:
-            all_items = ProductPriceList.objects.filter(
-                price_list=instance,
-                get_price_from_source=1
-            )
-            for item in all_items:  # update lại giá đã map theo factor mới
-                item.price = round((float(item.price) * float(instance.factor) / float(old_factor)), 2)
-                item.save()
+        if instance.auto_update:
+            get_product_when_turn_on_auto_update(instance)
+        else:
+            ProductPriceList.objects.filter(price_list=instance).update(get_price_from_source=False)
 
         if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-            products_belong_to_this_category = ProductGeneral.objects.filter(
-                product_category_id=self.initial_data.get('apply_for', None)
-            ).select_related('product', 'uom_group')
-
-            objs = []
-            for item in products_belong_to_this_category:
-                if not ProductPriceList.objects.filter(product=item.product, price_list=instance).exists():
-                    package_information = ProductSale.objects.filter(product=item.product).select_related(
-                        'currency_using',
-                        'default_uom'
-                    ).first()
-                    if package_information:
-                        objs.append(
-                            ProductPriceList(
-                                price_list=instance,
-                                product=item.product,
-                                price=0.0,
-                                currency_using=package_information.currency_using,
-                                uom_using=package_information.default_uom,
-                                uom_group_using=item.uom_group,
-                            )
-                        )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
+            price_list_apply_for(instance, self.initial_data.get('apply_for', None))
         return instance
 
 
@@ -494,7 +520,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                         ProductPriceList(
                             price_list_id=price['id'],
                             product_id=item['product_id'],
-                            price=round(result_price, 2),
+                            price=result_price,
                             currency_using_id=item['currency'],
                             uom_using_id=item['uom_id'],
                             uom_group_using_id=item['uom_group_id'],
@@ -549,7 +575,7 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
                         ProductPriceList(
                             price_list_id=item.get('price_list_id', None),
                             product_id=product['id'],
-                            price=round(float(item.get('price_value', None)), 2),
+                            price=float(item.get('price_value', None)),
                             currency_using_id=item.get('currency_using', None),
                             uom_using_id=product['uom'],
                             uom_group_using_id=product['uom_group'],
