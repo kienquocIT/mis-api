@@ -431,7 +431,7 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     expense = models.ForeignKey(
-        'saledata.Expense',
+        'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_expense_expense",

@@ -153,13 +153,3 @@ class ProductInventory(SimpleAbstractModel):
         verbose_name_plural = 'Products Inventory'
         default_permissions = ()
         permissions = ()
-
-
-# Expense
-class Expense(MasterDataAbstractModel):
-    class Meta:
-        verbose_name = 'Expense'
-        verbose_name_plural = 'Expenses'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
