@@ -8,7 +8,6 @@ from apps.shared.translations.expense import ExpenseMsg
 
 
 class ExpenseListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Expense
         fields = (
@@ -111,6 +110,26 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         ).exists():
             raise serializers.ValidationError(ExpenseMsg.CODE_EXIST)
         return value
+
+    def create(self, validated_data):
+        expense = Expense.objects.create(**validated_data)
+        self.common_create_expense(validated_data=validated_data, instance=expense)
+        return expense
+
+    @staticmethod
+    def common_create_expense(validated_data, instance):
+        if 'general_information' in validated_data:  # noqa
+            tax_id = None
+            if validated_data['general_information']['tax_code']:
+                tax_id = validated_data['general_information']['tax_code']['id']
+            ExpenseGeneral.objects.create(
+                expense=instance,
+                expense_type_id=validated_data['general_information']['expense_type']['id'],
+                uom_group_id=validated_data['general_information']['uom_group']['id'],
+                uom_id=validated_data['general_information']['uom']['id'],
+                tax_code_id=tax_id,
+            )
+        return True
 
 
 class ExpenseDetailSerializer(serializers.ModelSerializer):

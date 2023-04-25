@@ -170,9 +170,11 @@ class Expense(MasterDataAbstractModel):
 
 
 class ExpenseGeneral(SimpleAbstractModel):
-    expense = models.ForeignKey(  # noqa
+    expense = models.OneToOneField(  # noqa
         Expense,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=False,
+        related_name='expense',
     )
     expense_type = models.ForeignKey(
         ExpenseType,
@@ -218,7 +220,7 @@ class ExpenseGeneral(SimpleAbstractModel):
 
 
 class ExpensePrice(SimpleAbstractModel):
-    expense = models.ForeignKey(
+    expense_general = models.ForeignKey(
         ExpenseGeneral,
         on_delete=models.CASCADE,
     )
