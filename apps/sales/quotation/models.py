@@ -277,19 +277,26 @@ class QuotationLogistic(SimpleAbstractModel):
         Quotation,
         on_delete=models.CASCADE,
     )
-    shipping_address_list = models.ManyToManyField(
-        # 'saledata.AccountShipping',
-        'saledata.Account',
-        through='QuotationLogisticShipping',
-        symmetrical=False,
-        related_name='quotation_logistic_map_shipping',
+    # shipping_address_list = models.ManyToManyField(
+    #     'saledata.AccountShipping',
+    #     through='QuotationLogisticShipping',
+    #     symmetrical=False,
+    #     related_name='quotation_logistic_map_shipping',
+    # )
+    # billing_address_list = models.ManyToManyField(
+    #     'saledata.AccountBilling',
+    #     through='QuotationLogisticBilling',
+    #     symmetrical=False,
+    #     related_name='quotation_logistic_map_billing',
+    # )
+
+    shipping_address = models.TextField(
+        blank=True,
+        null=True
     )
-    billing_address_list = models.ManyToManyField(
-        # 'saledata.AccountBilling',
-        'saledata.Account',
-        through='QuotationLogisticBilling',
-        symmetrical=False,
-        related_name='quotation_logistic_map_billing',
+    billing_address = models.TextField(
+        blank=True,
+        null=True
     )
 
     class Meta:
@@ -299,46 +306,46 @@ class QuotationLogistic(SimpleAbstractModel):
         permissions = ()
 
 
-class QuotationLogisticShipping(SimpleAbstractModel):
-    quotation_logistic = models.ForeignKey(
-        QuotationLogistic,
-        on_delete=models.CASCADE,
-    )
-    shipping_address = models.ForeignKey(
-        # 'saledata.AccountShipping',
-        'saledata.Account',
-        on_delete=models.CASCADE,
-        verbose_name="shipping address",
-        related_name="quotation_logistic_shipping",
-        null=True
-    )
+# class QuotationLogisticShipping(SimpleAbstractModel):
+#     quotation_logistic = models.ForeignKey(
+#         QuotationLogistic,
+#         on_delete=models.CASCADE,
+#     )
+#     shipping_address = models.ForeignKey(
+#         # 'saledata.AccountShipping',
+#         'saledata.Account',
+#         on_delete=models.CASCADE,
+#         verbose_name="shipping address",
+#         related_name="quotation_logistic_shipping",
+#         null=True
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Quotation Logistic Shipping'
+#         verbose_name_plural = 'Quotation Logistic Shipping'
+#         default_permissions = ()
+#         permissions = ()
 
-    class Meta:
-        verbose_name = 'Quotation Logistic Shipping'
-        verbose_name_plural = 'Quotation Logistic Shipping'
-        default_permissions = ()
-        permissions = ()
 
-
-class QuotationLogisticBilling(SimpleAbstractModel):
-    quotation_logistic = models.ForeignKey(
-        QuotationLogistic,
-        on_delete=models.CASCADE,
-    )
-    billing_address = models.ForeignKey(
-        # 'saledata.AccountBilling',
-        'saledata.Account',
-        on_delete=models.CASCADE,
-        verbose_name="billing address",
-        related_name="quotation_logistic_billing",
-        null=True
-    )
-
-    class Meta:
-        verbose_name = 'Quotation Logistic Billing'
-        verbose_name_plural = 'Quotation Logistic Billing'
-        default_permissions = ()
-        permissions = ()
+# class QuotationLogisticBilling(SimpleAbstractModel):
+#     quotation_logistic = models.ForeignKey(
+#         QuotationLogistic,
+#         on_delete=models.CASCADE,
+#     )
+#     billing_address = models.ForeignKey(
+#         # 'saledata.AccountBilling',
+#         'saledata.Account',
+#         on_delete=models.CASCADE,
+#         verbose_name="billing address",
+#         related_name="quotation_logistic_billing",
+#         null=True
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Quotation Logistic Billing'
+#         verbose_name_plural = 'Quotation Logistic Billing'
+#         default_permissions = ()
+#         permissions = ()
 
 
 # SUPPORT COST
@@ -434,7 +441,7 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     expense = models.ForeignKey(
-        'saledata.Product',
+        'saledata.Expense',
         on_delete=models.CASCADE,
         verbose_name="quotation",
         related_name="quotation_expense_expense",

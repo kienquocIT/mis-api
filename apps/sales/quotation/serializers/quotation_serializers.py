@@ -72,8 +72,8 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuotationLogistic
         fields = (
-            'shipping_address_list',
-            'billing_address_list',
+            'shipping_address',
+            'shipping_address',
         )
 
 

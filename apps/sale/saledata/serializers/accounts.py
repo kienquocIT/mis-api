@@ -528,6 +528,8 @@ class AccountListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    shipping_address = serializers.JSONField()
+    billing_address = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -539,6 +541,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             "manager",
             "owner",
             "phone",
+            "shipping_address",
+            "billing_address"
         )
 
     @classmethod

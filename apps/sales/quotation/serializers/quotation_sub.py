@@ -1,6 +1,5 @@
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
-    QuotationTermDiscount, QuotationLogistic, QuotationLogisticShipping, QuotationLogisticBilling, QuotationCost, \
-    QuotationExpense
+    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense
 
 
 class QuotationCommon:
@@ -70,33 +69,41 @@ class QuotationCommon:
             ])
         return True
 
+    # @classmethod
+    # def create_logistic(cls, validated_data, instance):
+    #     shipping_address_list = []
+    #     billing_address_list = []
+    #     if 'shipping_address_list' in validated_data['quotation_logistic_data']:
+    #         shipping_address_list = validated_data['quotation_logistic_data']['shipping_address_list']
+    #         del validated_data['quotation_logistic_data']['shipping_address_list']
+    #     if 'billing_address_list' in validated_data['quotation_logistic_data']:
+    #         billing_address_list = validated_data['quotation_logistic_data']['billing_address_list']
+    #         del validated_data['quotation_logistic_data']['billing_address_list']
+    #     quotation_logistic = QuotationLogistic.objects.create(quotation=instance)
+    #     if shipping_address_list:
+    #         QuotationLogisticShipping.objects.bulk_create([
+    #             QuotationLogisticShipping(
+    #                 shipping_address_id=shipping_address.get('id', None),
+    #                 quotation_logistic=quotation_logistic
+    #             )
+    #             for shipping_address in shipping_address_list
+    #         ])
+    #     if billing_address_list:
+    #         QuotationLogisticBilling.objects.bulk_create([
+    #             QuotationLogisticBilling(
+    #                 billing_address_id=billing_address.get('id', None),
+    #                 quotation_logistic=quotation_logistic
+    #             )
+    #             for billing_address in billing_address_list
+    #         ])
+    #     return True
+
     @classmethod
     def create_logistic(cls, validated_data, instance):
-        shipping_address_list = []
-        billing_address_list = []
-        if 'shipping_address_list' in validated_data['quotation_logistic_data']:
-            shipping_address_list = validated_data['quotation_logistic_data']['shipping_address_list']
-            del validated_data['quotation_logistic_data']['shipping_address_list']
-        if 'billing_address_list' in validated_data['quotation_logistic_data']:
-            billing_address_list = validated_data['quotation_logistic_data']['billing_address_list']
-            del validated_data['quotation_logistic_data']['billing_address_list']
-        quotation_logistic = QuotationLogistic.objects.create(quotation=instance)
-        if shipping_address_list:
-            QuotationLogisticShipping.objects.bulk_create([
-                QuotationLogisticShipping(
-                    shipping_address_id=shipping_address.get('id', None),
-                    quotation_logistic=quotation_logistic
-                )
-                for shipping_address in shipping_address_list
-            ])
-        if billing_address_list:
-            QuotationLogisticBilling.objects.bulk_create([
-                QuotationLogisticBilling(
-                    billing_address_id=billing_address.get('id', None),
-                    quotation_logistic=quotation_logistic
-                )
-                for billing_address in billing_address_list
-            ])
+        QuotationLogistic.objects.create(
+            **validated_data['quotation_logistic_data'],
+            quotation=instance
+        )
         return True
 
     @classmethod
@@ -155,20 +162,27 @@ class QuotationCommon:
                 old_term_discount.delete()
         return True
 
+    # @classmethod
+    # def delete_old_logistic(cls, instance):
+    #     old_logistic = QuotationLogistic.objects.filter(quotation=instance)
+    #     if old_logistic:
+    #         old_logistic_shipping = QuotationLogisticShipping.objects.filter(
+    #             quotation_logistic__in=old_logistic
+    #         )
+    #         if old_logistic_shipping:
+    #             old_logistic_shipping.delete()
+    #         old_logistic_billing = QuotationLogisticBilling.objects.filter(
+    #             quotation_logistic__in=old_logistic
+    #         )
+    #         if old_logistic_billing:
+    #             old_logistic_billing.delete()
+    #         old_logistic.delete()
+    #     return True
+
     @classmethod
     def delete_old_logistic(cls, instance):
         old_logistic = QuotationLogistic.objects.filter(quotation=instance)
         if old_logistic:
-            old_logistic_shipping = QuotationLogisticShipping.objects.filter(
-                quotation_logistic__in=old_logistic
-            )
-            if old_logistic_shipping:
-                old_logistic_shipping.delete()
-            old_logistic_billing = QuotationLogisticBilling.objects.filter(
-                quotation_logistic__in=old_logistic
-            )
-            if old_logistic_billing:
-                old_logistic_billing.delete()
             old_logistic.delete()
         return True
 
