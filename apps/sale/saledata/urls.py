@@ -7,6 +7,7 @@ from apps.sale.saledata.views.accounts import (
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
 from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
+from apps.sale.saledata.views.expense import ExpenseList, ExpenseDetail
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
@@ -101,4 +102,9 @@ urlpatterns += [
         ConfigPaymentTermDetail.as_view(),
         name='ConfigPaymentTermDetail'
     ),
+]
+
+urlpatterns += [
+    path('expenses', ExpenseList.as_view(), name='ExpenseList'),
+    path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail')
 ]
