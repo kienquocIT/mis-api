@@ -32,8 +32,11 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_uom_code',
             'product_quantity',
             'product_unit_price',
+            'product_discount_value',
+            'product_discount_amount',
             'product_tax_title',
             'product_tax_value',
+            'product_tax_amount',
             'product_subtotal_price',
             'order',
         )
@@ -100,6 +103,7 @@ class QuotationCostSerializer(serializers.ModelSerializer):
             'product_cost_price',
             'product_tax_title',
             'product_tax_value',
+            'product_tax_amount',
             'product_subtotal_price',
             'order',
         )
@@ -131,6 +135,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
             'expense_price',
             'expense_tax_title',
             'expense_tax_value',
+            'expense_tax_amount',
             'expense_subtotal_price',
             'order',
         )

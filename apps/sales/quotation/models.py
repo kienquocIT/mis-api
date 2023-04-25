@@ -406,6 +406,9 @@ class QuotationCost(SimpleAbstractModel):
     product_tax_value = models.FloatField(
         default=0
     )
+    product_tax_amount = models.FloatField(
+        default=0
+    )
     product_subtotal_price = models.FloatField(
         default=0
     )
@@ -484,6 +487,9 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     expense_tax_value = models.FloatField(
+        default=0
+    )
+    expense_tax_amount = models.FloatField(
         default=0
     )
     expense_subtotal_price = models.FloatField(
