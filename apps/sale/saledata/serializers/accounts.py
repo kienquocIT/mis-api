@@ -785,6 +785,22 @@ class AccountDetailSerializer(serializers.ModelSerializer):
         return []
 
 
+def recreate_employee_map_account(instance):
+    bulk_info = []
+    instance_manager_field = []
+    get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=instance.manager)
+    for employee in get_employees:
+        bulk_info.append(AccountEmployee(**{'account': instance, 'employee': employee}))
+        instance_manager_field.append(
+            {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
+        )
+    instance.manager = instance_manager_field
+    instance.save()
+    AccountEmployee.objects.filter(account=instance).delete()
+    AccountEmployee.objects.bulk_create(bulk_info)
+    return True
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
@@ -870,34 +886,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError({"account owner": AccountsMsg.CONTACT_NOT_EXIST})
 
-            # create in AccountEmployee (Account Manager)
-            bulk_info = []
-            instance_manager_field = []
-            get_employees = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=instance.manager,
-            )
-            for employee in get_employees:
-                bulk_info.append(
-                    AccountEmployee(
-                        **{
-                            'account': instance,
-                            'employee': employee,
-                        }
-                    )
-                )
-                instance_manager_field.append({
-                    'id': str(employee.id),
-                    'code': employee.code,
-                    'fullname': employee.get_full_name(2)
-                })
+            # recreate in AccountEmployee (Account Manager)
+            recreate_employee_map_account(instance)
 
-            instance.manager = instance_manager_field
-            instance.save()
-
-            AccountEmployee.objects.filter(account=instance).delete()
-            AccountEmployee.objects.bulk_create(bulk_info)
         return instance
 
 
