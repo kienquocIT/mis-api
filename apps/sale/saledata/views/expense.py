@@ -57,4 +57,3 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = ExpenseUpdateSerializer
         return self.update(request, *args, **kwargs)
-
