@@ -1,10 +1,12 @@
 from rest_framework import serializers
 
 from apps.sale.saledata.models.accounts import Account
+from apps.sale.saledata.models.price import Tax
+from apps.sale.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
-from apps.sales.quotation.serializers.quotation_sub import QuotationCommon
-from apps.shared import AccountsMsg
+from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
+from apps.shared import AccountsMsg, ProductMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -41,6 +43,18 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    @classmethod
+    def validate_product(cls, value):
+        return QuotationCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return QuotationCommonValidate().validate_tax(value=value)
+
 
 class QuotationTermSerializer(serializers.ModelSerializer):
     price_list = serializers.ListField(
@@ -67,13 +81,21 @@ class QuotationTermSerializer(serializers.ModelSerializer):
             'payment_term'
         )
 
+    @classmethod
+    def validate_price_list(cls, value):
+        return QuotationCommonValidate().validate_price_list(value=value)
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        return QuotationCommonValidate().validate_payment_term(value=value)
+
 
 class QuotationLogisticSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuotationLogistic
         fields = (
             'shipping_address',
-            'shipping_address',
+            'billing_address',
         )
 
 
@@ -108,6 +130,18 @@ class QuotationCostSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    @classmethod
+    def validate_product(cls, value):
+        return QuotationCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return QuotationCommonValidate().validate_tax(value=value)
+
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
     expense = serializers.CharField(
@@ -139,6 +173,18 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
             'expense_subtotal_price',
             'order',
         )
+
+    @classmethod
+    def validate_expense(cls, value):
+        return QuotationCommonValidate().validate_expense(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return QuotationCommonValidate().validate_tax(value=value)
 
 
 # QUOTATION BEGIN
@@ -225,18 +271,23 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_customer(cls, value):
-        try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
+        return QuotationCommonValidate().validate_customer(value=value)
+
+    @classmethod
+    def validate_opportunity(cls, value):
+        return QuotationCommonValidate().validate_opportunity(value=value)
+
+    @classmethod
+    def validate_contact(cls, value):
+        return QuotationCommonValidate().validate_contact(value=value)
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        return QuotationCommonValidate().validate_sale_person(value=value)
 
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
-        QuotationCommon().create_quotation_sub_models(
+        QuotationCommonCreate().create_quotation_sub_models(
             validated_data=validated_data,
             instance=quotation
         )
@@ -321,7 +372,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        QuotationCommon().create_quotation_sub_models(
+        QuotationCommonCreate().create_quotation_sub_models(
             validated_data=validated_data,
             instance=instance
         )

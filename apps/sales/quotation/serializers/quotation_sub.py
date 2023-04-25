@@ -1,34 +1,43 @@
+from rest_framework import serializers
+
+from apps.core.hr.models import Employee
+from apps.sale.saledata.models.accounts import Account, Contact
+from apps.sale.saledata.models.config import PaymentTerm
+from apps.sale.saledata.models.price import Tax, Price
+from apps.sale.saledata.models.product import Product, UnitOfMeasure, Expense
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg
 
 
-class QuotationCommon:
+class QuotationCommonCreate:
 
     @classmethod
     def validate_product_cost(cls, dict_data):
-        product_id = None
-        unit_of_measure_id = None
-        tax_id = None
+        product = {}
+        unit_of_measure = {}
+        tax = {}
         if 'product' in dict_data:
-            product_id = dict_data['product']
+            product = dict_data['product']
             del dict_data['product']
         if 'unit_of_measure' in dict_data:
-            unit_of_measure_id = dict_data['unit_of_measure']
+            unit_of_measure = dict_data['unit_of_measure']
             del dict_data['unit_of_measure']
         if 'tax' in dict_data:
-            tax_id = dict_data['tax']
+            tax = dict_data['tax']
             del dict_data['tax']
-        return product_id, unit_of_measure_id, tax_id
+        return product, unit_of_measure, tax
 
     @classmethod
     def create_product(cls, validated_data, instance):
         for quotation_product in validated_data['quotation_products_data']:
-            product_id, unit_of_measure_id, tax_id = cls.validate_product_cost(dict_data=quotation_product)
+            product, unit_of_measure, tax = cls.validate_product_cost(dict_data=quotation_product)
             QuotationProduct.objects.create(
                 quotation=instance,
-                product_id=product_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
+                product_id=product.get('id', None),
+                unit_of_measure_id=unit_of_measure.get('id', None),
+                tax_id=tax.get('id', None),
                 **quotation_product
             )
         return True
@@ -109,12 +118,12 @@ class QuotationCommon:
     @classmethod
     def create_cost(cls, validated_data, instance):
         for quotation_cost in validated_data['quotation_costs_data']:
-            product_id, unit_of_measure_id, tax_id = cls.validate_product_cost(dict_data=quotation_cost)
+            product, unit_of_measure, tax = cls.validate_product_cost(dict_data=quotation_cost)
             QuotationCost.objects.create(
                 quotation=instance,
-                product_id=product_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
+                product_id=product.get('id', None),
+                unit_of_measure_id=unit_of_measure.get('id', None),
+                tax_id=tax.get('id', None),
                 **quotation_cost
             )
         return True
@@ -238,3 +247,147 @@ class QuotationCommon:
                 instance=instance
             )
         return True
+
+
+class QuotationCommonValidate:
+
+    @classmethod
+    def validate_customer(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_opportunity(cls, value):
+        try:
+            return Opportunity.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Opportunity.DoesNotExist:
+            raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
+
+    @classmethod
+    def validate_contact(cls, value):
+        try:
+            return Contact.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee': HRMsg.EMPLOYEES_NOT_EXIST})
+
+    @classmethod
+    def validate_product(cls, value):
+        try:
+            product = Product.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(product.id),
+                'title': product.title,
+                'code': product.code
+            }
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        try:
+            uom = UnitOfMeasure.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(uom.id),
+                'title': uom.title,
+                'code': uom.code
+            }
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+
+    @classmethod
+    def validate_tax(cls, value):
+        try:
+            tax = Tax.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(tax.id),
+                'title': tax.title,
+                'code': tax.code,
+                'value': tax.rate
+            }
+        except Tax.DoesNotExist:
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_expense(cls, value):
+        try:
+            expense = Expense.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(expense.id),
+                'title': expense.title,
+                'code': expense.code
+            }
+        except Expense.DoesNotExist:
+            raise serializers.ValidationError({'expense': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_price_list(cls, value):
+        if isinstance(value, list):
+            price_list = Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id__in=value
+            )
+            if price_list.count() == len(value):
+                return [
+                    {'id': str(price.id), 'title': price.title, 'code': price.code}
+                    for price in price_list
+                ]
+            raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
+        raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        try:
+            payment = PaymentTerm.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(payment.id),
+                'title': payment.title,
+                'code': payment.code
+            }
+        except PaymentTerm.DoesNotExist:
+            raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
