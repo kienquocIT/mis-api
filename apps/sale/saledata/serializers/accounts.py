@@ -495,7 +495,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if 'account_name' not in validated_data.keys():
-            validated_data['account_name'] = None
+            validated_data.update('account_name', None)
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
