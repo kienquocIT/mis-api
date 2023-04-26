@@ -90,7 +90,7 @@ class Account(DataAbstractModel):
         related_name='account_map_employee'
     )
     parent_account = models.CharField(
-        verbose_name='parent of this account',
+        verbose_name='parent account',
         null=True,
         max_length=150
     )
