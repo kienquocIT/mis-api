@@ -5,7 +5,6 @@ from apps.sale.saledata.models.product import (
 from apps.sale.saledata.models.price import Tax, Currency
 from apps.sale.saledata.models.product import ExpenseType
 from apps.shared.translations.expense import ExpenseMsg
-import uuid
 
 
 class ExpenseListSerializer(serializers.ModelSerializer):
