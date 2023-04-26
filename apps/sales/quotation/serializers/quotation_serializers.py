@@ -1,12 +1,10 @@
 from rest_framework import serializers
 
 from apps.sale.saledata.models.accounts import Account
-from apps.sale.saledata.models.price import Tax
-from apps.sale.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
-from apps.shared import AccountsMsg, ProductMsg
+from apps.shared import AccountsMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -189,13 +187,46 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
 
 # QUOTATION BEGIN
 class QuotationListSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+
     class Meta:
         model = Quotation
         fields = (
             'id',
             'title',
-            'code'
+            'code',
+            'customer',
+            'sale_person',
+            'date_created',
+            'total_product',
+            'system_status'
         )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(2),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_system_status(cls):
+        return "Open"
 
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
@@ -210,6 +241,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 
 # Quotation
 class QuotationCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField()
     opportunity = serializers.CharField(
         max_length=550,
         required=False
