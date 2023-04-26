@@ -10,10 +10,10 @@ from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPayment
 from apps.sale.saledata.views.expense import ExpenseList, ExpenseDetail
 
 from apps.sale.saledata.views.price import (
-    TaxCategoryList, TaxCategoryDetail,
+    TaxCategoryList, TaxCategoryDetail, PriceList, PriceDetail,
     TaxList, TaxDetail,
     CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail,
+
     UpdateProductsForPriceList, DeleteProductsForPriceList, ProductAddFromPriceList, DeleteCurrencyFromPriceList
 )
 
