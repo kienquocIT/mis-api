@@ -45,14 +45,10 @@ class QuotationCommonCreate:
     @classmethod
     def create_term(cls, validated_data, instance):
         price_list = []
-        discount_list = []
         payment_term = {}
         if 'price_list' in validated_data['quotation_term_data']:
             price_list = validated_data['quotation_term_data']['price_list']
             del validated_data['quotation_term_data']['price_list']
-        if 'discount_list' in validated_data['quotation_term_data']:
-            discount_list = validated_data['quotation_term_data']['discount_list']
-            del validated_data['quotation_term_data']['discount_list']
         if 'payment_term' in validated_data['quotation_term_data']:
             payment_term = validated_data['quotation_term_data']['payment_term']
             del validated_data['quotation_term_data']['payment_term']
@@ -67,14 +63,6 @@ class QuotationCommonCreate:
                     quotation_term=quotation_term
                 )
                 for price in price_list
-            ])
-        if discount_list:
-            QuotationTermDiscount.objects.bulk_create([
-                QuotationTermDiscount(
-                    discount_id=discount.get('id', None),
-                    quotation_term=quotation_term
-                )
-                for discount in discount_list
             ])
         return True
 

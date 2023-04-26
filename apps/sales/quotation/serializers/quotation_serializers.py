@@ -61,12 +61,6 @@ class QuotationTermSerializer(serializers.ModelSerializer):
         ),
         required=False
     )
-    discount_list = serializers.ListField(
-        child=serializers.CharField(
-            max_length=550
-        ),
-        required=False
-    )
     payment_term = serializers.CharField(
         max_length=550
     )
@@ -75,7 +69,6 @@ class QuotationTermSerializer(serializers.ModelSerializer):
         model = QuotationTerm
         fields = (
             'price_list',
-            'discount_list',
             'payment_term'
         )
 
@@ -232,13 +225,89 @@ class QuotationListSerializer(serializers.ModelSerializer):
 
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    contact = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+
     class Meta:
         model = Quotation
         fields = (
             'id',
             'title',
-            'code'
+            'code',
+            'opportunity',
+            'customer',
+            'contact',
+            'sale_person',
+            'system_status',
+            'quotation_products_data',
+            'quotation_term_data',
+            'quotation_logistic_data',
+            'quotation_costs_data',
+            'quotation_expenses_data',
+            # total amount of products
+            'total_product_pretax_amount',
+            'total_product_discount',
+            'total_product_tax',
+            'total_product',
+            # total amount of costs
+            'total_cost_pretax_amount',
+            'total_cost_tax',
+            'total_cost',
+            # total amount of expenses
+            'total_expense_pretax_amount',
+            'total_expense_tax',
+            'total_expense',
+            'is_customer_confirm',
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+            }
+        return {}
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+            }
+        return {}
+
+    @classmethod
+    def get_contact(cls, obj):
+        if obj.contact:
+            return {
+                'id': obj.contact_id,
+                'title': obj.contact.fullname,
+                'code': obj.contact.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(2),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status:
+            return "Open"
+        return "Open"
 
 
 # Quotation
