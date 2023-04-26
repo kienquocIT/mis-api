@@ -299,6 +299,20 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             raise serializers.ValidationError(PriceMsg.PRICE_MUST_BE_GREATER_THAN_ZERO)
         return None
 
+    def validate(self, validate_data):
+        if 'price_list_mapped' in validate_data:
+            price_list_mapped = Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=validate_data['price_list_mapped']
+            ).first()
+            if price_list_mapped:
+                if price_list_mapped.price_list_type != validate_data.get('price_list_type', None):
+                    raise serializers.ValidationError(PriceMsg.DIFFERENT_PRICE_LIST_TYPE)
+            else:
+                raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
+        return validate_data
+
     def create(self, validated_data):
         price_list = Price.objects.create(**validated_data)
         if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
@@ -436,7 +450,6 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         fields = (
             'auto_update',
             'can_delete',
-            'price_list_type',
             'factor',
             'currency'
         )
