@@ -128,9 +128,10 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        currency_using = validated_data.pop['currency_using']
+        currency_using = validated_data['general_information']['currency_using']
+        del validated_data['general_information']['currency_using']
         expense = Expense.objects.create(**validated_data)
-        validated_data['currency_using'] = currency_using
+        validated_data['general_information']['currency_using'] = currency_using
         self.common_create_expense_general(validated_data=validated_data, instance=expense)
         return expense
 
@@ -184,6 +185,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 'id': item.price_id,
                 'price_value': item.price_value,
                 'is_auto_update': item.is_auto_update,
+                'currency': item.currency_id
             } for item in ExpensePrice.objects.filter(expense_general=obj.expense)
         ]
 
@@ -209,9 +211,16 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-    @staticmethod
-    def common_delete_expense_price(instance):
-        ExpensePrice.objects.filter(expense_general=instance).delete()
+    @classmethod
+    def common_delete_expense_price(cls, instance, validate_data):
+        expense_price_delete = ExpensePrice.objects.filter(
+            expense_general=instance,
+        )
+        currency_using = validate_data['general_information']['currency_using']['id']
+        price_list = validate_data['general_information']['price_list']
+        for item in expense_price_delete:
+            if str(item.price_id) not in [obj["id"] for obj in price_list] or item.currency_id == currency_using:
+                item.delete()
         return True
 
     @classmethod
@@ -222,14 +231,12 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
                 tax_id = validated_data['general_information']['tax_code']['id']
 
             expense_general = instance.expense
-            expense_general.delete()
-            expense_general = ExpenseGeneral.objects.create(
-                expense=instance,
-                expense_type_id=validated_data['general_information']['expense_type']['id'],
-                uom_group_id=validated_data['general_information']['uom_group']['id'],
-                uom_id=validated_data['general_information']['uom']['id'],
-                tax_code_id=tax_id,
-            )
-            cls.common_delete_expense_price(expense_general)
+            expense_general.expense_type_id = validated_data['general_information']['expense_type']['id']
+            expense_general.uom_group_id = validated_data['general_information']['uom_group']['id']
+            expense_general.uom_id = validated_data['general_information']['uom']['id']
+            expense_general.tax_code_id = tax_id
+            expense_general.save()
+
+            cls.common_delete_expense_price(instance=expense_general, validate_data=validated_data)
             ExpenseCreateSerializer.common_create_expense_price(validated_data, expense_general)
         return True
