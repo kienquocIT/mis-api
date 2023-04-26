@@ -18,3 +18,19 @@ class Opportunity(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        opportunity = Opportunity.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "OPP.CODE."
+        if not self.code:
+            temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
