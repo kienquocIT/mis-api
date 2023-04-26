@@ -586,6 +586,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     contact_primary = serializers.UUIDField(required=False)
+    parent_account = serializers.UUIDField(required=False, allow_null=True)
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
@@ -674,20 +675,15 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         # create in AccountEmployee
         bulk_info = []
-        get_employees = Employee.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id__in=account.manager,
-        )
+        manager_field = []
+        get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=account.manager)
         for employee in get_employees:
-            bulk_info.append(
-                AccountEmployee(
-                    **{
-                        'account': account,
-                        'employee': employee,
-                    }
-                )
+            bulk_info.append(AccountEmployee(**{'account': account, 'employee': employee}))
+            manager_field.append(
+                {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
             )
+        account.manager = manager_field
+        account.save()
 
         AccountEmployee.objects.bulk_create(bulk_info)
 
@@ -801,9 +797,23 @@ def recreate_employee_map_account(instance):
     return True
 
 
+def update_account_owner(instance, account_owner):
+    if account_owner:
+        Contact.objects.filter_current(fill__tenant=True, fill__company=True, id=account_owner).update(
+            account_name=instance,
+            is_primary=True
+        )
+    Contact.objects.filter_current(fill__tenant=True, fill__company=True, account_name=instance).update(
+        account_name=None,
+        is_primary=False
+    )
+    return True
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
+    parent_account = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -826,19 +836,12 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         account_types = []
         for item in validate_data.get('account_type', None):
-            account_type = AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=item
-            ).first()
+            account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
             if account_type:
-                title = account_type.title
-                code = account_type.code
-                detail = ''
-                if title.lower() == 'customer':
-                    detail = self.initial_data.get('customer_detail_type', None)
-                account_types.append({'id': str(item), 'code': code, 'title': title, 'detail': detail})
-
+                detail = self.initial_data.get('customer_detail_type', '')
+                account_types.append(
+                    {'id': str(item), 'code': account_type.code, 'title': account_type.title, 'detail': detail}
+                )
                 if detail == 'organization':  # tax_code is required
                     tax_code = validate_data.get('tax_code', None)
                     if tax_code:
@@ -861,34 +864,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        # update account owner
-        account_owner_id_selected = self.initial_data.get('account-owner', None)
-        if account_owner_id_selected:
-            contact_mapped_new = Contact.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=account_owner_id_selected
-            ).first()
-            if contact_mapped_new:
-                contact_mapped_current = Contact.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    account_name=instance
-                ).first()
-                if contact_mapped_current:
-                    contact_mapped_current.account_name = None
-                    contact_mapped_current.is_primary = False
-                    contact_mapped_current.save()
-
-                contact_mapped_new.account_name = instance
-                contact_mapped_new.is_primary = True
-                contact_mapped_new.save()
-            else:
-                raise serializers.ValidationError({"account owner": AccountsMsg.CONTACT_NOT_EXIST})
-
-            # recreate in AccountEmployee (Account Manager)
-            recreate_employee_map_account(instance)
-
+        update_account_owner(instance, self.initial_data.get('account-owner', None))  # update account owner
+        recreate_employee_map_account(instance)  # recreate in AccountEmployee (Account Manager)
         return instance
 
 
