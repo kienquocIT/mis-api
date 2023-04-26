@@ -495,7 +495,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if 'account_name' not in validated_data.keys():
-            validated_data.update('account_name', None)
+            validated_data.update({'account_name': None})
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -854,6 +854,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                             raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
                     else:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
+                elif detail == 'individual':
+                    validate_data.update({'parent_account': None})
             else:
                 raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
         validate_data['account_type'] = account_types
