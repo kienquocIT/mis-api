@@ -796,15 +796,15 @@ def recreate_employee_map_account(instance):
 
 
 def update_account_owner(instance, account_owner):
+    Contact.objects.filter_current(fill__tenant=True, fill__company=True, account_name=instance).update(
+        account_name=None,
+        is_primary=False
+    )
     if account_owner:
         Contact.objects.filter_current(fill__tenant=True, fill__company=True, id=account_owner).update(
             account_name=instance,
             is_primary=True
         )
-    Contact.objects.filter_current(fill__tenant=True, fill__company=True, account_name=instance).update(
-        account_name=None,
-        is_primary=False
-    )
     return True
 
 
