@@ -8,6 +8,15 @@ from apps.sale.saledata.views.accounts import (
 )
 from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.sale.saledata.views.expense import ExpenseList, ExpenseDetail
+
+from apps.sale.saledata.views.price import (
+    TaxCategoryList, TaxCategoryDetail,
+    TaxList, TaxDetail,
+    CurrencyList, CurrencyDetail, SyncWithVCB,
+    PriceList, PriceDetail,
+    UpdateProductsForPriceList, DeleteProductsForPriceList, ProductAddFromPriceList, DeleteCurrencyFromPriceList
+)
+
 from apps.sale.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
@@ -15,13 +24,6 @@ from apps.sale.saledata.views.product import (
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
     UnitOfMeasureList, UnitOfMeasureDetail,
     ProductList, ProductDetail
-)
-from apps.sale.saledata.views.price import (
-    TaxCategoryList, TaxCategoryDetail,
-    TaxList, TaxDetail,
-    CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail,
-    UpdateProductsForPriceList, DeleteProductsForPriceList, ProductAddFromPriceList, DeleteCurrencyFromPriceList
 )
 
 urlpatterns = [
