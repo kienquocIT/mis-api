@@ -583,6 +583,7 @@ def common_delete_product_information(validated_data, instance):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -591,8 +592,17 @@ class ProductListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'general_information',
-            'sale_information'
+            'sale_information',
+            'price_list'
         )
+
+    @classmethod
+    def get_price_list(cls, obj):
+        # return ProductPriceList.objects.filter(product=obj).values_list('price', flat=True)
+        price_list = ProductPriceList.objects.filter(product=obj).values_list('price', flat=True)
+        if price_list:
+            return min(price_list)
+        return 0
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):

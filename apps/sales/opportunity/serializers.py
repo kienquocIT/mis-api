@@ -36,7 +36,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         model = Opportunity
         fields = (
             'title',
-            'code',
             'customer'
         )
 
