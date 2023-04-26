@@ -225,7 +225,9 @@ class QuotationListSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_system_status(cls):
+    def get_system_status(cls, obj):
+        if obj.system_status:
+            return "Open"
         return "Open"
 
 

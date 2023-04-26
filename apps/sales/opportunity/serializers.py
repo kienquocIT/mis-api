@@ -29,6 +29,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField()
     customer = serializers.UUIDField()
 
     class Meta:
