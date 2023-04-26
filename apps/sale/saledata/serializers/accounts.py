@@ -754,8 +754,6 @@ class AccountDetailSerializer(serializers.ModelSerializer):
                     'mobile': account_owner.mobile,
                     'owner': contact_owner_information
                 }
-            else:
-                raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
         return {}
 
     @classmethod
