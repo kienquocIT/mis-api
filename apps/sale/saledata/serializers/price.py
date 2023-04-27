@@ -1,4 +1,3 @@
-from datetime import datetime
 from django.utils import timezone
 from rest_framework import serializers
 from apps.sale.saledata.models.price import (
@@ -264,12 +263,11 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
     def get_status(cls, obj):
         if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
             return 'Valid'
-        elif obj.valid_time_end < timezone.now():
+        if obj.valid_time_end < timezone.now():
             return 'Expired'
-        elif obj.valid_time_start >= timezone.now():
+        if obj.valid_time_start >= timezone.now():
             return 'Invalid'
-        else:
-            return 'Undefined'
+        return 'Undefined'
 
 
 class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -413,12 +411,11 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     def get_status(cls, obj):
         if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
             return 'Valid'
-        elif obj.valid_time_end < timezone.now():
+        if obj.valid_time_end < timezone.now():
             return 'Expired'
-        elif obj.valid_time_start >= timezone.now():
+        if obj.valid_time_start >= timezone.now():
             return 'Invalid'
-        else:
-            return 'Undefined'
+        return 'Undefined'
 
 
 def get_product_when_turn_on_auto_update(instance):
