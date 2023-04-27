@@ -110,10 +110,19 @@ class TaxUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 # Currency
 class CurrencyListSerializer(serializers.ModelSerializer):  # noqa
+    currency = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_currency(cls, obj):
+        return {
+            "id": "",
+            "title": obj.title,
+            "code": obj.abbreviation
+        }
 
     class Meta:
         model = Currency
-        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary')
+        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary', 'currency')
 
 
 class CurrencyCreateSerializer(serializers.ModelSerializer):  # noqa
