@@ -268,7 +268,7 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
+        return {}
 
     @classmethod
     def get_account_name(cls, obj):
