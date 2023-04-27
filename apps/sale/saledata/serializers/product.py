@@ -598,11 +598,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        # return ProductPriceList.objects.filter(product=obj).values_list('price', flat=True)
-        price_list = ProductPriceList.objects.filter(product=obj).values_list('price', flat=True)
-        if price_list:
-            return min(price_list)
-        return 0
+        return obj.productpricelist_set.all().values_list('price', flat=True)
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
