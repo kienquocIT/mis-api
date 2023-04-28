@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import ProductGeneral, ProductSale
+from apps.sale.saledata.models.product import ProductGeneral, ProductSale, ExpensePrice
 from apps.shared import PriceMsg
 
 
@@ -353,23 +353,46 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_products_mapped(cls, obj):
-        products = ProductPriceList.objects.filter(
-            price_list_id=obj.id,
-            is_delete=False
-        ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
         all_products = []
-        for product in products:
-            product_information = {
-                'id': product.product_id,
-                'code': product.product.code,
-                'title': product.product.title,
-                'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
-                'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
-                'price': product.price,
-                'is_auto_update': product.get_price_from_source,
-                'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
-            }
-            all_products.append(product_information)
+        if obj.price_list_type == 0:
+            products = ProductPriceList.objects.filter(
+                price_list_id=obj.id,
+                is_delete=False
+            ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
+            for product in products:
+                product_information = {
+                    'id': product.product_id,
+                    'code': product.product.code,
+                    'title': product.product.title,
+                    'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
+                    'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
+                    'price': product.price,
+                    'is_auto_update': product.get_price_from_source,
+                    'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
+                }
+                all_products.append(product_information)
+        elif obj.price_list_type == 2:
+            expenses = ExpensePrice.objects.filter( # noqa
+                price_list_id=obj.id,
+                is_delete=False
+            ).select_related('expense_general', 'expense', 'currency', 'uom', 'uom_group')
+            for expense in expenses:
+                expense_information = {
+                    'id': expense.expense_general.expense.id,
+                    'code': expense.expense_general.expense.code,
+                    'title': expense.expense_general.expense.title,
+                    'uom_group': {
+                        'id': expense.expense_general.uom_group.id,
+                        'title': expense.expense_general.uom_group.title
+                    },
+                    'uom': {'id': expense.expense_general.uom.id, 'title': expense.expense_general.uom.title},
+                    'price': expense.price,
+                    'is_auto_update': expense.is_auto_update,
+                    'currency_using': {
+                        'id': expense.currency.id, 'abbreviation': expense.currency.abbreviation
+                    }
+                }
+                all_products.append(expense_information)
         return all_products
 
     @classmethod
