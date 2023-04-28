@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import ProductGeneral, ProductSale
+from apps.sale.saledata.models.product import ProductGeneral, ProductSale, ExpensePrice
 from apps.shared import PriceMsg
 
 
@@ -383,23 +383,45 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_products_mapped(cls, obj):
-        products = ProductPriceList.objects.filter(
-            price_list_id=obj.id,
-            is_delete=False
-        ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
         all_products = []
-        for product in products:
-            product_information = {
-                'id': product.product_id,
-                'code': product.product.code,
-                'title': product.product.title,
-                'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
-                'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
-                'price': product.price,
-                'is_auto_update': product.get_price_from_source,
-                'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
-            }
-            all_products.append(product_information)
+        if obj.price_list_type == 0:
+            products = ProductPriceList.objects.filter(
+                price_list_id=obj.id,
+                is_delete=False
+            ).select_related('product', 'currency_using', 'uom_using', 'uom_group_using')
+            for product in products:
+                product_information = {
+                    'id': product.product_id,
+                    'code': product.product.code,
+                    'title': product.product.title,
+                    'uom_group': {'id': product.uom_group_using_id, 'title': product.uom_group_using.title},
+                    'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
+                    'price': product.price,
+                    'is_auto_update': product.get_price_from_source,
+                    'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
+                }
+                all_products.append(product_information)
+        elif obj.price_list_type == 2:
+            expenses = ExpensePrice.objects.filter( # noqa
+                price_id=obj.id,
+            ).select_related('expense_general', 'currency')
+            for expense in expenses:
+                expense_information = {
+                    'id': expense.expense_general.expense.id,
+                    'code': expense.expense_general.expense.code,
+                    'title': expense.expense_general.expense.title,
+                    'uom_group': {
+                        'id': expense.expense_general.uom_group.id,
+                        'title': expense.expense_general.uom_group.title
+                    },
+                    'uom': {'id': expense.expense_general.uom.id, 'title': expense.expense_general.uom.title},
+                    'price': expense.price_value,
+                    'is_auto_update': expense.is_auto_update,
+                    'currency_using': {
+                        'id': expense.currency.id, 'abbreviation': expense.currency.abbreviation
+                    }
+                }
+                all_products.append(expense_information)
         return all_products
 
     @classmethod
@@ -620,7 +642,8 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
                 for item in list_price:
                     obj = ProductPriceList.objects.filter(
                         product_id=self.initial_data.get('product_id', None),
-                        price_list_id=item.get('id', None)
+                        price_list_id=item.get('id', None),
+						uom_using_id=self.initial_data.get('uom_id', None)
                     )
                     if obj:
                         obj.delete()
@@ -646,7 +669,8 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
                         get_price_from_source = True
                     if not ProductPriceList.objects.filter(
                             price_list_id=item['price_list_id'],
-                            product_id=product['id']
+                            product_id=product['id'],
+							uom_using_id=product['uom']
                     ).exists():
                         objs.append(
                             ProductPriceList(
@@ -662,27 +686,4 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
             return instance
-        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
-
-
-class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
-    currency_id = serializers.CharField()
-    class Meta:  # noqa
-        model = Price
-        fields = (
-            'currency_id',
-        )
-
-    @classmethod
-    def validate_currency_id(cls, value):
-        if value is None:
-            raise serializers.ValidationError(PriceMsg.CURRENCY_IS_NOT_NULL)
-        return value
-
-    def update(self, instance, validated_data):
-        if not instance.valid_time_end < timezone.now():  # not expired
-            ProductPriceList.objects.filter(
-                price_list_id=instance.id, currency_using_id=validated_data['currency_id']
-            ).delete()
-            return True
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
