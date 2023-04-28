@@ -6,3 +6,5 @@ __all__ = ['CompanyMsg']
 class CompanyMsg:
     VALID_NEED_TENANT_DATA = _('Valid company maximum raise errors.')
     MAXIMUM_COMPANY_LIMITED = _('Maximum company is {} companies.')
+    CURRENCY_NOT_EXIST = _("Currency isn't support for company.")
+    LANGUAGE_NOT_SUPPORT = _("Language isn't support.")

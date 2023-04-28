@@ -1,11 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
-from apps.core.company.models import CompanyUserEmployee
+from apps.core.company.models import CompanyUserEmployee, CompanyConfig
 from apps.core.company.mixins import CompanyDestroyMixin
 from apps.core.company.models import Company
 from apps.shared import (
-    mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin,
+    mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin, ResponseController,
+    HttpMsg,
 )
 from apps.core.company.serializers import (
     CompanyCreateSerializer,
@@ -14,7 +16,39 @@ from apps.core.company.serializers import (
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
+    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer,
 )
+
+
+class CompanyConfigDetail(APIView):
+    serializer_class = CompanyConfigDetailSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Get config of Company',
+    )
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        try:
+            obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
+            return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
+        except CompanyConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(
+        operation_summary='Update config of Company',
+    )
+    @mask_view(login_require=True)
+    def put(self, request, *args, **kwargs):
+        try:
+            obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
+            ser = CompanyConfigUpdateSerializer(obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        except CompanyConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
 
 
 class CompanyList(BaseListMixin, BaseCreateMixin):

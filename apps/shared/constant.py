@@ -1,6 +1,5 @@
 from .translations import WorkflowMsg
 
-
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -48,3 +47,26 @@ CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
+
+CURRENCY_MASK_MONEY = {
+    'VND': {
+        'prefix': '',
+        'suffix': ' VND',
+        'affixesStay': True,
+        'thousands': '.',
+        'decimal': ',',
+        'precision': 0,
+        'allowZero': True,
+        'allowNegative': False,
+    },
+    'USD': {
+        'prefix': '$ ',
+        'suffix': '',
+        'affixesStay': True,
+        'thousands': ',',
+        'decimal': '.',
+        'precision': 2,
+        'allowZero': True,
+        'allowNegative': True,
+    }
+}

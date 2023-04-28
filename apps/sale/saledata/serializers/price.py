@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
@@ -110,10 +111,19 @@ class TaxUpdateSerializer(serializers.ModelSerializer):  # noqa
 
 # Currency
 class CurrencyListSerializer(serializers.ModelSerializer):  # noqa
+    currency = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_currency(cls, obj):
+        return {
+            "id": "",
+            "title": obj.title,
+            "code": obj.abbreviation
+        }
 
     class Meta:
         model = Currency
-        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary')
+        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary', 'currency')
 
 
 class CurrencyCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -231,6 +241,7 @@ class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
 
 class PriceListSerializer(serializers.ModelSerializer):  # noqa
     price_list_type = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
@@ -244,6 +255,7 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             'price_list_type',
             'price_list_mapped',
             'is_default',
+            'status',
         )
 
     @classmethod
@@ -256,9 +268,21 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
             return {'value': obj.price_list_type, 'name': 'For Expense'}
         return {}
 
+    @classmethod
+    def get_status(cls, obj):
+        if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
+            return 'Valid'
+        if obj.valid_time_end < timezone.now():
+            return 'Expired'
+        if obj.valid_time_start >= timezone.now():
+            return 'Invalid'
+        return 'Undefined'
+
 
 class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
+    valid_time_start = serializers.DateTimeField(required=True)
+    valid_time_end = serializers.DateTimeField(required=True)
 
     class Meta:
         model = Price
@@ -269,7 +293,9 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
             'factor',
             'currency',
             'price_list_type',
-            'price_list_mapped'
+            'price_list_mapped',
+            'valid_time_start',
+            'valid_time_end'
         )
 
     @classmethod
@@ -335,6 +361,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     products_mapped = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Price
@@ -348,7 +375,10 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
             'price_list_type',
             'price_list_mapped',
             'is_default',
-            'products_mapped'
+            'products_mapped',
+            'valid_time_start',
+            'valid_time_end',
+            'status'
         )
 
     @classmethod
@@ -408,6 +438,16 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                 'title': price_list_mapped.title
             }
         return {}
+
+    @classmethod
+    def get_status(cls, obj):
+        if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
+            return 'Valid'
+        if obj.valid_time_end < timezone.now():
+            return 'Expired'
+        if obj.valid_time_start >= timezone.now():
+            return 'Invalid'
+        return 'Undefined'
 
 
 def get_product_when_turn_on_auto_update(instance):
@@ -500,6 +540,23 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return instance
 
 
+class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
+
+    class Meta:
+        model = Price
+        fields = ()
+
+    def update(self, instance, validated_data):
+        if not Price.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                price_list_mapped=instance.id).exists():
+            ProductPriceList.objects.filter(price_list=instance).delete()  # delete all item in M2M table
+            instance.delete()  # delete price list
+            return True
+        raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
+
+
 class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
     list_price = serializers.ListField(required=True)
     list_item = serializers.ListField(required=True)
@@ -581,11 +638,11 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
             for item in list_price:
                 obj = ProductPriceList.objects.filter(
                     product_id=self.initial_data.get('product_id', None),
-                    price_list=item.get('id', None)
+                    price_list_id=item.get('id', None)
                 )
                 if obj:
                     obj.delete()
-        return instance
+        return True
 
 
 class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
@@ -641,4 +698,4 @@ class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
         ProductPriceList.objects.filter(
             price_list_id=instance.id, currency_using_id=validated_data['currency_id']
         ).delete()
-        return instance
+        return True
