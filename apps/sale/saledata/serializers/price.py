@@ -593,6 +593,8 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                         product_id=item['product_id'],
                         price_list_id=price['id'],
                         currency_using_id=item['currency'],
+                        uom_using_id=item['uom_id'],
+                        uom_group_using_id=item['uom_group_id'],
                     ).first()
                     if product_price_list_obj:
                         is_auto_update = product_price_list_obj.get_price_from_source
@@ -613,7 +615,7 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
                     if price['id'] != str(instance.id):
                         if is_auto_update is False:
                             result_price = value_price
-                    if found:
+                    if found and result_price != 0:
                         objs.append(
                             ProductPriceList(
                                 price_list_id=price['id'],
