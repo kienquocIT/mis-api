@@ -4,7 +4,7 @@ from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
 from apps.sale.saledata.models.product import ProductGeneral, ProductSale, ExpensePrice
-from apps.shared import PriceMsg
+from apps.shared import PriceMsg, ProductMsg
 
 
 # Tax Category
@@ -398,7 +398,10 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                     'uom': {'id': product.uom_using_id, 'title': product.uom_using.title},
                     'price': product.price,
                     'is_auto_update': product.get_price_from_source,
-                    'currency_using': {'id': product.currency_using.id, 'abbreviation': product.currency_using.abbreviation}
+                    'currency_using': {
+                        'id': product.currency_using.id,
+                        'abbreviation': product.currency_using.abbreviation
+                    }
                 }
                 all_products.append(product_information)
         elif obj.price_list_type == 2:
@@ -643,12 +646,44 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
                     obj = ProductPriceList.objects.filter(
                         product_id=self.initial_data.get('product_id', None),
                         price_list_id=item.get('id', None),
-						uom_using_id=self.initial_data.get('uom_id', None)
+                        uom_using_id=self.initial_data.get('uom_id', None)
                     )
                     if obj:
                         obj.delete()
             return True
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
+
+
+def create_item_for_child_price_list(instance, bulk_info):
+    price_list_child = Price.objects.filter_current(
+        fill__tenant=True,
+        fill__company=True,
+        price_list_mapped=instance.id,
+        auto_update=True
+    )
+    objs = []
+    if len(price_list_child) > 0:
+        for item in price_list_child:
+            for product_item in bulk_info:
+                if (str(product_item.currency_using_id) in item.currency) and (not ProductPriceList.objects.filter(
+                        price_list=item,
+                        product=product_item.product,
+                        uom_using=product_item.uom_using,
+                ).exists()):
+                    objs.append(
+                        ProductPriceList(
+                            price_list=item,
+                            product=product_item.product,
+                            price=float(product_item.price) * float(item.factor),
+                            currency_using=product_item.currency_using,
+                            uom_using=product_item.uom_using,
+                            uom_group_using=product_item.uom_group_using,
+                            get_price_from_source=True
+                        )
+                    )
+        if len(objs) > 0:
+            ProductPriceList.objects.bulk_create(objs)
+    return True
 
 
 class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
@@ -659,31 +694,35 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if not instance.valid_time_end < timezone.now():  # not expired
-            price_list_information = self.initial_data['list_price_list']
-            product = self.initial_data['product']
-            objs = []
-            if price_list_information and product:
-                for item in price_list_information:
-                    get_price_from_source = False
-                    if item.get('is_auto_update', None) == '1':
-                        get_price_from_source = True
-                    if not ProductPriceList.objects.filter(
-                            price_list_id=item['price_list_id'],
+            product = self.initial_data.get('product', None)
+            if product:
+                bulk_info = []
+                if product and not ProductPriceList.objects.filter(
+                    price_list=instance,
+                    product_id=product['id'],
+                    uom_using_id=product['uom']
+                ):
+                    currency_list = instance.currency
+                    for currency in currency_list:
+                        bulk_info.append(ProductPriceList(
+                            price_list=instance,
                             product_id=product['id'],
-							uom_using_id=product['uom']
-                    ).exists():
-                        objs.append(
-                            ProductPriceList(
-                                price_list_id=item.get('price_list_id', None),
-                                product_id=product['id'],
-                                price=float(item.get('price_value', None)),
-                                currency_using_id=item.get('currency_using', None),
-                                uom_using_id=product['uom'],
-                                uom_group_using_id=product['uom_group'],
-                                get_price_from_source=get_price_from_source
-                            )
-                        )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
-            return instance
+                            price=0.0,
+                            currency_using_id=currency,
+                            uom_using_id=product['uom'],
+                            uom_group_using_id=product['uom_group']
+                        ))
+                    if len(bulk_info) > 0:
+                        ProductPriceList.objects.bulk_create(bulk_info)
+
+                create_item_for_child_price_list(
+                    instance,
+                    ProductPriceList.objects.filter(
+                        price_list=instance,
+                        product_id=product['id'],
+                        uom_using_id=product['uom']
+                    )
+                )
+                return instance
+            raise serializers.ValidationError(ProductMsg.PRODUCT_DOES_NOT_EXIST)
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
