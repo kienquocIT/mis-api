@@ -503,18 +503,20 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def update(self, instance, validated_data):
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
+        if not instance.valid_time_end < timezone.now():  # not expired
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
 
-        if instance.auto_update:
-            get_product_when_turn_on_auto_update(instance)
-        else:
-            ProductPriceList.objects.filter(price_list=instance).update(get_price_from_source=False)
+            if instance.auto_update:
+                get_product_when_turn_on_auto_update(instance)
+            else:
+                ProductPriceList.objects.filter(price_list=instance).update(get_price_from_source=False)
 
-        if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-            price_list_apply_for(instance, self.initial_data.get('apply_for', None))
-        return instance
+            if not instance.auto_update and 'apply_for' in self.initial_data.keys():
+                price_list_apply_for(instance, self.initial_data.get('apply_for', None))
+            return instance
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
 
 class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
@@ -553,55 +555,57 @@ class PriceListUpdateProductsSerializer(serializers.ModelSerializer):  # noqa
         return value
 
     def update(self, instance, validated_data):
-        objs = []
-        list_price_list_delete = []
-        for price in validated_data['list_price']:
-            for item in validated_data['list_item']:
-                found = True
-                value_price = 0
-                is_auto_update = True
+        if not instance.valid_time_end < timezone.now():  # not expired
+            objs = []
+            list_price_list_delete = []
+            for price in validated_data['list_price']:
+                for item in validated_data['list_item']:
+                    found = True
+                    value_price = 0
+                    is_auto_update = True
 
-                product_price_list_obj = ProductPriceList.objects.filter(
-                    product_id=item['product_id'],
-                    price_list_id=price['id'],
-                    currency_using_id=item['currency'],
-                ).first()
-                if product_price_list_obj:
-                    is_auto_update = product_price_list_obj.get_price_from_source
-                    value_price = product_price_list_obj.price
-                    list_price_list_delete.append(product_price_list_obj)
-                else:
-                    product_price_list_old = ProductPriceList.objects.filter(
+                    product_price_list_obj = ProductPriceList.objects.filter(
                         product_id=item['product_id'],
                         price_list_id=price['id'],
+                        currency_using_id=item['currency'],
                     ).first()
-                    if product_price_list_old:
-                        is_auto_update = product_price_list_old.get_price_from_source
-                        value_price = 0
+                    if product_price_list_obj:
+                        is_auto_update = product_price_list_obj.get_price_from_source
+                        value_price = product_price_list_obj.price
+                        list_price_list_delete.append(product_price_list_obj)
                     else:
-                        found = False
-
-                result_price = float(item['price']) * float(price['factor'])
-                if price['id'] != str(instance.id):
-                    if is_auto_update is False:
-                        result_price = value_price
-                if found:
-                    objs.append(
-                        ProductPriceList(
-                            price_list_id=price['id'],
+                        product_price_list_old = ProductPriceList.objects.filter(
                             product_id=item['product_id'],
-                            price=result_price,
-                            currency_using_id=item['currency'],
-                            uom_using_id=item['uom_id'],
-                            uom_group_using_id=item['uom_group_id'],
-                            get_price_from_source=is_auto_update
+                            price_list_id=price['id'],
+                        ).first()
+                        if product_price_list_old:
+                            is_auto_update = product_price_list_old.get_price_from_source
+                            value_price = 0
+                        else:
+                            found = False
+
+                    result_price = float(item['price']) * float(price['factor'])
+                    if price['id'] != str(instance.id):
+                        if is_auto_update is False:
+                            result_price = value_price
+                    if found:
+                        objs.append(
+                            ProductPriceList(
+                                price_list_id=price['id'],
+                                product_id=item['product_id'],
+                                price=result_price,
+                                currency_using_id=item['currency'],
+                                uom_using_id=item['uom_id'],
+                                uom_group_using_id=item['uom_group_id'],
+                                get_price_from_source=is_auto_update
+                            )
                         )
-                    )
-        for item in list_price_list_delete:
-            item.delete()
-        if len(objs) > 0:
-            ProductPriceList.objects.bulk_create(objs)
-        return instance
+            for item in list_price_list_delete:
+                item.delete()
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+            return instance
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
 
 class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
@@ -610,16 +614,18 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
-        list_price = self.initial_data.get('list_price', None)
-        if list_price:
-            for item in list_price:
-                obj = ProductPriceList.objects.filter(
-                    product_id=self.initial_data.get('product_id', None),
-                    price_list_id=item.get('id', None)
-                )
-                if obj:
-                    obj.delete()
-        return True
+        if not instance.valid_time_end < timezone.now():  # not expired
+            list_price = self.initial_data.get('list_price', None)
+            if list_price:
+                for item in list_price:
+                    obj = ProductPriceList.objects.filter(
+                        product_id=self.initial_data.get('product_id', None),
+                        price_list_id=item.get('id', None)
+                    )
+                    if obj:
+                        obj.delete()
+            return True
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
 
 class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
@@ -629,32 +635,34 @@ class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
         fields = ()
 
     def update(self, instance, validated_data):
-        price_list_information = self.initial_data['list_price_list']
-        product = self.initial_data['product']
-        objs = []
-        if price_list_information and product:
-            for item in price_list_information:
-                get_price_from_source = False
-                if item.get('is_auto_update', None) == '1':
-                    get_price_from_source = True
-                if not ProductPriceList.objects.filter(
-                        price_list_id=item['price_list_id'],
-                        product_id=product['id']
-                ).exists():
-                    objs.append(
-                        ProductPriceList(
-                            price_list_id=item.get('price_list_id', None),
-                            product_id=product['id'],
-                            price=float(item.get('price_value', None)),
-                            currency_using_id=item.get('currency_using', None),
-                            uom_using_id=product['uom'],
-                            uom_group_using_id=product['uom_group'],
-                            get_price_from_source=get_price_from_source
+        if not instance.valid_time_end < timezone.now():  # not expired
+            price_list_information = self.initial_data['list_price_list']
+            product = self.initial_data['product']
+            objs = []
+            if price_list_information and product:
+                for item in price_list_information:
+                    get_price_from_source = False
+                    if item.get('is_auto_update', None) == '1':
+                        get_price_from_source = True
+                    if not ProductPriceList.objects.filter(
+                            price_list_id=item['price_list_id'],
+                            product_id=product['id']
+                    ).exists():
+                        objs.append(
+                            ProductPriceList(
+                                price_list_id=item.get('price_list_id', None),
+                                product_id=product['id'],
+                                price=float(item.get('price_value', None)),
+                                currency_using_id=item.get('currency_using', None),
+                                uom_using_id=product['uom'],
+                                uom_group_using_id=product['uom_group'],
+                                get_price_from_source=get_price_from_source
+                            )
                         )
-                    )
-        if len(objs) > 0:
-            ProductPriceList.objects.bulk_create(objs)
-        return instance
+            if len(objs) > 0:
+                ProductPriceList.objects.bulk_create(objs)
+            return instance
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
 
 class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
@@ -672,7 +680,9 @@ class DeleteCurrencyFromPriceListSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        ProductPriceList.objects.filter(
-            price_list_id=instance.id, currency_using_id=validated_data['currency_id']
-        ).delete()
-        return True
+        if not instance.valid_time_end < timezone.now():  # not expired
+            ProductPriceList.objects.filter(
+                price_list_id=instance.id, currency_using_id=validated_data['currency_id']
+            ).delete()
+            return True
+        raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
