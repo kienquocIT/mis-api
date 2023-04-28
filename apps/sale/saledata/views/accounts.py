@@ -210,6 +210,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.objects.select_related('salutation', 'account_name')
+    filterset_fields = ['account_name_id']
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
