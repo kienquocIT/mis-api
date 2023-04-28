@@ -1,10 +1,12 @@
+import json
 from typing import Literal, Union
 from uuid import UUID
 
 from jsonfield import JSONField
 from django.db import models
+from django.conf import settings
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
 
 from apps.core.models import CoreAbstractModel
 
@@ -66,6 +68,59 @@ class Company(CoreAbstractModel):
             obj.total_user = CompanyUserEmployee.objects.filter(company_id=obj.id, user__isnull=False).count()
             obj.save(update_fields=['total_user'])
         return True
+
+
+class CompanyConfig(SimpleAbstractModel):
+    company = models.OneToOneField(Company, on_delete=models.CASCADE)
+    language = models.CharField(
+        max_length=10,
+        choices=settings.LANGUAGE_CHOICE,
+        default='vi',
+        verbose_name='Default language of Company',
+        help_text='Using language for company create in company',
+    )
+    currency = models.ForeignKey(
+        'base.Currency',
+        on_delete=models.CASCADE,
+        verbose_name='Currency was used by Company',
+    )
+    currency_rule = models.JSONField(
+        default=dict,
+        verbose_name='Config display currency',
+        help_text=json.dumps(
+            {
+                'prefix': '',
+                'suffix': ' VND',
+                'affixesStay': True,
+                'thousands': '.',
+                'decimal': ',',
+                'precision': 0,
+                'allowZero': True,
+                'allowNegative': False,
+            }
+        )
+    )
+
+    class Meta:
+        verbose_name = 'Currency was used by Company'
+        verbose_name_plural = 'Currency was used by Company'
+        default_permissions = ()
+        permissions = ()
+
+    def before_save(self, **kwargs):
+        self.language = self.language.lower()
+        if kwargs.get('force_insert', False):
+            if self.currency:
+                if self.currency.code.upper() in CURRENCY_MASK_MONEY:
+                    self.currency_rule = CURRENCY_MASK_MONEY[self.currency.code.upper()]
+                else:
+                    self.currency_rule = CURRENCY_MASK_MONEY['USD']
+                    self.currency_rule['prefix'] = f'{self.currency.code} '
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(**kwargs)
+        super().save(*args, **kwargs)
 
 
 class CompanyLicenseTracking(SimpleAbstractModel):

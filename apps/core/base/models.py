@@ -296,3 +296,27 @@ class Ward(SimpleAbstractModel):
         unique_together = ('district', 'id_crawler')
         verbose_name = 'Ward'
         verbose_name_plural = 'Ward'
+
+
+# Currency
+class Currency(SimpleAbstractModel):
+    title = models.CharField(max_length=100)
+    code = models.CharField(max_length=10, unique=True)
+    symbol = models.CharField(max_length=10)
+
+    class Meta:
+        verbose_name = 'Currency'
+        verbose_name_plural = 'Currency'
+        ordering = ('code',)
+        default_permissions = ()
+        permissions = ()
+
+    def before_save(self, **kwargs):
+        self.code = self.code.upper()
+        if not self.symbol and self.code:
+            self.symbol = self.code
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(**kwargs)
+        super().save(*args, **kwargs)

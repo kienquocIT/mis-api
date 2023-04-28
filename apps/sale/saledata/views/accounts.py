@@ -13,7 +13,7 @@ from apps.sale.saledata.serializers.accounts import (
     ContactListSerializer, ContactCreateSerializer, ContactDetailSerializer,
     ContactUpdateSerializer, ContactListNotMapAccountSerializer,
 
-    AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer,
+    AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
     AccountTypeUpdateSerializer,
 
     AccountsMapEmployeesListSerializer
@@ -210,6 +210,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.objects.select_related('salutation', 'account_name')
+    filterset_fields = ['account_name_id']
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
@@ -309,6 +310,12 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Account", request_body=AccountUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = AccountUpdateSerializer
+        return self.update(request, *args, **kwargs)
 
 
 class AccountsMapEmployeesList(BaseListMixin):

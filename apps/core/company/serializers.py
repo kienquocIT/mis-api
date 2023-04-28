@@ -1,11 +1,63 @@
 from crum import get_current_user
-from rest_framework import serializers
+from django.conf import settings
 from django.db.models import Count, Subquery
+from rest_framework import serializers
 
-from apps.core.company.models import Company, CompanyUserEmployee
+from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
+from apps.shared import DisperseModel
 from apps.shared.translations.company import CompanyMsg
+
+
+# Company Config
+class CompanyConfigDetailSerializer(serializers.ModelSerializer):
+    currency = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_currency(cls, obj):
+        return {
+            "id": obj.currency.id,
+            "title": obj.currency.title,
+            "code": obj.currency.code,
+            "symbol": obj.currency.symbol
+        } if obj.currency else {}
+
+    class Meta:
+        model = CompanyConfig
+        fields = ('language', 'currency', 'currency_rule',)
+
+
+class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
+    currency = serializers.CharField()
+
+    @classmethod
+    def validate_currency(cls, attrs):
+        currency_cls = DisperseModel(app_model='base.currency').get_model()
+        try:
+            # valid currency allow use in company after add foreign key currency to sale-data.currency model
+            return currency_cls.objects.get(code=attrs)
+        except currency_cls.DoesNotExist:
+            pass
+        raise serializers.ValidationError({'currency': CompanyMsg.CURRENCY_NOT_EXIST})
+
+    @classmethod
+    def validate_language(cls, attrs):
+        if attrs in [x[0] for x in settings.LANGUAGE_CHOICE]:
+            return attrs
+        raise serializers.ValidationError({'language': CompanyMsg.LANGUAGE_NOT_SUPPORT})
+
+    class Meta:
+        model = CompanyConfig
+        fields = ('language', 'currency', 'currency_rule',)
+
+    def update(self, instance, validated_data):
+        currency_rule = validated_data.pop('currency_rule', {})
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.currency_rule.update(currency_rule)
+        instance.save(update_fields=['language', 'currency', 'currency_rule'])
+        return instance
 
 
 # Company Serializer

@@ -6,13 +6,13 @@ from django.db.models import Model
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, PlanApplication, PermissionApplication, ApplicationProperty,
-    Country, City, District, Ward,
+    Country, City, District, Ward, Currency,
 )
-from apps.core.workflow.models import Node as WFNode
+from apps.core.company.models import Company, CompanyConfig
 from ...data.base import (
     SubscriptionPlan_data, Application_data, PlanApplication_data, PermissionApplication_data,
+    Currency_data,
 )
-from ...data.workflow import Node_data as WF_Node_data
 from ...data.application_properties import ApplicationProperty_data
 from ...data.vietnam_info import (
     Country_data, Cities_VN_data, Districts_VN_data, Wards_VN_data,
@@ -44,6 +44,7 @@ class InitialsData:
         (City, Cities_VN_data),
         (District, Districts_VN_data),
         (Ward, Wards_VN_data),
+        (Currency, Currency_data),
     )
 
     def loads(self):
@@ -58,6 +59,7 @@ class InitialsData:
             else:
                 self.active_loads(cls_model, data)
             sys.stdout.write("\n")
+        self.confirm_company_config()
         return True
 
     @classmethod
@@ -142,3 +144,17 @@ class InitialsData:
             f' - '
             f'{Fore.RED + str(count_diff) + " diff" + Fore.RESET}'
         )
+
+    @classmethod
+    def confirm_company_config(cls):
+        for obj in Company.objects.all():
+            try:
+                CompanyConfig.objects.get(company=obj)
+            except CompanyConfig.DoesNotExist:
+                CompanyConfig.objects.create(
+                    company=obj,
+                    language='vi',
+                    currency=Currency.objects.get(code='VND'),
+                )
+        print('Confirm config of Company is success')
+        return True

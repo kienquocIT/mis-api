@@ -484,7 +484,7 @@ class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
         if value:
             tax_code = Tax.objects.filter(id=value).first()
             if tax_code:
-                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code}
+                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code, 'rate': tax_code.rate}
         raise serializers.ValidationError(ProductMsg.TAX_DOES_NOT_EXIST)
 
     @classmethod
@@ -583,6 +583,7 @@ def common_delete_product_information(validated_data, instance):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -591,8 +592,19 @@ class ProductListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'general_information',
-            'sale_information'
+            'sale_information',
+            'price_list'
         )
+
+    @classmethod
+    def get_price_list(cls, obj):
+        price_list = obj.productpricelist_set.all().values_list('price_list__title', 'price')
+        if price_list:
+            return [
+                {'title': price[0], 'price': price[1]}
+                for price in price_list
+            ]
+        return []
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):

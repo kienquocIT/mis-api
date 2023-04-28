@@ -66,6 +66,16 @@ class Price(DataAbstractModel):
     # price_list_type = 0 is 'For Sale'
     # price_list_type = 1 is 'For Purchase'
     # price_list_type = 2 is 'For Expense'
+    valid_time_start = models.DateTimeField(
+        verbose_name='price list will be apply since valid_time_start',
+        default=timezone.now,
+        null=True
+    )
+    valid_time_end = models.DateTimeField(
+        verbose_name='price list will be end at valid_time_end',
+        default='9999-01-01 00:00:00.00',
+        null=True
+    )
     price_list_type = models.IntegerField()
     price_list_mapped = models.UUIDField(null=True)
     product = models.ManyToManyField(
@@ -109,5 +119,15 @@ class ProductPriceList(SimpleAbstractModel):
         verbose_name = 'ProductPriceList'
         verbose_name_plural = 'ProductsPriceList'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+# Discount
+class Discount(MasterDataAbstractModel):
+    class Meta:
+        verbose_name = 'Discount'
+        verbose_name_plural = 'Discounts'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

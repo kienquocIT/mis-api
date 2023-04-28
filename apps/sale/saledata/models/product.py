@@ -1,5 +1,9 @@
 from django.db import models
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
+
+from apps.shared import MasterDataAbstractModel
+
+__all__ = ['ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', ]
 
 
 # Create your models here.
@@ -151,5 +155,96 @@ class ProductInventory(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Product Inventory'
         verbose_name_plural = 'Products Inventory'
+        default_permissions = ()
+        permissions = ()
+
+
+class Expense(MasterDataAbstractModel):
+    general_information = models.JSONField(
+        default=dict,
+        help_text="information of tab general for Expense"
+    )
+
+    class Meta:
+        verbose_name = 'Expense'
+        verbose_name_plural = 'Expenses'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class ExpenseGeneral(SimpleAbstractModel):
+    expense = models.OneToOneField(  # noqa
+        Expense,
+        on_delete=models.CASCADE,
+        null=False,
+        related_name='expense',
+    )
+    expense_type = models.ForeignKey(
+        ExpenseType,
+        verbose_name='Type of Expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_type',
+    )
+    uom_group = models.ForeignKey(
+        UnitOfMeasureGroup,
+        verbose_name='Unit of Measure Group apply for expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_uom_group',
+    )
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        verbose_name='Unit of Measure apply for expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_uom',
+    )
+    tax_code = models.ForeignKey(
+        'saledata.Tax',
+        verbose_name='Tax Code apply for expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_tax_code',
+    )
+    price_list = models.ManyToManyField(
+        'saledata.Price',
+        through="ExpensePrice",
+        symmetrical=False,
+        blank=True,
+        related_name='expenses_map_prices'
+    )
+
+    class Meta:
+        verbose_name = 'Expense General'
+        verbose_name_plural = 'Expenses General'
+        default_permissions = ()
+        permissions = ()
+
+
+class ExpensePrice(SimpleAbstractModel):
+    expense_general = models.ForeignKey(
+        ExpenseGeneral,
+        on_delete=models.CASCADE,
+    )
+
+    price = models.ForeignKey(
+        'saledata.Price',
+        on_delete=models.CASCADE,
+    )
+    currency = models.ForeignKey(
+        'saledata.Currency',
+        verbose_name='Currency using for expense in price list',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_price_currency',
+    )
+    is_auto_update = models.BooleanField(default=False)
+    price_value = models.FloatField()
+
+    class Meta:
+        verbose_name = 'Expense Price'
+        verbose_name_plural = 'Expense Prices'
         default_permissions = ()
         permissions = ()

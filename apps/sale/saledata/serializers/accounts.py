@@ -3,7 +3,7 @@ from apps.core.hr.models import Employee
 from apps.sale.saledata.models.accounts import (
     Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
-from apps.shared import HRMsg, AccountsMsg
+from apps.shared import AccountsMsg
 
 
 # Salutation
@@ -268,7 +268,7 @@ class ContactListSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
+        return {}
 
     @classmethod
     def get_account_name(cls, obj):
@@ -383,7 +383,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
+        return {}
 
     @classmethod
     def get_report_to(cls, obj):
@@ -493,6 +493,16 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def update(self, instance, validated_data):
+        if 'account_name' not in validated_data.keys():
+            validated_data.update({'account_name': None})
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        return instance
+
 
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
@@ -520,7 +530,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
                     'id': obj.owner,
                     'fullname': owner.get_full_name(2)
                 }
-        raise serializers.ValidationError({"owner": HRMsg.EMPLOYEES_NOT_EXIST})
+        return {}
 
 
 # Account
@@ -528,6 +538,8 @@ class AccountListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    shipping_address = serializers.JSONField()
+    billing_address = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -539,6 +551,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             "manager",
             "owner",
             "phone",
+            "shipping_address",
+            "billing_address"
         )
 
     @classmethod
@@ -551,15 +565,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_manager(cls, obj):
         if obj.manager:
-            employees = Employee.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=obj.manager,
-            )
-            all_managers = []
-            for employee in employees:
-                all_managers.append(employee.get_full_name(2))
-            return all_managers
+            return obj.manager
         return []
 
     @classmethod
@@ -584,6 +590,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     contact_primary = serializers.UUIDField(required=False)
+    parent_account = serializers.UUIDField(required=False, allow_null=True)
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
@@ -622,11 +629,14 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         account_types = []
         for item in validate_data.get('account_type', None):
-            account_type = AccountType.objects.filter(
+            account_type = AccountType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
                 id=item
             ).first()
             if account_type:
                 title = account_type.title
+                code = account_type.code
                 detail = ''
                 tax_code = validate_data.get('tax_code', None)
                 if title.lower() == 'customer':
@@ -642,7 +652,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                     ).first()
                     if account_map_tax_code:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
-                account_types.append({'title': title, 'detail': detail})
+                account_types.append({'id': str(item), 'code': code, 'title': title, 'detail': detail})
             else:
                 raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
         validate_data['account_type'] = account_types
@@ -669,20 +679,15 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         # create in AccountEmployee
         bulk_info = []
-        get_employees = Employee.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id__in=account.manager,
-        )
+        manager_field = []
+        get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=account.manager)
         for employee in get_employees:
-            bulk_info.append(
-                AccountEmployee(
-                    **{
-                        'account': account,
-                        'employee': employee,
-                    }
-                )
+            bulk_info.append(AccountEmployee(**{'account': account, 'employee': employee}))
+            manager_field.append(
+                {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
             )
+        account.manager = manager_field
+        account.save()
 
         AccountEmployee.objects.bulk_create(bulk_info)
 
@@ -706,6 +711,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 class AccountDetailSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
+    contact_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -725,28 +731,146 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
-            'owner'
+            'owner',
+            'contact_mapped'
         )
 
     @classmethod
     def get_owner(cls, obj):
-        try:
-            list_owner = []
-            resp = Contact.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                account_name=obj
-            )
-            for item in resp:
-                list_owner.append(
+        account_owner = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            account_name=obj,
+            is_primary=True
+        ).first()
+        if account_owner:
+            contact_owner = Employee.objects.filter(
+                id=account_owner.owner
+            ).first()
+
+            if contact_owner:
+                contact_owner_information = {'id': str(account_owner.owner), 'fullname': contact_owner.get_full_name(2)}
+                return {
+                    'id': account_owner.id,
+                    'fullname': account_owner.fullname,
+                    'job_title': account_owner.job_title,
+                    'email': account_owner.email,
+                    'mobile': account_owner.mobile,
+                    'owner': contact_owner_information
+                }
+        return {}
+
+    @classmethod
+    def get_contact_mapped(cls, obj):
+        contact_mapped = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            account_name=obj
+        )
+        if len(contact_mapped) > 0:
+            list_contact_mapped = []
+            for i in contact_mapped:
+                list_contact_mapped.append(
                     {
-                        'id': item.id,
-                        'fullname': item.fullname,
+                        'id': i.id,
+                        'fullname': i.fullname,
+                        'job_title': i.job_title,
+                        'email': i.email,
+                        'mobile': i.mobile
                     }
                 )
-            return list_owner
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'owner': AccountsMsg.CONTACT_NOT_EXIST})
+            return list_contact_mapped
+        return []
+
+
+def recreate_employee_map_account(instance):
+    bulk_info = []
+    instance_manager_field = []
+    get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=instance.manager)
+    for employee in get_employees:
+        bulk_info.append(AccountEmployee(**{'account': instance, 'employee': employee}))
+        instance_manager_field.append(
+            {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
+        )
+    instance.manager = instance_manager_field
+    instance.save()
+    AccountEmployee.objects.filter(account=instance).delete()
+    AccountEmployee.objects.bulk_create(bulk_info)
+    return True
+
+
+def update_account_owner(instance, account_owner):
+    Contact.objects.filter_current(fill__tenant=True, fill__company=True, account_name=instance).update(
+        account_name=None,
+        is_primary=False
+    )
+    if account_owner:
+        Contact.objects.filter_current(fill__tenant=True, fill__company=True, id=account_owner).update(
+            account_name=instance,
+            is_primary=True
+        )
+    return True
+
+
+class AccountUpdateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=150)
+    account_type = serializers.JSONField()
+    parent_account = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = Account
+        fields = (
+            'name',
+            'website',
+            'account_type',
+            'manager',
+            'parent_account',
+            'tax_code',
+            'industry',
+            'annual_revenue',
+            'total_employees',
+            'phone',
+            'email',
+            'shipping_address',
+            'billing_address',
+        )
+
+    def validate(self, validate_data):
+        account_types = []
+        for item in validate_data.get('account_type', None):
+            account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
+            if account_type:
+                detail = self.initial_data.get('customer_detail_type', '')
+                account_types.append(
+                    {'id': str(item), 'code': account_type.code, 'title': account_type.title, 'detail': detail}
+                )
+                if detail == 'organization':  # tax_code is required
+                    tax_code = validate_data.get('tax_code', None)
+                    if tax_code:
+                        account_mapped_tax_code = Account.objects.filter_current(
+                            fill__tenant=True,
+                            fill__company=True,
+                            tax_code=tax_code
+                        ).first()
+                        if account_mapped_tax_code and account_mapped_tax_code != self.instance:
+                            raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
+                    else:
+                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
+                elif detail == 'individual':
+                    validate_data.update({'parent_account': None})
+            else:
+                raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
+        validate_data['account_type'] = account_types
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        update_account_owner(instance, self.initial_data.get('account-owner', None))  # update account owner
+        recreate_employee_map_account(instance)  # recreate in AccountEmployee (Account Manager)
+        return instance
 
 
 class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
