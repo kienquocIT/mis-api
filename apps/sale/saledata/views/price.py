@@ -9,9 +9,8 @@ from apps.sale.saledata.serializers.price import (
     TaxListSerializer, TaxCreateSerializer, TaxDetailSerializer, TaxUpdateSerializer,
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
     CurrencySyncWithVCBSerializer,
-    PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer,
+    PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer, PriceDeleteSerializer,
     PriceListUpdateProductsSerializer, PriceListDeleteProductsSerializer, ProductCreateInPriceListSerializer,
-    DeleteCurrencyFromPriceListSerializer
 )
 
 
@@ -210,6 +209,19 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
+class PriceDelete(BaseUpdateMixin):
+    queryset = Price.objects
+    serializer_detail = PriceDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(operation_summary="Delete Price List", request_body=PriceDeleteSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = PriceDeleteSerializer
+        return self.update(request, *args, **kwargs)
+
+
 class UpdateProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
@@ -269,22 +281,4 @@ class ProductAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = ProductCreateInPriceListSerializer
-        return self.update(request, *args, **kwargs)
-
-
-class DeleteCurrencyFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Price.objects # noqa
-    serializer_list = PriceListSerializer
-    serializer_detail = PriceDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
-
-    @swagger_auto_schema(
-        operation_summary="Delete Currency from Price List",
-        operation_description="Delete Currency from Price List",
-        request_body=DeleteCurrencyFromPriceListSerializer,
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        self.serializer_class = DeleteCurrencyFromPriceListSerializer
         return self.update(request, *args, **kwargs)
