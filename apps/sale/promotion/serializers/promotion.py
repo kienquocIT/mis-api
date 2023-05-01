@@ -32,8 +32,6 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = DiscountMethod
         fields = (
-            'id',
-            'promotion',
             'before_after_tax',
             'percent_fix_amount',
             'fix_value',
@@ -78,12 +76,14 @@ class PromotionListSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'valid_date_end',
+            'discount_method'
         )
 
 
+
 class PromotionCreateSerializer(serializers.ModelSerializer):
-    customer_by_list = CustomerByListSerializer(many=True)
-    customer_by_condition = CustomerByConditionSerializer(many=True)
+    # customer_by_list = CustomerByListSerializer(many=True)
+    # customer_by_condition = CustomerByConditionSerializer(many=True)
     discount_method = DiscountMethodSerializer()
     gift_method = GiftMethodSerializer()
 

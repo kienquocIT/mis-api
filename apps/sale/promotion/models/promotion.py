@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.base.models import Currency
 from apps.sale.saledata.models.product import Product
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
@@ -8,10 +9,10 @@ __all__ = ['Promotion', 'CustomerByList', 'CustomerByCondition', 'DiscountMethod
 
 class Promotion(MasterDataAbstractModel):
     valid_date_start = models.DateField(
-        verbose_name="Valid date start", help_text="promotion valid time form with date format"
+        verbose_name="Valid date start", help_text="promotion valid time from, with format '%Y-%m-%d'"
     )
     valid_date_end = models.DateField(
-        verbose_name="Valid date end", help_text="promotion valid time to with date format"
+        verbose_name="Valid date end", help_text="promotion valid time to, with format '%Y-%m-%d'"
     )
     remark = models.CharField(verbose_name="Descriptions", max_length=250, blank=True, null=True)
     currency = models.ForeignKey(
@@ -22,14 +23,17 @@ class Promotion(MasterDataAbstractModel):
     )
     customer_type = models.IntegerField(
         verbose_name="Customer type",
-        help_text="filter customer by option choose (0: all, 1: choose, 2: by condition)"
+        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)"
     )
     customer_by_list = models.JSONField(
-        verbose_name="Customer by list", help_text="list of customer follow by customer type (option = 1)", default=list
+        verbose_name="Customer by list",
+        help_text="list of customer follow by customer type (option = 1) example: [uuid1, uuid2]", default=list
     )
     customer_by_condition = models.JSONField(
         verbose_name="Customer by condition",
-        help_text="condition for filter customer list follow by customer type (option = 2)", default=list
+        help_text="condition for filter customer list follow by customer type (option = 2) example: ["
+                  "{property: 1, operator: =, result: uuid, property_type: text, logic: and, order: 1}]",
+        default=list
     )
     customer_remark = models.CharField(
         verbose_name="Customer Descriptions", max_length=250, blank=True, null=True,
@@ -50,17 +54,17 @@ class Promotion(MasterDataAbstractModel):
     discount_method = models.JSONField(
         verbose_name="JSON discount method",
         default=list,
-        help_text="Discount method JSON string data"
+        help_text="Discount method JSON string data",
     )
     coupons_method = models.JSONField(
         verbose_name="Coupons method",
         default=list,
-        help_text="Coupons method JSON string data"
+        help_text="Coupons method JSON string data",
     )
     gift_method = models.JSONField(
         verbose_name="Gift method",
         default=list,
-        help_text="Gift method JSON string data"
+        help_text="Gift method JSON string data",
     )
 
     class Meta:
