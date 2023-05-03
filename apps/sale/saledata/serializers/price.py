@@ -3,8 +3,8 @@ from rest_framework import serializers
 from apps.sale.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import ProductGeneral, ProductSale, ExpensePrice
-from apps.shared import PriceMsg, ProductMsg
+from apps.sale.saledata.models.product import ExpensePrice
+from apps.shared import PriceMsg
 
 
 # Tax Category
@@ -480,34 +480,6 @@ def get_product_when_turn_on_auto_update(instance):
     return True
 
 
-def price_list_apply_for(instance, product_category):
-    products_belong_to_this_category = ProductGeneral.objects.filter(
-        product_category_id=product_category
-    ).select_related('product', 'uom_group')
-
-    objs = []
-    for item in products_belong_to_this_category:
-        if not ProductPriceList.objects.filter(product=item.product, price_list=instance).exists():
-            package_information = ProductSale.objects.filter(product=item.product).select_related(
-                'currency_using',
-                'default_uom'
-            ).first()
-            if package_information:
-                objs.append(
-                    ProductPriceList(
-                        price_list=instance,
-                        product=item.product,
-                        price=0.0,
-                        currency_using=package_information.currency_using,
-                        uom_using=package_information.default_uom,
-                        uom_group_using=item.uom_group,
-                    )
-                )
-    if len(objs) > 0:
-        ProductPriceList.objects.bulk_create(objs)
-    return True
-
-
 class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
@@ -538,8 +510,6 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
             else:
                 ProductPriceList.objects.filter(price_list=instance).update(get_price_from_source=False)
 
-            if not instance.auto_update and 'apply_for' in self.initial_data.keys():
-                price_list_apply_for(instance, self.initial_data.get('apply_for', None))
             return instance
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
@@ -652,38 +622,6 @@ class PriceListDeleteProductsSerializer(serializers.ModelSerializer):  # noqa
                         obj.delete()
             return True
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
-
-
-def create_item_for_child_price_list(instance, bulk_info):
-    price_list_child = Price.objects.filter_current(
-        fill__tenant=True,
-        fill__company=True,
-        price_list_mapped=instance.id,
-        auto_update=True
-    )
-    objs = []
-    if len(price_list_child) > 0:
-        for item in price_list_child:
-            for product_item in bulk_info:
-                if (str(product_item.currency_using_id) in item.currency) and (not ProductPriceList.objects.filter(
-                        price_list=item,
-                        product=product_item.product,
-                        uom_using=product_item.uom_using,
-                ).exists()):
-                    objs.append(
-                        ProductPriceList(
-                            price_list=item,
-                            product=product_item.product,
-                            price=float(product_item.price) * float(item.factor),
-                            currency_using=product_item.currency_using,
-                            uom_using=product_item.uom_using,
-                            uom_group_using=product_item.uom_group_using,
-                            get_price_from_source=True
-                        )
-                    )
-        if len(objs) > 0:
-            ProductPriceList.objects.bulk_create(objs)
-    return True
 
 
 class ProductCreateInPriceListSerializer(serializers.ModelSerializer):
