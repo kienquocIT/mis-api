@@ -240,6 +240,12 @@ class ExpensePrice(SimpleAbstractModel):
         null=True,
         related_name='expense_price_currency',
     )
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_price_uom'
+    )
     is_auto_update = models.BooleanField(default=False)
     price_value = models.FloatField()
 
