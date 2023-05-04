@@ -22,8 +22,7 @@ class Promotion(MasterDataAbstractModel):
     )
     customer_type = models.IntegerField(
         verbose_name="Customer type",
-        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)",
-        max_length=1
+        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)"
     )
     customer_by_list = models.JSONField(
         verbose_name="Customer by list",
