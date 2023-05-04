@@ -71,6 +71,7 @@ INSTALLED_APPS = \
         'apps.sale.saledata',
         'apps.sales.opportunity',
         'apps.sales.quotation',
+        'apps.sale.promotion',
     ]
 
 MIDDLEWARE = [
