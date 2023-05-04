@@ -13,3 +13,4 @@ from .accounts import AccountsMsg
 from .product import ProductMsg
 from .price import PriceMsg
 from .sales import SaleMsg
+from .promotion import PromoMsg

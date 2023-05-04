@@ -18,12 +18,12 @@ class Promotion(MasterDataAbstractModel):
     currency = models.ForeignKey(
         Currency,
         on_delete=models.CASCADE,
-        related_name="customer_by_list_promotion",
-        null=False
+        related_name="customer_by_list_promotion"
     )
     customer_type = models.IntegerField(
         verbose_name="Customer type",
-        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)"
+        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)",
+        max_length=1
     )
     customer_by_list = models.JSONField(
         verbose_name="Customer by list",
@@ -153,11 +153,13 @@ class DiscountMethod(SimpleAbstractModel):
     )
     before_after_tax = models.BooleanField(
         verbose_name="Before After tax check",
-        help_text="Option check before or after tax"
+        help_text="Option check before or after tax",
+        default=True,
     )
     percent_fix_amount = models.BooleanField(
         verbose_name="Percent or Fixed amount",
-        help_text="Option check before or after tax"
+        help_text="Option check before or after tax",
+        default=True
     )
     fix_value = models.IntegerField(
         verbose_name="Fixed amount", blank=True, null=True,
@@ -260,7 +262,8 @@ class GiftMethod(SimpleAbstractModel):
     )
     before_after_tax = models.BooleanField(
         verbose_name="Before After tax select",
-        help_text="Option select before or after tax"
+        help_text="Option select before or after tax",
+        default=True
     )
     min_purchase_cost = models.FloatField(
         verbose_name="Cost of total value", default=0

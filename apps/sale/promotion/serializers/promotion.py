@@ -4,6 +4,8 @@ from apps.sale.promotion.models import Promotion, CustomerByList, CustomerByCond
 
 __all__ = ['PromotionListSerializer', 'PromotionCreateSerializer']
 
+from apps.shared import PromoMsg
+
 
 class CustomerByListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -28,7 +30,6 @@ class CustomerByConditionSerializer(serializers.ModelSerializer):
 
 
 class DiscountMethodSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = DiscountMethod
         fields = (
@@ -53,8 +54,6 @@ class GiftMethodSerializer(serializers.ModelSerializer):
     class Meta:
         model = GiftMethod
         fields = (
-            'id',
-            'promotion',
             'use_count',
             'times_condition',
             'max_usages',
@@ -80,10 +79,7 @@ class PromotionListSerializer(serializers.ModelSerializer):
         )
 
 
-
 class PromotionCreateSerializer(serializers.ModelSerializer):
-    # customer_by_list = CustomerByListSerializer(many=True)
-    # customer_by_condition = CustomerByConditionSerializer(many=True)
     discount_method = DiscountMethodSerializer()
     gift_method = GiftMethodSerializer()
 
@@ -106,21 +102,44 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
             'gift_method'
         )
 
-    # @classmethod
-    # def validate_title(cls, value):
-    #     if value:
-    #         return value
-    #     raise serializers.ValidationError({"title": "Title is required"})
-    #
-    # @classmethod
-    # def validate_term(cls, value):
-    #     if isinstance(value, list) and value:
-    #         return value
-    #     raise serializers.ValidationError({"term": "Term must be at least one rows"})
+    @classmethod
+    def validate_title(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"title": PromoMsg.PROMO_REQ_TITLE})
+
+    @classmethod
+    def validate_valid_date_start(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"valid_date_start": PromoMsg.PROMO_REQ_VALID_DATE})
+
+    @classmethod
+    def validate_valid_date_end(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"valid_date_end": PromoMsg.PROMO_REQ_VALID_DATE})\
+
+    @classmethod
+    def validate_customer_type(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"customer_type": PromoMsg.PROMO_REQ_VALID_DATE})
 
     def create(self, validated_data):
-        promotion = Promotion.objects.create(**validated_data)
+        # valid customer by list
+        if 'customer_by_list' in validated_data:
+            customer_list = validated_data['customer_by_list']
+            if validated_data['customer_type'] == 1 and not customer_list:
+                raise serializers.ValidationError({"customer": PromoMsg.PROMO_REQ_VALID_CUSTOMER_LIST})
+        # valid customer by condition
+        if 'customer_by_condition' in validated_data:
+            customer_cond = validated_data['customer_by_condition']
+            if validated_data['customer_type'] == 1 and not customer_cond:
+                raise serializers.ValidationError({"customer": PromoMsg.PROMO_REQ_VALID_CUSTOMER_COND})
+
+        # promotion = Promotion.objects.create(**validated_data)
         # list_term = validated_data['term']
         # if list_term:
         #     create_term(list_term, pm_term)
-        return promotion
+        return validated_data
