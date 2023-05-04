@@ -39,15 +39,15 @@ class Promotion(MasterDataAbstractModel):
         help_text="Explanation about customer type"
     )
     is_discount = models.BooleanField(
-        verbose_name="Discount check", blank=True, null=True,
+        verbose_name="Discount check", default=False,
         help_text="Promotion for discount"
     )
     is_coupons = models.BooleanField(
-        verbose_name="Coupons check", blank=True, null=True,
+        verbose_name="Coupons check", default=False,
         help_text="Promotion for Coupons"
     )
     is_gift = models.BooleanField(
-        verbose_name="Gift check", blank=True, null=True,
+        verbose_name="Gift check", default=False,
         help_text="Promotion for gift"
     )
     discount_method = models.JSONField(
@@ -152,21 +152,24 @@ class DiscountMethod(SimpleAbstractModel):
     )
     before_after_tax = models.BooleanField(
         verbose_name="Before After tax check",
-        help_text="Option check before or after tax",
-        default=True,
+        help_text="Option check before or after tax"
     )
     percent_fix_amount = models.BooleanField(
         verbose_name="Percent or Fixed amount",
-        help_text="Option check before or after tax",
-        default=True
+        help_text="Option check before or after tax"
     )
-    fix_value = models.IntegerField(
+    percent_value = models.FloatField(
+        verbose_name="percent number", blank=True, null=True,
+        help_text="This field is required when user check \"Percent\" icon"
+    )
+    fix_value = models.FloatField(
         verbose_name="Fixed amount", blank=True, null=True,
-        help_text="This field is required when user check \"percent fix amount\" field is False"
+        help_text="This field is required when user check \"Fixed amount\" field"
     )
+
     use_count = models.IntegerField(
-        verbose_name="Use count",
-        help_text="Count time per customer per times", default=1
+        verbose_name="Use count", blank=True, null=True,
+        help_text="Count time per customer per times",
     )
     times_condition = models.IntegerField(
         verbose_name="Times choose",
