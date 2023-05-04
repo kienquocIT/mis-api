@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import Account, Contact
-from apps.sale.saledata.models.config import PaymentTerm
-from apps.sale.saledata.models.price import Tax, Price
-from apps.sale.saledata.models.product import Product, UnitOfMeasure, Expense
+from apps.masterdata.saledata.models.accounts import Account, Contact
+from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.price import Tax, Price
+from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
     QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sale.promotion.models import Promotion, CustomerByList, CustomerByCondition, DiscountMethod, GiftMethod
+from apps.masterdata.promotion.models import Promotion, CustomerByList, CustomerByCondition, DiscountMethod, GiftMethod
 
 __all__ = ['PromotionListSerializer', 'PromotionCreateSerializer']
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
-from apps.sale.saledata.models.accounts import (
+from apps.masterdata.saledata.models.accounts import (
     Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
 from apps.shared import AccountsMsg

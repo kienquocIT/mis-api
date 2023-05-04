@@ -6,8 +6,8 @@ from django.dispatch import receiver
 
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
-from apps.sale.saledata.models.product import ProductType
-from apps.sale.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models.product import ProductType
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 
 logger = logging.getLogger(__name__)
 

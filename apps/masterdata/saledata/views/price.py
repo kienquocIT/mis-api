@@ -1,10 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
-from apps.sale.saledata.models.price import (
+from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency, Price
 )
-from apps.sale.saledata.serializers.price import (
+from apps.masterdata.saledata.serializers.price import (
     TaxCategoryListSerializer, TaxCategoryCreateSerializer, TaxCategoryDetailSerializer, TaxCategoryUpdateSerializer,
     TaxListSerializer, TaxCreateSerializer, TaxDetailSerializer, TaxUpdateSerializer,
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,

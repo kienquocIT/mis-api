@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class SaledataConfig(AppConfig):
+class PromotionConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.sale.saledata'
+    name = 'apps.masterdata.promotion'

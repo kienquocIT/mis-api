@@ -1,14 +1,14 @@
 from django.urls import path
-from apps.sale.saledata.views.accounts import (
+from apps.masterdata.saledata.views.accounts import (
     SalutationList, InterestsList, AccountTypeList, IndustryList,
     ContactList, ContactDetail,
     ContactListNotMapAccount,
     AccountList, AccountDetail, AccountsMapEmployeesList,
     SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
 )
-from apps.sale.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
-from apps.sale.saledata.views.expense import ExpenseList, ExpenseDetail
-from apps.sale.saledata.views.product import (
+from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
+from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
+from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductCategoryList,
     ProductTypeDetail, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail,
@@ -16,7 +16,7 @@ from apps.sale.saledata.views.product import (
     UnitOfMeasureList, UnitOfMeasureDetail,
     ProductList, ProductDetail
 )
-from apps.sale.saledata.views.price import (
+from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail,
     TaxList, TaxDetail,
     CurrencyList, CurrencyDetail, SyncWithVCB,

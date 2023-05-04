@@ -68,10 +68,10 @@ INSTALLED_APPS = \
 
         'apps.core.workflow',
         'apps.core.process',
-        'apps.sale.saledata',
+        'apps.masterdata.saledata',
         'apps.sales.opportunity',
         'apps.sales.quotation',
-        'apps.sale.promotion',
+        'apps.masterdata.promotion',
     ]
 
 MIDDLEWARE = [

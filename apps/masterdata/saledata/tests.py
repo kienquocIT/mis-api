@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from apps.core.auths.tests import TestCaseAuth
-from apps.sale.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
 

@@ -1,10 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
-from apps.sale.saledata.models.accounts import (
+from apps.masterdata.saledata.models.accounts import (
     Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
 )
-from apps.sale.saledata.serializers.accounts import (
+from apps.masterdata.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer, SalutationUpdateSerializer,
     InterestsListSerializer, InterestsCreateSerializer, InterestsDetailsSerializer, IndustryUpdateSerializer,
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer,

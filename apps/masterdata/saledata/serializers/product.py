@@ -1,9 +1,9 @@
 from rest_framework import serializers
-from apps.sale.saledata.models.product import (
+from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
     ProductGeneral, ProductSale, ProductInventory
 )
-from apps.sale.saledata.models.price import ProductPriceList, Tax, Currency
+from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency
 from apps.shared import ProductMsg
 
 

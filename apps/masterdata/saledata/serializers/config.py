@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sale.saledata.models.config import Term, PaymentTerm
+from apps.masterdata.saledata.models.config import Term, PaymentTerm
 
 
 def create_term(data, instance):

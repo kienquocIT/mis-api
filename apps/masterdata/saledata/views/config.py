@@ -1,8 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sale.saledata.models.config import PaymentTerm
-from apps.sale.saledata.serializers.config import PaymentTermCreateSerializer, PaymentTermListSerializer, \
+from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.serializers.config import PaymentTermCreateSerializer, PaymentTermListSerializer, \
     PaymentTermDetailSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseDestroyMixin, BaseUpdateMixin
 
