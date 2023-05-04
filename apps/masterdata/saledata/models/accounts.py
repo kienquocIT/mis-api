@@ -91,6 +91,11 @@ class Account(DataAbstractModel):
     account_type = models.JSONField(
         default=list
     )
+    account_group = models.ForeignKey(
+        AccountGroup,
+        on_delete=models.CASCADE,
+        null=True
+    )
     # ["e3e416d7-ae74-4bb8-a55f-169c5fde53a0", "d2f9397d-3a6c-46d6-9a67-442bc43554a8"]
     manager = models.JSONField(
         default=list
