@@ -357,18 +357,29 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
 
+    # @classmethod
+    # def validate_payment_term(cls, value):
+    #     try:
+    #         payment = PaymentTerm.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(payment.id),
+    #             'title': payment.title,
+    #             'code': payment.code
+    #         }
+    #     except PaymentTerm.DoesNotExist:
+    #         raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
     @classmethod
     def validate_payment_term(cls, value):
         try:
-            payment = PaymentTerm.objects.get_current(
+            return PaymentTerm.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
-            return {
-                'id': str(payment.id),
-                'title': payment.title,
-                'code': payment.code
-            }
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
