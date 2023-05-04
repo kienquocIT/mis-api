@@ -4,7 +4,8 @@ from apps.masterdata.promotion.models import Promotion, CustomerByList, Customer
 
 __all__ = ['PromotionListSerializer', 'PromotionCreateSerializer']
 
-from apps.sale.saledata.models.accounts import Account
+from apps.masterdata.saledata.models.accounts import Account
+from apps.masterdata.saledata.models.product import Product
 
 from apps.shared import PromoMsg
 
@@ -13,10 +14,33 @@ def check_customer_list(data):
     # for item in data:
     # customer = Account.objects.filter(id__in=data, title="Customner", is_active=True).exists()
     # if not customer:
-    #     raise serializers.ValidationError({"customer": PromoMsg.PROMO_REQ_VALID_CUSTOMER_LIST})
+    #     raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_LIST})
     return True
 
-def check_discout_method(discount):
+
+def check_discount_method(discount):
+    if discount['percent_fix_amount']:
+        if 'percent_value' not in discount and discount['percent_value'] == '':
+            raise serializers.ValidationError({"percent_value": PromoMsg.ERROR_PERCENT_VALUE})
+    else:
+        if 'fix_value' not in discount and discount['fix_value'] == '':
+            raise serializers.ValidationError({"fix_value": PromoMsg.ERROR_FIXED_AMOUNT})
+    if discount['is_on_order']:
+        if not discount['is_minimum'] and discount['minimum_value'] == 0:
+            raise serializers.ValidationError({"minimum_value": PromoMsg.ERROR_MINIMUM_PURCHASE})
+    if discount['is_on_product']:
+        if not discount['product_selected']:
+            raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
+        product = Product.objects.filter(id=discount['product_selected']).exists()
+        if not product:
+            raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
+        if discount['is_min_quantity'] and discount['num_minimum'] == 0:
+            raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_MINIMUM_QUANTITY})
+    if discount['free_shipping'] and discount['fix_value'] == 0:
+        raise serializers.ValidationError({"fix_value": PromoMsg.ERROR_FIXED_AMOUNT})
+    return True
+
+def check_gift_method(gift):
 
     return True
 
@@ -119,25 +143,25 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"title": PromoMsg.PROMO_REQ_TITLE})
+        raise serializers.ValidationError({"title": PromoMsg.ERROR_NAME})
 
     @classmethod
     def validate_valid_date_start(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"valid_date_start": PromoMsg.PROMO_REQ_VALID_DATE})
+        raise serializers.ValidationError({"valid_date_start": PromoMsg.ERROR_VALID_DATE})
 
     @classmethod
     def validate_valid_date_end(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"valid_date_end": PromoMsg.PROMO_REQ_VALID_DATE})\
+        raise serializers.ValidationError({"valid_date_end": PromoMsg.ERROR_VALID_DATE})\
 
     @classmethod
     def validate_customer_type(cls, value):
         if value:
             return value
-        raise serializers.ValidationError({"customer_type": PromoMsg.PROMO_REQ_VALID_DATE})
+        raise serializers.ValidationError({"customer_type": PromoMsg.ERROR_VALID_DATE})
 
     def create(self, validated_data):
         # valid customer by list
@@ -146,17 +170,23 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
             # check customer is available
             check_customer_list(customer_list)
             if validated_data['customer_type'] == 1 and not customer_list:
-                raise serializers.ValidationError({"customer": PromoMsg.PROMO_REQ_VALID_CUSTOMER_LIST})
+                raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_LIST})
         # valid customer by condition
         if 'customer_by_condition' in validated_data:
             customer_cond = validated_data['customer_by_condition']
             if validated_data['customer_type'] == 1 and not customer_cond:
-                raise serializers.ValidationError({"customer": PromoMsg.PROMO_REQ_VALID_CUSTOMER_COND})
+                raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_COND})
         if 'is_discount' in validated_data and validated_data['is_discount']:
             discount = validated_data['discount_method']
             if not discount:
-                raise serializers.ValidationError({"discount_method": PromoMsg.PROMO_REQ_DISCOUNT_METHOD})
-            check_discout_method(discount)
+                raise serializers.ValidationError({"discount_method": PromoMsg.ERROR_DISCOUNT_METHOD})
+            # check valid data when user select discount method
+            check_discount_method(discount)
+        if 'is_gift' in validated_data and validated_data['is_gift']:
+            gift = validated_data['gift_method']
+            if not gift:
+                raise serializers.ValidationError({"gift_method": PromoMsg.ERROR_GIFT})
+
         # promotion = Promotion.objects.create(**validated_data)
         # list_term = validated_data['term']
         # if list_term:

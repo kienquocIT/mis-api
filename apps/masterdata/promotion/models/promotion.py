@@ -166,9 +166,8 @@ class DiscountMethod(SimpleAbstractModel):
         verbose_name="Fixed amount", blank=True, null=True,
         help_text="This field is required when user check \"Fixed amount\" field"
     )
-
     use_count = models.IntegerField(
-        verbose_name="Use count", blank=True, null=True,
+        verbose_name="Use count", default=1,
         help_text="Count time per customer per times",
     )
     times_condition = models.IntegerField(
