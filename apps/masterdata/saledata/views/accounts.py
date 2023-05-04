@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup
 )
 from apps.masterdata.saledata.serializers.accounts import (
     SalutationListSerializer, SalutationCreateSerializer, SalutationDetailSerializer, SalutationUpdateSerializer,
@@ -15,6 +15,9 @@ from apps.masterdata.saledata.serializers.accounts import (
 
     AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
     AccountTypeUpdateSerializer,
+
+    AccountGroupListSerializer, AccountGroupCreateSerializer, AccountGroupDetailsSerializer,
+    AccountGroupUpdateSerializer,
 
     AccountsMapEmployeesListSerializer
 )
@@ -157,6 +160,52 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.serializer_class = AccountTypeUpdateSerializer
+        return self.update(request, *args, **kwargs)
+
+
+class AccountGroupList(BaseListMixin, BaseCreateMixin):
+    queryset = AccountGroup.objects
+    serializer_list = AccountGroupListSerializer
+    serializer_create = AccountGroupCreateSerializer
+    serializer_detail = AccountGroupDetailsSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="AccountGroup list",
+        operation_description="AccountGroup list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create AccountGroup",
+        operation_description="Create new AccountGroup",
+        request_body=AccountGroupCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = AccountGroup.objects
+    serializer_list = AccountGroupListSerializer
+    serializer_create = AccountGroupCreateSerializer
+    serializer_detail = AccountGroupDetailsSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(operation_summary='Detail AccountGroup')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update AccountGroup", request_body=AccountGroupUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = AccountGroupUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 

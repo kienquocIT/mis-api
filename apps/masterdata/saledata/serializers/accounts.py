@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup
 )
 from apps.shared import AccountsMsg
 
@@ -174,6 +174,65 @@ class AccountTypeUpdateSerializer(serializers.ModelSerializer):
 
     def validate_title(self, value):
         if value != self.instance.title and AccountType.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value,
+        ).exists():
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
+        return value
+
+
+# Account Group
+class AccountGroupListSerializer(serializers.ModelSerializer):  # noqa
+    class Meta:
+        model = AccountGroup
+        fields = ('id', 'title', 'code', 'description')
+
+
+class AccountGroupCreateSerializer(serializers.ModelSerializer):  # noqa
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = AccountGroup
+        fields = ('code', 'title', 'description')
+
+    @classmethod
+    def validate_code(cls, value):
+        if AccountGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value,
+        ).exists():
+            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+        return value
+
+    @classmethod
+    def validate_title(cls, value):
+        if AccountGroup.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                title=value,
+        ).exists():
+            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
+        return value
+
+
+class AccountGroupDetailsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = AccountGroup
+        fields = ('id', 'title', 'code', 'description')
+
+
+class AccountGroupUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = AccountGroup
+        fields = ('title', 'description')
+
+    def validate_title(self, value):
+        if value != self.instance.title and AccountGroup.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 title=value,
