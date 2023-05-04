@@ -1,9 +1,9 @@
 from django.utils import timezone
 from rest_framework import serializers
-from apps.sale.saledata.models.price import (
+from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList
 )
-from apps.sale.saledata.models.product import ExpensePrice
+from apps.masterdata.saledata.models.product import ExpensePrice
 from apps.shared import PriceMsg
 
 

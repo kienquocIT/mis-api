@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from apps.sale.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
+from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 

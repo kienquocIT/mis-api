@@ -1,8 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema # noqa
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sale.saledata.models.product import Expense
-from apps.sale.saledata.serializers.expense import ExpenseListSerializer, ExpenseCreateSerializer, \
+from apps.masterdata.saledata.models.product import Expense
+from apps.masterdata.saledata.serializers.expense import ExpenseListSerializer, ExpenseCreateSerializer, \
     ExpenseDetailSerializer, ExpenseUpdateSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 

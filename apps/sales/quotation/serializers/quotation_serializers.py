@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sale.saledata.models.accounts import Account
+from apps.masterdata.saledata.models.accounts import Account
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate

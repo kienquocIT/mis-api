@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sale.promotion.models import Promotion
-from apps.sale.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer
+from apps.masterdata.promotion.models import Promotion
+from apps.masterdata.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view
 
 __all__ = ['PromotionList']
