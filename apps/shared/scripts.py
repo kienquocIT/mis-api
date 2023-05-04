@@ -2,9 +2,9 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
-from apps.sale.saledata.models.product import ProductType, Product
-from apps.sale.saledata.models.price import TaxCategory, Currency, Price
-from apps.sale.saledata.models.accounts import Contact
+from apps.masterdata.saledata.models.product import ProductType, Product
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models.accounts import Contact
 
 from .extends.signals import SaleDefaultData
 
