@@ -723,8 +723,9 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
                                 instance=instance,
                                 is_auto_update=get_price_from_source
                             )
-                        if obj:
-                            objs.append(obj)
+                        if not obj:
+                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                        objs.append(obj)
                     else:
                         obj = self.add_expense_for_price_list(
                                 item=item,
@@ -732,8 +733,9 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
                                 instance=instance,
                                 is_auto_update=get_price_from_source
                             )
-                        if obj:
-                            objs.append(obj)
+                        if not obj:
+                            raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
+                        objs.append(obj)
             if len(objs) > 0:
                 if instance.price_list_type == 0:
                     ProductPriceList.objects.bulk_create(objs)
