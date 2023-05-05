@@ -21,7 +21,7 @@ from apps.masterdata.saledata.views.price import (
     TaxList, TaxDetail,
     CurrencyList, CurrencyDetail, SyncWithVCB,
     PriceList, PriceDetail, PriceDelete,
-    UpdateProductsForPriceList, DeleteProductsForPriceList, ProductAddFromPriceList
+    UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList
 )
 
 urlpatterns = [
@@ -63,7 +63,7 @@ urlpatterns += [
 
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
-    path('create-product-from-price-list/<str:pk>', ProductAddFromPriceList.as_view(), name='ProductAddFromPriceList'),
+    path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]
 
@@ -82,12 +82,12 @@ urlpatterns += [
     path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
     path('delete-price/<str:pk>', PriceDelete.as_view(), name='PriceDelete'),
     path(
-        'update-products-for-price-list/<str:pk>', UpdateProductsForPriceList.as_view(),
+        'update-products-for-price-list/<str:pk>', UpdateItemsForPriceList.as_view(),
         name='UpdateProductsForPriceList'
     ),
     path(
-        'delete-products-for-price-list/<str:pk>', DeleteProductsForPriceList.as_view(),
-        name='DeleteProductsForPriceList'
+        'delete-products-for-price-list/<str:pk>', DeleteItemForPriceList.as_view(),
+        name='DeleteItemForPriceList'
     ),
 ]
 
