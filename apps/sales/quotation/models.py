@@ -67,6 +67,10 @@ class Quotation(DataAbstractModel):
         default=0,
         help_text="total pretax amount of tab product"
     )
+    total_product_discount_rate = models.FloatField(
+        default=0,
+        help_text="total discount rate (%) of tab product"
+    )
     total_product_discount = models.FloatField(
         default=0,
         help_text="total discount of tab product"
