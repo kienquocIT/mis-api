@@ -163,7 +163,8 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
                         price_id=item['id'],
                         currency_id=validated_data['general_information']['currency_using']['id'],
                         price_value=item['value'],
-                        is_auto_update=item['is_auto_update']
+                        is_auto_update=item['is_auto_update'],
+                        uom_id=validated_data['general_information']['uom']['id']
                     ) for item in price_list
                 ]
                 if len(bulk_data) > 0:
@@ -219,8 +220,11 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
         currency_using = validate_data['general_information']['currency_using']['id']
         price_list = validate_data['general_information']['price_list']
         for item in expense_price_delete:
-            if str(item.price_id) not in [obj["id"] for obj in price_list] or item.currency_id == currency_using:
+            if str(item.price_id) not in [obj["id"] for obj in price_list]:
                 item.delete()
+            else:
+                if str(item.currency_id) == currency_using:
+                    item.delete()
         return True
 
     @classmethod

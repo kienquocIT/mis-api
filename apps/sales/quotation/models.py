@@ -34,6 +34,13 @@ class Quotation(DataAbstractModel):
         related_name="quotation_sale_person",
         null=True
     )
+    payment_term = models.ForeignKey(
+        'saledata.PaymentTerm',
+        on_delete=models.CASCADE,
+        verbose_name="payment term",
+        related_name="quotation_payment_term",
+        null=True
+    )
     # quotation tabs
     quotation_products_data = models.JSONField(
         default=list,
@@ -59,6 +66,10 @@ class Quotation(DataAbstractModel):
     total_product_pretax_amount = models.FloatField(
         default=0,
         help_text="total pretax amount of tab product"
+    )
+    total_product_discount_rate = models.FloatField(
+        default=0,
+        help_text="total discount rate (%) of tab product"
     )
     total_product_discount = models.FloatField(
         default=0,
