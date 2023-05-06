@@ -46,7 +46,6 @@ urlpatterns = [
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
-
 ]
 
 urlpatterns += [

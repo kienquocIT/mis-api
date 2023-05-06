@@ -15,3 +15,7 @@ class AccountsMsg:
     TAX_CODE_NOT_NONE = _('Tax code must not NULL.')
     TAX_CODE_IS_EXIST = _('Tax code is already exist.')
     ACCOUNT_GROUP_NOT_NONE = _('Account group must not NULL.')
+    PAYMENT_TERM_MAPPED_NOT_NONE = _('Payment term mapped must not NULL.')
+    PRICE_LIST_MAPPED_NOT_NONE = _('Price list mapped must not NULL.')
+    CREDIT_LIMIT_NOT_NONE = _('Credit limit must not NULL.')
+    BANK_ACCOUNT_MISSING_VALUE = _('Bank account is missing value.')

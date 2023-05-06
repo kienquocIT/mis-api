@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup, AccountBanks
 )
 from apps.shared import AccountsMsg
 
@@ -790,8 +790,12 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
+            'payment_term_mapped',
+            'price_list_mapped',
+            'credit_limit',
             'owner',
-            'contact_mapped'
+            'contact_mapped',
+            'bank_accounts_information'
         )
 
     @classmethod
@@ -871,10 +875,23 @@ def update_account_owner(instance, account_owner):
     return True
 
 
+def add_banking_accounts_information(instance, banking_accounts_list):
+    AccountBanks.objects.filter(account=instance).delete()
+    bulk_info = []
+    for item in banking_accounts_list:
+        bulk_info.append(
+            AccountBanks(**item, account=instance)
+        )
+    if len(bulk_info) > 0:
+        AccountBanks.objects.bulk_create(bulk_info)
+    return True
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
     parent_account = serializers.UUIDField(required=False, allow_null=True)
+    bank_accounts_information = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -893,6 +910,10 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
+            'payment_term_mapped',
+            'price_list_mapped',
+            'credit_limit',
+            'bank_accounts_information',
         )
 
     @classmethod
@@ -900,6 +921,32 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         if value:
             return value
         raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
+
+    @classmethod
+    def validate_payment_term_mapped(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError(AccountsMsg.PAYMENT_TERM_MAPPED_NOT_NONE)
+
+    @classmethod
+    def validate_price_list_mapped(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError(AccountsMsg.PRICE_LIST_MAPPED_NOT_NONE)
+
+    @classmethod
+    def validate_credit_limit(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError(AccountsMsg.CREDIT_LIMIT_NOT_NONE)
+
+    @classmethod
+    def validate_bank_accounts_information(cls, value):
+        for item in value:
+            for key in item:
+                if item[key] is None:
+                    raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
+        return value
 
     def validate(self, validate_data):
         account_types = []
@@ -934,8 +981,12 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
-        update_account_owner(instance, self.initial_data.get('account-owner', None))  # update account owner
-        recreate_employee_map_account(instance)  # recreate in AccountEmployee (Account Manager)
+        # update account owner
+        update_account_owner(instance, self.initial_data.get('account-owner', None))
+        # recreate in AccountEmployee (Account Manager)
+        recreate_employee_map_account(instance)
+        # add banking accounts
+        add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', None))
         return instance
 
 

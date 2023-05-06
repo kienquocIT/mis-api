@@ -1,4 +1,6 @@
 from django.db import models
+from apps.masterdata.saledata.models.price import Price
+from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = ['Salutation', 'Interest', 'AccountType', 'AccountGroup', 'Industry', 'Account', 'AccountEmployee', 'Contact']
@@ -107,6 +109,9 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_employee'
     )
+    bank_accounts_information = models.JSONField(
+        default=list
+    )
     parent_account = models.CharField(
         verbose_name='parent account',
         null=True,
@@ -146,6 +151,9 @@ class Account(DataAbstractModel):
         null=True,
         max_length=150
     )
+    payment_term_mapped = models.ForeignKey(PaymentTerm, on_delete=models.CASCADE, null=True)
+    price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
+    credit_limit = models.FloatField(null=True)
 
     # [
     #   "Số 2/8, Xã Định An, Huyện Dầu Tiếng, Bình Dương",
@@ -177,6 +185,71 @@ class Account(DataAbstractModel):
 class AccountEmployee(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+
+
+# AccountBanks
+class AccountBanks(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
+    bank_name = models.CharField(
+        verbose_name='Name of bank',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bank_code = models.CharField(
+        verbose_name='Code of bank',
+        blank=True,
+        null=True,
+        max_length=50
+    )
+    bank_account_name = models.CharField(
+        verbose_name='Bank account name',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bank_account_number = models.CharField(
+        verbose_name='Bank account number',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    bic_swift_code = models.CharField(
+        verbose_name='BIC/SWIFT code',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    is_default = models.BooleanField(default=False)
+
+
+# AccountCreditCards
+class AccountCreditCards(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    credit_card_type = models.CharField(
+        verbose_name='Credit card type',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    credit_card_number = models.CharField(
+        verbose_name='Credit card number',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    credit_card_name = models.CharField(
+        verbose_name='Credit card name',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    expired_date = models.DateTimeField(
+        verbose_name='EXP date',
+        null=True
+    )
+    is_default = models.BooleanField(default=False)
 
 
 # Contact
