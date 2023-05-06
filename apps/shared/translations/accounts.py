@@ -19,3 +19,4 @@ class AccountsMsg:
     PRICE_LIST_MAPPED_NOT_NONE = _('Price list mapped must not NULL.')
     CREDIT_LIMIT_NOT_NONE = _('Credit limit must not NULL.')
     BANK_ACCOUNT_MISSING_VALUE = _('Bank account is missing value.')
+    CREDIT_CARD_MISSING_VALUE = _('Credit card is missing value.')

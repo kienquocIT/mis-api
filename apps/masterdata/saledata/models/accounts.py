@@ -112,6 +112,9 @@ class Account(DataAbstractModel):
     bank_accounts_information = models.JSONField(
         default=list
     )
+    credit_cards_information = models.JSONField(
+        default=list
+    )
     parent_account = models.CharField(
         verbose_name='parent account',
         null=True,
@@ -245,9 +248,11 @@ class AccountCreditCards(SimpleAbstractModel):
         null=True,
         max_length=150
     )
-    expired_date = models.DateTimeField(
+    expired_date = models.CharField(
         verbose_name='EXP date',
-        null=True
+        blank=True,
+        null=True,
+        max_length=10
     )
     is_default = models.BooleanField(default=False)
 

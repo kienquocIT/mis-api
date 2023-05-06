@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.accounts import (
-    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup, AccountBanks
+    Salutation, Interest, AccountType, Industry, Contact, Account, AccountEmployee, AccountGroup,
+    AccountBanks, AccountCreditCards
 )
 from apps.shared import AccountsMsg
 
@@ -795,7 +796,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'credit_limit',
             'owner',
             'contact_mapped',
-            'bank_accounts_information'
+            'bank_accounts_information',
+            'credit_cards_information'
         )
 
     @classmethod
@@ -887,11 +889,24 @@ def add_banking_accounts_information(instance, banking_accounts_list):
     return True
 
 
+def add_credit_cards_information(instance, credit_cards_list):
+    AccountCreditCards.objects.filter(account=instance).delete()
+    bulk_info = []
+    for item in credit_cards_list:
+        bulk_info.append(
+            AccountCreditCards(**item, account=instance)
+        )
+    if len(bulk_info) > 0:
+        AccountCreditCards.objects.bulk_create(bulk_info)
+    return True
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
     parent_account = serializers.UUIDField(required=False, allow_null=True)
     bank_accounts_information = serializers.JSONField()
+    credit_cards_information = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -914,6 +929,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'price_list_mapped',
             'credit_limit',
             'bank_accounts_information',
+            'credit_cards_information'
         )
 
     @classmethod
@@ -946,6 +962,14 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             for key in item:
                 if item[key] is None:
                     raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
+        return value
+
+    @classmethod
+    def validate_credit_cards_information(cls, value):
+        for item in value:
+            for key in item:
+                if item[key] is None:
+                    raise serializers.ValidationError(AccountsMsg.CREDIT_CARD_MISSING_VALUE)
         return value
 
     def validate(self, validate_data):
@@ -987,6 +1011,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         recreate_employee_map_account(instance)
         # add banking accounts
         add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', None))
+        # add credit cards
+        add_credit_cards_information(instance, validated_data.get('credit_cards_information', None))
         return instance
 
 
