@@ -12,7 +12,7 @@ from apps.shared import AccountsMsg
 class AccountTypeListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = AccountType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'is_default', 'description')
 
 
 class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
@@ -47,10 +47,10 @@ class AccountTypeDetailsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AccountType
-        fields = ('id', 'title', 'code', 'description')
+        fields = ('id', 'title', 'code', 'is_default', 'description')
 
 
-class AccountTypeUpdateSerializer(serializers.ModelSerializer):
+class AccountTypeUpdateSerializer(serializers.ModelSerializer): # noqa
     title = serializers.CharField(max_length=150)
 
     class Meta:
