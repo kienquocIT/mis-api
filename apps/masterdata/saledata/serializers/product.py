@@ -601,7 +601,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         price_list = obj.productpricelist_set.all().values_list('price_list__title', 'price')
         if price_list:
             return [
-                {'title': price[0], 'price': price[1]}
+                {'title': price[0], 'value': price[1]}
                 for price in price_list
             ]
         return []

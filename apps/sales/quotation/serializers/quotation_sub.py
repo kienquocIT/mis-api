@@ -14,25 +14,31 @@ from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg
 class QuotationCommonCreate:
 
     @classmethod
-    def validate_product_cost(cls, dict_data):
+    def validate_product_cost_expense(cls, dict_data, is_expense=False):
         product = {}
+        expense = {}
         unit_of_measure = {}
         tax = {}
         if 'product' in dict_data:
             product = dict_data['product']
             del dict_data['product']
+        if 'expense' in dict_data:
+            expense = dict_data['expense']
+            del dict_data['expense']
         if 'unit_of_measure' in dict_data:
             unit_of_measure = dict_data['unit_of_measure']
             del dict_data['unit_of_measure']
         if 'tax' in dict_data:
             tax = dict_data['tax']
             del dict_data['tax']
+        if is_expense is True:
+            return expense, unit_of_measure, tax
         return product, unit_of_measure, tax
 
     @classmethod
     def create_product(cls, validated_data, instance):
         for quotation_product in validated_data['quotation_products_data']:
-            product, unit_of_measure, tax = cls.validate_product_cost(dict_data=quotation_product)
+            product, unit_of_measure, tax = cls.validate_product_cost_expense(dict_data=quotation_product)
             QuotationProduct.objects.create(
                 quotation=instance,
                 product_id=product.get('id', None),
@@ -106,7 +112,7 @@ class QuotationCommonCreate:
     @classmethod
     def create_cost(cls, validated_data, instance):
         for quotation_cost in validated_data['quotation_costs_data']:
-            product, unit_of_measure, tax = cls.validate_product_cost(dict_data=quotation_cost)
+            product, unit_of_measure, tax = cls.validate_product_cost_expense(dict_data=quotation_cost)
             QuotationCost.objects.create(
                 quotation=instance,
                 product_id=product.get('id', None),
@@ -119,23 +125,15 @@ class QuotationCommonCreate:
     @classmethod
     def create_expense(cls, validated_data, instance):
         for quotation_expense in validated_data['quotation_expenses_data']:
-            expense_id = None
-            unit_of_measure_id = None
-            tax_id = None
-            if 'expense' in quotation_expense:
-                expense_id = quotation_expense['expense']
-                del quotation_expense['expense']
-            if 'unit_of_measure' in quotation_expense:
-                unit_of_measure_id = quotation_expense['unit_of_measure']
-                del quotation_expense['unit_of_measure']
-            if 'tax' in quotation_expense:
-                tax_id = quotation_expense['tax']
-                del quotation_expense['tax']
+            expense, unit_of_measure, tax = cls.validate_product_cost_expense(
+                dict_data=quotation_expense,
+                is_expense=True
+            )
             QuotationExpense.objects.create(
                 quotation=instance,
-                expense_id=expense_id,
-                unit_of_measure_id=unit_of_measure_id,
-                tax_id=tax_id,
+                expense_id=expense.get('id', None),
+                unit_of_measure_id=unit_of_measure.get('id', None),
+                tax_id=tax.get('id', None),
                 **quotation_expense
             )
         return True
@@ -364,18 +362,29 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_IS_ARRAY})
         raise serializers.ValidationError({'price_list': PriceMsg.PRICE_LIST_NOT_EXIST})
 
+    # @classmethod
+    # def validate_payment_term(cls, value):
+    #     try:
+    #         payment = PaymentTerm.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(payment.id),
+    #             'title': payment.title,
+    #             'code': payment.code
+    #         }
+    #     except PaymentTerm.DoesNotExist:
+    #         raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
     @classmethod
     def validate_payment_term(cls, value):
         try:
-            payment = PaymentTerm.objects.get_current(
+            return PaymentTerm.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
-            return {
-                'id': str(payment.id),
-                'title': payment.title,
-                'code': payment.code
-            }
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
