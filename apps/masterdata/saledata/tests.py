@@ -1211,7 +1211,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.test_create_config_payment_term()
         url = reverse('ConfigPaymentTermList')
         response = self.client.get(url, format='json')
-        self.assertResponseList(
+        self.assertResponseList( # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -1335,7 +1335,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response.data['result']
 
     def test_create_new_expense(self):
-        currency = self.get_currency(self)
+        currency = self.get_currency(self) # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1364,7 +1364,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response, price_list
 
     def test_create_expense_missing_data(self):
-        currency = self.get_currency(self)  # noqa
+        currency = self.get_currency(self)
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
