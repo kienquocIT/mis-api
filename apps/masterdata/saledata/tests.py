@@ -560,7 +560,7 @@ class UoMTestCase(AdvanceTestCase):
         }
         response1 = self.client.post(url, data1, format='json')
         self.assertEqual(response1.status_code, 400)
-        return response1
+        return response
 
     def test_create_uom_missing_data(self):
         uom_group = self.test_create_new_uom_group()
