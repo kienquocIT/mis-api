@@ -1328,9 +1328,9 @@ class ExpenseTestCase(AdvanceTestCase):
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
         price_list = self.create_price_list(self, currency)
-        data = {
-            "code": "string",
-            "title": "string",
+        data = { # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
             "general_information": {
                 "expense_type": expense_type['id'],
                 "uom_group": uom_group['id'],
@@ -1348,7 +1348,234 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response, price_list
 
+    def test_create_expense_missing_data(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {
+            "code": "E01",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+
+        data1 = { # noqa
+            "title": "Chi phis nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+        return response
+
+    def test_create_expense_empty_data(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {
+            "code": "E01",
+            "title": "",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+
+        data1 = { # noqa
+            "code": "",
+            "title": "Chi phis nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": "",
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data3 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertEqual(response3.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return response
+
+    def test_update_expense(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
+
+        data_update = { # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công vệ sinh",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response_update = self.client.put(url_update, data_update, format='json')
+        self.assertEqual(response_update.status_code, status.HTTP_200_OK)
+        return response
+
+    def test_get_expense_in_price_list(self):
+        _, price_list = self.test_create_new_expense()
         url = reverse("PriceDetail", args=[price_list['id']])
         response_list = self.client.get(url, format='json')
-        return True
+        self.assertEqual(response_list.status_code, status.HTTP_200_OK)
+        return response_list
+
+    def test_get_list_and_detail_expense(self):
+        expense = self.test_update_expense()
+        url_list = reverse("ExpenseList")
+        response_list = self.client.get(url_list, format='json')
+        self.assertEqual(response_list.status_code, 200)
+
+        url_detail = reverse("ExpenseDetail", args=[expense.data['result']['id']])
+        response_detail = self.client.get(url_detail, format='json')
+        self.assertEqual(response_detail.status_code, 200)
+        return response_detail
