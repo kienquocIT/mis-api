@@ -981,7 +981,7 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_create_new(self):
         data = { # noqa
-            "title": "Customer",
+            "title": "Customer_01",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
         response = self.client.post(self.url, data, format='json')
@@ -995,8 +995,8 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_duplicate_code(self):
         data1 = {  # noqa
-            "code": "AT01",
-            "title": "Customer",
+            "code": "AT08",
+            "title": "Customer_02",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
         response = self.client.post(self.url, data1, format='json')
@@ -1007,8 +1007,8 @@ class AccountTypeTestCase(AdvanceTestCase):
         )
 
         data2 = {  # noqa
-            "code": "AT01",
-            "title": "Supplier",
+            "code": "AT08",
+            "title": "Supplier_01",
             "description": ""
         }
         response2 = self.client.post(self.url, data2, format='json')
@@ -1017,14 +1017,14 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_missing_data(self):
         data = {  # noqa
-            "code": "AT01",
-            "description": "Customer"
+            "code": "AT09",
+            "description": "Customer_01"
         }
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, 400)
 
         data1 = {  # noqa
-            "title": "Supplier",
+            "title": "Supplier_01",
             "description": "Supplier"
         }
 
@@ -1032,8 +1032,8 @@ class AccountTypeTestCase(AdvanceTestCase):
         self.assertEqual(response1.status_code, 201)
 
         data2 = {  # noqa
-            "code": "AT02",
-            "title": "Customer",
+            "code": "AT09",
+            "title": "Customer_01",
         }
 
         response2 = self.client.post(self.url, data2, format='json')  # noqa
