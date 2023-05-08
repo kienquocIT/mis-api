@@ -44,7 +44,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 expense_type = ExpenseType.objects.get(
                     id=value
                 )
-            return {'id': str(expense_type.id), 'title': expense_type.title}
+                return {'id': str(expense_type.id), 'title': expense_type.title}
         except ExpenseType.DoesNotExist:
             raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
         return None
@@ -92,7 +92,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 currency = Currency.objects.get(
                     id=value
                 )
-            return {'id': str(currency.id), 'title': currency.title, 'code': currency.code}
+                return {'id': str(currency.id), 'title': currency.title, 'code': currency.code}
         except ExpenseType.DoesNotExist:
             raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
         return None
@@ -106,6 +106,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
 
 
 class ExpenseCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
     code = serializers.CharField(max_length=150)
     general_information = ExpenseGeneralCreateSerializer(required=False)
 
@@ -195,6 +196,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
 
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
     general_information = ExpenseGeneralCreateSerializer(required=True)
 
     class Meta:
