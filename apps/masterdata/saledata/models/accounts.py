@@ -19,6 +19,7 @@ __all__ = [
 class AccountType(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
+    account_type_order = models.IntegerField(null=True)
 
     class Meta:
         verbose_name = 'AccountType'

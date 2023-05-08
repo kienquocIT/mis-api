@@ -37,10 +37,10 @@ class SaleDefaultData:
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
     ]
     Account_types_data = [
-        {'title': 'Customer', 'code': 'AT001', 'is_default': 1},
-        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1},
-        {'title': 'Partner', 'code': 'AT003', 'is_default': 1},
-        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1}
+        {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
+        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1, 'account_type_order': 1},
+        {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
+        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
 
     def __init__(self, company_obj):
