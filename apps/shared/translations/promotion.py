@@ -13,3 +13,7 @@ class PromoMsg:
     ERROR_PRO_SELECTED = _('Special product is empty or product selected not found, please verify again.')
     ERROR_MINIMUM_QUANTITY = _('Minimum quantity value is empty, please verify again.')
     ERROR_GIFT = _('Missing gift method, please verify again.')
+    ERROR_FREE_PRODUCT = _('Missing free product setup, please verify again.')
+    ERROR_MIN_PURCHASE_TOTAL = _('Minimum purchase total is missing, please verify again.')
+    ERROR_PRODUCT_PURCHASE = _('Purchase product is missing, please verify again.')
+    ERROR_MISSING_METHOD = _('Missing method, please verify again.')
