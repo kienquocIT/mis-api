@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models.accounts import Account, Contact
+from apps.masterdata.saledata.models.contacts import Contact
+from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense

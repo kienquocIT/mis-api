@@ -1,1 +1,1 @@
-from apps.masterdata.saledata.models import accounts, config, product
+from apps.masterdata.saledata.models import contacts, accounts, config, product

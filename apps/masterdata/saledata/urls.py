@@ -1,28 +1,22 @@
 from django.urls import path
+from apps.masterdata.saledata.views.contacts import (
+    SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
+    ContactListNotMapAccount
+)
 from apps.masterdata.saledata.views.accounts import (
-    SalutationList, InterestsList, AccountTypeList, IndustryList,
-    ContactList, ContactDetail,
-    ContactListNotMapAccount,
-    AccountList, AccountDetail, AccountsMapEmployeesList,
-    SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
-    AccountGroupList, AccountGroupDetail
+    AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
+    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
 from apps.masterdata.saledata.views.product import (
-    ProductTypeList, ProductCategoryList,
-    ProductTypeDetail, ProductCategoryDetail,
-    ExpenseTypeList, ExpenseTypeDetail,
-    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail,
-    ProductList, ProductDetail
+    ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
+    ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail
 )
 from apps.masterdata.saledata.views.price import (
-    TaxCategoryList, TaxCategoryDetail,
-    TaxList, TaxDetail,
-    CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail, PriceDelete,
-    UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList
+    TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
+    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList
 )
 
 urlpatterns = [
