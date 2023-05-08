@@ -289,7 +289,7 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type()  # noqa
+        product_type = self.create_product_type() # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -323,7 +323,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type()  # noqa
+        product_type = self.create_product_type() # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -560,6 +560,7 @@ class UoMTestCase(AdvanceTestCase):
         }
         response1 = self.client.post(url, data1, format='json')
         self.assertEqual(response1.status_code, 400)
+
         return response
 
     def test_create_uom_missing_data(self):
@@ -1340,7 +1341,7 @@ class ExpenseTestCase(AdvanceTestCase):
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
         price_list = self.create_price_list(self, currency)
-        data = {  # noqa
+        data = { # noqa
             "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "general_information": {
@@ -1364,7 +1365,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response, price_list
 
     def test_create_expense_missing_data(self):
-        currency = self.get_currency(self)
+        currency = self.get_currency(self) # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1388,7 +1389,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = {  # noqa
+        data1 = { # noqa
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
                 "expense_type": expense_type['id'],
@@ -1432,7 +1433,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_create_expense_empty_data(self):
-        currency = self.get_currency(self)  # noqa
+        currency = self.get_currency(self) # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1457,7 +1458,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = {  # noqa
+        data1 = { # noqa
             "code": "",
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
@@ -1523,7 +1524,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_update_expense(self):
-        currency = self.get_currency(self)  # noqa
+        currency = self.get_currency(self) # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1552,7 +1553,7 @@ class ExpenseTestCase(AdvanceTestCase):
 
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
-        data_update = {  # noqa
+        data_update = { # noqa
             "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
             "general_information": {
