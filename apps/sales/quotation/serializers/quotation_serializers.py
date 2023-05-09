@@ -15,7 +15,8 @@ class QuotationProductSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -98,7 +99,8 @@ class QuotationCostSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -142,7 +144,8 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
