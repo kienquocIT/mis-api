@@ -1,6 +1,5 @@
 from django.db import models
 from apps.shared import DataAbstractModel, SimpleAbstractModel
-
 from apps.shared import MasterDataAbstractModel
 
 __all__ = ['ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',

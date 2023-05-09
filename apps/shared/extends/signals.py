@@ -6,6 +6,7 @@ from django.dispatch import receiver
 
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
+from apps.masterdata.saledata.models.accounts import AccountType
 from apps.masterdata.saledata.models.product import ProductType
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 
@@ -35,6 +36,12 @@ class SaleDefaultData:
     Price_general_data = [
         {'title': 'General Price List', 'price_list_type': 0, 'factor': 1.0, 'is_default': 1}
     ]
+    Account_types_data = [
+        {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
+        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1, 'account_type_order': 1},
+        {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
+        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -46,6 +53,7 @@ class SaleDefaultData:
                 self.create_tax_category()
                 self.create_currency()
                 self.create_price_default()
+                self.create_account_types()
             return True
         except Exception as err:
             logger.error(
@@ -60,6 +68,14 @@ class SaleDefaultData:
             for pt_item in self.ProductType_data
         ]
         ProductType.objects.bulk_create(objs)
+        return True
+
+    def create_account_types(self):
+        objs = [
+            AccountType(tenant=self.company_obj.tenant, company=self.company_obj, **at_item)
+            for at_item in self.Account_types_data
+        ]
+        AccountType.objects.bulk_create(objs)
         return True
 
     def create_tax_category(self):
