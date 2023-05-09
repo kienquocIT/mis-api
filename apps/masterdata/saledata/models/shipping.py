@@ -17,20 +17,19 @@ class Shipping(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="currency of shipping",
         related_name="shipping_currency",
-        null=True
+        null=True,
     )
 
     cost_method = models.IntegerField(
         default=1,
         help_text='0 - fixed, 1 - formula, 2 - service provider',
-        null=True
-        ,
+        null=True,
     )
 
     formula_condition = models.JSONField(
         default=dict,
         help_text='Condition while user select Formular for shipping',
-        null=True
+        null=True,
     )
 
     fixed_price = models.IntegerField(
@@ -55,7 +54,7 @@ class ShippingCondition(SimpleAbstractModel):
     )
     formular = models.JSONField(
         default=dict,
-        help_text='formular for each condition'
+        help_text='formular for each condition',
     )
     location_condition = models.ManyToManyField(
         'base.City',
