@@ -26,15 +26,15 @@ class Shipping(MasterDataAbstractModel):
         null=True,
     )
 
-    formula_condition = models.JSONField(
-        default=dict,
-        help_text='Condition while user select Formular for shipping',
-        null=True,
-    )
-
     fixed_price = models.IntegerField(
         default=0,
         help_text='Amount while user select Fixed Price for shipping',
+        null=True,
+    )
+
+    formula_condition = models.JSONField(
+        default=dict,
+        help_text='Condition while user select Formular for shipping',
         null=True,
     )
 
@@ -50,7 +50,7 @@ class ShippingCondition(SimpleAbstractModel):
         Shipping,
         on_delete=models.CASCADE,
         related_name="formula_shipping_condition",
-        null=True
+        null=True,
     )
     formular = models.JSONField(
         default=dict,
@@ -61,7 +61,7 @@ class ShippingCondition(SimpleAbstractModel):
         through="ConditionLocation",
         symmetrical=False,
         blank=True,
-        related_name='location_map_condition'
+        related_name='location_map_condition',
     )
 
 
@@ -71,14 +71,14 @@ class ConditionLocation(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="location for shipping formular",
         related_name="location",
-        null=True
+        null=True,
     )
 
     condition = models.ForeignKey(
         ShippingCondition,
         on_delete=models.CASCADE,
         related_name="condition",
-        null=True
+        null=True,
     )
 
 
@@ -88,20 +88,20 @@ class FormularCondition(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="formula of condition",
         related_name="formula_condition",
-        null=True
+        null=True,
     )
 
     uom_group = models.ForeignKey(
         'saledata.UnitOfMeasureGroup',
         on_delete=models.CASCADE,
         related_name='uom_group_condition',
-        null=True
+        null=True,
     )
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='uom_condition',
-        null=True
+        null=True,
     )
     comparison_operators = models.IntegerField(
         default=1,
@@ -117,7 +117,7 @@ class FormularCondition(SimpleAbstractModel):
     amount_condition = models.FloatField(
         default=0,
         help_text='fixed price for each condition',
-        null=True
+        null=True,
     )
     extra_amount = models.FloatField(
         default=0,
