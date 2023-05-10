@@ -159,11 +159,15 @@ class DiscountMethod(SimpleAbstractModel):
     )
     percent_fix_amount = models.BooleanField(
         verbose_name="Percent or Fixed amount",
-        help_text="Option check before or after tax"
+        help_text="Option percent or fixed amount"
     )
     percent_value = models.FloatField(
         verbose_name="percent number", blank=True, null=True,
         help_text="This field is required when user check \"Percent\" icon"
+    )
+    max_percent_value = models.FloatField(
+        verbose_name="max percent amount", blank=True, null=True,
+        help_text="For percent option when user check \"Percent\" icon"
     )
     fix_value = models.FloatField(
         verbose_name="Fixed amount", blank=True, null=True,
@@ -186,14 +190,17 @@ class DiscountMethod(SimpleAbstractModel):
     )
     is_on_order = models.BooleanField(
         verbose_name="Discount on order",
+        help_text="checkbox Discount on order",
         default=False
     )
     is_minimum = models.BooleanField(
         verbose_name="Minimum purchase",
+        help_text="Checkbox near Discount on order",
         default=False
     )
     minimum_value = models.FloatField(
         verbose_name="Minimum purchase value",
+        help_text="input minimum purchase value",
         blank=True, null=True
     )
     is_on_product = models.BooleanField(

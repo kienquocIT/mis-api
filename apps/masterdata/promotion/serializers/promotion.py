@@ -35,15 +35,17 @@ def check_discount_method(discount):
     else:
         if 'fix_value' not in discount or discount['fix_value'] == float(0):
             raise serializers.ValidationError({"fix_value": PromoMsg.ERROR_FIXED_AMOUNT})
-    if discount['is_on_order']:
+    if 'is_on_order' in discount and discount['is_on_order']:
         if discount['is_minimum'] and discount['minimum_value'] == float(0):
             raise serializers.ValidationError({"minimum_value": PromoMsg.ERROR_MINIMUM_PURCHASE})
-    if discount['is_on_product']:
+    if 'is_on_product' in discount and discount['is_on_product']:
         if not discount['product_selected']:
             raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
         if discount['is_min_quantity'] and discount['num_minimum'] == int(0):
             raise serializers.ValidationError({"num_minimum": PromoMsg.ERROR_MINIMUM_QUANTITY})
-    if discount['free_shipping'] and ('fix_value' not in discount or discount['fix_value'] == float(0)):
+    if 'free_shipping' in discount \
+            and discount['free_shipping'] \
+            and ('fix_value' not in discount or discount['fix_value'] == float(0)):
         raise serializers.ValidationError({"fix_value": PromoMsg.ERROR_FIXED_AMOUNT})
     return True
 
