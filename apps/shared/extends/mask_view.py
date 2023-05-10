@@ -107,7 +107,7 @@ def mask_view(**parent_kwargs):
                 return ResponseController.notfound_404()
             except Exception as err:
                 if settings.DEBUG is True:
-                    print('Error on line {} with {}'.format(sys.exc_info()[-1].tb_lineno, err))
+                    print(f'Error on line {sys.exc_info()[-1].tb_lineno} with {str(err)}')
                 return ResponseController.internal_server_error_500(msg=str(err))
             raise ValueError('Return not map happy case.')
 
