@@ -1,6 +1,7 @@
 from django.db import models
 
 from apps.core.base.models import Currency
+from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.product import Product
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
@@ -22,7 +23,8 @@ class Promotion(MasterDataAbstractModel):
     )
     customer_type = models.IntegerField(
         verbose_name="Customer type",
-        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)"
+        help_text="filter customer by option choose (0: all, 1: choose customer, 2: filter by condition)",
+        default=0
     )
     customer_by_list = models.JSONField(
         verbose_name="Customer by list",
@@ -39,15 +41,15 @@ class Promotion(MasterDataAbstractModel):
         help_text="Explanation about customer type"
     )
     is_discount = models.BooleanField(
-        verbose_name="Discount check", blank=True, null=True,
+        verbose_name="Discount check", null=True,
         help_text="Promotion for discount"
     )
     is_coupons = models.BooleanField(
-        verbose_name="Coupons check", blank=True, null=True,
+        verbose_name="Coupons check", null=True,
         help_text="Promotion for Coupons"
     )
     is_gift = models.BooleanField(
-        verbose_name="Gift check", blank=True, null=True,
+        verbose_name="Gift check", null=True,
         help_text="Promotion for gift"
     )
     discount_method = models.JSONField(
@@ -82,7 +84,7 @@ class CustomerByList(SimpleAbstractModel):
         null=False
     )
     customer = models.ForeignKey(
-        'hr.Employee',
+        Account,
         on_delete=models.CASCADE,
         related_name="customer_by_list_customer",
         null=False
@@ -153,20 +155,27 @@ class DiscountMethod(SimpleAbstractModel):
     before_after_tax = models.BooleanField(
         verbose_name="Before After tax check",
         help_text="Option check before or after tax",
-        default=True,
+
     )
     percent_fix_amount = models.BooleanField(
         verbose_name="Percent or Fixed amount",
-        help_text="Option check before or after tax",
-        default=True
+        help_text="Option percent or fixed amount"
     )
-    fix_value = models.IntegerField(
+    percent_value = models.FloatField(
+        verbose_name="percent number", blank=True, null=True,
+        help_text="This field is required when user check \"Percent\" icon"
+    )
+    max_percent_value = models.FloatField(
+        verbose_name="max percent amount", blank=True, null=True,
+        help_text="For percent option when user check \"Percent\" icon"
+    )
+    fix_value = models.FloatField(
         verbose_name="Fixed amount", blank=True, null=True,
-        help_text="This field is required when user check \"percent fix amount\" field is False"
+        help_text="This field is required when user check \"Fixed amount\" field"
     )
     use_count = models.IntegerField(
-        verbose_name="Use count",
-        help_text="Count time per customer per times", default=1
+        verbose_name="Use count", default=1,
+        help_text="Count time per customer per times",
     )
     times_condition = models.IntegerField(
         verbose_name="Times choose",
@@ -181,14 +190,17 @@ class DiscountMethod(SimpleAbstractModel):
     )
     is_on_order = models.BooleanField(
         verbose_name="Discount on order",
+        help_text="checkbox Discount on order",
         default=False
     )
     is_minimum = models.BooleanField(
         verbose_name="Minimum purchase",
+        help_text="Checkbox near Discount on order",
         default=False
     )
     minimum_value = models.FloatField(
         verbose_name="Minimum purchase value",
+        help_text="input minimum purchase value",
         blank=True, null=True
     )
     is_on_product = models.BooleanField(
@@ -231,17 +243,16 @@ class GiftMethod(SimpleAbstractModel):
     )
     use_count = models.IntegerField(
         verbose_name="Use count",
-        help_text="Count time per customer per times", default=1
+        help_text="Count time per customer per times REQUIRED", default=1
     )
     times_condition = models.IntegerField(
         verbose_name="Times choose",
-        help_text="Choose times apply for per use per customer",
-        choices=VALID_TIME,
-        default=1
+        help_text="Choose times apply for per use per customer REQUIRED",
+        choices=VALID_TIME, default=1
     )
     max_usages = models.IntegerField(
         verbose_name="Max usages",
-        help_text="Maximum of usages is apply for discount campaign code",
+        help_text="Maximum of usages is apply for discount campaign code REQUIRED",
         default=0
     )
     is_free_product = models.BooleanField(
