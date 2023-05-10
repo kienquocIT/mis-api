@@ -89,7 +89,7 @@ class SaleDefaultData:
     def create_currency(self):
         currency_list = ['VND', 'USD', 'EUR', 'JPY']
         data_currency = BaseCurrency.objects.filter(code__in=currency_list)
-        if len(data_currency) > 0:
+        if data_currency.count() > 0:
             bulk_info = []
             for item in data_currency:
                 primary = False
