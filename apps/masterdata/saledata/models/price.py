@@ -2,7 +2,6 @@ from django.db import models
 from django.utils import timezone
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
-from apps.core.base.models import Currency as BaseCurrency
 
 # Create your models here.
 class TaxCategory(MasterDataAbstractModel):  # noqa
@@ -40,7 +39,7 @@ class Tax(MasterDataAbstractModel):
 
 
 class Currency(MasterDataAbstractModel):
-    currency = models.ForeignKey(BaseCurrency, on_delete=models.CASCADE, null=True)
+    currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
     abbreviation = models.CharField(max_length=100)
     rate = models.FloatField(null=True)
     is_default = models.BooleanField(default=False)
