@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Unit
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 # Create your models here.
-class TaxCategory(MasterDataAbstractModel):  # noqa
+class TaxCategory(MasterDataAbstractModel):   # noqa
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
 
