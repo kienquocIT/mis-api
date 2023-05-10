@@ -72,6 +72,7 @@ INSTALLED_APPS = \
         'apps.sales.opportunity',
         'apps.sales.quotation',
         'apps.masterdata.promotion',
+        'apps.sales.cashoutflow'
     ]
 
 MIDDLEWARE = [
