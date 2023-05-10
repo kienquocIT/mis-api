@@ -1,3 +1,4 @@
+import sys
 from functools import wraps
 
 import rest_framework.exceptions
@@ -102,9 +103,11 @@ def mask_view(**parent_kwargs):
                 return ResponseController.forbidden_403(msg=str(err.detail))
             except rest_framework.exceptions.AuthenticationFailed as err:
                 return ResponseController.unauthorized_401(msg=str(err.detail))
+            except rest_framework.exceptions.NotFound:
+                return ResponseController.notfound_404()
             except Exception as err:
                 if settings.DEBUG is True:
-                    print(err)
+                    print('Error on line {} with {}'.format(sys.exc_info()[-1].tb_lineno, err))
                 return ResponseController.internal_server_error_500(msg=str(err))
             raise ValueError('Return not map happy case.')
 
