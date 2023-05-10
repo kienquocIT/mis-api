@@ -17,7 +17,6 @@ class Shipping(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="currency of shipping",
         related_name="shipping_currency",
-        null=True,
     )
 
     cost_method = models.IntegerField(
@@ -26,7 +25,7 @@ class Shipping(MasterDataAbstractModel):
         null=True,
     )
 
-    fixed_price = models.IntegerField(
+    fixed_price = models.FloatField(
         default=0,
         help_text='Amount while user select Fixed Price for shipping',
         null=True,
@@ -50,7 +49,6 @@ class ShippingCondition(SimpleAbstractModel):
         Shipping,
         on_delete=models.CASCADE,
         related_name="formula_shipping_condition",
-        null=True,
     )
     formular = models.JSONField(
         default=dict,
@@ -71,14 +69,12 @@ class ConditionLocation(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="location for shipping formular",
         related_name="location",
-        null=True,
     )
 
     condition = models.ForeignKey(
         ShippingCondition,
         on_delete=models.CASCADE,
         related_name="condition",
-        null=True,
     )
 
 
@@ -88,20 +84,17 @@ class FormularCondition(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="formula of condition",
         related_name="formula_condition",
-        null=True,
     )
 
     uom_group = models.ForeignKey(
         'saledata.UnitOfMeasureGroup',
         on_delete=models.CASCADE,
         related_name='uom_group_condition',
-        null=True,
     )
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name='uom_condition',
-        null=True,
     )
     comparison_operators = models.IntegerField(
         default=1,
