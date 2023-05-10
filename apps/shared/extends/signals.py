@@ -87,13 +87,8 @@ class SaleDefaultData:
         return True
 
     def create_currency(self):
-        currency_vnd = BaseCurrency.objects.filter(code='VND').first()
-        currency_usd = BaseCurrency.objects.filter(code='USD').first()
-        currency_eur = BaseCurrency.objects.filter(code='EUR').first()
-        currency_jpy = BaseCurrency.objects.filter(code='JPY').first()
-        data_currency = []
-        if currency_vnd and currency_jpy and currency_eur and currency_usd:
-            data_currency = [currency_vnd, currency_usd, currency_jpy, currency_eur]
+        currency_list = ['VND', 'USD', 'EUR', 'JPY']
+        data_currency = BaseCurrency.objects.filter(code__in=currency_list)
         if len(data_currency) > 0:
             bulk_info = []
             for item in data_currency:
