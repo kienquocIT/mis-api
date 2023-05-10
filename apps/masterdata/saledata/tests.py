@@ -12,8 +12,7 @@ class AccountTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         # create industry
         url_create_industry = reverse('IndustryList')
         response_industry = self.client.post(
@@ -228,8 +227,7 @@ class ProductTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("ProductList")
 
     def create_product_type(self):
@@ -425,8 +423,7 @@ class SalutationTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new(self):
         data = {  # noqa
@@ -515,8 +512,7 @@ class UoMTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new_uom_group(self):
         data = {
@@ -620,8 +616,7 @@ class CurrencyTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("CurrencyList")
 
     def test_get_list_currency_default(self):
@@ -673,8 +668,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url_tax = reverse("TaxList")
         self.url_tax_category = reverse("TaxCategoryList")
 
@@ -798,10 +792,10 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
+        login_data = self._login()
         self.authenticated(login_data)
         self.url_product_category = reverse("ProductCategoryList")
-        self.url_product_type = reverse("TaxCategoryList")
+        self.url_product_type = reverse("ProductTypeList")
 
     def test_create_new_product_category(self):
         data = {
@@ -902,8 +896,7 @@ class InterestTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("InterestsList")
 
     def test_create_new(self):
@@ -988,8 +981,7 @@ class AccountTypeTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("AccountTypeList")
 
     def test_create_new(self):
@@ -1074,8 +1066,7 @@ class IndustryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("IndustryList")
 
     def test_create_new(self):
@@ -1162,8 +1153,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_config_payment_term(self):
         data = {
@@ -1266,8 +1256,7 @@ class ExpenseTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     @staticmethod
     def get_currency(self):
