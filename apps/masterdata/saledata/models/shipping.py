@@ -2,6 +2,7 @@ from django.db import models
 from apps.shared import SimpleAbstractModel
 
 from apps.shared import MasterDataAbstractModel
+
 __all__ = [
     'Shipping',
     'ShippingCondition',
@@ -48,6 +49,29 @@ class Shipping(MasterDataAbstractModel):
         help_text='Condition while user select Service Provider for shipping',
         null=True,
     )
+
+    class Meta:
+        verbose_name = 'Ship'
+        verbose_name_plural = 'Ships'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        shipping = Shipping.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "SHIP.CODE."
+        if not self.code:
+            temper = "%04d" % (shipping + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class ShippingCondition(SimpleAbstractModel):
