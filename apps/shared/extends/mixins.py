@@ -1,5 +1,5 @@
 from django.conf import settings
-from rest_framework import serializers
+from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
 
 from .controllers import ResponseController
@@ -220,7 +220,7 @@ class BaseMixin(GenericAPIView):
             self.check_object_permissions(self.request, obj)
             return obj
         except queryset.model.DoesNotExist:
-            return ResponseController.notfound_404()
+            raise exceptions.NotFound
 
 
 class BaseListMixin(BaseMixin):

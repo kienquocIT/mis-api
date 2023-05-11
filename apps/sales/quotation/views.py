@@ -58,7 +58,8 @@ class QuotationDetail(
             "opportunity",
             "customer",
             "contact",
-            "sale_person"
+            "sale_person",
+            "payment_term"
         )
 
     @swagger_auto_schema(

@@ -15,7 +15,8 @@ class QuotationProductSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -98,7 +99,8 @@ class QuotationCostSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -142,7 +144,8 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -229,6 +232,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
+    payment_term = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -241,7 +245,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
             'system_status',
+            # quotation tabs
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
@@ -249,6 +255,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'quotation_expenses_data',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',
@@ -304,6 +311,16 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
+    def get_payment_term(cls, obj):
+        if obj.payment_term:
+            return {
+                'id': obj.payment_term_id,
+                'title': obj.payment_term.title,
+                'code': obj.payment_term.code,
+            }
+        return {}
+
+    @classmethod
     def get_system_status(cls, obj):
         if obj.system_status:
             return "Open"
@@ -324,6 +341,9 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         max_length=550
     )
     sale_person = serializers.CharField(
+        max_length=550
+    )
+    payment_term = serializers.CharField(
         max_length=550
     )
     # quotation tabs
@@ -350,8 +370,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',
@@ -387,6 +409,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_sale_person(cls, value):
         return QuotationCommonValidate().validate_sale_person(value=value)
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        return QuotationCommonValidate().validate_payment_term(value=value)
 
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)

@@ -29,7 +29,10 @@ class CompanyConfigDetail(APIView):
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
         try:
-            obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
+            obj = CompanyConfig.objects.select_related('currency').get(
+                company_id=request.user.company_current_id,
+                **{'force_cache': True}
+            )
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
         except CompanyConfig.DoesNotExist:
             pass

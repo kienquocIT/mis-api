@@ -4,7 +4,7 @@ from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.masterdata.saledata.models.product import ProductType, Product
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
-from apps.masterdata.saledata.models.accounts import Contact
+from apps.masterdata.saledata.models.contacts import Contact
 
 from .extends.signals import SaleDefaultData
 

@@ -12,8 +12,7 @@ class AccountTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         # create industry
         url_create_industry = reverse('IndustryList')
         response_industry = self.client.post(
@@ -40,7 +39,7 @@ class AccountTestCase(AdvanceTestCase):
         self.account_type = response_account_type.data['result']
 
     def test_create_new_account(self):
-        data = { # noqa
+        data = {  # noqa
             'name': 'Công Ty Hạt Giống Trúc Phượng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
@@ -62,7 +61,7 @@ class AccountTestCase(AdvanceTestCase):
 
     def test_create_account_duplicate_code(self):
         self.test_create_new_account()
-        data = { # noqa
+        data = {  # noqa
             'name': 'Công Ty Hạt Giống Trúc Phượng',
             'code': 'PM002',
             'website': 'trucphuong.com.vn',
@@ -223,186 +222,200 @@ class AccountTestCase(AdvanceTestCase):
 #         return response
 
 
-# class ProductTestCase(AdvanceTestCase):
-#     def setUp(self):
-#         self.maxDiff = None
-#         self.client = APIClient()
-#
-#         login_data = TestCaseAuth.test_login(self)
-#         self.authenticated(login_data)
-#         self.url = reverse("ProductList")
-#
-#     def create_product_type(self):
-#         url = reverse('ProductTypeList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'San pham 1',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response.data['result']
-#
-#     def create_product_category(self):
-#         url = reverse('ProductCategoryList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Hardware',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response.data['result']
-#
-#     def create_uom_group(self):
-#         url = reverse('UnitOfMeasureGroupList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Time',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response.data['result']
-#
-#     def create_uom(self):
-#         data_uom_gr = self.create_uom_group()
-#         url = reverse('UnitOfMeasureGroupList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 "code": "MIN",
-#                 "title": "minute",
-#                 "group": data_uom_gr['id'],
-#                 "ratio": 1,
-#                 "rounding": 5,
-#                 "is_referenced_unit": True
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response.data['result'], data_uom_gr
-#
-#     def test_create_product_missing_code(self):
-#         product_type = self.create_product_type() # noqa
-#         product_category = self.create_product_category()
-#         unit_of_measure, uom_group = self.create_uom()
-#         data1 = {
-#             "code": "P01",
-#             "title": "Laptop HP HLVVL6R",
-#             "general_information": {
-#                 'product_type': product_type['id'],
-#                 'product_category': product_category['id'],
-#                 'uom_group': uom_group['id']
-#             },
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertEqual(response1.status_code, 500)
-#
-#         return True
-#
-#     def test_create_product_missing_title(self):
-#         data = {
-#             "code": "P01",
-#             "general_information": {
-#             }
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-#
-#     def test_create_product_duplicate_code(self):
-#         product_type = self.create_product_type() # noqa
-#         product_category = self.create_product_category()
-#         unit_of_measure, uom_group = self.create_uom()
-#         data1 = {
-#             "code": "P01",
-#             "title": "Laptop HP HLVVL6R",
-#             "general_information": {
-#                 'product_type': product_type['id'],
-#                 'product_category': product_category['id'],
-#                 'uom_group': uom_group['id']
-#             },
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertEqual(response1.status_code, 500)
-#         return False
-#
-#     def test_create_product_not_UUID(self):
-#         product_type = self.create_product_type()
-#         product_category = self.create_product_category()
-#         unit_of_measure, uom_group = self.create_uom()
-#         data = {
-#             "code": "P01",
-#             "title": "Laptop Dell HLVVL6R",
-#             "general_information": {
-#                 'product_type': {
-#                     'id': product_type['id'],
-#                     'title': product_type['title'],
-#                     'code': "",
-#                 },
-#                 'product_category': {
-#                     'id': product_category['id'],
-#                     'title': product_category['title'],
-#                     'code': "",
-#                 },
-#                 'uom_group': {
-#                     'id': uom_group['id'],
-#                     'title': uom_group['title'],
-#                     'code': "",
-#                 },
-#             },
-#             "sale_information": {
-#                 'default_uom_id': unit_of_measure['id']
-#             },
-#             "inventory_information": {
-#                 'uom': unit_of_measure['id'],
-#                 'inventory_level_min': 5,
-#                 'inventory_level_max': 20
-#             }
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, 400)
-#
-#         data1 = {
-#             "code": "P02",
-#             "title": "Laptop HP HLVVL6R",
-#             "general_information": {
-#                 'product_type': '1',
-#                 'product_category': '1',
-#                 'uom_group': '1'
-#             },
-#             "inventory_information": {},
-#             "sale_information": {},
-#             "purchase_information": {},
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertEqual(response1.status_code, 400)
-#         return True
+class ProductTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+        self.url = reverse("ProductList")
+
+    def create_product_type(self):
+        url = reverse('ProductTypeList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'San pham 1',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result']
+
+    def create_product_category(self):
+        url = reverse('ProductCategoryList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Hardware',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result']
+
+    def create_uom_group(self):
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Time',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result']
+
+    def create_uom(self):
+        data_uom_gr = self.create_uom_group()
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                "code": "MIN",
+                "title": "minute",
+                "group": data_uom_gr['id'],
+                "ratio": 1,
+                "rounding": 5,
+                "is_referenced_unit": True
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result'], data_uom_gr
+
+    def test_create_product_missing_code(self):
+        product_type = self.create_product_type() # noqa
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
+        data1 = {
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+        }
+        response1 = self.client.post(
+            self.url,
+            data1,
+            format='json'
+        )
+        self.assertEqual(response1.status_code, 400)
+
+        return True
+
+    def test_create_product_missing_title(self):
+        data = {
+            "code": "P01",
+            "general_information": {
+            }
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_product_duplicate_code(self):
+        product_type = self.create_product_type() # noqa
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
+        data1 = {
+            "code": "P01",
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+        }
+        response1 = self.client.post(
+            self.url,
+            data1,
+            format='json'
+        )
+        self.assertEqual(response1.status_code, 201)
+
+        data1 = {
+            "code": "P01",
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+        }
+        response1 = self.client.post(
+            self.url,
+            data1,
+            format='json'
+        )
+        self.assertEqual(response1.status_code, 400)
+        return False
+
+    def test_create_product_not_UUID(self):
+        product_type = self.create_product_type()
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "code": "P01",
+            "title": "Laptop Dell HLVVL6R",
+            "general_information": {
+                'product_type': {
+                    'id': product_type['id'],
+                    'title': product_type['title'],
+                    'code': "",
+                },
+                'product_category': {
+                    'id': product_category['id'],
+                    'title': product_category['title'],
+                    'code': "",
+                },
+                'uom_group': {
+                    'id': uom_group['id'],
+                    'title': uom_group['title'],
+                    'code': "",
+                },
+            },
+            "sale_information": {
+                'default_uom_id': unit_of_measure['id']
+            },
+            "inventory_information": {
+                'uom': unit_of_measure['id'],
+                'inventory_level_min': 5,
+                'inventory_level_max': 20
+            }
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, 400)
+
+        data1 = {
+            "code": "P02",
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': '1',
+                'product_category': '1',
+                'uom_group': '1'
+            },
+            "inventory_information": {},
+            "sale_information": {},
+            "purchase_information": {},
+        }
+        response1 = self.client.post(
+            self.url,
+            data1,
+            format='json'
+        )
+        self.assertEqual(response1.status_code, 400)
+        return True
 
 
 class SalutationTestCase(AdvanceTestCase):
@@ -410,11 +423,10 @@ class SalutationTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new(self):
-        data = { # noqa
+        data = {  # noqa
             "code": "S01",
             "title": "Mr",
             "description": "A man"
@@ -500,8 +512,7 @@ class UoMTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new_uom_group(self):
         data = {
@@ -543,11 +554,9 @@ class UoMTestCase(AdvanceTestCase):
             "rounding": 5,
             "is_referenced_unit": True
         }
-        try:
-            response1 = self.client.post(url, data1, format='json')
-            self.assertEqual(response1.status_code, 201)
-        except Exception as err:
-            print(err)
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, 400)
+
         return response
 
     def test_create_uom_missing_data(self):
@@ -607,8 +616,7 @@ class CurrencyTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("CurrencyList")
 
     def test_get_list_currency_default(self):
@@ -660,8 +668,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url_tax = reverse("TaxList")
         self.url_tax_category = reverse("TaxCategoryList")
 
@@ -785,10 +792,10 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
+        login_data = self._login()
         self.authenticated(login_data)
         self.url_product_category = reverse("ProductCategoryList")
-        self.url_product_type = reverse("TaxCategoryList")
+        self.url_product_type = reverse("ProductTypeList")
 
     def test_create_new_product_category(self):
         data = {
@@ -840,8 +847,8 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
 
     def test_get_list_and_detail_product_category(self):
         product_category = self.test_create_new_product_category()
-        response = self.client.get(self.url_product_category, format='json') # noqa
-        self.assertResponseList( # noqa
+        response = self.client.get(self.url_product_category, format='json')  # noqa
+        self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -862,8 +869,8 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
 
     def test_get_list_and_detail_product_type(self):
         product_type = self.test_create_new_product_type()
-        response = self.client.get(self.url_product_type, format='json') # noqa
-        self.assertResponseList( # noqa
+        response = self.client.get(self.url_product_type, format='json')  # noqa
+        self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -889,12 +896,11 @@ class InterestTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("InterestsList")
 
     def test_create_new(self):
-        data = { # noqa
+        data = {  # noqa
             "code": "I01",
             "title": "Yoga",
             "description": "Tập yoga"
@@ -956,10 +962,10 @@ class InterestTestCase(AdvanceTestCase):
         return True
 
     def test_get_interest(self):
-        interest = self.test_create_new() # noqa
+        interest = self.test_create_new()  # noqa
         url_detail = reverse('InterestDetail', args=[interest.data['result']['id']])
 
-        response = self.client.get(self.url) # noqa
+        response = self.client.get(self.url)  # noqa
         response_detail = self.client.get(url_detail)
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(
@@ -971,17 +977,16 @@ class InterestTestCase(AdvanceTestCase):
 
 
 class AccountTypeTestCase(AdvanceTestCase):
-    def setUp(self): # noqa
+    def setUp(self):  # noqa
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("AccountTypeList")
 
     def test_create_new(self):
-        data = { # noqa
-            "title": "Customer",
+        data = {  # noqa
+            "title": "Customer_01",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
         response = self.client.post(self.url, data, format='json')
@@ -995,8 +1000,8 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_duplicate_code(self):
         data1 = {  # noqa
-            "code": "AT01",
-            "title": "Customer",
+            "code": "AT08",
+            "title": "Customer_02",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
         response = self.client.post(self.url, data1, format='json')
@@ -1007,8 +1012,8 @@ class AccountTypeTestCase(AdvanceTestCase):
         )
 
         data2 = {  # noqa
-            "code": "AT01",
-            "title": "Supplier",
+            "code": "AT08",
+            "title": "Supplier_01",
             "description": ""
         }
         response2 = self.client.post(self.url, data2, format='json')
@@ -1017,23 +1022,23 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_missing_data(self):
         data = {  # noqa
-            "code": "AT01",
-            "description": "Customer"
+            "code": "AT09",
+            "description": "Customer_01"
         }
         response = self.client.post(self.url, data, format='json')
         self.assertEqual(response.status_code, 400)
 
         data1 = {  # noqa
-            "title": "Supplier",
+            "title": "Supplier_01",
             "description": "Supplier"
         }
 
-        response1 = self.client.post(self.url, data1, format='json') # noqa
+        response1 = self.client.post(self.url, data1, format='json')  # noqa
         self.assertEqual(response1.status_code, 201)
 
         data2 = {  # noqa
-            "code": "AT02",
-            "title": "Customer",
+            "code": "AT09",
+            "title": "Customer_01",
         }
 
         response2 = self.client.post(self.url, data2, format='json')  # noqa
@@ -1042,10 +1047,10 @@ class AccountTypeTestCase(AdvanceTestCase):
         return True
 
     def test_get_account_type(self):
-        account_type = self.test_create_new() # noqa
+        account_type = self.test_create_new()  # noqa
         url_detail = reverse('AccountTypeDetail', args=[account_type.data['result']['id']])
 
-        response = self.client.get(self.url) # noqa
+        response = self.client.get(self.url)  # noqa
         response_detail = self.client.get(url_detail)
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(
@@ -1057,16 +1062,15 @@ class AccountTypeTestCase(AdvanceTestCase):
 
 
 class IndustryTestCase(AdvanceTestCase):
-    def setUp(self): # noqa
+    def setUp(self):  # noqa
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("IndustryList")
 
     def test_create_new(self):
-        data = { # noqa
+        data = {  # noqa
             "title": "IT Service",
             "description": "Dịch vụ"
         }
@@ -1114,7 +1118,7 @@ class IndustryTestCase(AdvanceTestCase):
             "description": "Dịch vụ"
         }
 
-        response1 = self.client.post(self.url, data1, format='json') # noqa
+        response1 = self.client.post(self.url, data1, format='json')  # noqa
         self.assertEqual(response1.status_code, 201)
 
         data2 = {  # noqa
@@ -1128,10 +1132,10 @@ class IndustryTestCase(AdvanceTestCase):
         return True
 
     def test_get_account_type(self):
-        industry = self.test_create_new() # noqa
+        industry = self.test_create_new()  # noqa
         url_detail = reverse('IndustryDetail', args=[industry.data['result']['id']])
 
-        response = self.client.get(self.url) # noqa
+        response = self.client.get(self.url)  # noqa
         response_detail = self.client.get(url_detail)
         self.assertEqual(response.status_code, 200)
         self.assertCountEqual(
@@ -1149,8 +1153,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_config_payment_term(self):
         data = {
@@ -1199,7 +1202,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.test_create_config_payment_term()
         url = reverse('ConfigPaymentTermList')
         response = self.client.get(url, format='json')
-        self.assertResponseList(
+        self.assertResponseList( # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -1246,3 +1249,335 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
         self.assertFalse(PaymentTerm.objects.filter(pk=res.data['result']['id']).exists())
+
+
+class ExpenseTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    @staticmethod
+    def get_currency(self):
+        url = reverse("CurrencyList")
+        response = self.client.get(url, format='json')
+        return response.data['result']
+
+    @staticmethod
+    def create_expense_type(self):
+        data = {
+            'title': 'chi phí nhân công',
+            'description': ''
+        }
+        url = reverse("ExpenseTypeList")
+        response = self.client.post(url, data, format='json')
+        return response.data['result']
+
+    @staticmethod
+    def create_uom_group(self):
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'nhân công',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result']
+
+    @staticmethod
+    def create_uom(self, uom_group):
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(
+            url,
+            {
+                "code": "MD",
+                "title": "manday",
+                "group": uom_group['id'],
+                "ratio": 1,
+                "rounding": 5,
+                "is_referenced_unit": True
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response.data['result']
+
+    def create_tax_code(self):
+        pass
+
+    @staticmethod
+    def create_price_list(self, currency):
+        data = {
+            "title": "chi phí nhân công sản xuất",
+            "auto_update": True,
+            "can_delete": True,
+            "factor": 1,
+            "currency": [currency[0], currency[1]],
+            "price_list_type": 2,
+            "valid_time_start": "2023-05-01 17:13:00",
+            "valid_time_end": "2023-05-06 17:13:00"
+        }
+        url = reverse("PriceList")
+        response = self.client.post(url, data, format='json')
+        return response.data['result']
+
+    def test_create_new_expense(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = { # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response, price_list
+
+    def test_create_expense_missing_data(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {
+            "code": "E01",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+
+        data1 = { # noqa
+            "title": "Chi phis nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+        return response
+
+    def test_create_expense_empty_data(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {
+            "code": "E01",
+            "title": "",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+
+        data1 = { # noqa
+            "code": "",
+            "title": "Chi phis nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": "",
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data3 = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertEqual(response3.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return response
+
+    def test_update_expense(self):
+        currency = self.get_currency(self) # noqa
+        expense_type = self.create_expense_type(self)
+        uom_group = self.create_uom_group(self)
+        uom = self.create_uom(self, uom_group)
+        price_list = self.create_price_list(self, currency)
+        data = {  # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công sản xuất",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        url = reverse("ExpenseList")
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
+
+        data_update = { # noqa
+            "code": "E01",
+            "title": "Chi phí nhân công vệ sinh",
+            "general_information": {
+                "expense_type": expense_type['id'],
+                "uom_group": uom_group['id'],
+                "uom": uom['id'],
+                "tax_code": None,
+                "price_list": [
+                    {
+                        'id': price_list['id'],
+                        'value': 0,
+                        'is_auto_update': False,
+                    }
+                ],
+                "currency_using": currency[0]['id']
+            }
+        }
+        response_update = self.client.put(url_update, data_update, format='json')
+        self.assertEqual(response_update.status_code, status.HTTP_200_OK)
+        return response
+
+    def test_get_expense_in_price_list(self):
+        _, price_list = self.test_create_new_expense()
+        url = reverse("PriceDetail", args=[price_list['id']])
+        response_list = self.client.get(url, format='json')
+        self.assertEqual(response_list.status_code, status.HTTP_200_OK)
+        return response_list
+
+    def test_get_list_and_detail_expense(self):
+        expense = self.test_update_expense()
+        url_list = reverse("ExpenseList")
+        response_list = self.client.get(url_list, format='json')
+        self.assertEqual(response_list.status_code, 200)
+
+        url_detail = reverse("ExpenseDetail", args=[expense.data['result']['id']])
+        response_detail = self.client.get(url_detail, format='json')
+        self.assertEqual(response_detail.status_code, 200)
+        return response_detail

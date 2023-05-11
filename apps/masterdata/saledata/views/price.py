@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
-from apps.masterdata.saledata.models.price import (
+from apps.masterdata.saledata.models import (
     TaxCategory, Tax, Currency, Price
 )
 from apps.masterdata.saledata.serializers.price import (
@@ -10,7 +10,7 @@ from apps.masterdata.saledata.serializers.price import (
     CurrencyListSerializer, CurrencyCreateSerializer, CurrencyDetailSerializer, CurrencyUpdateSerializer,
     CurrencySyncWithVCBSerializer,
     PriceListSerializer, PriceCreateSerializer, PriceDetailSerializer, PriceUpdateSerializer, PriceDeleteSerializer,
-    PriceListUpdateProductsSerializer, PriceListDeleteProductsSerializer, ProductCreateInPriceListSerializer,
+    PriceListUpdateItemsSerializer, PriceListDeleteItemSerializer, CreateItemInPriceListSerializer,
 )
 
 
@@ -222,7 +222,7 @@ class PriceDelete(BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
-class UpdateProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
@@ -236,15 +236,15 @@ class UpdateProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(
         operation_summary="Update Price List's Products",
-        request_body=PriceListUpdateProductsSerializer
+        request_body=PriceListUpdateItemsSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceListUpdateProductsSerializer
+        self.serializer_class = PriceListUpdateItemsSerializer
         return self.update(request, *args, **kwargs)
 
 
-class DeleteProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
@@ -258,15 +258,15 @@ class DeleteProductsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(
         operation_summary="Delete Price List's Products",
-        request_body=PriceListDeleteProductsSerializer
+        request_body=PriceListDeleteItemSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceListDeleteProductsSerializer
+        self.serializer_class = PriceListDeleteItemSerializer
         return self.update(request, *args, **kwargs)
 
 
-class ProductAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
+class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
@@ -276,9 +276,9 @@ class ProductAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Create Product from Price List",
         operation_description="Create new Product from Price List",
-        request_body=ProductCreateInPriceListSerializer,
+        request_body=CreateItemInPriceListSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ProductCreateInPriceListSerializer
+        self.serializer_class = CreateItemInPriceListSerializer
         return self.update(request, *args, **kwargs)
