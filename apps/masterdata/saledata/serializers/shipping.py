@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.base.models import City
-from apps.masterdata.saledata.models.product import UnitOfMeasureGroup, UnitOfMeasure
-from apps.masterdata.saledata.models.shipping import Shipping, ShippingCondition, FormularCondition, ConditionLocation
+from apps.masterdata.saledata.models import UnitOfMeasureGroup, UnitOfMeasure
+from apps.masterdata.saledata.models import Shipping, ShippingCondition, FormularCondition, ConditionLocation
 
 
 class ShippingListSerializer(serializers.ModelSerializer):
@@ -124,9 +124,8 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
         if validate_data['cost_method'] == 1:
             if 'formula_condition' not in validate_data:
                 raise serializers.ValidationError("Not yet condition")
-            else:
-                if len(validate_data['formula_condition']) == 0:
-                    raise serializers.ValidationError({'condition': "Condition can't not null or blank"})
+            if len(validate_data['formula_condition']) == 0:
+                raise serializers.ValidationError({'condition': "Condition can't not null or blank"})
         return validate_data
 
     def create(self, validated_data):
@@ -141,7 +140,7 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
         bulk_data = []
         for condition in data_condition:
             data = {
-                'formular': condition['formula'],
+                'formula': condition['formula'],
                 'shipping': shipping,
             }
             shipping_condition = ShippingCondition.objects.create(**data)
@@ -159,7 +158,8 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
                     'extra_amount': formula['extra_amount'],
                 }
                 bulk_data.append(FormularCondition(**data))
-            FormularCondition.objects.bulk_create(bulk_data)
+
+        FormularCondition.objects.bulk_create(bulk_data)
         return True
 
 

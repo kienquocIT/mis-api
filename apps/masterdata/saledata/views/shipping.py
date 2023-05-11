@@ -1,12 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema # noqa
 from rest_framework.permissions import IsAuthenticated
-from apps.masterdata.saledata.models.shipping import Shipping
-from apps.masterdata.saledata.serializers.shipping import ShippingListSerializer, ShippingCreateSerializer, \
+from apps.masterdata.saledata.models import Shipping
+from apps.masterdata.saledata.serializers import ShippingListSerializer, ShippingCreateSerializer, \
     ShippingDetailSerializer
-from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import mask_view, BaseListMixin, BaseCreateMixin
 
 
 class ShippingList(BaseListMixin, BaseCreateMixin):
+    permission_classes = [IsAuthenticated]
     queryset = Shipping.objects
     serializer_list = ShippingListSerializer
     serializer_create = ShippingCreateSerializer
@@ -16,16 +17,16 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
-        operation_summary="Expense list",
-        operation_description="Expense list",
+        operation_summary="Shipping list",
+        operation_description="Shipping list",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Create Expense",
-        operation_description="Create new Expense",
+        operation_summary="Create Shipping",
+        operation_description="Create new Shipping",
         request_body=ShippingCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')

@@ -2,6 +2,12 @@ from django.db import models
 from apps.shared import SimpleAbstractModel
 
 from apps.shared import MasterDataAbstractModel
+__all__ = [
+    'Shipping',
+    'ShippingCondition',
+    'ConditionLocation',
+    'FormularCondition'
+]
 
 
 # Create your models here.
@@ -50,9 +56,9 @@ class ShippingCondition(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="formula_shipping_condition",
     )
-    formular = models.JSONField(
+    formula = models.JSONField(
         default=dict,
-        help_text='formular for each condition',
+        help_text='formula for each condition',
     )
     location_condition = models.ManyToManyField(
         'base.City',
