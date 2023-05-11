@@ -180,15 +180,22 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
         if isinstance(value, int):
             return value
         raise serializers.ValidationError({"customer_type": PromoMsg.ERROR_VALID_DATE})
+    def validate(self, validate_data):
+        discount = deepcopy(validate_data.get('discount_method', {}))
+        gift = deepcopy(validate_data.get('gift_method', {}))
 
-    def create(self, validated_data):
-        discount = deepcopy(validated_data.get('discount_method', {}))
-        gift = deepcopy(validated_data.get('gift_method', {}))
         # valid customer by list
-        if validated_data['customer_type'] == 1:
+        if validate_data['customer_type'] == 1:
             # customer_list = validated_data.get('customer_by_list', [])
             # check customer is available
             check_customer_list()
+
+        return validate_data
+
+
+    def create(self, validated_data):
+
+
 
         # valid customer by condition
         if validated_data['customer_type'] == 2:
