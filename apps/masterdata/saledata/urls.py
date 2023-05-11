@@ -18,7 +18,7 @@ from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
     PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList
 )
-from apps.masterdata.saledata.views import ShippingList
+from apps.masterdata.saledata.views import ShippingList, ShippingDetail
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -104,5 +104,5 @@ urlpatterns += [
 
 urlpatterns += [
     path('shippings', ShippingList.as_view(), name='ShippingList'),
-    # path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
 ]

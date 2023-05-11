@@ -7,7 +7,7 @@ __all__ = [
     'Shipping',
     'ShippingCondition',
     'ConditionLocation',
-    'FormularCondition'
+    'FormulaCondition'
 ]
 
 
@@ -40,7 +40,7 @@ class Shipping(MasterDataAbstractModel):
 
     formula_condition = models.JSONField(
         default=dict,
-        help_text='Condition while user select Formular for shipping',
+        help_text='Condition while user select Formula for shipping',
         null=True,
     )
 
@@ -97,7 +97,7 @@ class ConditionLocation(SimpleAbstractModel):
     location = models.ForeignKey(
         'base.City',
         on_delete=models.CASCADE,
-        verbose_name="location for shipping formular",
+        verbose_name="location for shipping Formula",
         related_name="location",
     )
 
@@ -108,7 +108,7 @@ class ConditionLocation(SimpleAbstractModel):
     )
 
 
-class FormularCondition(SimpleAbstractModel):
+class FormulaCondition(SimpleAbstractModel):
     condition = models.ForeignKey(
         ShippingCondition,
         on_delete=models.CASCADE,
