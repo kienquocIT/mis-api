@@ -467,7 +467,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             fill__company=True,
             account_name=obj
         )
-        if len(contact_mapped) > 0:
+        if contact_mapped.count() > 0:
             list_contact_mapped = []
             for i in contact_mapped:
                 list_contact_mapped.append(

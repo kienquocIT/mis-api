@@ -87,12 +87,30 @@ class SaleDefaultData:
         return True
 
     def create_currency(self):
-        objs = [
-            Currency(tenant=self.company_obj.tenant, company=self.company_obj, **c_item)
-            for c_item in self.Currency_data
-        ]
-        Currency.objects.bulk_create(objs)
-        return True
+        currency_list = ['VND', 'USD', 'EUR', 'JPY']
+        data_currency = BaseCurrency.objects.filter(code__in=currency_list)
+        if data_currency.count() > 0:
+            bulk_info = []
+            for item in data_currency:
+                primary = False
+                rate = None
+                if item.code == 'VND':
+                    primary = True
+                    rate = 1.0
+                bulk_info.append(
+                    Currency(
+                        tenant=self.company_obj.tenant,
+                        company=self.company_obj,
+                        title=item.title,
+                        abbreviation=item.code,
+                        currency=item,
+                        rate=rate,
+                        is_primary=primary)
+                )
+            if len(bulk_info) > 0:
+                Currency.objects.bulk_create(bulk_info)
+            return True
+        return False
 
     def create_price_default(self):
         primary_current = Currency.objects.filter(

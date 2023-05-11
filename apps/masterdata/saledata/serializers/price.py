@@ -131,7 +131,7 @@ class CurrencyCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Currency
-        fields = ('abbreviation', 'title', 'rate')
+        fields = ('abbreviation', 'title', 'rate', 'currency')
 
     @classmethod
     def validate_abbreviation(cls, value):
@@ -166,62 +166,18 @@ class CurrencyDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Currency
-        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary')
+        fields = ('id', 'abbreviation', 'title', 'rate', 'is_default', 'is_primary', 'currency')
 
 
 class CurrencyUpdateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150)
 
     class Meta:
         model = Currency
-        fields = ('abbreviation', 'title', 'rate', 'is_primary')
-
-    def validate_abbreviation(self, value):
-        if value != self.instance.abbreviation and Currency.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                abbreviation=value
-        ).exists():
-            raise serializers.ValidationError(PriceMsg.ABBREVIATION_EXIST)
-        return value
-
-    def validate_title(self, value):
-        if value != self.instance.title and TaxCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(PriceMsg.TITLE_EXIST)
-        return value
-
-    @classmethod
-    def validate_rate(cls, attrs):
-        if attrs is not None:
-            if attrs > 0:
-                return attrs
-            raise serializers.ValidationError(PriceMsg.RATIO_MUST_BE_GREATER_THAN_ZERO)
-        return None
+        fields = ()
 
     def update(self, instance, validated_data):
-        if 'is_primary' in validated_data.keys():
-            is_primary = validated_data['is_primary']
-            if is_primary:
-                old_primary = Currency.objects.get_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    is_primary=True
-                )
-                old_primary.is_primary = False
-                old_primary.rate = None
-                old_primary.save()
-
-                Currency.objects.filter_current(fill__tenant=True, fill__company=True).update(rate=None)
-
-        for key, value in validated_data.items():
-            setattr(instance, key, value)
-        instance.save()
-
-        return instance
+        instance.delete()
+        return True
 
 
 class CurrencySyncWithVCBSerializer(serializers.ModelSerializer):  # noqa
