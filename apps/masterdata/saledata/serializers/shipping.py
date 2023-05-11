@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.base.models import City
 from apps.masterdata.saledata.models import UnitOfMeasureGroup, UnitOfMeasure
 from apps.masterdata.saledata.models import Shipping, ShippingCondition, FormularCondition, ConditionLocation
+from apps.shared.translations.shipping import ShippingMsg
 
 
 class ShippingListSerializer(serializers.ModelSerializer):
@@ -47,7 +48,7 @@ class FormularConditionCreateSerializer(serializers.ModelSerializer):
                 )
                 return {'id': str(uom_group.id), 'title': uom_group.title, 'code': uom_group.code}
         except UnitOfMeasureGroup.DoesNotExist:
-            raise serializers.ValidationError({'UoM Group': "UoM Group does not exists"})
+            raise serializers.ValidationError({'UoM Group': ShippingMsg.UOM_GROUP_NOT_EXIST})
         return None
 
     @classmethod
@@ -59,25 +60,25 @@ class FormularConditionCreateSerializer(serializers.ModelSerializer):
                 )
                 return {'id': str(uom_group.id), 'title': uom_group.title, 'code': uom_group.code}
         except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'UoM': "UoM does not exists"})
+            raise serializers.ValidationError({'UoM': ShippingMsg.UOM_NOT_EXIST})
         return None
 
     @classmethod
     def validate_threshold(cls, value):
         if value < 0:
-            raise serializers.ValidationError({'quantity': 'Not < 0'})
+            raise serializers.ValidationError({'threshold in condition': ShippingMsg.GREAT_THAN_ZERO})
         return value
 
     @classmethod
     def validate_amount_condition(cls, value):
         if value < 0:
-            raise serializers.ValidationError({'price_fixed': 'Not < 0'})
+            raise serializers.ValidationError({'price_fixed in condition': ShippingMsg.GREAT_THAN_ZERO})
         return value
 
     @classmethod
     def validate_extra_amount(cls, value):
         if value < 0:
-            raise serializers.ValidationError({'extra_amount': 'Not < 0'})
+            raise serializers.ValidationError({'extra_amount in condition': ShippingMsg.GREAT_THAN_ZERO})
         return value
 
 
@@ -96,7 +97,7 @@ class ShippingConditionCreateSerializer(serializers.ModelSerializer):
     def validate_location(cls, value):
         found_objects = City.objects.filter(id__in=value)
         if len(found_objects) != len(value):
-            raise serializers.ValidationError({'location': "appears location does not exist"})
+            raise serializers.ValidationError({'location in condition': ShippingMsg.LOCATION_NOT_EXIST})
         return value
 
 
@@ -108,7 +109,6 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
         fields = (
-            'code',
             'title',
             'margin',
             'currency',
@@ -117,15 +117,27 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
             'formula_condition',
         )
 
+    @classmethod
+    def validate_margin(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'margin': ShippingMsg.GREAT_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_fixed_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'price_fixed': ShippingMsg.GREAT_THAN_ZERO})
+        return value
+
     def validate(self, validate_data):
         if validate_data['cost_method'] == 0:
             if 'fixed_price' not in validate_data:
-                raise serializers.ValidationError("Amount is required")
+                raise serializers.ValidationError({'Amount': ShippingMsg.REQUIRED_AMOUNT})
         if validate_data['cost_method'] == 1:
             if 'formula_condition' not in validate_data:
-                raise serializers.ValidationError("Not yet condition")
+                raise serializers.ValidationError({'conditinon': ShippingMsg.NOT_YET_CONDITION})
             if len(validate_data['formula_condition']) == 0:
-                raise serializers.ValidationError({'condition': "Condition can't not null or blank"})
+                raise serializers.ValidationError({'condition': ShippingMsg.CONDITION_NOT_NULL})
         return validate_data
 
     def create(self, validated_data):
