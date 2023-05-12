@@ -98,7 +98,7 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_employee'
     )
-    account_type_list = models.ManyToManyField(
+    account_types_mapped = models.ManyToManyField(
         AccountType,
         through='AccountAccountTypes',
         symmetrical=False,
