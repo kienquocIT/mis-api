@@ -4,3 +4,4 @@ from .config import *
 from .contacts import *
 from .price import *
 from .product import *
+from .shipping import *

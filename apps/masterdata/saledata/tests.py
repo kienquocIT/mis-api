@@ -29,8 +29,8 @@ class AccountTestCase(AdvanceTestCase):
         response_account_type = self.client.post(
             url_create_account_type,
             {
-                'code': 'AT01',
-                'title': 'customer',
+                'code': 'AT05',
+                'title': 'Service',
             },
             format='json'
         )
