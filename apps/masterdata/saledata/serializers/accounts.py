@@ -585,8 +585,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     def validate_bank_accounts_information(cls, value):
         for item in value:
             for key in item:
-                if item[key] is None:
-                    raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
+                if key != 'bic_swift_code':
+                    if item[key] is None:
+                        raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
         return value
 
     @classmethod
