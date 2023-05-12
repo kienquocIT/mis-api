@@ -1,8 +1,7 @@
 from django.urls import path
-
-from ..opportunity.views import OpportunityList, OpportunityDetail
+from .views import AdvancePaymentList, AdvancePaymentDetail
 
 urlpatterns = [
-    path('lists', OpportunityList.as_view(), name='OpportunityList'),
-    path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
+    path('advances-payments', AdvancePaymentList.as_view(), name='AdvancePaymentList'),
+    path('advances-payments/<str:pk>', AdvancePaymentDetail.as_view(), name='AdvancePaymentDetail'),
 ]

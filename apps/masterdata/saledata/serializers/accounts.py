@@ -188,6 +188,7 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
 class AccountListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     shipping_address = serializers.JSONField()
     billing_address = serializers.JSONField()
@@ -196,9 +197,11 @@ class AccountListSerializer(serializers.ModelSerializer):
         model = Account
         fields = (
             "id",
+            'code',
             "name",
             "website",
             "account_type",
+            "industry",
             "manager",
             "owner",
             "phone",
@@ -233,6 +236,13 @@ class AccountListSerializer(serializers.ModelSerializer):
                 'fullname': owner.fullname
             }
         return {}
+
+    @classmethod
+    def get_industry(cls, obj):
+        return {
+            'id': obj.industry_id,
+            'title': obj.industry.title
+        }
 
 
 def add_account_types_information(account_types_list, account):
