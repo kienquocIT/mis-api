@@ -500,11 +500,15 @@ def update_account_owner(instance, account_owner):
         account_name=None,
         is_primary=False
     )
+    instance.owner = None
+    instance.save()
     if account_owner:
         Contact.objects.filter_current(fill__tenant=True, fill__company=True, id=account_owner).update(
             account_name=instance,
             is_primary=True
         )
+        instance.owner_id = account_owner
+        instance.save()
     return True
 
 
