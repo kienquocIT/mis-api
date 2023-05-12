@@ -159,7 +159,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin): # noqa
     permission_classes = [IsAuthenticated]
-    queryset = Account.objects.select_related('industry')
+    queryset = Account.objects.select_related('industry', 'owner')
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer

@@ -1,6 +1,7 @@
 from django.db import models
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.contacts import Contact
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -84,6 +85,11 @@ class Account(DataAbstractModel):
     )
     account_group = models.ForeignKey(
         AccountGroup,
+        on_delete=models.CASCADE,
+        null=True
+    )
+    owner = models.ForeignKey(
+        Contact,
         on_delete=models.CASCADE,
         null=True
     )

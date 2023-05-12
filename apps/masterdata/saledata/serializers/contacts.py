@@ -219,6 +219,17 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def create(self, validated_data):
+        contact = Contact.objects.create(**validated_data)
+        account_mapped = Account.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            id=validated_data.get('account_name', None)
+        )
+        account_mapped.owner = contact
+        account_mapped.save()
+        return contact
+
 
 class ContactDetailSerializer(serializers.ModelSerializer):
     salutation = serializers.SerializerMethodField()
@@ -380,6 +391,9 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'account_name' not in validated_data.keys():
             validated_data.update({'account_name': None})
+            account_mapped = instance.account_name
+            account_mapped.owner = None
+            account_mapped.save()
 
         for key, value in validated_data.items():
             setattr(instance, key, value)

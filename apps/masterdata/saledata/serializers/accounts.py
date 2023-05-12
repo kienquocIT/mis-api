@@ -221,17 +221,8 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        owner = Contact.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            account_name=obj,
-            is_primary=True
-        ).first()
-        if owner:
-            return {
-                'id': owner.id,
-                'fullname': owner.fullname
-            }
+        if obj.owner:
+            return {'id': obj.owner_id, 'fullname': obj.owner.fullname}
         return {}
 
 
@@ -289,6 +280,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'code',
             'website',
             'account_type',
+            "owner",
             'manager',
             'parent_account',
             "account_group",
@@ -398,6 +390,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                     contact_list[0].is_primary = True
                     contact_list[0].account_name = account
                     contact_list[0].save()
+                    account.owner = contact_list[0]
+                    account.save()
                 else:
                     for contact in contact_list:
                         if contact.id == contact_primary:
@@ -408,8 +402,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 
 class AccountDetailSerializer(serializers.ModelSerializer):
-    owner = serializers.SerializerMethodField()
     contact_mapped = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -419,6 +413,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'code',
             'website',
             'account_type',
+            "owner",
             'manager',
             'parent_account',
             "account_group",
@@ -442,25 +437,19 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        account_owner = Contact.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            account_name=obj,
-            is_primary=True
-        ).first()
-        if account_owner:
+        if obj.owner:
             contact_owner = Employee.objects.filter(
-                id=account_owner.owner
+                id=obj.owner.owner
             ).first()
 
             if contact_owner:
-                contact_owner_information = {'id': str(account_owner.owner), 'fullname': contact_owner.get_full_name(2)}
+                contact_owner_information = {'id': str(obj.owner.owner), 'fullname': contact_owner.get_full_name(2)}
                 return {
-                    'id': account_owner.id,
-                    'fullname': account_owner.fullname,
-                    'job_title': account_owner.job_title,
-                    'email': account_owner.email,
-                    'mobile': account_owner.mobile,
+                    'id': obj.owner_id,
+                    'fullname': obj.owner.fullname,
+                    'job_title': obj.owner.job_title,
+                    'email': obj.owner.email,
+                    'mobile': obj.owner.mobile,
                     'owner': contact_owner_information
                 }
         return {}
@@ -627,6 +616,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
+        if self.initial_data.get('account-owner', None):
+            validated_data['owner_id'] = self.initial_data['account-owner']
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
