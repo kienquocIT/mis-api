@@ -195,7 +195,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('industry')
+        return super().get_queryset().select_related('industry', 'owner')
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(login_require=True, auth_require=True, code_perm='')
