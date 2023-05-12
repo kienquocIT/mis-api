@@ -223,7 +223,7 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         is_change_condition = self.initial_data['is_change_condition']
         if is_change_condition:
-            self.common_delete_condition(instance=instance, validate_data=validated_data)
+            self.common_delete_condition(instance=instance)
             ShippingCreateSerializer.common_create_shipping_condition(validate_data=validated_data, shipping=instance)
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -231,7 +231,7 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     @classmethod
-    def common_delete_condition(cls, instance, validate_data):
+    def common_delete_condition(cls, instance):
         FormulaCondition.objects.filter(condition__shipping=instance).delete()
         ConditionLocation.objects.filter(condition__shipping=instance).delete()
         instance.formula_shipping_condition.all().delete()
