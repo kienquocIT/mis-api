@@ -135,7 +135,7 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'Amount': ShippingMsg.REQUIRED_AMOUNT})
         if validate_data['cost_method'] == 1:
             if 'formula_condition' not in validate_data:
-                raise serializers.ValidationError({'conditinon': ShippingMsg.NOT_YET_CONDITION})
+                raise serializers.ValidationError({'condition': ShippingMsg.NOT_YET_CONDITION})
             if len(validate_data['formula_condition']) == 0:
                 raise serializers.ValidationError({'condition': ShippingMsg.CONDITION_NOT_NULL})
         return validate_data
@@ -215,7 +215,7 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'Amount': ShippingMsg.REQUIRED_AMOUNT})
         if validate_data['cost_method'] == 1:
             if 'formula_condition' not in validate_data:
-                raise serializers.ValidationError({'conditinon': ShippingMsg.NOT_YET_CONDITION})
+                raise serializers.ValidationError({'condition': ShippingMsg.NOT_YET_CONDITION})
             if len(validate_data['formula_condition']) == 0:
                 raise serializers.ValidationError({'condition': ShippingMsg.CONDITION_NOT_NULL})
         return validate_data
