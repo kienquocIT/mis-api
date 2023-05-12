@@ -2,7 +2,8 @@ from django.db import models
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 from apps.shared import MasterDataAbstractModel
 
-__all__ = ['ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense']
+__all__ = ['ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
+           'ExpensePrice', 'ExpenseGeneral']
 
 
 # Create your models here.
@@ -42,7 +43,6 @@ class ExpenseType(MasterDataAbstractModel):
 
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
-
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'
         verbose_name_plural = 'UnitsOfMeasureGroup'
