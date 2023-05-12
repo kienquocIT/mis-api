@@ -98,6 +98,13 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_employee'
     )
+    account_type_list = models.ManyToManyField(
+        AccountType,
+        through='AccountAccountTypes',
+        symmetrical=False,
+        blank=True,
+        related_name='account_map_account_types'
+    )
     bank_accounts_information = models.JSONField(
         default=list
     )
