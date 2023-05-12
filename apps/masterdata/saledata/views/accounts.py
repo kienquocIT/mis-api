@@ -159,12 +159,15 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin): # noqa
     permission_classes = [IsAuthenticated]
-    queryset = Account.objects.select_related('industry', 'owner')
+    queryset = Account.objects
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('industry', 'owner')
 
     @swagger_auto_schema(
         operation_summary="Account list",
@@ -186,10 +189,13 @@ class AccountList(BaseListMixin, BaseCreateMixin): # noqa
 
 class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Account.objects.select_related('industry')
+    queryset = Account.objects
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('industry')
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -205,8 +211,11 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class AccountsMapEmployeesList(BaseListMixin):
     permission_classes = [IsAuthenticated]
-    queryset = AccountEmployee.objects.select_related('account', 'employee')
+    queryset = AccountEmployee.objects
     serializer_list = AccountsMapEmployeesListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('account', 'employee')
 
     @swagger_auto_schema(
         operation_summary="Accounts map Employees list",

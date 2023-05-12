@@ -8,7 +8,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 
 class ExpenseList(BaseListMixin, BaseCreateMixin):
-    queryset = Expense.objects.select_related()
+    queryset = Expense.objects
     serializer_list = ExpenseListSerializer
     serializer_create = ExpenseCreateSerializer
     serializer_detail = ExpenseDetailSerializer

@@ -208,12 +208,15 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
-    queryset = UnitOfMeasure.objects.select_related('group')
+    queryset = UnitOfMeasure.objects
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('group')
 
     @swagger_auto_schema(
         operation_summary="UnitOfMeasure list",
@@ -234,12 +237,15 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
 
 
 class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = UnitOfMeasure.objects.select_related('group')
+    queryset = UnitOfMeasure.objects
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('group')
 
     @swagger_auto_schema(operation_summary='Detail UnitOfMeasure')
     @mask_view(login_require=True, auth_require=True, code_perm='')
