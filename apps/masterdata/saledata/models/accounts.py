@@ -187,9 +187,8 @@ class AccountEmployee(SimpleAbstractModel):
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
 
     class Meta:
-        verbose_name = 'AccountEmployee'
-        verbose_name_plural = 'AccountsEmployees'
-        ordering = ('-date_created',)
+        verbose_name = 'Account Employee'
+        verbose_name_plural = 'Accounts Employees'
         default_permissions = ()
         permissions = ()
 
@@ -231,9 +230,8 @@ class AccountBanks(SimpleAbstractModel):
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'AccountBanks'
-        verbose_name_plural = 'AccountsBanks'
-        ordering = ('-date_created',)
+        verbose_name = 'Account Banks'
+        verbose_name_plural = 'Accounts Banks'
         default_permissions = ()
         permissions = ()
 
@@ -268,9 +266,8 @@ class AccountCreditCards(SimpleAbstractModel):
     is_default = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'AccountCreditCards'
-        verbose_name_plural = 'AccountsCreditCards'
-        ordering = ('-date_created',)
+        verbose_name = 'Account Credit Cards'
+        verbose_name_plural = 'Accounts Credit Cards'
         default_permissions = ()
         permissions = ()
 
@@ -283,8 +280,7 @@ class AccountAccountTypes(SimpleAbstractModel):
     customer_type = models.BooleanField(null=True)
 
     class Meta:
-        verbose_name = 'AccountAccountTypes'
-        verbose_name_plural = 'AccountsAccountTypes'
-        ordering = ('-date_created',)
+        verbose_name = 'Account AccountTypes'
+        verbose_name_plural = 'Accounts AccountTypes'
         default_permissions = ()
         permissions = ()

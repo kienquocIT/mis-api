@@ -394,11 +394,16 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 id__in=contact_select_list
             )
             if contact_list:
-                for contact in contact_list:
-                    if contact.id == contact_primary:
-                        contact.is_primary = True
-                    contact.account_name = account
-                    contact.save()
+                if len(contact_list) == 1:
+                    contact_list[0].is_primary = True
+                    contact_list[0].account_name = account
+                    contact_list[0].save()
+                else:
+                    for contact in contact_list:
+                        if contact.id == contact_primary:
+                            contact.is_primary = True
+                        contact.account_name = account
+                        contact.save()
         return account
 
 
