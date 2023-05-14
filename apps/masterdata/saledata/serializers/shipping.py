@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.core.base.models import City, ShippingUnit
-from apps.masterdata.saledata.models import UnitOfMeasureGroup, UnitOfMeasure
 from apps.masterdata.saledata.models import Shipping, ShippingCondition, FormulaCondition, ConditionLocation
 from apps.shared.translations.shipping import ShippingMsg
 
