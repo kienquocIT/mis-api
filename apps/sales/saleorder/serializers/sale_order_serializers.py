@@ -1,11 +1,10 @@
 from rest_framework import serializers
 
-from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
-    QuotationCost, QuotationExpense
-from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
+from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
+from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder
 
 
-class QuotationProductSerializer(serializers.ModelSerializer):
+class SaleOrderProductSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
         max_length=550
     )
@@ -18,7 +17,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = QuotationProduct
+        model = SaleOrderProduct
         fields = (
             'product',
             'unit_of_measure',
@@ -42,54 +41,27 @@ class QuotationProductSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
+        return SaleOrderCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax(value=value)
 
 
-class QuotationTermSerializer(serializers.ModelSerializer):
-    price_list = serializers.ListField(
-        child=serializers.CharField(
-            max_length=550
-        ),
-        required=False
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
-
+class SaleOrderLogisticSerializer(serializers.ModelSerializer):
     class Meta:
-        model = QuotationTerm
-        fields = (
-            'price_list',
-            'payment_term'
-        )
-
-    @classmethod
-    def validate_price_list(cls, value):
-        return QuotationCommonValidate().validate_price_list(value=value)
-
-    @classmethod
-    def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
-
-
-class QuotationLogisticSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QuotationLogistic
+        model = SaleOrderLogistic
         fields = (
             'shipping_address',
             'billing_address',
         )
 
 
-class QuotationCostSerializer(serializers.ModelSerializer):
+class SaleOrderCostSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
         max_length=550
     )
@@ -102,7 +74,7 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = QuotationCost
+        model = SaleOrderCost
         fields = (
             'product',
             'unit_of_measure',
@@ -123,18 +95,18 @@ class QuotationCostSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
+        return SaleOrderCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax(value=value)
 
 
-class QuotationExpenseSerializer(serializers.ModelSerializer):
+class SaleOrderExpenseSerializer(serializers.ModelSerializer):
     expense = serializers.CharField(
         max_length=550
     )
@@ -147,7 +119,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        model = QuotationExpense
+        model = SaleOrderExpense
         fields = (
             'expense',
             'unit_of_measure',
@@ -168,25 +140,25 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_expense(cls, value):
-        return QuotationCommonValidate().validate_expense(value=value)
+        return SaleOrderCommonValidate().validate_expense(value=value)
 
     @classmethod
     def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
     def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
+        return SaleOrderCommonValidate().validate_tax(value=value)
 
 
-# QUOTATION BEGIN
-class QuotationListSerializer(serializers.ModelSerializer):
+# SALE ORDER BEGIN
+class SaleOrderListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
-        model = Quotation
+        model = SaleOrder
         fields = (
             'id',
             'title',
@@ -225,7 +197,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
         return "Open"
 
 
-class QuotationDetailSerializer(serializers.ModelSerializer):
+class SaleOrderDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -234,7 +206,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     system_status = serializers.SerializerMethodField()
 
     class Meta:
-        model = Quotation
+        model = SaleOrder
         fields = (
             'id',
             'title',
@@ -246,11 +218,10 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'payment_term',
             'system_status',
             # quotation tabs
-            'quotation_products_data',
-            'quotation_term_data',
-            'quotation_logistic_data',
-            'quotation_costs_data',
-            'quotation_expenses_data',
+            'sale_order_products_data',
+            'sale_order_logistic_data',
+            'sale_order_costs_data',
+            'sale_order_expenses_data',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -265,7 +236,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
-            'is_customer_confirm',
         )
 
     @classmethod
@@ -325,8 +295,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
         return "Open"
 
 
-# Quotation
-class QuotationCreateSerializer(serializers.ModelSerializer):
+class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     opportunity = serializers.CharField(
         max_length=550,
@@ -345,23 +314,22 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         max_length=550
     )
     # quotation tabs
-    quotation_products_data = QuotationProductSerializer(
+    sale_order_products_data = SaleOrderProductSerializer(
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
-    quotation_logistic_data = QuotationLogisticSerializer(required=False)
-    quotation_costs_data = QuotationCostSerializer(
+    sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
     )
-    quotation_expenses_data = QuotationExpenseSerializer(
+    sale_order_expenses_data = SaleOrderExpenseSerializer(
         many=True,
         required=False
     )
 
     class Meta:
-        model = Quotation
+        model = SaleOrder
         fields = (
             'title',
             'opportunity',
@@ -383,45 +351,43 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
-            # quotation tabs
-            'quotation_products_data',
-            'quotation_term_data',
-            'quotation_logistic_data',
-            'quotation_costs_data',
-            'quotation_expenses_data',
-            'is_customer_confirm',
+            # sale order tabs
+            'sale_order_products_data',
+            'sale_order_logistic_data',
+            'sale_order_costs_data',
+            'sale_order_expenses_data',
         )
 
     @classmethod
     def validate_customer(cls, value):
-        return QuotationCommonValidate().validate_customer(value=value)
+        return SaleOrderCommonValidate().validate_customer(value=value)
 
     @classmethod
     def validate_opportunity(cls, value):
-        return QuotationCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity(value=value)
 
     @classmethod
     def validate_contact(cls, value):
-        return QuotationCommonValidate().validate_contact(value=value)
+        return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
     def validate_sale_person(cls, value):
-        return QuotationCommonValidate().validate_sale_person(value=value)
+        return SaleOrderCommonValidate().validate_sale_person(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
+        return SaleOrderCommonValidate().validate_payment_term(value=value)
 
     def create(self, validated_data):
-        quotation = Quotation.objects.create(**validated_data)
-        QuotationCommonCreate().create_quotation_sub_models(
+        sale_order = SaleOrder.objects.create(**validated_data)
+        SaleOrderCommonCreate().create_sale_order_sub_models(
             validated_data=validated_data,
-            instance=quotation
+            instance=sale_order
         )
-        return quotation
+        return sale_order
 
 
-class QuotationUpdateSerializer(serializers.ModelSerializer):
+class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     opportunity = serializers.CharField(
         max_length=550,
         required=False
@@ -439,23 +405,22 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
     # quotation tabs
-    quotation_products_data = QuotationProductSerializer(
+    quotation_products_data = SaleOrderProductSerializer(
         many=True,
         required=False
     )
-    quotation_term_data = QuotationTermSerializer(required=False)
-    quotation_logistic_data = QuotationLogisticSerializer(required=False)
-    quotation_costs_data = QuotationCostSerializer(
+    quotation_logistic_data = SaleOrderLogisticSerializer(required=False)
+    quotation_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
     )
-    quotation_expenses_data = QuotationExpenseSerializer(
+    quotation_expenses_data = SaleOrderExpenseSerializer(
         many=True,
         required=False
     )
 
     class Meta:
-        model = Quotation
+        model = SaleOrder
         fields = (
             'title',
             'opportunity',
@@ -476,39 +441,37 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'total_expense_tax',
             'total_expense',
             # quotation tabs
-            'quotation_products_data',
-            'quotation_term_data',
-            'quotation_logistic_data',
-            'quotation_costs_data',
-            'quotation_expenses_data',
-            'is_customer_confirm',
+            'sale_order_products_data',
+            'sale_order_logistic_data',
+            'sale_order_costs_data',
+            'sale_order_expenses_data',
         )
 
     @classmethod
     def validate_customer(cls, value):
-        return QuotationCommonValidate().validate_customer(value=value)
+        return SaleOrderCommonValidate().validate_customer(value=value)
 
     @classmethod
     def validate_opportunity(cls, value):
-        return QuotationCommonValidate().validate_opportunity(value=value)
+        return SaleOrderCommonValidate().validate_opportunity(value=value)
 
     @classmethod
     def validate_contact(cls, value):
-        return QuotationCommonValidate().validate_contact(value=value)
+        return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
     def validate_sale_person(cls, value):
-        return QuotationCommonValidate().validate_sale_person(value=value)
+        return SaleOrderCommonValidate().validate_sale_person(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
+        return SaleOrderCommonValidate().validate_payment_term(value=value)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        QuotationCommonCreate().create_quotation_sub_models(
+        SaleOrderCommonCreate().create_sale_order_sub_models(
             validated_data=validated_data,
             instance=instance,
             is_update=True
