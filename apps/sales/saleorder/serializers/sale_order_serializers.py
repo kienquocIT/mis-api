@@ -203,6 +203,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     payment_term = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -216,6 +217,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'contact',
             'sale_person',
             'payment_term',
+            'quotation',
             'system_status',
             # quotation tabs
             'sale_order_products_data',
@@ -289,6 +291,16 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
+    def get_quotation(cls, obj):
+        if obj.quotation:
+            return {
+                'id': obj.quotation_id,
+                'title': obj.quotation.title,
+                'code': obj.quotation.code,
+            }
+        return {}
+
+    @classmethod
     def get_system_status(cls, obj):
         if obj.system_status:
             return "Open"
@@ -311,6 +323,9 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         max_length=550
     )
     payment_term = serializers.CharField(
+        max_length=550
+    )
+    quotation = serializers.CharField(
         max_length=550
     )
     # quotation tabs
@@ -337,6 +352,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'contact',
             'sale_person',
             'payment_term',
+            'quotation',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -377,6 +393,10 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_payment_term(cls, value):
         return SaleOrderCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_quotation(cls, value):
+        return SaleOrderCommonValidate().validate_quotation(value=value)
 
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)

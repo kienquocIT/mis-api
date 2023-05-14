@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
+from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg
 
@@ -190,6 +191,17 @@ class SaleOrderCommonValidate:
             )
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': HRMsg.EMPLOYEES_NOT_EXIST})
+
+    @classmethod
+    def validate_quotation(cls, value):
+        try:
+            return Quotation.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Quotation.DoesNotExist:
+            raise serializers.ValidationError({'quotation': SaleMsg.QUOTATION_NOT_EXIST})
 
     @classmethod
     def validate_product(cls, value):
