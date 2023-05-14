@@ -59,7 +59,8 @@ class SaleOrderDetail(
             "customer",
             "contact",
             "sale_person",
-            "payment_term"
+            "payment_term",
+            "quotation"
         )
 
     @swagger_auto_schema(
