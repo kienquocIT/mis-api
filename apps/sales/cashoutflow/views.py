@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.sales.cashoutflow.models import AdvancePayment
 from apps.sales.cashoutflow.serializers import (
     AdvancePaymentListSerializer, AdvancePaymentCreateSerializer, AdvancePaymentDetailSerializer

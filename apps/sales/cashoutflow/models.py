@@ -1,7 +1,5 @@
 from django.db import models
-from django.utils import timezone
-from apps.shared import DataAbstractModel, SimpleAbstractModel
-from apps.shared import MasterDataAbstractModel
+from apps.shared import DataAbstractModel
 
 __all__ = ['AdvancePayment']
 
