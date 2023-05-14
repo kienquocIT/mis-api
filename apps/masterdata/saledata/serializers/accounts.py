@@ -198,6 +198,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "website",
+            "code",
             "account_type",
             "manager",
             "owner",
