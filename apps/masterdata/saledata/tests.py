@@ -287,7 +287,7 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type() # noqa
+        product_type = self.create_product_type()  # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -321,7 +321,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type() # noqa
+        product_type = self.create_product_type()  # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -1144,8 +1144,6 @@ class IndustryTestCase(AdvanceTestCase):
             check_sum_second=False,
         )
         return True
-        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
-        return False
 
 
 class ConfigPaymentTermTestCase(AdvanceTestCase):
@@ -1202,7 +1200,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.test_create_config_payment_term()
         url = reverse('ConfigPaymentTermList')
         response = self.client.get(url, format='json')
-        self.assertResponseList( # noqa
+        self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -1325,12 +1323,12 @@ class ExpenseTestCase(AdvanceTestCase):
         return response.data['result']
 
     def test_create_new_expense(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
         price_list = self.create_price_list(self, currency)
-        data = { # noqa
+        data = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "general_information": {
@@ -1354,7 +1352,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response, price_list
 
     def test_create_expense_missing_data(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1378,7 +1376,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = { # noqa
+        data1 = {  # noqa
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
                 "expense_type": expense_type['id'],
@@ -1422,7 +1420,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_create_expense_empty_data(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1447,7 +1445,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = { # noqa
+        data1 = {  # noqa
             "code": "",
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
@@ -1513,7 +1511,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_update_expense(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1542,7 +1540,7 @@ class ExpenseTestCase(AdvanceTestCase):
 
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
-        data_update = { # noqa
+        data_update = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
             "general_information": {
@@ -1553,7 +1551,7 @@ class ExpenseTestCase(AdvanceTestCase):
                 "price_list": [
                     {
                         'id': price_list['id'],
-                        'value': 0,
+                        'value': 100000,
                         'is_auto_update': False,
                     }
                 ],
@@ -1581,3 +1579,253 @@ class ExpenseTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail, format='json')
         self.assertEqual(response_detail.status_code, 200)
         return response_detail
+
+
+class ShippingTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    @staticmethod
+    def get_location(self):
+        url = reverse("CityList")
+        response = self.client.get(url, format='json')
+        return response.data['result']
+
+    def test_create_new_shipping(self):
+        currency = ExpenseTestCase.get_currency(self)
+        uom_group = ExpenseTestCase.create_uom_group(self)
+        uom = ExpenseTestCase.create_uom(self, uom_group)
+        location = self.get_location(self)
+        data = {
+            "title": "Chi phí vận chuyển mặc định",
+            "margin": 0,
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "fixed_price": 30000,
+            "formula_condition": [
+                {
+                    "location": [
+                        location[1]['id']
+                    ],
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        url = reverse('ShippingList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        data1 = {  # noqa
+            "title": "Chi phí vận chuyển mặc định",
+            "margin": 0,
+            "currency": currency[0]['id'],
+            "cost_method": 1,
+            "formula_condition": [
+                {
+                    "location": [
+                        location[1]['id']
+                    ],
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        response1 = self.client.post(url, data1, format='json')
+        self.assertEqual(response1.status_code, status.HTTP_201_CREATED)
+        return True
+
+    def test_create_fail_validate(self):
+        currency = ExpenseTestCase.get_currency(self)
+        uom_group = ExpenseTestCase.create_uom_group(self)
+        uom = ExpenseTestCase.create_uom(self, uom_group)
+        location = self.get_location(self)
+
+        # integer or float field less than 0
+        data = { # noqa
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": -5,
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "fixed_price": 30000,
+            "formula_condition": [
+                {
+                    "location": [
+                        location[1]['id']
+                    ],
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        url = reverse('ShippingList')
+        response = self.client.post(url, data, format='json')
+
+        # missing data
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data1 = {
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "formula_condition": []
+        }
+        response1 = self.client.post(url, data1, format='json') # noqa
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": currency[0]['id'],
+            "cost_method": 1,
+            "formula_condition": [
+                {
+                    "location": [
+                        location[1]['id']
+                    ],
+                    "formula": [
+                        {
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data3 = { # noqa
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "formula_condition": [
+                {
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertEqual(response3.status_code, status.HTTP_400_BAD_REQUEST)
+        return True
+
+    def test_create_not_UUID(self):
+        currency = ExpenseTestCase.get_currency(self) # noqa
+        uom_group = ExpenseTestCase.create_uom_group(self)
+        uom = ExpenseTestCase.create_uom(self, uom_group)
+        location = self.get_location(self)
+
+        data = {  # noqa
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": '1111',
+            "cost_method": 0,
+            "fixed_price": 30000,
+            "formula_condition": []
+        }
+        url = reverse('ShippingList') # noqa
+        response = self.client.post(url, data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        data1 = {
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": '',
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "formula_condition": []
+        }
+        response1 = self.client.post(url, data1, format='json')  # noqa
+        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data2 = {
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": currency[0]['id'],
+            "cost_method": 1,
+            "formula_condition": [
+                {
+                    "location": [
+                        "string"
+                    ],
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": uom['id'],
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+
+        data3 = {  # noqa
+            "title": "Chi phí vận chuyển tiêu chuẩn",
+            "margin": 5,
+            "currency": currency[0]['id'],
+            "cost_method": 0,
+            "formula_condition": [
+                {
+                    "location":[
+                      location[1]['id']
+                    ],
+                    "formula": [
+                        {
+                            "uom_group": uom_group['id'],
+                            "uom": "string",
+                            "comparison_operators": 1,
+                            "threshold": 2,
+                            "amount_condition": 5000,
+                            "extra_amount": 500
+                        }
+                    ]
+                }
+            ]
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertEqual(response3.status_code, status.HTTP_400_BAD_REQUEST)
+        return True

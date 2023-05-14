@@ -8,7 +8,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 
 class ExpenseList(BaseListMixin, BaseCreateMixin):
-    queryset = Expense.objects.select_related()
+    queryset = Expense.objects
     serializer_list = ExpenseListSerializer
     serializer_create = ExpenseCreateSerializer
     serializer_detail = ExpenseDetailSerializer
@@ -38,6 +38,13 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Expense.objects
     serializer_detail = ExpenseDetailSerializer
     serializer_update = ExpenseCreateSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'expense__expenseprice_set'
+        ).select_related(
+            'expense'
+        )
 
     @swagger_auto_schema(
         operation_summary="Expense detail",

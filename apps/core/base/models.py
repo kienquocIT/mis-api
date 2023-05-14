@@ -320,3 +320,17 @@ class Currency(SimpleAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save(**kwargs)
         super().save(*args, **kwargs)
+
+
+class ShippingUnit(SimpleAbstractModel):
+    title = models.CharField(
+        verbose_name='name of unit',
+        max_length=100
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        verbose_name = 'ShippingUnit'
+        verbose_name_plural = 'ShippingUnits'

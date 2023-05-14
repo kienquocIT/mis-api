@@ -116,15 +116,11 @@ class FormulaCondition(SimpleAbstractModel):
         related_name="formula_condition",
     )
 
-    uom_group = models.ForeignKey(
-        'saledata.UnitOfMeasureGroup',
+    unit = models.ForeignKey(
+        'base.ShippingUnit',
         on_delete=models.CASCADE,
-        related_name='uom_group_condition',
-    )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='uom_condition',
+        related_name='unit_condition',
+        default=None,
     )
     comparison_operators = models.IntegerField(
         default=1,

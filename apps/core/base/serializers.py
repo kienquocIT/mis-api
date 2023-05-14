@@ -4,6 +4,7 @@ from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency
 )
+from apps.masterdata.saledata.models import Shipping
 
 
 # Subscription Plan
@@ -102,3 +103,9 @@ class BaseCurrencyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BaseCurrency
         fields = ('id', 'title', 'code', 'title')
+
+
+class ShippingUnitListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shipping
+        fields = ('id', 'title')
