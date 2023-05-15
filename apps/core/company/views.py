@@ -90,8 +90,11 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
 
 class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Company.objects.select_related('tenant')
+    queryset = Company.objects
     serializer_detail = CompanyDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('tenant')
 
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(login_require=True, auth_require=True, code_perm='')

@@ -1,12 +1,16 @@
 from django.db import models
 
-from apps.core.base.models import Currency
-from apps.masterdata.saledata.models.accounts import Account
-from apps.masterdata.saledata.models.product import Product
+from apps.masterdata.saledata.models import Currency, Account, Product
 from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = ['Promotion', 'CustomerByList', 'CustomerByCondition', 'DiscountMethod', 'GiftMethod']
 
+
+VALID_TIME = (
+    (1, 'Valid time'),
+    (2, 'Week'),
+    (3, 'Month'),
+)
 
 class Promotion(MasterDataAbstractModel):
     valid_date_start = models.DateField(
@@ -19,7 +23,7 @@ class Promotion(MasterDataAbstractModel):
     currency = models.ForeignKey(
         Currency,
         on_delete=models.CASCADE,
-        related_name="customer_by_list_promotion"
+        related_name="promotion_currency"
     )
     customer_type = models.IntegerField(
         verbose_name="Customer type",
@@ -136,13 +140,6 @@ class CustomerByCondition(SimpleAbstractModel):
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
-
-
-VALID_TIME = (
-    (1, 'Valid time'),
-    (2, 'Week'),
-    (3, 'Month'),
-)
 
 
 class DiscountMethod(SimpleAbstractModel):
