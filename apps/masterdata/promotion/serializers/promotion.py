@@ -133,6 +133,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
                 }
             except Product.DoesNotExist:
                 return serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
+        return value
 
     @classmethod
     def validate(cls, validate_data):  # pylint: disable=W0221
