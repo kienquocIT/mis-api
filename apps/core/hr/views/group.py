@@ -67,7 +67,6 @@ class GroupLevelDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = GroupLevelDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -77,7 +76,6 @@ class GroupLevelDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = GroupLevelUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -146,7 +144,6 @@ class GroupDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = GroupDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -156,7 +153,6 @@ class GroupDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = GroupUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(

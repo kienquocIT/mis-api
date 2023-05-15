@@ -46,6 +46,7 @@ class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = SalutationListSerializer
     serializer_create = SalutationCreateSerializer
     serializer_detail = SalutationDetailSerializer
+    serializer_update = SalutationUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -57,7 +58,6 @@ class SalutationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Salutation", request_body=SalutationUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = SalutationUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -92,6 +92,7 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = InterestsListSerializer
     serializer_create = InterestsCreateSerializer
     serializer_detail = InterestsDetailsSerializer
+    serializer_update = InterestsUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -103,7 +104,6 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Interest", request_body=InterestsUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = InterestsUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -143,6 +143,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
+    serializer_update = ContactUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -157,7 +158,6 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Contact", request_body=ContactUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ContactUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 

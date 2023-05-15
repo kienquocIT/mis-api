@@ -54,6 +54,7 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
+    serializer_update = ProductTypeUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -65,7 +66,6 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update ProductType", request_body=ProductTypeUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ProductTypeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -100,6 +100,7 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
+    serializer_update = ProductCategoryUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -111,7 +112,6 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update ProductCategory", request_body=ProductCategoryUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ProductCategoryUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -146,6 +146,7 @@ class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = ExpenseTypeListSerializer
     serializer_create = ExpenseTypeCreateSerializer
     serializer_detail = ExpenseTypeDetailSerializer
+    serializer_update = ExpenseTypeUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -157,7 +158,6 @@ class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update ExpenseType", request_body=ExpenseTypeUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ExpenseTypeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -192,6 +192,7 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
+    serializer_update = UnitOfMeasureGroupUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -203,7 +204,6 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update UnitOfMeasureGroup", request_body=UnitOfMeasureGroupUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = UnitOfMeasureGroupUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -241,6 +241,7 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
+    serializer_update = UnitOfMeasureUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -255,7 +256,6 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update UnitOfMeasure", request_body=UnitOfMeasureUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = UnitOfMeasureUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -290,6 +290,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = ProductListSerializer
     serializer_create = ProductCreateSerializer
     serializer_detail = ProductDetailSerializer
+    serializer_update = ProductUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -301,5 +302,4 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ProductUpdateSerializer
         return self.update(request, *args, **kwargs)
