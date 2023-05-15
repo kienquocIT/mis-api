@@ -328,7 +328,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     quotation = serializers.CharField(
         max_length=550
     )
-    # quotation tabs
+    # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(
         many=True,
         required=False
@@ -424,17 +424,17 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    # quotation tabs
-    quotation_products_data = SaleOrderProductSerializer(
+    # sale order tabs
+    sale_order_products_data = SaleOrderProductSerializer(
         many=True,
         required=False
     )
-    quotation_logistic_data = SaleOrderLogisticSerializer(required=False)
-    quotation_costs_data = SaleOrderCostSerializer(
+    sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
     )
-    quotation_expenses_data = SaleOrderExpenseSerializer(
+    sale_order_expenses_data = SaleOrderExpenseSerializer(
         many=True,
         required=False
     )
