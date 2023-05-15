@@ -4,3 +4,4 @@ from .accounts import *
 from .price import *
 from .expense import *
 from .shipping import *
+from .warehouse import *

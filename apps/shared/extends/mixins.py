@@ -1,4 +1,5 @@
 from django.conf import settings
+from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
 
@@ -9,6 +10,10 @@ __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin',
 
 
 class BaseMixin(GenericAPIView):
+    search_fields: list
+    filterset_fields: dict
+    filterset_class: filters.FilterSet
+
     def __init__(self, *args, **kwargs):
         serializer_list = getattr(self, 'serializer_list', None)
         serializer_detail = getattr(self, 'serializer_detail', None)
@@ -185,6 +190,21 @@ class BaseMixin(GenericAPIView):
             return tmp(*args, **kwargs)  # pylint: disable=E1102
         raise ValueError('Serializer detail attribute in view must be implement.')
 
+    def get_serializer_update(self, *args, **kwargs):
+        """
+        Get serializer class for retrieve.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        tmp = getattr(self, 'serializer_update', None)
+        if tmp and callable(tmp):
+            return tmp(*args, **kwargs)  # pylint: disable=E1102
+        raise ValueError('Serializer update attribute in view must be implement.')
+
     def get_object(self):
         """
         [OVERRODE from REST FRAMEWORK]
@@ -306,7 +326,7 @@ class BaseUpdateMixin(BaseMixin):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
