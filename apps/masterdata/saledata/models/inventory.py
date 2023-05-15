@@ -16,5 +16,6 @@ class WareHouse(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'WareHouse storage'
         verbose_name_plural = 'WareHouse storage'
+        ordering = ('title',)
         default_permissions = ()
         permissions = ()
