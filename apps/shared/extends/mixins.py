@@ -127,6 +127,8 @@ class BaseMixin(GenericAPIView):
     serializer_create: serializers.Serializer = None
     # Serializer Class for return data after call POST CREATE (object just created)
     serializer_detail: serializers.Serializer = None
+    # Serializer Class for PUT data
+    serializer_update: serializers.Serializer = None
     # Field list auto append to filter of current user request
     list_hidden_field: list[str] = []
     # Field list was autofill data when POST CREATE
