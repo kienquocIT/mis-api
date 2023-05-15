@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
 )
 from apps.masterdata.saledata.models import Shipping
 
@@ -105,7 +105,7 @@ class BaseCurrencyListSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code', 'title')
 
 
-class ShippingUnitListSerializer(serializers.ModelSerializer):
+class BaseItemUnitListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Shipping
-        fields = ('id', 'title')
+        model = BaseItemUnit
+        fields = ('id', 'title', 'measure')

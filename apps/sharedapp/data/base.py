@@ -5,7 +5,7 @@ __all__ = [
     'PermissionApplication_data',
     'ApplicationProperty_data',
     'Currency_data',
-    'ShippingUnit_data'
+    'BaseItemUnit_data'
 ]
 
 SubscriptionPlan_data = {
@@ -336,17 +336,21 @@ Currency_data = {
     },
 }
 
-ShippingUnit_data = {
+BaseItemUnit_data = {
     "4db94461-ba4b-4d5e-b9b1-1481ea38591d": {
         "title": "weight",
+        "measure": 'gram'
     },
     "6b772eaa-a4a8-44d0-94e3-ab5f428ca2c1": {
         "title": "quantity",
+        "measure": "unit"
     },
     "d12f696c-d435-4e93-ab8e-f2ccf5a4093b": {
         "title": "price",
+        "measure": "",
     },
     "68305048-03e2-4936-8f4b-f876fcc6b14e": {
         "title": "volume",
+        "measure": "cubic centimeter"
     },
 }

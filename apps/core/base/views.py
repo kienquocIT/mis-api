@@ -6,14 +6,14 @@ from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, ShippingUnit
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
 )
 
 from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    ShippingUnitListSerializer
+    BaseItemUnitListSerializer
 )
 
 
@@ -220,11 +220,11 @@ class BaseCurrencyList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ShippingUnitList(BaseListMixin):
-    queryset = ShippingUnit.objects
+class BaseItemUnitList(BaseListMixin):
+    queryset = BaseItemUnit.objects
     search_fields = ('title',)
     use_cache_queryset = True
-    serializer_list = ShippingUnitListSerializer
+    serializer_list = BaseItemUnitListSerializer
 
     @swagger_auto_schema()
     @mask_view(login_require=False)

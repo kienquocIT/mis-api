@@ -3,7 +3,7 @@ from django.urls import path
 from apps.core.base.views import (
     PlanList, ApplicationPropertyList, ApplicationPropertyEmployeeList, PermissionApplicationList,
     TenantApplicationList,
-    CountryList, CityList, DistrictList, WardList, BaseCurrencyList, ShippingUnitList
+    CountryList, CityList, DistrictList, WardList, BaseCurrencyList, BaseItemUnitList
 )
 
 urlpatterns = [
@@ -23,5 +23,5 @@ urlpatterns = [
     ),
     path('permissions', PermissionApplicationList.as_view(), name='PermissionApplicationList'),
 
-    path('shipping-units', ShippingUnitList.as_view(), name='ShippingUnitList'),
+    path('item-units', BaseItemUnitList.as_view(), name='BaseItemUnitList'),
 ]

@@ -322,15 +322,17 @@ class Currency(SimpleAbstractModel):
         super().save(*args, **kwargs)
 
 
-class ShippingUnit(SimpleAbstractModel):
+class BaseItemUnit(SimpleAbstractModel):
     title = models.CharField(
-        verbose_name='name of unit',
-        max_length=100
+        max_length=20,
+    )
+    measure = models.CharField(
+        max_length=20,
     )
 
     class Meta:
         default_permissions = ()
         permissions = ()
         ordering = ('title',)
-        verbose_name = 'ShippingUnit'
-        verbose_name_plural = 'ShippingUnits'
+        verbose_name = 'BaseItemUnit'
+        verbose_name_plural = 'BaseItemUnits'

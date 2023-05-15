@@ -117,7 +117,7 @@ class FormulaCondition(SimpleAbstractModel):
     )
 
     unit = models.ForeignKey(
-        'base.ShippingUnit',
+        'base.BaseItemUnit',
         on_delete=models.CASCADE,
         related_name='unit_condition',
         default=None,

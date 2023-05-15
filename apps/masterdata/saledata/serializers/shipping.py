@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.core.base.models import City, ShippingUnit
+from apps.core.base.models import City, BaseItemUnit
 from apps.masterdata.saledata.models import Shipping, ShippingCondition, FormulaCondition, ConditionLocation
 from apps.shared.translations.shipping import ShippingMsg
 
@@ -51,15 +51,15 @@ class FormulaConditionCreateSerializer(serializers.ModelSerializer):
     def validate_unit(cls, value):
         try:  # noqa
             if value is not None:
-                print(value)
-                unit = ShippingUnit.objects.get(
+                unit = BaseItemUnit.objects.get(
                     id=value
                 )
                 return {
                     'id': str(unit.id),
                     'title': unit.title,
+                    'measure': unit.measure
                 }
-        except ShippingUnit.DoesNotExist:
+        except BaseItemUnit.DoesNotExist:
             raise serializers.ValidationError({'Shipping Unit': ShippingMsg.UNIT_NOT_EXIST})
         return None
 

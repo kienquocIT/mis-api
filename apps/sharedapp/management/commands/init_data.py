@@ -6,12 +6,12 @@ from django.db.models import Model
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, PlanApplication, PermissionApplication, ApplicationProperty,
-    Country, City, District, Ward, Currency, ShippingUnit
+    Country, City, District, Ward, Currency, BaseItemUnit
 )
 from apps.core.company.models import Company, CompanyConfig
 from ...data.base import (
     SubscriptionPlan_data, Application_data, PlanApplication_data, PermissionApplication_data,
-    Currency_data, ShippingUnit_data
+    Currency_data, BaseItemUnit_data
 )
 from ...data.application_properties import ApplicationProperty_data
 from ...data.vietnam_info import (
@@ -45,7 +45,7 @@ class InitialsData:
         (District, Districts_VN_data),
         (Ward, Wards_VN_data),
         (Currency, Currency_data),
-        (ShippingUnit, ShippingUnit_data)
+        (BaseItemUnit, BaseItemUnit_data)
     )
 
     def loads(self):
