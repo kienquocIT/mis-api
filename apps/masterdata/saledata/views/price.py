@@ -118,6 +118,9 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
     serializer_detail = CurrencyDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        "currency__code": ["exact"],
+    }
 
     @swagger_auto_schema(
         operation_summary="Currency list",
