@@ -11,8 +11,20 @@ from apps.shared.translations.company import CompanyMsg
 
 
 # Company Config
+class CurrencyRuleDetail(serializers.Serializer): # noqa
+    prefix = serializers.CharField()
+    suffix = serializers.CharField()
+    decimal = serializers.CharField()
+    thousands = serializers.CharField()
+    allowZero = serializers.CharField()
+    precision = serializers.CharField()
+    affixesStay = serializers.CharField()
+    allowNegative = serializers.CharField()
+
+
 class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
+    currency_rule = CurrencyRuleDetail()
 
     @classmethod
     def get_currency(cls, obj):
