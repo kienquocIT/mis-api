@@ -5,6 +5,7 @@ __all__ = [
     'PermissionApplication_data',
     'ApplicationProperty_data',
     'Currency_data',
+    'ShippingUnit_data'
 ]
 
 SubscriptionPlan_data = {
@@ -332,5 +333,20 @@ Currency_data = {
         "title": "Chinese Yuan Renminbi",
         "code": "CNY",
         "symbol": "CNY",
+    },
+}
+
+ShippingUnit_data = {
+    "4db94461-ba4b-4d5e-b9b1-1481ea38591d": {
+        "title": "weight",
+    },
+    "6b772eaa-a4a8-44d0-94e3-ab5f428ca2c1": {
+        "title": "quantity",
+    },
+    "d12f696c-d435-4e93-ab8e-f2ccf5a4093b": {
+        "title": "price",
+    },
+    "68305048-03e2-4936-8f4b-f876fcc6b14e": {
+        "title": "volume",
     },
 }
