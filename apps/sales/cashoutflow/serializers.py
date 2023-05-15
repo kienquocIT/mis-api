@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import AdvancePayment
+from apps.masterdata.saledata.models.product import ExpensePrice
 from apps.shared import AdvancePaymentMsg
 
 
@@ -63,6 +64,16 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = AdvancePayment
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
+class ExpenseUnitPriceListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpensePrice
         fields = (
             'id',
             'title',
