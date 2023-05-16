@@ -89,7 +89,7 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'description')
 
 
-class ProductCategoryUpdateSerializer(serializers.ModelSerializer):
+class ProductCategoryUpdateSerializer(serializers.ModelSerializer): # noqa
     title = serializers.CharField(max_length=150)
 
     class Meta:

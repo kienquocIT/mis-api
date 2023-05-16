@@ -69,13 +69,3 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
         )
-
-
-class ExpenseUnitPriceListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ExpensePrice
-        fields = (
-            'id',
-            'title',
-            'code',
-        )

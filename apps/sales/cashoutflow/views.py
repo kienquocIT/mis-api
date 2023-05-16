@@ -1,9 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.cashoutflow.models import AdvancePayment
-from apps.masterdata.saledata.models.product import ExpensePrice
 from apps.sales.cashoutflow.serializers import (
     AdvancePaymentListSerializer, AdvancePaymentCreateSerializer, AdvancePaymentDetailSerializer,
-    ExpenseUnitPriceListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -53,21 +51,3 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     # def put(self, request, *args, **kwargs):
     #     self.serializer_class = AdvancePaymentUpdateSerializer
     #     return self.update(request, *args, **kwargs)
-
-
-class ExpenseUnitPriceList(BaseListMixin):
-    queryset = ExpensePrice.objects
-    serializer_list = ExpenseUnitPriceListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('price', 'currency', 'uom')
-
-    @swagger_auto_schema(
-        operation_summary="Expense Unit Price list",
-        operation_description="Expense Unit Price list",
-    )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        # kwargs.update({'account_name': None})
-        return self.list(request, *args, **kwargs)

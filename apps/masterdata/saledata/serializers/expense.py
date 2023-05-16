@@ -185,9 +185,12 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
         price_list = [
             {
                 'id': item.price_id,
+                'title': item.price.title,
                 'price_value': item.price_value,
                 'is_auto_update': item.is_auto_update,
-                'currency': item.currency_id
+                'currency': item.currency_id,
+                'is_primary': item.currency.is_primary,
+                'abbreviation': item.currency.abbreviation
             } for item in ExpensePrice.objects.filter(expense_general=obj.expense)
         ]
 
