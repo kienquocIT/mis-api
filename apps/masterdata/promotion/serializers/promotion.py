@@ -5,13 +5,13 @@ from apps.masterdata.promotion.models import Promotion, CustomerByList, Customer
 __all__ = ['PromotionListSerializer', 'PromotionCreateSerializer', 'PromotionDetailSerializer',
            'PromotionUpdateSerializer']
 
-from apps.masterdata.saledata.models import AccountAccountTypes, Product, AccountGroup, Industry
+from apps.masterdata.saledata.models import Account, Product, AccountGroup, Industry
 
 from apps.shared import PromoMsg, ACCOUNT_COMPANY_SIZE, ACCOUNT_REVENUE
 
 
 def check_customer_list(data):
-    customer = AccountAccountTypes.objects.filter(account__id__in=data, account_type__account_type_order=0)
+    customer = Account.objects.filter(id__in=data, account_types_mapped__account_type_order=0)
     if len(data) != customer.count():
         return False
     return True
@@ -47,6 +47,7 @@ def create_discount_method(validated_data, instance):
             product_selected_id=product_selected.get('id', None)
         )
 
+
 def create_gift_method(validated_data, instance):
     gift_method = validated_data.get('gift_method', {})
     if gift_method:
@@ -63,6 +64,7 @@ def create_gift_method(validated_data, instance):
             purchase_product_id=purchase_product.get('id', None)
         )
 
+
 def create_customer_condition(validated_data, instance):
     customer_cond = validated_data.get('customer_by_condition', {})
     if customer_cond:
@@ -70,6 +72,7 @@ def create_customer_condition(validated_data, instance):
             **customer_cond,
             promotion=instance,
         )
+
 
 class CustomerByListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -135,8 +138,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
                 return serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
         return value
 
-    @classmethod
-    def validate(cls, validate_data):  # pylint: disable=W0221
+    def validate(self, validate_data):
         if not validate_data.get('before_after_tax', None):
             raise serializers.ValidationError({"before_after_tax": PromoMsg.ERROR_IS_BE_AF})
         if 'percent_fix_amount' not in validate_data:
@@ -149,11 +151,11 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"use_count": PromoMsg.ERROR_USER_COUNT})
         if 'times_condition' not in validate_data:
             raise serializers.ValidationError({"times_condition": PromoMsg.ERROR_TIME_COND})
-        if 'is_minimum' in validate_data and\
+        if 'is_minimum' in validate_data and \
                 validate_data['is_minimum'] and validate_data['minimum_value'] == float(0):
             raise serializers.ValidationError({"minimum_value": PromoMsg.ERROR_MINIMUM_PURCHASE})
         if 'is_on_product' in validate_data and \
-                validate_data['is_on_product'] and\
+                validate_data['is_on_product'] and \
                 'product_selected' not in validate_data:
             raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
         if 'is_min_quantity' in validate_data and \
@@ -219,8 +221,7 @@ class GiftMethodSerializer(serializers.ModelSerializer):
         except Product.DoesNotExist:
             return serializers.ValidationError({"purchase_product": PromoMsg.ERROR_PRODUCT_PURCHASE})
 
-    @classmethod
-    def validate(cls, validate_data):  # pylint: disable=W0221
+    def validate(self, validate_data):
         if bool(validate_data['is_free_product']):
             if validate_data['num_product_received'] == 0:
                 raise serializers.ValidationError({"free_product": PromoMsg.ERROR_FREE_PRODUCT})
@@ -240,6 +241,7 @@ class PromotionListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'valid_date_end',
+            'valid_date_start',
         )
 
 
@@ -289,8 +291,7 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"customer_type": PromoMsg.ERROR_VALID_DATE})
 
-    @classmethod
-    def validate(cls, validate_data):  # pylint: disable=W0221
+    def validate(self, validate_data):
         discount = validate_data.get('discount_method', {})
         gift = validate_data.get('gift_method', {})
 
@@ -332,8 +333,8 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
 
 class PromotionDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
-    get_customer_by_list = serializers.SerializerMethodField()
-    get_customer_by_condition = serializers.SerializerMethodField()
+    customer_by_list = serializers.SerializerMethodField()
+    customer_by_condition = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
@@ -365,7 +366,7 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_customer_by_list(cls, obj):  # pylint: disable=E0102
+    def get_customer_by_list(cls, obj):
         return [
             {'id': item[0], 'name': item[1], 'code': item[2]}
             for item in CustomerByList.objects.filter(promotion=obj).values_list(
@@ -376,7 +377,7 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
         ]
 
     @classmethod
-    def get_customer_by_condition(cls, obj):  # pylint: disable=E0102
+    def get_customer_by_condition(cls, obj):
         return [
             {
                 'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
@@ -440,8 +441,7 @@ class PromotionUpdateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({"customer_type": PromoMsg.ERROR_VALID_DATE})
 
-    @classmethod
-    def validate(cls, validate_data):  # pylint: disable=W0221
+    def validate(self, validate_data):
         discount = validate_data.get('discount_method', {})
         gift = validate_data.get('gift_method', {})
 
