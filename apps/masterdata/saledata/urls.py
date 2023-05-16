@@ -1,22 +1,26 @@
 from django.urls import path
 from apps.masterdata.saledata.views.contacts import (
     SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
-    ContactListNotMapAccount
+    ContactListNotMapAccount,
 )
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
-    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList
+    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail
+    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList
+    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
+)
+from apps.masterdata.saledata.views import (
+    ShippingList, ShippingDetail,
+    WareHouseList, WareHouseDetail,
 )
 
 urlpatterns = [
@@ -100,3 +104,15 @@ urlpatterns += [
     path('expenses', ExpenseList.as_view(), name='ExpenseList'),
     path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail')
 ]
+
+urlpatterns += [
+    path('shippings', ShippingList.as_view(), name='ShippingList'),
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+]
+
+# warehouse
+urlpatterns += [
+    path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
+    path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
+]
+# // warehouse

@@ -8,7 +8,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 
 class ExpenseList(BaseListMixin, BaseCreateMixin):
-    queryset = Expense.objects.select_related()
+    queryset = Expense.objects
     serializer_list = ExpenseListSerializer
     serializer_create = ExpenseCreateSerializer
     serializer_detail = ExpenseDetailSerializer
@@ -37,7 +37,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Expense.objects
     serializer_detail = ExpenseDetailSerializer
-    serializer_update = ExpenseCreateSerializer
+    serializer_update = ExpenseUpdateSerializer
 
     @swagger_auto_schema(
         operation_summary="Expense detail",
@@ -45,7 +45,6 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = ExpenseDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -55,5 +54,4 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ExpenseUpdateSerializer
         return self.update(request, *args, **kwargs)

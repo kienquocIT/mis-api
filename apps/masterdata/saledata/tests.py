@@ -12,8 +12,7 @@ class AccountTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         # create industry
         url_create_industry = reverse('IndustryList')
         response_industry = self.client.post(
@@ -30,8 +29,8 @@ class AccountTestCase(AdvanceTestCase):
         response_account_type = self.client.post(
             url_create_account_type,
             {
-                'code': 'AT01',
-                'title': 'customer',
+                'code': 'AT05',
+                'title': 'Service',
             },
             format='json'
         )
@@ -228,8 +227,7 @@ class ProductTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("ProductList")
 
     def create_product_type(self):
@@ -289,7 +287,7 @@ class ProductTestCase(AdvanceTestCase):
         return response.data['result'], data_uom_gr
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type() # noqa
+        product_type = self.create_product_type()  # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -323,7 +321,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type() # noqa
+        product_type = self.create_product_type()  # noqa
         product_category = self.create_product_category()
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
@@ -425,8 +423,7 @@ class SalutationTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new(self):
         data = {  # noqa
@@ -515,8 +512,7 @@ class UoMTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_new_uom_group(self):
         data = {
@@ -620,8 +616,7 @@ class CurrencyTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("CurrencyList")
 
     def test_get_list_currency_default(self):
@@ -673,8 +668,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url_tax = reverse("TaxList")
         self.url_tax_category = reverse("TaxCategoryList")
 
@@ -798,10 +792,10 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
+        login_data = self._login()
         self.authenticated(login_data)
         self.url_product_category = reverse("ProductCategoryList")
-        self.url_product_type = reverse("TaxCategoryList")
+        self.url_product_type = reverse("ProductTypeList")
 
     def test_create_new_product_category(self):
         data = {
@@ -902,8 +896,7 @@ class InterestTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("InterestsList")
 
     def test_create_new(self):
@@ -988,8 +981,7 @@ class AccountTypeTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("AccountTypeList")
 
     def test_create_new(self):
@@ -1074,8 +1066,7 @@ class IndustryTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
         self.url = reverse("IndustryList")
 
     def test_create_new(self):
@@ -1162,8 +1153,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     def test_create_config_payment_term(self):
         data = {
@@ -1212,7 +1202,7 @@ class ConfigPaymentTermTestCase(AdvanceTestCase):
         self.test_create_config_payment_term()
         url = reverse('ConfigPaymentTermList')
         response = self.client.get(url, format='json')
-        self.assertResponseList( # noqa
+        self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_200_OK,
             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
@@ -1266,8 +1256,7 @@ class ExpenseTestCase(AdvanceTestCase):
         self.maxDiff = None
         self.client = APIClient()
 
-        login_data = TestCaseAuth.test_login(self)
-        self.authenticated(login_data)
+        self.authenticated()
 
     @staticmethod
     def get_currency(self):
@@ -1336,12 +1325,12 @@ class ExpenseTestCase(AdvanceTestCase):
         return response.data['result']
 
     def test_create_new_expense(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
         price_list = self.create_price_list(self, currency)
-        data = { # noqa
+        data = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "general_information": {
@@ -1365,7 +1354,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response, price_list
 
     def test_create_expense_missing_data(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1389,7 +1378,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = { # noqa
+        data1 = {  # noqa
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
                 "expense_type": expense_type['id'],
@@ -1433,7 +1422,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_create_expense_empty_data(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1458,7 +1447,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseList")
 
-        data1 = { # noqa
+        data1 = {  # noqa
             "code": "",
             "title": "Chi phis nhân công sản xuất",
             "general_information": {
@@ -1524,7 +1513,7 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_update_expense(self):
-        currency = self.get_currency(self) # noqa
+        currency = self.get_currency(self)  # noqa
         expense_type = self.create_expense_type(self)
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
@@ -1553,7 +1542,7 @@ class ExpenseTestCase(AdvanceTestCase):
 
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
-        data_update = { # noqa
+        data_update = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
             "general_information": {
@@ -1592,3 +1581,105 @@ class ExpenseTestCase(AdvanceTestCase):
         response_detail = self.client.get(url_detail, format='json')
         self.assertEqual(response_detail.status_code, 200)
         return response_detail
+
+
+class WareHouseTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def test_warehouse_create(self):
+        url = reverse("WareHouseList")
+        data = {
+            'title': 'Kho lưu trữ số 1',
+            'code': 'WareHouse_1',
+            'description': 'Lưu trữ linh kiện bán lẻ ở Tân Bình',
+            'is_active': True,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_warehouse_list(self):
+        self.test_warehouse_create()
+        url = reverse("WareHouseList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_warehouse_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_warehouse_create()
+            data_id = data_created.data['result']['id']
+        url = reverse("WareHouseDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_warehouse_update(self):
+        title_change = 'Tên nhà kho đã được thay đổi'
+        data_created = self.test_warehouse_create()
+        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
+        data = {
+            'title': title_change
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_warehouse_detail(data_id=data_created.data['result']['id'])
+        self.assertEqual(data_changed.data['result']['title'], title_change)
+        return response
+
+    def test_warehouse_delete(self):
+        data_created = self.test_warehouse_create()
+        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        return response

@@ -1,10 +1,8 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models.accounts import Account
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
-from apps.shared import AccountsMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -500,14 +498,23 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_customer(cls, value):
-        try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
+        return QuotationCommonValidate().validate_customer(value=value)
+
+    @classmethod
+    def validate_opportunity(cls, value):
+        return QuotationCommonValidate().validate_opportunity(value=value)
+
+    @classmethod
+    def validate_contact(cls, value):
+        return QuotationCommonValidate().validate_contact(value=value)
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        return QuotationCommonValidate().validate_sale_person(value=value)
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        return QuotationCommonValidate().validate_payment_term(value=value)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
@@ -515,6 +522,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         QuotationCommonCreate().create_quotation_sub_models(
             validated_data=validated_data,
-            instance=instance
+            instance=instance,
+            is_update=True
         )
         return instance

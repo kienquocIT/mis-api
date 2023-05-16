@@ -45,7 +45,6 @@ class ExpenseType(MasterDataAbstractModel):
 
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
-
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'
         verbose_name_plural = 'UnitsOfMeasureGroup'

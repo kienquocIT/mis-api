@@ -29,7 +29,10 @@ class CompanyConfigDetail(APIView):
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
         try:
-            obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
+            obj = CompanyConfig.objects.select_related('currency').get(
+                company_id=request.user.company_current_id,
+                **{'force_cache': True}
+            )
             return ResponseController.success_200(data=CompanyConfigDetailSerializer(obj).data, key_data='result')
         except CompanyConfig.DoesNotExist:
             pass
@@ -87,8 +90,12 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
 
 class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Company.objects.select_related('tenant')
+    queryset = Company.objects
     serializer_detail = CompanyDetailSerializer
+    serializer_update = CompanyUpdateSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('tenant')
 
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -98,7 +105,6 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete Company")

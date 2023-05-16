@@ -93,8 +93,8 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                     id=value
                 )
                 return {'id': str(currency.id), 'title': currency.title, 'code': currency.code}
-        except ExpenseType.DoesNotExist:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
     def validate(self, validate_data):

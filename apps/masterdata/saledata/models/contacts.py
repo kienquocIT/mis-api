@@ -1,6 +1,12 @@
 from django.db import models
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
+__all__ = [
+    'Salutation',
+    'Interest',
+    'Contact',
+]
+
 # Contact Master data
 class Salutation(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
