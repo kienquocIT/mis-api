@@ -5,7 +5,7 @@ __all__ = [
     'PermissionApplication_data',
     'ApplicationProperty_data',
     'Currency_data',
-    'BaseItemUnit_data'
+    'BaseItemUnit_data',
 ]
 
 SubscriptionPlan_data = {
@@ -351,6 +351,6 @@ BaseItemUnit_data = {
     },
     "68305048-03e2-4936-8f4b-f876fcc6b14e": {
         "title": "volume",
-        "measure": "cubic centimeter"
+        "measure": "cm³"
     },
 }
