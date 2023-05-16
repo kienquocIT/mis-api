@@ -45,6 +45,7 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = TaxCategory.objects
     serializer_list = TaxCategoryListSerializer
     serializer_detail = TaxCategoryDetailSerializer
+    serializer_update = TaxCategoryUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -56,7 +57,6 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update TaxCategory", request_body=TaxCategoryUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = TaxCategoryUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -93,6 +93,7 @@ class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Tax.objects
     serializer_list = TaxListSerializer
     serializer_detail = TaxDetailSerializer
+    serializer_update = TaxUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -107,7 +108,6 @@ class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Tax", request_body=TaxUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = TaxUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -141,6 +141,7 @@ class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Currency.objects
     serializer_list = CurrencyListSerializer
     serializer_detail = CurrencyDetailSerializer
+    serializer_update = CurrencyUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -152,7 +153,6 @@ class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Currency", request_body=CurrencyUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CurrencyUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -160,13 +160,13 @@ class SyncWithVCB(BaseUpdateMixin):
     queryset = Currency.objects
     serializer_list = CurrencyListSerializer
     serializer_detail = CurrencySyncWithVCBSerializer
+    serializer_update = CurrencySyncWithVCBSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary="Sync With VCB Currency", request_body=CurrencySyncWithVCBSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CurrencySyncWithVCBSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -200,6 +200,7 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
+    serializer_update = PriceUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -211,20 +212,19 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Price List Setting", request_body=PriceUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
 class PriceDelete(BaseUpdateMixin):
     queryset = Price.objects
     serializer_detail = PriceDetailSerializer
+    serializer_update = PriceDeleteSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary="Delete Price List", request_body=PriceDeleteSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceDeleteSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -232,6 +232,7 @@ class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
+    serializer_update = PriceListUpdateItemsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -246,7 +247,6 @@ class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceListUpdateItemsSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -254,6 +254,7 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects  # noqa
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
+    serializer_update = PriceListDeleteItemSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -268,7 +269,6 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PriceListDeleteItemSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -276,6 +276,7 @@ class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Price.objects
     serializer_list = PriceListSerializer
     serializer_detail = PriceDetailSerializer
+    serializer_update = CreateItemInPriceListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -286,5 +287,4 @@ class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CreateItemInPriceListSerializer
         return self.update(request, *args, **kwargs)

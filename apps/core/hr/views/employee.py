@@ -65,7 +65,6 @@ class EmployeeDetail(
         operation_description="Get employee detail by ID",
     )
     def get(self, request, *args, **kwargs):
-        self.serializer_class = EmployeeDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -75,7 +74,6 @@ class EmployeeDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = EmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 

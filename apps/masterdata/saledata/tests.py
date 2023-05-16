@@ -1581,6 +1581,108 @@ class ExpenseTestCase(AdvanceTestCase):
         return response_detail
 
 
+class WareHouseTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def test_warehouse_create(self):
+        url = reverse("WareHouseList")
+        data = {
+            'title': 'Kho lưu trữ số 1',
+            'code': 'WareHouse_1',
+            'description': 'Lưu trữ linh kiện bán lẻ ở Tân Bình',
+            'is_active': True,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_warehouse_list(self):
+        self.test_warehouse_create()
+        url = reverse("WareHouseList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_warehouse_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_warehouse_create()
+            data_id = data_created.data['result']['id']
+        url = reverse("WareHouseDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'remarks', 'is_active'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_warehouse_update(self):
+        title_change = 'Tên nhà kho đã được thay đổi'
+        data_created = self.test_warehouse_create()
+        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
+        data = {
+            'title': title_change
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_warehouse_detail(data_id=data_created.data['result']['id'])
+        self.assertEqual(data_changed.data['result']['title'], title_change)
+        return response
+
+    def test_warehouse_delete(self):
+        data_created = self.test_warehouse_create()
+        url = reverse("WareHouseDetail", kwargs={'pk': data_created.data['result']['id']})
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        return response
+
+
 # class ShippingTestCase(AdvanceTestCase):
 #     def setUp(self):
 #         self.maxDiff = None

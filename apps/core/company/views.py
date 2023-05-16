@@ -92,6 +92,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     permission_classes = [IsAuthenticated]
     queryset = Company.objects
     serializer_detail = CompanyDetailSerializer
+    serializer_update = CompanyUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related('tenant')
@@ -104,7 +105,6 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete Company")
