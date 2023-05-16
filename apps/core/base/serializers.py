@@ -4,7 +4,6 @@ from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
 )
-from apps.masterdata.saledata.models import Shipping
 
 
 # Subscription Plan
