@@ -110,13 +110,16 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.objects.select_related('salutation', 'account_name')
+    queryset = Contact.objects
     filterset_fields = ['account_name_id']
     serializer_list = ContactListSerializer
     serializer_create = ContactCreateSerializer
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('salutation', 'account_name')
 
     @swagger_auto_schema(
         operation_summary="Contact list",
@@ -138,10 +141,13 @@ class ContactList(BaseListMixin, BaseCreateMixin):
 
 class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
-    queryset = Contact.objects.select_related('salutation', 'account_name')
+    queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('salutation', 'account_name')
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(login_require=True, auth_require=True, code_perm='')

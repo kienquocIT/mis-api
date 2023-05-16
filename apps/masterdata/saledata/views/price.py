@@ -61,12 +61,15 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class TaxList(BaseListMixin, BaseCreateMixin):
-    queryset = Tax.objects.select_related('category')
+    queryset = Tax.objects
     serializer_list = TaxListSerializer
     serializer_create = TaxCreateSerializer
     serializer_detail = TaxDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('category')
 
     @swagger_auto_schema(
         operation_summary="Tax list",
@@ -87,11 +90,14 @@ class TaxList(BaseListMixin, BaseCreateMixin):
 
 
 class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = Tax.objects.select_related('category')
+    queryset = Tax.objects
     serializer_list = TaxListSerializer
     serializer_detail = TaxDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('category')
 
     @swagger_auto_schema(operation_summary='Detail Tax')
     @mask_view(login_require=True, auth_require=True, code_perm='')

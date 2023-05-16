@@ -1,6 +1,7 @@
 from django.db import models
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
+from apps.masterdata.saledata.models.contacts import Contact
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -87,6 +88,11 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
+    owner = models.ForeignKey(
+        Contact,
+        on_delete=models.CASCADE,
+        null=True
+    )
     # ["e3e416d7-ae74-4bb8-a55f-169c5fde53a0", "d2f9397d-3a6c-46d6-9a67-442bc43554a8"]
     manager = models.JSONField(
         default=list
@@ -97,6 +103,13 @@ class Account(DataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='account_map_employee'
+    )
+    account_types_mapped = models.ManyToManyField(
+        AccountType,
+        through='AccountAccountTypes',
+        symmetrical=False,
+        blank=True,
+        related_name='account_map_account_types'
     )
     bank_accounts_information = models.JSONField(
         default=list
@@ -179,6 +192,12 @@ class AccountEmployee(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
 
+    class Meta:
+        verbose_name = 'Account Employee'
+        verbose_name_plural = 'Accounts Employees'
+        default_permissions = ()
+        permissions = ()
+
 
 # AccountBanks
 class AccountBanks(SimpleAbstractModel):
@@ -216,6 +235,12 @@ class AccountBanks(SimpleAbstractModel):
     )
     is_default = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = 'Account Banks'
+        verbose_name_plural = 'Accounts Banks'
+        default_permissions = ()
+        permissions = ()
+
 
 # AccountCreditCards
 class AccountCreditCards(SimpleAbstractModel):
@@ -246,6 +271,12 @@ class AccountCreditCards(SimpleAbstractModel):
     )
     is_default = models.BooleanField(default=False)
 
+    class Meta:
+        verbose_name = 'Account Credit Cards'
+        verbose_name_plural = 'Accounts Credit Cards'
+        default_permissions = ()
+        permissions = ()
+
 
 # AccountAccountTypes
 class AccountAccountTypes(SimpleAbstractModel):
@@ -253,3 +284,9 @@ class AccountAccountTypes(SimpleAbstractModel):
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE)
     # 0 is individual, 1 is organization
     customer_type = models.BooleanField(null=True)
+
+    class Meta:
+        verbose_name = 'Account AccountTypes'
+        verbose_name_plural = 'Accounts AccountTypes'
+        default_permissions = ()
+        permissions = ()
