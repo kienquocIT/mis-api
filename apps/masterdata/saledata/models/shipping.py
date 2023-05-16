@@ -116,11 +116,15 @@ class FormulaCondition(SimpleAbstractModel):
         related_name="formula_condition",
     )
 
-    unit = models.ForeignKey(
-        'base.BaseItemUnit',
+    uom_group = models.ForeignKey(
+        'saledata.UnitOfMeasureGroup',
         on_delete=models.CASCADE,
-        related_name='unit_condition',
-        default=None,
+        related_name='uom_group_condition',
+    )
+    uom = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        related_name='uom_condition',
     )
     comparison_operators = models.IntegerField(
         default=1,
@@ -143,3 +147,40 @@ class FormulaCondition(SimpleAbstractModel):
         help_text='extra for amount condition',
         null=True,
     )
+
+
+# class FormulaCondition(SimpleAbstractModel):
+#     condition = models.ForeignKey(
+#         ShippingCondition,
+#         on_delete=models.CASCADE,
+#         verbose_name="formula of condition",
+#         related_name="formula_condition",
+#     )
+#
+#     unit = models.ForeignKey(
+#         'base.BaseItemUnit',
+#         on_delete=models.CASCADE,
+#         related_name='unit_condition',
+#         default=None,
+#     )
+#     comparison_operators = models.IntegerField(
+#         default=1,
+#         help_text='1 - <; 2 - >; 3 - <=; 4 - >=',
+#         null=True,
+#
+#     )
+#     threshold = models.IntegerField(
+#         default=0,
+#         help_text='threshold of unit of measure for comparison operator',
+#         null=True,
+#     )
+#     amount_condition = models.FloatField(
+#         default=0,
+#         help_text='fixed price for each condition',
+#         null=True,
+#     )
+#     extra_amount = models.FloatField(
+#         default=0,
+#         help_text='extra for amount condition',
+#         null=True,
+#     )
