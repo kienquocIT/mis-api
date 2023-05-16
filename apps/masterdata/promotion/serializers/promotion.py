@@ -51,8 +51,8 @@ def create_discount_method(validated_data, instance):
 def create_gift_method(validated_data, instance):
     gift_method = validated_data.get('gift_method', {})
     if gift_method:
-        product_received = gift_method.get('product_received', '')
-        purchase_product = gift_method.get('purchase_product', '')
+        product_received = gift_method.get('product_received', {})
+        purchase_product = gift_method.get('purchase_product', {})
 
         del gift_method['product_received']
         if purchase_product:
@@ -170,7 +170,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
 
 class GiftMethodSerializer(serializers.ModelSerializer):
     product_received = serializers.UUIDField()
-    purchase_product = serializers.UUIDField()
+    purchase_product = serializers.UUIDField(required=False)
 
     class Meta:
         model = GiftMethod
@@ -207,19 +207,21 @@ class GiftMethodSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_purchase_product(cls, value):
-        try:
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return {
-                'id': str(product.id),
-                'title': str(product.title),
-                'code': str(product.code),
-            }
-        except Product.DoesNotExist:
-            return serializers.ValidationError({"purchase_product": PromoMsg.ERROR_PRODUCT_PURCHASE})
+        if value:
+            try:
+                product = Product.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+                return {
+                    'id': str(product.id),
+                    'title': str(product.title),
+                    'code': str(product.code),
+                }
+            except Product.DoesNotExist:
+                return serializers.ValidationError({"purchase_product": PromoMsg.ERROR_PRODUCT_PURCHASE})
+        return value
 
     def validate(self, validate_data):
         if bool(validate_data['is_free_product']):
