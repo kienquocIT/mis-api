@@ -320,3 +320,19 @@ class Currency(SimpleAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save(**kwargs)
         super().save(*args, **kwargs)
+
+
+class BaseItemUnit(SimpleAbstractModel):
+    title = models.CharField(
+        max_length=20,
+    )
+    measure = models.CharField(
+        max_length=20,
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        verbose_name = 'BaseItemUnit'
+        verbose_name_plural = 'BaseItemUnits'
