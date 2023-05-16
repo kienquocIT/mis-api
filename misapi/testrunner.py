@@ -20,7 +20,7 @@ class CustomTestRunner(DiscoverRunner):
         Step 3: Return _db
         """
         _db = super().setup_databases(**kwargs)
-        call_command('init_data')
+        call_command('init_data', **{'limit_wards': True})
         return _db
 
     def teardown_test_environment(self):

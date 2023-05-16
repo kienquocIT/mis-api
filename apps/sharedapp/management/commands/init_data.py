@@ -22,12 +22,16 @@ from ...data.vietnam_info import (
 class Command(BaseCommand):
     help = 'Initials data for all apps.'
 
+    def add_arguments(self, parser):
+        parser.add_argument('--limit_wards', type=bool, help='Limit 100 records wards', default=False, required=False)
+
     def handle(self, *args, **options):
         # sys.stdout.write(
         #     f'{sys.style.WARNING(str(item[0]))}: {self.style.SUCCESS(str(item[1]))} loaded, '
         #     f'{sys.style.ERROR(str(item[2]))} diff'
         # )
-        InitialsData().loads()
+        is_limit_wards = options.get('limit_wards', False)
+        InitialsData().loads(is_limit_wards=is_limit_wards)
         self.stdout.write(self.style.SUCCESS('Successfully initials data.'))
 
 
@@ -47,7 +51,7 @@ class InitialsData:
         (Currency, Currency_data),
     )
 
-    def loads(self):
+    def loads(self, is_limit_wards=False):
         for cls_model, data in self.MAPPING:
             sys.stdout.write(cls_model.__name__ + "... " + Fore.CYAN + ' PROCESSING... ' + Fore.RESET)
             if cls_model == City:
@@ -55,7 +59,7 @@ class InitialsData:
             elif cls_model == District:
                 self.active_load_district()
             elif cls_model == Ward:
-                self.active_load_wards()
+                self.active_load_wards(is_limit_wards)
             else:
                 self.active_loads(cls_model, data)
             sys.stdout.write("\n")
@@ -124,10 +128,13 @@ class InitialsData:
         )
 
     @classmethod
-    def active_load_wards(cls):
+    def active_load_wards(cls, is_limit_wards):
         # (Ward, Wards_VN_data),
+        counter = 0
         ward_ids = []
         for ward_data in Wards_VN_data:
+            if is_limit_wards is True and counter == 100:
+                break
             ward_ids.append(ward_data['id'])
             obj, created = Ward.objects.get_or_create(
                 id=ward_data['id'],
@@ -137,6 +144,7 @@ class InitialsData:
                 for field, value in ward_data.items():
                     setattr(obj, field, value)
                 obj.save()
+            counter += 1
         count_diff = Ward.objects.exclude(id__in=ward_ids).count()
         sys.stdout.write(
             f'{Fore.CYAN + "DONE... " + Fore.RESET}'

@@ -49,6 +49,7 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
+    serializer_update = AccountTypeUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -60,7 +61,6 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update AccountType", request_body=AccountTypeUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = AccountTypeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -95,6 +95,7 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = AccountGroupListSerializer
     serializer_create = AccountGroupCreateSerializer
     serializer_detail = AccountGroupDetailsSerializer
+    serializer_update = AccountGroupUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -106,7 +107,6 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update AccountGroup", request_body=AccountGroupUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = AccountGroupUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -141,6 +141,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
+    serializer_update = IndustryUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -152,7 +153,6 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Industry", request_body=IndustryUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = IndustryUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
@@ -192,6 +192,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
+    serializer_update = AccountUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -206,7 +207,6 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Account", request_body=AccountUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = AccountUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
