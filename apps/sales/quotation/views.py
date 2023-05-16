@@ -13,7 +13,7 @@ class QuotationList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
-    filterset_fields = []
+    filterset_fields = ['opportunity', 'sale_person']
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
