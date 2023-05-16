@@ -39,34 +39,37 @@ def create_discount_method(validated_data, instance):
     discount_method = validated_data.get('discount_method', {})
     if discount_method:
         product_selected = discount_method.get('product_selected', {})
-        del discount_method['product_selected']
+        if product_selected:
+            del discount_method['product_selected']
         DiscountMethod.objects.create(
             **discount_method,
             promotion=instance,
             product_selected_id=product_selected.get('id', None)
         )
 
-
 def create_gift_method(validated_data, instance):
     gift_method = validated_data.get('gift_method', {})
     if gift_method:
         product_received = gift_method.get('product_received', '')
         purchase_product = gift_method.get('purchase_product', '')
-        del gift_method['purchase_product']
-        del gift_method['product_received']
-        if product_received:
-            GiftMethod.objects.create(
-                **gift_method,
-                promotion=instance,
-                product_received_id=product_received.get('id', None)
-            )
-        if purchase_product:
-            GiftMethod.objects.create(
-                **gift_method,
-                promotion=instance,
-                purchase_product_id=purchase_product.get('id', None)
-            )
 
+        del gift_method['product_received']
+        if purchase_product:
+            del gift_method['purchase_product']
+        GiftMethod.objects.create(
+            **gift_method,
+            promotion=instance,
+            product_received_id=product_received.get('id', None),
+            purchase_product_id=purchase_product.get('id', None)
+        )
+
+def create_customer_condition(validated_data, instance):
+    customer_cond = validated_data.get('customer_by_condition', {})
+    if customer_cond:
+        CustomerByCondition.objects.create(
+            **customer_cond,
+            promotion=instance,
+        )
 
 class CustomerByListSerializer(serializers.ModelSerializer):
     class Meta:
@@ -91,7 +94,7 @@ class CustomerByConditionSerializer(serializers.ModelSerializer):
 
 
 class DiscountMethodSerializer(serializers.ModelSerializer):
-    product_selected = serializers.UUIDField()
+    product_selected = serializers.UUIDField(required=False)
 
     class Meta:
         model = DiscountMethod
@@ -116,23 +119,25 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_product_selected(cls, value):
-        try:
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return {
-                'id': str(product.id),
-                'title': str(product.title),
-                'code': str(product.code),
-            }
-        except Product.DoesNotExist:
-            return serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
+        if value:
+            try:
+                product = Product.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+                return {
+                    'id': str(product.id),
+                    'title': str(product.title),
+                    'code': str(product.code),
+                }
+            except Product.DoesNotExist:
+                return serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
+        return value
 
     @classmethod
     def validate(cls, validate_data):  # pylint: disable=W0221
-        if 'before_after_tax' not in validate_data:
+        if not validate_data.get('before_after_tax', None):
             raise serializers.ValidationError({"before_after_tax": PromoMsg.ERROR_IS_BE_AF})
         if 'percent_fix_amount' not in validate_data:
             raise serializers.ValidationError({"percent_fix_amount": PromoMsg.ERROR_IS_PER_FIX})
@@ -144,11 +149,15 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"use_count": PromoMsg.ERROR_USER_COUNT})
         if 'times_condition' not in validate_data:
             raise serializers.ValidationError({"times_condition": PromoMsg.ERROR_TIME_COND})
-        if 'is_minimum' in validate_data and validate_data['minimum_value'] == float(0):
+        if 'is_minimum' in validate_data and\
+                validate_data['is_minimum'] and validate_data['minimum_value'] == float(0):
             raise serializers.ValidationError({"minimum_value": PromoMsg.ERROR_MINIMUM_PURCHASE})
-        if 'is_on_product' in validate_data and 'product_selected' not in validate_data:
+        if 'is_on_product' in validate_data and \
+                validate_data['is_on_product'] and\
+                'product_selected' not in validate_data:
             raise serializers.ValidationError({"product_selected": PromoMsg.ERROR_PRO_SELECTED})
-        if 'is_min_quantity' in validate_data and validate_data['num_minimum'] == int(0):
+        if 'is_min_quantity' in validate_data and \
+                validate_data['is_min_quantity'] and validate_data['num_minimum'] == int(0):
             raise serializers.ValidationError({"num_minimum": PromoMsg.ERROR_MINIMUM_QUANTITY})
         if 'free_shipping' in validate_data \
                 and bool(validate_data['free_shipping']) \
