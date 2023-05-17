@@ -20,7 +20,7 @@ from apps.masterdata.saledata.views.price import (
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail,
-    WareHouseList, WareHouseDetail,
+    WareHouseList, WareHouseDetail, GoodReceiptList,
 )
 
 urlpatterns = [
@@ -114,5 +114,13 @@ urlpatterns += [
 urlpatterns += [
     path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
+]
+# // warehouse
+
+
+# good receipt
+urlpatterns += [
+    path('good-receipt', GoodReceiptList.as_view(), name='GoodReceiptList'),
+    path('good-receipt/<str:pk>', GoodReceiptList.as_view(), name='GoodReceiptCreate'),
 ]
 # // warehouse
