@@ -121,17 +121,18 @@ class CustomerByCondition(SimpleAbstractModel):
         verbose_name="Customer result", max_length=50,
         help_text="Customer value field follow by value of property"
     )
-    property_type = models.CharField(
-        verbose_name="Customer property type", max_length=50,
-        help_text="Customer property type field for format result field purpose."
-    )
     logic = models.CharField(
         verbose_name="Logic", max_length=50,
-        help_text="Logic between condition for connect 2 or many condition purpose"
+        help_text="Logic between condition for connect 2 or many condition purpose", null=True, blank=True
     )
     order = models.IntegerField(
         verbose_name="Order",
         blank=True, null=True
+    )
+    result_detail = models.JSONField(
+        verbose_name="result detail field",
+        default=list,
+        help_text="result JSON string data",
     )
 
     class Meta:
