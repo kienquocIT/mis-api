@@ -188,7 +188,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 'price_value': item.price_value,
                 'is_auto_update': item.is_auto_update,
                 'currency': item.currency_id
-            } for item in ExpensePrice.objects.filter(expense_general=obj.expense)
+            } for item in obj.expense.expenseprice_set.all()
         ]
 
         obj.general_information['price_list'] = price_list

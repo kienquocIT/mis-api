@@ -2,8 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ShippingMsg:
-    UOM_NOT_EXIST = _('unit of measure not exist.')
-    UOM_GROUP_NOT_EXIST = _('unit of measure group not exist.')
+    UNIT_NOT_EXIST = _('unit of shipping not exist.')
     GREAT_THAN_ZERO = _('must be greater than zero')
     LOCATION_NOT_EXIST = _('appears location does not exist')
     REQUIRED_AMOUNT = _('Amount is required')

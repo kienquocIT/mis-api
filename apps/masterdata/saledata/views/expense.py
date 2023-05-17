@@ -37,7 +37,14 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Expense.objects
     serializer_detail = ExpenseDetailSerializer
-    serializer_update = ExpenseCreateSerializer
+    serializer_update = ExpenseUpdateSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'expense__expenseprice_set'
+        ).select_related(
+            'expense'
+        )
 
     @swagger_auto_schema(
         operation_summary="Expense detail",
@@ -45,7 +52,6 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = ExpenseDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -55,5 +61,4 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = ExpenseUpdateSerializer
         return self.update(request, *args, **kwargs)

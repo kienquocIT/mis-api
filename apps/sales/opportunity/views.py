@@ -63,7 +63,6 @@ class OpportunityDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = OpportunityListSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -73,5 +72,4 @@ class OpportunityDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = OpportunityUpdateSerializer
         return self.update(request, *args, **kwargs)
