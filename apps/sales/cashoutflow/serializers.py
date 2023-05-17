@@ -1,17 +1,91 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import AdvancePayment
-from apps.masterdata.saledata.models.product import ExpensePrice
+from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
+from apps.masterdata.saledata.models import Currency, Tax
 from apps.shared import AdvancePaymentMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
+    type = serializers.SerializerMethodField()
+    to_payment = serializers.SerializerMethodField()
+    return_value = serializers.SerializerMethodField()
+    remain_value = serializers.SerializerMethodField()
+    value = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
+
     class Meta:
         model = AdvancePayment
         fields = (
             'id',
             'title',
             'code',
+            'type',
+            'date_created',
+            'return_date',
+            'value',
+            'status',
+            'to_payment',
+            'return_value',
+            'remain_value'
         )
+
+    @classmethod
+    def get_type(cls, obj):
+        if obj.type:
+            return "To Supplier"
+        return "To Employee"
+
+    @classmethod
+    def get_value(cls, obj):
+        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
+        value = sum([price[0] for price in all_cost])
+        return value
+
+    @classmethod
+    def get_to_payment(cls, obj):
+        return 0
+
+    @classmethod
+    def get_return_value(cls, obj):
+        return 0
+
+    @classmethod
+    def get_remain_value(cls, obj):
+        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
+        value = sum([price[0] for price in all_cost])
+        return value
+
+    @classmethod
+    def get_status(cls, obj):
+        return 'Approved'
+
+
+def create_expense_items(instance, expense_valid_list):
+    vnd_currency = Currency.objects.filter_current(
+        fill__tenant=True,
+        fill__company=True,
+        abbreviation='VND'
+    ).first()
+    if vnd_currency:
+        bulk_info = []
+        for item in expense_valid_list:
+            bulk_info.append(
+                AdvancePaymentCost(
+                    advance_payment=instance,
+                    expense_id=item.get('expense_id', None),
+                    expense_unit_of_measure_id=item.get('unit_of_measure_id', None),
+                    expense_quantity=item.get('quantity', None),
+                    expense_unit_price=item.get('unit_price', None),
+                    tax_id=item.get('tax_id', None),
+                    tax_price=item.get('tax_price', None),
+                    subtotal_price=item.get('subtotal_price', None),
+                    after_tax_price=item.get('after_tax_price', None),
+                    currency=vnd_currency,
+                )
+            )
+        if len(bulk_info) > 0:
+            AdvancePaymentCost.objects.bulk_create(bulk_info)
+        return True
+    return False
 
 
 class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
@@ -29,6 +103,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             'creator_name',
             'beneficiary',
             'return_date',
+            'money_gave'
         )
 
     @classmethod
@@ -57,8 +132,9 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
             new_code = 'AP.CODE.000' + str(new_code)
 
-        AdvancePayment.objects.create(**validated_data, code=new_code)
-        return True
+        advance_payment_obj = AdvancePayment.objects.create(**validated_data, code=new_code)
+        create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', None))
+        return advance_payment_obj
 
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):

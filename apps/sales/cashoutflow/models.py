@@ -1,7 +1,8 @@
 from django.db import models
-from apps.shared import DataAbstractModel
+from django.utils import timezone
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
-__all__ = ['AdvancePayment']
+__all__ = ['AdvancePayment', 'AdvancePaymentCost']
 
 
 class AdvancePayment(DataAbstractModel):
@@ -13,10 +14,32 @@ class AdvancePayment(DataAbstractModel):
     creator_name = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, related_name='advance_creator_name')
     beneficiary = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, related_name='advance_beneficiary')
     return_date = models.DateTimeField()
+    money_gave = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = 'AdvancePayment'
-        verbose_name_plural = 'AdvancesPayments'
+        verbose_name = 'Advance Payment'
+        verbose_name_plural = 'Advances Payments'
+        ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class AdvancePaymentCost(SimpleAbstractModel):
+    advance_payment = models.ForeignKey(AdvancePayment, on_delete=models.CASCADE)
+    expense = models.ForeignKey('saledata.Expense', on_delete=models.CASCADE)
+    expense_unit_of_measure = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
+    expense_quantity = models.IntegerField()
+    expense_unit_price = models.FloatField(default=0)
+    tax = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    tax_price = models.FloatField(default=0)
+    subtotal_price = models.FloatField(default=0)
+    after_tax_price = models.FloatField(default=0)
+    currency = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
+    date_created = models.DateTimeField(default=timezone.now, editable=False, help_text='The record created at value')
+
+    class Meta:
+        verbose_name = 'Advance Payment Cost'
+        verbose_name_plural = 'Advance Payment Costs'
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
