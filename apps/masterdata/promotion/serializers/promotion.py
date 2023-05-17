@@ -10,68 +10,81 @@ from apps.masterdata.saledata.models import Account, Product, AccountGroup, Indu
 from apps.shared import PromoMsg, ACCOUNT_COMPANY_SIZE, ACCOUNT_REVENUE
 
 
-def check_customer_list(data):
-    customer = Account.objects.filter(id__in=data, account_types_mapped__account_type_order=0)
-    if len(data) != customer.count():
-        return False
-    return True
+class CustomerUtils:
+    @staticmethod
+    def check_customer_list(data):
+        customer = Account.objects.filter(id__in=data, account_types_mapped__account_type_order=0)
+        if len(data) != customer.count():
+            return False
+        return True
 
+    @staticmethod
+    def check_customer_cond(data):
+        for val in data:
+            if 'property' in val:
+                if int(val['property']) == 0 and not AccountGroup.objects.filter(id=val['result']).exists():
+                    raise serializers.ValidationError({"property_group": PromoMsg.ERROR_PROPERTY_GROUP})
+                if int(val['property']) == 1 and not Industry.objects.filter(id=val['result']).exists():
+                    raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_INDUSTRY})
+                if int(val['property']) == 2:
+                    is_check = any(item[0] == int(val['result']) for item in ACCOUNT_COMPANY_SIZE)
+                    if not is_check:
+                        raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_COMPANY_SIZE})
+                if int(val['property']) == 3:
+                    is_check2 = any(item[0] == int(val['result']) for item in ACCOUNT_REVENUE)
+                    if not is_check2:
+                        raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_REVENUE})
+        return True
 
-def check_customer_cond(data):
-    for val in data:
-        if 'property' in val:
-            if int(val['property']) == 0 and not AccountGroup.objects.filter(id=val['result']).exists():
-                raise serializers.ValidationError({"property_group": PromoMsg.ERROR_PROPERTY_GROUP})
-            if int(val['property']) == 1 and not Industry.objects.filter(id=val['result']).exists():
-                raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_INDUSTRY})
-            if int(val['property']) == 2:
-                is_check = any(item[0] == int(val['result']) for item in ACCOUNT_COMPANY_SIZE)
-                if not is_check:
-                    raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_COMPANY_SIZE})
-            if int(val['property']) == 3:
-                is_check2 = any(item[0] == int(val['result']) for item in ACCOUNT_REVENUE)
-                if not is_check2:
-                    raise serializers.ValidationError({"property_industry": PromoMsg.ERROR_PROPERTY_REVENUE})
-    return True
+    @staticmethod
+    def create_discount_method(validated_data, instance):
+        discount_method = validated_data.get('discount_method', {})
+        if discount_method:
+            product_selected = discount_method.get('product_selected', {})
+            if product_selected:
+                del discount_method['product_selected']
+            DiscountMethod.objects.create(
+                **discount_method,
+                promotion=instance,
+                product_selected_id=product_selected.get('id', None)
+            )
 
+    @staticmethod
+    def create_gift_method(validated_data, instance):
+        gift_method = validated_data.get('gift_method', {})
+        if gift_method:
+            product_received = gift_method.get('product_received', {})
+            purchase_product = gift_method.get('purchase_product', {})
 
-def create_discount_method(validated_data, instance):
-    discount_method = validated_data.get('discount_method', {})
-    if discount_method:
-        product_selected = discount_method.get('product_selected', {})
-        if product_selected:
-            del discount_method['product_selected']
-        DiscountMethod.objects.create(
-            **discount_method,
-            promotion=instance,
-            product_selected_id=product_selected.get('id', None)
-        )
+            del gift_method['product_received']
+            if purchase_product:
+                del gift_method['purchase_product']
+            GiftMethod.objects.create(
+                **gift_method,
+                promotion=instance,
+                product_received_id=product_received.get('id', None),
+                purchase_product_id=purchase_product.get('id', None)
+            )
 
+    @staticmethod
+    def create_update_customer_by_list(customer_list, instance):
+        if customer_list and isinstance(customer_list, list):
+            check_list = CustomerByList.objects.filter(id__in=customer_list)
+            if check_list.count():
+                check_list.delete()
+                CustomerByList.objects.bulk_create(
+                    [CustomerByList(**customer, promotion=instance) for customer in customer_list]
+                )
 
-def create_gift_method(validated_data, instance):
-    gift_method = validated_data.get('gift_method', {})
-    if gift_method:
-        product_received = gift_method.get('product_received', '')
-        purchase_product = gift_method.get('purchase_product', '')
-
-        del gift_method['product_received']
-        if purchase_product:
-            del gift_method['purchase_product']
-        GiftMethod.objects.create(
-            **gift_method,
-            promotion=instance,
-            product_received_id=product_received.get('id', None),
-            purchase_product_id=purchase_product.get('id', None)
-        )
-
-
-def create_customer_condition(validated_data, instance):
-    customer_cond = validated_data.get('customer_by_condition', {})
-    if customer_cond:
-        CustomerByCondition.objects.create(
-            **customer_cond,
-            promotion=instance,
-        )
+    @staticmethod
+    def create_customer_condition(customer_cond, instance):
+        if customer_cond and isinstance(customer_cond, list):
+            check_cond = CustomerByCondition.objects.filter(id__in=customer_cond)
+            if check_cond.count():
+                check_cond.delete()
+                CustomerByCondition.objects.bulk_create(
+                    [CustomerByCondition(**cond, promotion=instance) for cond in customer_cond]
+                )
 
 
 class CustomerByListSerializer(serializers.ModelSerializer):
@@ -170,7 +183,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
 
 class GiftMethodSerializer(serializers.ModelSerializer):
     product_received = serializers.UUIDField()
-    purchase_product = serializers.UUIDField()
+    purchase_product = serializers.UUIDField(required=False)
 
     class Meta:
         model = GiftMethod
@@ -207,19 +220,21 @@ class GiftMethodSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_purchase_product(cls, value):
-        try:
-            product = Product.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-            return {
-                'id': str(product.id),
-                'title': str(product.title),
-                'code': str(product.code),
-            }
-        except Product.DoesNotExist:
-            return serializers.ValidationError({"purchase_product": PromoMsg.ERROR_PRODUCT_PURCHASE})
+        if value:
+            try:
+                product = Product.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+                return {
+                    'id': str(product.id),
+                    'title': str(product.title),
+                    'code': str(product.code),
+                }
+            except Product.DoesNotExist:
+                return serializers.ValidationError({"purchase_product": PromoMsg.ERROR_PRODUCT_PURCHASE})
+        return value
 
     def validate(self, validate_data):
         if bool(validate_data['is_free_product']):
@@ -299,14 +314,14 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
         if validate_data['customer_type'] == 1:
             customer_list = validate_data.get('customer_by_list', [])
             # check customer is available
-            is_checked = check_customer_list(customer_list)
+            is_checked = CustomerUtils.check_customer_list(customer_list)
             if not is_checked:
                 raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_LIST})
 
         # valid customer by condition
         if validate_data['customer_type'] == 2:
             customer_cond = validate_data.get('customer_by_condition', [])
-            is_checked = check_customer_cond(customer_cond)
+            is_checked = CustomerUtils.check_customer_cond(customer_cond)
             if not is_checked:
                 raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_COND})
 
@@ -323,18 +338,21 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = Promotion.objects.create(**validated_data)
         if instance:
+            # create customer by list
+            CustomerUtils.create_update_customer_by_list(validated_data.get('customer_by_list', []), instance)
+
+            CustomerUtils.create_customer_condition(validated_data.get('customer_by_condition', []), instance)
+
             # create discount method
-            create_discount_method(validated_data, instance)
+            CustomerUtils.create_discount_method(validated_data, instance)
 
             # create gift method
-            create_gift_method(validated_data, instance)
+            CustomerUtils.create_gift_method(validated_data, instance)
         return instance
 
 
 class PromotionDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
-    customer_by_list = serializers.SerializerMethodField()
-    customer_by_condition = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
@@ -365,34 +383,34 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    @classmethod
-    def get_customer_by_list(cls, obj):
-        return [
-            {'id': item[0], 'name': item[1], 'code': item[2]}
-            for item in CustomerByList.objects.filter(promotion=obj).values_list(
-                'customer_id',
-                'customer__name',
-                'customer__code'
-            )
-        ]
+    # @classmethod
+    # def get_customer_by_list(cls, obj):
+    #     return [
+    #         {'id': item[0], 'name': item[1], 'code': item[2]}
+    #         for item in CustomerByList.objects.filter(promotion=obj).values_list(
+    #             'customer_id',
+    #             'customer__name',
+    #             'customer__code'
+    #         )
+    #     ]
 
-    @classmethod
-    def get_customer_by_condition(cls, obj):
-        return [
-            {
-                'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
-                'property_type': item[4], 'logic': item[5], 'order': item[6]
-            }
-            for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
-                'id',
-                'property',
-                'operator',
-                'result',
-                'property_type',
-                'logic',
-                'order'
-            )
-        ]
+    # @classmethod
+    # def get_customer_by_condition(cls, obj):
+    #     return [
+    #         {
+    #             'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
+    #             'property_type': item[4], 'logic': item[5], 'order': item[6]
+    #         }
+    #         for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
+    #             'id',
+    #             'property',
+    #             'operator',
+    #             'result',
+    #             'property_type',
+    #             'logic',
+    #             'order'
+    #         )
+    #     ]
 
 
 class PromotionUpdateSerializer(serializers.ModelSerializer):
@@ -449,14 +467,14 @@ class PromotionUpdateSerializer(serializers.ModelSerializer):
         if validate_data['customer_type'] == 1:
             customer_list = validate_data.get('customer_by_list', [])
             # check customer is available
-            is_checked = check_customer_list(customer_list)
+            is_checked = CustomerUtils.check_customer_list(customer_list)
             if not is_checked:
                 raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_LIST})
 
         # valid customer by condition
         if validate_data['customer_type'] == 2:
             customer_cond = validate_data.get('customer_by_condition', [])
-            is_checked = check_customer_cond(customer_cond)
+            is_checked = CustomerUtils.check_customer_cond(customer_cond)
             if not is_checked:
                 raise serializers.ValidationError({"customer": PromoMsg.ERROR_CUSTOMER_COND})
 
@@ -481,9 +499,9 @@ class PromotionUpdateSerializer(serializers.ModelSerializer):
             discount = DiscountMethod.objects.filter(promotion=instance)
             if discount:
                 discount.delete()
-                create_discount_method(validated_data, instance)
+                CustomerUtils.create_discount_method(validated_data, instance)
             gift = GiftMethod.objects.filter(promotion=instance)
             if gift:
                 gift.delete()
-                create_gift_method(validated_data, instance)
+                CustomerUtils.create_gift_method(validated_data, instance)
         return instance

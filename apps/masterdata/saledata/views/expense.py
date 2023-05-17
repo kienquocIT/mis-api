@@ -39,6 +39,13 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_detail = ExpenseDetailSerializer
     serializer_update = ExpenseUpdateSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'expense__expenseprice_set'
+        ).select_related(
+            'expense'
+        )
+
     @swagger_auto_schema(
         operation_summary="Expense detail",
         operation_description="Get Expense detail by ID",
