@@ -87,12 +87,14 @@ class AdvanceTestCase(TestCase):
             for key, __type in type_match.items():
                 self.assertIsInstance(resp_data[key], __type)
 
-    @classmethod
-    def call_another(cls, testcase_cls: callable, func_name):
-        test_result = testcase_cls()
-        test_result.setUp()
-        result = getattr(test_result, func_name, None)()
-        test_result.tearDown()
+    def call_another(self, testcase_cls: callable, func_name, args: list = None, kwargs: dict = None):
+        args = args if (args and isinstance(args, list)) else []
+        kwargs = kwargs if (kwargs and isinstance(kwargs, dict)) else {}
+
+        test_cls = testcase_cls()
+        test_cls.client = self.client
+        result = getattr(test_cls, func_name, None)(*args, **kwargs)
+        test_cls.tearDown()
         return result
 
     def authenticated(self, login_data=None):

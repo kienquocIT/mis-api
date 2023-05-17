@@ -243,6 +243,26 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response.data['result']
 
+    def test_get_product_type(self, product_type_id=None):
+        if not product_type_id:
+            # change to .data['result']['id'] after change data returned create_product_type
+            product_type_id = self.create_product_type()['id']
+        url = reverse('ProductTypeDetail', kwargs={'pk': product_type_id})
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default']
+        )
+        return response
+
     def create_product_category(self):
         url = reverse('ProductCategoryList')
         response = self.client.post(
