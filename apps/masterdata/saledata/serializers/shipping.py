@@ -16,6 +16,7 @@ class ShippingListSerializer(serializers.ModelSerializer):
             'cost_method',
             'fixed_price',
             'is_active',
+            'formula_condition'
         )
 
 
@@ -199,7 +200,17 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
 class ShippingDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'margin',
+            'currency',
+            'is_active',
+            'cost_method',
+            'fixed_price',
+            'formula_condition',
+        )
 
 
 class ShippingUpdateSerializer(serializers.ModelSerializer):
