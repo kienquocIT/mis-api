@@ -65,12 +65,23 @@ def create_gift_method(validated_data, instance):
         )
 
 
+def create_update_customer_by_list(validated_data, instance):
+    customer_list = validated_data.get('customer_by_list', {})
+    check_list = CustomerByList.objects.filter(id__in=customer_list)
+    if check_list.count():
+        check_list.delete()
+        CustomerByList.objects.bulk_create(
+            [CustomerByList(**customer, promotion=instance) for customer in customer_list]
+        )
+
+
 def create_customer_condition(validated_data, instance):
     customer_cond = validated_data.get('customer_by_condition', {})
-    if customer_cond:
-        CustomerByCondition.objects.create(
-            **customer_cond,
-            promotion=instance,
+    check_cond = CustomerByCondition.objects.filter(id__in=customer_cond)
+    if check_cond.count():
+        check_cond.delete()
+        CustomerByCondition.objects.bulk_create(
+            [CustomerByCondition(**cond, promotion=instance) for cond in customer_cond]
         )
 
 
@@ -325,6 +336,13 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instance = Promotion.objects.create(**validated_data)
         if instance:
+            # create customer by list
+            if validated_data['customer_by_list']:
+                create_update_customer_by_list(validated_data, instance)
+
+            if validated_data['customer_by_condition']:
+                create_customer_condition(validated_data, instance)
+
             # create discount method
             create_discount_method(validated_data, instance)
 
@@ -335,8 +353,6 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
 
 class PromotionDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
-    customer_by_list = serializers.SerializerMethodField()
-    customer_by_condition = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
@@ -367,34 +383,34 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    @classmethod
-    def get_customer_by_list(cls, obj):
-        return [
-            {'id': item[0], 'name': item[1], 'code': item[2]}
-            for item in CustomerByList.objects.filter(promotion=obj).values_list(
-                'customer_id',
-                'customer__name',
-                'customer__code'
-            )
-        ]
+    # @classmethod
+    # def get_customer_by_list(cls, obj):
+    #     return [
+    #         {'id': item[0], 'name': item[1], 'code': item[2]}
+    #         for item in CustomerByList.objects.filter(promotion=obj).values_list(
+    #             'customer_id',
+    #             'customer__name',
+    #             'customer__code'
+    #         )
+    #     ]
 
-    @classmethod
-    def get_customer_by_condition(cls, obj):
-        return [
-            {
-                'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
-                'property_type': item[4], 'logic': item[5], 'order': item[6]
-            }
-            for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
-                'id',
-                'property',
-                'operator',
-                'result',
-                'property_type',
-                'logic',
-                'order'
-            )
-        ]
+    # @classmethod
+    # def get_customer_by_condition(cls, obj):
+    #     return [
+    #         {
+    #             'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
+    #             'property_type': item[4], 'logic': item[5], 'order': item[6]
+    #         }
+    #         for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
+    #             'id',
+    #             'property',
+    #             'operator',
+    #             'result',
+    #             'property_type',
+    #             'logic',
+    #             'order'
+    #         )
+    #     ]
 
 
 class PromotionUpdateSerializer(serializers.ModelSerializer):
