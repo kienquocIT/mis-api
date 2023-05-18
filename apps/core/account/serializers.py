@@ -148,7 +148,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_username(cls, attrs):
-        if User.objects.filter_current(username=attrs, fill__tenant=True).exists():
+        if User.objects.filter_current(username=attrs).exists():
             raise serializers.ValidationError({'username': AccountMsg.USERNAME_EXISTS})
         return attrs
 
@@ -198,7 +198,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'username',
             'company_current_id',
             'phone',
-            'tenant_current',
         )
 
     @classmethod
