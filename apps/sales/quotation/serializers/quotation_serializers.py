@@ -548,6 +548,4 @@ class QuotationExpenseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_plan_after_tax(cls, obj):
-        if obj.expense_subtotal_price and obj.expense_tax_amount:
-            return obj.expense_subtotal_price + obj.expense_tax_amount
-        return 0
+        return obj.expense_subtotal_price + obj.expense_tax_amount

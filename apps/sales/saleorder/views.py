@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.saleorder.models import SaleOrder
+from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, \
-    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer
+    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -23,7 +23,8 @@ class SaleOrderList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person"
+            "sale_person",
+            "opportunity"
         )
 
     @swagger_auto_schema(
@@ -79,3 +80,23 @@ class SaleOrderDetail(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class SaleOrderExpenseList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderExpense.objects
+    serializer_list = SaleOrderExpenseListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "tax"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="SaleOrderExpense List",
+        operation_description="Get SaleOrderExpense List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        kwargs.update({'sale_order_id': request.query_params['filter_sale_order']})
+        return self.list(request, *args, **kwargs)
