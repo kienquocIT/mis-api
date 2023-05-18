@@ -47,12 +47,10 @@ class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = PaymentTermDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = PaymentTermDetailSerializer
         return self.update(request, *args, **kwargs)
 
     @mask_view(login_require=True, auth_require=True, code_perm='')

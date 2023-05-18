@@ -13,7 +13,7 @@ class QuotationList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
-    filterset_fields = []
+    filterset_fields = ['opportunity', 'sale_person']
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
@@ -58,7 +58,8 @@ class QuotationDetail(
             "opportunity",
             "customer",
             "contact",
-            "sale_person"
+            "sale_person",
+            "payment_term"
         )
 
     @swagger_auto_schema(
@@ -67,7 +68,6 @@ class QuotationDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        self.serializer_class = QuotationDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -77,5 +77,4 @@ class QuotationDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = QuotationUpdateSerializer
         return self.update(request, *args, **kwargs)

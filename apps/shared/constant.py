@@ -1,5 +1,5 @@
+from django.utils.translation import gettext_lazy as _
 from .translations import WorkflowMsg
-
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -70,3 +70,21 @@ CURRENCY_MASK_MONEY = {
         'allowNegative': True,
     }
 }
+
+ACCOUNT_COMPANY_SIZE = (
+    (1, _('< 20 people')),
+    (2, _('20-50 people')),
+    (3, _('50-200 people')),
+    (4, _('200-500 people')),
+    (5, _('> 500 people')),
+)
+
+
+ACCOUNT_REVENUE = (
+    (1, _('1-10 billions')),
+    (2, _('10-20 billions')),
+    (3, _('20-50 billions')),
+    (4, _('50-200 billions')),
+    (5, _('200-1000 billions')),
+    (6, _('> 1000 billions')),
+)

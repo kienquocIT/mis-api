@@ -1,27 +1,26 @@
 from django.urls import path
-from apps.masterdata.saledata.views.accounts import (
-    SalutationList, InterestsList, AccountTypeList, IndustryList,
-    ContactList, ContactDetail,
+from apps.masterdata.saledata.views.contacts import (
+    SalutationList, SalutationDetail, InterestsList, InterestsDetail, ContactList, ContactDetail,
     ContactListNotMapAccount,
-    AccountList, AccountDetail, AccountsMapEmployeesList,
-    SalutationDetail, InterestsDetail, AccountTypeDetail, IndustryDetail,
+)
+from apps.masterdata.saledata.views.accounts import (
+    AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
+    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
 from apps.masterdata.saledata.views.product import (
-    ProductTypeList, ProductCategoryList,
-    ProductTypeDetail, ProductCategoryDetail,
-    ExpenseTypeList, ExpenseTypeDetail,
-    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail,
-    ProductList, ProductDetail
+    ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
+    ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail,
 )
 from apps.masterdata.saledata.views.price import (
-    TaxCategoryList, TaxCategoryDetail,
-    TaxList, TaxDetail,
-    CurrencyList, CurrencyDetail, SyncWithVCB,
-    PriceList, PriceDetail, PriceDelete,
-    UpdateProductsForPriceList, DeleteProductsForPriceList, ProductAddFromPriceList
+    TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
+    PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
+)
+from apps.masterdata.saledata.views import (
+    ShippingList, ShippingDetail,
+    WareHouseList, WareHouseDetail,
 )
 
 urlpatterns = [
@@ -31,6 +30,8 @@ urlpatterns = [
     path('interest/<str:pk>', InterestsDetail.as_view(), name='InterestDetail'),
     path('accounttypes', AccountTypeList.as_view(), name='AccountTypeList'),
     path('accounttype/<str:pk>', AccountTypeDetail.as_view(), name='AccountTypeDetail'),
+    path('accountgroups', AccountGroupList.as_view(), name='AccountGroupList'),
+    path('accountgroup/<str:pk>', AccountGroupDetail.as_view(), name='AccountGroupDetail'),
     path('industries', IndustryList.as_view(), name='IndustryList'),
     path('industry/<str:pk>', IndustryDetail.as_view(), name='IndustryDetail'),
 
@@ -43,7 +44,6 @@ urlpatterns = [
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
-
 ]
 
 urlpatterns += [
@@ -63,7 +63,7 @@ urlpatterns += [
 
 urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
-    path('create-product-from-price-list/<str:pk>', ProductAddFromPriceList.as_view(), name='ProductAddFromPriceList'),
+    path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
 ]
 
@@ -82,12 +82,12 @@ urlpatterns += [
     path('price/<str:pk>', PriceDetail.as_view(), name='PriceDetail'),
     path('delete-price/<str:pk>', PriceDelete.as_view(), name='PriceDelete'),
     path(
-        'update-products-for-price-list/<str:pk>', UpdateProductsForPriceList.as_view(),
+        'update-products-for-price-list/<str:pk>', UpdateItemsForPriceList.as_view(),
         name='UpdateProductsForPriceList'
     ),
     path(
-        'delete-products-for-price-list/<str:pk>', DeleteProductsForPriceList.as_view(),
-        name='DeleteProductsForPriceList'
+        'delete-products-for-price-list/<str:pk>', DeleteItemForPriceList.as_view(),
+        name='DeleteItemForPriceList'
     ),
 ]
 
@@ -104,3 +104,15 @@ urlpatterns += [
     path('expenses', ExpenseList.as_view(), name='ExpenseList'),
     path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail')
 ]
+
+urlpatterns += [
+    path('shippings', ShippingList.as_view(), name='ShippingList'),
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+]
+
+# warehouse
+urlpatterns += [
+    path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
+    path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
+]
+# // warehouse

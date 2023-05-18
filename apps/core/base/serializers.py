@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward,
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
 )
 
 
@@ -96,3 +96,15 @@ class WardListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ward
         fields = ('id', 'title', 'district_id')
+
+
+class BaseCurrencyListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseCurrency
+        fields = ('id', 'title', 'code', 'title')
+
+
+class BaseItemUnitListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BaseItemUnit
+        fields = ('id', 'title', 'measure')
