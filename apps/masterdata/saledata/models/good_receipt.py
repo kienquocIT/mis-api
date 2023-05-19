@@ -1,6 +1,7 @@
+import json
+
 from django.db import models
-from django.utils import timezone
-from apps.masterdata.saledata.models import Account, Product, WareHouse, UnitOfMeasure
+from apps.masterdata.saledata.models import Account, Product, WareHouse, UnitOfMeasure, Tax
 from apps.shared import MasterDataAbstractModel, DataAbstractModel
 
 __all__ = ['GoodReceipt', 'GoodReceiptProduct']
@@ -14,12 +15,14 @@ class GoodReceipt(DataAbstractModel):
         related_name="good_receipt_supplier",
         null=True
     )
-    posting_date = models.DateTimeField(
-        default=timezone.now,
-        help_text='Posting date',
+    posting_date = models.DateField(
+        verbose_name="Posting date",
+        help_text='Posting date of request when user apply',
     )
     product_list = models.JSONField(
         default=list,
+        verbose_name="Line detail",
+        help_text='Product list detail of Good receipt format json'
     )
     pretax_amount = models.FloatField(
         verbose_name="Pretax amount",
@@ -43,11 +46,27 @@ class GoodReceipt(DataAbstractModel):
 
 
 class GoodReceiptProduct(MasterDataAbstractModel):
+    good_receipt = models.ForeignKey(
+        GoodReceipt,
+        on_delete=models.CASCADE,
+        verbose_name="Good receipt",
+        related_name="good_receipt_product_good_receipt",
+        null=True
+    )
     product = models.ForeignKey(
         Product,
         on_delete=models.CASCADE,
         verbose_name="Product",
         related_name="good_receipt_product"
+    )
+    product_data = models.JSONField(
+        default={},
+        verbose_name='',
+        help_text=json.dumps({
+            'id': '',
+            'title': '',
+            'code': '',
+        }),
     )
     warehouse = models.ForeignKey(
         WareHouse,
@@ -55,11 +74,29 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         verbose_name="Warehouse",
         related_name="good_receipt_warehouse"
     )
+    warehouse_data = models.JSONField(
+        default={},
+        verbose_name='',
+        help_text=json.dumps({
+            'id': '',
+            'title': '',
+            'code': '',
+        }),
+    )
     uom = models.ForeignKey(
         UnitOfMeasure,
         on_delete=models.CASCADE,
         verbose_name="Unit of Measure",
         related_name="good_receipt_uom"
+    )
+    uom_data = models.JSONField(
+        default={},
+        verbose_name='',
+        help_text=json.dumps({
+            'id': '',
+            'title': '',
+            'code': '',
+        }),
     )
     quantity = models.IntegerField(
         verbose_name="Quantity",
@@ -69,9 +106,20 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         verbose_name="unit price",
         help_text="price per product"
     )
-    tax = models.FloatField(
+    tax = models.ForeignKey(
+        Tax,
+        on_delete=models.CASCADE,
         verbose_name="Tax",
         help_text="Tax per product"
+    )
+    tax_data = models.JSONField(
+        default={},
+        verbose_name='',
+        help_text=json.dumps({
+            'id': '',
+            'title': '',
+            'code': '',
+        }),
     )
     subtotal_price = models.FloatField(
         verbose_name="Subtotal price",
@@ -81,6 +129,36 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         verbose_name="order",
         help_text="sort purpose", null=True, blank=True
     )
+
+    def before_save(self):
+        if self.product and not self.product_data:
+            self.product_data = {
+                'id': str(self.product_id),
+                'title': str(self.product.title),
+                'code': str(self.product.code),
+            }
+        if self.warehouse and not self.warehouse_data:
+            self.warehouse_data = {
+                'id': str(self.warehouse_id),
+                'title': str(self.warehouse.title),
+                'code': str(self.warehouse.code),
+            }
+        if self.uom and not self.uom_data:
+            self.uom_data = {
+                'id': str(self.uom_id),
+                'title': str(self.uom.title),
+                'code': str(self.uom.code),
+            }
+        if self.tax and not self.tax_data:
+            self.tax_data = {
+                'id': str(self.tax_id),
+                'title': str(self.tax.title),
+                'code': str(self.tax.code),
+            }
+
+    def save(self, *args, **kwargs):
+        self.before_save()
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Good receipt'

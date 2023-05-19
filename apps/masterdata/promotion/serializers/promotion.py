@@ -383,35 +383,6 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    # @classmethod
-    # def get_customer_by_list(cls, obj):
-    #     return [
-    #         {'id': item[0], 'name': item[1], 'code': item[2]}
-    #         for item in CustomerByList.objects.filter(promotion=obj).values_list(
-    #             'customer_id',
-    #             'customer__name',
-    #             'customer__code'
-    #         )
-    #     ]
-
-    # @classmethod
-    # def get_customer_by_condition(cls, obj):
-    #     return [
-    #         {
-    #             'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
-    #             'property_type': item[4], 'logic': item[5], 'order': item[6]
-    #         }
-    #         for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
-    #             'id',
-    #             'property',
-    #             'operator',
-    #             'result',
-    #             'property_type',
-    #             'logic',
-    #             'order'
-    #         )
-    #     ]
-
 
 class PromotionUpdateSerializer(serializers.ModelSerializer):
     discount_method = DiscountMethodSerializer(required=False)

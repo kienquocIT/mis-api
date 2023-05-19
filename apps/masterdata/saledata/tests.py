@@ -1,7 +1,6 @@
 from django.urls import reverse
 from rest_framework import status
 
-from apps.core.auths.tests import TestCaseAuth
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
@@ -223,12 +222,13 @@ class AccountTestCase(AdvanceTestCase):
 
 
 class ProductTestCase(AdvanceTestCase):
+    url = reverse("ProductList")
+
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
 
         self.authenticated()
-        self.url = reverse("ProductList")
 
     def create_product_type(self):
         url = reverse('ProductTypeList')
@@ -305,6 +305,27 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response.data['result'], data_uom_gr
+
+    def test_create_product(self):
+        product_type = self.create_product_type()  # noqa
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "code": "P01",
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
 
     def test_create_product_missing_code(self):
         product_type = self.create_product_type()  # noqa
@@ -579,6 +600,21 @@ class UoMTestCase(AdvanceTestCase):
 
         return response
 
+    def test_create_uom(self):
+        uom_group = self.test_create_new_uom_group()
+        data = {
+            "code": "UOP001",
+            "title": "Unit",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
     def test_create_uom_missing_data(self):
         uom_group = self.test_create_new_uom_group()
         data = {
@@ -684,13 +720,13 @@ class CurrencyTestCase(AdvanceTestCase):
 
 
 class TaxAndTaxCategoryTestCase(AdvanceTestCase):
+    url_tax_category = reverse("TaxCategoryList")
+    url_tax = reverse("TaxList")
+
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
-
         self.authenticated()
-        self.url_tax = reverse("TaxList")
-        self.url_tax_category = reverse("TaxCategoryList")
 
     def test_create_new_tax_category(self):
         data = {
@@ -1945,3 +1981,190 @@ class WareHouseTestCase(AdvanceTestCase):
 #         response3 = self.client.post(url, data3, format='json')
 #         self.assertEqual(response3.status_code, status.HTTP_400_BAD_REQUEST)
 #         return True
+
+
+class GoodReceiptTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+        # create industry
+        url_create_industry = reverse('IndustryList')
+        response_industry = self.client.post(
+            url_create_industry,
+            {
+                'code': 'IDT01',
+                'title': 'Banking',
+            },
+            format='json'
+        )
+
+        # create account type
+        url_create_account_type = reverse('AccountTypeList')
+        response_account_type = self.client.post(
+            url_create_account_type,
+            {
+                'code': 'ACT002',
+                'title': 'Supplier default',
+                'account_type_order': 1
+            },
+            format='json'
+        )
+
+        self.industry = response_industry.data['result']
+        self.account_type = response_account_type.data['result']
+
+    def test_good_receipt_create(self):
+        # create account supplier
+        data = {
+            'name': 'Công Ty TNHH 1 mình tao',
+            'code': 'ACSP001',
+            'website': 'nguyenquan.com.vn',
+            'tax_code': 'TAXCODE001',
+            'annual_revenue': '10-20 billions',
+            'total_employees': '< 20 people',
+            'phone': '0933875345',
+            'email': 'nguyenquan@gmail.com',
+            'industry': self.industry['id'],
+            'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
+                        'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
+            'account_type': [str(self.account_type['id'])],
+            'customer_type': 'individual',
+        }
+        acc_url = reverse('AccountList')
+        account_supplier = self.client.post(acc_url, data, format='json')
+
+        # create product
+        pro_data = self.call_another(ProductTestCase, 'test_create_product')
+        # create new tax
+        tax = self.call_another(TaxAndTaxCategoryTestCase, 'test_create_new_tax')
+        # create warehouse
+        warehouse = self.call_another(WareHouseTestCase, 'test_warehouse_create')
+        # create UoM
+        UoM = self.call_another(UoMTestCase, 'test_create_uom')
+        # create good receipt
+        good_r_url = reverse("GoodReceiptList")
+        data = {
+            'title': 'good receipt create test',
+            'remark': 'Good receipt description.',
+            'supplier': account_supplier.data['result']['id'],
+            'posting_date': '2023-06-29',
+            'product_list': [
+                {
+                    'product': pro_data.data['result']['id'],
+                    'warehouse': warehouse.data['result']['id'],
+                    'uom': UoM.data['result']['id'],
+                    'quantity': 100,
+                    'unit_price': 1000000.0,
+                    'tax': tax.data['result']['id'],
+                    'subtotal_price': 110000000.0,
+                    'order': 1,
+                },
+            ],
+            'pretax_amount': 10000000.0,
+            'taxes': 1000000.0,
+            'total_amount': 11000000.0
+        }
+        response = self.client.post(good_r_url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'supplier', 'date_created', 'posting_date', 'product_list', 'pretax_amount',
+             'taxes', 'total_amount'],
+        )
+        return response
+
+    def test_good_receipt_list(self):
+        self.test_good_receipt_create()
+        url = reverse("GoodReceiptList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'code', 'title', 'supplier', 'posting_date', 'system_status'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_good_receipt_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_good_receipt_create()
+            data_id = data_created.data['result']['id']
+        url = reverse("GoodReceiptDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'supplier', 'date_created', 'posting_date', 'product_list', 'pretax_amount',
+             'taxes', 'total_amount'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_warehouse_update(self):
+        title_change = 'good receipt đã được thay đổi'
+        data_created = self.test_good_receipt_create()
+        url = reverse("GoodReceiptDetail", kwargs={'pk': data_created.data['result']['id']})
+        data = data_created.data['result']
+        data['title'] = title_change
+        data['supplier'] = str(data['supplier']['id'])
+        temp_prod_list = []
+        for item in data['product_list']:
+            temp_prod_list.append(
+                {
+                    'product': item['product']['id'],
+                    'warehouse': item['warehouse']['id'],
+                    'uom': item['uom']['id'],
+                    'tax': item['tax']['id'],
+                    'quantity': item['quantity'],
+                    'unit_price': item['unit_price'],
+                    'subtotal_price': item['subtotal_price'],
+                    'order': item['order']
+                }
+            )
+        data['product_list'] = temp_prod_list
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_good_receipt_detail(data_id=data_created.data['result']['id'])
+        self.assertEqual(data_changed.data['result']['title'], title_change)
+        return response
+
+    def test_warehouse_delete(self):
+        data_created = self.test_good_receipt_create()
+        url = reverse("GoodReceiptDetail", kwargs={'pk': data_created.data['result']['id']})
+        response = self.client.delete(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        return response
