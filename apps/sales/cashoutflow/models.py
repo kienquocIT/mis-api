@@ -6,7 +6,8 @@ __all__ = ['AdvancePayment', 'AdvancePaymentCost']
 
 
 class AdvancePayment(DataAbstractModel):
-    sale_code = models.ForeignKey('opportunity.Opportunity', on_delete=models.CASCADE, null=True)
+    sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE, null=True)
+    quotation_mapped = models.ForeignKey('quotation.Quotation', on_delete=models.CASCADE, null=True)
     sale_code_type = models.SmallIntegerField(help_text='0 is Sale, 1 is Purchase')
     type = models.BooleanField(help_text='0 is For Employee, 1 is For Supplier', default=False)
     supplier = models.UUIDField(verbose_name='Supplier mapped', null=True)

@@ -95,7 +95,6 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         model = AdvancePayment
         fields = (
             'title',
-            'sale_code',
             'sale_code_type',
             'type',
             'supplier',
@@ -123,6 +122,17 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         if attrs in [0, 1]:
             return attrs
         raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+
+    def validate(self, validate_data):
+        if 'sale_code' in self.initial_data:
+            sale_code = self.initial_data['sale_code']
+            if sale_code.get('id', None):
+                if sale_code.get('type', None) == '0':
+                    validate_data['sale_order_mapped_id'] = sale_code.get('id', None)
+                if sale_code.get('type', None) == '1':
+                    validate_data['quotation_mapped_id'] = sale_code.get('id', None)
+                return validate_data
+        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
 
     def create(self, validated_data):
         if AdvancePayment.objects.all().count() == 0:

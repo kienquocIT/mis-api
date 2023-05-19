@@ -207,7 +207,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             "owner",
             "phone",
             "shipping_address",
-            "billing_address"
+            "billing_address",
+            "bank_accounts_information",
         )
 
     @classmethod
