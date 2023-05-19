@@ -5,7 +5,7 @@ from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
-    UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
+    UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer,
     CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
     CompanyUserEmployeeUpdateSerializer,
 )
