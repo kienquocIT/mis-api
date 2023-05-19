@@ -8,6 +8,7 @@ from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 
 def update_company_created_user():
@@ -209,12 +210,11 @@ def delete_data_old():
     delete_all_product()
 
 
-def update_is_super_user():
-    users = User.objects.all()
-    for user in users:
-        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
-            user.save(is_superuser=True)
-    print('update done.')
+def delete_data_shipping():
+    ConditionLocation.objects.all().delete()
+    FormulaCondition.objects.all().delete()
+    ShippingCondition.objects.all().delete()
+    Shipping.objects.all().delete()
     return True
 
 

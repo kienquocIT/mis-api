@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from apps.core.base.models import City
-from apps.masterdata.saledata.models import UnitOfMeasureGroup, UnitOfMeasure
+from apps.core.base.models import City, BaseItemUnit
 from apps.masterdata.saledata.models import Shipping, ShippingCondition, FormulaCondition, ConditionLocation
 from apps.shared.translations.shipping import ShippingMsg
 
@@ -17,15 +16,12 @@ class ShippingListSerializer(serializers.ModelSerializer):
             'cost_method',
             'fixed_price',
             'is_active',
+            'formula_condition'
         )
 
 
 class FormulaConditionCreateSerializer(serializers.ModelSerializer):
-    uom_group = serializers.UUIDField(
-        required=True,
-        allow_null=False
-    )
-    uom = serializers.UUIDField(
+    unit = serializers.UUIDField(
         required=True,
         allow_null=False
     )
@@ -45,8 +41,7 @@ class FormulaConditionCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = FormulaCondition
         fields = (
-            'uom_group',
-            'uom',
+            'unit',
             'comparison_operators',
             'threshold',
             'amount_condition',
@@ -54,35 +49,19 @@ class FormulaConditionCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_uom_group(cls, value):
+    def validate_unit(cls, value):
         try:  # noqa
             if value is not None:
-                uom_group = UnitOfMeasureGroup.objects.get(
+                unit = BaseItemUnit.objects.get(
                     id=value
                 )
                 return {
-                    'id': str(uom_group.id),
-                    'title': uom_group.title,
-                    'code': uom_group.code
+                    'id': str(unit.id),
+                    'title': unit.title,
+                    'measure': unit.measure
                 }
-        except UnitOfMeasureGroup.DoesNotExist:
-            raise serializers.ValidationError({'UoM Group': ShippingMsg.UOM_GROUP_NOT_EXIST})
-        return None
-
-    @classmethod
-    def validate_uom(cls, value):
-        try:  # noqa
-            if value is not None:
-                uom_group = UnitOfMeasure.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(uom_group.id),
-                    'title': uom_group.title,
-                    'code': uom_group.code
-                }
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'UoM': ShippingMsg.UOM_NOT_EXIST})
+        except BaseItemUnit.DoesNotExist:
+            raise serializers.ValidationError({'Shipping Unit': ShippingMsg.UNIT_NOT_EXIST})
         return None
 
     @classmethod
@@ -149,6 +128,7 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
             'title',
             'margin',
             'currency',
+            'is_active',
             'cost_method',
             'fixed_price',
             'formula_condition',
@@ -178,7 +158,7 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        if validated_data['cost_method']  == 0:
+        if validated_data['cost_method'] == 0:
             validated_data['formula_condition'] = []
         shipping = Shipping.objects.create(**validated_data)
         self.common_create_shipping_condition(
@@ -206,15 +186,13 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
             for formula in data_formula:
                 data = {
                     'condition': shipping_condition,
-                    'uom_group_id': formula['uom_group']['id'],
-                    'uom_id': formula['uom']['id'],
+                    'unit_id': formula['unit']['id'],
                     'comparison_operators': formula['comparison_operators'],
                     'threshold': formula['threshold'],
                     'amount_condition': formula['amount_condition'],
                     'extra_amount': formula['extra_amount'],
                 }
                 bulk_data.append(FormulaCondition(**data))
-
         FormulaCondition.objects.bulk_create(bulk_data)
         return True
 
@@ -222,7 +200,17 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
 class ShippingDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Shipping
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'margin',
+            'currency',
+            'is_active',
+            'cost_method',
+            'fixed_price',
+            'formula_condition',
+        )
 
 
 class ShippingUpdateSerializer(serializers.ModelSerializer):
@@ -244,6 +232,7 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
             'title',
             'margin',
             'currency',
+            'is_active',
             'cost_method',
             'fixed_price',
             'formula_condition',

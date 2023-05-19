@@ -34,6 +34,13 @@ class Promotion(MasterDataAbstractModel):
         verbose_name="Customer by list",
         help_text="list of customer follow by customer type (option = 1) example: [uuid1, uuid2]", default=list
     )
+    customers_map_promotion = models.ManyToManyField(
+        'saledata.Account',
+        through="CustomerByList",
+        symmetrical=False,
+        blank=True,
+        related_name='customers_map_promotion'
+    )
     customer_by_condition = models.JSONField(
         verbose_name="Customer by condition",
         help_text="condition for filter customer list follow by customer type (option = 2) example: ["
@@ -121,13 +128,9 @@ class CustomerByCondition(SimpleAbstractModel):
         verbose_name="Customer result", max_length=50,
         help_text="Customer value field follow by value of property"
     )
-    property_type = models.CharField(
-        verbose_name="Customer property type", max_length=50,
-        help_text="Customer property type field for format result field purpose.", null=True, blank=True
-    )
     logic = models.CharField(
         verbose_name="Logic", max_length=50,
-        help_text="Logic between condition for connect 2 or many condition purpose",null=True, blank=True
+        help_text="Logic between condition for connect 2 or many condition purpose", null=True, blank=True
     )
     order = models.IntegerField(
         verbose_name="Order",

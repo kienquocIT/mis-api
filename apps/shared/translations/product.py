@@ -27,3 +27,5 @@ class ProductMsg:
     WRONG_COMPARE = _('"Inventory Level Min" must be <= "Inventory Level Max".')
     NEGATIVE_VALUE = _('"Inventory Level Min" and "Inventory Level Max" must be > 0.')
     UOM_MISSING_REFERENCED_UNIT = _('Unit of Measure is missing referenced unit.')
+    VALUE_GREATER_THAN_ZERO = _("Must greater than zero")
+    NOT_SAVE = _('Not save value in database')
