@@ -1,8 +1,13 @@
 import json
 
 from django.db import models
-from apps.masterdata.saledata.models import Account, Product, WareHouse, UnitOfMeasure, Tax
+
 from apps.shared import MasterDataAbstractModel, DataAbstractModel
+
+from .accounts import Account
+from .product import Product, UnitOfMeasure
+from .inventory import WareHouse
+from .price import Tax
 
 __all__ = ['GoodReceipt', 'GoodReceiptProduct']
 
