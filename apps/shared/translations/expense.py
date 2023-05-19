@@ -10,4 +10,3 @@ class ExpenseMsg:
     CURRENCY_NOT_EXIST = _('Currency not exist')
     UOM_NOT_MAP_UOM_GROUP = _('unit of measure not in unit of measure group')
     IS_REQUIRED = _('must be required')
-
