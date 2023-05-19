@@ -4,4 +4,5 @@ urlpatterns = [
     path('quotation/', include('apps.sales.quotation.urls')),
     path('opportunity/', include('apps.sales.opportunity.urls')),
     path('saleorder/', include('apps.sales.saleorder.urls')),
+    path('delivery/', include('apps.sales.delivery.urls')),
 ]

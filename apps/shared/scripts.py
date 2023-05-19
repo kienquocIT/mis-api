@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType
 
-from .extends.signals import SaleDefaultData
+from .extends.signals import SaleDefaultData, ConfigDefaultData
 
 
 def update_company_created_user():
@@ -216,3 +216,9 @@ def update_is_super_user():
             user.save(is_superuser=True)
     print('update done.')
     return True
+
+
+def make_sure_delivery_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).delivery_config()
+    print('Make sure delivery config is done!')

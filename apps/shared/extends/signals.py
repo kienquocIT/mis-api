@@ -9,6 +9,7 @@ from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models.accounts import AccountType
 from apps.masterdata.saledata.models.product import ProductType
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.sales.delivery.models import DeliveryConfig
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +106,8 @@ class SaleDefaultData:
                         abbreviation=item.code,
                         currency=item,
                         rate=rate,
-                        is_primary=primary)
+                        is_primary=primary
+                    )
                 )
             if len(bulk_info) > 0:
                 Currency.objects.bulk_create(bulk_info)
@@ -131,12 +133,40 @@ class SaleDefaultData:
         return False
 
 
+class ConfigDefaultData:
+    """
+    Class support create all config of company when signal new Company just created
+    """
+
+    def __init__(self, company_obj):
+        self.company_obj = company_obj
+
+    def company_config(self):
+        CompanyConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'language': 'vi',
+                'currency': BaseCurrency.objects.get(code='VND'),
+            },
+        )
+
+    def delivery_config(self):
+        DeliveryConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'is_picking': False,
+                'is_partial_ship': False,
+            },
+        )
+
+    def call_new(self):
+        self.company_config()
+        self.delivery_config()
+        return True
+
+
 @receiver(post_save, sender=Company)
 def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
-        CompanyConfig.objects.create(
-            company=instance,
-            language='vi',
-            currency=BaseCurrency.objects.get(code='VND'),
-        )
+        ConfigDefaultData(company_obj=instance).call_new()
         SaleDefaultData(company_obj=instance)()

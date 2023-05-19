@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from .translations import WorkflowMsg
+
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -79,7 +80,6 @@ ACCOUNT_COMPANY_SIZE = (
     (5, _('> 500 people')),
 )
 
-
 ACCOUNT_REVENUE = (
     (1, _('1-10 billions')),
     (2, _('10-20 billions')),
@@ -87,4 +87,23 @@ ACCOUNT_REVENUE = (
     (4, _('50-200 billions')),
     (5, _('200-1000 billions')),
     (6, _('> 1000 billions')),
+)
+
+# sales delivery
+DELIVERY_OPTION = (
+    (0, 'Full'),
+    (1, 'Partial'),
+)
+PICKING_STATE = (
+    (0, 'Wait'),
+    (1, 'Done'),
+)
+DELIVERY_STATE = (
+    (0, 'Wait'),
+    (1, 'Partial'),
+    (2, 'Full'),
+)
+DELIVERY_WITH_KIND_PICKUP = (
+    (0, 'Wait auto picking'),
+    (1, 'Manual select product'),
 )
