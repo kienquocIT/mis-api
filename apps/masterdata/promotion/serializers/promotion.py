@@ -73,7 +73,7 @@ class CustomerUtils:
             if check_list.count():
                 check_list.delete()
             CustomerByList.objects.bulk_create(
-                [CustomerByList(**customer, promotion=instance) for customer in customer_list]
+                [CustomerByList(customer_id=customer, promotion=instance) for customer in customer_list]
             )
 
     @staticmethod
@@ -152,7 +152,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, validate_data):
-        if not validate_data.get('before_after_tax', None):
+        if 'before_after_tax' not in validate_data:
             raise serializers.ValidationError({"before_after_tax": PromoMsg.ERROR_IS_BE_AF})
         if 'percent_fix_amount' not in validate_data:
             raise serializers.ValidationError({"percent_fix_amount": PromoMsg.ERROR_IS_PER_FIX})
