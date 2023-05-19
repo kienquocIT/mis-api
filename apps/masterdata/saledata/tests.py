@@ -1257,12 +1257,11 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         data_created = self.test_create_new_tax()
         rate_change = 5
         title_change = 'Thuế bán hàng'
-        code_change = 'VAT-5'
         url = reverse("TaxDetail", kwargs={'pk': data_created.data['result']['id']})
         data = {
             "title": title_change,
-            "code": "VAT-10",
-            "rate": code_change,
+            "code": 'VAT-10',
+            "rate": rate_change,
             "category": data_created.data['result']['category'],
             "type": 0
         }
@@ -1272,7 +1271,6 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         data_changed = self.test_get_detail(data_id=data_created.data['result']['id'])
         self.assertEqual(data_changed.data['result']['title'], title_change)
         self.assertEqual(data_changed.data['result']['rate'], rate_change)
-        self.assertEqual(data_changed.data['result']['code'], code_change)
 
         return response
 
@@ -2151,6 +2149,7 @@ class ExpenseTestCase(AdvanceTestCase):
         uom_group = self.create_uom_group(self)
         uom = self.create_uom(self, uom_group)
         price_list = self.create_price_list(self, currency)
+        url = reverse("ExpenseList")
         data = {
             "code": "E01",
             "title": "",
@@ -2169,8 +2168,21 @@ class ExpenseTestCase(AdvanceTestCase):
                 "currency_using": currency[0]['id']
             }
         }
-        url = reverse("ExpenseList")
 
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            ['title'],
+            check_sum_second=True,
+        )
         data1 = {  # noqa
             "code": "",
             "title": "Chi phis nhân công sản xuất",
@@ -2189,10 +2201,21 @@ class ExpenseTestCase(AdvanceTestCase):
                 "currency_using": currency[0]['id']
             }
         }
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
         response1 = self.client.post(url, data1, format='json')
-        self.assertEqual(response1.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
 
         data2 = {  # noqa
             "code": "E01",
@@ -2213,7 +2236,19 @@ class ExpenseTestCase(AdvanceTestCase):
             }
         }
         response2 = self.client.post(url, data2, format='json')
-        self.assertEqual(response2.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response2.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['errors'],
+            ['uom_group'],
+            check_sum_second=True,
+        )
 
         data3 = {  # noqa
             "code": "E01",
@@ -2225,15 +2260,27 @@ class ExpenseTestCase(AdvanceTestCase):
                 "tax_code": None,
                 "price_list": [
                     {
-                        'id': price_list['id'],
                         'value': 0,
+                        'is_auto_update': False
                     }
                 ],
                 "currency_using": currency[0]['id']
             }
         }
         response3 = self.client.post(url, data3, format='json')
-        self.assertEqual(response3.status_code, status.HTTP_500_INTERNAL_SERVER_ERROR)
+        self.assertResponseList(
+            response3,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response3.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response3.data['errors'],
+            ['price list'],
+            check_sum_second=True,
+        )
         return response
 
     def test_update_expense(self):

@@ -622,7 +622,10 @@ def common_create_update_product(validated_data, instance):
             product=instance,
             default_uom_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
             tax_code_id=validated_data['sale_information'].get('tax_code', {}).get('id', None),
-            currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None)
+            currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
+            length=validated_data['sale_information']['length'],
+            width=validated_data['sale_information']['width'],
+            height=validated_data['sale_information']['height'],
         )
         data_bulk = [ProductMeasurements(
             product=instance,
