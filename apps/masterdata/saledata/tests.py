@@ -2042,7 +2042,7 @@ class GoodReceiptTestCase(AdvanceTestCase):
         # create warehouse
         warehouse = self.call_another(WareHouseTestCase, 'test_warehouse_create')
         # create UoM
-        UoM = self.call_another(UoMTestCase, 'test_create_uom')
+        uom = self.call_another(UoMTestCase, 'test_create_uom')
         # create good receipt
         good_r_url = reverse("GoodReceiptList")
         data = {
@@ -2054,7 +2054,7 @@ class GoodReceiptTestCase(AdvanceTestCase):
                 {
                     'product': pro_data.data['result']['id'],
                     'warehouse': warehouse.data['result']['id'],
-                    'uom': UoM.data['result']['id'],
+                    'uom': uom.data['result']['id'],
                     'quantity': 100,
                     'unit_price': 1000000.0,
                     'tax': tax.data['result']['id'],

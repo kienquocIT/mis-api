@@ -87,7 +87,7 @@ class GoodReceiptCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_title(cls, value):
         if not value:
-            serializers.ValidationError({'detail': GRMsg.TITLE})
+            raise serializers.ValidationError(GRMsg.TITLE)
         return value
 
     @classmethod
@@ -95,12 +95,12 @@ class GoodReceiptCreateSerializer(serializers.ModelSerializer):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'detail': GRMsg.SUPPLIER})
+            raise serializers.ValidationError(GRMsg.SUPPLIER)
 
     @classmethod
     def validate_product_list(cls, value):
         if not value:
-            serializers.ValidationError({'detail': GRMsg.PRODUCT_LIST})
+            raise serializers.ValidationError(GRMsg.PRODUCT_LIST)
         return value
 
     @staticmethod
@@ -109,18 +109,18 @@ class GoodReceiptCreateSerializer(serializers.ModelSerializer):
         parse data từ object của GoodReceiptProductSerializer sang json và trả vể cho hàm create hoặc update
         """
         arr = []
-        for x in data:
-            x = dict(x)
+        for item in data:
+            item = dict(item)
             arr.append(
                 {
-                    'product': str(x['product']) if 'product' in x else None,
-                    'warehouse': str(x['warehouse']) if 'warehouse' in x else None,
-                    'uom': str(x['uom']) if 'uom' in x else None,
-                    'tax': str(x['tax']) if 'tax' in x else None,
-                    "quantity": x['quantity'] if 'quantity' in x else None,
-                    "unit_price": x['unit_price'] if 'unit_price' in x else None,
-                    "subtotal_price": x['subtotal_price'] if 'subtotal_price' in x else None,
-                    "order": x['order'] if 'order' in x else None,
+                    'product': str(item['product']) if 'product' in item else None,
+                    'warehouse': str(item['warehouse']) if 'warehouse' in item else None,
+                    'uom': str(item['uom']) if 'uom' in item else None,
+                    'tax': str(item['tax']) if 'tax' in item else None,
+                    "quantity": item['quantity'] if 'quantity' in item else None,
+                    "unit_price": item['unit_price'] if 'unit_price' in item else None,
+                    "subtotal_price": item['subtotal_price'] if 'subtotal_price' in item else None,
+                    "order": item['order'] if 'order' in item else None,
                 }
             )
         return arr
@@ -209,7 +209,7 @@ class GoodReceiptUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_title(cls, value):
         if not value:
-            serializers.ValidationError({'detail': GRMsg.TITLE})
+            raise serializers.ValidationError(GRMsg.TITLE)
         return value
 
     @classmethod
@@ -217,12 +217,12 @@ class GoodReceiptUpdateSerializer(serializers.ModelSerializer):
         try:
             return Account.objects.get(id=value)
         except Account.DoesNotExist:
-            raise serializers.ValidationError({'detail': GRMsg.SUPPLIER})
+            raise serializers.ValidationError(GRMsg.SUPPLIER)
 
     @classmethod
     def validate_product_list(cls, value):
         if not value:
-            serializers.ValidationError({'detail': GRMsg.PRODUCT_LIST})
+            raise serializers.ValidationError(GRMsg.PRODUCT_LIST)
         return value
 
     def update(self, instance, validated_data):
