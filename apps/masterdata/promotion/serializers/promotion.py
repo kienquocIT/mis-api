@@ -69,22 +69,22 @@ class CustomerUtils:
     @staticmethod
     def create_update_customer_by_list(customer_list, instance):
         if customer_list and isinstance(customer_list, list):
-            check_list = CustomerByList.objects.filter(id__in=customer_list)
+            check_list = CustomerByList.objects.filter(promotion=instance)
             if check_list.count():
                 check_list.delete()
-                CustomerByList.objects.bulk_create(
-                    [CustomerByList(**customer, promotion=instance) for customer in customer_list]
-                )
+            CustomerByList.objects.bulk_create(
+                [CustomerByList(**customer, promotion=instance) for customer in customer_list]
+            )
 
     @staticmethod
     def create_customer_condition(customer_cond, instance):
         if customer_cond and isinstance(customer_cond, list):
-            check_cond = CustomerByCondition.objects.filter(id__in=customer_cond)
+            check_cond = CustomerByCondition.objects.filter(promotion=instance)
             if check_cond.count():
                 check_cond.delete()
-                CustomerByCondition.objects.bulk_create(
-                    [CustomerByCondition(**cond, promotion=instance) for cond in customer_cond]
-                )
+            CustomerByCondition.objects.bulk_create(
+                [CustomerByCondition(**cond, promotion=instance) for cond in customer_cond]
+            )
 
 
 class CustomerByListSerializer(serializers.ModelSerializer):
