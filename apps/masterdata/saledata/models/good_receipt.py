@@ -65,7 +65,7 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         related_name="good_receipt_product"
     )
     product_data = models.JSONField(
-        default={},
+        default=dict,
         verbose_name='',
         help_text=json.dumps({
             'id': '',
@@ -80,7 +80,7 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         related_name="good_receipt_warehouse"
     )
     warehouse_data = models.JSONField(
-        default={},
+        default=dict,
         verbose_name='',
         help_text=json.dumps({
             'id': '',
@@ -95,7 +95,7 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         related_name="good_receipt_uom"
     )
     uom_data = models.JSONField(
-        default={},
+        default=dict,
         verbose_name='',
         help_text=json.dumps({
             'id': '',
@@ -118,7 +118,7 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         help_text="Tax per product"
     )
     tax_data = models.JSONField(
-        default={},
+        default=dict,
         verbose_name='',
         help_text=json.dumps({
             'id': '',
