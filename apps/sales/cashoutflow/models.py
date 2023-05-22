@@ -8,6 +8,7 @@ __all__ = ['AdvancePayment', 'AdvancePaymentCost']
 SALE_CODE_TYPE = [
     (0, _('Sale')),
     (1, _('Purchase')),
+    (2, _('None-sale'))
 ]
 
 ADVANCE_PAYMENT_TYPE = [
@@ -33,7 +34,7 @@ class AdvancePayment(DataAbstractModel):
     )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
-        help_text='0 is Sale, 1 is Purchase'
+        help_text='0 is Sale, 1 is Purchase, 2 is None-sale'
     )
     advance_payment_type = models.SmallIntegerField(
         choices=ADVANCE_PAYMENT_TYPE,
