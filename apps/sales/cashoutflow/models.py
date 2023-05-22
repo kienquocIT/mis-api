@@ -69,7 +69,7 @@ class AdvancePayment(DataAbstractModel):
     class Meta:
         verbose_name = 'Advance Payment'
         verbose_name_plural = 'Advances Payments'
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
