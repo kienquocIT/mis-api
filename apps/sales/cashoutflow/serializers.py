@@ -38,8 +38,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_advance_value(cls, obj):
         all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        obj.advance_value = sum(price[0] for price in all_cost)
-        return obj.advance_value
+        advance_value = sum(price[0] for price in all_cost)
+        return advance_value
 
     @classmethod
     def get_to_payment(cls, obj):
@@ -54,13 +54,14 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_remain_value(cls, obj):
         all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        obj.remain_value = sum(price[0] for price in all_cost)
-        return obj.remain_value
+        remain_value = sum(price[0] for price in all_cost)
+        return remain_value
 
     @classmethod
     def get_status(cls, obj):
-        obj.status = 'Approved'
-        return obj.status
+        if obj.status:
+            return "Approved"
+        return "Approved"
 
 
 def create_expense_items(instance, expense_valid_list):
