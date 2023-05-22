@@ -25,7 +25,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'status',
             'to_payment',
             'return_value',
-            'remain_value'
+            'remain_value',
+            'money_gave'
         )
 
     @classmethod
