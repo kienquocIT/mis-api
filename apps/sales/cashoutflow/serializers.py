@@ -96,10 +96,10 @@ def add_banking_accounts_information(instance, banking_accounts_list):
     bulk_info = []
     for item in banking_accounts_list:
         bulk_info.append(
-            AccountBanks(**item, account_id=instance)
+            AccountBanks(**item, account=instance)
         )
     if len(bulk_info) > 0:
-        AccountBanks.objects.filter(account_id=instance).delete()
+        AccountBanks.objects.filter(account=instance).delete()
         AccountBanks.objects.bulk_create(bulk_info)
     return True
 
@@ -151,16 +151,13 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
 
     def create(self, validated_data):
-        supplier_id = validated_data.get('supplier', None)
-        if supplier_id:
-            if self.initial_data['account_bank_information_dict'][str(supplier_id)]:
-                bank_accounts_information = self.initial_data['account_bank_information_dict'][str(supplier_id)]
-                Account.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=supplier_id
-                ).update(bank_accounts_information=bank_accounts_information)
-                add_banking_accounts_information(str(supplier_id), bank_accounts_information)
+        supplier = validated_data.get('supplier', None)
+        if supplier:
+            if self.initial_data['account_bank_information_dict'][str(supplier.id)]:
+                bank_accounts_information = self.initial_data['account_bank_information_dict'][str(supplier.id)]
+                supplier.bank_accounts_information = bank_accounts_information
+                supplier.save()
+                add_banking_accounts_information(supplier, bank_accounts_information)
         if AdvancePayment.objects.all().count() == 0:
             new_code = 'AP.CODE.0001'
         else:
