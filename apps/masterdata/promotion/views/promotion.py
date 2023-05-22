@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
@@ -60,12 +61,19 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
 
 class PromotionCheckList(BaseListMixin):
-    queryset = Promotion.objects.all()
-    filterset_fields = ['customer_type', 'customers_map_promotion__id']
+    queryset = Promotion.objects
+    # filterset_fields = ['customer_type', 'customers_map_promotion__id']
     serializer_list = PromotionDetailSerializer
     serializer_detail = PromotionDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        data_filter = self.request.query_params.dict()
+        query = Q()
+        for key in data_filter:
+            query |= Q(**{key: data_filter[key]})
+        return super().get_queryset().filter(query)
 
     @swagger_auto_schema(
         operation_summary="Promotion list",
