@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.masterdata.saledata.models import Currency, AccountBanks
-from apps.shared import AdvancePaymentMsg
+from apps.shared import AdvancePaymentMsg, AccountsMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
@@ -95,9 +95,12 @@ def create_expense_items(instance, expense_valid_list):
 def add_banking_accounts_information(instance, banking_accounts_list):
     bulk_info = []
     for item in banking_accounts_list:
-        bulk_info.append(
-            AccountBanks(**item, account=instance)
-        )
+        if item['bank_name'] and item['bank_code'] and item['bank_account_name'] and item['bank_account_number']:
+            bulk_info.append(
+                AccountBanks(**item, account=instance)
+            )
+        else:
+            raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
     if len(bulk_info) > 0:
         AccountBanks.objects.filter(account=instance).delete()
         AccountBanks.objects.bulk_create(bulk_info)
