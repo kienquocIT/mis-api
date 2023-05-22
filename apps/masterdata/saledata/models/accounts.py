@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.contacts import Contact
@@ -16,11 +17,19 @@ __all__ = [
 ]
 
 
+ACCOUNT_TYPE_ORDER = [
+    (0, _('Customer')),
+    (1, _('Supplier')),
+    (2, _('Partner')),
+    (3, _('Competitor')),
+]
+
+
 # Create your models here.
 class AccountType(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
-    account_type_order = models.IntegerField(null=True)
+    account_type_order = models.IntegerField(choices=ACCOUNT_TYPE_ORDER, null=True)
 
     class Meta:
         verbose_name = 'AccountType'
