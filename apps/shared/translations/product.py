@@ -23,6 +23,7 @@ class ProductMsg:
     UOM_MISSING = _('Unit of Measure is missing.')
     DEFAULT_UOM_MISSING = _('Default Unit of Measure is missing.')
     INVENTORY_INFORMATION_MISSING = _('Inventory information is missing field(s).')
+    SALE_INFORMATION_MISSING = _('Sale information is missing field(s).')
     PURCHASE_INFORMATION_MISSING = _('Purchase information is missing field(s).')
     WRONG_COMPARE = _('"Inventory Level Min" must be <= "Inventory Level Max".')
     NEGATIVE_VALUE = _('"Inventory Level Min" and "Inventory Level Max" must be > 0.')

@@ -89,7 +89,7 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'description')
 
 
-class ProductCategoryUpdateSerializer(serializers.ModelSerializer):
+class ProductCategoryUpdateSerializer(serializers.ModelSerializer): # noqa
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -617,6 +617,9 @@ def common_create_update_product(validated_data, instance):
             product_category_id=validated_data['general_information'].get('product_category', {}).get('id', None),
             uom_group_id=validated_data['general_information'].get('uom_group', {}).get('id', None)
         )
+    else:
+        raise serializers.ValidationError(ProductMsg.SALE_INFORMATION_MISSING)
+
     if 'sale_information' in validated_data:
         ProductSale.objects.create(
             product=instance,
@@ -634,6 +637,9 @@ def common_create_update_product(validated_data, instance):
         ) for item in validated_data['sale_information']['measure']]
 
         ProductMeasurements.objects.bulk_create(data_bulk)
+    else:
+        instance.sale_information = {}
+
     if 'inventory_information' in validated_data:
         ProductInventory.objects.create(
             product=instance,
@@ -641,6 +647,10 @@ def common_create_update_product(validated_data, instance):
             inventory_level_min=validated_data['inventory_information'].get('inventory_level_min', None),
             inventory_level_max=validated_data['inventory_information'].get('inventory_level_max', None)
         )
+    else:
+        instance.inventory_information = {}
+
+    instance.save()
     return True
 
 
