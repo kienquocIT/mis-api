@@ -41,8 +41,10 @@ class AdvancePayment(DataAbstractModel):
         help_text='0 is For Employee, 1 is For Supplier',
         default=False
     )
-    supplier = models.UUIDField(
+    supplier = models.ForeignKey(
+        'saledata.Account',
         verbose_name='Supplier mapped',
+        on_delete=models.CASCADE,
         null=True
     )
     method = models.SmallIntegerField(
