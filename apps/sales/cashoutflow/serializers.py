@@ -59,9 +59,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_status(cls, obj):
-        if obj.status:
-            return "Approved"
-        return "Approved"
+        obj.status = "Approved"
+        return obj.status
 
 
 def create_expense_items(instance, expense_valid_list):
