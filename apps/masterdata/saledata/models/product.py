@@ -120,10 +120,29 @@ class Product(DataAbstractModel):
 
 # SUB-MODEL FOR PRODUCT GENERAL
 class ProductGeneral(SimpleAbstractModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    product_type = models.ForeignKey(ProductType, null=True, on_delete=models.CASCADE)
-    product_category = models.ForeignKey(ProductCategory, null=True, on_delete=models.CASCADE)
-    uom_group = models.ForeignKey(UnitOfMeasureGroup, null=True, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_general',
+    )
+    product_type = models.ForeignKey(
+        ProductType,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_general_product_type',
+    )
+    product_category = models.ForeignKey(
+        ProductCategory,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_general_product_category'
+    )
+    uom_group = models.ForeignKey(
+        UnitOfMeasureGroup,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_general_uom_group'
+    )
 
     class Meta:
         verbose_name = 'Product General'
@@ -134,10 +153,42 @@ class ProductGeneral(SimpleAbstractModel):
 
 # SUB-MODEL FOR PRODUCT SALE
 class ProductSale(SimpleAbstractModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    default_uom = models.ForeignKey(UnitOfMeasure, null=True, on_delete=models.CASCADE)
-    tax_code = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
-    currency_using = models.ForeignKey('saledata.Currency', null=True, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_sale'
+    )
+    default_uom = models.ForeignKey(
+        UnitOfMeasure,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_sale_uom',
+    )
+    tax_code = models.ForeignKey(
+        'saledata.Tax',
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_sale_tax'
+    )
+    currency_using = models.ForeignKey(
+        'saledata.Currency',
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_sale_currency',
+    )
+
+    length = models.FloatField(
+        default=None,
+        null=True,
+    )
+    width = models.FloatField(
+        default=None,
+        null=True,
+    )
+    height = models.FloatField(
+        default=None,
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'Product Sale'
@@ -148,8 +199,17 @@ class ProductSale(SimpleAbstractModel):
 
 # SUB-MODEL FOR PRODUCT INVENTORY
 class ProductInventory(SimpleAbstractModel):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    uom = models.ForeignKey(UnitOfMeasure, null=True, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_inventory'
+    )
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='product_inventory_uom'
+    )
     inventory_level_min = models.IntegerField(null=True)
     inventory_level_max = models.IntegerField(null=True)
 
@@ -255,3 +315,19 @@ class ExpensePrice(SimpleAbstractModel):
         verbose_name_plural = 'Expense Prices'
         default_permissions = ()
         permissions = ()
+
+
+class ProductMeasurements(SimpleAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_measure'
+    )
+    measure = models.ForeignKey(
+        'base.BaseItemUnit',
+        on_delete=models.CASCADE,
+        related_name="product_volume",
+        limit_choices_to={'title__in': ['volume', 'weight']}
+    )
+
+    value = models.FloatField()

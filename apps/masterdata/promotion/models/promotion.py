@@ -34,6 +34,13 @@ class Promotion(MasterDataAbstractModel):
         verbose_name="Customer by list",
         help_text="list of customer follow by customer type (option = 1) example: [uuid1, uuid2]", default=list
     )
+    customers_map_promotion = models.ManyToManyField(
+        'saledata.Account',
+        through="CustomerByList",
+        symmetrical=False,
+        blank=True,
+        related_name='customers_map_promotion'
+    )
     customer_by_condition = models.JSONField(
         verbose_name="Customer by condition",
         help_text="condition for filter customer list follow by customer type (option = 2) example: ["

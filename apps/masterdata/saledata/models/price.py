@@ -106,13 +106,33 @@ class Price(DataAbstractModel):
 
 # ProductPriceList
 class ProductPriceList(SimpleAbstractModel):
-    price_list = models.ForeignKey(Price, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    price_list = models.ForeignKey(
+        Price,
+        on_delete=models.CASCADE,
+        related_name='product_price_price',
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_price_product',
+    )
     price = models.FloatField()
     get_price_from_source = models.BooleanField(default=False)  # True nếu lấy giá từ 1 price_list khác, else False
-    currency_using = models.ForeignKey(Currency, on_delete=models.CASCADE)
-    uom_using = models.ForeignKey(UnitOfMeasure, on_delete=models.CASCADE)
-    uom_group_using = models.ForeignKey(UnitOfMeasureGroup, on_delete=models.CASCADE)
+    currency_using = models.ForeignKey(
+        Currency,
+        on_delete=models.CASCADE,
+        related_name='product_price_currency',
+    )
+    uom_using = models.ForeignKey(
+        UnitOfMeasure,
+        on_delete=models.CASCADE,
+        related_name='product_price_uom',
+    )
+    uom_group_using = models.ForeignKey(
+        UnitOfMeasureGroup,
+        on_delete=models.CASCADE,
+        related_name='product_price_uom_group'
+    )
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
         help_text='The record created at value',
