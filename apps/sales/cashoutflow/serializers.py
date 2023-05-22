@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
-from apps.masterdata.saledata.models import Currency, Tax
+from apps.masterdata.saledata.models import Currency, Account, AccountBanks
 from apps.shared import AdvancePaymentMsg
 
 
@@ -88,6 +88,18 @@ def create_expense_items(instance, expense_valid_list):
     return False
 
 
+def add_banking_accounts_information(instance, banking_accounts_list):
+    bulk_info = []
+    for item in banking_accounts_list:
+        bulk_info.append(
+            AccountBanks(**item, account_id=instance)
+        )
+    if len(bulk_info) > 0:
+        AccountBanks.objects.filter(account_id=instance).delete()
+        AccountBanks.objects.bulk_create(bulk_info)
+    return True
+
+
 class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
@@ -135,6 +147,16 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
 
     def create(self, validated_data):
+        supplier_id = validated_data.get('supplier', None)
+        if supplier_id:
+            if self.initial_data['account_bank_information_dict'][str(supplier_id)]:
+                bank_accounts_information = self.initial_data['account_bank_information_dict'][str(supplier_id)]
+                Account.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=supplier_id
+                ).update(bank_accounts_information=bank_accounts_information)
+                add_banking_accounts_information(str(supplier_id), bank_accounts_information)
         if AdvancePayment.objects.all().count() == 0:
             new_code = 'AP.CODE.0001'
         else:
@@ -143,7 +165,8 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             new_code = 'AP.CODE.000' + str(new_code)
 
         advance_payment_obj = AdvancePayment.objects.create(**validated_data, code=new_code)
-        create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', None))
+        if self.initial_data.get('expense_valid_list', None):
+            create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', None))
         return advance_payment_obj
 
 
