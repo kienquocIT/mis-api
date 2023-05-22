@@ -5,7 +5,7 @@ from apps.shared import AdvancePaymentMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
-    type = serializers.SerializerMethodField()
+    advance_payment_type = serializers.SerializerMethodField()
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
@@ -18,7 +18,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'type',
+            'advance_payment_type',
             'date_created',
             'return_date',
             'advance_value',
@@ -30,8 +30,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_type(cls, obj):
-        if obj.type:
+    def get_advance_payment_type(cls, obj):
+        if obj.advance_payment_type:
             return "To Supplier"
         return "To Employee"
 
@@ -112,7 +112,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'sale_code_type',
-            'type',
+            'advance_payment_type',
             'supplier',
             'method',
             'creator_name',
@@ -128,7 +128,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
 
     @classmethod
-    def validate_type(cls, attrs):
+    def validate_advance_payment_type(cls, attrs):
         if attrs in [0, 1]:
             return attrs
         raise serializers.ValidationError(AdvancePaymentMsg.TYPE_ERROR)
