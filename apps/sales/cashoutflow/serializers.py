@@ -150,8 +150,10 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                     validate_data['sale_order_mapped_id'] = sale_code.get('id', None)
                 if sale_code.get('type', None) == '1':
                     validate_data['quotation_mapped_id'] = sale_code.get('id', None)
-                return validate_data
-        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+        else:
+            if self.initial_data.get('sale_code_type', None) != 2:
+                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+        return validate_data
 
     def create(self, validated_data):
         supplier = validated_data.get('supplier', None)
