@@ -9,7 +9,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
-    value = serializers.SerializerMethodField()
+    advance_value = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -21,7 +21,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'type',
             'date_created',
             'return_date',
-            'value',
+            'advance_value',
             'status',
             'to_payment',
             'return_value',
@@ -36,28 +36,31 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         return "To Employee"
 
     @classmethod
-    def get_value(cls, obj):
+    def get_advance_value(cls, obj):
         all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        value = sum([price[0] for price in all_cost])
-        return value
+        obj.advance_value = sum(price[0] for price in all_cost)
+        return obj.advance_value
 
     @classmethod
     def get_to_payment(cls, obj):
-        return 0
+        obj.to_payment = 0
+        return obj.to_payment
 
     @classmethod
     def get_return_value(cls, obj):
-        return 0
+        obj.return_value = 0
+        return obj.return_value
 
     @classmethod
     def get_remain_value(cls, obj):
         all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        value = sum([price[0] for price in all_cost])
-        return value
+        obj.remain_value = sum(price[0] for price in all_cost)
+        return obj.remain_value
 
     @classmethod
     def get_status(cls, obj):
-        return 'Approved'
+        obj.status = 'Approved'
+        return obj.status
 
 
 def create_expense_items(instance, expense_valid_list):
