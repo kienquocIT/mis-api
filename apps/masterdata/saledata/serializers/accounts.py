@@ -232,10 +232,12 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_industry(cls, obj):
-        return {
-            'id': obj.industry_id,
-            'title': obj.industry.title
-        }
+        if obj.industry:
+            return {
+                'id': obj.industry_id,
+                'title': obj.industry.title
+            }
+        return {}
 
 
 def add_account_types_information(account_types_list, account):
