@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
-from apps.masterdata.saledata.models import Currency, Account, AccountBanks
+from apps.masterdata.saledata.models import Currency, AccountBanks
 from apps.shared import AdvancePaymentMsg
 
 
