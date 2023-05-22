@@ -50,7 +50,7 @@ class AccountTypeDetailsSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code', 'is_default', 'description')
 
 
-class AccountTypeUpdateSerializer(serializers.ModelSerializer): # noqa
+class AccountTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -127,7 +127,7 @@ class AccountGroupUpdateSerializer(serializers.ModelSerializer):
 
 
 # Industry
-class IndustryListSerializer(serializers.ModelSerializer): # noqa
+class IndustryListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = Industry
         fields = ('id', 'title', 'code', 'description')
@@ -259,7 +259,7 @@ def add_account_types_information(account_types_list, account):
 
 
 def add_employees_information(account):
-    bulk_info = [] # noqa
+    bulk_info = []  # noqa
     manager_field = []
     get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=account.manager)
     for employee in get_employees:
@@ -376,7 +376,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             default_currency = Currency.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                is_default=True).first()
+                is_default=True
+            ).first()
         else:
             default_currency = validated_data['currency']
 
@@ -492,7 +493,7 @@ class AccountDetailSerializer(serializers.ModelSerializer):
 
 
 def recreate_employee_map_account(instance):
-    bulk_info = [] # noqa
+    bulk_info = []  # noqa
     instance_manager_field = []
     get_employees = Employee.objects.filter_current(fill__tenant=True, fill__company=True, id__in=instance.manager)
     for employee in get_employees:
@@ -529,9 +530,12 @@ def update_account_owner(instance, account_owner):
 def add_banking_accounts_information(instance, banking_accounts_list):
     bulk_info = []
     for item in banking_accounts_list:
-        bulk_info.append(
-            AccountBanks(**item, account=instance)
-        )
+        if item['bank_name'] and item['bank_code'] and item['bank_account_name'] and item['bank_account_number']:
+            bulk_info.append(
+                AccountBanks(**item, account=instance)
+            )
+        else:
+            raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
     if len(bulk_info) > 0:
         AccountBanks.objects.filter(account=instance).delete()
         AccountBanks.objects.bulk_create(bulk_info)
@@ -541,9 +545,13 @@ def add_banking_accounts_information(instance, banking_accounts_list):
 def add_credit_cards_information(instance, credit_cards_list):
     bulk_info = []
     for item in credit_cards_list:
-        bulk_info.append(
-            AccountCreditCards(**item, account=instance)
-        )
+        if item['credit_card_type'] and item['credit_card_number'] and item['credit_card_name']\
+                and item['expired_date']:
+            bulk_info.append(
+                AccountCreditCards(**item, account=instance)
+            )
+        else:
+            raise serializers.ValidationError(AccountsMsg.CREDIT_CARD_MISSING_VALUE)
     if len(bulk_info) > 0:
         AccountCreditCards.objects.filter(account=instance).delete()
         AccountCreditCards.objects.bulk_create(bulk_info)
