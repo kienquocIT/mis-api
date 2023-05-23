@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models.accounts import Account, Contact
+from apps.masterdata.saledata.models.contacts import Contact
+from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
@@ -284,6 +285,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_product(cls, value):
         try:
+            if value is None:
+                return {}
             product = Product.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -300,6 +303,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_unit_of_measure(cls, value):
         try:
+            if value is None:
+                return {}
             uom = UnitOfMeasure.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,

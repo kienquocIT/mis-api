@@ -7,10 +7,12 @@ from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate
 
 class QuotationProductSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
         max_length=550,
@@ -38,6 +40,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_promotion'
         )
 
     @classmethod
@@ -184,6 +187,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -195,7 +199,8 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'sale_person',
             'date_created',
             'total_product',
-            'system_status'
+            'system_status',
+            'opportunity'
         )
 
     @classmethod
@@ -223,6 +228,16 @@ class QuotationListSerializer(serializers.ModelSerializer):
         if obj.system_status:
             return "Open"
         return "Open"
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+            }
+        return {}
 
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
@@ -518,3 +533,22 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             is_update=True
         )
         return instance
+
+
+class QuotationExpenseListSerializer(serializers.ModelSerializer):
+    tax = serializers.SerializerMethodField()
+    plan_after_tax = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QuotationExpense
+        fields = ('id', 'expense_title', 'tax', 'plan_after_tax')
+
+    @classmethod
+    def get_tax(cls, obj):
+        if obj.tax:
+            return {'id': obj.tax_id, 'code': obj.tax.code, 'title': obj.tax.title}
+        return {}
+
+    @classmethod
+    def get_plan_after_tax(cls, obj):
+        return obj.expense_subtotal_price + obj.expense_tax_amount
