@@ -190,6 +190,11 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'return_date',
             'money_gave',
             'sale_code_type',
+            'quotation_mapped',
+            'sale_order_mapped',
+            'supplier',
+            'method',
+            'beneficiary',
             'expense_items'
         )
 

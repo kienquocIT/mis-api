@@ -187,7 +187,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, attrs):
-        if attrs is not None:
+        if attrs:
             account = Account.objects.filter(
                 id=attrs
             ).first()
@@ -197,7 +197,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -209,7 +209,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_mobile(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
