@@ -359,7 +359,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, value):
-        if value is not None:
+        if value:
             account = Account.objects.filter(
                 id=value
             ).first()
@@ -368,7 +368,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     def validate_email(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.email and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -379,7 +379,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate_mobile(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.mobile and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
