@@ -226,8 +226,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             fill__company=True,
             id=validated_data.get('account_name', None)
         ).first()
-        account_mapped.owner = contact
-        account_mapped.save()
+        if account_mapped:
+            account_mapped.owner = contact
+            account_mapped.save()
         return contact
 
 
