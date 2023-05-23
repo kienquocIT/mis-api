@@ -18,6 +18,14 @@ class QuotationProductSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
+    promotion = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
 
     class Meta:
         model = QuotationProduct
@@ -40,7 +48,10 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
-            'is_promotion'
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
         )
 
     @classmethod
@@ -54,6 +65,14 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_promotion(cls, value):
+        return QuotationCommonValidate().validate_promotion(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return QuotationCommonValidate().validate_shipping(value=value)
 
 
 class QuotationTermSerializer(serializers.ModelSerializer):

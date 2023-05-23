@@ -226,6 +226,24 @@ class QuotationProduct(SimpleAbstractModel):
         default=False,
         help_text="flag to know this product is for promotion (discount, gift,...)"
     )
+    promotion = models.ForeignKey(
+        'promotion.Promotion',
+        on_delete=models.CASCADE,
+        verbose_name="promotion",
+        related_name="quotation_product_promotion",
+        null=True
+    )
+    is_shipping = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for shipping fee"
+    )
+    shipping = models.ForeignKey(
+        'saledata.Shipping',
+        on_delete=models.CASCADE,
+        verbose_name="shipping",
+        related_name="quotation_product_shipping",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Quotation Product'
