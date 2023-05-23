@@ -177,10 +177,30 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
+    expense_items = serializers.SerializerMethodField()
+
     class Meta:
         model = AdvancePayment
         fields = (
             'id',
             'title',
             'code',
+            'advance_payment_type',
+            'date_created',
+            'return_date',
+            'money_gave',
+            'sale_code_type',
+            'expense_items'
         )
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        all_item = AdvancePaymentCost.objects.filter(advance_payment=obj)
+        expense_items = []
+        for item in all_item:
+            expense_items.append({
+                'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                'after_tax_price': item.after_tax_price
+            })
+        return expense_items
