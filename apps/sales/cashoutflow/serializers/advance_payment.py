@@ -183,4 +183,8 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
+            'advance_payment_type',
+            'date_created',
+            'return_date',
+            'money_gave'
         )
