@@ -47,7 +47,7 @@ class GoodReceiptListSerializer(serializers.ModelSerializer):
         if obj:
             return {
                 'id': obj.supplier_id,
-                'title': obj.supplier.title,
+                'title': obj.supplier.name,
                 'code': obj.supplier.code
             }
         return {}
@@ -163,7 +163,7 @@ class GoodReceiptDetailSerializer(serializers.ModelSerializer):
         if obj.supplier:
             return {
                 'id': obj.supplier_id,
-                'title': obj.supplier.title,
+                'title': obj.supplier.name,
                 'code': obj.supplier.code,
             }
         return {}
