@@ -7,10 +7,12 @@ from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate
 
 class QuotationProductSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
         max_length=550,
@@ -38,6 +40,7 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_promotion'
         )
 
     @classmethod

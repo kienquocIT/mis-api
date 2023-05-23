@@ -285,6 +285,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_product(cls, value):
         try:
+            if value is None:
+                return {}
             product = Product.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -301,6 +303,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_unit_of_measure(cls, value):
         try:
+            if value is None:
+                return {}
             uom = UnitOfMeasure.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,

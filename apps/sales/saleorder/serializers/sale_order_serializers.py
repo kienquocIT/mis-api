@@ -338,7 +338,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         max_length=550
     )
     quotation = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
     # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(
