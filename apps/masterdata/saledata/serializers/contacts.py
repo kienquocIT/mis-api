@@ -226,8 +226,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             fill__company=True,
             id=validated_data.get('account_name', None)
         ).first()
-        account_mapped.owner = contact
-        account_mapped.save()
+        if account_mapped:
+            account_mapped.owner = contact
+            account_mapped.save()
         return contact
 
 
@@ -392,8 +393,9 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         if 'account_name' not in validated_data.keys():
             validated_data.update({'account_name': None})
             account_mapped = instance.account_name
-            account_mapped.owner = None
-            account_mapped.save()
+            if account_mapped:
+                account_mapped.owner = None
+                account_mapped.save()
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
