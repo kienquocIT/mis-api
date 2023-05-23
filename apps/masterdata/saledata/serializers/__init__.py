@@ -5,3 +5,4 @@ from .price import *
 from .expense import *
 from .shipping import *
 from .warehouse import *
+from .good_receipt import *

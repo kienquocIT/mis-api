@@ -1,7 +1,6 @@
 from django.urls import reverse
 from rest_framework import status
 
-from apps.core.auths.tests import TestCaseAuth
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
@@ -274,12 +273,13 @@ class AccountTestCase(AdvanceTestCase):
 
 
 class ProductTestCase(AdvanceTestCase):
+    url = reverse("ProductList")
+
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
 
         self.authenticated()
-        self.url = reverse("ProductList")
 
     def create_product_type(self):
         url = reverse('ProductTypeList')
@@ -356,6 +356,27 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response.data['result'], data_uom_gr
+
+    def test_create_product(self):
+        product_type = self.create_product_type()  # noqa
+        product_category = self.create_product_category()
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "code": "P01",
+            "title": "Laptop HP HLVVL6R",
+            "general_information": {
+                'product_type': product_type['id'],
+                'product_category': product_category['id'],
+                'uom_group': uom_group['id']
+            },
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, 201)
+        return response
 
     def test_create_product_missing_code(self):
         product_type = self.create_product_type()  # noqa
@@ -787,6 +808,21 @@ class UoMTestCase(AdvanceTestCase):
 
         return response
 
+    def test_create_uom(self):
+        uom_group = self.test_create_new_uom_group()
+        data = {
+            "code": "UOP001",
+            "title": "Unit",
+            "group": uom_group.data['result']['id'],
+            "ratio": 1,
+            "rounding": 5,
+            "is_referenced_unit": True
+        }
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
     def test_create_uom_missing_data(self):
         uom_group = self.test_create_new_uom_group()
         data = {
@@ -983,13 +1019,13 @@ class CurrencyTestCase(AdvanceTestCase):
 
 
 class TaxAndTaxCategoryTestCase(AdvanceTestCase):
+    url_tax_category = reverse("TaxCategoryList")
+    url_tax = reverse("TaxList")
+
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
-
         self.authenticated()
-        self.url_tax = reverse("TaxList")
-        self.url_tax_category = reverse("TaxCategoryList")
 
     def test_create_new_tax_category(self):
         data = {
