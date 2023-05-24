@@ -203,9 +203,16 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         all_item = AdvancePaymentCost.objects.filter(advance_payment=obj)
         expense_items = []
         for item in all_item:
+            tax_dict = None
+            if item.tax:
+                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
             expense_items.append({
+                'tax': tax_dict,
+                'unit_price': item.expense_unit_price,
+                'subtotal_price': item.subtotal_price,
+                'after_tax_price': item.after_tax_price,
+                'expense_quantity': item.expense_quantity,
                 'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                'after_tax_price': item.after_tax_price
             })
         return expense_items
