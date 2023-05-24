@@ -326,7 +326,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 )
                 tax_code = validate_data.get('tax_code', None)
                 if validate_data['account_type_selection'] == 1:  # tax_code is required
-                    if tax_code is None:
+                    if not tax_code:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
                 elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
@@ -618,7 +618,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 )
                 tax_code = validate_data.get('tax_code', None)
                 if validate_data['account_type_selection'] == 1:  # tax_code is required
-                    if tax_code is None:
+                    if not tax_code:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
                 elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
