@@ -6,3 +6,4 @@ from .price import *
 from .product import *
 from .shipping import *
 from .inventory import *
+from .good_receipt import *

@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
@@ -73,6 +75,9 @@ class PromotionCheckList(BaseListMixin):
         query = Q()
         for key in data_filter:
             query |= Q(**{key: data_filter[key]})
+        # Add date filtering
+        current_date = date.today()
+        query &= Q(valid_date_start__lte=current_date, valid_date_end__gte=current_date)
         return super().get_queryset().filter(query)
 
     @swagger_auto_schema(
