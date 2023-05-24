@@ -23,7 +23,7 @@ class ReturnAdvance(DataAbstractModel):
         help_text='0 is Cash, 1 is Bank Transfer',
         default=0
     )
-    creator_name = models.ForeignKey(
+    creator = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
         related_name='creator_name'
