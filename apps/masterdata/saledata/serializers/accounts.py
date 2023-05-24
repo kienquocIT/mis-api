@@ -243,14 +243,7 @@ class AccountListSerializer(serializers.ModelSerializer):
 def add_account_types_information(account_types_list, account):
     bulk_info = []
     for item in account_types_list:
-        if item.get('title', None) == 'Customer' and item.get('id', None) is not None:
-            if item.get('detail', None) == 'individual':
-                bulk_info.append(AccountAccountTypes(account=account, account_type_id=item['id'], customer_type=0))
-            if item.get('detail', None) == 'organization':
-                bulk_info.append(AccountAccountTypes(account=account, account_type_id=item['id'], customer_type=1))
-        else:
-            if item.get('title', None) is not None and item.get('id', None) is not None:
-                bulk_info.append(AccountAccountTypes(account=account, account_type_id=item['id'], customer_type=None))
+        bulk_info.append(AccountAccountTypes(account=account, account_type_id=item['id']))
 
     if len(bulk_info) > 0:
         AccountAccountTypes.objects.filter(account=account).delete()
@@ -307,7 +300,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'shipping_address',
             'billing_address',
             'contact_select_list',
-            'contact_primary'
+            'contact_primary',
+            'account_type_selection'
         )
 
     @classmethod
@@ -327,15 +321,14 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         for item in validate_data.get('account_type', None):
             account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
             if account_type:
-                detail = self.initial_data.get('customer_detail_type', '')
                 account_types.append(
-                    {'id': str(item), 'code': account_type.code, 'title': account_type.title, 'detail': detail}
+                    {'id': str(item), 'code': account_type.code, 'title': account_type.title}
                 )
                 tax_code = validate_data.get('tax_code', None)
-                if detail == 'organization':  # tax_code is required
+                if validate_data['account_type_selection'] == 1:  # tax_code is required
                     if tax_code is None:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
-                elif detail == 'individual':
+                elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
 
                 account_mapped_tax_code = Account.objects.filter_current(
@@ -447,7 +440,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'owner',
             'contact_mapped',
             'bank_accounts_information',
-            'credit_cards_information'
+            'credit_cards_information',
+            'account_type_selection'
         )
 
     @classmethod
@@ -587,7 +581,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'price_list_mapped',
             'credit_limit',
             'bank_accounts_information',
-            'credit_cards_information'
+            'credit_cards_information',
+            'account_type_selection'
         )
 
     @classmethod
@@ -618,15 +613,14 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         for item in validate_data.get('account_type', None):
             account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
             if account_type:
-                detail = self.initial_data.get('customer_detail_type', '')
                 account_types.append(
-                    {'id': str(item), 'code': account_type.code, 'title': account_type.title, 'detail': detail}
+                    {'id': str(item), 'code': account_type.code, 'title': account_type.title}
                 )
                 tax_code = validate_data.get('tax_code', None)
-                if detail == 'organization':  # tax_code is required
+                if validate_data['account_type_selection'] == 1:  # tax_code is required
                     if tax_code is None:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
-                elif detail == 'individual':
+                elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
 
                 account_mapped_tax_code = Account.objects.filter_current(

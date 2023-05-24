@@ -24,6 +24,11 @@ ACCOUNT_TYPE_ORDER = [
     (3, _('Competitor')),
 ]
 
+ACCOUNT_TYPE_SELECTION = [
+    (0, _('individual')),
+    (1, _('organization')),
+]
+
 
 # Create your models here.
 class AccountType(MasterDataAbstractModel):
@@ -92,6 +97,7 @@ class Account(DataAbstractModel):
     account_type = models.JSONField(
         default=list
     )
+    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=0)
     account_group = models.ForeignKey(
         AccountGroup,
         on_delete=models.CASCADE,
@@ -291,11 +297,61 @@ class AccountCreditCards(SimpleAbstractModel):
 class AccountAccountTypes(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE)
-    # 0 is individual, 1 is organization
-    customer_type = models.BooleanField(null=True)
 
     class Meta:
         verbose_name = 'Account AccountTypes'
         verbose_name_plural = 'Accounts AccountTypes'
+        default_permissions = ()
+        permissions = ()
+
+
+# AccountShippingAddress
+class AccountShippingAddress(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
+    detail_address = models.CharField(
+        verbose_name='Detail address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    city = models.ForeignKey('base.City', on_delete=models.CASCADE)
+    district = models.ForeignKey('base.District', on_delete=models.CASCADE)
+    ward = models.ForeignKey('base.Ward', on_delete=models.CASCADE, null=True)
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Account Shipping Address'
+        verbose_name_plural = 'Account Shipping Addresses'
+        default_permissions = ()
+        permissions = ()
+
+
+# AccountShippingAddress
+class AccountBillingAddress(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    email = models.CharField(
+        verbose_name='account email',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    tax_code = models.CharField(
+        verbose_name='tax code',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    account_address = models.CharField(
+        verbose_name='Account address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Account Billing Address'
+        verbose_name_plural = 'Account Billing Addresses'
         default_permissions = ()
         permissions = ()
