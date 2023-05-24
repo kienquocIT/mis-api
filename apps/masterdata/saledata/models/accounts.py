@@ -318,6 +318,11 @@ class AccountShippingAddress(SimpleAbstractModel):
     city = models.ForeignKey('base.City', on_delete=models.CASCADE)
     district = models.ForeignKey('base.District', on_delete=models.CASCADE)
     ward = models.ForeignKey('base.Ward', on_delete=models.CASCADE, null=True)
+    full_address = models.CharField(
+        verbose_name='Full address',
+        blank=True,
+        max_length=500
+    )
     is_default = models.BooleanField(default=False)
 
     class Meta:

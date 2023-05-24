@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.accounts import (
-    AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks, AccountCreditCards
+    AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -552,6 +553,20 @@ def add_credit_cards_information(instance, credit_cards_list):
     return True
 
 
+def add_shipping_address_information(instance, shipping_address_sub_create_list):
+    delete_address = AccountShippingAddress.objects.exclude(full_address__in=instance.shipping_address)
+    delete_address.delete()
+    bulk_info = []
+    for item in shipping_address_sub_create_list:
+        if not AccountShippingAddress.objects.filter(**item).exists():
+            bulk_info.append(AccountShippingAddress(**item, account=instance))
+            if item['is_default']:
+                AccountShippingAddress.objects.filter(account=instance).update(is_default=False)
+    if len(bulk_info) > 0:
+        AccountShippingAddress.objects.bulk_create(bulk_info)
+    return True
+
+
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
@@ -648,6 +663,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         recreate_employee_map_account(instance)
         # add account type detail information
         add_account_types_information(validated_data.get('account_type', None), instance)
+        # add shipping address
+        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', None))
         # add banking accounts
         add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', None))
         # add credit cards
