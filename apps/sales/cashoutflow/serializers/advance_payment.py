@@ -177,10 +177,66 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
+    expense_items = serializers.SerializerMethodField()
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    beneficiary = serializers.SerializerMethodField()
+
     class Meta:
         model = AdvancePayment
         fields = (
             'id',
             'title',
             'code',
+            'advance_payment_type',
+            'date_created',
+            'return_date',
+            'money_gave',
+            'sale_code_type',
+            'expense_items',
+            'sale_order_mapped',
+            'quotation_mapped',
+            'beneficiary',
         )
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        all_item = AdvancePaymentCost.objects.filter(advance_payment=obj).select_related(
+            'expense',
+            'expense__expense',
+            'expense__expense__expense_type'
+        )
+        expense_items = []
+        for item in all_item:
+            expense_items.append({
+                'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                'expense_type': item.expense.expense.expense_type.title,
+                'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                'after_tax_price': item.after_tax_price
+            })
+        return expense_items
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        if obj.sale_order_mapped:
+            return {
+                'id': obj.sale_order_mapped.id,
+                'title': obj.sale_order_mapped.title,
+            }
+        return None
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        if obj.quotation_mapped:
+            return {
+                'id': obj.quotation_mapped.id,
+                'title': obj.quotation_mapped.title,
+            }
+        return None
+
+    @classmethod
+    def get_beneficiary(cls, obj):
+        return {
+            'id': obj.beneficiary.id,
+            'name': obj.beneficiary.get_full_name(),
+        }
