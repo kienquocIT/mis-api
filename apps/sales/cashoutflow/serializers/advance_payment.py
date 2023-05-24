@@ -37,8 +37,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_advance_value(cls, obj):
-        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        advance_value = sum(price[0] for price in all_cost)
+        all_cost = obj.advance_payment.all()
+        advance_value = sum(price.after_tax_price for price in all_cost)
         return advance_value
 
     @classmethod
@@ -53,9 +53,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_remain_value(cls, obj):
-        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        remain_value = sum(price[0] for price in all_cost)
-        return remain_value
+        all_cost = obj.advance_payment.all()
+        advance_value = sum(price.after_tax_price for price in all_cost)
+        return advance_value
 
     @classmethod
     def get_status(cls, obj):
@@ -190,17 +190,29 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'return_date',
             'money_gave',
             'sale_code_type',
+            'quotation_mapped',
+            'sale_order_mapped',
+            'supplier',
+            'method',
+            'beneficiary',
             'expense_items'
         )
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = AdvancePaymentCost.objects.filter(advance_payment=obj)
+        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax').all()
         expense_items = []
         for item in all_item:
+            tax_dict = None
+            if item.tax:
+                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
             expense_items.append({
+                'tax': tax_dict,
+                'unit_price': item.expense_unit_price,
+                'subtotal_price': item.subtotal_price,
+                'after_tax_price': item.after_tax_price,
+                'expense_quantity': item.expense_quantity,
                 'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                'after_tax_price': item.after_tax_price
             })
         return expense_items

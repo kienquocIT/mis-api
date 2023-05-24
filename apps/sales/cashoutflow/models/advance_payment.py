@@ -77,11 +77,12 @@ class AdvancePayment(DataAbstractModel):
 class AdvancePaymentCost(SimpleAbstractModel):
     advance_payment = models.ForeignKey(
         AdvancePayment,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='advance_payment'
     )
     expense = models.ForeignKey(
         'saledata.Expense',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
     expense_unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
