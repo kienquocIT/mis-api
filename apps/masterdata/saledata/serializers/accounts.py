@@ -419,11 +419,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         # add employee information
         add_employees_information(account)
         # add account type detail information
-        add_account_types_information(validated_data.get('account_type', None), account)
-        # # add shipping address
-        # add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
-        # # add billing address
-        # add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
+        add_account_types_information(validated_data.get('account_type', []), account)
+        # add shipping address
+        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
+        # add billing address
+        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
 
         # update contact select
         if contact_primary:
@@ -688,7 +688,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         # recreate in AccountEmployee (Account Manager)
         recreate_employee_map_account(instance)
         # add account type detail information
-        add_account_types_information(validated_data.get('account_type', None), instance)
+        add_account_types_information(validated_data.get('account_type', []), instance)
         # add shipping address
         add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', []))
         # add billing address
