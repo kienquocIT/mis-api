@@ -420,10 +420,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         add_employees_information(account)
         # add account type detail information
         add_account_types_information(validated_data.get('account_type', None), account)
-        # add shipping address
-        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
-        # add billing address
-        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
+        # # add shipping address
+        # add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
+        # # add billing address
+        # add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
 
         # update contact select
         if contact_primary:
