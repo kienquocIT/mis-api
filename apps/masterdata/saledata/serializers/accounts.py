@@ -421,9 +421,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         # add account type detail information
         add_account_types_information(validated_data.get('account_type', None), account)
         # add shipping address
-        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', None))
+        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
         # add billing address
-        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', None))
+        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
 
         # update contact select
         if contact_primary:
@@ -690,13 +690,13 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         # add account type detail information
         add_account_types_information(validated_data.get('account_type', None), instance)
         # add shipping address
-        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', None))
+        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', []))
         # add billing address
-        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', None))
+        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', []))
         # add banking accounts
-        add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', None))
+        add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', []))
         # add credit cards
-        add_credit_cards_information(instance, validated_data.get('credit_cards_information', None))
+        add_credit_cards_information(instance, validated_data.get('credit_cards_information', []))
         return instance
 
 
