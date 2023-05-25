@@ -29,6 +29,23 @@ ACCOUNT_TYPE_SELECTION = [
     (1, _('organization')),
 ]
 
+ANNUAL_REVENUE_SELECTION = [
+    (1, _('1-10 billions')),
+    (2, _('10-20 billions')),
+    (3, _('20-50 billions')),
+    (4, _('50-200 billions')),
+    (5, _('200-1000 billions')),
+    (6, _('> 1000 billions')),
+]
+
+TOTAL_EMPLOYEES_SELECTION = [
+    (1, _('< 20 people')),
+    (2, _('20-50 people')),
+    (3, _('50-200 people')),
+    (4, _('200-500 people')),
+    (5, _('> 500 people')),
+]
+
 
 # Create your models here.
 class AccountType(MasterDataAbstractModel):
@@ -148,17 +165,8 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=False
     )
-    annual_revenue = models.CharField(
-        verbose_name='annual revenue of account',
-        blank=True,
-        null=True,
-        max_length=150
-    )
-    total_employees = models.CharField(
-        verbose_name='total employees of account',
-        null=False,
-        max_length=150
-    )
+    annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True, default=0)
+    total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=0)
     phone = models.CharField(
         verbose_name='account phone number',
         blank=True,
