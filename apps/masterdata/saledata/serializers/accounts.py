@@ -193,6 +193,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     shipping_address = serializers.JSONField()
     billing_address = serializers.JSONField()
+    payment_term_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -210,6 +211,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "shipping_address",
             "billing_address",
             "bank_accounts_information",
+            "payment_term_mapped"
         )
 
     @classmethod
@@ -237,6 +239,16 @@ class AccountListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.industry_id,
                 'title': obj.industry.title
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term_mapped(cls, obj):
+        if obj.payment_term_mapped:
+            return {
+                'id': obj.payment_term_mapped_id,
+                'title': obj.payment_term_mapped.title,
+                'code': obj.payment_term_mapped.code
             }
         return {}
 
