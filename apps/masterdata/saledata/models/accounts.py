@@ -13,7 +13,9 @@ __all__ = [
     'AccountEmployee',
     'AccountBanks',
     'AccountCreditCards',
-    'AccountAccountTypes'
+    'AccountAccountTypes',
+    'AccountShippingAddress',
+    'AccountBillingAddress'
 ]
 
 
