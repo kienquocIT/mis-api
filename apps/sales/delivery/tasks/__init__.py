@@ -70,6 +70,7 @@ class SaleOrderActiveDeliverySerializer:
             tenant_id=self.tenant_id,
             company_id=self.company_id,
             sale_order=self.order_obj,
+            title=self.order_obj.title,
             sale_order_data={
                 "id": str(self.order_obj.id),
                 "title": str(self.order_obj.title),
@@ -167,7 +168,7 @@ class SaleOrderActiveDeliverySerializer:
                         obj_delivery = self._create_order_delivery(delivery_quantity=pickup_quantity)
                         print(pickup_quantity, obj_delivery)
                     # raise ValueError('Cancel with check!')
-                    if obj_picking and obj_delivery:
+                    if obj_delivery:
                         return True, ''
                     raise ValueError('Have exception in create picking or deliver process')
                 return False, 'Sale Order had exist delivery'
@@ -185,8 +186,12 @@ def task_active_delivery_from_sale_order(sale_order_id):
         sale_order=sale_order_obj
     )
     config_obj = DeliveryConfig.objects.get(company=sale_order_obj.company)
-    return SaleOrderActiveDeliverySerializer(
+    state, msg_returned = SaleOrderActiveDeliverySerializer(
         sale_order_obj=sale_order_obj,
         order_products=sale_order_products,
         delivery_config_obj=config_obj,
     ).active()
+    if state is True:
+        sale_order_obj.delivery_call = True
+        sale_order_obj.save(update_fields=['delivery_call'])
+    return state, msg_returned

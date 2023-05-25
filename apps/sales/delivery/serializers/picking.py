@@ -54,6 +54,7 @@ class OrderPickingListSerializer(serializers.ModelSerializer):
         model = OrderPicking
         fields = (
             'id',
+            'title',
             'code',
             'sale_order_id',
             'sale_order_data',
