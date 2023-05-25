@@ -13,7 +13,7 @@ from apps.masterdata.saledata.serializers.accounts import (
     AccountGroupListSerializer, AccountGroupCreateSerializer,
     AccountGroupDetailsSerializer, AccountGroupUpdateSerializer,
 
-    AccountsMapEmployeesListSerializer
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer
 )
 
 
@@ -221,6 +221,32 @@ class AccountsMapEmployeesList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Accounts map Employees list",
         operation_description="Accounts map Employees list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# Account List use for Sale Apps
+class AccountForSaleList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Account.objects
+    serializer_list = AccountForSaleListSerializer
+    serializer_detail = AccountDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'industry',
+            'owner',
+            'payment_term_mapped',
+            'price_list_mapped'
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Account list use for Sales",
+        operation_description="Account list use for Sales Apps",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

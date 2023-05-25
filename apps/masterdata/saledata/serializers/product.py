@@ -678,10 +678,14 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        price_list = obj.product_price_product.all().values_list('price_list__title', 'price')
+        price_list = obj.product_price_product.all().values_list(
+            'price_list__id',
+            'price_list__title',
+            'price'
+        )
         if price_list:
             return [
-                {'title': price[0], 'value': price[1]}
+                {'id': price[0], 'title': price[1], 'value': price[2]}
                 for price in price_list
             ]
         return []
