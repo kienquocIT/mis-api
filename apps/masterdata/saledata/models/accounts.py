@@ -165,8 +165,19 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=False
     )
-    annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True, default=0)
-    total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=0)
+    # annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True)
+    # total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=1)
+    annual_revenue = models.CharField(
+        verbose_name='annual revenue of account',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    total_employees = models.CharField(
+        verbose_name='total employees of account',
+        null=False,
+        max_length=150
+    )
     phone = models.CharField(
         verbose_name='account phone number',
         blank=True,
