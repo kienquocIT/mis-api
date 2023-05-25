@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema # noqa
 from rest_framework.permissions import IsAuthenticated
 from apps.masterdata.saledata.models import Shipping
 from apps.masterdata.saledata.serializers import ShippingListSerializer, ShippingCreateSerializer, \
-    ShippingDetailSerializer, ShippingUpdateSerializer
+    ShippingDetailSerializer, ShippingUpdateSerializer, ShippingCheckListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -56,3 +56,19 @@ class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class ShippingCheckList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Shipping.objects
+    serializer_list = ShippingCheckListSerializer
+    serializer_detail = ShippingDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Shipping check list",
+        operation_description="Shipping check list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
