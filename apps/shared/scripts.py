@@ -1,5 +1,3 @@
-import random
-
 from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
 from apps.core.hr.models import PlanEmployee
