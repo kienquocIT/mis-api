@@ -335,6 +335,7 @@ class AccountShippingAddress(SimpleAbstractModel):
 # AccountShippingAddress
 class AccountBillingAddress(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account_name = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='billing_account_name')
     email = models.CharField(
         verbose_name='account email',
         blank=True,
@@ -352,6 +353,11 @@ class AccountBillingAddress(SimpleAbstractModel):
         blank=True,
         null=True,
         max_length=150
+    )
+    full_address = models.CharField(
+        verbose_name='Full address',
+        blank=True,
+        max_length=500
     )
     is_default = models.BooleanField(default=False)
 

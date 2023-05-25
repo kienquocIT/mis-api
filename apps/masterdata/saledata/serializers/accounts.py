@@ -270,6 +270,42 @@ def add_employees_information(account):
     return True
 
 
+def add_shipping_address_information(instance, shipping_address_sub_create_list):
+    AccountShippingAddress.objects.filter(account=instance).exclude(full_address__in=instance.shipping_address).delete()
+    bulk_info = []
+    for item in shipping_address_sub_create_list:
+        if not AccountShippingAddress.objects.filter(**item).exists():
+            bulk_info.append(AccountShippingAddress(**item, account=instance))
+    AccountShippingAddress.objects.bulk_create(bulk_info)
+    # update default
+    if len(instance.shipping_address) > 0:
+        AccountShippingAddress.objects.filter(account=instance).update(is_default=False)
+        AccountShippingAddress.objects.filter(
+            account=instance,
+            full_address=instance.shipping_address[0]
+        ).update(is_default=True)
+    return True
+
+
+def add_billing_address_information(instance, billing_address_sub_create_list):
+    AccountBillingAddress.objects.filter(account=instance).exclude(full_address__in=instance.billing_address).delete()
+    bulk_info = []
+    for item in billing_address_sub_create_list:
+        if not item['account_name_id']:
+            item['account_name_id'] = instance.id
+        if not AccountBillingAddress.objects.filter(**item).exists():
+            bulk_info.append(AccountBillingAddress(**item, account=instance))
+    AccountBillingAddress.objects.bulk_create(bulk_info)
+    # update default
+    if len(instance.billing_address) > 0:
+        AccountBillingAddress.objects.filter(account=instance).update(is_default=False)
+        AccountBillingAddress.objects.filter(
+            account=instance,
+            full_address=instance.billing_address[0]
+        ).update(is_default=True)
+    return True
+
+
 class AccountCreateSerializer(serializers.ModelSerializer):
     contact_select_list = serializers.ListField(
         child=serializers.UUIDField(required=False),
@@ -384,6 +420,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         add_employees_information(account)
         # add account type detail information
         add_account_types_information(validated_data.get('account_type', None), account)
+        # add shipping address
+        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', None))
+        # add billing address
+        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', None))
 
         # update contact select
         if contact_primary:
@@ -553,20 +593,6 @@ def add_credit_cards_information(instance, credit_cards_list):
     return True
 
 
-def add_shipping_address_information(instance, shipping_address_sub_create_list):
-    delete_address = AccountShippingAddress.objects.exclude(full_address__in=instance.shipping_address)
-    delete_address.delete()
-    bulk_info = []
-    for item in shipping_address_sub_create_list:
-        if not AccountShippingAddress.objects.filter(**item).exists():
-            bulk_info.append(AccountShippingAddress(**item, account=instance))
-            if item['is_default']:
-                AccountShippingAddress.objects.filter(account=instance).update(is_default=False)
-    if len(bulk_info) > 0:
-        AccountShippingAddress.objects.bulk_create(bulk_info)
-    return True
-
-
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
@@ -665,6 +691,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         add_account_types_information(validated_data.get('account_type', None), instance)
         # add shipping address
         add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', None))
+        # add billing address
+        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', None))
         # add banking accounts
         add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', None))
         # add credit cards
