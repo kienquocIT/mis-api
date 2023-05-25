@@ -387,13 +387,13 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         step 3: contact_select_list = contact_select_list append primary contact
         step 4: update is_primary in which id == primary
         """
-        contact_select_list = None
-        contact_primary = None
+        contact_select_list = []
+        contact_primary = []
         if 'contact_select_list' in validated_data:
-            contact_select_list = validated_data.get('contact_select_list', None)
+            contact_select_list = validated_data.get('contact_select_list', [])
             del validated_data['contact_select_list']
         if 'contact_primary' in validated_data:
-            contact_primary = validated_data.get('contact_primary', None)
+            contact_primary = validated_data.get('contact_primary', [])
             del validated_data['contact_primary']
 
         # create account
