@@ -51,7 +51,6 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            'customer_type': 'individual',
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -88,7 +87,6 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            'customer_type': 'individual',
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -119,7 +117,6 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            'customer_type': 'individual',
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -152,7 +149,6 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': '1',
-            'customer_type': 'individual',
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
