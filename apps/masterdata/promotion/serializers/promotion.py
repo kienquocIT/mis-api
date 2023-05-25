@@ -73,7 +73,7 @@ class CustomerUtils:
             if check_list.count():
                 check_list.delete()
             CustomerByList.objects.bulk_create(
-                [CustomerByList(**customer, promotion=instance) for customer in customer_list]
+                [CustomerByList(customer_id=customer, promotion=instance) for customer in customer_list]
             )
 
     @staticmethod
@@ -152,7 +152,7 @@ class DiscountMethodSerializer(serializers.ModelSerializer):
         return value
 
     def validate(self, validate_data):
-        if not validate_data.get('before_after_tax', None):
+        if 'before_after_tax' not in validate_data:
             raise serializers.ValidationError({"before_after_tax": PromoMsg.ERROR_IS_BE_AF})
         if 'percent_fix_amount' not in validate_data:
             raise serializers.ValidationError({"percent_fix_amount": PromoMsg.ERROR_IS_PER_FIX})
@@ -341,6 +341,7 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
             # create customer by list
             CustomerUtils.create_update_customer_by_list(validated_data.get('customer_by_list', []), instance)
 
+            # create customer by condition
             CustomerUtils.create_customer_condition(validated_data.get('customer_by_condition', []), instance)
 
             # create discount method
@@ -382,35 +383,6 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
                 'abbreviation': obj.currency.abbreviation,
             }
         return {}
-
-    # @classmethod
-    # def get_customer_by_list(cls, obj):
-    #     return [
-    #         {'id': item[0], 'name': item[1], 'code': item[2]}
-    #         for item in CustomerByList.objects.filter(promotion=obj).values_list(
-    #             'customer_id',
-    #             'customer__name',
-    #             'customer__code'
-    #         )
-    #     ]
-
-    # @classmethod
-    # def get_customer_by_condition(cls, obj):
-    #     return [
-    #         {
-    #             'id': item[0], 'property': item[1], 'operator': item[2], 'result': item[3],
-    #             'property_type': item[4], 'logic': item[5], 'order': item[6]
-    #         }
-    #         for item in CustomerByCondition.objects.filter(promotion=obj).values_list(
-    #             'id',
-    #             'property',
-    #             'operator',
-    #             'result',
-    #             'property_type',
-    #             'logic',
-    #             'order'
-    #         )
-    #     ]
 
 
 class PromotionUpdateSerializer(serializers.ModelSerializer):
@@ -496,6 +468,12 @@ class PromotionUpdateSerializer(serializers.ModelSerializer):
 
         # delete old discount and gift method and update if had new product
         if instance:
+            # create customer by list
+            CustomerUtils.create_update_customer_by_list(validated_data.get('customer_by_list', []), instance)
+
+            # create customer by condition
+            CustomerUtils.create_customer_condition(validated_data.get('customer_by_condition', []), instance)
+
             discount = DiscountMethod.objects.filter(promotion=instance)
             if discount:
                 discount.delete()

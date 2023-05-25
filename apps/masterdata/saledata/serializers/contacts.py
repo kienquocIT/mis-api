@@ -187,7 +187,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, attrs):
-        if attrs is not None:
+        if attrs:
             account = Account.objects.filter(
                 id=attrs
             ).first()
@@ -197,7 +197,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -209,7 +209,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_mobile(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -226,8 +226,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             fill__company=True,
             id=validated_data.get('account_name', None)
         ).first()
-        account_mapped.owner = contact
-        account_mapped.save()
+        if account_mapped:
+            account_mapped.owner = contact
+            account_mapped.save()
         return contact
 
 
@@ -358,7 +359,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_account_name(cls, value):
-        if value is not None:
+        if value:
             account = Account.objects.filter(
                 id=value
             ).first()
@@ -367,7 +368,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     def validate_email(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.email and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -378,7 +379,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate_mobile(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.mobile and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -392,8 +393,9 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         if 'account_name' not in validated_data.keys():
             validated_data.update({'account_name': None})
             account_mapped = instance.account_name
-            account_mapped.owner = None
-            account_mapped.save()
+            if account_mapped:
+                account_mapped.owner = None
+                account_mapped.save()
 
         for key, value in validated_data.items():
             setattr(instance, key, value)

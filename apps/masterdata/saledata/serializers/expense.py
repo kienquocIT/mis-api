@@ -97,6 +97,16 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
+    @classmethod
+    def validate_price_list(cls, value):
+        for item in value:
+            if 'id' not in item:
+                raise serializers.ValidationError({'price list': ExpenseMsg.IS_REQUIRED})
+            if 'value' not in item:
+                raise serializers.ValidationError({'price list value': ExpenseMsg.IS_REQUIRED})
+            if 'is_auto_update' not in item:
+                raise serializers.ValidationError({'price list is auto update': ExpenseMsg.IS_REQUIRED})
+
     def validate(self, validate_data):
         uom = validate_data['uom']
         uom_group = validate_data['uom_group']
@@ -185,9 +195,12 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
         price_list = [
             {
                 'id': item.price_id,
+                'title': item.price.title,
                 'price_value': item.price_value,
                 'is_auto_update': item.is_auto_update,
-                'currency': item.currency_id
+                'currency': item.currency_id,
+                'is_primary': item.currency.is_primary,
+                'abbreviation': item.currency.abbreviation
             } for item in obj.expense.expenseprice_set.all()
         ]
 
