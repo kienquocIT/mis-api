@@ -226,3 +226,13 @@ def update_account_annual_revenue():
 def update_account_total_employees():
     Account.objects.all().update(total_employees=1)
     return True
+
+
+def update_account_shipping_address():
+    Account.objects.all().update(shipping_address=[])
+    return True
+
+
+def update_account_billing_address():
+    Account.objects.all().update(billing_address=[])
+    return True
