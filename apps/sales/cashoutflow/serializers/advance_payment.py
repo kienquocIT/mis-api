@@ -208,12 +208,14 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         )
         expense_items = []
         for item in all_item:
-            expense_items.append({
-                'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
-                'expense_type': item.expense.expense.expense_type.title,
-                'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                'after_tax_price': item.after_tax_price
-            })
+            expense_items.append(
+                {
+                    'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                    'expense_type': item.expense.expense.expense_type.title,
+                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                    'after_tax_price': item.after_tax_price
+                }
+            )
         return expense_items
 
     @classmethod
@@ -222,6 +224,11 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.sale_order_mapped.id,
                 'title': obj.sale_order_mapped.title,
+                'opportunity': {
+                    'code': obj.sale_order_mapped.opportunity.code,
+                    'title': obj.sale_order_mapped.opportunity.title,
+                    'customer': obj.sale_order_mapped.opportunity.customer.name,
+                }
             }
         return None
 
@@ -231,6 +238,11 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.quotation_mapped.id,
                 'title': obj.quotation_mapped.title,
+                'opportunity': {
+                    'code': obj.sale_order_mapped.opportunity.code,
+                    'title': obj.sale_order_mapped.opportunity.title,
+                    'customer': obj.sale_order_mapped.opportunity.customer.name,
+                }
             }
         return None
 

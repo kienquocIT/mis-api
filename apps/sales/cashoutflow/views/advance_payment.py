@@ -34,12 +34,21 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
 
 class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = AdvancePayment.objects # noqa
+    queryset = AdvancePayment.objects  # noqa
     serializer_list = AdvancePaymentListSerializer
     serializer_create = AdvancePaymentCreateSerializer
     serializer_detail = AdvancePaymentDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'sale_order_mapped',
+            'sale_order_mapped__opportunity',
+            'quotation_mapped',
+            'quotation_mapped__opportunity',
+            'beneficiary',
+        )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')
     @mask_view(login_require=True, auth_require=True, code_perm='')

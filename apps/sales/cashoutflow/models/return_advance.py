@@ -8,6 +8,9 @@ RETURN_ADVANCE_METHOD = [
     (0, _('Cash')),
     (1, _('Bank Transfer')),
 ]
+RETURN_ADVANCE_STATUS = [
+    (0, _('Approved')),
+]
 
 
 class ReturnAdvance(DataAbstractModel):
@@ -19,7 +22,7 @@ class ReturnAdvance(DataAbstractModel):
     )
     method = models.SmallIntegerField(
         choices=RETURN_ADVANCE_METHOD,
-        verbose_name='AdvancePayment method',
+        verbose_name='method return',
         help_text='0 is Cash, 1 is Bank Transfer',
         default=0
     )
@@ -33,6 +36,11 @@ class ReturnAdvance(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='beneficiary'
     )
+    status = models.SmallIntegerField(
+        choices=RETURN_ADVANCE_STATUS,
+        verbose_name='status of Return Advance',
+        default=0
+    )
     money_received = models.BooleanField(default=False)
 
     class Meta:
@@ -41,6 +49,22 @@ class ReturnAdvance(DataAbstractModel):
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        return_advance = ReturnAdvance.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "RA.CODE."
+        if not self.code:
+            temper = "%04d" % (return_advance + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class ReturnAdvanceCost(SimpleAbstractModel):
