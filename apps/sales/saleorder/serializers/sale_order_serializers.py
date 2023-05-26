@@ -250,6 +250,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
+            'date_created',
         )
 
     @classmethod

@@ -300,6 +300,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense_tax',
             'total_expense',
             'is_customer_confirm',
+            'date_created',
         )
 
     @classmethod
