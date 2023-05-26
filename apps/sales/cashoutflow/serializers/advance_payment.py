@@ -37,8 +37,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_advance_value(cls, obj):
-        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        advance_value = sum(price[0] for price in all_cost)
+        all_cost = obj.advance_payment.all()
+        advance_value = sum(price.after_tax_price for price in all_cost)
         return advance_value
 
     @classmethod
@@ -53,9 +53,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_remain_value(cls, obj):
-        all_cost = AdvancePaymentCost.objects.filter(advance_payment=obj).values_list('after_tax_price', flat=False)
-        remain_value = sum(price[0] for price in all_cost)
-        return remain_value
+        all_cost = obj.advance_payment.all()
+        advance_value = sum(price.after_tax_price for price in all_cost)
+        return advance_value
 
     @classmethod
     def get_status(cls, obj):
@@ -178,9 +178,6 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     expense_items = serializers.SerializerMethodField()
-    sale_order_mapped = serializers.SerializerMethodField()
-    quotation_mapped = serializers.SerializerMethodField()
-    beneficiary = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -193,62 +190,29 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'return_date',
             'money_gave',
             'sale_code_type',
-            'expense_items',
-            'sale_order_mapped',
             'quotation_mapped',
+            'sale_order_mapped',
+            'supplier',
+            'method',
             'beneficiary',
+            'expense_items'
         )
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = AdvancePaymentCost.objects.filter(advance_payment=obj).select_related(
-            'expense',
-            'expense__expense',
-            'expense__expense__expense_type'
-        )
+        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax').all()
         expense_items = []
         for item in all_item:
-            expense_items.append(
-                {
-                    'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
-                    'expense_type': item.expense.expense.expense_type.title,
-                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                    'after_tax_price': item.after_tax_price
-                }
-            )
+            tax_dict = None
+            if item.tax:
+                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+            expense_items.append({
+                'tax': tax_dict,
+                'unit_price': item.expense_unit_price,
+                'subtotal_price': item.subtotal_price,
+                'after_tax_price': item.after_tax_price,
+                'expense_quantity': item.expense_quantity,
+                'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+            })
         return expense_items
-
-    @classmethod
-    def get_sale_order_mapped(cls, obj):
-        if obj.sale_order_mapped:
-            return {
-                'id': obj.sale_order_mapped.id,
-                'title': obj.sale_order_mapped.title,
-                'opportunity': {
-                    'code': obj.sale_order_mapped.opportunity.code,
-                    'title': obj.sale_order_mapped.opportunity.title,
-                    'customer': obj.sale_order_mapped.opportunity.customer.name,
-                }
-            }
-        return None
-
-    @classmethod
-    def get_quotation_mapped(cls, obj):
-        if obj.quotation_mapped:
-            return {
-                'id': obj.quotation_mapped.id,
-                'title': obj.quotation_mapped.title,
-                'opportunity': {
-                    'code': obj.sale_order_mapped.opportunity.code,
-                    'title': obj.sale_order_mapped.opportunity.title,
-                    'customer': obj.sale_order_mapped.opportunity.customer.name,
-                }
-            }
-        return None
-
-    @classmethod
-    def get_beneficiary(cls, obj):
-        return {
-            'id': obj.beneficiary.id,
-            'name': obj.beneficiary.get_full_name(),
-        }

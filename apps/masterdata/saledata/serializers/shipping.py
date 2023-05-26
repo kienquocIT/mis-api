@@ -286,3 +286,36 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
         ).delete()
         instance.formula_shipping_condition.all().delete()
         return True
+
+
+class ShippingCheckListSerializer(serializers.ModelSerializer):
+    formula_condition = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Shipping
+        fields = (
+            'id',
+            'title',
+            'code',
+            'margin',
+            'currency',
+            'is_active',
+            'cost_method',
+            'fixed_price',
+            'formula_condition',
+        )
+
+    @classmethod
+    def get_formula_condition(cls, obj):
+        return [
+            {
+                'formula': data.formula,
+                'location_condition': [
+                    {'id': item.id, 'title': item.title}
+                    for item in data.location_condition.all()
+                ]
+            }
+            for data in obj.formula_shipping_condition.prefetch_related(
+                'location_condition'
+            )
+        ]

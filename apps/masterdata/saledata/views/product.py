@@ -214,6 +214,9 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     serializer_detail = UnitOfMeasureDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        'group': ['exact', 'in'],
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related('group')

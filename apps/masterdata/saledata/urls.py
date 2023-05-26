@@ -5,7 +5,7 @@ from apps.masterdata.saledata.views.contacts import (
 )
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
-    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList,
+    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
@@ -21,7 +21,7 @@ from apps.masterdata.saledata.views.price import (
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail,
-    WareHouseList, WareHouseDetail, GoodReceiptList,
+    WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList,
 )
 
 urlpatterns = [
@@ -45,6 +45,7 @@ urlpatterns = [
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
+    path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),
 ]
 
 urlpatterns += [
@@ -108,7 +109,8 @@ urlpatterns += [
 
 urlpatterns += [
     path('shippings', ShippingList.as_view(), name='ShippingList'),
-    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail'),
+    path('shippings-check', ShippingCheckList.as_view(), name='ShippingCheckList'),
 ]
 
 # warehouse

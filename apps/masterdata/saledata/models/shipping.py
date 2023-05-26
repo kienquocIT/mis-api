@@ -92,6 +92,12 @@ class ShippingCondition(SimpleAbstractModel):
         related_name='location_map_condition',
     )
 
+    class Meta:
+        verbose_name = 'Shipping Condition'
+        verbose_name_plural = 'Shipping Conditions'
+        default_permissions = ()
+        permissions = ()
+
 
 class ConditionLocation(SimpleAbstractModel):
     location = models.ForeignKey(
@@ -106,6 +112,12 @@ class ConditionLocation(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="condition",
     )
+
+    class Meta:
+        verbose_name = 'Condition Location'
+        verbose_name_plural = 'Condition Locations'
+        default_permissions = ()
+        permissions = ()
 
 
 class FormulaCondition(SimpleAbstractModel):
@@ -143,3 +155,9 @@ class FormulaCondition(SimpleAbstractModel):
         help_text='extra for amount condition',
         null=True,
     )
+
+    class Meta:
+        verbose_name = 'Formula Condition'
+        verbose_name_plural = 'Formula Conditions'
+        default_permissions = ()
+        permissions = ()

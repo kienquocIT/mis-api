@@ -341,6 +341,7 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
             # create customer by list
             CustomerUtils.create_update_customer_by_list(validated_data.get('customer_by_list', []), instance)
 
+            # create customer by condition
             CustomerUtils.create_customer_condition(validated_data.get('customer_by_condition', []), instance)
 
             # create discount method
@@ -467,6 +468,12 @@ class PromotionUpdateSerializer(serializers.ModelSerializer):
 
         # delete old discount and gift method and update if had new product
         if instance:
+            # create customer by list
+            CustomerUtils.create_update_customer_by_list(validated_data.get('customer_by_list', []), instance)
+
+            # create customer by condition
+            CustomerUtils.create_customer_condition(validated_data.get('customer_by_condition', []), instance)
+
             discount = DiscountMethod.objects.filter(promotion=instance)
             if discount:
                 discount.delete()

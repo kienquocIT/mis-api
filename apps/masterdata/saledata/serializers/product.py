@@ -678,10 +678,14 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        price_list = obj.product_price_product.all().values_list('price_list__title', 'price')
+        price_list = obj.product_price_product.all().values_list(
+            'price_list__id',
+            'price_list__title',
+            'price'
+        )
         if price_list:
             return [
-                {'title': price[0], 'value': price[1]}
+                {'id': price[0], 'title': price[1], 'value': price[2]}
                 for price in price_list
             ]
         return []
@@ -813,20 +817,20 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 ).first()
                 if product_price_list_item:
                     product_price_list_item.delete()
-                    currency_using_id = validated_data['sale_information'].get('currency_using', {}).get('id', None)
-                    default_uom_id = validated_data['sale_information'].get('default_uom', {}).get('id', None)
-                    uom_group_id = validated_data['general_information'].get('uom_group', {}).get('id', None)
-                    objs.append(
-                        ProductPriceList(
-                            price_list_id=item.get('price_list_id', None),
-                            product=instance,
-                            price=float(item.get('price_value', None)),
-                            currency_using_id=currency_using_id,
-                            uom_using_id=default_uom_id,
-                            uom_group_using_id=uom_group_id,
-                            get_price_from_source=get_price_from_source
-                        )
+                currency_using_id = validated_data['sale_information'].get('currency_using', {}).get('id', None)
+                default_uom_id = validated_data['sale_information'].get('default_uom', {}).get('id', None)
+                uom_group_id = validated_data['general_information'].get('uom_group', {}).get('id', None)
+                objs.append(
+                    ProductPriceList(
+                        price_list_id=item.get('price_list_id', None),
+                        product=instance,
+                        price=float(item.get('price_value', None)),
+                        currency_using_id=currency_using_id,
+                        uom_using_id=default_uom_id,
+                        uom_group_using_id=uom_group_id,
+                        get_price_from_source=get_price_from_source
                     )
+                )
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
         return instance
