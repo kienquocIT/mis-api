@@ -119,6 +119,22 @@ class SaleOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        sale_order = SaleOrder.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "ORDER.CODE."
+        if not self.code:
+            temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 # SUPPORT PRODUCTS
 class SaleOrderProduct(SimpleAbstractModel):
