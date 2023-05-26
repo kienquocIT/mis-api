@@ -269,6 +269,11 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
+                'payment_term_mapped': {
+                    'id': obj.customer.payment_term_mapped_id,
+                    'title': obj.customer.payment_term_mapped.title,
+                    'code': obj.customer.payment_term_mapped.code,
+                } if obj.customer.payment_term_mapped else {}
             }
         return {}
 
