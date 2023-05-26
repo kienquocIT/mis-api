@@ -87,6 +87,7 @@ def create_expense_items(instance, expense_valid_list):
                 )
             )
         if len(bulk_info) > 0:
+            AdvancePaymentCost.objects.filter(advance_payment=instance).delete()
             AdvancePaymentCost.objects.bulk_create(bulk_info)
         return True
     return False
@@ -216,3 +217,72 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
             })
         return expense_items
+
+
+class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = AdvancePayment
+        fields = (
+            'title',
+            'sale_code_type',
+            'advance_payment_type',
+            'supplier',
+            'method',
+            'creator_name',
+            'beneficiary',
+            'return_date',
+            'money_gave'
+        )
+
+    @classmethod
+    def validate_sale_code_type(cls, attrs):
+        if attrs in [0, 1, 2]:
+            return attrs
+        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+
+    @classmethod
+    def validate_advance_payment_type(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError(AdvancePaymentMsg.TYPE_ERROR)
+
+    @classmethod
+    def validate_method(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+
+    def validate(self, validate_data):
+        if 'sale_code' in self.initial_data:
+            sale_code = self.initial_data['sale_code']
+            if sale_code.get('id', None):
+                if sale_code.get('type', None) == '0':
+                    validate_data['sale_order_mapped_id'] = sale_code.get('id', None)
+                if sale_code.get('type', None) == '1':
+                    validate_data['quotation_mapped_id'] = sale_code.get('id', None)
+        else:
+            if self.initial_data.get('sale_code_type', None) != 2:
+                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+        return validate_data
+
+    def update(self, instance, validated_data):
+        supplier = validated_data.get('supplier', None)
+        if supplier:
+            if self.initial_data['account_bank_information_dict'][str(supplier.id)]:
+                bank_accounts_information = self.initial_data['account_bank_information_dict'][str(supplier.id)]
+                supplier.bank_accounts_information = bank_accounts_information
+                supplier.save()
+                add_banking_accounts_information(supplier, bank_accounts_information)
+
+        if validated_data.get('sale_code_type', None) == 0:
+            instance.sale_order_mapped = None
+            instance.quotation_mapped = None
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        if self.initial_data.get('expense_valid_list', None):
+            create_expense_items(instance, self.initial_data.get('expense_valid_list', None))
+        return instance
