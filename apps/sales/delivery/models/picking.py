@@ -56,6 +56,7 @@ class OrderPicking(MasterDataAbstractModel):
         default=0,
     )
     remarks = models.TextField(blank=True)
+    to_location = models.TextField(blank=True)
 
     delivery_option = models.SmallIntegerField(
         choices=DELIVERY_OPTION,

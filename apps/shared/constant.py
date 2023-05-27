@@ -95,7 +95,7 @@ DELIVERY_OPTION = (
     (1, 'Partial'),
 )
 PICKING_STATE = (
-    (0, 'Wait'),
+    (0, 'Ready'),
     (1, 'Done'),
 )
 DELIVERY_STATE = (
