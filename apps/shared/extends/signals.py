@@ -4,9 +4,10 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.core.company.models import Company
-from apps.sale.saledata.models.product import ProductType
-from apps.sale.saledata.models.price import TaxCategory, Currency, Price
+from apps.core.base.models import Currency as BaseCurrency
+from apps.core.company.models import Company, CompanyConfig
+from apps.masterdata.saledata.models.product import ProductType
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 
 logger = logging.getLogger(__name__)
 
@@ -99,4 +100,9 @@ class SaleDefaultData:
 @receiver(post_save, sender=Company)
 def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
+        CompanyConfig.objects.create(
+            company=instance,
+            language='vi',
+            currency=BaseCurrency.objects.get(code='VND'),
+        )
         SaleDefaultData(company_obj=instance)()
