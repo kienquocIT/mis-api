@@ -170,12 +170,14 @@ class Account(DataAbstractModel):
     # annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True)
     # total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=1)
     annual_revenue = models.CharField(
+        choices=ANNUAL_REVENUE_SELECTION,
         verbose_name='annual revenue of account',
         blank=True,
         null=True,
         max_length=150
     )
     total_employees = models.CharField(
+        choices=TOTAL_EMPLOYEES_SELECTION,
         verbose_name='total employees of account',
         null=False,
         max_length=150
