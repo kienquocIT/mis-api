@@ -1,8 +1,8 @@
 import time
-from celery import uuid
 from typing import Union
 from uuid import UUID
 
+from celery import uuid
 from celery import shared_task
 from django.db import models
 
@@ -141,6 +141,7 @@ class RuntimeHandler:
             pass
         except Runtime.DoesNotExist:
             pass
+        return None
 
     @classmethod
     def call_new(cls, company_id, doc_id, app_code, task_bg_id) -> bool:
@@ -349,7 +350,9 @@ class RuntimeStageHandler:
                 RuntimeLogHandler(stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created).log_finish_doc()
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj)
-        return (True if len(assignee_created) == 0 else False), stage_obj
+        if len(assignee_created) == 0:
+            return True, stage_obj
+        return False, stage_obj
 
     def run_stage(self, workflow: Workflow) -> Union[RuntimeStage, None]:
         config_cls = WFConfigSupport(workflow=workflow)
@@ -440,7 +443,7 @@ class WFConfigSupport:
                 return None
             case 1:
                 return association_passed[0]
-            case x if x > 1:
+            case _x if _x > 1:
                 raise ValueError('Association passed large more than 1.')
         return None
 

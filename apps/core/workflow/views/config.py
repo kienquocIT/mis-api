@@ -9,8 +9,13 @@ from apps.core.workflow.serializers.config import (
 )
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
-    ResponseController, HttpMsg, WorkflowMsg, call_task_background,
+    ResponseController, HttpMsg, WorkflowMsg,
 )
+
+__all__ = [
+    'WorkflowList',
+    'WorkflowDetail',
+]
 
 
 class WorkflowList(

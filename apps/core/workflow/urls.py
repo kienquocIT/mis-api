@@ -1,8 +1,7 @@
 from django.urls import path
 
-from .views import WorkflowList, WorkflowDetail  # pylint: disable-msg=E0611
-
-from .views.runtime import (
+from apps.core.workflow.views import (
+    WorkflowList, WorkflowDetail,
     RuntimeDataView, WorkflowRuntimeTest, RuntimeDiagramView, HistoryStage, RuntimeTask
 )
 

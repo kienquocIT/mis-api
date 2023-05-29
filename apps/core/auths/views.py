@@ -46,7 +46,9 @@ class AuthLogin(generics.GenericAPIView):
                 user_obj.company_current_id = obj_first.company_id
                 user_obj.save(update_fields=['company_current_id'])
                 return user_obj, obj_first, True, ['company_current_id']
-        return user_obj, None, (True if user_obj.company_current_id else False), ['company_current_id']
+        if user_obj.company_current_id:
+            return user_obj, None, True, ['company_current_id']
+        return user_obj, None, False, ['company_current_id']
 
     @classmethod
     def force_employee_currently(cls, user_obj: User, company_user_emp_obj: models.Model = None) -> list[str]:
