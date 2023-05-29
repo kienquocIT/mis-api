@@ -54,7 +54,6 @@ class ReturnAdvance(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
         return_advance = ReturnAdvance.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -87,3 +86,9 @@ class ReturnAdvanceCost(SimpleAbstractModel):
     return_price = models.FloatField(
         default=0,
     )
+
+    class Meta:
+        verbose_name = 'Return Advance Cost'
+        verbose_name_plural = 'Return Advance Costs'
+        default_permissions = ()
+        permissions = ()

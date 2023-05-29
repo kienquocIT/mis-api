@@ -49,18 +49,11 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment',
-            'advance_payment__expense',
-            'advance_payment__expense__expense',
             'advance_payment__expense__expense__expense_type',
             'advance_payment__currency',
             'advance_payment__tax',
             'return_advance_payment__return_advance',
-            'return_advance_payment'
         ).select_related(
-            'sale_order_mapped',
-            'sale_order_mapped__opportunity',
-            'quotation_mapped__opportunity',
             'quotation_mapped__opportunity__customer',
             'sale_order_mapped__opportunity__customer',
             'beneficiary',

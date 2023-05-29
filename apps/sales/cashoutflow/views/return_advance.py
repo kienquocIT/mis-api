@@ -51,16 +51,12 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            'return_advance',
-            'return_advance__expense',
-            'return_advance__expense__expense',
-            'return_advance__expense__expense__expense_type',
-            'advance_payment__return_advance_payment',
-            'advance_payment__advance_payment',
-            'advance_payment__return_advance_payment__return_advance'
-        ).select_related(
+        return super().get_queryset().select_related(
             'advance_payment'
+        ).prefetch_related(
+            'return_advance__expense__expense__expense_type',
+            'advance_payment__return_advance_payment__advance_payment',
+            'advance_payment__return_advance_payment__return_advance'
         )
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')

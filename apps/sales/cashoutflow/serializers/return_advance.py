@@ -5,7 +5,6 @@ from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 class ReturnAdvanceListSerializer(serializers.ModelSerializer):
     advance_payment = serializers.SerializerMethodField()
-    return_value = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
@@ -16,7 +15,6 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'advance_payment',
-            'return_value',
             'status',
             'money_received',
             'date_created',
@@ -32,10 +30,6 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
                 'title': obj.advance_payment.title
             }
         return {}
-
-    @classmethod
-    def get_return_value(cls, obj):
-        return sum(cost.return_price for cost in obj.return_advance.all())
 
     @classmethod
     def get_money_received(cls, obj):
