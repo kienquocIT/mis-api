@@ -261,7 +261,7 @@ class EmployeeDetail(
     queryset = Employee.objects.select_related(
         "user",
     )
-    serializer_class = EmployeeDetailSerializer
+    serializer_detail = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
 
     @swagger_auto_schema(
@@ -269,7 +269,6 @@ class EmployeeDetail(
         operation_description="Get employee detail by ID",
     )
     def get(self, request, *args, **kwargs):
-        self.serializer_class = EmployeeDetailSerializer
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(

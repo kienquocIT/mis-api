@@ -1,21 +1,30 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models.accounts import Account
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
-from apps.shared import AccountsMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
+    )
+    promotion = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
     )
 
     class Meta:
@@ -39,6 +48,10 @@ class QuotationProductSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
         )
 
     @classmethod
@@ -52,6 +65,14 @@ class QuotationProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_promotion(cls, value):
+        return QuotationCommonValidate().validate_promotion(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return QuotationCommonValidate().validate_shipping(value=value)
 
 
 class QuotationTermSerializer(serializers.ModelSerializer):
@@ -98,7 +119,8 @@ class QuotationCostSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -142,7 +164,8 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         max_length=550
     )
     tax = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
 
     class Meta:
@@ -183,6 +206,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -194,7 +218,8 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'sale_person',
             'date_created',
             'total_product',
-            'system_status'
+            'system_status',
+            'opportunity'
         )
 
     @classmethod
@@ -223,12 +248,23 @@ class QuotationListSerializer(serializers.ModelSerializer):
             return "Open"
         return "Open"
 
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+            }
+        return {}
+
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
+    payment_term = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -241,7 +277,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
             'system_status',
+            # quotation tabs
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
@@ -249,6 +287,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'quotation_expenses_data',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',
@@ -261,6 +300,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense_tax',
             'total_expense',
             'is_customer_confirm',
+            'date_created',
         )
 
     @classmethod
@@ -270,6 +310,10 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'customer': {
+                    'id': obj.opportunity.customer_id,
+                    'title': obj.opportunity.customer.title
+                } if obj.opportunity.customer else {}
             }
         return {}
 
@@ -280,6 +324,11 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
+                'payment_term_mapped': {
+                    'id': obj.customer.payment_term_mapped_id,
+                    'title': obj.customer.payment_term_mapped.title,
+                    'code': obj.customer.payment_term_mapped.code,
+                } if obj.customer.payment_term_mapped else {}
             }
         return {}
 
@@ -300,6 +349,16 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.sale_person_id,
                 'full_name': obj.sale_person.get_full_name(2),
                 'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term(cls, obj):
+        if obj.payment_term:
+            return {
+                'id': obj.payment_term_id,
+                'title': obj.payment_term.title,
+                'code': obj.payment_term.code,
             }
         return {}
 
@@ -326,6 +385,9 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     sale_person = serializers.CharField(
         max_length=550
     )
+    payment_term = serializers.CharField(
+        max_length=550
+    )
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
         many=True,
@@ -350,8 +412,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',
@@ -387,6 +451,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_sale_person(cls, value):
         return QuotationCommonValidate().validate_sale_person(value=value)
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        return QuotationCommonValidate().validate_payment_term(value=value)
 
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
@@ -462,14 +530,23 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_customer(cls, value):
-        try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'customer': AccountsMsg.ACCOUNT_NOT_EXIST})
+        return QuotationCommonValidate().validate_customer(value=value)
+
+    @classmethod
+    def validate_opportunity(cls, value):
+        return QuotationCommonValidate().validate_opportunity(value=value)
+
+    @classmethod
+    def validate_contact(cls, value):
+        return QuotationCommonValidate().validate_contact(value=value)
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        return QuotationCommonValidate().validate_sale_person(value=value)
+
+    @classmethod
+    def validate_payment_term(cls, value):
+        return QuotationCommonValidate().validate_payment_term(value=value)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
@@ -477,6 +554,26 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         QuotationCommonCreate().create_quotation_sub_models(
             validated_data=validated_data,
-            instance=instance
+            instance=instance,
+            is_update=True
         )
         return instance
+
+
+class QuotationExpenseListSerializer(serializers.ModelSerializer):
+    tax = serializers.SerializerMethodField()
+    plan_after_tax = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QuotationExpense
+        fields = ('id', 'expense_title', 'tax', 'plan_after_tax')
+
+    @classmethod
+    def get_tax(cls, obj):
+        if obj.tax:
+            return {'id': obj.tax_id, 'code': obj.tax.code, 'title': obj.tax.title}
+        return {}
+
+    @classmethod
+    def get_plan_after_tax(cls, obj):
+        return obj.expense_subtotal_price + obj.expense_tax_amount

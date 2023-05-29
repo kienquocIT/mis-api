@@ -34,6 +34,13 @@ class Quotation(DataAbstractModel):
         related_name="quotation_sale_person",
         null=True
     )
+    payment_term = models.ForeignKey(
+        'saledata.PaymentTerm',
+        on_delete=models.CASCADE,
+        verbose_name="payment term",
+        related_name="quotation_payment_term",
+        null=True
+    )
     # quotation tabs
     quotation_products_data = models.JSONField(
         default=list,
@@ -59,6 +66,10 @@ class Quotation(DataAbstractModel):
     total_product_pretax_amount = models.FloatField(
         default=0,
         help_text="total pretax amount of tab product"
+    )
+    total_product_discount_rate = models.FloatField(
+        default=0,
+        help_text="total discount rate (%) of tab product"
     )
     total_product_discount = models.FloatField(
         default=0,
@@ -109,6 +120,22 @@ class Quotation(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        quotation = Quotation.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "QUOTATION.CODE."
+        if not self.code:
+            temper = "%04d" % (quotation + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 # SUPPORT PRODUCTS
@@ -194,6 +221,28 @@ class QuotationProduct(SimpleAbstractModel):
     )
     order = models.IntegerField(
         default=1
+    )
+    is_promotion = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for promotion (discount, gift,...)"
+    )
+    promotion = models.ForeignKey(
+        'promotion.Promotion',
+        on_delete=models.CASCADE,
+        verbose_name="promotion",
+        related_name="quotation_product_promotion",
+        null=True
+    )
+    is_shipping = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for shipping fee"
+    )
+    shipping = models.ForeignKey(
+        'saledata.Shipping',
+        on_delete=models.CASCADE,
+        verbose_name="shipping",
+        related_name="quotation_product_shipping",
+        null=True
     )
 
     class Meta:

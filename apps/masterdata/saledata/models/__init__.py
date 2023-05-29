@@ -1,1 +1,9 @@
-from apps.masterdata.saledata.models import accounts, config, product
+# from apps.masterdata.saledata.models import contacts, accounts, config, product
+from .accounts import *
+from .config import *
+from .contacts import *
+from .price import *
+from .product import *
+from .shipping import *
+from .inventory import *
+from .good_receipt import *

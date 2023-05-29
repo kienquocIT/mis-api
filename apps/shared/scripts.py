@@ -4,9 +4,11 @@ from apps.core.hr.models import PlanEmployee
 from apps.core.tenant.models import TenantPlan, Tenant
 from apps.masterdata.saledata.models.product import ProductType, Product
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
-from apps.masterdata.saledata.models.accounts import Contact
+from apps.masterdata.saledata.models.contacts import Contact
+from apps.masterdata.saledata.models.accounts import AccountType, Account
 
 from .extends.signals import SaleDefaultData
+from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 
 def update_company_created_user():
@@ -167,6 +169,38 @@ def delete_wrong_contact():
         pass
 
 
+def delete_all_account_types():
+    try:
+        AccountType.objects.filter(company_id='560bcfd8bfdb4f48b8d258c5f9e66320').delete()
+        return True
+    except AccountType.DoesNotExist:
+        return False
+
+
+def create_default_account_types():
+    account_types_data = [
+        {'title': 'Customer', 'code': 'AT001', 'is_default': 1, 'account_type_order': 0},
+        {'title': 'Supplier', 'code': 'AT002', 'is_default': 1, 'account_type_order': 1},
+        {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
+        {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
+    ]
+    bulk_info = []
+    for item in account_types_data:
+        bulk_info.append(
+            AccountType(
+                title=item['title'],
+                code=item['code'],
+                is_default=1,
+                account_type_order=item['account_type_order'],
+                tenant_id='a86a8871520945fc8e3c44179e2d70d9',
+                company_id='560bcfd8bfdb4f48b8d258c5f9e66320'
+            )
+        )
+    if len(bulk_info) > 0:
+        AccountType.objects.bulk_create(bulk_info)
+    return True
+
+
 def delete_data_old():
     delete_wrong_contact()
     delete_all_product_type()
@@ -176,10 +210,29 @@ def delete_data_old():
     delete_all_product()
 
 
-def update_is_super_user():
-    users = User.objects.all()
-    for user in users:
-        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
-            user.save(is_superuser=True)
-    print('update done.')
+def delete_data_shipping():
+    ConditionLocation.objects.all().delete()
+    FormulaCondition.objects.all().delete()
+    ShippingCondition.objects.all().delete()
+    Shipping.objects.all().delete()
+    return True
+
+
+def update_account_annual_revenue():
+    Account.objects.all().update(annual_revenue=1)
+    return True
+
+
+def update_account_total_employees():
+    Account.objects.all().update(total_employees=1)
+    return True
+
+
+def update_account_shipping_address():
+    Account.objects.all().update(shipping_address=[])
+    return True
+
+
+def update_account_billing_address():
+    Account.objects.all().update(billing_address=[])
     return True

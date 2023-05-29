@@ -2,6 +2,8 @@ import json
 from copy import deepcopy
 
 from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
 
 from rest_framework.test import APIClient
 
@@ -11,6 +13,10 @@ __all__ = ['AdvanceTestCase']
 
 
 class AdvanceTestCase(TestCase):
+    tenant_code = 'MiS'
+    admin_username = 'queptl'
+    admin_password = 'queptl@1234'
+
     client = APIClient()
 
     @staticmethod
@@ -81,13 +87,124 @@ class AdvanceTestCase(TestCase):
             for key, __type in type_match.items():
                 self.assertIsInstance(resp_data[key], __type)
 
-    @classmethod
-    def call_another(cls, testcase_cls: callable, func_name):
-        test_result = testcase_cls()
-        test_result.setUp()
-        result = getattr(test_result, func_name, None)()
-        test_result.tearDown()
+    def call_another(self, testcase_cls: callable, func_name, args: list = None, kwargs: dict = None):
+        args = args if (args and isinstance(args, list)) else []
+        kwargs = kwargs if (kwargs and isinstance(kwargs, dict)) else {}
+
+        test_cls = testcase_cls()
+        test_cls.client = self.client
+        result = getattr(test_cls, func_name, None)(*args, **kwargs)
+        test_cls.tearDown()
         return result
 
-    def authenticated(self, login_data):
+    def authenticated(self, login_data=None):
+        login_data = login_data if login_data is not None else self._login()
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + login_data['token']['access_token'])
+
+    def _new_tenant(self):
+        url = reverse('NewTenant')
+        data = {
+            "tenant_data": {
+                "title": "Cong Ty TNHH MiS",
+                "code": self.tenant_code,
+                "sub_domain": "MiS",
+                "representative_fullname": "Nguyen Van A",
+                "representative_phone_number": "0987654321",
+                "auto_create_company": True,
+                "company_quality_max": 5,
+                "user_request_created": {
+                    "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+                    "full_name": "Nguyen Van A",
+                    "email": "nva@mis.com",
+                    "phone": "0987654321"
+                },
+                "plan": {}
+            },
+            "user_data": {
+                "first_name": "Quế",
+                "last_name": "Phan Thị Loan",
+                "email": "ptlque@mis.com",
+                "phone": "0988776655",
+                "username": self.admin_username,
+                "password": self.admin_password
+            },
+            "create_admin": True,
+            "create_employee": True,
+            "plan_data": {}
+        }
+        response = self.client.post(url, data, format='json')
+        resp_data = self.reload_json(response.data)
+
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=[
+                'id', 'admin_info', 'user_request_created', 'title', 'date_created', 'date_modified', 'code', 'kind',
+                'private_block', 'sub_domain', 'sub_domain_suffix',
+                'representative_fullname', 'representative_phone_number', 'plan', 'auto_create_company',
+                'company_quality_max', 'admin_created', 'company_total', 'admin',
+            ],
+            all_key_from=resp_data['result'],
+            type_match={
+                'result': dict,
+                'status': int,
+            }
+        )
+        self.assertCountEqual(
+            ['id', 'date_created', 'date_modified', 'admin', 'user_request_created'],
+            list(resp_data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertCountEqual(
+            {
+                'admin_info': {
+                    'fullname': 'Quế Phan Thị Loan', 'phone_number': '0988776655', 'username': 'queptl',
+                    'email': 'ptlque@mis.com'
+                },
+                'title': 'Cong Ty TNHH MiS',
+                'code': 'MiS', 'kind': 0, 'private_block': '',
+                'sub_domain': 'MiS', 'sub_domain_suffix': '.quantrimis.com.vn',
+                'representative_fullname': 'Nguyen Van A', 'representative_phone_number': '0987654321',
+                'plan': '{}', 'auto_create_company': True, 'company_quality_max': 5, 'admin_created': True,
+                'company_total': 1,
+            }.items(),
+            resp_data['result'].items(),
+            check_sum_second=False,
+        )
+        return resp_data['result']
+
+    def _login(self):
+        new_tenant = self._new_tenant()
+        url = reverse('AuthLogin')
+        data = {
+            'tenant_code': self.tenant_code.lower(),
+            'username': self.admin_username,
+            'password': self.admin_password,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={
+                'result': dict,
+                'status': int,
+            }
+        )
+        self.assertCountEqual(
+            ['id', 'first_name', 'last_name', 'username_auth', 'username', 'email', 'last_login', 'is_admin_tenant',
+             'language', 'tenant_current', 'company_current', 'space_current',
+             'employee_current', 'companies', 'token',
+             ],
+            list(response.data['result'].keys()),
+            check_sum_second=False,
+        )
+        self.assertCountEqual(
+            ['access_token', 'refresh_token'],
+            list(response.data['result']['token'].keys())
+        )
+        return response.data['result']

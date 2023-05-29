@@ -69,7 +69,6 @@ class RoleDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = RoleUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(

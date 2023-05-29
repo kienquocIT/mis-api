@@ -5,7 +5,7 @@ from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
-    UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer, CompanyUserUpdateSerializer,
+    UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer,
     CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
     CompanyUserEmployeeUpdateSerializer,
 )
@@ -60,6 +60,7 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     queryset = User.objects
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
+    serializer_update = UserUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related('tenant_current', 'company_current').prefetch_related('companies')
@@ -72,7 +73,6 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @swagger_auto_schema(operation_summary="Update User", request_body=UserUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = UserUpdateSerializer
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete User")
@@ -83,7 +83,7 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
 
 class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = User.objects.select_related('company_current')
-    serializer_update = CompanyUserUpdateSerializer
+    serializer_update = CompanyUserEmployeeUpdateSerializer
     serializer_detail = CompanyUserDetailSerializer
 
     @swagger_auto_schema(
@@ -101,7 +101,6 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        self.serializer_class = CompanyUserEmployeeUpdateSerializer
         return self.update(request, *args, **kwargs)
 
 
