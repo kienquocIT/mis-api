@@ -150,13 +150,30 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost(cls, obj):
+        advance_payment = obj.advance_payment
+        list_return_advance = advance_payment.return_advance_payment.all()
+
+        dict_money_returned = {}
+
+        for item in advance_payment.advance_payment.all():
+            dict_money_returned[item.expense_id] = item.after_tax_price
+
+        for item in list_return_advance:
+            if item.money_received:
+                for cost in item.return_advance.all():
+                    if cost.expense_id in dict_money_returned:
+                        dict_money_returned[cost.expense_id] -= cost.return_price
+
         result = []
         for item in obj.return_advance.all():
+            remain_total = dict_money_returned[item.expense_id]
+            if obj.money_received:
+                remain_total = item.remain_total
             result.append(
                 {
                     'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
                     'expense_type': item.expense.expense.expense_type.title,
-                    'remain_total': item.remain_total,
+                    'remain_total': remain_total,
                     'return_price': item.return_price,
                 }
             )

@@ -56,6 +56,11 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'return_advance__expense',
             'return_advance__expense__expense',
             'return_advance__expense__expense__expense_type',
+            'advance_payment__return_advance_payment',
+            'advance_payment__advance_payment',
+            'advance_payment__return_advance_payment__return_advance'
+        ).select_related(
+            'advance_payment'
         )
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')
