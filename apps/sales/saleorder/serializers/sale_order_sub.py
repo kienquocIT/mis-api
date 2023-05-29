@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Employee
+from apps.masterdata.promotion.models import Promotion
+from apps.masterdata.saledata.models import Shipping
 from apps.masterdata.saledata.models.accounts import Account, Contact
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
@@ -8,17 +10,19 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense
-from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg
+from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
 
 
 class SaleOrderCommonCreate:
 
     @classmethod
-    def validate_product_cost_expense(cls, dict_data, is_expense=False):
+    def validate_product_cost_expense(cls, dict_data, is_product=False, is_expense=False, is_cost=False):
         product = {}
         expense = {}
         unit_of_measure = {}
         tax = {}
+        promotion = {}
+        shipping = {}
         if 'product' in dict_data:
             product = dict_data['product']
             del dict_data['product']
@@ -31,21 +35,51 @@ class SaleOrderCommonCreate:
         if 'tax' in dict_data:
             tax = dict_data['tax']
             del dict_data['tax']
+        if 'promotion' in dict_data:
+            promotion = dict_data['promotion']
+            del dict_data['promotion']
+        if 'shipping' in dict_data:
+            shipping = dict_data['shipping']
+            del dict_data['shipping']
+        if is_product is True:
+            return {
+                'product': product,
+                'unit_of_measure': unit_of_measure,
+                'tax': tax,
+                'promotion': promotion,
+                'shipping': shipping
+            }
         if is_expense is True:
-            return expense, unit_of_measure, tax
-        return product, unit_of_measure, tax
+            return {
+                'expense': expense,
+                'unit_of_measure': unit_of_measure,
+                'tax': tax,
+            }
+        if is_cost is True:
+            return {
+                'product': product,
+                'unit_of_measure': unit_of_measure,
+                'tax': tax,
+            }
+        return {}
 
     @classmethod
     def create_product(cls, validated_data, instance):
         for sale_order_product in validated_data['sale_order_products_data']:
-            product, unit_of_measure, tax = cls.validate_product_cost_expense(dict_data=sale_order_product)
-            SaleOrderProduct.objects.create(
-                sale_order=instance,
-                product_id=product.get('id', None),
-                unit_of_measure_id=unit_of_measure.get('id', None),
-                tax_id=tax.get('id', None),
-                **sale_order_product
+            data = cls.validate_product_cost_expense(
+                dict_data=sale_order_product,
+                is_product=True
             )
+            if data:
+                SaleOrderProduct.objects.create(
+                    sale_order=instance,
+                    product_id=data['product'].get('id', None),
+                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
+                    tax_id=data['tax'].get('id', None),
+                    promotion_id=data['promotion'].get('id', None),
+                    shipping_id=data['shipping'].get('id', None),
+                    **sale_order_product
+                )
         return True
 
     @classmethod
@@ -59,30 +93,35 @@ class SaleOrderCommonCreate:
     @classmethod
     def create_cost(cls, validated_data, instance):
         for sale_order_cost in validated_data['sale_order_costs_data']:
-            product, unit_of_measure, tax = cls.validate_product_cost_expense(dict_data=sale_order_cost)
-            SaleOrderCost.objects.create(
-                sale_order=instance,
-                product_id=product.get('id', None),
-                unit_of_measure_id=unit_of_measure.get('id', None),
-                tax_id=tax.get('id', None),
-                **sale_order_cost
+            data = cls.validate_product_cost_expense(
+                dict_data=sale_order_cost,
+                is_cost=True
             )
+            if data:
+                SaleOrderCost.objects.create(
+                    sale_order=instance,
+                    product_id=data['product'].get('id', None),
+                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
+                    tax_id=data['tax'].get('id', None),
+                    **sale_order_cost
+                )
         return True
 
     @classmethod
     def create_expense(cls, validated_data, instance):
         for sale_order_expense in validated_data['sale_order_expenses_data']:
-            expense, unit_of_measure, tax = cls.validate_product_cost_expense(
+            data = cls.validate_product_cost_expense(
                 dict_data=sale_order_expense,
                 is_expense=True
             )
-            SaleOrderExpense.objects.create(
-                sale_order=instance,
-                expense_id=expense.get('id', None),
-                unit_of_measure_id=unit_of_measure.get('id', None),
-                tax_id=tax.get('id', None),
-                **sale_order_expense
-            )
+            if data:
+                SaleOrderExpense.objects.create(
+                    sale_order=instance,
+                    expense_id=data['expense'].get('id', None),
+                    unit_of_measure_id=data['unit_of_measure'].get('id', None),
+                    tax_id=data['tax'].get('id', None),
+                    **sale_order_expense
+                )
         return True
 
     @classmethod
@@ -294,3 +333,39 @@ class SaleOrderCommonValidate:
             )
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_promotion(cls, value):
+        try:
+            if value is None:
+                return {}
+            promotion = Promotion.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(promotion.id),
+                'title': promotion.title,
+                'code': promotion.code
+            }
+        except Promotion.DoesNotExist:
+            raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
+
+    @classmethod
+    def validate_shipping(cls, value):
+        try:
+            if value is None:
+                return {}
+            shipping = Shipping.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(shipping.id),
+                'title': shipping.title,
+                'code': shipping.code
+            }
+        except Shipping.DoesNotExist:
+            raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})

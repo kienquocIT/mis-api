@@ -1,10 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
-from apps.sales.quotation.models import Quotation, QuotationExpense
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig
+from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
+    QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
+    ResponseController, HttpMsg
 
 
 class QuotationList(
@@ -99,3 +103,35 @@ class QuotationExpenseList(BaseListMixin):
     def get(self, request, *args, **kwargs):
         kwargs.update({'quotation_id': request.query_params['filter_quotation']})
         return self.list(request, *args, **kwargs)
+
+
+# Config
+class QuotationConfigDetail(APIView):
+    serializer_class = QuotationConfigDetailSerializer
+
+    @swagger_auto_schema(
+        operation_summary='Get config of Quotation',
+    )
+    @mask_view(login_require=True)
+    def get(self, request, *args, **kwargs):
+        try:
+            obj = QuotationAppConfig.objects.get(company_id=request.user.company_current_id)
+            return ResponseController.success_200(data=QuotationConfigDetailSerializer(obj).data, key_data='result')
+        except QuotationAppConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(
+        operation_summary='Update config of Quotation',
+    )
+    @mask_view(login_require=True)
+    def put(self, request, *args, **kwargs):
+        try:
+            obj = QuotationAppConfig.objects.get(company_id=request.user.company_current_id)
+            ser = QuotationConfigUpdateSerializer(obj, data=request.data)
+            ser.is_valid(raise_exception=True)
+            ser.save()
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        except QuotationAppConfig.DoesNotExist:
+            pass
+        return ResponseController.notfound_404()
