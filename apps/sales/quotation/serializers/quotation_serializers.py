@@ -300,6 +300,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense_tax',
             'total_expense',
             'is_customer_confirm',
+            'date_created',
         )
 
     @classmethod
@@ -323,6 +324,11 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
+                'payment_term_mapped': {
+                    'id': obj.customer.payment_term_mapped_id,
+                    'title': obj.customer.payment_term_mapped.title,
+                    'code': obj.customer.payment_term_mapped.code,
+                } if obj.customer.payment_term_mapped else {}
             }
         return {}
 

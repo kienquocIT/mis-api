@@ -59,7 +59,8 @@ class QuotationDetail(
             "customer",
             "contact",
             "sale_person",
-            "payment_term"
+            "payment_term",
+            "customer__payment_term_mapped",
         )
 
     @swagger_auto_schema(
