@@ -17,7 +17,7 @@ class ReturnAdvance(DataAbstractModel):
     advance_payment = models.ForeignKey(
         'cashoutflow.AdvancePayment',
         on_delete=models.CASCADE,
-        related_name='advance_payment'
+        related_name='return_advance_payment'
 
     )
     method = models.SmallIntegerField(

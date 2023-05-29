@@ -26,7 +26,10 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'to_payment',
             'return_value',
             'remain_value',
-            'money_gave'
+            'money_gave',
+            'beneficiary',
+            'sale_order_mapped',
+            'quotation_mapped',
         )
 
     @classmethod
@@ -61,6 +64,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     def get_status(cls, obj):
         obj.status = "Approved"
         return obj.status
+
+
 
 
 def create_expense_items(instance, expense_valid_list):
@@ -178,6 +183,9 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     expense_items = serializers.SerializerMethodField()
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    beneficiary = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -200,7 +208,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax').all()
+        all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
@@ -213,6 +221,48 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'after_tax_price': item.after_tax_price,
                 'expense_quantity': item.expense_quantity,
                 'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                'expense_type': item.expense.expense.expense_type.title,
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
             })
         return expense_items
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        if obj.sale_order_mapped:
+            return {
+                'id': obj.sale_order_mapped.id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
+                'opportunity': {
+                    'id': obj.sale_order_mapped.opportunity.id,
+                    'code': obj.sale_order_mapped.opportunity.code,
+                    'title': obj.sale_order_mapped.opportunity.title,
+                    'customer': obj.sale_order_mapped.opportunity.customer.name,
+                }
+
+            }
+        return None
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        if obj.quotation_mapped:
+            return {
+                'id': obj.quotation_mapped.id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
+                'opportunity': {
+                    'id': obj.quotation_mapped.opportunity.id,
+                    'code': obj.quotation_mapped.opportunity.code,
+                    'title': obj.quotation_mapped.opportunity.title,
+                    'customer': obj.quotation_mapped.opportunity.customer.name,
+                }
+
+            }
+        return None
+
+    @classmethod
+    def get_beneficiary(cls, obj):
+        return {
+            'id': obj.beneficiary.id,
+            'name': obj.beneficiary.get_full_name(),
+        }
