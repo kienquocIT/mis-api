@@ -51,8 +51,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_return_value(cls, obj):
-        obj.return_value = 0
-        return obj.return_value
+        return sum(item.return_total for item in obj.return_advance_payment.all() if item.money_received is True)
 
     @classmethod
     def get_remain_value(cls, obj):
@@ -64,8 +63,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     def get_status(cls, obj):
         obj.status = "Approved"
         return obj.status
-
-
 
 
 def create_expense_items(instance, expense_valid_list):
@@ -203,17 +200,27 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'method',
             'beneficiary',
-            'expense_items'
+            'expense_items',
         )
 
     @classmethod
     def get_expense_items(cls, obj):
+        dict_cost_return = {}
+        for return_advance in obj.return_advance_payment.all():
+            for cost in return_advance.return_advance.all():
+                if cost.expense_id not in dict_cost_return:
+                    dict_cost_return[cost.expense_id] = cost.return_price
+                else:
+                    dict_cost_return[cost.expense_id] += cost.return_price
         all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
+            refunded_value = 0
             if item.tax:
                 tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+            if item.expense_id in dict_cost_return:
+                refunded_value = dict_cost_return[item.expense_id]
             expense_items.append({
                 'tax': tax_dict,
                 'unit_price': item.expense_unit_price,
@@ -223,6 +230,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
                 'expense_type': item.expense.expense.expense_type.title,
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                'remain_total': item.after_tax_price - refunded_value,
             })
         return expense_items
 

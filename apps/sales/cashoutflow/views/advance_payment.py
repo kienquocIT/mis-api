@@ -17,7 +17,8 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment'
+            'advance_payment',
+            'return_advance_payment',
         )
 
     @swagger_auto_schema(
@@ -54,6 +55,8 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'advance_payment__expense__expense__expense_type',
             'advance_payment__currency',
             'advance_payment__tax',
+            'return_advance_payment__return_advance',
+            'return_advance_payment'
         ).select_related(
             'sale_order_mapped',
             'sale_order_mapped__opportunity',

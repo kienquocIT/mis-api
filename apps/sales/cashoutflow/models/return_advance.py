@@ -41,6 +41,9 @@ class ReturnAdvance(DataAbstractModel):
         verbose_name='status of Return Advance',
         default=0
     )
+    return_total = models.FloatField(
+        default=0
+    )
     money_received = models.BooleanField(default=False)
 
     class Meta:

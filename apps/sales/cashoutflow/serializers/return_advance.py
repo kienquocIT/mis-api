@@ -20,6 +20,7 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
             'status',
             'money_received',
             'date_created',
+            'return_total',
         )
 
     @classmethod
@@ -57,7 +58,7 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
         fields = (
             'expense',
             'remain_total',
-            'return_price'
+            'return_price',
         )
 
     @classmethod
@@ -91,7 +92,8 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             'beneficiary',
             'status',
             'money_received',
-            'cost'
+            'cost',
+            'return_total',
         )
 
     def validate(self, validate_data):
@@ -142,7 +144,8 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             'status',
             'money_received',
             'date_created',
-            'cost'
+            'cost',
+            'return_total'
         )
 
     @classmethod
