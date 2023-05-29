@@ -236,6 +236,9 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def __str__(self):
+        return self.first_name + '. ' + self.last_name
+
     def sync_company_map(self, user_id_old, user_id_new, is_new) -> models.Model or Exception:
         if self.company_id:  # pylint: disable=R1702
             company_employee_user_model = DisperseModel(app_model='company_CompanyUserEmployee').get_model()

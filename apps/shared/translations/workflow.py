@@ -11,3 +11,7 @@ class WorkflowMsg:
     COLLABORATOR_IN = _("In form")
     COLLABORATOR_OUT = _("Out form")
     COLLABORATOR_WF = _("In workflow")
+    WORKFLOW_NOT_ALLOW_CHANGE = _(
+        "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or "
+        "reconfigure old flow."
+    )
