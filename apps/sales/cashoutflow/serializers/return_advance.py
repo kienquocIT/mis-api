@@ -34,7 +34,7 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_return_value(cls, obj):
-        return sum([cost.return_price for cost in obj.return_advance.all()])
+        return sum(cost.return_price for cost in obj.return_advance.all())
 
     @classmethod
     def get_money_received(cls, obj):
@@ -72,8 +72,7 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'input return': ReturnAdvanceMsg.GREATER_THAN_ZERO})
         return value
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         if validate_data['remain_total'] < validate_data['return_price']:
             raise serializers.ValidationError({'input return': ReturnAdvanceMsg.RETURN_GREATER_THAN_REMAIN})
         return validate_data
@@ -95,8 +94,7 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             'cost'
         )
 
-    @classmethod
-    def validate(cls, validate_data):
+    def validate(self, validate_data):
         count_expense = AdvancePaymentCost.objects.filter(
             advance_payment_id=validate_data['advance_payment'],
             expense_id__in=[item['expense'] for item in validate_data['cost']]

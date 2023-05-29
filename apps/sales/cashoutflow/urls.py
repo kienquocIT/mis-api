@@ -1,5 +1,6 @@
 from django.urls import path
-from apps.sales.cashoutflow.views import AdvancePaymentList, AdvancePaymentDetail, ReturnAdvanceList, ReturnAdvanceDetail
+from apps.sales.cashoutflow.views import AdvancePaymentList, AdvancePaymentDetail, ReturnAdvanceList, \
+    ReturnAdvanceDetail
 
 
 urlpatterns = [
