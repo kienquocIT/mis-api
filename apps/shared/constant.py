@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from .translations import WorkflowMsg
+
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -47,6 +48,10 @@ CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
+
+MAP_FIELD_TITLE = {
+    'saledata.contact': 'fullname',
+}
 
 CURRENCY_MASK_MONEY = {
     'VND': {

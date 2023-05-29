@@ -1,0 +1,448 @@
+import json
+from typing import Union, Literal
+from uuid import UUID
+
+from django.db import models
+from django.utils import timezone
+
+from apps.shared import SimpleAbstractModel
+
+from .config import Workflow, Node
+
+__all__ = [
+    'Runtime',
+    'RuntimeStage',
+    'RuntimeLog',
+    'RuntimeAssignee',
+]
+
+STATE_RUNTIME = (
+    (0, 'Created'),  # default
+    (1, 'In Progress'),
+    (2, 'Finish'),
+    (3, 'Finish with flow non-apply'),
+)
+STATUS_RUNTIME = (
+    (0, 'Waiting'),  # default
+    (1, 'Success'),
+    (2, 'Fail'),
+    (3, 'Pending'),
+)
+STATE_RUNTIME_COLLAB = (
+    (0, 'Created'),
+    (1, 'Wait'),
+    (2, 'Done'),
+)
+
+KIND_LOG_ACTIVITY = (
+    (0, 'Login'),
+    (1, 'In Doc'),
+    (2, 'In Flow'),
+)
+ACTION_LOG_ACTIVITY = (
+    (0, ''),
+    (1, ''),
+)
+TASK_BACKGROUND_STATE = (
+    ('PENDING', 'The task is waiting to be executed | task đang chờ để được thực thi'),
+    ('STARTED', 'The task has started execution | task đã được bắt đầu thực thi'),
+    ('SUCCESS', 'The task has successfully executed | task đã thực thi thành công'),
+    ('FAILURE', 'The task has failed during execution | task đã thất bại trong quá trình thực thi'),
+    ('RETRY', 'The task is being retried after a failure | task đang được thực hiện lại sau khi đã thất bại'),
+    (
+        'REVOKED',
+        'The task has been cancelled before completion or execution | '
+        'task đã bị hủy bỏ trước khi hoàn thành hoặc bị thực thi'
+    ),
+    ('IGNORED', 'The task was ignored and not executed | task bị bỏ qua và không được thực thi'),
+)
+
+
+class Runtime(SimpleAbstractModel):
+    """
+    Runtime of all document.
+    Filter by workflow/doc_id (don't filter by tenant, company)
+    """
+    doc_id = models.UUIDField(verbose_name='Document was runtime')
+    doc_title = models.TextField(
+        blank=True,
+        verbose_name='Title of Doc',
+        help_text='Title get from Doc Obj when create runtime obj'
+    )
+    app = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name='App of DocID',
+    )
+    doc_params = models.JSONField(
+        default=dict,
+        verbose_name='Params parsed of doc runtime'
+    )
+    doc_employee_created = models.ForeignKey(
+        'hr.Employee',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Employee created of Document",
+        help_text='Data from Runtime first time',
+    )
+    flow = models.ForeignKey(
+        Workflow,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Workflow applied'
+    )
+    state = models.IntegerField(
+        choices=STATE_RUNTIME,
+        default=0,
+        verbose_name='State of stage runtime',
+    )
+    status = models.IntegerField(
+        choices=STATUS_RUNTIME,
+        default=0,
+        verbose_name='Status of document runtime'
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at time',
+    )
+    date_finished = models.DateTimeField(null=True, help_text='The records finish at time')
+    stage_currents = models.ForeignKey(
+        'RuntimeStage',
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='stage_currently_of_runtime',
+        verbose_name='Stage Currently'
+    )
+    task_bg_id = models.UUIDField(
+        null=True,
+        verbose_name='ID Task',
+        help_text='ID of task run background',
+    )
+    task_bg_state = models.CharField(
+        max_length=10,
+        choices=TASK_BACKGROUND_STATE,
+        default='PENDING',
+        verbose_name='State Task BG',
+        help_text='Sate run of task background'
+    )
+
+    class Meta:
+        verbose_name = 'Runtime'
+        verbose_name_plural = 'Runtime'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+        unique_together = ('doc_id', 'app')
+
+    @classmethod
+    def check_document_in_progress(
+            cls,
+            workflow_id: Union[UUID, str],
+            state_or_count: Literal['state', 'count'] = 'state',
+    ) -> Union[bool, int]:
+        """
+        Check document is not finish process.
+        Returns:
+            Boolean
+                True: Exist document is not finish
+                False: All document finished process
+        """
+        if state_or_count == 'state':
+            return cls.objects.filter(flow_id=workflow_id).exclude(status=2).exists()
+        if state_or_count == 'count':
+            return cls.objects.filter(flow_id=workflow_id).exclude(status=2).count()
+        raise AttributeError('state_or_count value must be choice in [state, count].')
+
+    @classmethod
+    def get_document_in_progress(
+            cls,
+            workflow_id: Union[UUID, str],
+            obj_or_data: Literal['obj', 'data'] = 'obj',
+    ) -> list[Union[dict, models.Model]]:
+        if obj_or_data == 'obj':
+            return cls.objects.filter(flow_id=workflow_id).exclude(status=2)
+        if obj_or_data == 'data':
+            return list(
+                cls.objects.filter(flow_id=workflow_id).exclude(status=2).values(
+                    'id', 'doc_id', 'app', 'flow_id', 'state', 'status', 'date_created', 'date_finished'
+                )
+            )
+        return []
+
+
+class RuntimeStage(SimpleAbstractModel):
+    """
+    Stage in Doc's timeline... All station that Doc's timeline was passed.
+    Node information was recorded to node_data (don't miss node data when related node was destroyed)
+    Timeline arrange in order by ASC (ascending)
+    """
+
+    # overview of stage | management
+    runtime = models.ForeignKey(
+        Runtime,
+        on_delete=models.CASCADE,
+        verbose_name='All Node by Runtime',
+    )
+
+    # Important infor of Stage
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE,
+        verbose_name='Relate to Config Node. node_data get data from this',
+    )
+    title = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Title copy from node',
+    )
+    code = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Code copy from node',
+    )
+    node_data = models.JSONField(
+        default=dict,
+        verbose_name='Detail of Config Node at this created',
+        help_text=json.dumps(
+            {"id": "", "title": "", "code": "", "date_created": ""}
+        ),
+    )
+    actions = models.JSONField(
+        default=dict,
+        verbose_name='Action code array',
+        help_text='Collect from Node.actions'
+    )
+    exit_node_conditions = models.JSONField(
+        default=dict,
+        verbose_name='Condition for exit node',
+        help_text='Collect data from Node.condition)',
+    )
+    association_passed = models.ForeignKey(
+        'workflow.Association',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Association was passed',
+        help_text='Association selected when create stage from node'
+    )
+    association_passed_data = models.JSONField(
+        default=dict,
+        verbose_name='Storage data of association passed',
+        help_text=json.dumps(
+            {
+                "id": "", "node_in": {"id": "", "title": "", "code": ""},
+                "node_out": {"id": "", "title": "", "code": ""}, "condition": []
+            }
+        )
+    )
+    assignee_count = models.SmallIntegerField(
+        default=0,
+        verbose_name='Employee Count',
+        help_text='Counter of assignee_and_zone, count employee',
+    )
+    assignee_and_zone = models.ManyToManyField(
+        'hr.Employee',
+        through='RuntimeAssignee',
+        symmetrical=False,
+        related_name='assignee_and_zone_of_runtime_stage',
+        verbose_name='Employee + Zone need action in this stage',
+        help_text='Assignee have task with properties zone',
+    )
+
+    # utils
+    order = models.IntegerField(
+        default=0,
+        verbose_name='Order Number step in Runtime, Stage arrange in order by ASC (ascending)',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='Node was created at time',
+    )
+    date_exit = models.DateTimeField(
+        null=True,
+        help_text='Node was exited at time',
+    )
+    from_stage = models.ForeignKey(
+        'self',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Stage Before (from node)',
+        related_name='stage_stage_before',
+    )
+    to_stage = models.ForeignKey(
+        'self',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Stage After (to node)',
+        related_name='stage_stage_after',
+    )
+
+    # utils
+    log_count = models.SmallIntegerField(
+        verbose_name='Total log of Stage',
+        help_text='Support display UX of FE',
+        default=0
+    )
+
+    class Meta:
+        verbose_name = 'Runtime Node'
+        verbose_name_plural = 'Runtime Node'
+        ordering = ('-order',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def generate_order(cls, runtime_obj) -> int:
+        """
+        Get max order of RUNTIME OBJ.
+        Then return it plus one.
+        Args:
+            runtime_obj:    Runtime Object.
+
+        Returns: Integer Number (max + 1)
+
+        """
+        order_list = cls.objects.filter(runtime=runtime_obj).values_list('order', flat=True)
+        return max(order_list) + 1 if len(order_list) > 0 else 1
+
+    def set_association_passed_data(self):
+        if self.association_passed:
+            self.association_passed_data = {
+                "id": str(self.association_passed.id),
+                "node_in": {
+                    "id": str(self.association_passed.node_in.id),
+                    "title": self.association_passed.node_in.title,
+                    "code": self.association_passed.node_in.code,
+                } if self.association_passed.node_in else {},
+                "node_out": {
+                    "id": str(self.association_passed.node_out.id),
+                    "title": self.association_passed.node_out.title,
+                    "code": self.association_passed.node_out.code,
+                } if self.association_passed.node_out else {},
+                "condition": self.association_passed.condition,
+            }
+        return True
+
+    def save(self, *args, **kwargs):
+        if kwargs.get('force_insert', False) and self.runtime:
+            self.order = self.generate_order(self.runtime)
+        self.set_association_passed_data()
+        super().save(*args, **kwargs)
+
+
+class RuntimeAssignee(SimpleAbstractModel):
+    stage = models.ForeignKey(
+        RuntimeStage,
+        on_delete=models.CASCADE,
+        related_name='assignee_of_runtime_stage',
+        verbose_name='Assignee in Stage',
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        related_name='all_runtime_assignee_of_employee',
+        verbose_name='Employee selected',
+    )
+    zone_and_properties = models.JSONField(
+        default=dict,
+        verbose_name='Zone detail and Properties ID of Zone | collect from Zone() and ApplicationProperties()',
+        help_text=json.dumps(
+            [{"id": "", "title": "", "remark": "", "properties": ['application_property_id']}]
+        ),
+    )
+    action_perform = models.JSONField(
+        default=list,
+        verbose_name='Is action code array that was performed by assignee',
+        help_text='[0,1,2,3]'
+    )
+    is_done = models.BooleanField(
+        default=False,
+        verbose_name='Flag status Task of assignee',
+        help_text='True if assignee finish your task, False if assignee need action finish with approve, next,...'
+    )
+
+    def push_action_perform(self, action_code, **kwargs):
+        if isinstance(self.action_perform, list):
+            self.action_perform.append(action_code)
+        else:
+            self.action_perform = [action_code]
+
+        if kwargs.get('force_save', False):
+            super().save(update_fields=['action_perform'])
+        return True
+
+    class Meta:
+        verbose_name = 'Stage map Employee plus Zone'
+        verbose_name_plural = 'Stage map Employee plus Zone'
+        default_permissions = ()
+        permissions = ()
+
+
+class RuntimeLog(SimpleAbstractModel):
+    actor = models.ForeignKey(
+        'hr.Employee',
+        null=True,
+        on_delete=models.SET_NULL
+    )
+    actor_data = models.JSONField(
+        default=dict,
+        verbose_name="Employee's data changed docs",
+        help_text='{"id": "", "first_name": "", "last_name": "", "email": "", "avatar": "",}'
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='Log Activity was created at time',
+    )
+    runtime = models.ForeignKey(
+        'Runtime',
+        on_delete=models.CASCADE,
+        verbose_name='All log of Runtime Doc',
+    )
+    stage = models.ForeignKey(
+        'RuntimeStage',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Log in Stage Runtime | =null when Runtime create + Dont apply WF',
+        related_name='log_of_stage_runtime',
+    )
+    kind = models.SmallIntegerField(
+        choices=KIND_LOG_ACTIVITY,
+        verbose_name='Flag filter doc for some main case: login history, doc history only, flow history only.',
+        help_text='0: log from login, 1: log from doc, 2: log from workflow',
+    )
+    action = models.SmallIntegerField(
+        verbose_name='Action choice that was used by actor',
+    )
+    msg = models.TextField(
+        verbose_name='Message log action of actor',
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = 'Log Activity'
+        verbose_name_plural = 'Log Activity'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+    def before_force(self, **kwargs):
+        if kwargs.get('force_insert', False):
+            if self.actor:
+                self.actor_data = {
+                    "id": str(self.actor_id),
+                    "first_name": str(self.actor.first_name),
+                    "last_name": str(self.actor.last_name),
+                    "full_name": str(self.actor.get_full_name()),
+                    "email": str(self.actor.email),
+                    "avatar": str(self.actor.avatar),
+                }
+
+        if not self.runtime and self.stage:
+            self.runtime = self.stage.runtime
+
+        if self.stage:
+            self.stage.log_count += 1
+            self.stage.save(update_fields=['log_count'])
+
+    def save(self, *args, **kwargs):
+        self.before_force(**kwargs)
+        super().save(*args, **kwargs)

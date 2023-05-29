@@ -3,6 +3,8 @@ from django.utils import timezone
 
 from apps.shared import SimpleAbstractModel
 
+__all__ = ['LogActivity']
+
 LOG_LEVEL = (
     (0, 'Success'),
     (1, 'Failure'),
@@ -28,10 +30,14 @@ LOG_FLOW_ACTIONS = (
 )
 
 
-class LogData(SimpleAbstractModel):
+class LogActivity(SimpleAbstractModel):
     doc_id = models.UUIDField(null=True, verbose_name='Log of the document ID')
-    app = models.CharField(max_length=100, null=True, verbose_name='Log of feature app')
-
+    app = models.ForeignKey(
+        'base.Application',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Log of feature app',
+    )
     level = models.IntegerField(choices=LOG_LEVEL, verbose_name='LEVEL of log')
     action = models.IntegerField(choices=LOG_ACTIONS, verbose_name='Name of event')
     flow_action = models.IntegerField(choices=LOG_FLOW_ACTIONS, null=True, verbose_name='Action name user submit in WF')

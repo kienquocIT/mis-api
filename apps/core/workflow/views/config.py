@@ -1,10 +1,21 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.workflow.models import Workflow  # pylint: disable-msg=E0611
-from apps.core.workflow.serializers.config import WorkflowListSerializer, WorkflowCreateSerializer, \
-    WorkflowDetailSerializer, WorkflowUpdateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.core.workflow.models import Workflow, Runtime  # pylint: disable-msg=E0611
+from apps.core.workflow.serializers.config import (
+    WorkflowListSerializer, WorkflowCreateSerializer,
+    WorkflowDetailSerializer, WorkflowUpdateSerializer,
+)
+from apps.shared import (
+    BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
+    ResponseController, HttpMsg, WorkflowMsg,
+)
+
+__all__ = [
+    'WorkflowList',
+    'WorkflowDetail',
+]
 
 
 class WorkflowList(
@@ -73,3 +84,21 @@ class WorkflowDetail(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        # check in-progress workflows. If exists, don't allow change.
+        count = Runtime.check_document_in_progress(workflow_id=instance.id, state_or_count='count')
+        if count > 0:
+            raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
+
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}  # pylint: disable=W0212
+
+        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')

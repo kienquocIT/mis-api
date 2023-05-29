@@ -310,7 +310,7 @@ class InitialNodeZone(SimpleAbstractModel):
 
 # SUPPORT IN FORM
 class CollaborationInForm(MasterDataAbstractModel):
-    node = models.ForeignKey(
+    node = models.OneToOneField(
         Node,
         on_delete=models.CASCADE,
     )
@@ -352,7 +352,7 @@ class CollaborationInFormZone(SimpleAbstractModel):
 
 # SUPPORT OUT FORM
 class CollaborationOutForm(MasterDataAbstractModel):
-    node = models.ForeignKey(
+    node = models.OneToOneField(
         Node,
         on_delete=models.CASCADE,
     )
@@ -413,7 +413,7 @@ class CollaborationOutFormZone(SimpleAbstractModel):
 class CollabInWorkflow(MasterDataAbstractModel):
     node = models.ForeignKey(
         Node,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
     )
     employee = models.ForeignKey(
         'hr.Employee',
