@@ -48,3 +48,7 @@ CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
+
+MAP_FIELD_TITLE = {
+    'saledata.contact': 'fullname',
+}
