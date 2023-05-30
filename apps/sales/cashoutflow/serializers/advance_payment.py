@@ -26,7 +26,10 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'to_payment',
             'return_value',
             'remain_value',
-            'money_gave'
+            'money_gave',
+            'beneficiary',
+            'sale_order_mapped',
+            'quotation_mapped',
         )
 
     @classmethod
@@ -48,8 +51,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_return_value(cls, obj):
-        obj.return_value = 0
-        return obj.return_value
+        return sum(item.return_total for item in obj.return_advance_payment.all() if item.status == 0)
 
     @classmethod
     def get_remain_value(cls, obj):
