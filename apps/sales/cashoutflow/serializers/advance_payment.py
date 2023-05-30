@@ -51,7 +51,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_return_value(cls, obj):
-        return sum(item.return_total for item in obj.return_advance_payment.all() if item.money_received is True)
+        return sum(item.return_total for item in obj.return_advance_payment.all() if item.status == 0)
 
     @classmethod
     def get_remain_value(cls, obj):
@@ -208,7 +208,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     def get_expense_items(cls, obj):
         dict_cost_return = {}
         for return_advance in obj.return_advance_payment.all():
-            if return_advance.money_received:
+            if return_advance.status == 0:
                 for cost in return_advance.return_advance.all():
                     if cost.expense_id not in dict_cost_return:
                         dict_cost_return[cost.expense_id] = cost.return_price

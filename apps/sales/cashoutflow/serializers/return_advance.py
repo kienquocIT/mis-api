@@ -153,7 +153,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             dict_money_returned[item.expense_id] = item.after_tax_price
 
         for item in list_return_advance:
-            if item.money_received:
+            if item.status == 0:
                 for cost in item.return_advance.all():
                     if cost.expense_id in dict_money_returned:
                         dict_money_returned[cost.expense_id] -= cost.return_price
@@ -161,7 +161,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
         result = []
         for item in obj.return_advance.all():
             remain_total = dict_money_returned[item.expense_id]
-            if obj.money_received:
+            if obj.status == 0:
                 remain_total = item.remain_total
             result.append(
                 {
