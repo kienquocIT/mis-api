@@ -4,6 +4,88 @@ from apps.sales.opportunity.models import Opportunity
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
+# CONFIG
+class QuotationAppConfig(SimpleAbstractModel):
+    company = models.OneToOneField(
+        'company.Company',
+        on_delete=models.CASCADE,
+        related_name='sales_quotation_config_detail',
+    )
+    short_sale_config = models.JSONField(
+        default=dict,
+        help_text="all config use for Quotation without Opportunity, data record in ConfigShortSale"
+    )
+    long_sale_config = models.JSONField(
+        default=dict,
+        help_text="all config use for Quotation with Opportunity, data record in ConfigLongSale"
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Config'
+        verbose_name_plural = 'Quotation Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigShortSale(SimpleAbstractModel):
+    quotation_config = models.OneToOneField(
+        QuotationAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="config short sale",
+        related_name="quotation_config_short_sale"
+    )
+    is_choose_price_list = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can choose price in price list"
+    )
+    is_input_price = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input price for any product"
+    )
+    is_discount_on_product = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for any product"
+    )
+    is_discount_on_total = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for total of all products"
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Short Sale Config'
+        verbose_name_plural = 'Quotation Short Sale Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigLongSale(SimpleAbstractModel):
+    quotation_config = models.OneToOneField(
+        QuotationAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="config long sale",
+        related_name="quotation_config_long_sale"
+    )
+    is_not_input_price = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input price for any product"
+    )
+    is_not_discount_on_product = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for any product"
+    )
+    is_not_discount_on_total = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for total of all products"
+    )
+
+    class Meta:
+        verbose_name = 'Quotation Long Sale Config'
+        verbose_name_plural = 'Quotation Long Sale Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+# BEGIN QUOTATION
 class Quotation(DataAbstractModel):
     opportunity = models.ForeignKey(
         Opportunity,

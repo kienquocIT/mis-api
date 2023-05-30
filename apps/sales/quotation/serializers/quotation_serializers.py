@@ -482,6 +482,10 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
+    payment_term = serializers.CharField(
+        max_length=550,
+        required=False
+    )
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
         many=True,
@@ -506,8 +510,10 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',

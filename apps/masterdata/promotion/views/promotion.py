@@ -1,13 +1,13 @@
-from datetime import date
-
 from django.db.models import Q
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer, \
     PromotionDetailSerializer, PromotionUpdateSerializer
-from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin,\
+    BaseDestroyMixin, TypeCheck
 
 __all__ = ['PromotionList', 'PromotionDetail', 'PromotionCheckList']
 
@@ -64,21 +64,37 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 
 class PromotionCheckList(BaseListMixin):
     queryset = Promotion.objects
-    # filterset_fields = ['customer_type', 'customers_map_promotion__id']
     serializer_list = PromotionDetailSerializer
     serializer_detail = PromotionDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
+        # filter expires date
+        current_date = timezone.now()
+        filter_expires = {
+            'valid_date_start__lte': current_date,
+            'valid_date_end__gte': current_date
+        }
+        # setup where OR
         data_filter = self.request.query_params.dict()
-        query = Q()
+        filter_q = Q()
         for key in data_filter:
-            query |= Q(**{key: data_filter[key]})
-        # Add date filtering
-        current_date = date.today()
-        query &= Q(valid_date_start__lte=current_date, valid_date_end__gte=current_date)
-        return super().get_queryset().filter(query)
+            match key:
+                case 'customer_type':
+                    val_of_key = data_filter[key]
+                    if isinstance(val_of_key, int) or val_of_key.isdigit():
+                        filter_q |= Q(customer_type=int(val_of_key))
+                    break
+                case 'customers_map_promotion__id':
+                    val_of_key = data_filter[key]
+                    if TypeCheck.check_uuid(val_of_key):
+                        filter_q |= Q(customers_map_promotion__id=val_of_key)
+                    break
+        # return query filter
+        if len(filter_q) > 0:
+            return super().get_queryset().filter(**filter_expires)
+        return super().get_queryset().filter(**filter_expires).filter(filter_q)
 
     @swagger_auto_schema(
         operation_summary="Promotion list",
