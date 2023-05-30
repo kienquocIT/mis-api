@@ -215,7 +215,13 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'subtotal_price': item.subtotal_price,
                 'after_tax_price': item.after_tax_price,
                 'expense_quantity': item.expense_quantity,
-                'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
+                'expense': {
+                    'id': item.expense_id,
+                    'code': item.expense.code,
+                    'title': item.expense.title,
+                    'type': item.expense.general_information['expense_type'],
+                    'remain_value': 0
+                },
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
             })
         return expense_items
