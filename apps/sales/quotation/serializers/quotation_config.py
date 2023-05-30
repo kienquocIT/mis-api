@@ -35,6 +35,24 @@ class QuotationConfigUpdateSerializer(serializers.ModelSerializer):
             'long_sale_config'
         )
 
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        # delete & create new short_sale_config
+        instance.quotation_config_short_sale.all().delete()
+        ConfigShortSale.objects.create(
+            quotation_config=instance,
+            **validated_data['short_sale_config']
+        )
+        # delete & create new long_sale_config
+        instance.quotation_config_long_sale.all().delete()
+        ConfigLongSale.objects.create(
+            quotation_config=instance,
+            **validated_data['long_sale_config']
+        )
+        return instance
+
 
 class QuotationConfigDetailSerializer(serializers.ModelSerializer):
     short_sale_config = serializers.JSONField()

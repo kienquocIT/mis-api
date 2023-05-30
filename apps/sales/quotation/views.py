@@ -1,14 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.views import APIView
 
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, \
-    ResponseController, HttpMsg
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class QuotationList(
@@ -106,32 +104,26 @@ class QuotationExpenseList(BaseListMixin):
 
 
 # Config
-class QuotationConfigDetail(APIView):
-    serializer_class = QuotationConfigDetailSerializer
+class QuotationConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = QuotationAppConfig.objects
+    serializer_detail = QuotationConfigDetailSerializer
+    serializer_update = QuotationConfigUpdateSerializer
 
     @swagger_auto_schema(
-        operation_summary='Get config of Quotation',
+        operation_summary="Quotation Config Detail",
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        try:
-            obj = QuotationAppConfig.objects.get(company_id=request.user.company_current_id)
-            return ResponseController.success_200(data=QuotationConfigDetailSerializer(obj).data, key_data='result')
-        except QuotationAppConfig.DoesNotExist:
-            pass
-        return ResponseController.notfound_404()
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary='Update config of Quotation',
+        operation_summary="Quotation Config Update",
+        request_body=QuotationConfigUpdateSerializer,
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
-        try:
-            obj = QuotationAppConfig.objects.get(company_id=request.user.company_current_id)
-            ser = QuotationConfigUpdateSerializer(obj, data=request.data)
-            ser.is_valid(raise_exception=True)
-            ser.save()
-            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
-        except QuotationAppConfig.DoesNotExist:
-            pass
-        return ResponseController.notfound_404()
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
