@@ -196,7 +196,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    product_quantity = models.IntegerField(
+    product_quantity = models.FloatField(
         default=0
     )
     product_unit_price = models.FloatField(
@@ -329,7 +329,7 @@ class SaleOrderCost(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    product_quantity = models.IntegerField(
+    product_quantity = models.FloatField(
         default=0
     )
     product_cost_price = models.FloatField(
@@ -412,7 +412,7 @@ class SaleOrderExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    expense_quantity = models.IntegerField(
+    expense_quantity = models.FloatField(
         default=0
     )
     expense_price = models.FloatField(
