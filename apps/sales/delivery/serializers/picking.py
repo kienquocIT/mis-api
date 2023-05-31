@@ -1,8 +1,9 @@
+
 from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from ..models import DeliveryConfig, OrderDeliverySub
+from ..models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.models import OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
 
 __all__ = [
@@ -115,58 +116,53 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
 class OrderPickingUpdateSerializer(serializers.ModelSerializer):
     products = ProductPickingUpdateSerializer(many=True)
     sale_order_id = serializers.UUIDField()
-    delivery_option = serializers.IntegerField(min_value=1)
+    delivery_option = serializers.IntegerField(min_value=0)
 
     # tạo delivery sub sau khi picking done
     @staticmethod
     def create_delivery_sub(picked_quantity_total, remain, picking_obj):
-        delivery = OrderDelivery.objects.filter(sale_order_id=picking_obj.sale_order_id)
+        delivery = OrderDelivery.objects.filter(sale_order_id=picking_obj.sale_order_id).first()
         # get delivery config
         config = DeliveryConfig.objects.get(company_id=picking_obj.company_id)
-        is_picking = config.is_pikcing
+        is_picking = config.is_picking
         is_partial = config.is_partial_ship
-
-        if is_partial and is_picking:
+        state_val = 0
+        if is_partial and not is_picking:
             # giao hàng nhiều lần
-            pass
+            state_val = 1
         elif picked_quantity_total == remain:
             # đợi full
             # tạo sub delivery
             sub_delivery = OrderDeliverySub.objects.create(
                 order_delivery=delivery,
-                date_done=None,
+                date_done=timezone.now(),
                 previous_step=None,
                 times=1,
-                delivery_quantity=picking_obj.delivery_quantity,
-                delivered_quantity_before=picking_obj.delivered_quantity_before,
-                remaining_quantity=picking_obj.remaining_quantity,
-                ready_quantity=picked_quantity_total,
-                delivery_data=picking_obj.pickup_data
+                delivery_quantity=picking_obj.pickup_quantity,
+                delivered_quantity_before=0,
+                remaining_quantity=picking_obj.pickup_quantity,
+                ready_quantity=picking_obj.pickup_quantity,
+                delivery_data=picking_obj.sub.pickup_data
             )
             # create delivery prod
             for obj in OrderPickingProduct.objects.filter_current(
                     picking_sub=picking_obj.sub
             ):
-                OrderPickingProduct.objects.create(
-                    product=obj,
-                    product_data=obj.product_data,
+                OrderDeliveryProduct.objects.create(
+                    product=obj.product,
                     uom=obj.uom,
-                    uom_data=obj.uom_data,
                     delivery_quantity=obj.pickup_quantity,
                     delivered_quantity_before=0,
-                    remaining_quantity=obj.remaining_quantity,
-                    ready_quantity=picked_quantity_total,
+                    remaining_quantity=obj.pickup_quantity,
+                    ready_quantity=obj.pickup_quantity,
                     delivery_sub=sub_delivery,
                 )
+            delivery.sub = sub_delivery
             # giao hàng 1 lần delivery = 1 giao nhiều lần delivery = 0
             # state = 0 (wait). state = 1 giao nhiều lần (Partial). state = 2 giao 1 lần (full)
-            state_val = 0
-            if is_picking == 0 and is_partial == 0:
-                state_val = 2
-            elif is_partial == 1:
-                state_val = 1
-            delivery.state = state_val
-            delivery.save()
+            state_val = 2
+        delivery.state = state_val
+        delivery.save()
 
     @staticmethod
     def create_new_picking_sub(instance, sub):
@@ -201,6 +197,7 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
                 picking_sub=new_sub,
                 product_id=obj.product_id
             )
+
     '''
     STEP 1: update table OrderPicking
         + estimated_delivery_date
@@ -233,6 +230,7 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
         + kiem tra giao hàng picking = true (đợi đủ), 
         + picking = true và giao nhieu lan = true hoặc chỉ có giao nhiểu lần => post prod mới update qua delivery
     '''
+
     def update(self, instance, validated_data):
         picking_obj = instance
         # convert prod to dict
@@ -243,11 +241,6 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
         # update picking info step 1
         picking_obj.estimated_delivery_date = validated_data['estimated_delivery_date']
         picking_obj.ware_house = validated_data['ware_house']
-        picking_obj.ware_house_data = {
-            'id': str(validated_data['ware_house'].id),
-            'title': validated_data['ware_house'].title,
-            'code': validated_data['ware_house'].code
-        }
         picking_obj.to_location = validated_data['to_location']
         picking_obj.remarks = validated_data['remarks']
         picking_obj.save(
@@ -278,30 +271,31 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
                             'products': _('Picked quantity must be less more than pickup remain')
                         }
                     )
-            continue  # Skip the current iteration if num is 3
 
         # update sub after update product step 3
-        picking_sub = OrderPickingSub.objects.filter_current(order_picking=picking_obj.id).order_by('-times')
-        remain = 0
-        for sub in picking_sub:
-            sub.pickup_data = pickup_data
-            remain = sub.remaining_quantity
-            sub.picked_quantity = picked_quantity_total
-            sub.ware_house = picking_obj.ware_house
-            sub.ware_house_data = picking_obj.ware_house_data
-            sub.to_location = picking_obj.to_location
-            sub.remarks = picking_obj.remarks
-            sub.date_done = timezone.now
-            sub.pickup_data = pickup_data
-            sub.save(update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'ware_house_data',
-                                    'to_location', 'remarks', 'date_done'])
-            if remain > picked_quantity_total:
-                # chưa đủ => tạo mới sub
-                self.create_new_picking_sub(instance, sub)
-            if picked_quantity_total == remain:
-                # change state from ready to Done if picked was enough.
-                instance.state = 1
-                instance.save(update_fields=['state'])
+        picking_sub = picking_obj.sub
+        remain = picking_sub.remaining_quantity
+        if picking_sub.remaining_quantity > picked_quantity_total:
+            remain = picking_sub.pickup_quantity - picked_quantity_total
+        time_now = timezone.now()
+        picking_sub.pickup_data = pickup_data
+        picking_sub.remaining_quantity = remain
+        picking_sub.picked_quantity = picked_quantity_total
+        picking_sub.to_location = picking_obj.to_location
+        picking_sub.remarks = picking_obj.remarks
+        picking_sub.date_done = time_now
+        picking_sub.save(
+            update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'to_location', 'remarks',
+                           'date_done']
+        )
+
+        if remain > picked_quantity_total:
+            # chưa đủ => tạo mới sub
+            self.create_new_picking_sub(instance, picking_sub)
+        if picked_quantity_total == remain:
+            # change state from ready to Done if picked was enough.
+            instance.state = 1
+            instance.save(update_fields=['state'])
 
         # trigger delivery state step 4
         self.create_delivery_sub(picked_quantity_total, remain, picking_obj)

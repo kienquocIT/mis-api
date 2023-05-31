@@ -148,6 +148,7 @@ class OrderDeliverySub(MasterDataAbstractModel):
     )
     date_done = models.DateTimeField(
         help_text='The record done at value',
+        null=True
     )
     previous_step = models.ForeignKey(
         'self',
