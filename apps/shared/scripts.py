@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models.accounts import AccountType, Account
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.base.models import PlanApplication
+from ..core.tenant.models import Tenant, TenantPlan
 from ..core.workflow.models import WorkflowConfigOfApp, Workflow
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
@@ -145,4 +146,3 @@ def make_sure_workflow_apps():
                     }
                 )
     print('Make sure workflow app is successfully.')
-
