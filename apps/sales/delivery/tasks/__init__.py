@@ -81,7 +81,7 @@ class SaleOrderActiveDeliverySerializer:
             estimated_delivery_date=None,
             state=0,
             remarks='',
-            delivery_option=0 if self.config_obj.is_partial_ship else 1,  # 0: Full, 1: Partial
+            delivery_option=1 if self.config_obj.is_partial_ship else 0,  # 0: Full, 1: Partial
             sub=None,
 
             pickup_quantity=pickup_quantity,

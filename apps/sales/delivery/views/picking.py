@@ -7,7 +7,7 @@ from apps.shared import (
 from apps.sales.delivery.models import OrderPicking
 from apps.sales.delivery.serializers import (
     OrderPickingListSerializer,
-    OrderPickingDetailSerializer,
+    OrderPickingDetailSerializer, OrderPickingUpdateSerializer,
 )
 
 __all__ = [
@@ -37,7 +37,7 @@ class OrderPickingDetail(
 ):
     queryset = OrderPicking.objects
     serializer_detail = OrderPickingDetailSerializer
-    serializer_update = OrderPickingDetailSerializer
+    serializer_update = OrderPickingUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -55,7 +55,7 @@ class OrderPickingDetail(
     @swagger_auto_schema(
         operation_summary='Order Picking Update',
         operation_description="Update picked quantity (Done) for Order picking product/sub of table",
-        serializer_update=OrderPickingDetailSerializer
+        serializer_update=OrderPickingUpdateSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):

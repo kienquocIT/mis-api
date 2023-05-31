@@ -188,6 +188,24 @@ class OrderPickingSub(MasterDataAbstractModel):
             }
         )
     )
+    ware_house = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Ware-House selected for picking',
+        help_text='Auto select first ware house in list',
+    )
+    ware_house_data = models.JSONField(
+        default=dict,
+        verbose_name='WareHouse data',
+        help_text=json.dumps(
+            {
+                'id': '', 'title': '', 'code': '',
+            }
+        ),
+    )
+    remarks = models.TextField(blank=True)
+    to_location = models.TextField(blank=True)
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:

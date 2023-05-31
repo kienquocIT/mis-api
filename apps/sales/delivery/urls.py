@@ -2,7 +2,7 @@ from django.urls import path
 
 from apps.sales.delivery.views import (
     DeliveryConfigDetail, SaleOrderActiveDelivery,
-    OrderPickingList, OrderPickingDetail,
+    OrderPickingList, OrderPickingDetail, OrderDeliveryList, OrderDeliveryDetail,
 )
 
 urlpatterns = [
@@ -11,4 +11,6 @@ urlpatterns = [
 
     path('picking', OrderPickingList.as_view(), name='OrderPickingList'),
     path('picking/<str:pk>', OrderPickingDetail.as_view(), name='OrderPickingDetail'),
+    path('', OrderDeliveryList.as_view(), name='OrderDeliveryList'),
+    path('<str:pk>', OrderDeliveryDetail.as_view(), name='OrderDeliveryDetail'),
 ]
