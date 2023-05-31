@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from .extends.signals import SaleDefaultData
+from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 
@@ -113,3 +113,9 @@ def update_account_shipping_address():
 def update_account_billing_address():
     Account.objects.all().update(billing_address=[])
     return True
+
+
+def make_sure_delivery_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).delivery_config()
+    print('Make sure delivery config is done!')
