@@ -5,7 +5,7 @@ from apps.core.tenant.models import TenantPlan, Tenant
 from apps.masterdata.saledata.models.product import ProductType, Product
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType
+from apps.masterdata.saledata.models.accounts import AccountType, Account
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
@@ -215,6 +215,26 @@ def delete_data_shipping():
     FormulaCondition.objects.all().delete()
     ShippingCondition.objects.all().delete()
     Shipping.objects.all().delete()
+    return True
+
+
+def update_account_annual_revenue():
+    Account.objects.all().update(annual_revenue=1)
+    return True
+
+
+def update_account_total_employees():
+    Account.objects.all().update(total_employees=1)
+    return True
+
+
+def update_account_shipping_address():
+    Account.objects.all().update(shipping_address=[])
+    return True
+
+
+def update_account_billing_address():
+    Account.objects.all().update(billing_address=[])
     return True
 
 

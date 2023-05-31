@@ -25,3 +25,4 @@ class PromoMsg:
     ERROR_MIN_PURCHASE_TOTAL = _('Minimum purchase total is missing, please verify again.')
     ERROR_PRODUCT_PURCHASE = _('Purchase product is missing, please verify again.')
     ERROR_CURRENCY = _('Currency not valid.')
+    PROMOTION_NOT_EXIST = _('Promotion not exist.')

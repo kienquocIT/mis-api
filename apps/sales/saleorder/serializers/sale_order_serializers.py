@@ -156,6 +156,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -167,7 +168,8 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'sale_person',
             'date_created',
             'total_product',
-            'system_status'
+            'system_status',
+            'opportunity'
         )
 
     @classmethod
@@ -187,6 +189,16 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
                 'id': obj.sale_person_id,
                 'full_name': obj.sale_person.get_full_name(2),
                 'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
             }
         return {}
 
@@ -327,7 +339,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         max_length=550
     )
     quotation = serializers.CharField(
-        max_length=550
+        max_length=550,
+        required=False
     )
     # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(
@@ -498,3 +511,22 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             is_update=True
         )
         return instance
+
+
+class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
+    tax = serializers.SerializerMethodField()
+    plan_after_tax = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderExpense
+        fields = ('id', 'expense_title', 'tax', 'plan_after_tax')
+
+    @classmethod
+    def get_tax(cls, obj):
+        if obj.tax:
+            return {'id': obj.tax_id, 'code': obj.tax.code, 'title': obj.tax.title}
+        return {}
+
+    @classmethod
+    def get_plan_after_tax(cls, obj):
+        return obj.expense_subtotal_price + obj.expense_tax_amount

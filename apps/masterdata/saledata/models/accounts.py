@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.price import Price, Currency
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.contacts import Contact
@@ -12,7 +13,39 @@ __all__ = [
     'AccountEmployee',
     'AccountBanks',
     'AccountCreditCards',
-    'AccountAccountTypes'
+    'AccountAccountTypes',
+    'AccountShippingAddress',
+    'AccountBillingAddress'
+]
+
+
+ACCOUNT_TYPE_ORDER = [
+    (0, _('Customer')),
+    (1, _('Supplier')),
+    (2, _('Partner')),
+    (3, _('Competitor')),
+]
+
+ACCOUNT_TYPE_SELECTION = [
+    (0, _('individual')),
+    (1, _('organization')),
+]
+
+ANNUAL_REVENUE_SELECTION = [
+    (1, _('1-10 billions')),
+    (2, _('10-20 billions')),
+    (3, _('20-50 billions')),
+    (4, _('50-200 billions')),
+    (5, _('200-1000 billions')),
+    (6, _('> 1000 billions')),
+]
+
+TOTAL_EMPLOYEES_SELECTION = [
+    (1, _('< 20 people')),
+    (2, _('20-50 people')),
+    (3, _('50-200 people')),
+    (4, _('200-500 people')),
+    (5, _('> 500 people')),
 ]
 
 
@@ -20,7 +53,7 @@ __all__ = [
 class AccountType(MasterDataAbstractModel):
     description = models.CharField(blank=True, max_length=200)
     is_default = models.BooleanField(default=False)
-    account_type_order = models.IntegerField(null=True)
+    account_type_order = models.IntegerField(choices=ACCOUNT_TYPE_ORDER, null=True)
 
     class Meta:
         verbose_name = 'AccountType'
@@ -83,6 +116,7 @@ class Account(DataAbstractModel):
     account_type = models.JSONField(
         default=list
     )
+    account_type_selection = models.SmallIntegerField(choices=ACCOUNT_TYPE_SELECTION, default=0)
     account_group = models.ForeignKey(
         AccountGroup,
         on_delete=models.CASCADE,
@@ -133,6 +167,8 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=False
     )
+    # annual_revenue = models.SmallIntegerField(choices=ANNUAL_REVENUE_SELECTION, null=True)
+    # total_employees = models.SmallIntegerField(choices=TOTAL_EMPLOYEES_SELECTION, default=1)
     annual_revenue = models.CharField(
         verbose_name='annual revenue of account',
         blank=True,
@@ -282,11 +318,72 @@ class AccountCreditCards(SimpleAbstractModel):
 class AccountAccountTypes(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE)
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE)
-    # 0 is individual, 1 is organization
-    customer_type = models.BooleanField(null=True)
 
     class Meta:
         verbose_name = 'Account AccountTypes'
         verbose_name_plural = 'Accounts AccountTypes'
+        default_permissions = ()
+        permissions = ()
+
+
+# AccountShippingAddress
+class AccountShippingAddress(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
+    detail_address = models.CharField(
+        verbose_name='Detail address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    city = models.ForeignKey('base.City', on_delete=models.CASCADE)
+    district = models.ForeignKey('base.District', on_delete=models.CASCADE)
+    ward = models.ForeignKey('base.Ward', on_delete=models.CASCADE, null=True)
+    full_address = models.CharField(
+        verbose_name='Full address',
+        blank=True,
+        max_length=500
+    )
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Account Shipping Address'
+        verbose_name_plural = 'Account Shipping Addresses'
+        default_permissions = ()
+        permissions = ()
+
+
+# AccountShippingAddress
+class AccountBillingAddress(SimpleAbstractModel):
+    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account_name = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='billing_account_name')
+    email = models.CharField(
+        verbose_name='account email',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    tax_code = models.CharField(
+        verbose_name='tax code',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    account_address = models.CharField(
+        verbose_name='Account address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    full_address = models.CharField(
+        verbose_name='Full address',
+        blank=True,
+        max_length=500
+    )
+    is_default = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Account Billing Address'
+        verbose_name_plural = 'Account Billing Addresses'
         default_permissions = ()
         permissions = ()

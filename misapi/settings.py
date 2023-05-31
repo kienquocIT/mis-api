@@ -73,6 +73,8 @@ INSTALLED_APPS = \
         'apps.sales.quotation',
         'apps.masterdata.promotion',
         'apps.sales.saleorder',
+        'apps.sales.cashoutflow'
+        'apps.sales.saleorder',
         'apps.sales.delivery',
     ]
 

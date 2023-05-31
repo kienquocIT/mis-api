@@ -9,6 +9,7 @@ from apps.masterdata.saledata.views.accounts import (
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
+from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
@@ -20,7 +21,7 @@ from apps.masterdata.saledata.views.price import (
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail,
-    WareHouseList, WareHouseDetail,
+    WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList,
 )
 
 urlpatterns = [
@@ -107,7 +108,8 @@ urlpatterns += [
 
 urlpatterns += [
     path('shippings', ShippingList.as_view(), name='ShippingList'),
-    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail'),
+    path('shippings-check', ShippingCheckList.as_view(), name='ShippingCheckList'),
 ]
 
 # warehouse
@@ -116,3 +118,11 @@ urlpatterns += [
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
 ]
 # // warehouse
+
+
+# good receipt
+urlpatterns += [
+    path('good-receipt', GoodReceiptList.as_view(), name='GoodReceiptList'),
+    path('good-receipt/<str:pk>', GoodReceiptDetail.as_view(), name='GoodReceiptDetail'),
+]
+# // end good receipt

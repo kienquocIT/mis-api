@@ -8,3 +8,4 @@ class ShippingMsg:
     REQUIRED_AMOUNT = _('Amount is required')
     NOT_YET_CONDITION = _('Not yet condition')
     CONDITION_NOT_NULL = _("Condition can't not null or blank")
+    SHIPPING_NOT_EXIST = _('Shipping not exist.')
