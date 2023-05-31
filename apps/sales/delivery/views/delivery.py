@@ -2,9 +2,10 @@ __all__ = ['OrderDeliveryList']
 
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from ..models import OrderDelivery
 from ..serializers import OrderDeliveryListSerializer, OrderPickingDetailSerializer
-from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+
 
 __all__ = ['OrderDeliveryList', 'OrderDeliveryDetail']
 
