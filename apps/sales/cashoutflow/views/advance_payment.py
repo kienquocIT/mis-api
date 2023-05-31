@@ -1,7 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.cashoutflow.models import AdvancePayment
 from apps.sales.cashoutflow.serializers import (
-    AdvancePaymentListSerializer, AdvancePaymentCreateSerializer, AdvancePaymentDetailSerializer,
+    AdvancePaymentListSerializer, AdvancePaymentCreateSerializer,
+    AdvancePaymentDetailSerializer, AdvancePaymentUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -17,7 +18,8 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment'
+            'advance_payment',
+            'return_advance_payment',
         )
 
     @swagger_auto_schema(
@@ -39,16 +41,24 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
 
 
 class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = AdvancePayment.objects # noqa
+    queryset = AdvancePayment.objects  # noqa
     serializer_list = AdvancePaymentListSerializer
     serializer_create = AdvancePaymentCreateSerializer
     serializer_detail = AdvancePaymentDetailSerializer
+    serializer_update = AdvancePaymentUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment'
+            'advance_payment__expense__expense__expense_type',
+            'advance_payment__currency',
+            'advance_payment__tax',
+            'return_advance_payment__return_advance',
+        ).select_related(
+            'quotation_mapped__opportunity__customer',
+            'sale_order_mapped__opportunity__customer',
+            'beneficiary',
         )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')
@@ -56,8 +66,8 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    # @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=AdvancePaymentUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=True, code_perm='')
-    # def put(self, request, *args, **kwargs):
-    #     self.serializer_class = AdvancePaymentUpdateSerializer
-    #     return self.update(request, *args, **kwargs)
+    @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=AdvancePaymentUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = AdvancePaymentUpdateSerializer
+        return self.update(request, *args, **kwargs)

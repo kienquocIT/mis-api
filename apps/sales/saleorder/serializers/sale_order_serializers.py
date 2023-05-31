@@ -6,14 +6,24 @@ from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, Sal
 
 class SaleOrderProductSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
         max_length=550,
         required=False
+    )
+    promotion = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
     )
 
     class Meta:
@@ -37,6 +47,10 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
         )
 
     @classmethod
@@ -50,6 +64,14 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return SaleOrderCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_promotion(cls, value):
+        return SaleOrderCommonValidate().validate_promotion(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_shipping(value=value)
 
 
 class SaleOrderLogisticSerializer(serializers.ModelSerializer):
@@ -251,6 +273,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'total_expense_tax',
             'total_expense',
             'date_created',
+            'delivery_call',
         )
 
     @classmethod
@@ -443,6 +466,14 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
+    payment_term = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    quotation = serializers.CharField(
+        max_length=550,
+        required=False
+    )
     # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(
         many=True,
@@ -466,8 +497,11 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'sale_person',
+            'payment_term',
+            'quotation',
             # total amount of products
             'total_product_pretax_amount',
+            'total_product_discount_rate',
             'total_product_discount',
             'total_product_tax',
             'total_product',
@@ -479,7 +513,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'total_expense_pretax_amount',
             'total_expense_tax',
             'total_expense',
-            # quotation tabs
+            # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
             'sale_order_costs_data',
@@ -505,6 +539,10 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_payment_term(cls, value):
         return SaleOrderCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_quotation(cls, value):
+        return SaleOrderCommonValidate().validate_quotation(value=value)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
