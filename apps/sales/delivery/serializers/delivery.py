@@ -24,11 +24,10 @@ class OrderDeliverySubListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_products(cls, obj):
-        xx = OrderDeliveryProductListSerializer(
+        return OrderDeliveryProductListSerializer(
             obj.orderdeliveryproduct_set.all(),
             many=True,
         ).data
-        return xx
 
     class Meta:
         model = OrderDeliverySub

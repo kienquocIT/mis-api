@@ -3,8 +3,10 @@ from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 
-from ..models import DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct
-from apps.sales.delivery.models import OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
+from ..models import (
+    DeliveryConfig, OrderDeliverySub, OrderDeliveryProduct, OrderPicking, OrderPickingProduct,
+    OrderPickingSub, OrderDelivery
+)
 
 __all__ = [
     'OrderPickingListSerializer',
@@ -34,11 +36,10 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_products(cls, obj):
-        xx = OrderPickingProductListSerializer(
+        return OrderPickingProductListSerializer(
             obj.orderpickingproduct_set.all(),
             many=True,
         ).data
-        return xx
 
     class Meta:
         model = OrderPickingSub
@@ -198,39 +199,36 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
                 product_id=obj.product_id
             )
 
-    '''
-    STEP 1: update table OrderPicking
-        + estimated_delivery_date
-        + ware_house, ware_house_data
-        + to_location, remarks
-
-    STEP 2: update table OrderPickingProduct
-        * điều kiện remain >= done
-            + picked_quantity
-
-    STEP 3: update current sub và tạo mới nếu chưa đủ cho table OrderPickingSub
-        * nếu chưa update vào current và tạo mới nếu rồi update vào current
-        => update vào currenct 
-            + picked_quantity
-            + pickup_data ex. {
-                                product_id: { 
-                                                remaining_quantity: '', 
-                                                picked_quantity: validated_data['done'], 
-                                                pickup_quantity: '', 
-                                                picked_quantity_before: ''
-                                            }
-                              }
-        => tạo mới
-            + times = times cũ + 1
-            + picked_quantity_before = tổng done trước đó
-            + remaining_quantity = remaining - done
-            + previous_step_id = sub_id_current
-
-    STEP 4: update cho phiếu delivery nếu đã done
-        + kiem tra giao hàng picking = true (đợi đủ), 
-        + picking = true và giao nhieu lan = true hoặc chỉ có giao nhiểu lần => post prod mới update qua delivery
-    '''
-
+    # STEP 1: update table OrderPicking
+    #     + estimated_delivery_date
+    #     + ware_house, ware_house_data
+    #     + to_location, remarks
+    #
+    # STEP 2: update table OrderPickingProduct
+    #     * điều kiện remain >= done
+    #         + picked_quantity
+    #
+    # STEP 3: update current sub và tạo mới nếu chưa đủ cho table OrderPickingSub
+    #     * nếu chưa update vào current và tạo mới nếu rồi update vào current
+    #     => update vào currenct
+    #         + picked_quantity
+    #         + pickup_data ex. {
+    #                             product_id: {
+    #                                             remaining_quantity: '',
+    #                                             picked_quantity: validated_data['done'],
+    #                                             pickup_quantity: '',
+    #                                             picked_quantity_before: ''
+    #                                         }
+    #                           }
+    #     => tạo mới
+    #         + times = times cũ + 1
+    #         + picked_quantity_before = tổng done trước đó
+    #         + remaining_quantity = remaining - done
+    #         + previous_step_id = sub_id_current
+    #
+    # STEP 4: update cho phiếu delivery nếu đã done
+    #     + kiem tra giao hàng picking = true (đợi đủ),
+    #     + picking = true và giao nhieu lan = true hoặc chỉ có giao nhiểu lần => post prod mới update qua delivery
     def update(self, instance, validated_data):
         picking_obj = instance
         # convert prod to dict
