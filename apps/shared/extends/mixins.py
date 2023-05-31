@@ -14,19 +14,18 @@ class BaseMixin(GenericAPIView):
     filterset_fields: dict
     filterset_class: filters.FilterSet
 
-    def __init__(self, *args, **kwargs):
-        serializer_list = getattr(self, 'serializer_list', None)
-        serializer_detail = getattr(self, 'serializer_detail', None)
-        if serializer_list:
-            self.serializer_class = self.serializer_list
-        elif serializer_detail:
-            self.serializer_class = self.serializer_detail
-        else:
-            raise AttributeError(
-                f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute.'
-            )
-
-        super().__init__(*args, **kwargs)
+    def get_serializer_class(self):
+        if getattr(self, 'serializer_list', None):
+            return getattr(self, 'serializer_list', None)
+        if getattr(self, 'serializer_detail', None):
+            return getattr(self, 'serializer_detail', None)
+        if getattr(self, 'serializer_create', None):
+            return getattr(self, 'serializer_create', None)
+        if getattr(self, 'serializer_update', None):
+            return getattr(self, 'serializer_update', None)
+        raise AttributeError(
+            f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute.'
+        )
 
     @staticmethod
     def setup_hidden(fields: list, user) -> dict:
@@ -237,7 +236,11 @@ class BaseMixin(GenericAPIView):
             )
         try:
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-            obj = queryset.get(**filter_kwargs, force_cache=self.use_cache_object)
+            obj = queryset.get(
+                **filter_kwargs,
+                **self.setup_retrieve_field_hidden(user=self.request.user),
+                force_cache=self.use_cache_object
+            )
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj

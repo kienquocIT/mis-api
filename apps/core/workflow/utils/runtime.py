@@ -457,8 +457,8 @@ class RuntimeLogHandler:
     ):
         self.stage_obj = stage_obj
         if not actor_id and not actor_obj:
-            raise AttributeError('Need actor for log')
-        if actor_obj:
+            self.actor_obj = None
+        elif actor_obj:
             self.actor_obj = actor_obj
         elif actor_id:
             self.actor_obj = DisperseModel(app_model='hr.employee').get_model().objects.get(pk=actor_id)

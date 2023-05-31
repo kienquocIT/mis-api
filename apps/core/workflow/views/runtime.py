@@ -3,8 +3,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeLog, RuntimeAssignee
-from apps.core.workflow.serializers.runtime import RuntimeTaskSerializer
-from apps.shared import ResponseController, mask_view, call_task_background
+from apps.core.workflow.serializers.runtime import (
+    RuntimeTaskSerializer,
+    RuntimeListSerializer,
+)
+from apps.shared import ResponseController, mask_view, call_task_background, BaseListMixin, TypeCheck
 from apps.core.workflow.utils.runtime import call_new_runtime, call_approval_task
 from apps.core.workflow.utils.docs import DocHandler
 
@@ -14,7 +17,28 @@ __all__ = [
     'WorkflowRuntimeTest',
     'HistoryStage',
     'RuntimeTask',
+    'RuntimeListView',
 ]
+
+
+class RuntimeListView(BaseListMixin):
+    queryset = Runtime.objects
+    serializer_list = RuntimeListSerializer
+    filterset_fields = {
+        'flow_id': ['exact', 'in'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('stage_currents', 'doc_employee_created')
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        params = request.query_params
+        if 'flow_id' in params and TypeCheck.check_uuid(params['flow_id']):
+            kwargs['flow_id'] = params['flow_id']
+            return self.list(request, *args, **kwargs)
+        return ResponseController.notfound_404()
 
 
 class RuntimeDataView(APIView):
