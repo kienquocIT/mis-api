@@ -729,3 +729,83 @@ class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
             'id': obj.account_id,
             'name': obj.account.name
         }
+
+
+class AccountForSaleListSerializer(serializers.ModelSerializer):
+    account_type = serializers.SerializerMethodField()
+    manager = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
+    owner = serializers.SerializerMethodField()
+    shipping_address = serializers.JSONField()
+    billing_address = serializers.JSONField()
+    payment_term_mapped = serializers.SerializerMethodField()
+    price_list_mapped = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Account
+        fields = (
+            "id",
+            'code',
+            "name",
+            "website",
+            "code",
+            "account_type",
+            "industry",
+            "manager",
+            "owner",
+            "phone",
+            "shipping_address",
+            "billing_address",
+            "bank_accounts_information",
+            "payment_term_mapped",
+            "price_list_mapped"
+        )
+
+    @classmethod
+    def get_account_type(cls, obj):
+        if obj.account_type:
+            all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
+            return all_account_types
+        return []
+
+    @classmethod
+    def get_manager(cls, obj):
+        if obj.manager:
+            return obj.manager
+        return []
+
+    @classmethod
+    def get_owner(cls, obj):
+        if obj.owner:
+            return {'id': obj.owner_id, 'fullname': obj.owner.fullname}
+        return {}
+
+    @classmethod
+    def get_industry(cls, obj):
+        if obj.industry:
+            return {
+                'id': obj.industry_id,
+                'title': obj.industry.title
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term_mapped(cls, obj):
+        if obj.payment_term_mapped:
+            return {
+                'id': obj.payment_term_mapped_id,
+                'title': obj.payment_term_mapped.title,
+                'code': obj.payment_term_mapped.code
+            }
+        return {}
+
+    @classmethod
+    def get_price_list_mapped(cls, obj):
+        if obj.price_list_mapped:
+            return {
+                'id': obj.price_list_mapped_id,
+                'title': obj.price_list_mapped.title,
+                'code': obj.price_list_mapped.code
+            }
+        return {}
+
