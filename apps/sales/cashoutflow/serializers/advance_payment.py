@@ -212,6 +212,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             expense_items.append({
                 'tax': tax_dict,
                 'unit_price': item.expense_unit_price,
+                'remain_value': item.after_tax_price,
                 'subtotal_price': item.subtotal_price,
                 'after_tax_price': item.after_tax_price,
                 'expense_quantity': item.expense_quantity,
@@ -220,7 +221,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'code': item.expense.code,
                     'title': item.expense.title,
                     'type': item.expense.general_information['expense_type'],
-                    'remain_value': 0
                 },
                 'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
             })
