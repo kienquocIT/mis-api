@@ -1,0 +1,98 @@
+from rest_framework import serializers
+from apps.sales.cashoutflow.models import Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail
+from apps.masterdata.saledata.models import Currency, AccountBanks
+from apps.shared import AdvancePaymentMsg, AccountsMsg
+
+
+class PaymentListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = "__all__"
+
+
+def create_expense_items(instance, expense_valid_list):
+    vnd_currency = Currency.objects.filter_current(
+        fill__tenant=True,
+        fill__company=True,
+        abbreviation='VND'
+    ).first()
+    if vnd_currency:
+        bulk_info = []
+        for item in expense_valid_list:
+            bulk_info.append(
+                PaymentCost(
+                    payment=instance,
+                    expense_id=item.get('expense_id', None),
+                    expense_unit_of_measure_id=item.get('unit_of_measure_id', None),
+                    expense_quantity=item.get('quantity', None),
+                    expense_unit_price=item.get('unit_price', None),
+                    tax_id=item.get('tax_id', None),
+                    tax_price=item.get('tax_price', None),
+                    subtotal_price=item.get('subtotal_price', None),
+                    after_tax_price=item.get('after_tax_price', None),
+                    currency=vnd_currency,
+                    document_number=item.get('document_number', None),
+                    expense_ap_detail_list=item.get('expense_ap_detail_list', None),
+                )
+            )
+        if len(bulk_info) > 0:
+            PaymentCost.objects.filter(payment=instance).delete()
+            PaymentCost.objects.bulk_create(bulk_info)
+        return True
+    return False
+
+
+class PaymentCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = Payment
+        fields = (
+            'title',
+            'sale_code_mapped',
+            'sale_code_type',
+            'supplier',
+            'method',
+            'creator_name',
+            'beneficiary',
+        )
+
+    @classmethod
+    def validate_sale_code_type(cls, attrs):
+        if attrs in [0, 1, 2, 3]:
+            return attrs
+        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+
+    @classmethod
+    def validate_method(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+
+    def validate(self, validate_data):
+        if 'sale_code' in self.initial_data:
+            validate_data['sale_code_mapped'] = self.initial_data['sale_code']
+        else:
+            if self.initial_data.get('sale_code_type', None) != 2:
+                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+        return validate_data
+
+    def create(self, validated_data):
+        if Payment.objects.all().count() == 0:
+            new_code = 'AP.CODE.0001'
+        else:
+            latest_code = Payment.objects.latest('date_created').code
+            new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
+            new_code = 'AP.CODE.000' + str(new_code)
+
+        payment_obj = Payment.objects.create(**validated_data, code=new_code)
+        if self.initial_data.get('expense_valid_list', None):
+            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', None))
+        return payment_obj
+
+
+class PaymentDetailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Payment
+        fields = '__all__'
