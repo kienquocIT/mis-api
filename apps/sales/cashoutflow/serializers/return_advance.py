@@ -164,6 +164,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
                 remain_total = item.remain_value
             result.append(
                 {
+                    'id': item.advance_payment_cost_id,
                     'expense': {
                         'id': item.advance_payment_cost.expense_id,
                         'code': item.advance_payment_cost.expense.code,
