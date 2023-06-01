@@ -45,30 +45,30 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
 
 
 class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
-    expense = serializers.UUIDField(required=True)
+    advance_payment_cost = serializers.UUIDField(required=True)
 
     class Meta:
         model = ReturnAdvanceCost
         fields = (
-            'expense',
-            'remain_total',
-            'return_price',
+            'advance_payment_cost',
+            'remain_value',
+            'return_value',
         )
 
     @classmethod
-    def validate_remain_total(cls, value):
+    def validate_remain_value(cls, value):
         if value < 0:
             raise serializers.ValidationError({'remain total': ReturnAdvanceMsg.GREATER_THAN_ZERO})
         return value
 
     @classmethod
-    def validate_return_price(cls, value):
+    def validate_return_value(cls, value):
         if value < 0:
             raise serializers.ValidationError({'input return': ReturnAdvanceMsg.GREATER_THAN_ZERO})
         return value
 
     def validate(self, validate_data):
-        if validate_data['remain_total'] < validate_data['return_price']:
+        if validate_data['remain_value'] < validate_data['return_value']:
             raise serializers.ValidationError({'input return': ReturnAdvanceMsg.RETURN_GREATER_THAN_REMAIN})
         return validate_data
 
@@ -93,7 +93,6 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         count_expense = AdvancePaymentCost.objects.filter(
             advance_payment_id=validate_data['advance_payment'],
-            expense_id__in=[item['expense'] for item in validate_data['cost']]
         ).count()
         if len(validate_data['cost']) != count_expense:
             raise serializers.ValidationError({'expense': ReturnAdvanceMsg.NOT_MAP_AP})
@@ -104,9 +103,9 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
         data_bulk = [
             ReturnAdvanceCost(
                 return_advance=return_advance,
-                expense_id=data['expense'],
-                remain_total=data['remain_total'],
-                return_price=data['return_price']
+                advance_payment_cost_id=data['advance_payment_cost'],
+                remain_value=data['remain_value'],
+                return_value=data['return_value']
             ) for data in validate_data
         ]
         ReturnAdvanceCost.objects.bulk_create(data_bulk)
@@ -150,25 +149,29 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
         dict_money_returned = {}
 
         for item in advance_payment.advance_payment.all():
-            dict_money_returned[item.expense_id] = item.after_tax_price
+            dict_money_returned[item.id] = item.after_tax_price
 
         for item in list_return_advance:
             if item.status == 0:
                 for cost in item.return_advance.all():
-                    if cost.expense_id in dict_money_returned:
-                        dict_money_returned[cost.expense_id] -= cost.return_price
+                    if cost.advance_payment_cost_id in dict_money_returned:
+                        dict_money_returned[cost.advance_payment_cost_id] -= cost.return_value
 
         result = []
         for item in obj.return_advance.all():
-            remain_total = dict_money_returned[item.expense_id]
+            remain_total = dict_money_returned[item.advance_payment_cost_id]
             if obj.status == 0:
-                remain_total = item.remain_total
+                remain_total = item.remain_value
             result.append(
                 {
-                    'expense': {'id': item.expense_id, 'code': item.expense.code, 'title': item.expense.title},
-                    'expense_type': item.expense.expense.expense_type.title,
+                    'expense': {
+                        'id': item.advance_payment_cost.expense_id,
+                        'code': item.advance_payment_cost.expense.code,
+                        'title': item.advance_payment_cost.expense.title
+                    },
+                    'expense_type': item.advance_payment_cost.expense.expense.expense_type.title,
                     'remain_total': remain_total,
-                    'return_price': item.return_price,
+                    'return_price': item.return_value,
                 }
             )
         return result

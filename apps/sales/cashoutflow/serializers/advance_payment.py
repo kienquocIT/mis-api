@@ -56,8 +56,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_remain_value(cls, obj):
         all_cost = obj.advance_payment.all()
-        advance_value = sum(price.after_tax_price for price in all_cost)
-        return advance_value
+        sum_ap_value = sum(price.after_tax_price for price in all_cost)
+        sum_return_value = sum(item.return_total for item in obj.return_advance_payment.all() if item.status == 0)
+        return sum_ap_value - sum_return_value
 
     @classmethod
     def get_status(cls, obj):
@@ -210,10 +211,10 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         for return_advance in obj.return_advance_payment.all():
             if return_advance.status == 0:
                 for cost in return_advance.return_advance.all():
-                    if cost.expense_id not in dict_cost_return:
-                        dict_cost_return[cost.expense_id] = cost.return_price
+                    if cost.advance_payment_cost_id not in dict_cost_return:
+                        dict_cost_return[cost.advance_payment_cost_id] = cost.return_value
                     else:
-                        dict_cost_return[cost.expense_id] += cost.return_price
+                        dict_cost_return[cost.advance_payment_cost_id] += cost.return_value
 
         all_item = obj.advance_payment.select_related('currency', 'expense', 'tax').all()
         expense_items = []
@@ -223,22 +224,27 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             if item.tax:
                 tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
 
-            if item.expense_id in dict_cost_return:
-                refunded_value = dict_cost_return[item.expense_id]
+            if item.id in dict_cost_return:
+                refunded_value = dict_cost_return[item.id]
 
             expense_items.append(
                 {
-                    'tax': tax_dict,
-                    'unit_price': item.expense_unit_price,
-                    'subtotal_price': item.subtotal_price,
-                    'after_tax_price': item.after_tax_price,
-                    'expense_quantity': item.expense_quantity,
+                    'id': item.id,
                     'expense': {
                         'id': item.expense_id,
                         'code': item.expense.code,
                         'title': item.expense.title,
                         'type': item.expense.general_information['expense_type'],
-                        'remain_value': 0
+                    },
+                    'tax': tax_dict,
+                    'unit_price': item.expense_unit_price,
+                    'subtotal_price': item.subtotal_price,
+                    'after_tax_price': item.after_tax_price,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_uom': {
+                        'id': item.expense_unit_of_measure_id,
+                        'code': item.expense_unit_of_measure.code,
+                        'title': item.expense_unit_of_measure.title
                     },
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                     'remain_total': item.after_tax_price - refunded_value,
