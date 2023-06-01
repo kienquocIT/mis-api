@@ -111,6 +111,11 @@ class SaleOrder(DataAbstractModel):
         default=0,
         help_text="total amount of tab expense"
     )
+    delivery_call = models.BooleanField(
+        default=False,
+        verbose_name='Called delivery',
+        help_text='State call delivery of this',
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -191,7 +196,7 @@ class SaleOrderProduct(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    product_quantity = models.IntegerField(
+    product_quantity = models.FloatField(
         default=0
     )
     product_unit_price = models.FloatField(
@@ -324,7 +329,7 @@ class SaleOrderCost(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    product_quantity = models.IntegerField(
+    product_quantity = models.FloatField(
         default=0
     )
     product_cost_price = models.FloatField(
@@ -407,7 +412,7 @@ class SaleOrderExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    expense_quantity = models.IntegerField(
+    expense_quantity = models.FloatField(
         default=0
     )
     expense_price = models.FloatField(

@@ -4,7 +4,10 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from .extends.signals import SaleDefaultData
+from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..core.base.models import PlanApplication
+from ..core.tenant.models import Tenant, TenantPlan
+from ..core.workflow.models import WorkflowConfigOfApp, Workflow
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 
@@ -113,3 +116,33 @@ def update_account_shipping_address():
 def update_account_billing_address():
     Account.objects.all().update(billing_address=[])
     return True
+
+
+def make_sure_delivery_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).delivery_config()
+    print('Make sure delivery config is done!')
+
+
+def make_sure_workflow_apps():
+    for tenant_obj in Tenant.objects.all():
+        plan_ids = TenantPlan.objects.filter(tenant=tenant_obj).values_list('plan_id', flat=True)
+        app_objs = [
+            x.application for x in
+            PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
+        ]
+        for company_obj in Company.objects.filter(tenant=tenant_obj):
+            for app in app_objs:
+                WorkflowConfigOfApp.objects.get_or_create(
+                    company=company_obj,
+                    application=app,
+                    defaults={
+                        'tenant': tenant_obj,
+                        'workflow_currently': Workflow.objects.filter(
+                            tenant=tenant_obj,
+                            company=company_obj,
+                            application=app,
+                        ).first()
+                    }
+                )
+    print('Make sure workflow app is successfully.')

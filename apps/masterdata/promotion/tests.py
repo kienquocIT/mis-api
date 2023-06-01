@@ -26,7 +26,7 @@ class PromotionTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     def test_create_promotion(self):
         currency_data = {
@@ -35,8 +35,8 @@ class PromotionTestCase(AdvanceTestCase):
             "rate": 0.45
         }
         currency = self.client.post(reverse("CurrencyList"), currency_data, format='json')
-        product_type = ProductTestCase.create_product_type(self)  # noqa
-        product_category = ProductTestCase.create_product_category(self)
+        product_type = ProductTestCase.create_product_type(self).data['result']  # noqa
+        product_category = ProductTestCase.create_product_category(self).data['result']
         unit_of_measure, uom_group = ProductTestCase.create_uom(self)
         data1 = {
             "code": "P01",
@@ -44,7 +44,7 @@ class PromotionTestCase(AdvanceTestCase):
             "general_information": {
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'uom_group': uom_group.data['result']['id']
             },
         }
         product = self.client.post(reverse("ProductList"), data1, format='json')
