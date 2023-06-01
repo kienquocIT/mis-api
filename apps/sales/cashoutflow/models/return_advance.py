@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.sales.cashoutflow.models import AdvancePaymentCost
 from apps.shared import DataAbstractModel, SimpleAbstractModel
+from .advance_payment import AdvancePaymentCost
+
 
 __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 
