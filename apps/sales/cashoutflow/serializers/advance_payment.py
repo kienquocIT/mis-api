@@ -40,25 +40,29 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_advance_value(cls, obj):
-        all_cost = obj.advance_payment.all()
-        advance_value = sum(price.after_tax_price for price in all_cost)
-        return advance_value
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        return sum_ap_value
 
     @classmethod
     def get_to_payment(cls, obj):
-        obj.to_payment = 0
-        return obj.to_payment
+        all_items = obj.advance_payment.all()
+        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
+        return sum_payment_converted_value
 
     @classmethod
     def get_return_value(cls, obj):
-        return sum(item.return_total for item in obj.return_advance_payment.all() if item.status == 0)
+        all_items = obj.advance_payment.all()
+        sum_return_value = sum(item.sum_return_value for item in all_items)
+        return sum_return_value
 
     @classmethod
     def get_remain_value(cls, obj):
-        all_cost = obj.advance_payment.all()
-        sum_ap_value = sum(price.after_tax_price for price in all_cost)
-        sum_return_value = sum(item.return_total for item in obj.return_advance_payment.all() if item.status == 0)
-        return sum_ap_value - sum_return_value
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_return_value = sum(item.sum_return_value for item in all_items)
+        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
+        return sum_ap_value - sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_status(cls, obj):
