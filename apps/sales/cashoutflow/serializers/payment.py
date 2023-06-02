@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail
+from apps.sales.cashoutflow.models import (
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail,
+    AdvancePaymentCost
+)
 from apps.masterdata.saledata.models import Currency, AccountBanks
 from apps.shared import AdvancePaymentMsg, AccountsMsg
 
@@ -37,7 +40,41 @@ def create_expense_items(instance, expense_valid_list):
             )
         if len(bulk_info) > 0:
             PaymentCost.objects.filter(payment=instance).delete()
-            PaymentCost.objects.bulk_create(bulk_info)
+            paymentcost_list = PaymentCost.objects.bulk_create(bulk_info)
+
+            payment_cost_bulk_info = []
+            expense_ap_bulk_info = []
+            for pc_item in paymentcost_list:
+                expense_ap_detail_list = pc_item.expense_ap_detail_list
+                for expense_ap_detail in expense_ap_detail_list:
+                    payment_cost_item = PaymentCostItems(
+                        payment_cost=pc_item,
+                        sale_code_mapped=expense_ap_detail.get('sale_code_item_id', None),
+                        real_value=expense_ap_detail.get('real_value', 0),
+                        value_converted=expense_ap_detail.get('converted_value', 0),
+                        sum_value=expense_ap_detail.get('sum_value', 0),
+                    )
+                    payment_cost_bulk_info.append(payment_cost_item)
+
+                    for expense_ap in expense_ap_detail['converted_value_detail']:
+                        if expense_ap.get('id', None):
+                            expense_ap_bulk_info.append(
+                                PaymentCostItemsDetail(
+                                    payment_cost_item=payment_cost_item,
+                                    expense_converted_id=expense_ap['id'],
+                                    expense_value_converted=expense_ap.get('value', 0),
+                                    return_remain_value_after=0,
+                                )
+                            )
+                            ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
+                            new_converted_value = ap_updated.sum_converted_value + float(expense_ap.get('value', 0))
+                            ap_updated.sum_converted_value = new_converted_value
+                            ap_updated.save()
+
+            if len(payment_cost_bulk_info) > 0:
+                PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
+            if len(expense_ap_bulk_info) > 0:
+                PaymentCostItemsDetail.objects.bulk_create(expense_ap_bulk_info)
         return True
     return False
 

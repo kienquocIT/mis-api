@@ -132,15 +132,11 @@ class PaymentCostItemsDetail(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='payment_cost_item'
     )
-    advance_payment_converted = models.ForeignKey(
-        AdvancePayment,
-        on_delete=models.CASCADE,
-        related_name='advance_payment_converted'
-    )
     expense_converted = models.ForeignKey(
         AdvancePaymentCost,
         on_delete=models.CASCADE,
-        related_name='expense_converted'
+        related_name='expense_converted',
+        null=True
     )
     expense_value_converted = models.FloatField(
         default=0,
