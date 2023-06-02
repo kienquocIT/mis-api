@@ -142,10 +142,6 @@ class PaymentCostItemsDetail(SimpleAbstractModel):
         default=0,
         help_text='Value which is CONVERTED from Advance Payment Expense'
     )
-    return_remain_value_after = models.FloatField(
-        default=0,
-        help_text='Remain value which is returned after converted'
-    )
     date_created = models.DateTimeField(
         default=timezone.now,
         editable=False,

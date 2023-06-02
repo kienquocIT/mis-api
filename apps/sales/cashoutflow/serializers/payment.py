@@ -63,7 +63,6 @@ def create_expense_items(instance, expense_valid_list):
                                     payment_cost_item=payment_cost_item,
                                     expense_converted_id=expense_ap['id'],
                                     expense_value_converted=expense_ap.get('value', 0),
-                                    return_remain_value_after=0,
                                 )
                             )
                             ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
