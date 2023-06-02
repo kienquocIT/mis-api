@@ -110,7 +110,7 @@ class PaymentCostItems(SimpleAbstractModel):
     )
     sale_code_mapped = models.UUIDField(null=True)
     real_value = models.FloatField(default=0, help_text='Value which is NOT CONVERTED from Advance Payment')
-    value_converted = models.FloatField(default=0, help_text='Value which is CONVERTED from Advance Payment')
+    converted_value = models.FloatField(default=0, help_text='Value which is CONVERTED from Advance Payment')
     sum_value = models.FloatField(default=0, help_text='Sum value (include real_value and value_converted')
     date_created = models.DateTimeField(
         default=timezone.now,
