@@ -15,3 +15,4 @@ class WorkflowMsg:
         "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or "
         "reconfigure old flow."
     )
+    WORKFLOW_APPLY_REQUIRED_WF = _("The workflow currently is required when mode is apply")
