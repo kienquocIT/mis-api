@@ -152,7 +152,7 @@ class EntryQuerySet(models.query.QuerySet):
                 replace_pk_to_id=True,
             )
             data = Caching().get(key)
-            if data:
+            if data and isinstance(data, models.Model):
                 return data
             data = super().get(*args, **kwargs)
             Caching().set(key, data, cache_timeout)
