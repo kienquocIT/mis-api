@@ -51,17 +51,18 @@ class OrderPicking(MasterDataAbstractModel):
         null=True,
         verbose_name='Delivery Date '
     )
-    state = models.SmallIntegerField(
+    state = models.PositiveSmallIntegerField(
         choices=PICKING_STATE,
         default=0,
     )
     remarks = models.TextField(blank=True)
     to_location = models.TextField(blank=True)
 
-    delivery_option = models.SmallIntegerField(
+    delivery_option = models.PositiveSmallIntegerField(
         choices=DELIVERY_OPTION,
         verbose_name='Delivery Option',
         help_text='Delivery option when change in this records',
+        default=0,
     )
 
     sub = models.OneToOneField(
@@ -70,18 +71,18 @@ class OrderPicking(MasterDataAbstractModel):
         null=True,
         verbose_name='Only one sub in the current'
     )
-    pickup_quantity = models.SmallIntegerField(
+    pickup_quantity = models.PositiveSmallIntegerField(
         verbose_name='Quantity need pickup of SaleOrder',
     )
-    picked_quantity_before = models.SmallIntegerField(
+    picked_quantity_before = models.PositiveSmallIntegerField(
         default=0,
         verbose_name='Quantity was picked before',
     )
-    remaining_quantity = models.SmallIntegerField(
+    remaining_quantity = models.PositiveSmallIntegerField(
         default=0,
         verbose_name='Quantity need pick'
     )
-    picked_quantity = models.SmallIntegerField(
+    picked_quantity = models.PositiveSmallIntegerField(
         default=0,
         verbose_name='Quantity was picked',
     )
