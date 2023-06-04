@@ -5,7 +5,7 @@ from .mixins import BaseMixin, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin
 from .mask_view import mask_view
 from .models import (
     SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel, DisperseModel,
-    SignalRegisterMetaClass,
+    SignalRegisterMetaClass, CoreSignalRegisterMetaClass,
 )
 from .managers import NormalManager
 from .utils import LinkListHandler, StringHandler, CustomizeEncoder, TypeCheck, FORMATTING
@@ -18,6 +18,7 @@ __all__ = [
     'BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin',
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'DisperseModel',
     'LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING',
-    'SignalRegisterMetaClass', 'NormalManager',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
+    'NormalManager',
     'AdvanceTestCase',
 ]

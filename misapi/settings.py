@@ -30,6 +30,7 @@ SECRET_KEY = 'django-insecure-z+!6=0b0sdkx!#su_z1$+6(*_8&5lo5&%jy8n76c5l1b1um&%t
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG_SIGNAL_CHANGE = False
 
 ALLOWED_HOSTS = []
 ALLOWED_CIDR_NETS = []  # whitelist range IP
@@ -389,17 +390,7 @@ USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
 
 # DATABASE CONFIG
 USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
-USE_MYSQL_POOL = False
-MYSQL_POOL_CONFIG = {
-    # (Lưu lượng truy cập đồng thời / Thời gian xử lý trung bình) + Số lượng kết nối dự phòng
-    'POOL_OPTIONS': {
-        'POOL_SIZE': 100,   # size connection current in pool
-        'MAX_OVERFLOW': 200,  # x2 pool size
-        'POOL_TIME': 30,    # seconds: wait connection return from pool storage -> reject get connection when timeout
-        'RECYCLE': 0.5 * 60 * 60,  # recycle every a half-hourly
-        'REUSE': 0.5 * 60 * 60 * 5,  # max times reuse connections: x5 recycle
-    }
-}
+USE_MYSQL_POOL = os.environ.get('USE_MYSQL_POOL', False)
 
 # import local_settings
 LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
@@ -483,9 +474,9 @@ if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES)
 # Change to connection pool MySQL
 if USE_MYSQL_POOL is True:
     for site, config in DATABASES.items():
-        if config['ENGINE'] == 'django.db.backends.mysql':
-            config['ENGINE'] = 'dj_db_conn_pool.backends.mysql'
-            config.update(MYSQL_POOL_CONFIG)
+        if isinstance(config, dict) and config['ENGINE'] == 'django.db.backends.mysql':
+            config['CONN_MAX_AGE'] = 5  # connections alive in 5 seconds if not reused
+            config['CONN_HEALTH_CHECKS'] = True  # check healthy connection before query
 
 # Display config about DB, Cache, CELERY,...
 if DEBUG is True:
