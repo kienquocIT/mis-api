@@ -65,10 +65,13 @@ class AccountTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
-             'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-             'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-             'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped'],
+            [
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+                'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
+                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
+                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+                'workflow_runtime_id'
+            ],
             check_sum_second=True,
         )
         return response
@@ -88,7 +91,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -119,7 +122,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -152,7 +155,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': '1',
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -379,7 +382,7 @@ class ProductTestCase(AdvanceTestCase):
         return response
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type().data['result'] # noqa
+        product_type = self.create_product_type().data['result']  # noqa
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data1 = {

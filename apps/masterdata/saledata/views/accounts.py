@@ -164,7 +164,7 @@ class AccountList(BaseListMixin, BaseCreateMixin): # noqa
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
     filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
 
     def get_queryset(self):
@@ -195,6 +195,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = AccountUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = ['employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related('industry', 'owner')

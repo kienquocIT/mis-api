@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
-    AccountCreditCards, AccountShippingAddress, AccountBillingAddress
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress,
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -316,6 +317,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
     account_type = serializers.JSONField()
+    system_status = serializers.ChoiceField(
+        choices=[0, 1],
+        help_text='0: draft, 1: created',
+        default=0,
+    )
 
     class Meta:
         model = Account
@@ -338,7 +344,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'billing_address',
             'contact_select_list',
             'contact_primary',
-            'account_type_selection'
+            'account_type_selection',
+            'system_status',
         )
 
     @classmethod
@@ -380,6 +387,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         validate_data['account_type'] = account_types
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         """
         step 1: contact_select_list: get list contact selected
@@ -414,7 +422,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         account = Account.objects.create(
             **validated_data,
             price_list_mapped=default_price_list,
-            currency=default_currency
+            currency=default_currency,
         )
         # add employee information
         add_employees_information(account)
@@ -482,7 +490,8 @@ class AccountDetailSerializer(serializers.ModelSerializer):
             'contact_mapped',
             'bank_accounts_information',
             'credit_cards_information',
-            'account_type_selection'
+            'account_type_selection',
+            'workflow_runtime_id',
         )
 
     @classmethod
@@ -580,7 +589,7 @@ def add_banking_accounts_information(instance, banking_accounts_list):
 def add_credit_cards_information(instance, credit_cards_list):
     bulk_info = []
     for item in credit_cards_list:
-        if item['credit_card_type'] and item['credit_card_number'] and item['credit_card_name']\
+        if item['credit_card_type'] and item['credit_card_number'] and item['credit_card_name'] \
                 and item['expired_date']:
             bulk_info.append(
                 AccountCreditCards(**item, account=instance)

@@ -150,16 +150,8 @@ class Runtime(SimpleAbstractModel):
 
     def save(self, *args, **kwargs):
         if kwargs.get('force_insert', False) and self.app:
-            self.app_code = self.app.app_label
+            self.app_code = f'{self.app.app_label}.{self.app.code}'
         super().save(*args, **kwargs)
-
-    class Meta:
-        verbose_name = 'Runtime'
-        verbose_name_plural = 'Runtime'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-        unique_together = ('doc_id', 'app')
 
     @classmethod
     def check_document_in_progress(
@@ -195,6 +187,14 @@ class Runtime(SimpleAbstractModel):
                 )
             )
         return []
+
+    class Meta:
+        verbose_name = 'Runtime'
+        verbose_name_plural = 'Runtime'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+        unique_together = ('doc_id', 'app')
 
 
 class RuntimeStage(SimpleAbstractModel):

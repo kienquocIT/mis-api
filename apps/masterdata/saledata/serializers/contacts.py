@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
@@ -166,6 +167,11 @@ class ContactListSerializer(serializers.ModelSerializer):
 
 class ContactCreateSerializer(serializers.ModelSerializer):
     account_name = serializers.UUIDField(required=False, allow_null=True)
+    system_status = serializers.ChoiceField(
+        choices=[0, 1],
+        help_text='0: draft, 1: created',
+        default=0,
+    )
 
     class Meta:
         model = Contact
@@ -183,6 +189,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "address_information",
             "additional_information",
             'account_name',
+            'system_status',
         )
 
     @classmethod
@@ -221,8 +228,9 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    @decorator_run_workflow
     def create(self, validated_data):
-        contact = Contact.objects.create(**validated_data, system_status=1)
+        contact = Contact.objects.create(**validated_data)
         if contact.account_name:
             contact.account_name.owner = contact
             contact.account_name.save(update_fields=['owner'])
