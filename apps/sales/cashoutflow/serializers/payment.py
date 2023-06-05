@@ -8,12 +8,45 @@ from apps.shared import AdvancePaymentMsg
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
+    converted_value_list = serializers.SerializerMethodField()
+    return_value_list = serializers.SerializerMethodField()
+    payment_value = serializers.SerializerMethodField()
+
     class Meta:
         model = Payment
-        fields = "__all__"
+        fields = (
+            'code',
+            'title',
+            'sale_code_mapped',
+            'sale_code_type',
+            'supplier',
+            'method',
+            'creator_name',
+            'beneficiary',
+            'converted_value_list',
+            'return_value_list',
+            'payment_value',
+            'date_created'
+        )
+
+    @classmethod
+    def get_converted_value_list(cls, obj):
+        all_items = obj.payment.all()
+        sum_payment_value = sum(item.after_tax_price for item in all_items)
+        return sum_payment_value
+
+    @classmethod
+    def get_return_value_list(cls, obj):
+        return 0
+
+    @classmethod
+    def get_payment_value(cls, obj):
+        all_items = obj.payment.all()
+        sum_payment_value = sum(item.after_tax_price for item in all_items)
+        return sum_payment_value
 
 
-def create_payment_cost_detail_items(payment_cost_item_list):
+def create_payment_cost_detail_items(payment_obj, payment_cost_item_list):
     expense_ap_bulk_info = []
     for payment_cost_item in payment_cost_item_list:
         for expense_ap in payment_cost_item.expense_items_detail_list:
@@ -21,6 +54,7 @@ def create_payment_cost_detail_items(payment_cost_item_list):
                 expense_ap_bulk_info.append(
                     PaymentCostItemsDetail(
                         payment_cost_item=payment_cost_item,
+                        payment_mapped=payment_obj,
                         expense_converted_id=expense_ap['id'],
                         expense_value_converted=expense_ap.get('value', 0),
                     )
@@ -33,7 +67,7 @@ def create_payment_cost_detail_items(payment_cost_item_list):
     return True
 
 
-def create_payment_cost_items(payment_cost_list):
+def create_payment_cost_items(payment_obj, payment_cost_list):
     payment_cost_bulk_info = []
     for payment_cost in payment_cost_list:
         for expense_ap_detail in payment_cost.expense_ap_detail_list:
@@ -49,7 +83,7 @@ def create_payment_cost_items(payment_cost_list):
             )
     PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
     payment_cost_item_list = PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
-    create_payment_cost_detail_items(payment_cost_item_list)
+    create_payment_cost_detail_items(payment_obj, payment_cost_item_list)
     return True
 
 
@@ -80,7 +114,7 @@ def create_expense_items(instance, expense_valid_list):
             )
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
-        create_payment_cost_items(payment_cost_list)
+        create_payment_cost_items(instance, payment_cost_list)
         return True
     return False
 
@@ -122,11 +156,11 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if Payment.objects.all().count() == 0:
-            new_code = 'AP.CODE.0001'
+            new_code = 'PAYMENT.CODE.0001'
         else:
             latest_code = Payment.objects.latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
-            new_code = 'AP.CODE.000' + str(new_code)
+            new_code = int(latest_code.split('.')[-1]) + 1
+            new_code = 'PAYMENT.CODE.000' + str(new_code)
 
         payment_obj = Payment.objects.create(**validated_data, code=new_code)
         if self.initial_data.get('expense_valid_list', None):

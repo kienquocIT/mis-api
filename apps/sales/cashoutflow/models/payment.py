@@ -133,6 +133,10 @@ class PaymentCostItemsDetail(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='payment_cost_item'
     )
+    payment_mapped = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+    )
     expense_converted = models.ForeignKey(
         AdvancePaymentCost,
         on_delete=models.CASCADE,

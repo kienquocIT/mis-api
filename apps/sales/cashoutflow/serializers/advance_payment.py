@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
+from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost, PaymentCostItemsDetail
 from apps.masterdata.saledata.models import Currency, AccountBanks
 from apps.shared import AdvancePaymentMsg, AccountsMsg
 
@@ -46,9 +46,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_to_payment(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
-        return sum_payment_converted_value
+        return 0
 
     @classmethod
     def get_return_value(cls, obj):
@@ -189,6 +187,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
+    converted_payment_list = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -206,30 +205,18 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'method',
             'beneficiary',
-            'expense_items'
+            'expense_items',
+            'converted_payment_list'
         )
 
     @classmethod
     def get_expense_items(cls, obj):
-        # dict_cost_return = {}
-        # for return_advance in obj.return_advance_payment.all():
-        #     if return_advance.status == 0:
-        #         for cost in return_advance.return_advance.all():
-        #             if cost.advance_payment_cost_id not in dict_cost_return:
-        #                 dict_cost_return[cost.advance_payment_cost_id] = cost.return_value
-        #             else:
-        #                 dict_cost_return[cost.advance_payment_cost_id] += cost.return_value
-
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax').all()
+        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
         expense_items = []
         for item in all_item:
             tax_dict = None
-            # refunded_value = 0
             if item.tax:
                 tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
-
-            # if item.id in dict_cost_return:
-            #     refunded_value = dict_cost_return[item.id]
 
             expense_items.append(
                 {
@@ -269,7 +256,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'title': obj.sale_order_mapped.opportunity.title,
                     'customer': obj.sale_order_mapped.opportunity.customer.name,
                 }
-
             }
         return None
 
@@ -286,7 +272,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'title': obj.quotation_mapped.opportunity.title,
                     'customer': obj.quotation_mapped.opportunity.customer.name,
                 }
-
             }
         return None
 
@@ -296,6 +281,30 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'id': obj.beneficiary.id,
             'name': obj.beneficiary.get_full_name(),
         }
+
+    @classmethod
+    def get_converted_payment_list(cls, obj):
+        all_items = obj.advance_payment.all()
+        all_converted_items = PaymentCostItemsDetail.objects.filter(
+            expense_converted__in=all_items
+        ).select_related('payment_mapped')
+        converted_payment_list = []
+        payment_code_list = []
+        for item in all_converted_items:
+            payment_code = item.payment_mapped.code
+            if payment_code not in payment_code_list:
+                converted_payment_list.append(
+                    {
+                        'payment_code': item.payment_mapped.code,
+                        'payment_title': item.payment_mapped.title,
+                        'payment_value_converted': item.expense_value_converted
+                    }
+                )
+                payment_code_list.append(item.payment_mapped.code)
+            else:
+                result = next(filter(lambda x: x['payment_code'] == payment_code, converted_payment_list), None)
+                result['payment_value_converted'] = result['payment_value_converted'] + item.expense_value_converted
+        return converted_payment_list
 
 
 class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
