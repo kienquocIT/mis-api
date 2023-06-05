@@ -2,7 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel
-from .advance_payment import AdvancePayment, AdvancePaymentCost
+from .advance_payment import AdvancePaymentCost
 
 __all__ = ['Payment', 'PaymentCost', 'PaymentCostItems', 'PaymentCostItemsDetail']
 
