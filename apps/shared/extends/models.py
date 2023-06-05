@@ -13,34 +13,64 @@ from ..constant import SYSTEM_STATUS
 
 __all__ = [
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
-    'DisperseModel', 'SignalRegisterMetaClass',
+    'DisperseModel',
+    'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
 
 
-class SignalRegisterMetaClass(models.base.ModelBase, type):
-    def register_signals(cls):
-        models.signals.post_save.connect(cls.post_save_handler, sender=cls)
-        models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+def post_save_handler(sender, **kwargs):
+    table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
+    update_fields = kwargs.get('update_fields', None)
+    update_fields = list(update_fields) if update_fields else []
+    if not (
+            table_name == 'account_user' and
+            update_fields and
+            isinstance(update_fields, list) and
+            len(update_fields) == 1 and
+            'last_login' in update_fields
+    ):
+        # don't clean cache when update last_login
+        Caching().clean_by_prefix(table_name=table_name)
+        if settings.DEBUG_SIGNAL_CHANGE:
+            print(f'Receive signal: {table_name}, ', kwargs)
 
-    def post_save_handler(cls, sender, **kwargs):
-        table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
-        update_fields = kwargs.get('update_fields', None)
-        update_fields = list(update_fields) if update_fields else []
-        if not (
-                table_name == 'account_user' and
-                update_fields and
-                isinstance(update_fields, list) and
-                len(update_fields) == 1 and
-                'last_login' in update_fields
-        ):
-            # don't clean cache when update last_login
-            Caching().clean_by_prefix(table_name=table_name)
-            if getattr(settings, 'DEBUG_SIGNAL_CHANGE', False):
-                print(f'Receive signal: {table_name}, ', kwargs)
+
+class CoreSignalRegisterMetaClass(models.base.ModelBase, type):
+
+    def register_signals(cls):
+        models.signals.post_save.connect(
+            post_save_handler, sender=cls
+        )
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
         cls.register_signals()  # pylint: disable=E1120
+
+
+class SignalRegisterMetaClass(models.base.ModelBase, type):
+    # def register_signals(cls):
+    #     models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+    #     models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+    #
+    # def post_save_handler(cls, sender, **kwargs):
+    #     table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
+    #     update_fields = kwargs.get('update_fields', None)
+    #     update_fields = list(update_fields) if update_fields else []
+    #     if not (
+    #             table_name == 'account_user' and
+    #             update_fields and
+    #             isinstance(update_fields, list) and
+    #             len(update_fields) == 1 and
+    #             'last_login' in update_fields
+    #     ):
+    #         # don't clean cache when update last_login
+    #         Caching().clean_by_prefix(table_name=table_name)
+    #         if getattr(settings, 'DEBUG_SIGNAL_CHANGE', False):
+    #             print(f'Receive signal: {table_name}, ', kwargs)
+
+    def __init__(cls, name, bases, attrs):
+        super().__init__(name, bases, attrs)
+        # cls.register_signals()  # pylint: disable=E1120
 
 
 class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
@@ -110,8 +140,8 @@ class MasterDataAbstractModel(SimpleAbstractModel):
         help_text='The record created at value',
     )
     employee_modified = models.ForeignKey(
-        'account.User', on_delete=models.SET_NULL, null=True,
-        help_text='User modified this record in last',
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
         related_name='%(app_label)s_%(class)s_employee_modifier'
     )
     date_modified = models.DateTimeField(
@@ -139,6 +169,12 @@ class DataAbstractModel(SimpleAbstractModel):
     Abstract model for table data that have a lot flag for all case.
     """
 
+    @classmethod
+    def get_model_code(cls):
+        app_label = cls._meta.app_label
+        model_name = cls._meta.model_name
+        return f"{app_label}.{model_name}".lower()
+
     class Meta:
         abstract = True
         default_permissions = ()
@@ -159,8 +195,8 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='The record created at value',
     )
     employee_modified = models.ForeignKey(
-        'account.User', on_delete=models.SET_NULL, null=True,
-        help_text='User modified this record in last',
+        'hr.Employee', on_delete=models.SET_NULL, null=True,
+        help_text='Employee modified this record in last',
         related_name='%(app_label)s_%(class)s_employee_modifier'
     )
     date_modified = models.DateTimeField(
@@ -197,6 +233,13 @@ class DataAbstractModel(SimpleAbstractModel):
     system_status = models.SmallIntegerField(
         choices=SYSTEM_STATUS,
         default=0
+    )
+    workflow_runtime = models.ForeignKey(
+        'workflow.Runtime',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Runtime Obj of Doc',
+        help_text='Relate to Runtime Model is running flow of doc',
     )
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)

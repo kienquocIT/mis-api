@@ -1,12 +1,6 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel
-
-WORKFLOW_CONFIG_MODE = (
-    (0, 'UnApply'),
-    (1, 'Apply'),
-    (2, 'Pending'),
-)
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel, WORKFLOW_CONFIG_MODE
 
 
 class WorkflowConfigOfApp(MasterDataAbstractModel):

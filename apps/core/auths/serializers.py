@@ -1,6 +1,5 @@
 from django.conf import settings
 from django.contrib.auth.models import update_last_login
-from crum import get_current_user
 from slugify import slugify
 from rest_framework import serializers
 from rest_framework.serializers import Serializer
@@ -102,14 +101,17 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
         raise serializers.ValidationError({"company": AccountMsg.COMPANY_NOT_EXIST})
 
     def validate(self, attrs):
-        user_obj = get_current_user()
-        company_obj = attrs['company']
-        if user_obj and company_obj:
-            try:
-                obj = CompanyUserEmployee.objects.get(company=company_obj, user=user_obj)
-                attrs['user'] = user_obj
-                attrs['company_user_employee'] = obj
-                return attrs
-            except CompanyUserEmployee.DoesNotExist:
-                pass
-        raise serializers.ValidationError({"detail": AccountMsg.COMPANY_NOT_EXIST})
+        # user_obj = get_current_user()
+        user_obj = self.context.get('user_obj', None)
+        if user_obj:
+            company_obj = attrs['company']
+            if user_obj and company_obj:
+                try:
+                    obj = CompanyUserEmployee.objects.get(company=company_obj, user=user_obj)
+                    attrs['user'] = user_obj
+                    attrs['company_user_employee'] = obj
+                    return attrs
+                except CompanyUserEmployee.DoesNotExist:
+                    pass
+            raise serializers.ValidationError({"detail": AccountMsg.COMPANY_NOT_EXIST})
+        raise serializers.ValidationError({"detail": AccountMsg.USER_NOT_EXIST})

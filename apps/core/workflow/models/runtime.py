@@ -5,9 +5,13 @@ from uuid import UUID
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import (
+    SimpleAbstractModel, WORKFLOW_CONFIG_MODE,
+)
 
-from .config import Workflow, Node
+from .config import (
+    Workflow, Node,
+)
 
 __all__ = [
     'Runtime',
@@ -63,6 +67,18 @@ class Runtime(SimpleAbstractModel):
     Runtime of all document.
     Filter by workflow/doc_id (don't filter by tenant, company)
     """
+
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+
     doc_id = models.UUIDField(verbose_name='Document was runtime')
     doc_title = models.TextField(
         blank=True,
@@ -73,6 +89,11 @@ class Runtime(SimpleAbstractModel):
         'base.Application',
         on_delete=models.CASCADE,
         verbose_name='App of DocID',
+    )
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}'
     )
     doc_params = models.JSONField(
         default=dict,
@@ -113,11 +134,6 @@ class Runtime(SimpleAbstractModel):
         related_name='stage_currently_of_runtime',
         verbose_name='Stage Currently'
     )
-    task_bg_id = models.UUIDField(
-        null=True,
-        verbose_name='ID Task',
-        help_text='ID of task run background',
-    )
     task_bg_state = models.CharField(
         max_length=10,
         choices=TASK_BACKGROUND_STATE,
@@ -125,6 +141,17 @@ class Runtime(SimpleAbstractModel):
         verbose_name='State Task BG',
         help_text='Sate run of task background'
     )
+
+    start_mode = models.PositiveSmallIntegerField(
+        choices=WORKFLOW_CONFIG_MODE,
+        default=None,
+        null=True,
+    )
+
+    def save(self, *args, **kwargs):
+        if kwargs.get('force_insert', False) and self.app:
+            self.app_code = self.app.app_label
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Runtime'
@@ -246,6 +273,13 @@ class RuntimeStage(SimpleAbstractModel):
         related_name='assignee_and_zone_of_runtime_stage',
         verbose_name='Employee + Zone need action in this stage',
         help_text='Assignee have task with properties zone',
+    )
+    assignee_and_zone_data = models.JSONField(
+        default=dict,
+        verbose_name='Summary assignee and zone data',
+        help_text=json.dumps(
+            {'employee_id': [{"id": "", "title": "", "remark": "", "properties": ['application_property_id']}]}
+        )
     )
 
     # utils
@@ -378,6 +412,10 @@ class RuntimeAssignee(SimpleAbstractModel):
 
 
 class RuntimeLog(SimpleAbstractModel):
+    is_system = models.BooleanField(
+        default=False,
+        verbose_name='Is system Log',
+    )
     actor = models.ForeignKey(
         'hr.Employee',
         null=True,
@@ -420,7 +458,7 @@ class RuntimeLog(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Log Activity'
         verbose_name_plural = 'Log Activity'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
@@ -435,6 +473,8 @@ class RuntimeLog(SimpleAbstractModel):
                     "email": str(self.actor.email),
                     "avatar": str(self.actor.avatar),
                 }
+            else:
+                self.is_system = True
 
         if not self.runtime and self.stage:
             self.runtime = self.stage.runtime

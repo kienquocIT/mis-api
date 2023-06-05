@@ -58,8 +58,10 @@ class BaseMixin(GenericAPIView):
                     data = getattr(user, 'mode_id', 0)
                 case 'mode':
                     data = getattr(user, 'mode', 0)
-                case 'user_created':
-                    data = user.id
+                case 'employee_created_id':
+                    data = user.employee_current_id
+                case 'employee_modified_id':
+                    data = user.employee_current_id
             if data is not None:
                 ctx[key] = data
         return ctx
@@ -95,6 +97,17 @@ class BaseMixin(GenericAPIView):
 
         """
         return self.setup_hidden(self.create_hidden_field, user)
+
+    def setup_update_field_hidden(self, user) -> dict:
+        """
+        Fill data of hidden fields when create
+        Args:
+            user:
+
+        Returns:
+
+        """
+        return self.setup_hidden(self.update_hidden_field, user)
 
     def setup_list_field_hidden(self, user) -> dict:
         """
@@ -132,6 +145,8 @@ class BaseMixin(GenericAPIView):
     list_hidden_field: list[str] = []
     # Field list was autofill data when POST CREATE
     create_hidden_field: list[str] = []
+    # Field list was autofill data when PUT UPDATE
+    update_hidden_field: list[str] = []
     # Field list auto append to filtering of current user request
     retrieve_hidden_field: list[str] = []
     # Flag is enable cache queryset of view

@@ -129,6 +129,30 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"detail": AccountMsg.USER_DATA_VALID})
 
 
+class UserResetPasswordSerializer(serializers.ModelSerializer):
+    re_password = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs['password'] == attrs['re_password']:
+            return attrs
+        raise serializers.ValidationError({
+            'detail': AccountMsg.VALID_PASSWORD
+        })
+
+    def update(self, instance, validated_data):
+        password = validated_data['password']
+        instance.set_password(password)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = User
+        fields = (
+            'password',
+            're_password',
+        )
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, allow_blank=True)
     email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)

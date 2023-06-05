@@ -7,7 +7,7 @@ from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
     UserUpdateSerializer, UserCreateSerializer, UserDetailSerializer,
     CompanyUserDetailSerializer, UserListSerializer, UserListTenantOverviewSerializer,
-    CompanyUserEmployeeUpdateSerializer,
+    CompanyUserEmployeeUpdateSerializer, UserResetPasswordSerializer,
 )
 from .models import User
 from apps.core.company.models import CompanyUserEmployee
@@ -79,6 +79,22 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class UserDetailResetPassword(BaseUpdateMixin):
+    queryset = User.objects
+    serializer_detail = UserDetailSerializer
+    serializer_update = UserResetPasswordSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().filter_current(fill__tenant=True, fill__map_key={
+            'fill__tenant': 'tenant_current_id',
+        })
+
+    @swagger_auto_schema(operation_summary="Reset password of User", request_body=UserResetPasswordSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):

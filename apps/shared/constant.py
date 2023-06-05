@@ -29,6 +29,11 @@ PERMISSION_OPTION = (
 )
 
 # workflow
+WORKFLOW_CONFIG_MODE = (
+    (0, 'UnApply'),
+    (1, 'Apply'),
+    (2, 'Pending'),
+)
 WORKFLOW_ACTION = (
     (0, WorkflowMsg.ACTION_CREATE),
     (1, WorkflowMsg.ACTION_APPROVE),

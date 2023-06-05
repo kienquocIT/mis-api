@@ -307,3 +307,9 @@ msgstr "In workflow"
 #
 msgid "Username is exist, please choose another user name"
 msgstr "Tên đăng nhập đã tồn tại, vui lòng chọn tên đăng nhập khác"
+
+#
+msgid "The workflow currently is required when mode is apply"
+msgstr ""
+"Quy trình áp dụng cho chức năng cần được chọn trước khi chọn chế độ sử dụng "
+"quy trình"
