@@ -119,7 +119,7 @@ def create_expense_items(instance, expense_valid_list):
     return False
 
 
-def create_sale_code_object(payment_obj, validated_data, initial_data):
+def create_sale_code_object(payment_obj, initial_data):
     if 'sale_code' in initial_data:
         if initial_data['sale_code_detail']:
             PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=initial_data['sale_code'])
@@ -174,7 +174,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
         payment_obj = Payment.objects.create(code=new_code, **validated_data)
 
-        create_sale_code_object(payment_obj, validated_data, self.initial_data)
+        create_sale_code_object(payment_obj, self.initial_data)
         if self.initial_data.get('expense_valid_list', None):
             create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', None))
         return payment_obj
