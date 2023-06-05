@@ -188,6 +188,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
+    return_value = serializers.SerializerMethodField()
     converted_payment_list = serializers.SerializerMethodField()
 
     class Meta:
@@ -207,6 +208,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'method',
             'beneficiary',
             'expense_items',
+            'return_value',
             'converted_payment_list'
         )
 
@@ -282,6 +284,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'id': obj.beneficiary.id,
             'name': obj.beneficiary.get_full_name(),
         }
+
+    @classmethod
+    def get_return_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_return_value = sum(item.sum_return_value for item in all_items)
+        return sum_return_value
 
     @classmethod
     def get_converted_payment_list(cls, obj):
