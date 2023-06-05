@@ -189,7 +189,10 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
+    to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
+    remain_value = serializers.SerializerMethodField()
+    advance_value = serializers.SerializerMethodField()
     converted_payment_list = serializers.SerializerMethodField()
 
     class Meta:
@@ -209,7 +212,10 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'method',
             'beneficiary',
             'expense_items',
+            'advance_value',
+            'to_payment',
             'return_value',
+            'remain_value',
             'converted_payment_list'
         )
 
@@ -287,10 +293,30 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         }
 
     @classmethod
+    def get_advance_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        return sum_ap_value
+
+    @classmethod
+    def get_to_payment(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
+        return sum_payment_converted_value
+
+    @classmethod
     def get_return_value(cls, obj):
         all_items = obj.advance_payment.all()
         sum_return_value = sum(item.sum_return_value for item in all_items)
         return sum_return_value
+
+    @classmethod
+    def get_remain_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_return_value = sum(item.sum_return_value for item in all_items)
+        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
+        return sum_ap_value - sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_converted_payment_list(cls, obj):
