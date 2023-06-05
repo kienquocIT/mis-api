@@ -298,7 +298,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 if converted_payment['payment_code'] == payment_code:
                     result = converted_payment
                     break
-            if result:
+            if not result:
                 if payment_code not in payment_code_list:
                     converted_payment_list.append({
                         'payment_code': payment_code,
