@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail,
-    AdvancePaymentCost
+    AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder
 )
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg
@@ -17,7 +17,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
         fields = (
             'code',
             'title',
-            'sale_code_mapped',
             'sale_code_type',
             'supplier',
             'method',
@@ -120,6 +119,35 @@ def create_expense_items(instance, expense_valid_list):
     return False
 
 
+def create_sale_code_object(payment_obj, validated_data, initial_data):
+    if 'sale_code' in initial_data:
+        if validated_data.get('quotation_mapped_id', None):
+            PaymentQuotation.objects.create(
+                payment_mapped=payment_obj,
+                quotation_mapped_id=validated_data['quotation_mapped_id']
+            )
+        elif validated_data.get('sale_order_mapped_id', None):
+            PaymentSaleOrder.objects.create(
+                payment_mapped=payment_obj,
+                sale_order_mapped_id=validated_data['sale_order_mapped_id']
+            )
+    else:
+        payment_quotation_bulk_info = []
+        for item in validated_data['quotation_selected_list']:
+            payment_quotation_bulk_info.append(
+                PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item)
+            )
+        PaymentQuotation.objects.bulk_create(payment_quotation_bulk_info)
+
+        sale_order_quotation_bulk_info = []
+        for item in validated_data['sale_order_selected_list']:
+            sale_order_quotation_bulk_info.append(
+                PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item)
+            )
+        PaymentSaleOrder.objects.bulk_create(sale_order_quotation_bulk_info)
+    return True
+
+
 class PaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
@@ -127,7 +155,6 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         model = Payment
         fields = (
             'title',
-            'sale_code_mapped',
             'sale_code_type',
             'supplier',
             'method',
@@ -149,10 +176,13 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if 'sale_code' in self.initial_data:
-            validate_data['sale_code_mapped'] = self.initial_data['sale_code']
+            if self.initial_data.get('sale_code_detail', None):
+                validate_data['quotation_mapped_id'] = self.initial_data['sale_code']
+            else:
+                validate_data['sale_order_mapped_id'] = self.initial_data['sale_code']
         else:
-            if self.initial_data.get('sale_code_type', None) != 2:
-                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+            validate_data['quotation_selected_list'] = self.initial_data['quotation_selected_list']
+            validate_data['sale_order_selected_list'] = self.initial_data['sale_order_selected_list']
         return validate_data
 
     def create(self, validated_data):
@@ -163,7 +193,16 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'PAYMENT.CODE.000' + str(new_code)
 
-        payment_obj = Payment.objects.create(**validated_data, code=new_code)
+        payment_obj = Payment.objects.create(
+            code=new_code,
+            sale_code_type=validated_data.get('sale_code_type', None),
+            supplier=validated_data.get('supplier', None),
+            method=validated_data.get('method', None),
+            creator_name=validated_data.get('creator_name', None),
+            beneficiary=validated_data.get('beneficiary', None),
+        )
+
+        create_sale_code_object(payment_obj, validated_data, self.initial_data)
         if self.initial_data.get('expense_valid_list', None):
             create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', None))
         return payment_obj

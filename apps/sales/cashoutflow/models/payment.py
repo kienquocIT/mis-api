@@ -4,7 +4,14 @@ from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 from .advance_payment import AdvancePaymentCost
 
-__all__ = ['Payment', 'PaymentCost', 'PaymentCostItems', 'PaymentCostItemsDetail']
+__all__ = [
+    'Payment',
+    'PaymentCost',
+    'PaymentCostItems',
+    'PaymentCostItemsDetail',
+    'PaymentSaleOrder',
+    'PaymentQuotation'
+]
 
 SALE_CODE_TYPE = [
     (0, _('Sale')),
@@ -20,8 +27,19 @@ ADVANCE_PAYMENT_METHOD = [
 
 
 class Payment(DataAbstractModel):
-    sale_code_mapped = models.JSONField(
-        default=list
+    sale_order_mapped = models.ManyToManyField(
+        'saleorder.SaleOrder',
+        through='PaymentSaleOrder',
+        symmetrical=False,
+        blank=True,
+        related_name='sale_order_mapped'
+    )
+    quotation_mapped = models.ManyToManyField(
+        'quotation.Quotation',
+        through='PaymentQuotation',
+        symmetrical=False,
+        blank=True,
+        related_name='quotation_mapped'
     )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
@@ -157,5 +175,27 @@ class PaymentCostItemsDetail(SimpleAbstractModel):
         verbose_name = 'Payment Cost Item Detail'
         verbose_name_plural = 'Payment Cost Item Details'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PaymentSaleOrder(SimpleAbstractModel):
+    payment_mapped = models.ForeignKey(Payment, on_delete=models.CASCADE)
+    sale_order_mapped = models.ForeignKey('saleorder.SaleOrder', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Payment Sale Order'
+        verbose_name_plural = 'Payments Sale Orders'
+        default_permissions = ()
+        permissions = ()
+
+
+class PaymentQuotation(SimpleAbstractModel):
+    payment_mapped = models.ForeignKey(Payment, on_delete=models.CASCADE)
+    quotation_mapped = models.ForeignKey('quotation.Quotation', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Payment Quotation'
+        verbose_name_plural = 'Payments Quotations'
         default_permissions = ()
         permissions = ()
