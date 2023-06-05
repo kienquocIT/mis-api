@@ -12,7 +12,7 @@ from apps.core.workflow.models import (
 from apps.core.workflow.utils.runtime import (
     RuntimeStageHandler, RuntimeHandler,
 )
-from apps.shared import DisperseModel
+from apps.shared import DisperseModel, call_task_background, DataAbstractModel
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,31 @@ __all__ = [
     'call_new_runtime',
     'call_next_stage',
     'call_approval_task',
+    'decorator_run_workflow',
 ]
+
+
+def decorator_run_workflow(func):
+    def wrapper(*args, **kwargs):
+        instance = func(*args, **kwargs)
+        if isinstance(instance, DataAbstractModel):
+            if instance.system_status == 1:
+                if not instance.workflow_runtime_id:
+                    if not Runtime.objects.filter(
+                            tenant_id=instance.tenant_id, company_id=instance.company_id,
+                            doc_id=instance.id, app_code=str(instance.__class__.get_model_code())
+                    ).exists():
+                        runtime_obj = RuntimeHandler.create_runtime_obj(
+                            tenant_id=str(instance.tenant_id), company_id=str(instance.company_id),
+                            doc_id=str(instance.id), app_code=str(instance.__class__.get_model_code()),
+                        )
+                        call_task_background(
+                            call_new_runtime,
+                            *[str(runtime_obj.id)],
+                        )
+        return instance
+
+    return wrapper
 
 
 @shared_task

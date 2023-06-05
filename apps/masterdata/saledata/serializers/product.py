@@ -165,16 +165,12 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_referenced_unit(cls, obj):
-        uom_obj = UnitOfMeasure.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            group=obj,
-            is_referenced_unit=True
-        ).first()
-
-        if uom_obj:
-            return {'id': uom_obj.id, 'title': uom_obj.title}
-        return {}
+        uom_list = obj.unitofmeasure_group.all()
+        result = {}
+        for item in uom_list:
+            if item.is_referenced_unit:
+                result = {'id': item.id, 'title': item.title}
+        return result
 
 
 class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):
@@ -204,11 +200,7 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom(cls, obj):
-        uom = UnitOfMeasure.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            group=obj,
-        )
+        uom = obj.unitofmeasure_group.all()
         uom_list = []
         for item in uom:
             uom_list.append(

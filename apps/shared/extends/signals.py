@@ -4,29 +4,19 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from apps.core.workflow.utils.runtime import (
-    RuntimeHandler,
-)
-from apps.core.workflow.tasks import (
-    call_new_runtime,
-)
-from apps.shared import call_task_background
+from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
-    Account, Contact,
 )
 from apps.sales.delivery.models import DeliveryConfig
-from apps.core.workflow.models import (
-    Runtime,
-)
+
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
     'update_stock',
-    'entry_run_workflow',
 ]
 
 
@@ -175,9 +165,39 @@ class ConfigDefaultData:
             },
         )
 
+    def quotation_config(self):
+        short_sale_config = {
+            'is_choose_price_list': False,
+            'is_input_price': False,
+            'is_discount_on_product': False,
+            'is_discount_on_total': False
+        }
+        long_sale_config = {
+            'is_not_input_price': False,
+            'is_not_discount_on_product': False,
+            'is_not_discount_on_total': False,
+        }
+        config, created = QuotationAppConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'short_sale_config': short_sale_config,
+                'long_sale_config': long_sale_config,
+            },
+        )
+        if created:
+            ConfigShortSale.objects.create(
+                quotation_config=config,
+                **short_sale_config
+            )
+            ConfigLongSale.objects.create(
+                quotation_config=config,
+                **long_sale_config
+            )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
+        self.quotation_config()
         return True
 
 
@@ -186,24 +206,3 @@ def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
         ConfigDefaultData(company_obj=instance).call_new()
         SaleDefaultData(company_obj=instance)()
-
-
-@receiver(post_save, sender=Account)
-@receiver(post_save, sender=Contact)
-def entry_run_workflow(sender, instance, created, **kwargs):  # pylint: disable=W0613
-    if instance.system_status == 1:
-        if not instance.workflow_runtime_id:
-            update_fields = kwargs.get('update_fields', [])
-            if not (update_fields and len(update_fields) == 1 and 'workflow_runtime' in update_fields):
-                if not Runtime.objects.filter(
-                        tenant_id=instance.tenant_id, company_id=instance.company_id,
-                        doc_id=instance.id, app_code=str(instance.__class__.get_model_code())
-                ).exists():
-                    runtime_obj = RuntimeHandler.create_runtime_obj(
-                        tenant_id=str(instance.tenant_id), company_id=str(instance.company_id),
-                        doc_id=str(instance.id), app_code=str(instance.__class__.get_model_code()),
-                    )
-                    call_task_background(
-                        call_new_runtime,
-                        *[str(runtime_obj.id)],
-                    )

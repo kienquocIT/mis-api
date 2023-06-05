@@ -134,7 +134,6 @@ class AdvanceTestCase(TestCase):
         }
         response = self.client.post(url, data, format='json')
         resp_data = self.reload_json(response.data)
-
         self.assertResponseList(
             response,
             status_code=status.HTTP_200_OK,

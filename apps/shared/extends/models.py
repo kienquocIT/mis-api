@@ -48,29 +48,29 @@ class CoreSignalRegisterMetaClass(models.base.ModelBase, type):
 
 
 class SignalRegisterMetaClass(models.base.ModelBase, type):
-    # def register_signals(cls):
-    #     models.signals.post_save.connect(cls.post_save_handler, sender=cls)
-    #     models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
-    #
-    # def post_save_handler(cls, sender, **kwargs):
-    #     table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
-    #     update_fields = kwargs.get('update_fields', None)
-    #     update_fields = list(update_fields) if update_fields else []
-    #     if not (
-    #             table_name == 'account_user' and
-    #             update_fields and
-    #             isinstance(update_fields, list) and
-    #             len(update_fields) == 1 and
-    #             'last_login' in update_fields
-    #     ):
-    #         # don't clean cache when update last_login
-    #         Caching().clean_by_prefix(table_name=table_name)
-    #         if getattr(settings, 'DEBUG_SIGNAL_CHANGE', False):
-    #             print(f'Receive signal: {table_name}, ', kwargs)
+    def register_signals(cls):
+        models.signals.post_save.connect(cls.post_save_handler, sender=cls)
+        models.signals.post_delete.connect(cls.post_save_handler, sender=cls)
+
+    def post_save_handler(cls, sender, **kwargs):
+        table_name = sender._meta.db_table  # pylint: disable=protected-access / W0212
+        update_fields = kwargs.get('update_fields', None)
+        update_fields = list(update_fields) if update_fields else []
+        if not (
+                table_name == 'account_user' and
+                update_fields and
+                isinstance(update_fields, list) and
+                len(update_fields) == 1 and
+                'last_login' in update_fields
+        ):
+            # don't clean cache when update last_login
+            Caching().clean_by_prefix(table_name=table_name)
+            if getattr(settings, 'DEBUG_SIGNAL_CHANGE', False):
+                print(f'Receive signal: {table_name}, ', kwargs)
 
     def __init__(cls, name, bases, attrs):
         super().__init__(name, bases, attrs)
-        # cls.register_signals()  # pylint: disable=E1120
+        cls.register_signals()  # pylint: disable=E1120
 
 
 class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):

@@ -56,6 +56,7 @@ CONDITION_LOGIC = (
 
 MAP_FIELD_TITLE = {
     'saledata.contact': 'fullname',
+    'saledata.account': 'name',
 }
 
 CURRENCY_MASK_MONEY = {

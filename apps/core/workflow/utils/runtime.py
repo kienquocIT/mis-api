@@ -13,14 +13,75 @@ from apps.core.workflow.models import (
     Zone,
     Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
 )
-from .docs import DocHandler
 
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    'DocHandler',
     'RuntimeHandler',
     'RuntimeStageHandler',
 ]
+
+
+class DocHandler:
+    @property
+    def model(self) -> models.Model:
+        model_cls = DisperseModel(app_model=self.app_code).get_model()
+        if model_cls and hasattr(model_cls, 'objects'):
+            return model_cls
+        raise ValueError('App code is incorrect. Value: ' + self.app_code)
+
+    def __init__(self, doc_id, app_code):
+        self.doc_id = doc_id
+        self.app_code = app_code
+
+    def get_obj(self, default_filter: dict) -> Union[models.Model, None]:
+        try:
+            return self.model.objects.get(pk=self.doc_id, **default_filter)
+        except self.model.DoesNotExist:
+            return None
+
+    @classmethod
+    def force_added(cls, obj):
+        setattr(obj, 'system_status', 2)  # added
+        obj.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def force_added_with_runtime(cls, runtime_obj):
+        print('added_with_runtime: ', runtime_obj.doc_id)
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            setattr(obj, 'system_status', 2)  # added
+            obj.save(update_fields=['system_status'])
+            return True
+        return False
+
+    @classmethod
+    def force_finish(cls, obj):
+        setattr(obj, 'system_status', 3)  # finish
+        obj.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def force_finish_with_runtime(cls, runtime_obj):
+        print('finish_with_runtime: ', runtime_obj.doc_id)
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            setattr(obj, 'system_status', 3)  # finish
+            obj.save(update_fields=['system_status'])
+            return True
+        return False
 
 
 class RuntimeHandler:
@@ -316,11 +377,15 @@ class RuntimeStageHandler:
             self.set_state_task_bg('SUCCESS')
             return next_stage
 
-        # call log and state errors
+        # update some field when go to completed
         if stage_obj_currently.code == 'completed':
             self.runtime_obj.status = 1
             self.runtime_obj.state = 2
             self.runtime_obj.save(update_fields=['status', 'state'])
+            DocHandler.force_finish_with_runtime(self.runtime_obj)
+        elif stage_obj_currently.code == 'approved':
+            # call added doc obj
+            DocHandler.force_added_with_runtime(self.runtime_obj)
         return None
 
     def create_stage(self, node_passed: Node, **kwargs) -> (bool, RuntimeStage):
@@ -413,6 +478,7 @@ class RuntimeStageHandler:
                 self.runtime_obj.status = 1  # finish with flow is non-apply.
                 field_saved += ['status']
                 state_task = 'SUCCESS'
+                DocHandler.force_finish_with_runtime(self.runtime_obj)
             elif mode_wf == 1:  # apply
                 if not flow_apply or not isinstance(flow_apply, Workflow):
                     raise ValueError('[RuntimeStageHandler][apply] Workflow must be required with apply flow.')
@@ -435,6 +501,7 @@ class RuntimeStageHandler:
             self.runtime_obj.state = 3  # finish with flow is non-apply.
             self.runtime_obj.satus = 1  # finish with flow is non-apply.
             field_saved += ['status']
+            DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
         return True
 
