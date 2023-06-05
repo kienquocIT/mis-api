@@ -2,17 +2,16 @@ from django.urls import path
 
 from apps.core.workflow.views import (
     WorkflowOfAppList, WorkflowOfAppDetail, WorkflowList, WorkflowDetail,
-    RuntimeDataView, WorkflowRuntimeTest, RuntimeDiagramView, HistoryStage, RuntimeTask, RuntimeListView,
+    RuntimeDiagramDetail,
+    RuntimeListView, RuntimeDetail, RuntimeAssigneeDetail,
 )
 
 urlpatterns = [
     # runtime
-    path('history/stage/<str:pk>', HistoryStage.as_view(), name='HistoryStage'),
-    path('test', WorkflowRuntimeTest.as_view(), name='WorkflowRuntimeTest'),
-    path('runtime/list', RuntimeListView.as_view(), name='RuntimeListView'),
-    path('runtime', RuntimeDataView.as_view(), name='RuntimeDataView'),
-    path('diagram', RuntimeDiagramView.as_view(), name='RuntimeDiagramView'),
-    path('task/<str:pk>', RuntimeTask.as_view(), name='RuntimeTask'),
+    path('runtimes', RuntimeListView.as_view(), name='RuntimeListView'),
+    path('diagram/<str:runtime_id>', RuntimeDiagramDetail.as_view(), name='RuntimeDiagramDetail'),
+    path('runtime/<str:pk>', RuntimeDetail.as_view(), name='RuntimeDetail'),
+    path('task/<str:pk>', RuntimeAssigneeDetail.as_view(), name='RuntimeAssigneeDetail'),
 
     # config
     path('apps', WorkflowOfAppList.as_view(), name='WorkflowOfAppList'),

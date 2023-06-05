@@ -9,10 +9,10 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.account.manager import AccountManager
-from apps.shared import AuthMsg, FORMATTING, DisperseModel, SignalRegisterMetaClass
+from apps.shared import AuthMsg, FORMATTING, DisperseModel, CoreSignalRegisterMetaClass
 
 
-class AuthUser(AbstractBaseUser, PermissionsMixin, metaclass=SignalRegisterMetaClass):
+class AuthUser(AbstractBaseUser, PermissionsMixin, metaclass=CoreSignalRegisterMetaClass):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     username_validator = UnicodeUsernameValidator()
     username_auth = models.CharField(

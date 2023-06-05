@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.accounts import AccountType, Account
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.base.models import PlanApplication
 from ..core.tenant.models import Tenant, TenantPlan
-from ..core.workflow.models import WorkflowConfigOfApp, Workflow
+from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 
@@ -146,3 +146,11 @@ def make_sure_workflow_apps():
                     }
                 )
     print('Make sure workflow app is successfully.')
+
+
+def refill_app_code_workflow_runtime():
+    for obj in Runtime.objects.all():
+        if obj.app:
+            obj.app_code = obj.app.app_label
+            obj.save(update_fields=['app_code'])
+    print('App_code was updated for runtime!')

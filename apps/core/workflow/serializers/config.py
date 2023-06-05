@@ -11,6 +11,7 @@ from apps.core.workflow.serializers.config_sub import (
     NodeCreateSerializer, ZoneDetailSerializer,
     ZoneCreateSerializer, AssociationCreateSerializer, NodeDetailSerializer,
 )
+from apps.shared import WorkflowMsg
 
 
 # workflow of app
@@ -54,6 +55,20 @@ class WorkflowOfAppUpdateSerializer(serializers.ModelSerializer):
                 'workflow_currently': 'This field should be ID.'
             }
         )
+
+    def validate(self, attrs):
+        mode = self.instance.mode
+        if 'mode' in attrs:
+            mode = attrs['mode']
+
+        wf_current = self.instance.workflow_currently
+        if 'workflow_currently' in attrs:
+            wf_current = attrs['workflow_currently']
+
+        if mode == 1 and not wf_current:
+            raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_APPLY_REQUIRED_WF})
+
+        return attrs
 
     class Meta:
         model = WorkflowConfigOfApp
