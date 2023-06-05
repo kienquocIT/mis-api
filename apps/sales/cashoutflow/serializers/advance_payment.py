@@ -62,7 +62,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
-        return sum_ap_value - sum_return_value - sum_payment_converted_value
+        return sum_ap_value + sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_status(cls, obj):
@@ -248,7 +248,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'title': item.expense_unit_of_measure.title
                     },
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                    'remain_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
+                    'remain_total': item.after_tax_price - item.sum_converted_value + item.sum_return_value,
                 }
             )
         return expense_items
@@ -316,7 +316,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
-        return sum_ap_value - sum_return_value - sum_payment_converted_value
+        return sum_ap_value + sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_converted_payment_list(cls, obj):
