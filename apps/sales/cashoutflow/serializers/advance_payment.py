@@ -6,10 +6,11 @@ from apps.shared import AdvancePaymentMsg, AccountsMsg
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
     advance_payment_type = serializers.SerializerMethodField()
+    advance_value = serializers.SerializerMethodField()
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
-    advance_value = serializers.SerializerMethodField()
+    available_value = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -21,11 +22,12 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'advance_payment_type',
             'date_created',
             'return_date',
-            'advance_value',
             'status',
+            'advance_value',
             'to_payment',
             'return_value',
             'remain_value',
+            'available_value',
             'money_gave',
             'beneficiary',
             'sale_order_mapped',
@@ -61,8 +63,15 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         all_items = obj.advance_payment.all()
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
+        return sum_ap_value - sum_return_value
+
+    @classmethod
+    def get_available_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
-        return sum_ap_value + sum_return_value - sum_payment_converted_value
+        return sum_ap_value - sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_status(cls, obj):
@@ -193,6 +202,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
     advance_value = serializers.SerializerMethodField()
+    available_value = serializers.SerializerMethodField()
     converted_payment_list = serializers.SerializerMethodField()
 
     class Meta:
@@ -216,6 +226,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'to_payment',
             'return_value',
             'remain_value',
+            'available_value',
             'converted_payment_list'
         )
 
@@ -248,7 +259,8 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'title': item.expense_unit_of_measure.title
                     },
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                    'remain_total': item.after_tax_price - item.sum_converted_value + item.sum_return_value,
+                    'remain_total': item.after_tax_price - item.sum_return_value,
+                    'available_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
                 }
             )
         return expense_items
@@ -315,8 +327,15 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         all_items = obj.advance_payment.all()
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
+        return sum_ap_value - sum_return_value
+
+    @classmethod
+    def get_available_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
-        return sum_ap_value + sum_return_value - sum_payment_converted_value
+        return sum_ap_value - sum_return_value - sum_payment_converted_value
 
     @classmethod
     def get_converted_payment_list(cls, obj):

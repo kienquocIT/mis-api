@@ -100,14 +100,16 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def common_create_return_advance_cost(cls, validate_data, return_advance):
-        data_bulk = [
-            ReturnAdvanceCost(
-                return_advance=return_advance,
-                advance_payment_cost_id=data['advance_payment_cost'],
-                remain_value=data['remain_value'],
-                return_value=data['return_value']
-            ) for data in validate_data
-        ]
+        data_bulk = []
+        for data in validate_data:
+            data_bulk.append(
+                ReturnAdvanceCost(
+                    return_advance=return_advance,
+                    advance_payment_cost_id=data['advance_payment_cost'],
+                    remain_value=data['remain_value'],
+                    return_value=data['return_value']
+                )
+            )
         ReturnAdvanceCost.objects.bulk_create(data_bulk)
         return True
 
