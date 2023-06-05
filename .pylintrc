@@ -25,4 +25,3 @@ disable=
     W0237, # arguments-renamed
     R0801, # duplicate-code
     F0002, # astroid-error
-    W0640, # cell-var-from-loop

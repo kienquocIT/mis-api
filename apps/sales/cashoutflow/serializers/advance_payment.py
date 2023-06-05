@@ -293,10 +293,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         payment_code_list = []
         for item in all_converted_items:
             payment_code = item.payment_mapped.code
-            result = next(filter(lambda x: x['payment_code'] == payment_code, converted_payment_list), None)
-            if result is not None:
-                result['payment_value_converted'] = result['payment_value_converted'] + item.expense_value_converted
-            else:
+            result = None
+            for converted_payment in converted_payment_list:
+                if converted_payment['payment_code'] == payment_code:
+                    result = converted_payment
+                    break
+            if result:
                 if payment_code not in payment_code_list:
                     converted_payment_list.append({
                         'payment_code': payment_code,
@@ -304,6 +306,8 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'payment_value_converted': item.expense_value_converted
                     })
                     payment_code_list.append(payment_code)
+            else:
+                result['payment_value_converted'] = result['payment_value_converted'] + item.expense_value_converted
         return converted_payment_list
 
 
