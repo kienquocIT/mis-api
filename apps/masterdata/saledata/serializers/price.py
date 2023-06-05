@@ -365,6 +365,9 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                 price_id=obj.id,
             ).select_related('expense_general', 'currency', 'uom')
             for expense in expenses:
+                uom_data = {}
+                if expense.uom:
+                    uom_data = {'id': expense.uom.id, 'title': expense.uom.title}
                 expense_information = {
                     'id': expense.expense_general.expense.id,
                     'code': expense.expense_general.expense.code,
@@ -373,7 +376,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
                         'id': expense.expense_general.uom_group.id,
                         'title': expense.expense_general.uom_group.title
                     },
-                    'uom': {'id': expense.uom.id, 'title': expense.uom.title},
+                    'uom': uom_data,
                     'price': expense.price_value,
                     'is_auto_update': expense.is_auto_update,
                     'currency_using': {
