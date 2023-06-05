@@ -112,6 +112,7 @@ class PaymentCostItems(SimpleAbstractModel):
     real_value = models.FloatField(default=0, help_text='Value which is NOT CONVERTED from Advance Payment')
     converted_value = models.FloatField(default=0, help_text='Value which is CONVERTED from Advance Payment')
     sum_value = models.FloatField(default=0, help_text='Sum value (include real_value and value_converted')
+    expense_items_detail_list = models.JSONField(default=list)
     date_created = models.DateTimeField(
         default=timezone.now,
         editable=False,
