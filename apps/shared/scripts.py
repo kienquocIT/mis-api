@@ -154,3 +154,9 @@ def refill_app_code_workflow_runtime():
             obj.app_code = obj.app.app_label
             obj.save(update_fields=['app_code'])
     print('App_code was updated for runtime!')
+
+
+def make_sure_quotation_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).quotation_config()
+    print('Make sure quotation config is done!')
