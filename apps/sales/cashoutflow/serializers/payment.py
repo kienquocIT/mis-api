@@ -37,7 +37,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_return_value_list(cls, obj):
-        return 0
+        obj.return_value_list = {}
+        return obj.return_value_list
 
     @classmethod
     def get_payment_value(cls, obj):
