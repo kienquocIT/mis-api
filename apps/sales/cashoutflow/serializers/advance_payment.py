@@ -46,8 +46,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_to_payment(cls, obj):
-        obj.to_payment = 0
-        return obj.to_payment
+        all_items = obj.advance_payment.all()
+        sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
+        return sum_payment_converted_value
 
     @classmethod
     def get_return_value(cls, obj):
