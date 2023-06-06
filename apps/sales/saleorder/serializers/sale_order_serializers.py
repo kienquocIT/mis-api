@@ -2,7 +2,6 @@ from rest_framework import serializers
 
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder
-from apps.sales.cashoutflow.models import AdvancePaymentCost
 
 
 class SaleOrderProductSerializer(serializers.ModelSerializer):
