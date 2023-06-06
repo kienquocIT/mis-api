@@ -176,3 +176,11 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
                 }
             )
         return result
+
+
+class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReturnAdvance
+        fields = (
+            'money_received',
+        )
