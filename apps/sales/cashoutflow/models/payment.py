@@ -10,7 +10,7 @@ __all__ = [
     'PaymentCostItems',
     'PaymentCostItemsDetail',
     'PaymentSaleOrder',
-    'PaymentQuotation'
+    'PaymentQuotation',
 ]
 
 SALE_CODE_TYPE = [

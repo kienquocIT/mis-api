@@ -3,6 +3,7 @@ from apps.sales.cashoutflow.views import (
     AdvancePaymentList, AdvancePaymentDetail,
     PaymentList, PaymentDetail,
     ReturnAdvanceList, ReturnAdvanceDetail,
+    PaymentCostItemsList
 )
 
 
@@ -14,5 +15,7 @@ urlpatterns = [
     path('payments/<str:pk>', PaymentDetail.as_view(), name='PaymentDetail'),
 
     path('return-advances', ReturnAdvanceList.as_view(), name='ReturnAdvanceList'),
-    path('return-advance/<str:pk>', ReturnAdvanceDetail.as_view(), name='ReturnAdvanceDetail')
+    path('return-advance/<str:pk>', ReturnAdvanceDetail.as_view(), name='ReturnAdvanceDetail'),
+
+    path('payment-cost-items-list', PaymentCostItemsList.as_view(), name='PaymentCostItemsList')
 ]

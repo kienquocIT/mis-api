@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.cashoutflow.models import ReturnAdvance
-from apps.sales.cashoutflow.serializers.return_advance import ReturnAdvanceCreateSerializer, \
-    ReturnAdvanceListSerializer, ReturnAdvanceDetailSerializer
+from apps.sales.cashoutflow.serializers import (
+    ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer, ReturnAdvanceDetailSerializer,
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 

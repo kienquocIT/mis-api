@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder
+from apps.sales.cashoutflow.models import AdvancePaymentCost
 
 
 class SaleOrderProductSerializer(serializers.ModelSerializer):
@@ -562,7 +563,13 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SaleOrderExpense
-        fields = ('id', 'expense_title', 'tax', 'plan_after_tax')
+        fields = (
+            'id',
+            'expense_title',
+            'expense_id',
+            'tax',
+            'plan_after_tax',
+        )
 
     @classmethod
     def get_tax(cls, obj):

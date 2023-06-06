@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.cashoutflow.models import Payment
+from apps.sales.cashoutflow.models import Payment, PaymentCostItems
 from apps.sales.cashoutflow.serializers import (
     PaymentListSerializer, PaymentCreateSerializer,
     PaymentDetailSerializer,
+    PaymentCostItemsListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -57,3 +58,26 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     # def put(self, request, *args, **kwargs):
     #     self.serializer_class = PaymentUpdateSerializer
     #     return self.update(request, *args, **kwargs)
+
+
+class PaymentCostItemsList(BaseListMixin):
+    queryset = PaymentCostItems.objects
+    serializer_list = PaymentCostItemsListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'payment_cost'
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Payment Cost Items list",
+        operation_description="Payment Cost Items list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        kwargs.update(
+            {
+                'sale_code_mapped': request.query_params['filter_sale_order'],
+            }
+        )
+        return self.list(request, *args, **kwargs)

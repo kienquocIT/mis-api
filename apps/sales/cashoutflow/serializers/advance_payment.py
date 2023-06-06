@@ -1,5 +1,10 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost, PaymentCostItemsDetail
+from apps.sales.cashoutflow.models import (
+    AdvancePayment,
+    AdvancePaymentCost,
+    PaymentCostItemsDetail,
+    PaymentSaleOrder
+)
 from apps.masterdata.saledata.models import Currency, AccountBanks
 from apps.shared import AdvancePaymentMsg, AccountsMsg
 
@@ -11,6 +16,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
     available_value = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -32,7 +38,44 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'beneficiary',
             'sale_order_mapped',
             'quotation_mapped',
+            'expense_items'
         )
+
+    @classmethod
+    def get_expense_items(cls, obj):
+        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
+        expense_items = []
+        for item in all_item:
+            tax_dict = None
+            if item.tax:
+                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+            expense_items.append(
+                {
+                    'id': item.id,
+                    'expense': {
+                        'id': item.expense_id,
+                        'code': item.expense.code,
+                        'title': item.expense.title,
+                        'type': item.expense.general_information['expense_type'],
+                    },
+                    'tax': tax_dict,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_uom': {
+                        'id': item.expense_unit_of_measure_id,
+                        'code': item.expense_unit_of_measure.code,
+                        'title': item.expense_unit_of_measure.title
+                    },
+                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                    'unit_price': item.expense_unit_price,
+                    'subtotal_price': item.subtotal_price,
+                    'after_tax_price': item.after_tax_price,
+                    'returned_total': item.sum_return_value,
+                    'to_payment_total': item.sum_converted_value,
+                    'remain_total': item.after_tax_price - item.sum_return_value,
+                    'available_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
+                }
+            )
+        return expense_items
 
     @classmethod
     def get_advance_payment_type(cls, obj):
@@ -238,7 +281,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             tax_dict = None
             if item.tax:
                 tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
-
             expense_items.append(
                 {
                     'id': item.id,
@@ -249,9 +291,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'type': item.expense.general_information['expense_type'],
                     },
                     'tax': tax_dict,
-                    'unit_price': item.expense_unit_price,
-                    'subtotal_price': item.subtotal_price,
-                    'after_tax_price': item.after_tax_price,
                     'expense_quantity': item.expense_quantity,
                     'expense_uom': {
                         'id': item.expense_unit_of_measure_id,
@@ -259,6 +298,11 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'title': item.expense_unit_of_measure.title
                     },
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
+                    'unit_price': item.expense_unit_price,
+                    'subtotal_price': item.subtotal_price,
+                    'after_tax_price': item.after_tax_price,
+                    'returned_total': item.sum_return_value,
+                    'to_payment_total': item.sum_converted_value,
                     'remain_total': item.after_tax_price - item.sum_return_value,
                     'available_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
                 }

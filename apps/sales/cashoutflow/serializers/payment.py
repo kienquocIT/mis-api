@@ -81,6 +81,9 @@ def create_payment_cost_items(payment_obj, payment_cost_list):
                     expense_items_detail_list=expense_ap_detail.get('converted_value_detail', None)
                 )
             )
+            # ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
+            # ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(expense_ap.get('value', 0))
+            # ap_updated.save()
     PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
     payment_cost_item_list = PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
     create_payment_cost_detail_items(payment_obj, payment_cost_item_list)
@@ -185,3 +188,22 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
+
+
+class PaymentCostItemsListSerializer(serializers.ModelSerializer):
+    expense_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentCostItems
+        fields = (
+            'expense_id',
+            'payment_cost',
+            'sale_code_mapped',
+            'real_value',
+            'converted_value',
+            'sum_value',
+        )
+
+    @classmethod
+    def get_expense_id(cls, obj):
+        return obj.payment_cost.expense_id

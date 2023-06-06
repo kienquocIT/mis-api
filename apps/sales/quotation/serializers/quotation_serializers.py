@@ -572,7 +572,13 @@ class QuotationExpenseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuotationExpense
-        fields = ('id', 'expense_title', 'tax', 'plan_after_tax')
+        fields = (
+            'id',
+            'expense_title',
+            'expense_id',
+            'tax',
+            'plan_after_tax'
+        )
 
     @classmethod
     def get_tax(cls, obj):
