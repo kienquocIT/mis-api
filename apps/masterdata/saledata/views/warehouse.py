@@ -1,12 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view
-from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models import WareHouse, WareHouseStock
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer,
-    WareHouseDetailSerializer, WareHouseUpdateSerializer,
+    WareHouseDetailSerializer, WareHouseUpdateSerializer, WarehouseStockListSerializer,
 )
-__all__ = ['WareHouseList', 'WareHouseDetail']
+
+__all__ = ['WareHouseList', 'WareHouseDetail', 'WarehouseStockList']
 
 
 class WareHouseList(BaseListMixin, BaseCreateMixin):
@@ -51,3 +52,21 @@ class WareHouseDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
+
+
+class WarehouseStockList(BaseListMixin):
+    queryset = WareHouseStock.objects
+    serializer_list = WarehouseStockListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        "product": ['exact'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('product', 'warehouse')
+
+    @swagger_auto_schema(operation_summary='WareHouse Stock product')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
