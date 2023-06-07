@@ -352,6 +352,17 @@ class SaleOrderCost(SimpleAbstractModel):
     order = models.IntegerField(
         default=1
     )
+    is_shipping = models.BooleanField(
+        default=False,
+        help_text="flag to know this cost is for shipping fee"
+    )
+    shipping = models.ForeignKey(
+        'saledata.Shipping',
+        on_delete=models.CASCADE,
+        verbose_name="shipping",
+        related_name="sale_order_cost_shipping",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Sale Order Cost'
