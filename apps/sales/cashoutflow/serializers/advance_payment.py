@@ -409,20 +409,20 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
 
 class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
+    # title = serializers.CharField(max_length=150)
 
     class Meta:
         model = AdvancePayment
         fields = (
-            'title',
-            'sale_code_type',
-            'advance_payment_type',
-            'supplier',
-            'method',
-            'creator_name',
-            'beneficiary',
-            'return_date',
-            'money_gave'
+            # 'title',
+            # 'sale_code_type',
+            # 'advance_payment_type',
+            # 'supplier',
+            # 'method',
+            # 'creator_name',
+            # 'beneficiary',
+            # 'return_date',
+            'money_gave',
         )
 
     # @classmethod
@@ -474,4 +474,6 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
 
         # if self.initial_data.get('expense_valid_list', None):
         #     create_expense_items(instance, self.initial_data.get('expense_valid_list', None))
+        instance.money_gave = validated_data.get('money_gave', None)
+        instance.save()
         return instance

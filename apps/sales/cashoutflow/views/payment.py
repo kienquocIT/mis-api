@@ -48,6 +48,11 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'payment'
+        )
+
     @swagger_auto_schema(operation_summary='Detail Payment')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

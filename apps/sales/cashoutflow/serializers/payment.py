@@ -15,6 +15,7 @@ class PaymentListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = (
+            'id',
             'code',
             'title',
             'sale_code_type',
@@ -184,10 +185,81 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
 
 class PaymentDetailSerializer(serializers.ModelSerializer):
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    expense_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
-        fields = '__all__'
+        fields = (
+            'sale_order_mapped',
+            'quotation_mapped',
+            'title',
+            'code',
+            'creator_name',
+            'date_created',
+            'method',
+            'sale_code_type',
+            'supplier',
+            'expense_mapped'
+        )
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        all_sale_order_mapped = []
+        for item in obj.sale_order_mapped.all().select_related('opportunity'):
+            all_sale_order_mapped.append({
+                'id': str(item.id),
+                'code': item.code,
+                'title': item.title,
+                'opportunity': {'id': str(item.opportunity_id), 'code': item.opportunity.code, 'title': item.opportunity.title}
+            })
+        return all_sale_order_mapped
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        all_quotation_mapped = []
+        for item in obj.quotation_mapped.all().select_related('opportunity'):
+            all_quotation_mapped.append(
+                {
+                    'id': str(item.id),
+                    'code': item.code,
+                    'title': item.title,
+                    'opportunity': {
+                        'id': str(item.opportunity_id), 'code': item.opportunity.code, 'title': item.opportunity.title
+                    }
+                }
+            )
+        return all_quotation_mapped
+
+    @classmethod
+    def get_expense_mapped(cls, obj):
+        all_expense_mapped = []
+        for item in obj.payment.all():
+            tax_obj = None
+            if item.tax:
+                tax_obj = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+            all_expense_mapped.append({
+                'id': item.id,
+                'expense': {
+                    'id': item.expense_id,
+                    'code': item.expense.code,
+                    'title': item.expense.title
+                },
+                'expense_unit_of_measure': {
+                    'id': item.expense_unit_of_measure_id,
+                    'code': item.expense_unit_of_measure.code,
+                    'title': item.expense_unit_of_measure.title
+                },
+                'expense_quantity': item.expense_quantity,
+                'expense_unit_price': item.expense_unit_price,
+                'tax': tax_obj,
+                'subtotal_price': item.subtotal_price,
+                'after_tax_price': item.after_tax_price,
+                'document_number': item.document_number,
+                'expense_ap_detail_list': item.expense_ap_detail_list
+            })
+        return all_expense_mapped
 
 
 class PaymentCostItemsListSerializer(serializers.ModelSerializer):
