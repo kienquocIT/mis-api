@@ -7,6 +7,7 @@ from apps.masterdata.saledata.models.accounts import AccountType, Account
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.base.models import PlanApplication
 from ..core.tenant.models import Tenant, TenantPlan
+from ..sales.cashoutflow.models import AdvancePayment, ReturnAdvance
 from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
@@ -115,6 +116,16 @@ def update_account_shipping_address():
 
 def update_account_billing_address():
     Account.objects.all().update(billing_address=[])
+    return True
+
+
+def delete_all_ap():
+    AdvancePayment.objects.all().delete()
+    return True
+
+
+def delete_all_return():
+    ReturnAdvance.objects.all().delete()
     return True
 
 
