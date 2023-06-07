@@ -113,14 +113,20 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
 
 class QuotationCostSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
         max_length=550,
         required=False
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
     )
 
     class Meta:
@@ -141,6 +147,8 @@ class QuotationCostSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_shipping',
+            'shipping',
         )
 
     @classmethod
@@ -154,6 +162,10 @@ class QuotationCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return QuotationCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return QuotationCommonValidate().validate_shipping(value=value)
 
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
