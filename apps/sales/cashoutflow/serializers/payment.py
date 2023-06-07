@@ -212,7 +212,11 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
                 'id': str(item.id),
                 'code': item.code,
                 'title': item.title,
-                'opportunity': {'id': str(item.opportunity_id), 'code': item.opportunity.code, 'title': item.opportunity.title}
+                'opportunity': {
+                    'id': str(item.opportunity_id),
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title
+                }
             })
         return all_sale_order_mapped
 

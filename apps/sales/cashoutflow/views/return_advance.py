@@ -1,16 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.cashoutflow.models import ReturnAdvance
 from apps.sales.cashoutflow.serializers.return_advance import (
-	ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer, 
-	ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer
+    ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer,
+    ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 # Create your views here.
-
-
 class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     queryset = ReturnAdvance.objects
     serializer_list = ReturnAdvanceListSerializer
