@@ -1,7 +1,8 @@
 import json
 
-from django.db import models
+from django.db import models, transaction
 
+from apps.masterdata.saledata.models import WareHouseStock
 from apps.shared import (
     SimpleAbstractModel, MasterDataAbstractModel,
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP,
@@ -126,6 +127,18 @@ class OrderDelivery(MasterDataAbstractModel):
                 'title': str(self.sale_order.title),
                 'code': str(self.sale_order.code),
             }
+        if self.customer and not self.customer_data:
+            self.customer_data = {
+                'id': str(self.customer_id),
+                'title': str(self.customer.name),
+                'code': str(self.customer.code)
+            }
+        if self.contact and not self.contact_data:
+            self.contact_data = {
+                'id': str(self.contact_id),
+                'title': str(self.contact.fullname),
+                'code': str(self.contact.code)
+            }
         return True
 
     def save(self, *args, **kwargs):
@@ -194,7 +207,8 @@ class OrderDeliverySub(MasterDataAbstractModel):
                     'ready_quantity': '(Delivery quantity was delivered in this record)',
                 }
             }
-        )
+        ),
+        null=True
     )
 
     def set_and_check_quantity(self):
@@ -268,7 +282,21 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     )
     ready_quantity = models.SmallIntegerField(
         default=0,
+        verbose_name='Quantity already for delivery',
+    )
+    picked_quantity = models.SmallIntegerField(
+        default=0,
         verbose_name='Quantity was picked',
+    )
+    delivery_data = models.JSONField(
+        default=dict,
+        verbose_name='data about product, warehouse, stock',
+        help_text=json.dumps(
+            {
+                'warehouse_id': 'stock number',
+            }
+        ),
+        null=True
     )
 
     def put_backup_data(self):
@@ -287,13 +315,37 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         return True
 
     def set_and_check_quantity(self):
-        if self.ready_quantity > self.remaining_quantity:
+        if self.picked_quantity > self.remaining_quantity:
             raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
-    def save(self, *args, **kwargs):
+    def update_warehouse_stock(self):
+        if self.delivery_data:
+            try:
+                with transaction.atomic():
+                    update_list = self.delivery_data
+                    product_with_warehouse_list = WareHouseStock.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        product=self.product
+                    )
+                    new_obj = []
+                    for prod in product_with_warehouse_list:
+                        warehouse_id = str(prod.warehouse_id)
+                        if warehouse_id in update_list:
+                            prod.stock = prod.stock - update_list[warehouse_id]
+                            new_obj.append(prod)
+                    WareHouseStock.objects.bulk_update(new_obj, fields=['stock'])
+            except Exception as err:
+                print(err)
+
+    def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
+        self.update_warehouse_stock()
+
+    def save(self, *args, **kwargs):
+        self.before_save()
         super().save(*args, **kwargs)
 
     class Meta:

@@ -67,11 +67,13 @@ class GoodReceiptProduct(MasterDataAbstractModel):
     product_data = models.JSONField(
         default=dict,
         verbose_name='',
-        help_text=json.dumps({
-            'id': '',
-            'title': '',
-            'code': '',
-        }),
+        help_text=json.dumps(
+            {
+                'id': '',
+                'title': '',
+                'code': '',
+            }
+        ),
     )
     warehouse = models.ForeignKey(
         WareHouse,
@@ -82,11 +84,13 @@ class GoodReceiptProduct(MasterDataAbstractModel):
     warehouse_data = models.JSONField(
         default=dict,
         verbose_name='',
-        help_text=json.dumps({
-            'id': '',
-            'title': '',
-            'code': '',
-        }),
+        help_text=json.dumps(
+            {
+                'id': '',
+                'title': '',
+                'code': '',
+            }
+        ),
     )
     uom = models.ForeignKey(
         UnitOfMeasure,
@@ -97,11 +101,13 @@ class GoodReceiptProduct(MasterDataAbstractModel):
     uom_data = models.JSONField(
         default=dict,
         verbose_name='',
-        help_text=json.dumps({
-            'id': '',
-            'title': '',
-            'code': '',
-        }),
+        help_text=json.dumps(
+            {
+                'id': '',
+                'title': '',
+                'code': '',
+            }
+        ),
     )
     quantity = models.IntegerField(
         verbose_name="Quantity",
@@ -120,11 +126,13 @@ class GoodReceiptProduct(MasterDataAbstractModel):
     tax_data = models.JSONField(
         default=dict,
         verbose_name='',
-        help_text=json.dumps({
-            'id': '',
-            'title': '',
-            'code': '',
-        }),
+        help_text=json.dumps(
+            {
+                'id': '',
+                'title': '',
+                'code': '',
+            }
+        ),
     )
     subtotal_price = models.FloatField(
         verbose_name="Subtotal price",

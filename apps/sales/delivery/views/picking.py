@@ -60,3 +60,11 @@ class OrderPickingDetail(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Order Picking Delete',
+        operation_description="Delete Picking",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)

@@ -1,10 +1,9 @@
-__all__ = ['OrderDeliveryList']
-
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 from ..models import OrderDelivery
-from ..serializers import OrderDeliveryListSerializer, OrderPickingDetailSerializer
+from ..serializers import OrderDeliveryListSerializer, OrderDeliveryDetailSerializer, \
+    OrderDeliveryUpdateSerializer
 
 __all__ = ['OrderDeliveryList', 'OrderDeliveryDetail']
 
@@ -29,8 +28,8 @@ class OrderDeliveryDetail(
     BaseDestroyMixin
 ):
     queryset = OrderDelivery.objects
-    serializer_detail = OrderDeliveryListSerializer
-    serializer_update = OrderPickingDetailSerializer
+    serializer_detail = OrderDeliveryDetailSerializer
+    serializer_update = OrderDeliveryUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -44,3 +43,12 @@ class OrderDeliveryDetail(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary='Order Delivery Update',
+        operation_description="Put delivery detail by ID update done field of product",
+        serializer_update=OrderDeliveryUpdateSerializer
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)

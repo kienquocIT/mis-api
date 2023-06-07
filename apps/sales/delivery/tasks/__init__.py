@@ -6,9 +6,9 @@ from django.db import transaction
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
-    OrderDelivery,
+    OrderDelivery, OrderDeliveryProduct, OrderDeliverySub
 )
-from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
+from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct, SaleOrderLogistic
 
 __all__ = [
     'task_active_delivery_from_sale_order',
@@ -60,6 +60,39 @@ class SaleOrderActiveDeliverySerializer:
             obj_tmp.before_save()
             m2m_obj_arr.append(obj_tmp)
         return sub_id, pickup_quantity, m2m_obj_arr
+
+    def __prepare_order_delivery_product(self):
+        sub_id = uuid4()
+        m2m_obj_arr = []
+        delivery_quantity = 0
+        for m2m_obj in self.order_products:
+            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, int):
+                delivery_quantity += m2m_obj.product_quantity
+            obj_tmp = OrderDeliveryProduct(
+                delivery_sub_id=sub_id,
+                product=m2m_obj.product,
+                product_data={
+                    'id': str(m2m_obj.product.id),
+                    'title': str(m2m_obj.product.title),
+                    'code': str(m2m_obj.product.code),
+                    'remarks': ''
+                } if m2m_obj.product else {},
+                uom=m2m_obj.unit_of_measure,
+                uom_data={
+                    'id': str(m2m_obj.unit_of_measure.id),
+                    'title': str(m2m_obj.unit_of_measure.title),
+                    'code': str(m2m_obj.unit_of_measure.code),
+                } if m2m_obj.unit_of_measure else {},
+
+                delivery_quantity=m2m_obj.product_quantity,
+                delivered_quantity_before=0,
+                remaining_quantity=m2m_obj.product_quantity,
+                ready_quantity=m2m_obj.product_quantity,
+                picked_quantity=0,
+            )
+            obj_tmp.put_backup_data()
+            m2m_obj_arr.append(obj_tmp)
+        return sub_id, delivery_quantity, m2m_obj_arr
 
     def _create_order_picking(self):
         # data
@@ -119,6 +152,8 @@ class SaleOrderActiveDeliverySerializer:
             delivery_quantity,
 
     ):
+        logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
+
         return OrderDelivery.objects.create(
             tenant_id=self.tenant_id,
             company_id=self.company_id,
@@ -127,24 +162,26 @@ class SaleOrderActiveDeliverySerializer:
                 "id": str(self.order_obj.id),
                 "title": str(self.order_obj.title),
                 "code": str(self.order_obj.code),
+                "shipping_address": logistic.shipping_address,
+                "billing_address": logistic.billing_address,
             },
             from_picking_area='',
             customer=self.order_obj.customer,
             customer_data={
                 "id": str(self.order_obj.customer_id),
-                "title": str(self.order_obj.customer.title),
+                "title": str(self.order_obj.customer.name),
                 "code": str(self.order_obj.customer.code),
             },
             contact=self.order_obj.contact,
             contact_data={
                 "id": str(self.order_obj.contact_id),
-                "title": str(self.order_obj.contact.title),
+                "title": str(self.order_obj.contact.fullname),
                 "code": str(self.order_obj.contact.code),
             },
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
-
+            state=1 if self.config_obj.is_partial_ship else 0,
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=0,
             remaining_quantity=delivery_quantity,
@@ -164,9 +201,26 @@ class SaleOrderActiveDeliverySerializer:
                         obj_delivery = self._create_order_delivery(delivery_quantity=obj_picking.pickup_quantity)
                         print(obj_picking, obj_delivery)
                     else:
-                        _id, pickup_quantity, _y = self.__create_order_picking_sub_map_product()
-                        obj_delivery = self._create_order_delivery(delivery_quantity=pickup_quantity)
-                        print(pickup_quantity, obj_delivery)
+                        sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
+                        obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
+                        # setup SUB
+                        sub_obj = OrderDeliverySub.objects.create(
+                            tenant_id=self.tenant_id,
+                            company_id=self.company_id,
+                            id=sub_id,
+                            order_delivery=obj_delivery,
+                            date_done=None,
+                            previous_step=None,
+                            times=1,
+                            delivery_quantity=delivery_quantity,
+                            delivered_quantity_before=0,
+                            remaining_quantity=delivery_quantity,
+                            ready_quantity=delivery_quantity,
+                            delivery_data={},
+                        )
+                        obj_delivery.sub = sub_obj
+                        obj_delivery.save(update_fields=['sub'])
+                        OrderDeliveryProduct.objects.bulk_create(_y)
                     # raise ValueError('Cancel with check!')
                     if obj_delivery:
                         return True, ''
