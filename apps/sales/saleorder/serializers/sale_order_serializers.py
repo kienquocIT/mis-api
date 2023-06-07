@@ -85,14 +85,20 @@ class SaleOrderLogisticSerializer(serializers.ModelSerializer):
 
 class SaleOrderCostSerializer(serializers.ModelSerializer):
     product = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     unit_of_measure = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True
     )
     tax = serializers.CharField(
         max_length=550,
         required=False
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
     )
 
     class Meta:
@@ -113,6 +119,8 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             'product_tax_amount',
             'product_subtotal_price',
             'order',
+            'is_shipping',
+            'shipping',
         )
 
     @classmethod
@@ -126,6 +134,10 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return SaleOrderCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_shipping(value=value)
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):

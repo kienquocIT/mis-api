@@ -60,6 +60,7 @@ class SaleOrderCommonCreate:
                 'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
+                'shipping': shipping
             }
         return {}
 
@@ -103,6 +104,7 @@ class SaleOrderCommonCreate:
                     product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
+                    shipping_id=data['shipping'].get('id', None),
                     **sale_order_cost
                 )
         return True

@@ -112,6 +112,7 @@ DELIVERY_STATE = (
     (0, 'Wait'),
     (1, 'Partial'),
     (2, 'Full'),
+    (3, 'Done'),
 )
 DELIVERY_WITH_KIND_PICKUP = (
     (0, 'Wait auto picking'),
