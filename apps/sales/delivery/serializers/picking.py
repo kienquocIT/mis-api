@@ -120,28 +120,9 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
     delivery_option = serializers.IntegerField(min_value=0)
 
     @staticmethod
-    def update_delivery_sub(instance, total, product_update):
-        delivery = OrderDelivery.objects.filter(sale_order_id=instance.sale_order_id).first()
-        delivery_sub = delivery.sub
-        if not delivery_sub:
-            delivery_sub = OrderDeliverySub.objects.create(
-                order_delivery=delivery,
-                date_done=django.utils.timezone.now(),
-                previous_step=None,
-                times=1,
-                delivery_quantity=instance.pickup_quantity,
-                delivered_quantity_before=0,
-                remaining_quantity=instance.pickup_quantity,
-                ready_quantity=0,
-                delivery_data=None
-            )
-            delivery.sub = delivery_sub
-        if instance.delivery_option == 1:
-            delivery_sub.ready_quantity = total
+    def update_delivery_sub_ver_one(delivery_sub, product_update):
         obj_list_id = []
         obj_update = []
-        # loop trong product list được update từ picking
-        # lấy delivery_data từ item product
         for key, value in product_update.items():
             delivery_data = value['delivery_data']
             delivery_prod = OrderDeliveryProduct.objects.filter(
@@ -164,6 +145,31 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
             else:
                 obj_list_id.append(key)
         OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
+        return obj_list_id
+
+    @staticmethod
+    def update_delivery_sub(instance, total, product_update):
+        delivery = OrderDelivery.objects.filter(sale_order_id=instance.sale_order_id).first()
+        delivery_sub = delivery.sub
+        if not delivery_sub:
+            delivery_sub = OrderDeliverySub.objects.create(
+                order_delivery=delivery,
+                date_done=django.utils.timezone.now(),
+                previous_step=None,
+                times=1,
+                delivery_quantity=instance.pickup_quantity,
+                delivered_quantity_before=0,
+                remaining_quantity=instance.pickup_quantity,
+                ready_quantity=0,
+                delivery_data=None
+            )
+            delivery.sub = delivery_sub
+        if instance.delivery_option == 1:
+            delivery_sub.ready_quantity = total
+        # loop trong product list được update từ picking
+        # lấy delivery_data từ item product
+        obj_list_id = OrderPickingUpdateSerializer.update_delivery_sub_ver_one(delivery_sub, product_update)
+
         create_new_prod = []
         for item in OrderPickingProduct.objects.filter(
                 product_id__in=obj_list_id,
