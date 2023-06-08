@@ -60,13 +60,14 @@ class WarehouseStockList(BaseListMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
     filterset_fields = {
-        "product": ['exact'],
+        "product": ['exact', 'in'],
+        "warehouse": ['exact', 'in'],
     }
 
     def get_queryset(self):
         return super().get_queryset().select_related('product', 'warehouse')
 
-    @swagger_auto_schema(operation_summary='WareHouse Stock product')
+    @swagger_auto_schema(operation_summary='WareHouse stock product')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
