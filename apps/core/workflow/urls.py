@@ -1,16 +1,21 @@
 from django.urls import path
 
 from apps.core.workflow.views import (
-    WorkflowList, WorkflowDetail,
-    RuntimeDataView, WorkflowRuntimeTest, RuntimeDiagramView, HistoryStage, RuntimeTask
+    WorkflowOfAppList, WorkflowOfAppDetail, WorkflowList, WorkflowDetail,
+    RuntimeDiagramDetail,
+    RuntimeListView, RuntimeDetail, RuntimeAssigneeDetail,
 )
 
 urlpatterns = [
-    path('history/stage/<str:pk>', HistoryStage.as_view(), name='HistoryStage'),
+    # runtime
+    path('runtimes', RuntimeListView.as_view(), name='RuntimeListView'),
+    path('diagram/<str:runtime_id>', RuntimeDiagramDetail.as_view(), name='RuntimeDiagramDetail'),
+    path('runtime/<str:pk>', RuntimeDetail.as_view(), name='RuntimeDetail'),
+    path('task/<str:pk>', RuntimeAssigneeDetail.as_view(), name='RuntimeAssigneeDetail'),
+
+    # config
+    path('apps', WorkflowOfAppList.as_view(), name='WorkflowOfAppList'),
+    path('app/<str:pk>', WorkflowOfAppDetail.as_view(), name='WorkflowOfAppDetail'),
     path('lists', WorkflowList.as_view(), name='WorkflowList'),
-    path('test', WorkflowRuntimeTest.as_view(), name='WorkflowRuntimeTest'),
-    path('runtime', RuntimeDataView.as_view(), name='RuntimeDataView'),
-    path('diagram', RuntimeDiagramView.as_view(), name='RuntimeDiagramView'),
-    path('task/<str:pk>', RuntimeTask.as_view(), name='RuntimeTask'),
     path('<str:pk>', WorkflowDetail.as_view(), name='WorkflowDetail'),
 ]

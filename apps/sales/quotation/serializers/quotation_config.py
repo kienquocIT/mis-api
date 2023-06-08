@@ -4,6 +4,11 @@ from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, Con
 
 
 class ShortConfigSerializer(serializers.ModelSerializer):
+    is_choose_price_list = serializers.BooleanField(default=False)
+    is_input_price = serializers.BooleanField(default=False)
+    is_discount_on_product = serializers.BooleanField(default=False)
+    is_discount_on_total = serializers.BooleanField(default=False)
+
     class Meta:
         model = ConfigShortSale
         fields = (
@@ -15,6 +20,10 @@ class ShortConfigSerializer(serializers.ModelSerializer):
 
 
 class LongConfigSerializer(serializers.ModelSerializer):
+    is_not_input_price = serializers.BooleanField(default=False)
+    is_not_discount_on_product = serializers.BooleanField(default=False)
+    is_not_discount_on_total = serializers.BooleanField(default=False)
+
     class Meta:
         model = ConfigLongSale
         fields = (
@@ -40,13 +49,13 @@ class QuotationConfigUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         # delete & create new short_sale_config
-        instance.quotation_config_short_sale.all().delete()
+        instance.quotation_config_short_sale.delete()
         ConfigShortSale.objects.create(
             quotation_config=instance,
             **validated_data['short_sale_config']
         )
         # delete & create new long_sale_config
-        instance.quotation_config_long_sale.all().delete()
+        instance.quotation_config_long_sale.delete()
         ConfigLongSale.objects.create(
             quotation_config=instance,
             **validated_data['long_sale_config']
@@ -61,6 +70,7 @@ class QuotationConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuotationAppConfig
         fields = (
+            'id',
             'short_sale_config',
             'long_sale_config'
         )

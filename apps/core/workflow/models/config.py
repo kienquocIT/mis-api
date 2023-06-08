@@ -1,6 +1,52 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel, WORKFLOW_CONFIG_MODE
+
+
+class WorkflowConfigOfApp(MasterDataAbstractModel):
+    # title is title of app
+    # code is code of app
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        verbose_name="application",
+        related_name="workflow_config_of_application",
+        null=True
+    )
+    mode = models.SmallIntegerField(
+        choices=WORKFLOW_CONFIG_MODE,
+        default=0,
+        verbose_name='Mode feature in workflow',
+    )
+    error_total = models.SmallIntegerField(
+        default=0,
+        verbose_name='Error total in feature',
+    )
+    workflow_currently = models.ForeignKey(
+        'workflow.Workflow',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Workflow applied of feature',
+    )
+
+    def before_save(self, *args, **kwargs):
+        if kwargs.get('force_insert', False):
+            if self.application:
+                self.title = self.application.title
+                self.code = self.application.code
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(*args, **kwargs)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Workflow of Apps'
+        verbose_name_plural = 'Workflow of Apps'
+        ordering = ('title',)
+        unique_together = ('company', 'application')
+        default_permissions = ()
+        permissions = ()
 
 
 class Workflow(MasterDataAbstractModel):

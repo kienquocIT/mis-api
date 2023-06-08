@@ -1,6 +1,7 @@
 from typing import Union
 
 from django.db import models
+from django.utils import translation
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -44,9 +45,15 @@ class AuthLogin(generics.GenericAPIView):
             if company_user_emp.count() > 0:
                 obj_first = company_user_emp.first()
                 user_obj.company_current_id = obj_first.company_id
-                user_obj.save(update_fields=['company_current_id'])
                 return user_obj, obj_first, True, ['company_current_id']
         if user_obj.company_current_id:
+            company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
+                user_id=user_obj.id,
+                company_id=user_obj.company_current_id,
+            )
+            if company_user_emp.count() > 0:
+                obj_first = company_user_emp.first()
+                return user_obj, obj_first, True, ['company_current_id']
             return user_obj, None, True, ['company_current_id']
         return user_obj, None, False, ['company_current_id']
 
@@ -55,7 +62,6 @@ class AuthLogin(generics.GenericAPIView):
         if company_user_emp_obj:
             if hasattr(company_user_emp_obj, 'employee_id'):
                 user_obj.employee_current_id = company_user_emp_obj.employee_id
-                user_obj.save(update_fields=['employee_current_id'])
                 return ['employee_current_id']
         else:
             emp_objs = DisperseModel(app_model='hr.employee').get_model().objects.filter(
@@ -64,7 +70,6 @@ class AuthLogin(generics.GenericAPIView):
             )
             if emp_objs.count() > 0:
                 user_obj.employee_current_id = emp_objs.first().id
-                user_obj.save(update_fields=['employee_current_id'])
                 return ['employee_current_id']
         return []
 
@@ -83,6 +88,9 @@ class AuthLogin(generics.GenericAPIView):
         request_body=AuthLoginSerializer
     )
     def post(self, request, *args, **kwargs):
+        # active translate vietnamese default
+        translation.activate('vi')
+
         # validate username and password
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -157,9 +165,7 @@ class SwitchCompanyView(APIView):
     def put(self, request, *args, **kwargs):
         user_obj = request.user
         if user_obj and hasattr(user_obj, 'switch_company'):
-            body_data = request.data
-            body_data['user_id'] = request.user.id
-            ser = SwitchCompanySerializer(data=request.data)
+            ser = SwitchCompanySerializer(data=request.data, context={'user_obj': request.user})
             ser.is_valid(raise_exception=True)
             user_obj.switch_company(ser.validated_data['company_user_employee'])
             return ResponseController.success_200(

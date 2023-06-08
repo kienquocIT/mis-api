@@ -1,27 +1,87 @@
-import time
+import logging
 from typing import Union
 from uuid import UUID
 
-from celery import uuid
-from celery import shared_task
 from django.db import models
 
 from apps.shared import (
-    FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
+    FORMATTING, DisperseModel, MAP_FIELD_TITLE,
 )
-from ..models.config import (
+from apps.core.workflow.models import (
+    WorkflowConfigOfApp,
     Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
     Zone,
-)
-from ..models.runtime import (
     Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
 )
-from .docs import DocHandler
+
+logger = logging.getLogger(__name__)
 
 __all__ = [
-    'call_new_runtime',
-    'call_approval_task',
+    'DocHandler',
+    'RuntimeHandler',
+    'RuntimeStageHandler',
 ]
+
+
+class DocHandler:
+    @property
+    def model(self) -> models.Model:
+        model_cls = DisperseModel(app_model=self.app_code).get_model()
+        if model_cls and hasattr(model_cls, 'objects'):
+            return model_cls
+        raise ValueError('App code is incorrect. Value: ' + self.app_code)
+
+    def __init__(self, doc_id, app_code):
+        self.doc_id = doc_id
+        self.app_code = app_code
+
+    def get_obj(self, default_filter: dict) -> Union[models.Model, None]:
+        try:
+            return self.model.objects.get(pk=self.doc_id, **default_filter)
+        except self.model.DoesNotExist:
+            return None
+
+    @classmethod
+    def force_added(cls, obj):
+        setattr(obj, 'system_status', 2)  # added
+        obj.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def force_added_with_runtime(cls, runtime_obj):
+        print('added_with_runtime: ', runtime_obj.doc_id)
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            setattr(obj, 'system_status', 2)  # added
+            obj.save(update_fields=['system_status'])
+            return True
+        return False
+
+    @classmethod
+    def force_finish(cls, obj):
+        setattr(obj, 'system_status', 3)  # finish
+        obj.save(update_fields=['system_status'])
+        return True
+
+    @classmethod
+    def force_finish_with_runtime(cls, runtime_obj):
+        print('finish_with_runtime: ', runtime_obj.doc_id)
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            setattr(obj, 'system_status', 3)  # finish
+            obj.save(update_fields=['system_status'])
+            return True
+        return False
 
 
 class RuntimeHandler:
@@ -80,11 +140,11 @@ class RuntimeHandler:
         return None
 
     @classmethod
-    def create_runtime_obj(cls, company_id, doc_id, app_code, task_bg_id) -> Runtime:
+    def create_runtime_obj(cls, tenant_id, company_id, doc_id, app_code) -> Runtime:
         """
         Call create runtime for Doc ID + App Code
         Args:
-            task_bg_id:
+            tenant_id:
             company_id:
             doc_id:
             app_code:
@@ -96,25 +156,35 @@ class RuntimeHandler:
         try:
             arr = app_code.split(".")
             if len(arr) == 2:
+                # check runtime exist
                 app_obj = application_model.objects.get(app_label=arr[0], code=arr[1])
-                if Runtime.objects.filter(doc_id=doc_id, app=app_obj).exists():
+                if Runtime.objects.filter(
+                        tenant_id=tenant_id, company_id=company_id,
+                        doc_id=doc_id, app=app_obj
+                ).exists():
                     raise ValueError('Runtime Obj is exist')
-                doc_obj = DocHandler(doc_id, app_code).get_obj(default_filter={'company_id': company_id})
-                print("doc_obj: ", doc_obj)
+
+                # check doc exist
+                doc_obj = DocHandler(doc_id, app_code).get_obj(
+                    default_filter={'tenant_id': tenant_id, 'company_id': company_id}
+                )
                 if not doc_obj:
                     raise ValueError('Document Object does not exist')
 
-                print('Doc Title: ', getattr(doc_obj, MAP_FIELD_TITLE[app_code], ''))
-                return Runtime.objects.create(
+                runtime_obj = Runtime.objects.create(
+                    tenant_id=tenant_id,
+                    company_id=company_id,
                     doc_id=doc_id,
                     doc_title=getattr(doc_obj, MAP_FIELD_TITLE[app_code], ''),
                     app=app_obj,
                     doc_params={},
                     flow=None,  # default don't use WF then check apply WF
                     stage_currents=None,
-                    task_bg_id=task_bg_id,
                     doc_employee_created=cls.employee_created_obj(doc_obj=doc_obj),
                 )
+                doc_obj.workflow_runtime = runtime_obj
+                doc_obj.save(update_fields=['workflow_runtime'])
+                return runtime_obj
         except application_model.DoesNotExist:
             raise AttributeError('App code runtime is incorrect')
         except ValueError as err:
@@ -144,72 +214,60 @@ class RuntimeHandler:
         return None
 
     @classmethod
-    def call_new(cls, company_id, doc_id, app_code, task_bg_id) -> bool:
-        """
-        Call when new document create then apply/check apply workflow
-        Args:
-            task_bg_id:
-            company_id:
-            doc_id:
-            app_code: "{app_label}.{model_name}"
-
-        Returns:
-            Boolean
-        """
-        # create runtime obj
-        runtime_obj = cls.create_runtime_obj(company_id, doc_id, app_code, task_bg_id)
-        time.sleep(10)
-        return RuntimeStageHandler(
-            runtime_obj=runtime_obj,
-        ).apply(
-            app_obj=cls._get_application_obj(app_code),
-
-        )
-
-    @classmethod
-    def approval(cls, rt_assignee: RuntimeAssignee, employee_assignee_obj: models.Model) -> bool:
+    def action_perform(
+            cls,
+            rt_assignee: RuntimeAssignee,
+            employee_assignee_obj: models.Model,
+            action_code: int,
+    ) -> bool:
         if rt_assignee.is_done is False:
             runtime_obj = rt_assignee.stage.runtime
 
-            # RuntimeStage logging
-            # Update flag done
-            RuntimeLogHandler(stage_obj=rt_assignee.stage, actor_obj=employee_assignee_obj).log_approval_doc()
-            rt_assignee.is_done = True
-            rt_assignee.action_perform.append(0)
-            rt_assignee.action_perform = list(set(rt_assignee.action_perform))
-            rt_assignee.save(update_fields=['is_done', 'action_perform'])
+            match action_code:
+                case 1:
+                    # RuntimeStage logging
+                    # Update flag done
+                    RuntimeLogHandler(
+                        stage_obj=rt_assignee.stage,
+                        actor_obj=employee_assignee_obj,
+                        is_system=False,
+                    ).log_approval_doc()
+                    rt_assignee.is_done = True
+                    rt_assignee.action_perform.append(action_code)
+                    rt_assignee.action_perform = list(set(rt_assignee.action_perform))
+                    rt_assignee.save(update_fields=['is_done', 'action_perform'])
 
-            # handle next stage
-            if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
-                task_bg_id = uuid()
-                call_task_background(
-                    call_next_stage,
-                    *[
-                        str(rt_assignee.stage.runtime_id),
-                        str(rt_assignee.stage_id),
-                    ],
-                )
-                runtime_obj.task_bg_id = task_bg_id
-                runtime_obj.task_bg_state = 'PENDING'
-                runtime_obj.save(update_fields=['task_bg_id', 'task_bg_state'])
-                RuntimeStageHandler(
-                    runtime_obj=runtime_obj,
-                ).set_state_task_bg('SUCCESS')
+                    # handle next stage
+                    if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
+                        # new cls call run_next
+                        RuntimeStageHandler(
+                            runtime_obj=runtime_obj,
+                        ).run_next(
+                            workflow=runtime_obj.flow, stage_obj_currently=rt_assignee.stage
+                        )
+                        # update runtime object
+                        runtime_obj.task_bg_state = 'PENDING'
+                        runtime_obj.save(update_fields=['task_bg_state'])
+                        RuntimeStageHandler(
+                            runtime_obj=runtime_obj,
+                        ).set_state_task_bg('SUCCESS')
             return True
         return False
 
 
 class RuntimeStageHandler:
-    def set_state_task_bg(self, state):
+    def set_state_task_bg(self, state, field_saved=None):
         """
         Args:
             state:
+            field_saved:
 
         Returns:
 
         """
+        field_saved = field_saved if isinstance(field_saved, list) else []
         self.runtime_obj.task_bg_state = state
-        self.runtime_obj.save(update_fields=['task_bg_state'])
+        self.runtime_obj.save(update_fields=['task_bg_state'] + field_saved)
         return True
 
     @classmethod
@@ -262,6 +320,7 @@ class RuntimeStageHandler:
     def _create_assignee_and_zone(self, stage_obj: RuntimeStage) -> list[RuntimeAssignee]:
         if stage_obj.node:
             assignee_and_zone = self.__parse_collaboration(stage_obj.node, self.runtime_obj.doc_params)
+            employee_ids_zones = {}
             objs = []
             log_objs = []
             for emp_id, zone_and_properties in assignee_and_zone.items():
@@ -273,14 +332,28 @@ class RuntimeStageHandler:
                     )
                 )
                 # create instance log
-                log_obj_tmp = RuntimeLogHandler(stage_obj=stage_obj, actor_id=emp_id).log_new_assignee(
+                log_obj_tmp = RuntimeLogHandler(
+                    stage_obj=stage_obj,
+                    actor_id=emp_id,
+                    is_system=True,
+                ).log_new_assignee(
                     perform_created=False
                 )
                 # update some field need call save() (call bulk don't hit save())
                 log_obj_tmp.before_force(force_insert=True)
                 # add to list for call bulk create
                 log_objs.append(log_obj_tmp)
+                # push employee to stages.assignees
+                employee_ids_zones.update({emp_id: zone_and_properties})
+
+            # create runtime assignee
             objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+
+            # update assignee and zone to Stage
+            stage_obj.assignee_and_zone_data = employee_ids_zones
+            stage_obj.save(update_fields=['assignee_and_zone_data'])
+
+            # create log
             RuntimeLogHandler.perform_create(log_objs)
             return objs_created
         return []
@@ -302,15 +375,17 @@ class RuntimeStageHandler:
             if is_next_stage:
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
-            print('Process next stopped: ', next_stage)
             return next_stage
 
-        # call log and state errors
+        # update some field when go to completed
         if stage_obj_currently.code == 'completed':
             self.runtime_obj.status = 1
             self.runtime_obj.state = 2
             self.runtime_obj.save(update_fields=['status', 'state'])
-        print('Association not pass: ', stage_obj_currently)
+            DocHandler.force_finish_with_runtime(self.runtime_obj)
+        elif stage_obj_currently.code == 'approved':
+            # call added doc obj
+            DocHandler.force_added_with_runtime(self.runtime_obj)
         return None
 
     def create_stage(self, node_passed: Node, **kwargs) -> (bool, RuntimeStage):
@@ -341,13 +416,23 @@ class RuntimeStageHandler:
         )
         match stage_obj.code:
             case 'initial':
-                RuntimeLogHandler(stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created).log_create_doc()
+                RuntimeLogHandler(
+                    stage_obj=stage_obj,
+                    actor_obj=self.runtime_obj.doc_employee_created,
+                    is_system=True,
+                ).log_create_doc()
             case 'approved':
                 RuntimeLogHandler(
-                    stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created
+                    stage_obj=stage_obj,
+                    actor_obj=self.runtime_obj.doc_employee_created,
+                    is_system=True,
                 ).log_approval_doc()
             case 'completed':
-                RuntimeLogHandler(stage_obj=stage_obj, actor_obj=self.runtime_obj.doc_employee_created).log_finish_doc()
+                RuntimeLogHandler(
+                    stage_obj=stage_obj,
+                    actor_obj=self.runtime_obj.doc_employee_created,
+                    is_system=True,
+                ).log_finish_doc()
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj)
         if len(assignee_created) == 0:
@@ -372,28 +457,53 @@ class RuntimeStageHandler:
         self.runtime_obj = runtime_obj
 
     @classmethod
-    def get_flow_applied(cls, app_obj: models.Model) -> (bool, Workflow):
-        print(app_obj)
-        return True, Workflow.objects.first()
+    def get_flow_applied(cls, runtime_obj: Runtime, app_obj: models.Model) -> (bool, int, Workflow):
+        app_wf_config = WorkflowConfigOfApp.objects.filter(
+            tenant=runtime_obj.tenant,
+            company=runtime_obj.company,
+            application=app_obj,
+        ).first()
+        if app_wf_config:
+            return True, app_wf_config.mode, app_wf_config.workflow_currently
+        return False, None, None
 
     def apply(self, app_obj: models.Model) -> Union[bool, None]:
         self.set_state_task_bg('STARTED')
-        state_global = None
-        state_apply, flow_apply = self.get_flow_applied(app_obj)
-        if state_apply:
-            if not flow_apply or not isinstance(flow_apply, Workflow):
-                raise ValueError('[RuntimeStageHandler][apply] Workflow must be required when config is apply flow.')
-            self.runtime_obj.flow = flow_apply
-            self.runtime_obj.state = 1  # in-progress
-            self.runtime_obj.save(update_fields=['flow', 'state'])
-            print('FLOW: ', flow_apply, self.runtime_obj.flow)
-            wait_stage = self.run_stage(workflow=flow_apply)
-            if wait_stage:
-                state_global = True
+        field_saved = ['state', 'start_mode']
+        have_config, mode_wf, flow_apply = self.get_flow_applied(self.runtime_obj, app_obj)
+        if have_config is True:
+            self.runtime_obj.start_mode = mode_wf
+            if mode_wf == 0:  # un-apply
+                self.runtime_obj.state = 3  # finish with flow is non-apply.
+                self.runtime_obj.status = 1  # finish with flow is non-apply.
+                field_saved += ['status']
+                state_task = 'SUCCESS'
+                DocHandler.force_finish_with_runtime(self.runtime_obj)
+            elif mode_wf == 1:  # apply
+                if not flow_apply or not isinstance(flow_apply, Workflow):
+                    raise ValueError('[RuntimeStageHandler][apply] Workflow must be required with apply flow.')
+                self.runtime_obj.flow = flow_apply
+                self.runtime_obj.state = 1  # in-progress
+                self.runtime_obj.save(update_fields=['flow', 'state'])
+                self.run_stage(workflow=flow_apply)
+                state_task = 'SUCCESS'
+            elif mode_wf == 2:  # pending
+                self.runtime_obj.state = 0  # created
+                state_task = 'PENDING'
+            else:  # not support
+                raise ValueError(
+                    '[RuntimeStageHandler][apply] Mode app workflow must be choice in '
+                    '[0: un-apply, 1: apply, 2: pending].'
+                )
         else:
+            state_task = 'SUCCESS'
+            self.runtime_obj.start_mode = None
             self.runtime_obj.state = 3  # finish with flow is non-apply.
-        self.set_state_task_bg('SUCCESS')
-        return state_global
+            self.runtime_obj.satus = 1  # finish with flow is non-apply.
+            field_saved += ['status']
+            DocHandler.force_finish_with_runtime(self.runtime_obj)
+        self.set_state_task_bg(state_task, field_saved=field_saved)
+        return True
 
 
 class WFConfigSupport:
@@ -454,14 +564,18 @@ class RuntimeLogHandler:
             stage_obj: RuntimeStage,
             actor_obj: DisperseModel(app_model='hr.employee').get_model() = None,
             actor_id: Union[UUID, str] = None,
+            is_system: bool = False,
     ):
+        self.is_system = is_system
         self.stage_obj = stage_obj
         if not actor_id and not actor_obj:
-            raise AttributeError('Need actor for log')
-        if actor_obj:
+            self.actor_obj = None
+        elif actor_obj:
             self.actor_obj = actor_obj
         elif actor_id:
             self.actor_obj = DisperseModel(app_model='hr.employee').get_model().objects.get(pk=actor_id)
+        else:
+            self.actor_obj = None
 
     @classmethod
     def perform_create(cls, objs: list[RuntimeLog]):
@@ -474,7 +588,8 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Create document'
+            msg='Create document',
+            is_system=self.is_system,
         )
 
     def log_new_assignee(self, perform_created: bool = True):
@@ -484,7 +599,8 @@ class RuntimeLogHandler:
             "stage": self.stage_obj,
             "kind": 2,
             "action": 0,
-            "msg": 'New task'
+            "msg": 'New task',
+            "is_system": self.is_system,
         }
         if perform_created is True:
             return RuntimeLog.objects.create(**data)
@@ -497,7 +613,8 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Approved'
+            msg='Approved',
+            is_system=self.is_system,
         )
 
     def log_finish_doc(self):
@@ -507,7 +624,8 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Finish flow'
+            msg='Finish flow',
+            is_system=self.is_system,
         )
 
     def log_action_perform(self):
@@ -517,39 +635,6 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Perform a action'
+            msg='Perform a action',
+            is_system=self.is_system,
         )
-
-
-@shared_task
-def call_new_runtime(
-        company_id: Union[UUID, str], doc_id: Union[UUID, str], app_code: str, task_bg_id: Union[UUID, str]
-):
-    return RuntimeHandler().call_new(
-        company_id=company_id,
-        doc_id=doc_id,
-        app_code=app_code,
-        task_bg_id=task_bg_id,
-    )
-
-
-@shared_task
-def call_next_stage(runtime_id: Union[UUID, str], stage_currently_id: Union[UUID, str]):
-    # get objects from arguments
-    runtime_obj = Runtime.objects.get(pk=runtime_id)
-    stage_currently_obj = RuntimeStage.objects.get(pk=stage_currently_id)
-
-    # new cls call run_next
-    cls_handle = RuntimeStageHandler(
-        runtime_obj=runtime_obj,
-    )
-    return cls_handle.run_next(
-        workflow=runtime_obj.flow, stage_obj_currently=stage_currently_obj
-    )
-
-
-@shared_task
-def call_approval_task(runtime_assignee_id: RuntimeAssignee, employee_id: models.Model):
-    runtime_assignee_obj = RuntimeAssignee.objects.get(pk=runtime_assignee_id)
-    employee_obj = DisperseModel(app_model='hr.employee').get_model().objects.get(pk=employee_id)
-    return RuntimeHandler().approval(rt_assignee=runtime_assignee_obj, employee_assignee_obj=employee_obj)

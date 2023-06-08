@@ -7,6 +7,7 @@ from ..models import (
     OrderDeliverySub, OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
 
+
 __all__ = [
     'OrderPickingListSerializer',
     'OrderPickingDetailSerializer',

@@ -14,19 +14,18 @@ class BaseMixin(GenericAPIView):
     filterset_fields: dict
     filterset_class: filters.FilterSet
 
-    def __init__(self, *args, **kwargs):
-        serializer_list = getattr(self, 'serializer_list', None)
-        serializer_detail = getattr(self, 'serializer_detail', None)
-        if serializer_list:
-            self.serializer_class = self.serializer_list
-        elif serializer_detail:
-            self.serializer_class = self.serializer_detail
-        else:
-            raise AttributeError(
-                f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute.'
-            )
-
-        super().__init__(*args, **kwargs)
+    def get_serializer_class(self):
+        if getattr(self, 'serializer_list', None):
+            return getattr(self, 'serializer_list', None)
+        if getattr(self, 'serializer_detail', None):
+            return getattr(self, 'serializer_detail', None)
+        if getattr(self, 'serializer_create', None):
+            return getattr(self, 'serializer_create', None)
+        if getattr(self, 'serializer_update', None):
+            return getattr(self, 'serializer_update', None)
+        raise AttributeError(
+            f'{self.__class__.__name__} must be required serializer_list or serializer_detail attribute.'
+        )
 
     @staticmethod
     def setup_hidden(fields: list, user) -> dict:
@@ -59,8 +58,10 @@ class BaseMixin(GenericAPIView):
                     data = getattr(user, 'mode_id', 0)
                 case 'mode':
                     data = getattr(user, 'mode', 0)
-                case 'user_created':
-                    data = user.id
+                case 'employee_created_id':
+                    data = user.employee_current_id
+                case 'employee_modified_id':
+                    data = user.employee_current_id
             if data is not None:
                 ctx[key] = data
         return ctx
@@ -96,6 +97,17 @@ class BaseMixin(GenericAPIView):
 
         """
         return self.setup_hidden(self.create_hidden_field, user)
+
+    def setup_update_field_hidden(self, user) -> dict:
+        """
+        Fill data of hidden fields when create
+        Args:
+            user:
+
+        Returns:
+
+        """
+        return self.setup_hidden(self.update_hidden_field, user)
 
     def setup_list_field_hidden(self, user) -> dict:
         """
@@ -133,6 +145,8 @@ class BaseMixin(GenericAPIView):
     list_hidden_field: list[str] = []
     # Field list was autofill data when POST CREATE
     create_hidden_field: list[str] = []
+    # Field list was autofill data when PUT UPDATE
+    update_hidden_field: list[str] = []
     # Field list auto append to filtering of current user request
     retrieve_hidden_field: list[str] = []
     # Flag is enable cache queryset of view
@@ -237,7 +251,11 @@ class BaseMixin(GenericAPIView):
             )
         try:
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-            obj = queryset.get(**filter_kwargs, force_cache=self.use_cache_object)
+            obj = queryset.get(
+                **filter_kwargs,
+                **self.setup_retrieve_field_hidden(user=self.request.user),
+                force_cache=self.use_cache_object
+            )
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj

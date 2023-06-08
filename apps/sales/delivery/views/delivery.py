@@ -5,6 +5,7 @@ from ..models import OrderDelivery
 from ..serializers import OrderDeliveryListSerializer, OrderDeliveryDetailSerializer, \
     OrderDeliveryUpdateSerializer
 
+
 __all__ = ['OrderDeliveryList', 'OrderDeliveryDetail']
 
 

@@ -65,10 +65,13 @@ class AccountTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
-             'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-             'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-             'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped'],
+            [
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+                'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
+                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
+                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+                'workflow_runtime_id'
+            ],
             check_sum_second=True,
         )
         return response
@@ -88,7 +91,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -119,7 +122,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': [str(self.account_type['id'])],
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -152,7 +155,7 @@ class AccountTestCase(AdvanceTestCase):
             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
             'account_type': '1',
-            
+
         }
         url = reverse('AccountList')
         response = self.client.post(url, data, format='json')
@@ -292,12 +295,12 @@ class ProductTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     def test_get_product_type(self, product_type_id=None):
         if not product_type_id:
             # change to .data['result']['id'] after change data returned create_product_type
-            product_type_id = self.create_product_type()['id']
+            product_type_id = self.create_product_type().data['result']['id']
         url = reverse('ProductTypeDetail', kwargs={'pk': product_type_id})
         response = self.client.get(url, format='json')
         self.assertResponseList(  # noqa
@@ -325,7 +328,7 @@ class ProductTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     def create_uom_group(self):
         url = reverse('UnitOfMeasureGroupList')
@@ -337,7 +340,7 @@ class ProductTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     def create_uom(self):
         data_uom_gr = self.create_uom_group()
@@ -347,7 +350,7 @@ class ProductTestCase(AdvanceTestCase):
             {
                 "code": "MIN",
                 "title": "minute",
-                "group": data_uom_gr['id'],
+                "group": data_uom_gr.data['result']['id'],
                 "ratio": 1,
                 "rounding": 5,
                 "is_referenced_unit": True
@@ -355,11 +358,11 @@ class ProductTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result'], data_uom_gr
+        return response, data_uom_gr
 
     def test_create_product(self):
-        product_type = self.create_product_type()  # noqa
-        product_category = self.create_product_category()
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
             "code": "P01",
@@ -367,7 +370,7 @@ class ProductTestCase(AdvanceTestCase):
             "general_information": {
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'uom_group': uom_group.data['result']['id']
             },
         }
         response = self.client.post(
@@ -379,15 +382,15 @@ class ProductTestCase(AdvanceTestCase):
         return response
 
     def test_create_product_missing_code(self):
-        product_type = self.create_product_type()  # noqa
-        product_category = self.create_product_category()
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "title": "Laptop HP HLVVL6R",
             "general_information": {
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'uom_group': uom_group.data['result']['id']
             },
         }
         response1 = self.client.post(
@@ -413,8 +416,8 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_create_product_duplicate_code(self):
-        product_type = self.create_product_type()  # noqa
-        product_category = self.create_product_category()
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "code": "P01",
@@ -422,7 +425,7 @@ class ProductTestCase(AdvanceTestCase):
             "general_information": {
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'uom_group': uom_group.data['result']['id']
             },
         }
         response1 = self.client.post(
@@ -438,7 +441,7 @@ class ProductTestCase(AdvanceTestCase):
             "general_information": {
                 'product_type': product_type['id'],
                 'product_category': product_category['id'],
-                'uom_group': uom_group['id']
+                'uom_group': uom_group.data['result']['id']
             },
         }
         response1 = self.client.post(
@@ -450,8 +453,8 @@ class ProductTestCase(AdvanceTestCase):
         return None
 
     def test_create_product_not_UUID(self):
-        product_type = self.create_product_type()
-        product_category = self.create_product_category()
+        product_type = self.create_product_type().data['result']
+        product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
             "code": "P01",
@@ -468,16 +471,16 @@ class ProductTestCase(AdvanceTestCase):
                     'code': "",
                 },
                 'uom_group': {
-                    'id': uom_group['id'],
-                    'title': uom_group['title'],
+                    'id': uom_group.data['result']['id'],
+                    'title': uom_group.data['result']['title'],
                     'code': "",
                 },
             },
             "sale_information": {
-                'default_uom_id': unit_of_measure['id']
+                'default_uom_id': unit_of_measure.data['result']['id']
             },
             "inventory_information": {
-                'uom': unit_of_measure['id'],
+                'uom': unit_of_measure.data['result']['id'],
                 'inventory_level_min': 5,
                 'inventory_level_max': 20
             }
@@ -1970,7 +1973,7 @@ class ExpenseTestCase(AdvanceTestCase):
     def get_currency(self):
         url = reverse("CurrencyList")
         response = self.client.get(url, format='json')
-        return response.data['result']
+        return response
 
     @staticmethod
     def create_expense_type(self):
@@ -1980,7 +1983,7 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("ExpenseTypeList")
         response = self.client.post(url, data, format='json')
-        return response.data['result']
+        return response
 
     @staticmethod
     def create_uom_group(self):
@@ -1993,7 +1996,7 @@ class ExpenseTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     @staticmethod
     def create_uom(self, uom_group):
@@ -2011,7 +2014,7 @@ class ExpenseTestCase(AdvanceTestCase):
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        return response.data['result']
+        return response
 
     def create_tax_code(self):
         pass
@@ -2030,14 +2033,14 @@ class ExpenseTestCase(AdvanceTestCase):
         }
         url = reverse("PriceList")
         response = self.client.post(url, data, format='json')
-        return response.data['result']
+        return response
 
     def test_create_new_expense(self):
-        currency = self.get_currency(self)  # noqa
-        expense_type = self.create_expense_type(self)
-        uom_group = self.create_uom_group(self)
-        uom = self.create_uom(self, uom_group)
-        price_list = self.create_price_list(self, currency)
+        currency = self.get_currency(self).data['result']  # noqa
+        expense_type = self.create_expense_type(self).data['result']
+        uom_group = self.create_uom_group(self).data['result']
+        uom = self.create_uom(self, uom_group).data['result']
+        price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công sản xuất",
@@ -2075,11 +2078,11 @@ class ExpenseTestCase(AdvanceTestCase):
         return response, price_list
 
     def test_create_expense_missing_data(self):
-        currency = self.get_currency(self)  # noqa
-        expense_type = self.create_expense_type(self)
-        uom_group = self.create_uom_group(self)
-        uom = self.create_uom(self, uom_group)
-        price_list = self.create_price_list(self, currency)
+        currency = self.get_currency(self).data['result']  # noqa
+        expense_type = self.create_expense_type(self).data['result']
+        uom_group = self.create_uom_group(self).data['result']
+        uom = self.create_uom(self, uom_group).data['result']
+        price_list = self.create_price_list(self, currency).data['result']
         data = {
             "code": "E01",
             "general_information": {
@@ -2180,11 +2183,11 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_create_expense_empty_data(self):
-        currency = self.get_currency(self)  # noqa
-        expense_type = self.create_expense_type(self)
-        uom_group = self.create_uom_group(self)
-        uom = self.create_uom(self, uom_group)
-        price_list = self.create_price_list(self, currency)
+        currency = self.get_currency(self).data['result']  # noqa
+        expense_type = self.create_expense_type(self).data['result']
+        uom_group = self.create_uom_group(self).data['result']
+        uom = self.create_uom(self, uom_group).data['result']
+        price_list = self.create_price_list(self, currency).data['result']
         url = reverse("ExpenseList")
         data = {
             "code": "E01",
@@ -2320,11 +2323,11 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     def test_update_expense(self):
-        currency = self.get_currency(self)  # noqa
-        expense_type = self.create_expense_type(self)
-        uom_group = self.create_uom_group(self)
-        uom = self.create_uom(self, uom_group)
-        price_list = self.create_price_list(self, currency)
+        currency = self.get_currency(self).data['result']  # noqa
+        expense_type = self.create_expense_type(self).data['result']
+        uom_group = self.create_uom_group(self).data['result']
+        uom = self.create_uom(self, uom_group).data['result']
+        price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "code": "E01",
             "title": "Chi phí nhân công sản xuất",
@@ -2502,17 +2505,17 @@ class ShippingTestCase(AdvanceTestCase):
     def get_location(self):
         url = reverse("CityList")
         response = self.client.get(url, format='json')
-        return response.data['result']
+        return response
 
     def get_shipping_unit(self):
         url = reverse("BaseItemUnitList")
         response = self.client.get(url, format='json')
-        return response.data['result']
+        return response
 
     def test_create_new_shipping(self):
-        currency = ExpenseTestCase.get_currency(self)
-        unit = self.get_shipping_unit()
-        location = self.get_location()
+        currency = ExpenseTestCase.get_currency(self).data['result']
+        unit = self.get_shipping_unit().data['result']
+        location = self.get_location().data['result']
         data = {
             "title": "Chi phí vận chuyển mặc định",
             "margin": 0,
@@ -2593,9 +2596,9 @@ class ShippingTestCase(AdvanceTestCase):
         return response
 
     def test_create_fail_validate(self):
-        currency = ExpenseTestCase.get_currency(self)
-        unit = self.get_shipping_unit()
-        location = self.get_location()
+        currency = ExpenseTestCase.get_currency(self).data['result']
+        unit = self.get_shipping_unit().data['result']
+        location = self.get_location().data['result']
 
         # integer or float field less than 0
         data = {  # noqa
@@ -2734,9 +2737,9 @@ class ShippingTestCase(AdvanceTestCase):
         return None
 
     def test_create_not_UUID(self):
-        currency = ExpenseTestCase.get_currency(self)  # noqa
-        unit = self.get_shipping_unit()
-        location = self.get_location()
+        currency = ExpenseTestCase.get_currency(self).data['result']  # noqa
+        unit = self.get_shipping_unit().data['result']
+        location = self.get_location().data['result']
 
         data = {  # noqa
             "title": "Chi phí vận chuyển tiêu chuẩn",
@@ -2913,9 +2916,9 @@ class ShippingTestCase(AdvanceTestCase):
         return response
 
     def test_shipping_update(self):
-        currency = ExpenseTestCase.get_currency(self)
-        unit = self.get_shipping_unit()
-        location = self.get_location()
+        currency = ExpenseTestCase.get_currency(self).data['result']
+        unit = self.get_shipping_unit().data['result']
+        location = self.get_location().data['result']
         title_change = 'Chi phí vận chuyển theo khối lượng'
         fixed_price_change = 25000
         data_created = self.test_create_new_shipping()

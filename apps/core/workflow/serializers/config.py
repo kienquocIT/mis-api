@@ -1,12 +1,78 @@
 from rest_framework import serializers
 
 from apps.core.base.models import Application
-from apps.core.workflow.models import Workflow, Node, Zone, Association, \
-    ZoneProperties, CollaborationInForm, CollaborationInFormZone, CollaborationOutForm, \
-    CollaborationOutFormEmployee, CollaborationOutFormZone, CollabInWorkflow, \
-    CollabInWorkflowZone, InitialNodeZone  # pylint: disable-msg=E0611
-from apps.core.workflow.serializers.config_sub import NodeCreateSerializer, ZoneDetailSerializer, \
-    ZoneCreateSerializer, AssociationCreateSerializer, NodeDetailSerializer
+from apps.core.workflow.models import (
+    Workflow, Node, Zone, Association,
+    ZoneProperties, CollaborationInForm, CollaborationInFormZone, CollaborationOutForm,
+    CollaborationOutFormEmployee, CollaborationOutFormZone, CollabInWorkflow,
+    CollabInWorkflowZone, InitialNodeZone, WorkflowConfigOfApp, WORKFLOW_CONFIG_MODE,  # pylint: disable-msg=E0611
+)
+from apps.core.workflow.serializers.config_sub import (
+    NodeCreateSerializer, ZoneDetailSerializer,
+    ZoneCreateSerializer, AssociationCreateSerializer, NodeDetailSerializer,
+)
+from apps.shared import WorkflowMsg
+
+
+# workflow of app
+class WorkflowOfAppListSerializer(serializers.ModelSerializer):
+    workflow_currently = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_workflow_currently(cls, obj):
+        if obj.workflow_currently:
+            return {
+                'id': obj.workflow_currently.id,
+                'title': obj.workflow_currently.title,
+            }
+        return {}
+
+    class Meta:
+        model = WorkflowConfigOfApp
+        fields = ('id', 'title', 'code', 'application_id', 'mode', 'error_total', 'workflow_currently')
+
+
+class WorkflowOfAppUpdateSerializer(serializers.ModelSerializer):
+    mode = serializers.ChoiceField(choices=WORKFLOW_CONFIG_MODE, required=False, help_text=str(WORKFLOW_CONFIG_MODE))
+    workflow_currently = serializers.UUIDField(
+        required=False, help_text='ID of workflow - had application equal application of ID'
+    )
+
+    def validate_workflow_currently(self, attrs):
+        if attrs:
+            try:
+                obj = Workflow.objects.get(pk=attrs, application=self.instance.application)
+                return obj
+            except Workflow.DoesNotExist:
+                pass
+            raise serializers.ValidationError(
+                {
+                    'workflow_currently': 'The record is not found'
+                }
+            )
+        raise serializers.ValidationError(
+            {
+                'workflow_currently': 'This field should be ID.'
+            }
+        )
+
+    def validate(self, attrs):
+        mode = self.instance.mode
+        if 'mode' in attrs:
+            mode = attrs['mode']
+
+        wf_current = self.instance.workflow_currently
+        if 'workflow_currently' in attrs:
+            wf_current = attrs['workflow_currently']
+
+        if mode == 1 and not wf_current:
+            raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_APPLY_REQUIRED_WF})
+
+        return attrs
+
+    class Meta:
+        model = WorkflowConfigOfApp
+        fields = ('mode', 'workflow_currently')
 
 
 # Workflow
@@ -306,13 +372,17 @@ class CommonCreateUpdate:
                         company_id=workflow.company_id,
                     )
                     if zone:
-                        zone_created_data.update({
-                            order: {'id': str(zone.id), 'title': zone.title, 'order': order}
-                        })
-                        ZoneProperties.objects.bulk_create([
-                            (ZoneProperties(zone=zone, app_property_id=proper))
-                            for proper in zone.property_list
-                        ])
+                        zone_created_data.update(
+                            {
+                                order: {'id': str(zone.id), 'title': zone.title, 'order': order}
+                            }
+                        )
+                        ZoneProperties.objects.bulk_create(
+                            [
+                                (ZoneProperties(zone=zone, app_property_id=proper))
+                                for proper in zone.property_list
+                            ]
+                        )
         return True
 
     @classmethod
@@ -329,32 +399,36 @@ class CommonCreateUpdate:
                 for association in association_list:
                     if 'node_in' in association and 'node_out' in association:
                         if association['node_in'] in node_created_data and association['node_out'] in node_created_data:
-                            association.update({
-                                'node_in': node_created_data[association['node_in']],
-                                'node_out': node_created_data[association['node_out']],
-                                'node_in_data': {
-                                    'id': str(node_created_data[association['node_in']].id),
-                                    'title': node_created_data[association['node_in']].title,
-                                    'is_system': node_created_data[association['node_in']].is_system,
-                                    'code_node_system': node_created_data[association['node_in']].code_node_system,
-                                    'condition': node_created_data[association['node_in']].condition,
-                                    'order': node_created_data[association['node_in']].order
-                                },
-                                'node_out_data': {
-                                    'id': str(node_created_data[association['node_out']].id),
-                                    'title': node_created_data[association['node_out']].title,
-                                    'is_system': node_created_data[association['node_out']].is_system,
-                                    'code_node_system': node_created_data[association['node_out']].code_node_system,
-                                    'condition': node_created_data[association['node_out']].condition,
-                                    'order': node_created_data[association['node_out']].order
+                            association.update(
+                                {
+                                    'node_in': node_created_data[association['node_in']],
+                                    'node_out': node_created_data[association['node_out']],
+                                    'node_in_data': {
+                                        'id': str(node_created_data[association['node_in']].id),
+                                        'title': node_created_data[association['node_in']].title,
+                                        'is_system': node_created_data[association['node_in']].is_system,
+                                        'code_node_system': node_created_data[association['node_in']].code_node_system,
+                                        'condition': node_created_data[association['node_in']].condition,
+                                        'order': node_created_data[association['node_in']].order
+                                    },
+                                    'node_out_data': {
+                                        'id': str(node_created_data[association['node_out']].id),
+                                        'title': node_created_data[association['node_out']].title,
+                                        'is_system': node_created_data[association['node_out']].is_system,
+                                        'code_node_system': node_created_data[association['node_out']].code_node_system,
+                                        'condition': node_created_data[association['node_out']].condition,
+                                        'order': node_created_data[association['node_out']].order
+                                    }
                                 }
-                            })
-                            bulk_info.append(Association(
-                                **association,
-                                workflow=workflow,
-                                tenant_id=workflow.tenant_id,
-                                company_id=workflow.company_id
-                            ))
+                            )
+                            bulk_info.append(
+                                Association(
+                                    **association,
+                                    workflow=workflow,
+                                    tenant_id=workflow.tenant_id,
+                                    company_id=workflow.company_id
+                                )
+                            )
                 if bulk_info:
                     Association.objects.bulk_create(bulk_info)
         return True
@@ -365,13 +439,15 @@ class CommonCreateUpdate:
             node_create,
             zone_data_list
     ):
-        InitialNodeZone.objects.bulk_create([
-            InitialNodeZone(
-                node=node_create,
-                zone_id=zone.get('id', None)
-            )
-            for zone in zone_data_list
-        ])
+        InitialNodeZone.objects.bulk_create(
+            [
+                InitialNodeZone(
+                    node=node_create,
+                    zone_id=zone.get('id', None)
+                )
+                for zone in zone_data_list
+            ]
+        )
         return True
 
     @classmethod
@@ -385,10 +461,12 @@ class CommonCreateUpdate:
             app_property_id=collab_in_form.get('property', {}).get('id', None)
         )
         if collab_in_forms:
-            CollaborationInFormZone.objects.bulk_create([
-                CollaborationInFormZone(collab=collab_in_forms, zone_id=zone.get('id', None))
-                for zone in collab_in_form.get('zone', [])
-            ])
+            CollaborationInFormZone.objects.bulk_create(
+                [
+                    CollaborationInFormZone(collab=collab_in_forms, zone_id=zone.get('id', None))
+                    for zone in collab_in_form.get('zone', [])
+                ]
+            )
         return True
 
     @classmethod
@@ -401,14 +479,18 @@ class CommonCreateUpdate:
             node=node_create,
         )
         if collab_out_forms:
-            CollaborationOutFormEmployee.objects.bulk_create([
-                CollaborationOutFormEmployee(collab=collab_out_forms, employee_id=employee.get('id', None))
-                for employee in collab_out_form.get('employee_list', [])
-            ])
-            CollaborationOutFormZone.objects.bulk_create([
-                CollaborationOutFormZone(collab=collab_out_forms, zone_id=zone.get('id', None))
-                for zone in collab_out_form.get('zone', [])
-            ])
+            CollaborationOutFormEmployee.objects.bulk_create(
+                [
+                    CollaborationOutFormEmployee(collab=collab_out_forms, employee_id=employee.get('id', None))
+                    for employee in collab_out_form.get('employee_list', [])
+                ]
+            )
+            CollaborationOutFormZone.objects.bulk_create(
+                [
+                    CollaborationOutFormZone(collab=collab_out_forms, zone_id=zone.get('id', None))
+                    for zone in collab_out_form.get('zone', [])
+                ]
+            )
         return True
 
     @classmethod
@@ -423,10 +505,12 @@ class CommonCreateUpdate:
                 employee_id=data_in_workflow.get('employee', {}).get('id', None)
             )
             if collab_in_workflows:
-                CollabInWorkflowZone.objects.bulk_create([
-                    CollabInWorkflowZone(collab=collab_in_workflows, zone_id=zone.get('id', None))
-                    for zone in data_in_workflow.get('zone', [])
-                ])
+                CollabInWorkflowZone.objects.bulk_create(
+                    [
+                        CollabInWorkflowZone(collab=collab_in_workflows, zone_id=zone.get('id', None))
+                        for zone in data_in_workflow.get('zone', [])
+                    ]
+                )
         return True
 
     @classmethod

@@ -1,8 +1,9 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.contacts import (
-    Salutation, Interest, Contact
+    Salutation, Interest, Contact,
 )
 from apps.shared import AccountsMsg
 
@@ -166,6 +167,11 @@ class ContactListSerializer(serializers.ModelSerializer):
 
 class ContactCreateSerializer(serializers.ModelSerializer):
     account_name = serializers.UUIDField(required=False, allow_null=True)
+    system_status = serializers.ChoiceField(
+        choices=[0, 1],
+        help_text='0: draft, 1: created',
+        default=0,
+    )
 
     class Meta:
         model = Contact
@@ -182,13 +188,16 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "report_to",
             "address_information",
             "additional_information",
-            'account_name'
+            'account_name',
+            'system_status',
         )
 
     @classmethod
     def validate_account_name(cls, attrs):
         if attrs:
-            account = Account.objects.filter(
+            account = Account.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
                 id=attrs
             ).first()
             if account:
@@ -219,16 +228,12 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
-        account_mapped = Account.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id=validated_data.get('account_name', None)
-        ).first()
-        if account_mapped:
-            account_mapped.owner = contact
-            account_mapped.save()
+        if contact.account_name:
+            contact.account_name.owner = contact
+            contact.account_name.save(update_fields=['owner'])
         return contact
 
 
@@ -256,7 +261,8 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             "report_to",
             "address_information",
             "additional_information",
-            "account_name"
+            "account_name",
+            "workflow_runtime_id",
         )
 
     @classmethod

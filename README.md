@@ -446,3 +446,58 @@ Trong setUp(), ta đã tạo một đối tượng sản phẩm Product mới b�
 Trong các phương thức test, ta sử dụng các phương thức khác của APIClient như `get
 
 ---
+## Cách áp dụng WF cho chức năng:
+#### API
+```python
+# serializer.py
+from apps.core.workflow.tasks import decorator_run_workflow
+
+class XCreateSerializer(serializers.ModelSerializer):
+    system_status = serializers.ChoiceField(
+        choices=[0, 1],
+        help_text='0: draft, 1: created',
+        default=0,
+    )
+
+     class Meta:
+        ...
+        fields = (..., "system_status")
+
+    @decorator_run_workflow
+    def create(self, validated_data):
+        ...
+        instance = X.objects.create(**validated_data)
+        ...
+        return instance
+
+class XDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        ...
+        fields = (..., "workflow_runtime_id")
+```
+```python
+# views.py
+from .serializers import XCreateSerializer, XDetailSerializer
+
+class XList(BaseCreateMixin): # noqa
+    serializer_create = XCreateSerializer
+    serializer_detail = XDetailSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+
+    ....
+
+class XDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    serializer_detail = XDetailSerializer
+    update_hidden_field = ['employee_modified_id']
+
+```
+```python
+# apps\shared\constant.py
+MAP_FIELD_TITLE = {
+    'saledata.contact': 'fullname',
+    'saledata.account': 'name',
+    '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
+}
+
+```
+---

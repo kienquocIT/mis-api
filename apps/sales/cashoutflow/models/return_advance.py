@@ -1,6 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from apps.shared import DataAbstractModel, SimpleAbstractModel
+from .advance_payment import AdvancePaymentCost
+
 
 __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 
@@ -75,15 +78,16 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='return_advance'
     )
-    expense = models.ForeignKey(
-        'saledata.Expense',
+    advance_payment_cost = models.ForeignKey(
+        AdvancePaymentCost,
         on_delete=models.CASCADE,
-        related_name='return_advance_expense'
+        null=True,
+        related_name='advance_payment_cost',
     )
-    remain_total = models.FloatField(
+    remain_value = models.FloatField(
         default=0,
     )
-    return_price = models.FloatField(
+    return_value = models.FloatField(
         default=0,
     )
 

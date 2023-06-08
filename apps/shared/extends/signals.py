@@ -4,14 +4,20 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
-from apps.masterdata.saledata.models.accounts import AccountType
-from apps.masterdata.saledata.models.product import ProductType
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models import (
+    AccountType, ProductType, TaxCategory, Currency, Price,
+)
 from apps.sales.delivery.models import DeliveryConfig
 
+
 logger = logging.getLogger(__name__)
+
+__all__ = [
+    'update_stock',
+]
 
 
 class SaleDefaultData:
@@ -159,9 +165,39 @@ class ConfigDefaultData:
             },
         )
 
+    def quotation_config(self):
+        short_sale_config = {
+            'is_choose_price_list': False,
+            'is_input_price': False,
+            'is_discount_on_product': False,
+            'is_discount_on_total': False
+        }
+        long_sale_config = {
+            'is_not_input_price': False,
+            'is_not_discount_on_product': False,
+            'is_not_discount_on_total': False,
+        }
+        config, created = QuotationAppConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'short_sale_config': short_sale_config,
+                'long_sale_config': long_sale_config,
+            },
+        )
+        if created:
+            ConfigShortSale.objects.create(
+                quotation_config=config,
+                **short_sale_config
+            )
+            ConfigLongSale.objects.create(
+                quotation_config=config,
+                **long_sale_config
+            )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
+        self.quotation_config()
         return True
 
 

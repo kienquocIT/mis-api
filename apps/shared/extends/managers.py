@@ -6,17 +6,17 @@ __all__ = ['NormalManager']
 
 from .caching import Caching
 
+DEFAULT__FILL__MAP_KEY = {
+    'fill__tenant': 'tenant_id',
+    'fill__company': 'company_id',
+    'fill__space': 'space_id',
+}
+
 
 class EntryQuerySet(models.query.QuerySet):
     """
     The class is custom QuerySet that support new method call
     """
-
-    default__fill__map_key = {
-        'fill__tenant': 'tenant_id',
-        'fill__company': 'company_id',
-        'fill__space': 'space_id',
-    }
 
     @property
     def table_name(self):
@@ -27,10 +27,23 @@ class EntryQuerySet(models.query.QuerySet):
         """
         return str(self.model._meta.db_table)  # pylint: disable=protected-access / W0212
 
-    def append_filter_currently(self, sql_query, fill__tenant, fill__company, fill__space, filter_kwargs):
+    @staticmethod
+    def parsed_fill__map_key(fill__map_key) -> dict:
+        if fill__map_key and isinstance(fill__map_key, dict):
+            default__fill__map_key = DEFAULT__FILL__MAP_KEY.copy()
+            default__fill__map_key.update(fill__map_key)
+            return default__fill__map_key
+        return DEFAULT__FILL__MAP_KEY
+
+    @classmethod
+    def append_filter_currently(
+            cls, sql_query, fill__tenant, fill__company, fill__space, filter_kwargs,
+            default__fill__map_key: dict,
+    ):
         """
         Put key=value to filter or get for auto append currently data user to filter.
         Args:
+            default__fill__map_key:
             fill__space:
             fill__company:
             fill__tenant:
@@ -40,6 +53,7 @@ class EntryQuerySet(models.query.QuerySet):
         Returns:
             Dictionary from filter_kwargs
         """
+        # handle with SQL
         sql_query = str(sql_query)
         user_obj = get_current_user()
         if user_obj and not isinstance(user_obj, AnonymousUser):
@@ -47,27 +61,27 @@ class EntryQuerySet(models.query.QuerySet):
             if (
                     fill__tenant and
                     user_obj.tenant_current_id and
-                    f'{self.default__fill__map_key["fill__tenant"]}` = {user_obj.tenant_current_id.hex}' not in
+                    f'{default__fill__map_key["fill__tenant"]}` = {user_obj.tenant_current_id.hex}' not in
                     sql_query
             ):
-                filter_kwargs[self.default__fill__map_key["fill__tenant"]] = user_obj.tenant_current_id
+                filter_kwargs[default__fill__map_key["fill__tenant"]] = user_obj.tenant_current_id
 
             # append company_id if not exist in query
             if (
                     fill__company and
                     user_obj.company_current_id and
-                    f'{self.default__fill__map_key["fill__company"]}` = {user_obj.company_current_id.hex}' not in
+                    f'{default__fill__map_key["fill__company"]}` = {user_obj.company_current_id.hex}' not in
                     sql_query
             ):
-                filter_kwargs[self.default__fill__map_key["fill__company"]] = user_obj.company_current_id
+                filter_kwargs[default__fill__map_key["fill__company"]] = user_obj.company_current_id
 
             # append space_id if not exist in query
             if (
                     fill__space and
                     user_obj.space_current_id and
-                    f'{self.default__fill__map_key["fill__space"]}` = {user_obj.space_current_id.hex}' not in sql_query
+                    f'{default__fill__map_key["fill__space"]}` = {user_obj.space_current_id.hex}' not in sql_query
             ):
-                filter_kwargs[self.default__fill__map_key["fill__space"]] = user_obj.space_current_id
+                filter_kwargs[default__fill__map_key["fill__space"]] = user_obj.space_current_id
         return filter_kwargs
 
     def filter_current(
@@ -89,13 +103,12 @@ class EntryQuerySet(models.query.QuerySet):
         Returns:
             return self.filter()
         """
-        # update field map in query
-        if fill__map_key and isinstance(fill__map_key, dict):
-            self.default__fill__map_key.update(fill__map_key)
         # convert kwargs before force db
         kwargs_converted = self.append_filter_currently(
-            self.query, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
-            filter_kwargs=kwargs
+            self.query,
+            fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
+            filter_kwargs=kwargs,
+            default__fill__map_key=self.parsed_fill__map_key(fill__map_key),
         )
         return self.filter(*args, **kwargs_converted)
 
@@ -132,13 +145,12 @@ class EntryQuerySet(models.query.QuerySet):
         Returns:
             self.get()
         """
-        # update field map in query
-        if fill__map_key and isinstance(fill__map_key, dict):
-            self.default__fill__map_key.update(fill__map_key)
         # convert kwargs before force db
         kwargs_converted = self.append_filter_currently(
-            self.query, fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
-            filter_kwargs=kwargs
+            self.query,
+            fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
+            filter_kwargs=kwargs,
+            default__fill__map_key=self.parsed_fill__map_key(fill__map_key)
         )
         return super().get(*args, **kwargs_converted)
 
@@ -152,7 +164,7 @@ class EntryQuerySet(models.query.QuerySet):
                 replace_pk_to_id=True,
             )
             data = Caching().get(key)
-            if data:
+            if data and isinstance(data, models.Model):
                 return data
             data = super().get(*args, **kwargs)
             Caching().set(key, data, cache_timeout)
