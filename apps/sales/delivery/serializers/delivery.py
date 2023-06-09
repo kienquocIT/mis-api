@@ -133,8 +133,19 @@ class OrderDeliveryUpdateSerializer(serializers.ModelSerializer):
             'delivery_option',
             'kind_pickup',
             'sub',
+            'state',
             'products',
             'date_created', 'date_modified', 'is_active'
+        )
+
+    @classmethod
+    def validate_state(cls, value):
+        if value < 3:
+            return value
+        raise serializers.ValidationError(
+            {
+                'State': _('Can not update when status is Done!')
+            }
         )
 
     @classmethod
