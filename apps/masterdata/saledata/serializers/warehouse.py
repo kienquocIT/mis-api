@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
-from ..models import WareHouse, WareHouseStock
+from apps.masterdata.saledata.models import (
+    WareHouse, WareHouseStock,
+    ProductWareHouse,
+)
 
 __all__ = [
     'WareHouseListSerializer',
@@ -8,7 +11,10 @@ __all__ = [
     'WareHouseDetailSerializer',
     'WareHouseUpdateSerializer',
     'WarehouseStockListSerializer',
+    'ProductWareHouseStockListSerializer',
 ]
+
+from apps.shared import TypeCheck
 
 
 class WareHouseListSerializer(serializers.ModelSerializer):
@@ -67,3 +73,26 @@ class WarehouseStockListSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouseStock
         fields = ('product', 'warehouse', 'stock')
+
+
+class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
+    product_amount = serializers.SerializerMethodField()
+
+    def get_product_amount(self, obj):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
+        uom_id = self.context.get('uom_id', None)
+        if tenant_id and company_id and product_id and uom_id and TypeCheck.check_uuid_list(
+                [tenant_id, company_id, product_id, uom_id]
+        ):
+            return ProductWareHouse.get_stock(
+                tenant_id=tenant_id, company_id=company_id,
+                warehouse_id=obj.id, product_id=product_id,
+                uom_id=uom_id
+            )
+        return 0
+
+    class Meta:
+        model = WareHouse
+        fields = ('id', 'title', 'code', 'remarks', 'product_amount',)

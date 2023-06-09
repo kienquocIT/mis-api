@@ -3,7 +3,9 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.shared import GRMsg
 
-from ..models import WareHouseStock, GoodReceipt, Account, GoodReceiptProduct
+from apps.masterdata.saledata.models import (
+    WareHouseStock, GoodReceipt, Account, GoodReceiptProduct, ProductWareHouse,
+)
 
 __all__ = ['GoodReceiptListSerializer', 'GoodReceiptCreateSerializer', 'GoodReceiptDetailSerializer',
            'GoodReceiptUpdateSerializer']
@@ -129,7 +131,7 @@ class ProductListUtil:
         """
         if product_list and isinstance(product_list, list):
             check_pro_list = GoodReceiptProduct.objects.filter(good_receipt=instance)
-            ProductListUtil.handle_product_stock(instance, product_list, check_pro_list)
+            # ProductListUtil.handle_product_stock(instance, product_list, check_pro_list)
             if check_pro_list.count():
                 check_pro_list.delete()
             objs = []
@@ -139,6 +141,19 @@ class ProductListUtil:
                 objs.append(obj)
 
             GoodReceiptProduct.objects.bulk_create(objs)
+
+            # push data to ProductWareHouse
+            for prod_receipt in objs:
+                ProductWareHouse.push_from_receipt(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    product_id=prod_receipt.product_id,
+                    warehouse_id=prod_receipt.warehouse_id,
+                    uom_id=prod_receipt.uom_id,
+                    tax_id=prod_receipt.tax_id,
+                    amount=prod_receipt.quantity,
+                    unit_price=prod_receipt.unit_price,
+                )
 
 
 class GoodReceiptListSerializer(serializers.ModelSerializer):
