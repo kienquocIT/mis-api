@@ -237,7 +237,8 @@ def task_active_delivery_from_sale_order(sale_order_id):
     sale_order_products = SaleOrderProduct.objects.select_related(
         'product', 'unit_of_measure'
     ).filter(
-        sale_order=sale_order_obj
+        sale_order=sale_order_obj,
+        product__isnull=False,
     )
     config_obj = DeliveryConfig.objects.get(company=sale_order_obj.company)
     state, msg_returned = SaleOrderActiveDeliverySerializer(

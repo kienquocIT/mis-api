@@ -61,6 +61,7 @@ class QuotationCommonCreate:
                 'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
+                'shipping': shipping
             }
         return {}
 
@@ -128,6 +129,7 @@ class QuotationCommonCreate:
                     product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
+                    shipping_id=data['shipping'].get('id', None),
                     **quotation_cost
                 )
         return True

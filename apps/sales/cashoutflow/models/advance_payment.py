@@ -98,6 +98,10 @@ class AdvancePaymentCost(SimpleAbstractModel):
     tax_price = models.FloatField(default=0)
     subtotal_price = models.FloatField(default=0)
     after_tax_price = models.FloatField(default=0)
+
+    sum_return_value = models.FloatField(default=0)
+    sum_converted_value = models.FloatField(default=0)
+
     currency = models.ForeignKey(
         'saledata.Currency',
         on_delete=models.CASCADE

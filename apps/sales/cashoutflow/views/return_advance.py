@@ -1,14 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.sales.cashoutflow.models import ReturnAdvance
-from apps.sales.cashoutflow.serializers.return_advance import ReturnAdvanceCreateSerializer, \
-    ReturnAdvanceListSerializer, ReturnAdvanceDetailSerializer
+from apps.sales.cashoutflow.serializers.return_advance import (
+    ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer,
+    ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 # Create your views here.
-
-
 class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     queryset = ReturnAdvance.objects
     serializer_list = ReturnAdvanceListSerializer
@@ -44,9 +43,8 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
 
 class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ReturnAdvance.objects # noqa
-    serializer_list = ReturnAdvanceListSerializer
-    serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
+    serializer_update = ReturnAdvanceUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
@@ -64,8 +62,7 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    # @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=AdvancePaymentUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=True, code_perm='')
-    # def put(self, request, *args, **kwargs):
-    #     self.serializer_class = AdvancePaymentUpdateSerializer
-    #     return self.update(request, *args, **kwargs)
+    @swagger_auto_schema(operation_summary="Update Return Advance", request_body=ReturnAdvanceUpdateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
