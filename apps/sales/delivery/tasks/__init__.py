@@ -66,7 +66,7 @@ class SaleOrderActiveDeliverySerializer:
         m2m_obj_arr = []
         delivery_quantity = 0
         for m2m_obj in self.order_products:
-            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, int):
+            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, float):
                 delivery_quantity += m2m_obj.product_quantity
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,

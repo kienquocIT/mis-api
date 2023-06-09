@@ -70,7 +70,12 @@ class SaleOrderActiveDelivery(APIView):
                     my_task=task_active_delivery_from_sale_order,
                     **{'sale_order_id': str(obj.id)}
                 )
-                return ResponseController.success_200(data={'state': 'Successfully'}, key_data='result')
+                config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
+                serializer = DeliveryConfigDetailSerializer(config)
+                return ResponseController.success_200(
+                    data={'state': 'Successfully', 'config': serializer.data},
+                    key_data='result'
+                )
             except cls_model.DoesNotExist:
                 pass
             except DeliveryConfig.DoesNotExist:

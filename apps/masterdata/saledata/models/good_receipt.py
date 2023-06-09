@@ -109,7 +109,7 @@ class GoodReceiptProduct(MasterDataAbstractModel):
             }
         ),
     )
-    quantity = models.IntegerField(
+    quantity = models.FloatField(
         verbose_name="Quantity",
         help_text="quantity of product",
     )
