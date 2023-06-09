@@ -36,7 +36,7 @@ class WareHouseStock(MasterDataAbstractModel):
         verbose_name="Product",
         related_name="warehouse_stock_product",
     )
-    stock = models.SmallIntegerField(
+    stock = models.FloatField(
         verbose_name="Stock",
         help_text="Stock of product",
     )
