@@ -306,6 +306,16 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
             instance.state = 1
             instance.save(update_fields=['state'])
 
+    @classmethod
+    def validate_state(cls, value):
+        if value == 1:
+            raise serializers.ValidationError(
+                {
+                    'state': _('Can not update after status Done!')
+                }
+            )
+        return value
+
     def update(self, instance, validated_data):
         picking_obj = instance
         # convert prod to dict
