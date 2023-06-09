@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.opportunity.models import OpportunityDecisionFactor
 from apps.sales.opportunity.serializers import OpportunityDecisionFactorListSerializer, \
-    OpportunityDecisionFactorCreateSerializer, OpportunityDecisionFactorDetailSerializer
+    OpportunityDecisionFactorCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin
 
 

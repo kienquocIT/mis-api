@@ -58,7 +58,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         product_categories = validated_data.pop('product_category', [])
         opportunity = Opportunity.objects.create(**validated_data)
-        CommonOpportunityUpdate.common_create_product_category(product_categories, opportunity)
+        CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
         return opportunity
 
 
@@ -194,7 +194,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 )
             )
         OpportunityProduct.objects.bulk_create(bulk_data)
-        return None
+        return True
 
     @classmethod
     def update_product_category(cls, data, instance):
@@ -202,7 +202,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         OpportunityProductCategory.objects.filter(opportunity=instance).delete()
         # create new
         cls.create_product_category(data, instance)
-        return None
+        return True
 
     @classmethod
     def update_customer_decision_factor(cls, data, instance):
@@ -216,7 +216,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 )
             )
         OpportunityCustomerDecisionFactor.objects.bulk_create(bulk_data)
-        return None
+        return True
 
     @classmethod
     def update_opportunity_competitor(cls, data, instance):
@@ -235,7 +235,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 )
             )
         OpportunityCompetitor.objects.bulk_create(bulk_data)
-        return None
+        return True
 
     @classmethod
     def update_opportunity_contact_role(cls, data, instance):
@@ -254,7 +254,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 )
             )
         OpportunityContactRole.objects.bulk_create(bulk_data)
-        return None
+        return True
 
 
 class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
