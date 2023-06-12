@@ -85,6 +85,11 @@ class OrderDelivery(MasterDataAbstractModel):
         null=True,
         verbose_name='Only one sub in the current'
     )
+    sub_list = models.JSONField(
+        default=dict,
+        verbose_name='Sub list',
+        help_text='List of sub related to delivery'
+    )
     delivery_option = models.SmallIntegerField(
         choices=DELIVERY_OPTION,
         verbose_name='Delivery Option',
@@ -141,8 +146,22 @@ class OrderDelivery(MasterDataAbstractModel):
             }
         return True
 
+    def create_code_delivery(self):
+        # auto create code (temporary)
+        delivery = OrderDelivery.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "DELIVERY.CODE."
+        if not self.code:
+            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
     def save(self, *args, **kwargs):
         self.put_backup_data()
+        self.create_code_delivery()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -179,7 +198,6 @@ class OrderDeliverySub(MasterDataAbstractModel):
         symmetrical=False,
         related_name='products_of_order_delivery',
     )
-
     delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
     )
@@ -210,6 +228,41 @@ class OrderDeliverySub(MasterDataAbstractModel):
         ),
         null=True
     )
+    is_updated = models.BooleanField(
+        default=False,
+        verbose_name='Sub is update',
+        help_text=json.dumps('Red Flag')
+    )
+    state = models.SmallIntegerField(
+        choices=DELIVERY_STATE,
+        default=0,
+    )
+    sale_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Sale Order data',
+        null=True
+    )
+    estimated_delivery_date = models.DateTimeField(
+        null=True,
+        verbose_name='Delivery Date '
+    )
+    actual_delivery_date = models.DateTimeField(
+        null=True,
+        verbose_name='Delivery Date '
+    )
+    customer_data = models.JSONField(
+        default=dict,
+        verbose_name='Customer Data backup',
+        help_text=json.dumps({'id': '', 'title': '', 'code': ''}),
+        null=True
+    )
+    contact_data = models.JSONField(
+        default=dict,
+        verbose_name='Contact Data backup',
+        help_text=json.dumps({'id': '', 'title': '', 'code': ''}),
+        null=True
+    )
+    remarks = models.TextField(blank=True)
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:

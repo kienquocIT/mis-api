@@ -120,7 +120,7 @@ urlpatterns += [
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouse-stock', WarehouseStockList.as_view(), name='WarehouseStockList'),
     path(
-        'warehousees/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
+        'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
         name='WareHouseCheckAvailableProductList'
     ),
 ]

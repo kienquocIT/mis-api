@@ -120,7 +120,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                     product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
                     fill__tenant=True, fill__company=True,
                 )
-            return obj.stock_amount
+            return obj.stock_amount - obj.sold_amount
         except cls.DoesNotExist:
             pass
         return 0

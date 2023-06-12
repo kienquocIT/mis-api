@@ -1,8 +1,8 @@
 from uuid import uuid4
+import django.utils.timezone
 
 from celery import shared_task
 from django.db import transaction
-
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -153,6 +153,9 @@ class SaleOrderActiveDeliverySerializer:
 
     ):
         logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
+        state = 0
+        if not self.config_obj.is_partial_ship and not self.config_obj.is_picking:
+            state = 1
 
         return OrderDelivery.objects.create(
             tenant_id=self.tenant_id,
@@ -181,12 +184,13 @@ class SaleOrderActiveDeliverySerializer:
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
-            state=1 if self.config_obj.is_partial_ship else 0,
+            state=state,
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=0,
             remaining_quantity=delivery_quantity,
             ready_quantity=0,
             delivery_data={},
+            date_created=django.utils.timezone.now
         )
 
     def active(self) -> (bool, str):
@@ -205,6 +209,7 @@ class SaleOrderActiveDeliverySerializer:
                         obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                         # setup SUB
                         sub_obj = OrderDeliverySub.objects.create(
+                            code=obj_delivery.code,
                             tenant_id=self.tenant_id,
                             company_id=self.company_id,
                             id=sub_id,
@@ -217,6 +222,12 @@ class SaleOrderActiveDeliverySerializer:
                             remaining_quantity=delivery_quantity,
                             ready_quantity=delivery_quantity,
                             delivery_data={},
+                            is_updated=False,
+                            state=obj_delivery.state,
+                            sale_order_data=obj_delivery.sale_order_data,
+                            customer_data=obj_delivery.customer_data,
+                            contact_data=obj_delivery.contact_data,
+                            date_created=obj_delivery.date_created
                         )
                         obj_delivery.sub = sub_obj
                         obj_delivery.save(update_fields=['sub'])

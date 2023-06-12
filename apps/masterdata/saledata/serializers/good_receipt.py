@@ -1,126 +1,13 @@
-from django.db import transaction
-from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.shared import GRMsg
 
-from apps.masterdata.saledata.models import (
-    WareHouseStock, GoodReceipt, Account, GoodReceiptProduct, ProductWareHouse,
-)
+from apps.masterdata.saledata.models import ( GoodReceipt, Account, GoodReceiptProduct, ProductWareHouse)
 
 __all__ = ['GoodReceiptListSerializer', 'GoodReceiptCreateSerializer', 'GoodReceiptDetailSerializer',
            'GoodReceiptUpdateSerializer']
 
 
 class ProductListUtil:
-    @staticmethod
-    def sub_update_good_receipt(new_product_list_ids, prod_check, instance):
-        for old_prod in prod_check:
-            if str(old_prod.product_id) in new_product_list_ids:
-                # nếu prod cũ có trong prod mới
-                prod_warehouse = WareHouseStock.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    product=old_prod.product,
-                    warehouse=old_prod.warehouse
-                ).first()
-                if old_prod.warehouse_id == new_product_list_ids[str(old_prod.product_id)][
-                    'warehouse'].id and old_prod.quantity != new_product_list_ids[str(old_prod.product_id)][
-                    'quantity']:
-                    # 2 warehouse giống nhau so sánh lớn bé và update
-                    # nếu 2 quantity cũ mới bằng nhau
-                    prod_warehouse.stock += new_product_list_ids[
-                                                str(old_prod.product_id)][
-                                                'quantity'] - old_prod.quantity
-                else:
-                    # 2 warehouse khác nhau
-                    # 1 trừ stock nhánh cũ
-                    prod_warehouse.stock += -int(old_prod.quantity)
-                    new_prod_warehouse = WareHouseStock.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        product=new_product_list_ids[str(old_prod.product_id)]['product'],
-                        warehouse=new_product_list_ids[str(old_prod.product_id)]['warehouse']
-                    )
-                    if new_prod_warehouse.exists():
-                        # kiểm tra prod mới có chưa
-                        new_prod_warehouse = new_prod_warehouse.first()
-
-                        if new_prod_warehouse.stock != new_product_list_ids[str(old_prod.product_id)][
-                            'quantity']:
-                            # kiểm tra stock > or < hơn
-                            new_prod_warehouse.stock += new_product_list_ids[
-                                str(old_prod.product_id)][
-                                'quantity']
-                            new_prod_warehouse.save(update_fields=['stock'])
-                    else:
-                        #   ko có tạo mới với stock mới
-                        WareHouseStock.objects.create(
-                            company_id=instance.company_id,
-                            tenant_id=instance.tenant_id,
-                            product=new_product_list_ids[str(old_prod.product_id)]['product'],
-                            warehouse=new_product_list_ids[str(old_prod.product_id)]['warehouse'],
-                            stock=new_product_list_ids[str(old_prod.product_id)]['quantity']
-                        )
-                prod_warehouse.save(update_fields=['stock'])
-            else:
-                # nếu prod cũ ko có trong prod mới
-                # trừ prod vs warehouse cũ
-                old_prod_stock = WareHouseStock.objects.filter(
-                    product=old_prod.product,
-                    warehouse=old_prod.warehouse
-                )
-                old_prod_stock.stock += -int(old_prod.quantity)
-                old_prod_stock.save(update_fields=['stock'])
-
-    @classmethod
-    def handle_product_stock(cls, instance, new_prod, prod_check):
-        new_product_list = new_prod
-        new_product_list_ids = {str(item['product'].id): {
-            'product': item['product'],
-            'warehouse': item['warehouse'],
-            'quantity': item['quantity']
-        } for item in new_product_list}
-        try:
-            with transaction.atomic():
-                if not prod_check.exists():
-                    # tạo mới good receipt
-                    prod_create_temp = []
-                    for item in new_product_list:
-                        product = WareHouseStock.objects.filter_current(
-                            fill__tenant=True,
-                            fill__company=True,
-                            product=item['product'],
-                            warehouse=item['warehouse']
-                        )
-                        if product.exists():
-                            # moi cong ty chi co mot uuid san pham duy nhat nen co the .first()
-                            product = product.first()
-                            product.stock += item['quantity']
-                            product.save(update_fields=['stock'])
-                        else:
-                            prod_create_temp.append(
-                                WareHouseStock(
-                                    company_id=instance.company_id,
-                                    tenant_id=instance.tenant_id,
-                                    product=item['product'],
-                                    warehouse=item['warehouse'],
-                                    stock=item['quantity']
-                                )
-                            )
-                    WareHouseStock.objects.bulk_create(prod_create_temp)
-                else:
-                    # update good receipt
-                    cls.sub_update_good_receipt(new_product_list_ids, prod_check, instance)
-
-        except Exception as err:
-            print('update stock for warehouse Stock is error---\n', err)
-            raise serializers.ValidationError(
-                {
-                    'products': _(
-                        'Sync stock product failure. please contact support'
-                    )
-                }
-            )
 
     @staticmethod
     def create_update_product_list(product_list, instance):
@@ -131,7 +18,6 @@ class ProductListUtil:
         """
         if product_list and isinstance(product_list, list):
             check_pro_list = GoodReceiptProduct.objects.filter(good_receipt=instance)
-            # ProductListUtil.handle_product_stock(instance, product_list, check_pro_list)
             if check_pro_list.count():
                 check_pro_list.delete()
             objs = []
