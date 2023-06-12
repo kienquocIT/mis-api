@@ -148,7 +148,7 @@ class OrderDelivery(MasterDataAbstractModel):
 
     def create_code_delivery(self):
         # auto create code (temporary)
-        delivery = OrderDelivery.objects.filter_current(
+        delivery = OrderDeliverySub.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
             is_delete=False
@@ -271,7 +271,21 @@ class OrderDeliverySub(MasterDataAbstractModel):
             raise ValueError("Products must have delivery quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
+    def create_code_delivery(self):
+        # auto create code (temporary)
+        delivery = OrderDeliverySub.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "DELIVERY.CODE."
+        if not self.code:
+            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
     def save(self, *args, **kwargs):
+
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
@@ -372,30 +386,9 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
-    def update_warehouse_stock(self):
-        if self.delivery_data:
-            try:
-                with transaction.atomic():
-                    update_list = self.delivery_data
-                    product_with_warehouse_list = WareHouseStock.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        product=self.product
-                    )
-                    new_obj = []
-                    for prod in product_with_warehouse_list:
-                        warehouse_id = str(prod.warehouse_id)
-                        if warehouse_id in update_list:
-                            prod.stock = prod.stock - update_list[warehouse_id]
-                            new_obj.append(prod)
-                    WareHouseStock.objects.bulk_update(new_obj, fields=['stock'])
-            except Exception as err:
-                print(err)
-
     def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
-        self.update_warehouse_stock()
 
     def save(self, *args, **kwargs):
         self.before_save()

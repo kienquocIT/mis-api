@@ -1,8 +1,8 @@
 from uuid import uuid4
-import django.utils.timezone
+from django.utils import timezone
 
 from celery import shared_task
-from django.db import transaction
+import django.db
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -154,7 +154,8 @@ class SaleOrderActiveDeliverySerializer:
     ):
         logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
         state = 0
-        if not self.config_obj.is_partial_ship and not self.config_obj.is_picking:
+        if not self.config_obj.is_partial_ship and not self.config_obj.is_picking \
+                or self.config_obj.is_partial_ship and not self.config_obj.is_picking:
             state = 1
 
         return OrderDelivery.objects.create(
@@ -190,12 +191,12 @@ class SaleOrderActiveDeliverySerializer:
             remaining_quantity=delivery_quantity,
             ready_quantity=0,
             delivery_data={},
-            date_created=django.utils.timezone.now
+            date_created=timezone.now()
         )
 
     def active(self) -> (bool, str):
         try:
-            with transaction.atomic():
+            with django.db.transaction.atomic():
                 if (
                         not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
                         and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
