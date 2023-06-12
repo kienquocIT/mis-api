@@ -1,8 +1,7 @@
 import json
 
-from django.db import models, transaction
+from django.db import models
 
-from apps.masterdata.saledata.models import WareHouseStock
 from apps.shared import (
     SimpleAbstractModel, MasterDataAbstractModel,
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP,

@@ -221,8 +221,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             if str(obj.product_id) in product_done:
                 obj.picked_quantity = product_done[str(obj.product_id)]['picked_num']
                 obj.delivery_data = product_done[str(obj.product_id)]['delivery_data']
-                if config == 1 or config == 2:
-                    # config case 1
+                if config in (1, 2):
+                    # config case 1, 2
                     cls.minus_product_warehouse_stock(
                         {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
                         obj.product_id,
