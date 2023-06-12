@@ -113,7 +113,25 @@ class FORMATTING:
         return str(value)
 
     @classmethod
+    def parse_to_datetime(cls, value_str):
+        if value_str:
+            if isinstance(value_str, datetime):
+                return value_str
+            if isinstance(value_str, str):
+                return datetime.strptime(value_str, cls.DATETIME)
+        return None
+
+    @classmethod
     def parse_date(cls, value):
         if isinstance(value, date):
             return datetime.strftime(value, cls.DATE) if value else None
         return str(value)
+
+    @classmethod
+    def parse_to_date(cls, value_str):
+        if value_str:
+            if isinstance(value_str, date):
+                return value_str
+            if isinstance(value_str, str):
+                return datetime.strptime(value_str, cls.DATE)
+        return None

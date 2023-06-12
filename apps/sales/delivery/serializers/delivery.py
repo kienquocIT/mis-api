@@ -19,6 +19,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'delivered_quantity_before',
             'remaining_quantity',
             'ready_quantity',
+            'delivery_data'
         )
 
 
@@ -109,10 +110,6 @@ class OrderDeliveryDetailSerializer(serializers.ModelSerializer):
             'sub',
             'date_created', 'date_modified', 'is_active'
         )
-
-    def update(self, instance, validated_data):
-        # filter all sub of picking
-        return instance
 
 
 class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa

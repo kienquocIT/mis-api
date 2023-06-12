@@ -90,18 +90,18 @@ class OrderDelivery(MasterDataAbstractModel):
         verbose_name='Delivery Option',
         help_text='Delivery option when change in this records',
     )
-    delivery_quantity = models.SmallIntegerField(
+    delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
     )
-    delivered_quantity_before = models.SmallIntegerField(
+    delivered_quantity_before = models.FloatField(
         default=0,
         verbose_name='Quantity was picked before',
     )
-    remaining_quantity = models.SmallIntegerField(
+    remaining_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity need pick'
     )
-    ready_quantity = models.SmallIntegerField(
+    ready_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity was picked',
     )
@@ -180,18 +180,18 @@ class OrderDeliverySub(MasterDataAbstractModel):
         related_name='products_of_order_delivery',
     )
 
-    delivery_quantity = models.SmallIntegerField(
+    delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
     )
-    delivered_quantity_before = models.SmallIntegerField(
+    delivered_quantity_before = models.FloatField(
         default=0,
         verbose_name='Quantity was picked before',
     )
-    remaining_quantity = models.SmallIntegerField(
+    remaining_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity need pick'
     )
-    ready_quantity = models.SmallIntegerField(
+    ready_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity was picked',
     )
@@ -269,22 +269,22 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             }
         )
     )
-    delivery_quantity = models.SmallIntegerField(
+    delivery_quantity = models.FloatField(
         verbose_name='Quantity need pickup of SaleOrder',
     )
-    delivered_quantity_before = models.SmallIntegerField(
+    delivered_quantity_before = models.FloatField(
         default=0,
         verbose_name='Quantity was picked before',
     )
-    remaining_quantity = models.SmallIntegerField(
+    remaining_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity need pick'
     )
-    ready_quantity = models.SmallIntegerField(
+    ready_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity already for delivery',
     )
-    picked_quantity = models.SmallIntegerField(
+    picked_quantity = models.FloatField(
         default=0,
         verbose_name='Quantity was picked',
     )

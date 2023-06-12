@@ -10,6 +10,7 @@ __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin',
 
 
 class BaseMixin(GenericAPIView):
+    ser_context: dict[str, any] = {}
     search_fields: list
     filterset_fields: dict
     filterset_class: filters.FilterSet
@@ -156,6 +157,11 @@ class BaseMixin(GenericAPIView):
     # Flag is enable cache get_object data
     use_cache_object: bool = False
 
+    def parse_ser_kwargs(self, kwargs: dict):
+        if 'context' not in kwargs:
+            kwargs['context'] = self.ser_context
+        return kwargs
+
     def get_serializer_list(self, *args, **kwargs):
         """
         Get serializer class for list. Flexible with config view.
@@ -173,7 +179,7 @@ class BaseMixin(GenericAPIView):
             tmp = getattr(self, 'serializer_list', None)
 
         if tmp and callable(tmp):
-            return tmp(*args, **kwargs)  # pylint: disable=E1102
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer list attribute in view must be implement.')
 
     def get_serializer_create(self, *args, **kwargs):
@@ -188,7 +194,7 @@ class BaseMixin(GenericAPIView):
         """
         tmp = getattr(self, 'serializer_create', None)
         if tmp and callable(tmp):
-            return tmp(*args, **kwargs)  # pylint: disable=E1102
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer create attribute in view must be implement.')
 
     def get_serializer_detail(self, *args, **kwargs):
@@ -203,7 +209,7 @@ class BaseMixin(GenericAPIView):
         """
         tmp = getattr(self, 'serializer_detail', None)
         if tmp and callable(tmp):
-            return tmp(*args, **kwargs)  # pylint: disable=E1102
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer detail attribute in view must be implement.')
 
     def get_serializer_update(self, *args, **kwargs):
@@ -218,7 +224,7 @@ class BaseMixin(GenericAPIView):
         """
         tmp = getattr(self, 'serializer_update', None)
         if tmp and callable(tmp):
-            return tmp(*args, **kwargs)  # pylint: disable=E1102
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer update attribute in view must be implement.')
 
     def get_object(self):
