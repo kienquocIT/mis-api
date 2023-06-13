@@ -85,16 +85,14 @@ class PromotionCheckList(BaseListMixin):
                     val_of_key = data_filter[key]
                     if isinstance(val_of_key, int) or val_of_key.isdigit():
                         filter_q |= Q(customer_type=int(val_of_key))
-                    break
                 case 'customers_map_promotion__id':
                     val_of_key = data_filter[key]
                     if TypeCheck.check_uuid(val_of_key):
                         filter_q |= Q(customers_map_promotion__id=val_of_key)
-                    break
         # return query filter
         if len(filter_q) > 0:
-            return super().get_queryset().filter(**filter_expires)
-        return super().get_queryset().filter(**filter_expires).filter(filter_q)
+            return super().get_queryset().filter(**filter_expires).filter(filter_q)
+        return super().get_queryset().filter(**filter_expires)
 
     @swagger_auto_schema(
         operation_summary="Promotion list",
