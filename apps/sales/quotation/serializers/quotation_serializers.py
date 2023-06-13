@@ -218,7 +218,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
-    opportunity = serializers.SerializerMethodField()
+    # opportunity = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -231,7 +231,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'date_created',
             'total_product',
             'system_status',
-            'opportunity'
+            # 'opportunity'
         )
 
     @classmethod
@@ -260,15 +260,15 @@ class QuotationListSerializer(serializers.ModelSerializer):
             return "Open"
         return "Open"
 
-    @classmethod
-    def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'title': obj.opportunity.title,
-                'code': obj.opportunity.code,
-            }
-        return {}
+    # @classmethod
+    # def get_opportunity(cls, obj):
+    #     if obj.opportunity:
+    #         return {
+    #             'id': obj.opportunity_id,
+    #             'title': obj.opportunity.title,
+    #             'code': obj.opportunity.code,
+    #         }
+    #     return {}
 
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
