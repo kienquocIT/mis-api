@@ -32,6 +32,10 @@ class AdvancePayment(DataAbstractModel):
         'quotation.Quotation',
         on_delete=models.CASCADE, null=True
     )
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True
+    )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
         help_text='0 is Sale, 1 is Purchase, 2 is None-sale'

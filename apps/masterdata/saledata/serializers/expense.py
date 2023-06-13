@@ -106,6 +106,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'price list value': ExpenseMsg.IS_REQUIRED})
             if 'is_auto_update' not in item:
                 raise serializers.ValidationError({'price list is auto update': ExpenseMsg.IS_REQUIRED})
+        return value
 
     def validate(self, validate_data):
         uom = validate_data['uom']
