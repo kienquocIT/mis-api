@@ -193,8 +193,8 @@ class Runtime(SimpleAbstractModel):
         code_arr = []
         if zone_and_properties and isinstance(zone_and_properties, list):
             for item in zone_and_properties:
-                for x in item['properties_detail']:
-                    code_arr.append(x['code'])
+                for detail in item['properties_detail']:
+                    code_arr.append(detail['code'])
         return code_arr
 
     def find_task_id_get_zones(

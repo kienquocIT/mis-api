@@ -1,5 +1,3 @@
-import json
-
 from django.db import models
 from apps.shared import DataAbstractModel, MasterDataAbstractModel
 
@@ -100,12 +98,6 @@ class Contact(DataAbstractModel):
     # }
     address_information = models.JSONField(
         default=dict,
-        help_text=json.dumps(
-            {
-              "work_address": "",
-              "home_address": ""
-            }
-        )
     )
 
     # {
@@ -120,8 +112,7 @@ class Contact(DataAbstractModel):
         default=dict,
     )
     is_primary = models.BooleanField(
-        verbose_name='Account Owner Exist',
-        help_text='True if it have a account owner; otherwise it is False',
+        help_text='is account owner',
         default=False
     )
 

@@ -279,17 +279,17 @@ class RuntimeStageHandler:
         for obj in zone_objs:
             properties = []
             properties_detail = []
-            for x in obj.properties.all():
-                properties.append(str(x.id))
+            for detail in obj.properties.all():
+                properties.append(str(detail.id))
                 properties_detail.append(
                     {
-                        'id': str(x.id),
-                        'code': str(x.code),
-                        'type': str(x.type),
-                        'content_type': str(x.content_type),
-                        'properties': str(x.properties),
-                        'compare_operator': str(x.compare_operator),
-                        'remark': str(x.remark),
+                        'id': str(detail.id),
+                        'code': str(detail.code),
+                        'type': str(detail.type),
+                        'content_type': str(detail.content_type),
+                        'properties': str(detail.properties),
+                        'compare_operator': str(detail.compare_operator),
+                        'remark': str(detail.remark),
                     }
                 )
             result.append(

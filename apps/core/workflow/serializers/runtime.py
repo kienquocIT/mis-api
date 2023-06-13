@@ -122,8 +122,8 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
     def get_properties_data(zone_and_properties):
         if len(zone_and_properties) > 0:
             properties_id = []
-            for x in zone_and_properties:
-                properties_id += x['properties']
+            for detail in zone_and_properties:
+                properties_id += detail['properties']
 
             property_objs = ApplicationProperty.objects.filter(id__in=properties_id)
             if property_objs:

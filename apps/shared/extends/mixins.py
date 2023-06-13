@@ -7,15 +7,15 @@ from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
 
+from apps.core.log.tasks import force_log_activity
+from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
+
 from .controllers import ResponseController
 from .utils import TypeCheck
 from ..translations import HttpMsg
 from .tasks import call_task_background
-from apps.core.log.tasks import force_log_activity
 
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
-
-from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 
 
 class BaseMixin(GenericAPIView):
@@ -450,15 +450,15 @@ class BaseUpdateMixin(BaseMixin):
                         if key in code_field_arr:
                             new_body_data[key] = value
                     return new_body_data, True, task_id
-                else:
-                    # check permission default | wait implement so it is True
-                    pass
+                # check permission default | wait implement so it is True
         return request_data, False, None
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            body_data, partial, task_id = self.parsed_body(instance=instance, request_data=request.data, user=request.user)
+            body_data, partial, task_id = self.parsed_body(
+                instance=instance, request_data=request.data, user=request.user
+            )
             serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
