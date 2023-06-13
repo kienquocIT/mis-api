@@ -313,3 +313,7 @@ msgid "The workflow currently is required when mode is apply"
 msgstr ""
 "Quy trình áp dụng cho chức năng cần được chọn trước khi chọn chế độ sử dụng "
 "quy trình"
+
+#
+msgid "This record has been finalized and is not allow to any further modifications or destroy."
+msgstr "Phiếu này đã hoàn thành và không được phép chỉnh sửa hoặc xóa."

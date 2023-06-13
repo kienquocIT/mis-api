@@ -26,5 +26,6 @@ urlpatterns = [
     path('company/', include('apps.core.company.urls')),
     path('base/', include('apps.core.base.urls')),
     path('workflow/', include('apps.core.workflow.urls')),
-    path('task-bg/<str:pk>', TaskBackgroundState.as_view(), name='TaskBackgroundState')
+    path('task-bg/<str:pk>', TaskBackgroundState.as_view(), name='TaskBackgroundState'),
+    path('log/', include('apps.core.log.urls')),
 ]

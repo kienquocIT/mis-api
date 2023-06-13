@@ -37,5 +37,22 @@ ApplicationProperty_data = {
         'title': 'date joined',
         'code': 'date_joined',
         'type': 2,
-    }
+    },
+
+    # field of contact
+    '1732206e-c2f4-42bf-98c2-9cc3d5294de6': {
+        'id': '1732206e-c2f4-42bf-98c2-9cc3d5294de6',
+        'application_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'title': 'Owner',
+        'code': 'owner',
+        'type': 5,
+        'content_type': 'hr_Employee',
+    },
+    '3e9235f9-e7d0-4b9c-87ce-ad3e66aa41c2': {
+        'id': '3e9235f9-e7d0-4b9c-87ce-ad3e66aa41c2',
+        'application_id': '828b785a-8f57-4a03-9f90-e0edf96560d7',
+        'title': 'Job Title',
+        'code': 'job_title',
+        'type': 1,
+    },
 }
