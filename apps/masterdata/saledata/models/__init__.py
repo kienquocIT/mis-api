@@ -7,3 +7,4 @@ from .product import *
 from .shipping import *
 from .inventory import *
 from .good_receipt import *
+from .product_warehouse import ProductWareHouse

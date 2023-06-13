@@ -22,6 +22,7 @@ from apps.masterdata.saledata.views.price import (
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, WarehouseStockList,
+    WareHouseCheckAvailableProductList,
 )
 
 urlpatterns = [
@@ -118,6 +119,10 @@ urlpatterns += [
     path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouse-stock', WarehouseStockList.as_view(), name='WarehouseStockList'),
+    path(
+        'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
+        name='WareHouseCheckAvailableProductList'
+    ),
 ]
 # // warehouse
 

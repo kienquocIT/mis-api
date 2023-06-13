@@ -1,8 +1,8 @@
 from uuid import uuid4
+from django.utils import timezone
 
 from celery import shared_task
-from django.db import transaction
-
+import django.db
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -66,7 +66,7 @@ class SaleOrderActiveDeliverySerializer:
         m2m_obj_arr = []
         delivery_quantity = 0
         for m2m_obj in self.order_products:
-            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, int):
+            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, float):
                 delivery_quantity += m2m_obj.product_quantity
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
@@ -153,6 +153,10 @@ class SaleOrderActiveDeliverySerializer:
 
     ):
         logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
+        state = 0
+        if not self.config_obj.is_partial_ship and not self.config_obj.is_picking \
+                or self.config_obj.is_partial_ship and not self.config_obj.is_picking:
+            state = 1
 
         return OrderDelivery.objects.create(
             tenant_id=self.tenant_id,
@@ -181,17 +185,18 @@ class SaleOrderActiveDeliverySerializer:
             kind_pickup=0 if self.config_obj.is_picking else 1,
             sub=None,
             delivery_option=0 if not self.config_obj.is_partial_ship else 1,
-            state=1 if self.config_obj.is_partial_ship else 0,
+            state=state,
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=0,
             remaining_quantity=delivery_quantity,
             ready_quantity=0,
             delivery_data={},
+            date_created=timezone.now()
         )
 
     def active(self) -> (bool, str):
         try:
-            with transaction.atomic():
+            with django.db.transaction.atomic():
                 if (
                         not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
                         and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
@@ -205,6 +210,7 @@ class SaleOrderActiveDeliverySerializer:
                         obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                         # setup SUB
                         sub_obj = OrderDeliverySub.objects.create(
+                            code=obj_delivery.code,
                             tenant_id=self.tenant_id,
                             company_id=self.company_id,
                             id=sub_id,
@@ -217,6 +223,12 @@ class SaleOrderActiveDeliverySerializer:
                             remaining_quantity=delivery_quantity,
                             ready_quantity=delivery_quantity,
                             delivery_data={},
+                            is_updated=False,
+                            state=obj_delivery.state,
+                            sale_order_data=obj_delivery.sale_order_data,
+                            customer_data=obj_delivery.customer_data,
+                            contact_data=obj_delivery.contact_data,
+                            date_created=obj_delivery.date_created
                         )
                         obj_delivery.sub = sub_obj
                         obj_delivery.save(update_fields=['sub'])

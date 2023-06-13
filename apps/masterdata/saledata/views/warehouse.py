@@ -1,13 +1,21 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view
-from apps.masterdata.saledata.models import WareHouse, WareHouseStock
+from apps.shared import (
+    BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
+)
+from apps.masterdata.saledata.models import (
+    WareHouse, WareHouseStock,
+)
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer,
     WareHouseDetailSerializer, WareHouseUpdateSerializer, WarehouseStockListSerializer,
+    ProductWareHouseStockListSerializer,
 )
 
-__all__ = ['WareHouseList', 'WareHouseDetail', 'WarehouseStockList']
+__all__ = [
+    'WareHouseList', 'WareHouseDetail', 'WarehouseStockList',
+    'WareHouseCheckAvailableProductList',
+]
 
 
 class WareHouseList(BaseListMixin, BaseCreateMixin):
@@ -60,13 +68,31 @@ class WarehouseStockList(BaseListMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
     filterset_fields = {
-        "product": ['exact'],
+        "product": ['exact', 'in'],
+        "warehouse": ['exact', 'in'],
     }
 
     def get_queryset(self):
         return super().get_queryset().select_related('product', 'warehouse')
 
-    @swagger_auto_schema(operation_summary='WareHouse Stock product')
+    @swagger_auto_schema(operation_summary='WareHouse stock product')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WareHouseCheckAvailableProductList(BaseListMixin):
+    queryset = WareHouse.objects
+    serializer_list = ProductWareHouseStockListSerializer
+    list_hidden_field = ['tenant_id', 'product_id']
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, product_id, uom_id, **kwargs):
+        self.ser_context = {
+            'product_id': product_id,
+            'uom_id': uom_id,
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.list(request, *args, **kwargs)
