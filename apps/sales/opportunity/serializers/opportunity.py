@@ -353,8 +353,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     budget_value = serializers.FloatField(required=False)
     open_date = serializers.DateTimeField(required=False)
     close_date = serializers.DateTimeField(required=False)
-    end_customer = serializers.UUIDField(required=False)
-    decision_maker = serializers.UUIDField(required=False, )
+    end_customer = serializers.UUIDField(required=False, allow_null=True)
+    decision_maker = serializers.UUIDField(required=False, allow_null=True)
     total_product = serializers.FloatField(required=False, )
     total_product_pretax_amount = serializers.FloatField(required=False)
     total_product_tax = serializers.FloatField(required=False)
@@ -399,25 +399,29 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_end_customer(cls, value):
-        try:
-            return Account.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Account.DoesNotExist:
-            raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+        if value:
+            try:
+                return Account.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_decision_maker(cls, value):
-        try:
-            return Contact.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except Contact.DoesNotExist:
-            raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
+        if value:
+            try:
+                return Contact.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({'contact': AccountsMsg.CONTACT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_total_product(cls, value):
