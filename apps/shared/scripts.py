@@ -1,4 +1,5 @@
 from apps.core.company.models import Company
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.product import ProductType, Product
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
@@ -14,7 +15,6 @@ from ..sales.cashoutflow.models import (
 )
 from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
-from apps.core.hr.models import Employee
 
 
 def update_sale_default_data_old_company():
@@ -196,7 +196,7 @@ def update_contact_owner():
         try:
             item.owner_mapped_id = item.owner
             item.save()
-        except:
+        except Employee.DoesNotExist:
             item.delete()
     return True
 
@@ -207,6 +207,6 @@ def update_report_to():
         try:
             item.report_to_mapped_id = item.report_to
             item.save()
-        except:
+        except Employee.DoesNotExist:
             item.delete()
     return True

@@ -1,5 +1,4 @@
 from rest_framework import serializers
-from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.contacts import (
