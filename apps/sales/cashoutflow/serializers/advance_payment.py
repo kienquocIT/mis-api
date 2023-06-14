@@ -332,7 +332,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'title': obj.sale_order_mapped.title,
                 'opportunity': opportunity_obj
             }
-        return None
+        return []
 
     @classmethod
     def get_quotation_mapped(cls, obj):
@@ -351,7 +351,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'title': obj.quotation_mapped.title,
                 'opportunity': opportunity_obj
             }
-        return None
+        return []
 
     @classmethod
     def get_opportunity_mapped(cls, obj):
@@ -362,7 +362,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'title': obj.opportunity_mapped.title,
                 'customer': obj.opportunity_mapped.customer.name,
             }
-        return None
+        return []
 
     @classmethod
     def get_beneficiary(cls, obj):

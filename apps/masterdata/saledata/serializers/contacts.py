@@ -127,7 +127,7 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 
 # Contact
 class ContactListSerializer(serializers.ModelSerializer):
-    owner = serializers.SerializerMethodField()
+    owner_mapped = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -136,23 +136,19 @@ class ContactListSerializer(serializers.ModelSerializer):
             'id',
             'fullname',
             'job_title',
-            'owner',
+            'owner_mapped',
             'account_name',
             'mobile',
             'email'
         )
 
     @classmethod
-    def get_owner(cls, obj):
-        if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+    def get_owner_mapped(cls, obj):
+        if obj.owner_mapped:
+            return {
+                'id': obj.owner_mapped_id,
+                'fullname':  obj.owner_mapped.get_full_name(2)
+            }
         return {}
 
     @classmethod
@@ -176,7 +172,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            "owner",
+            "owner_mapped",
             "job_title",
             "biography",
             "avatar",
@@ -185,7 +181,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "phone",
             "mobile",
             "email",
-            "report_to",
+            "report_to_mapped",
             "address_information",
             "additional_information",
             'account_name',
@@ -239,8 +235,8 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
 class ContactDetailSerializer(serializers.ModelSerializer):
     salutation = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
-    report_to = serializers.SerializerMethodField()
+    owner_mapped = serializers.SerializerMethodField()
+    report_to_mapped = serializers.SerializerMethodField()
     additional_information = serializers.SerializerMethodField()
     fullname = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
@@ -249,7 +245,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
         model = Contact
         fields = (
             "id",
-            "owner",
+            "owner_mapped",
             "job_title",
             "biography",
             "avatar",
@@ -258,7 +254,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             "phone",
             "mobile",
             "email",
-            "report_to",
+            "report_to_mapped",
             "address_information",
             "additional_information",
             "account_name",
@@ -275,29 +271,21 @@ class ContactDetailSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_owner(cls, obj):
-        if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+    def get_owner_mapped(cls, obj):
+        if obj.owner_mapped:
+            return {
+                'id': obj.owner_mapped_id,
+                'fullname': obj.owner_mapped.get_full_name(2)
+            }
         return {}
 
     @classmethod
-    def get_report_to(cls, obj):
-        if obj.report_to:
-            owner = Contact.objects.filter(
-                id=obj.report_to
-            ).first()
-            if owner:
-                return {
-                    'id': obj.report_to,
-                    'fullname': owner.fullname
-                }
+    def get_report_to_mapped(cls, obj):
+        if obj.report_to_mapped:
+            return {
+                'id': obj.report_to_mapped_id,
+                'fullname': obj.report_to_mapped.fullname
+            }
         return {}
 
     @classmethod
@@ -348,7 +336,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            "owner",
+            "owner_mapped",
             "job_title",
             "biography",
             "avatar",
@@ -357,7 +345,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "phone",
             "mobile",
             "email",
-            "report_to",
+            "report_to_mapped",
             "address_information",
             "additional_information",
             'account_name'
@@ -411,7 +399,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
 
 
 class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
-    owner = serializers.SerializerMethodField()
+    owner_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
@@ -419,21 +407,17 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
             'id',
             'fullname',
             'job_title',
-            'owner',
+            'owner_mapped',
             'mobile',
             'phone',
             'email'
         )
 
     @classmethod
-    def get_owner(cls, obj):
-        if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+    def get_owner_mapped(cls, obj):
+        if obj.owner_mapped:
+            return {
+                'id': obj.owner_mapped_id,
+                'fullname': obj.owner_mapped.get_full_name(2)
+            }
         return {}
