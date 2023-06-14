@@ -7,6 +7,7 @@ from apps.shared import AccountsMsg
 
 class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -14,7 +15,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'customer'
+            'customer',
+            'sale_person'
         )
 
     @classmethod
@@ -26,6 +28,21 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'code': obj.customer.code
             }
         return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.customer:
+            data = []
+            for manager in obj.customer.manager:
+                data.append(
+                    {
+                        'id': manager['id'],
+                        'code': manager['code'],
+                        'name': manager['fullname'],
+                    }
+                )
+            return data
+        return []
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
