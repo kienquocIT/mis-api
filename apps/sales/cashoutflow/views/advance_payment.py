@@ -20,7 +20,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().prefetch_related(
             'advance_payment',
             'return_advance_payment',
-        )
+        ).select_related('sale_order_mapped', 'quotation_mapped', 'opportunity_mapped')
 
     @swagger_auto_schema(
         operation_summary="AdvancePayment list",
