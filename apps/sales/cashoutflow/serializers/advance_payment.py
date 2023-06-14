@@ -228,7 +228,9 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'AP.CODE.0001'
         else:
-            latest_code = AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True).latest('date_created').code
+            latest_code = AdvancePayment.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
             new_code = 'AP.CODE.000' + str(new_code)
 
