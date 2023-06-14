@@ -1,28 +1,50 @@
 from rest_framework import serializers
 
-from apps.sales.opportunity.models import OpportunityDecisionFactor
+from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig
 
 
-class OpportunityDecisionFactorListSerializer(serializers.ModelSerializer):
+class OpportunityConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OpportunityDecisionFactor
+        model = OpportunityConfig
         fields = (
             'id',
-            'title'
+            'is_select_stage',
+            'is_input_win_rate',
         )
 
 
-class OpportunityDecisionFactorCreateSerializer(serializers.ModelSerializer):
+class OpportunityConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OpportunityDecisionFactor
+        model = OpportunityConfig
+        fields = (
+            'is_select_stage',
+            'is_input_win_rate',
+        )
+
+
+class CustomerDecisionFactorListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomerDecisionFactor
+        fields = (
+            'id',
+            'title',
+            'company_id'
+        )
+
+
+class CustomerDecisionFactorCreateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CustomerDecisionFactor
         fields = (
             'title',
         )
 
 
-class OpportunityDecisionFactorDetailSerializer(serializers.ModelSerializer):
+class CustomerDecisionFactorDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = OpportunityDecisionFactor
+        model = CustomerDecisionFactor
         fields = (
             'id',
             'title'

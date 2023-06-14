@@ -4,6 +4,7 @@ from django.db import transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
+from apps.sales.opportunity.models import OpportunityConfig
 from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
@@ -194,10 +195,20 @@ class ConfigDefaultData:
                 **long_sale_config
             )
 
+    def opportunity_config(self):
+        OpportunityConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'is_select_stage': False,
+                'is_input_win_rate': False,
+            },
+        )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
         self.quotation_config()
+        self.opportunity_config()
         return True
 
 

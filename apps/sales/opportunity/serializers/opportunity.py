@@ -1,15 +1,17 @@
 from rest_framework import serializers
 
+from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor
-from apps.shared import AccountsMsg
+from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -17,7 +19,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'customer'
+            'customer',
+            'sale_person',
+            'open_date'
         )
 
     @classmethod
@@ -30,11 +34,22 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'name': obj.sale_person.get_full_name(),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     customer = serializers.UUIDField()
-    product_category = serializers.ListField(child=serializers.UUIDField())
+    product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
+    sale_person = serializers.UUIDField()
 
     class Meta:
         model = Opportunity
@@ -42,6 +57,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
+            'sale_person',
         )
 
     @classmethod
@@ -54,6 +70,17 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             )
         except Account.DoesNotExist:
             raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def create(self, validated_data):
         product_categories = validated_data.pop('product_category', [])
@@ -136,6 +163,7 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
                 return {
                     'id': str(obj.id),
                     'title': obj.title,
+                    'rate': obj.rate,
                 }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'Tax': OpportunityMsg.NOT_EXIST})
@@ -180,10 +208,13 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         # create new
         bulk_data = []
         for item in data:
+            product_id = None
+            if item['product']:
+                product_id = item['product']['id']
             bulk_data.append(
                 OpportunityProduct(
                     opportunity=instance,
-                    product_id=item['product'].get('id', None),
+                    product_id=product_id,
                     product_category_id=item['product_category']['id'],
                     uom_id=item['uom']['id'],
                     tax_id=item['tax']['id'],
@@ -278,7 +309,7 @@ class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
                 )
                 return {
                     'id': str(obj.id),
-                    'title': obj.title,
+                    'name': obj.name,
                 }
         except Account.DoesNotExist:
             raise serializers.ValidationError({'competitor': OpportunityMsg.NOT_EXIST})
@@ -287,6 +318,7 @@ class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
 
 class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
     contact = serializers.UUIDField(allow_null=False)
+    job_title = serializers.CharField(allow_blank=True)
 
     class Meta:
         model = OpportunityContactRole
@@ -322,14 +354,15 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     open_date = serializers.DateTimeField(required=False)
     close_date = serializers.DateTimeField(required=False)
     end_customer = serializers.UUIDField(required=False)
-    decision_maker = serializers.UUIDField(required=False,)
-    total_product = serializers.FloatField(required=False,)
+    decision_maker = serializers.UUIDField(required=False, )
+    total_product = serializers.FloatField(required=False, )
     total_product_pretax_amount = serializers.FloatField(required=False)
     total_product_tax = serializers.FloatField(required=False)
     win_rate = serializers.FloatField(required=False)
     customer_decision_factor = serializers.ListField(required=False, child=serializers.UUIDField())
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
     title = serializers.CharField(required=False)
+    is_input_rate = serializers.BooleanField(required=False)
 
     class Meta:
         model = Opportunity
@@ -339,6 +372,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'product_category',
             'budget_value',
             'open_date',
+            'is_input_rate',
             'close_date',
             'decision_maker',
             'end_customer',
@@ -449,6 +483,53 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityDetailSerializer(serializers.ModelSerializer):
+    decision_maker = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+
     class Meta:
         model = Opportunity
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'end_customer',
+            'product_category',
+            'budget_value',
+            'open_date',
+            'close_date',
+            'decision_maker',
+            'opportunity_product_datas',
+            'total_product_pretax_amount',
+            'total_product_tax',
+            'total_product',
+            'opportunity_competitors_datas',
+            'opportunity_contact_role_datas',
+            'win_rate',
+            'is_input_rate',
+            'customer_decision_factor',
+            'sale_person'
+        )
+
+    @classmethod
+    def get_decision_maker(cls, obj):
+        if obj.decision_maker:
+            return {
+                'id': obj.decision_maker.id,
+                'name': obj.decision_maker.fullname,
+            }
+        return None
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.customer:
+            data = []
+            for manager in obj.customer.manager:
+                data.append(
+                    {
+                        'id': manager['id'],
+                        'name': manager['fullname'],
+                    }
+                )
+            return data
+        return []

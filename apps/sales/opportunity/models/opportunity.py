@@ -24,6 +24,14 @@ class Opportunity(DataAbstractModel):
         null=True
     )
 
+    sale_person = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        verbose_name="sale person",
+        related_name='opportunity_sale_person',
+        null=True,
+    )
+
     end_customer = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -99,8 +107,12 @@ class Opportunity(DataAbstractModel):
         help_text='possibility of win deal of opportunity'
     )
 
+    is_input_rate = models.BooleanField(
+        default=False,
+    )
+
     customer_decision_factor = models.ManyToManyField(
-        'opportunity.OpportunityDecisionFactor',
+        'opportunity.CustomerDecisionFactor',
         through="OpportunityCustomerDecisionFactor",
         symmetrical=False,
         verbose_name='reason why customer buy product',
@@ -308,7 +320,7 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
     )
 
     factor = models.ForeignKey(
-        'opportunity.OpportunityDecisionFactor',
+        'opportunity.CustomerDecisionFactor',
         on_delete=models.CASCADE,
         verbose_name='reason why customer buy product',
         related_query_name='opportunity_customer_decision_factor_factor',

@@ -187,3 +187,9 @@ def make_sure_quotation_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).quotation_config()
     print('Make sure quotation config is done!')
+
+
+def make_sure_opportunity_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config()
+    print('Make sure opportunity config is done!')
