@@ -9,5 +9,7 @@ urlpatterns = [
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
 
     path('config/decision-factors', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
-    path('config/decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'),
+    path(
+        'config/decision-factor/<str:pk>', CustomerDecisionFactorDetail.as_view(), name='CustomerDecisionFactorDetail'
+    ),
 ]
