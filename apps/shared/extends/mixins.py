@@ -1,10 +1,19 @@
+from typing import Union
+from uuid import UUID
+
 from django.conf import settings
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
 
+from apps.core.log.tasks import force_log_activity
+from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
+
 from .controllers import ResponseController
+from .utils import TypeCheck
 from ..translations import HttpMsg
+from .tasks import call_task_background
 
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
@@ -14,6 +23,9 @@ class BaseMixin(GenericAPIView):
     search_fields: list
     filterset_fields: dict
     filterset_class: filters.FilterSet
+    # for log
+    log_doc_app: str = ''
+    log_msg: str = ''
 
     def get_serializer_class(self):
         if getattr(self, 'serializer_list', None):
@@ -268,6 +280,68 @@ class BaseMixin(GenericAPIView):
         except queryset.model.DoesNotExist:
             raise exceptions.NotFound
 
+    @classmethod
+    def check_obj_change_or_delete(cls, instance):
+        if instance and hasattr(instance, 'system_status') and getattr(instance, 'system_status', None) == 3:
+            return False
+        return True
+
+    def get_default_doc_app(self) -> str:
+        if not self.log_doc_app:
+            if self.queryset:
+                cls_queryset = self.queryset.__class__
+                if hasattr(cls_queryset, 'get_model_code'):
+                    return cls_queryset.get_model_code()
+            return ''
+        return self.log_doc_app
+
+    def get_default_log_msg(self, task_id=None) -> str:
+        real_msg = ''
+        if not self.log_msg:
+            match self.request.method.upper():
+                case 'GET':
+                    real_msg = 'Get list or detail'
+                case 'POST':
+                    real_msg = 'Create new'
+                case 'PUT':
+                    real_msg = 'Update record'
+                case 'DELETE':
+                    real_msg = 'Destroy record'
+        else:
+            real_msg = self.log_msg
+        if task_id:
+            return real_msg + " at Zone's Workflow"
+        return real_msg
+
+    def write_log(
+            self, doc_obj, request_data: dict = None, change_partial: bool = False, task_id: Union[UUID, str] = None,
+    ):
+        user = self.request.user
+        call_task_background(
+            force_log_activity,
+            **{
+                'tenant_id': user.tenant_current_id,
+                'company_id': user.company_current_id,
+                'request_method': self.request.method.upper(),
+                'date_created': timezone.now(),
+                'doc_id': doc_obj.id,
+                'doc_app': self.get_default_doc_app(),
+                'automated_logging': False,
+                'user_id': user.id,
+                'employee_id': user.employee_current_id,
+                'msg': self.get_default_log_msg(task_id=task_id),
+                'data_change': request_data if isinstance(request_data, dict) else self.request.data,
+                'change_partial': change_partial,
+                'task_workflow_id': task_id,
+            },
+        )
+        if task_id:
+            call_task_background(
+                call_log_update_at_zone,
+                *[task_id, user.employee_current_id],
+            )
+        return True
+
 
 class BaseListMixin(BaseMixin):
     def get_object(self):
@@ -334,6 +408,7 @@ class BaseCreateMixin(BaseMixin):
         serializer.is_valid(raise_exception=True)
         field_hidden = self.setup_create_field_hidden(request.user)
         obj = self.perform_create(serializer, extras=field_hidden)
+        self.write_log(doc_obj=obj)
         return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
 
     @staticmethod
@@ -349,19 +424,53 @@ class BaseRetrieveMixin(BaseMixin):
 
 
 class BaseUpdateMixin(BaseMixin):
+    @classmethod
+    def parsed_body(cls, instance, request_data, user) -> (dict, bool, Union[UUID, str, None]):
+        """
+        Parse request body and return it with partial is True/False.
+        Args:
+            instance: Model Object
+            request_data: request.data
+            user: request user object
+
+        Returns:
+            request_data: Data parsed with remove key don't accept edit in zone, else return input request_data
+            partial: True if request_data don't exist task_id else False (update some field or all field)
+        """
+        workflow_runtime = getattr(instance, 'workflow_runtime', None)
+        if workflow_runtime and hasattr(workflow_runtime, 'find_task_id_get_zones'):
+            task_id = request_data.get('task_id', None)
+            if task_id and TypeCheck.check_uuid(task_id):
+                state, code_field_arr = workflow_runtime.find_task_id_get_zones(
+                    task_id=task_id, employee_id=user.employee_current_id
+                )
+                if state is True:
+                    new_body_data = {}
+                    for key, value in request_data.items():
+                        if key in code_field_arr:
+                            new_body_data[key] = value
+                    return new_body_data, True, task_id
+                # check permission default | wait implement so it is True
+        return request_data, False, None
+
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        if self.check_obj_change_or_delete(instance):
+            body_data, partial, task_id = self.parsed_body(
+                instance=instance, request_data=request.data, user=request.user
+            )
+            serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
+            # request force write log
+            self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
+            if getattr(instance, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                instance._prefetched_objects_cache = {}  # pylint: disable=W0212
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}  # pylint: disable=W0212
-
-        return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+        return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
@@ -375,8 +484,10 @@ class BaseUpdateMixin(BaseMixin):
 class BaseDestroyMixin(BaseMixin):
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        self.perform_destroy(instance)
-        return ResponseController.no_content_204()
+        if self.check_obj_change_or_delete(instance):
+            self.perform_destroy(instance)
+            return ResponseController.no_content_204()
+        return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod
     def perform_destroy(instance):

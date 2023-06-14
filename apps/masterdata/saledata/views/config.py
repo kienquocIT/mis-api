@@ -8,7 +8,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 
 class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
-    queryset = PaymentTerm.objects.all()
+    queryset = PaymentTerm.objects
     serializer_list = PaymentTermListSerializer
     serializer_create = PaymentTermCreateSerializer
     serializer_detail = PaymentTermDetailSerializer

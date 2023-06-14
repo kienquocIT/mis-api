@@ -1,6 +1,9 @@
 from rest_framework import serializers
 
+from apps.core.base.models import ApplicationProperty
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee
+from apps.core.workflow.tasks import call_approval_task
+from apps.shared import call_task_background
 
 __all__ = [
     'RuntimeListSerializer',
@@ -8,9 +11,6 @@ __all__ = [
     'RuntimeDetailSerializer',
     'RuntimeAssigneeUpdateSerializer',
 ]
-
-from apps.core.workflow.tasks import call_approval_task
-from apps.shared import call_task_background
 
 
 class RuntimeListSerializer(serializers.ModelSerializer):
@@ -108,9 +108,27 @@ class RuntimeStageListSerializer(serializers.ModelSerializer):
         )
 
 
+class ApplicationPropertySubDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApplicationProperty
+        fields = ('id', 'remark', 'code', 'type', 'content_type', 'properties', 'compare_operator')
+
+
 class RuntimeDetailSerializer(serializers.ModelSerializer):
     action_myself = serializers.SerializerMethodField()
     stage_currents = serializers.SerializerMethodField()
+
+    @staticmethod
+    def get_properties_data(zone_and_properties):
+        if len(zone_and_properties) > 0:
+            properties_id = []
+            for detail in zone_and_properties:
+                properties_id += detail['properties']
+
+            property_objs = ApplicationProperty.objects.filter(id__in=properties_id)
+            if property_objs:
+                return ApplicationPropertySubDetailSerializer(property_objs, many=True).data
+        return []
 
     def get_action_myself(self, obj):
         employee_current_id = self.context.get('employee_current_id', None)
@@ -125,7 +143,7 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                     return {
                         'id': stage_assignee_obj.id,
                         'actions': obj.stage_currents.actions,
-                        'zones': stage_assignee_obj.zone_and_properties,
+                        'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
                     }
         return {}
 
@@ -155,9 +173,11 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     def validate_action(self, attrs):
         if attrs in self.instance.stage.actions:
             return attrs
-        raise serializers.ValidationError({
-            'action': 'Action not support for you'
-        })
+        raise serializers.ValidationError(
+            {
+                'action': 'Action not support for you'
+            }
+        )
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])

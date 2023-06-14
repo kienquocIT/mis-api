@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail,
-    AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder
+    AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder, PaymentOpportunity
 )
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg
@@ -125,20 +125,28 @@ def create_expense_items(instance, expense_valid_list):
 
 def create_sale_code_object(payment_obj, initial_data):
     if 'sale_code' in initial_data:
-        if initial_data['sale_code_detail']:
-            PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=initial_data['sale_code'])
-        else:
-            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=initial_data['sale_code'])
+        sale_code_id = initial_data['sale_code']
+        if initial_data['sale_code_detail'] == 0:
+            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+        if initial_data['sale_code_detail'] == 1:
+            PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+        if initial_data['sale_code_detail'] == 2:
+            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
     else:
+        sale_order_bulk_info = []
+        for item in initial_data['sale_order_selected_list']:
+            sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
+        PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
+
         payment_quotation_bulk_info = []
         for item in initial_data['quotation_selected_list']:
             payment_quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
         PaymentQuotation.objects.bulk_create(payment_quotation_bulk_info)
 
-        sale_order_bulk_info = []
-        for item in initial_data['sale_order_selected_list']:
-            sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
-        PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
+        opportunity_bulk_info = []
+        for item in initial_data['opportunity_selected_list']:
+            opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
+        PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
     return True
 
 
@@ -169,10 +177,12 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
 
     def create(self, validated_data):
-        if Payment.objects.all().count() == 0:
+        if Payment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'PAYMENT.CODE.0001'
         else:
-            latest_code = Payment.objects.latest('date_created').code
+            latest_code = Payment.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
             new_code = 'PAYMENT.CODE.000' + str(new_code)
 
@@ -187,6 +197,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 class PaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
     expense_mapped = serializers.SerializerMethodField()
 
     class Meta:
@@ -194,9 +205,11 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
         fields = (
             'sale_order_mapped',
             'quotation_mapped',
+            'opportunity_mapped',
             'title',
             'code',
             'creator_name',
+            'beneficiary',
             'date_created',
             'method',
             'sale_code_type',
@@ -208,15 +221,19 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     def get_sale_order_mapped(cls, obj):
         all_sale_order_mapped = []
         for item in obj.sale_order_mapped.all().select_related('opportunity'):
+            opportunity_obj = {}
+            if item.opportunity:
+                opportunity_obj = {
+                    'id': item.opportunity.id,
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title,
+                    'customer': item.opportunity.customer.name,
+                }
             all_sale_order_mapped.append({
                 'id': str(item.id),
                 'code': item.code,
                 'title': item.title,
-                'opportunity': {
-                    'id': str(item.opportunity_id),
-                    'code': item.opportunity.code,
-                    'title': item.opportunity.title
-                }
+                'opportunity': opportunity_obj
             })
         return all_sale_order_mapped
 
@@ -224,17 +241,39 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     def get_quotation_mapped(cls, obj):
         all_quotation_mapped = []
         for item in obj.quotation_mapped.all().select_related('opportunity'):
+            opportunity_obj = {}
+            if item.opportunity:
+                opportunity_obj = {
+                    'id': item.opportunity.id,
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title,
+                    'customer': item.opportunity.customer.name,
+                }
             all_quotation_mapped.append(
                 {
                     'id': str(item.id),
                     'code': item.code,
                     'title': item.title,
-                    'opportunity': {
-                        'id': str(item.opportunity_id), 'code': item.opportunity.code, 'title': item.opportunity.title
-                    }
+                    'opportunity': opportunity_obj
                 }
             )
         return all_quotation_mapped
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        all_opportunity_mapped = []
+        for item in obj.opportunity_mapped.all():
+            all_opportunity_mapped.append(
+                {
+                    'id': str(item.id),
+                    'code': item.code,
+                    'title': item.title,
+                    'opportunity': {
+                        'id': str(item.id), 'code': item.code, 'title': item.title
+                    }
+                }
+            )
+        return all_opportunity_mapped
 
     @classmethod
     def get_expense_mapped(cls, obj):

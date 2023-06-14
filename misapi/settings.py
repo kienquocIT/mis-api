@@ -59,6 +59,7 @@ INSTALLED_APPS = \
     ] + [  # integrate some service management or tracing
         'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
+        'apps.core.log',  # all logged data, except Workflow Log
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
