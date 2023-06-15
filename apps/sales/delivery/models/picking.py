@@ -100,6 +100,11 @@ class OrderPicking(MasterDataAbstractModel):
             }
         )
     )
+    sub_list = models.JSONField(
+        default=list,
+        verbose_name='Sub list',
+        help_text='List of all sub in picking current'
+    )
 
     def set_and_check_quantity(self):
         if self.picked_quantity > self.remaining_quantity:
@@ -121,9 +126,26 @@ class OrderPicking(MasterDataAbstractModel):
             }
         return True
 
+    def create_code_picking(self):
+        # auto create code (temporary)
+        delivery = OrderPickingSub.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "PICKING.CODE."
+        if not self.code:
+            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+    def before_save(self):
+        self.create_code_picking()
+
     def save(self, *args, **kwargs):
         self.set_and_check_quantity()
         self.put_backup_data()
+        self.before_save()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -207,6 +229,29 @@ class OrderPickingSub(MasterDataAbstractModel):
     )
     remarks = models.TextField(blank=True)
     to_location = models.TextField(blank=True)
+    sale_order_data = models.JSONField(
+        default=dict,
+        verbose_name='Sale Order data',
+        help_text=json.dumps(
+            {
+                'id': '', 'title': '', 'code': '',
+            }
+        ),
+    )
+    estimated_delivery_date = models.DateTimeField(
+        null=True,
+        verbose_name='Delivery Date '
+    )
+    state = models.PositiveSmallIntegerField(
+        choices=PICKING_STATE,
+        default=0,
+    )
+    delivery_option = models.PositiveSmallIntegerField(
+        choices=DELIVERY_OPTION,
+        verbose_name='Delivery Option',
+        help_text='Delivery option when change in this records',
+        default=0,
+    )
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:
@@ -215,8 +260,31 @@ class OrderPickingSub(MasterDataAbstractModel):
             raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
         self.remaining_quantity = self.pickup_quantity - self.picked_quantity_before
 
-    def save(self, *args, **kwargs):
+    def create_code_picking(self):
+        # auto create code (temporary)
+        delivery = OrderPickingSub.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "PICKING.CODE."
+        if not self.code:
+            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+    def before_save(self):
+        self.create_code_picking()
         self.set_and_check_quantity()
+        if self.ware_house and not self.ware_house_data:
+            self.ware_house_data = {
+                "id": str(self.ware_house_id),
+                "title": str(self.ware_house.title),
+                "code": str(self.ware_house.code),
+            }
+
+    def save(self, *args, **kwargs):
+        self.before_save()
         if kwargs.get('force_inserts', False):
             times_arr = OrderPickingSub.objects.filter(order_picking=self.order_picking).values_list('times', flat=True)
             self.times = (max(times_arr) + 1) if len(times_arr) > 0 else 1

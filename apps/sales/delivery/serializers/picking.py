@@ -1,19 +1,19 @@
+from django.utils import timezone
 from django.db import transaction
 from rest_framework import serializers
-import django.utils
-from django.utils.translation import gettext_lazy as _
+import django.utils.translation
 
-from ..models import (
-    OrderDeliverySub, OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
+from apps.sales.delivery.models import (
+    OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
 
 
 __all__ = [
     'OrderPickingListSerializer',
-    'OrderPickingDetailSerializer',
+    'OrderPickingSubDetailSerializer',
     'OrderPickingProductListSerializer',
     'OrderPickingSubListSerializer',
-    'OrderPickingUpdateSerializer',
+    'OrderPickingSubUpdateSerializer',
 ]
 
 
@@ -45,67 +45,73 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
         model = OrderPickingSub
         fields = (
             'id',
-            'date_done',
-            'previous_step',
-            'times',
-            'pickup_quantity',
-            'picked_quantity_before',
-            'remaining_quantity',
-            'picked_quantity',
-            'pickup_data',
+            'code',
+            'sale_order_data',
+            'date_created',
+            'state',
+            'estimated_delivery_date',
             'products',
         )
 
 
 class OrderPickingListSerializer(serializers.ModelSerializer):
+    sub_list = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_sub_list(cls, obj):
+        sub_list = []
+        query_sub_list = OrderPickingSub.objects.filter(
+            tenant_id=obj.tenant_id, company_id=obj.company_id,
+            order_picking=obj
+        )
+        if query_sub_list:
+            for query_sub in query_sub_list:
+                serializer = OrderPickingSubListSerializer(query_sub)
+                sub_list.append(serializer.data)
+
+        return sub_list
+
     class Meta:
         model = OrderPicking
         fields = (
-            'id',
-            'title',
-            'code',
-            'sale_order_id',
             'sale_order_data',
-            'ware_house_id',
             'ware_house_data',
             'estimated_delivery_date',
             'state',
-            'remarks',
-            'delivery_option',
-            'pickup_quantity',
-            'picked_quantity_before',
-            'remaining_quantity',
-            'picked_quantity',
-            'pickup_data',
             'sub',
-            'date_created', 'date_modified', 'is_active'
+            'sub_list',
+            'date_created',
         )
 
 
-class OrderPickingDetailSerializer(serializers.ModelSerializer):
-    sub = OrderPickingSubListSerializer()
+class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
+    products = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_products(cls, obj):
+        return OrderPickingProductListSerializer(
+            obj.orderpickingproduct_set.all(),
+            many=True,
+        ).data
 
     class Meta:
-        model = OrderPicking
+        model = OrderPickingSub
         fields = (
             'id',
             'code',
-            'sale_order_id',
+            'order_picking',
             'sale_order_data',
-            'ware_house_id',
             'ware_house_data',
             'estimated_delivery_date',
             'state',
             'remarks',
             'to_location',
-            'delivery_option',
+            'products',
             'pickup_quantity',
             'picked_quantity_before',
             'remaining_quantity',
             'picked_quantity',
-            'pickup_data',
-            'sub',
-            'date_created', 'date_modified', 'is_active'
+            'delivery_option',
         )
 
 
@@ -115,113 +121,110 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
     delivery_data = serializers.JSONField()
 
 
-class OrderPickingUpdateSerializer(serializers.ModelSerializer):
+class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
     products = ProductPickingUpdateSerializer(many=True)
     sale_order_id = serializers.UUIDField()
     delivery_option = serializers.IntegerField(min_value=0)
 
+    @classmethod
+    def validate_state(cls, value):
+        if value == 1:
+            raise serializers.ValidationError(
+                {
+                    'state': django.utils.translation.gettext_lazy('Can not update after status Done!')
+                }
+            )
+        return value
+
     @staticmethod
-    def update_delivery_sub_ver_one(delivery_sub, product_update):
-        obj_list_id = []
+    def update_picking_to_delivery_prod(instance, total, product_update):
+        delivery = OrderDelivery.objects.filter(
+            sale_order_id=instance.sale_order_data['id']
+        ).first()
+        delivery_sub = delivery.sub
+        # update stock cho delivery prod
         obj_update = []
+        # loop trong picking product
         for key, value in product_update.items():
-            delivery_data = value['delivery_data']
+            delivery_data = value['delivery_data'][0]
             delivery_prod = OrderDeliveryProduct.objects.filter(
                 delivery_sub=delivery_sub,
-                product_id=key
+                product_id=key,
+                uom_id=delivery_data['uom']
             )
             if delivery_prod.exists():
                 delivery_prod = delivery_prod.first()
+                # cộng vào stock cho delivery prod
                 delivery_prod.ready_quantity += value['stock']
-                temp = {}
-                current_delivery_data = delivery_prod.delivery_data
-                for uuid_str, value_num in delivery_data.items():
-                    if uuid_str in current_delivery_data:
-                        current_delivery_data[uuid_str] += value_num
-                    else:
-                        temp[uuid_str] = value_num
-                current_delivery_data.update(temp)
-                delivery_prod.delivery_data = current_delivery_data
+                delivery_prod.delivery_data.append(delivery_data)
                 obj_update.append(delivery_prod)
-            else:
-                obj_list_id.append(key)
+
         OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
-        return obj_list_id
+        # update ready stock cho delivery sub
+        delivery_sub.ready_quantity += total
+        if instance.delivery_option == 1 or instance.remaining_quantity == total:
+            delivery_sub.state = 1
+        delivery_sub.estimated_delivery_date = instance.estimated_delivery_date
+        delivery_sub.save(update_fields=['state', 'estimated_delivery_date', 'ready_quantity'])
 
-    @staticmethod
-    def update_delivery_sub(instance, total, product_update):
-        delivery = OrderDelivery.objects.filter(sale_order_id=instance.sale_order_id).first()
-        delivery_sub = delivery.sub
-        if not delivery_sub:
-            delivery_sub = OrderDeliverySub.objects.create(
-                order_delivery=delivery,
-                date_done=django.utils.timezone.now(),
-                previous_step=None,
-                times=1,
-                delivery_quantity=instance.pickup_quantity,
-                delivered_quantity_before=0,
-                remaining_quantity=instance.pickup_quantity,
-                ready_quantity=0,
-                delivery_data=None
+    @classmethod
+    def update_prod_current(cls, instance, prod_update, total_picked):
+        pickup_data_temp = {}
+        for key, item in prod_update.items():
+            delivery_data = item['delivery_data'][0]
+            # mỗi phiếu picking chỉ có 1 product match với warehouse nên có thể lấy value 0 của list delivery_data
+            get_prod = OrderPickingProduct.objects.filter(
+                picking_sub=instance,
+                product_id=key,
+                uom_id=delivery_data['uom']
             )
-            delivery.sub = delivery_sub
-        if instance.delivery_option == 1:
-            delivery_sub.ready_quantity = total
-        # loop trong product list được update từ picking
-        # lấy delivery_data từ item product
-        obj_list_id = OrderPickingUpdateSerializer.update_delivery_sub_ver_one(delivery_sub, product_update)
+            if get_prod.exists():
+                this_prod = get_prod.first()
+                this_prod.picked_quantity = item['stock']
 
-        create_new_prod = []
-        for item in OrderPickingProduct.objects.filter(
-                product_id__in=obj_list_id,
-                picking_sub=instance.sub
-        ):
-            val_new = OrderDeliveryProduct(
-                delivery_sub=delivery_sub,
-                product=item.product,
-                uom=item.uom,
-                delivery_quantity=item.pickup_quantity,
-                delivered_quantity_before=0,
-                remaining_quantity=item.remaining_quantity,
-                ready_quantity=product_update[str(item.product_id)],
-                picked_quantity=0,
-                delivery_data={}
+                pickup_data_temp[str(key)] = {
+                    'remaining_quantity': this_prod.remaining_quantity,
+                    'picked_quantity': item['stock'],
+                    'pickup_quantity': this_prod.pickup_quantity,
+                    'picked_quantity_before': this_prod.picked_quantity_before
+                }
+                this_prod.save(update_fields=['picked_quantity'])
+
+            cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
+
+        if total_picked > instance.remaining_quantity:
+            raise serializers.ValidationError(
+                {
+                    'products': django.utils.translation.gettext_lazy('Done quantity not equal remain quantity!')
+                }
             )
-            val_new.before_save()
-            create_new_prod.append(val_new)
-
-        OrderDeliveryProduct.objects.bulk_create(create_new_prod)
-
-        if instance.delivery_option == 1:
-            delivery.state = 1
-        elif total == instance.sub.remaining_quantity:
-            delivery.state = 2
-        delivery.estimated_delivery_date = instance.estimated_delivery_date
-        delivery.save(update_fields=['state', 'estimated_delivery_date', 'sub'])
+        return pickup_data_temp
 
     @staticmethod
     def create_new_picking_sub(instance):
-        sub = instance.sub
+        picking = instance.order_picking
         # create new sub follow by prev sub
         new_sub = OrderPickingSub.objects.create(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
-            order_picking=instance,
+            order_picking=picking,
             date_done=None,
-            previous_step=sub,
-            times=sub.times + 1,
-            pickup_quantity=sub.pickup_quantity,
-            picked_quantity_before=sub.picked_quantity_before + sub.picked_quantity,
-            remaining_quantity=sub.pickup_quantity - (sub.picked_quantity_before + sub.picked_quantity),
+            previous_step=instance,
+            times=instance.times + 1,
+            pickup_quantity=instance.pickup_quantity,
+            picked_quantity_before=instance.picked_quantity_before + instance.picked_quantity,
+            remaining_quantity=instance.pickup_quantity - (instance.picked_quantity_before + instance.picked_quantity),
             picked_quantity=0,
-            pickup_data=sub.pickup_data,
+            pickup_data=instance.pickup_data,
+            sale_order_data=picking.sale_order_data,
         )
-        instance.sub = new_sub
-        instance.save(update_fields=['sub'])
+
+        picking.sub = new_sub
+        picking.save(update_fields=['sub'])
         # create prod with new sub id
         obj_new_prod = []
-        for obj in OrderPickingProduct.objects.filter_current(
-                picking_sub=sub
+        for obj in OrderPickingProduct.objects.filter(
+                picking_sub=instance
         ):
             new_item = OrderPickingProduct(
                 product_data=obj.product_data,
@@ -238,86 +241,29 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
             obj_new_prod.append(new_item)
         OrderPickingProduct.objects.bulk_create(obj_new_prod)
 
-    @staticmethod
-    def isupdate_picking_info(instance, validated_data):
-        # update picking info
-        picking_obj = instance
-        picking_obj.estimated_delivery_date = validated_data['estimated_delivery_date']
-        picking_obj.ware_house = validated_data['ware_house']
-        picking_obj.to_location = validated_data['to_location']
-        picking_obj.remarks = validated_data['remarks']
-        picking_obj.save(
-            update_fields=['estimated_delivery_date', 'ware_house', 'ware_house_data', 'to_location',
-                           'remarks']
-        )
-
-    @classmethod
-    def update_prod_current_by_sub(cls, instance, prod_update, total_picked):
-        pickup_data_temp = {}
-        prod_list_by_sub = OrderPickingProduct.objects.filter_current(
-            picking_sub=instance.sub
-        )
-        if instance.delivery_option == 1 or total_picked == instance.sub.remaining_quantity:
-            # cho phép delivery nhiều lần or phiếu đã pick đủ
-            # update current prod and update delivery prod
-            for obj in prod_list_by_sub:
-                if str(obj.product_id) in prod_update:
-                    # nếu obj có trong list update
-                    pickup_data_temp[str(obj.product_id)] = {
-                        'remaining_quantity': obj.remaining_quantity,
-                        'picked_quantity': prod_update[str(obj.product_id)]['stock'],
-                        'pickup_quantity': obj.pickup_quantity,
-                        'picked_quantity_before': obj.picked_quantity_before
-                    }
-                    obj.picked_quantity = prod_update[str(obj.product_id)]['stock']
-                    obj.save(update_fields=['picked_quantity'])
-
-            cls.update_delivery_sub(instance, total_picked, prod_update)
-
-        elif instance.delivery_option == 0 and total_picked < instance.sub.remaining_quantity:
-            raise serializers.ValidationError(
-                {
-                    'products': _('Done quantity not equal remain quantity!')
-                }
-            )
-        return pickup_data_temp
-
     @classmethod
     def update_current_sub(cls, instance, pickup_data, total):
         # update sub after update product
-        picking_sub = instance.sub
-        picking_sub.date_done = django.utils.timezone.now()
-        picking_sub.pickup_data = pickup_data
-        picking_sub.picked_quantity = total
-        picking_sub.to_location = instance.to_location
-        picking_sub.remarks = instance.remarks
-        picking_sub.ware_house = instance.ware_house
-        picking_sub.save(
+        instance.date_done = timezone.now()
+        instance.pickup_data = pickup_data
+        instance.picked_quantity = total
+        instance.state = 1
+        instance.save(
             update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'to_location', 'remarks',
-                           'date_done']
+                           'date_done', 'state', 'estimated_delivery_date']
         )
-        if instance.delivery_option == 1 and not total == picking_sub.remaining_quantity:
+
+        if total < instance.remaining_quantity:
             # giao hàng nhiều lần
             # update current sub
-            # tạo mới sub and tạo mới prod, gán sub cho phiếu picking
+            # tạo mới sub and tạo mới prod, gán sub cho prod picking
             cls.create_new_picking_sub(instance)
-
-        if total == picking_sub.remaining_quantity:
-            instance.state = 1
-            instance.save(update_fields=['state'])
-
-    @classmethod
-    def validate_state(cls, value):
-        if value == 1:
-            raise serializers.ValidationError(
-                {
-                    'state': _('Can not update after status Done!')
-                }
-            )
-        return value
+        if total == instance.remaining_quantity:
+            picking = instance.order_picking
+            picking.state = 1
+            picking.save(update_fields=['state'])
 
     def update(self, instance, validated_data):
-        picking_obj = instance
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
@@ -327,21 +273,20 @@ class OrderPickingUpdateSerializer(serializers.ModelSerializer):
                 'stock': item['done'],
                 'delivery_data': item['delivery_data']
             }
+        instance.estimated_delivery_date = validated_data['estimated_delivery_date']
+        instance.remarks = validated_data['remarks']
+        instance.to_location = validated_data['to_location']
+        instance.ware_house = validated_data['ware_house']
         try:
             with transaction.atomic():
-                # update picking info step 1
-                self.isupdate_picking_info(instance, validated_data)
-
-                # update product by sub if partial status true or picked equal remain
-                pickup_data = self.update_prod_current_by_sub(instance, product_done, picked_quantity_total)
-
-                # update and tracking current sub
+                # update picking prod và delivery prod trừ vào warehouse stock
+                pickup_data = self.update_prod_current(instance, product_done, picked_quantity_total)
                 self.update_current_sub(instance, pickup_data, picked_quantity_total)
         except Exception as err:
             print(err)
-        return picking_obj
+        return instance
 
     class Meta:
-        model = OrderPicking
-        fields = ('products', 'sale_order_id', 'delivery_option', 'sub', 'estimated_delivery_date', 'ware_house',
-                  'ware_house_data', 'to_location', 'remarks')
+        model = OrderPickingSub
+        fields = ('products', 'sale_order_id', 'order_picking', 'state', 'estimated_delivery_date', 'ware_house',
+                  'to_location', 'remarks', 'delivery_option')
