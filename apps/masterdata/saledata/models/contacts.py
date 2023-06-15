@@ -32,9 +32,11 @@ class Interest(MasterDataAbstractModel):
 
 # Contact
 class Contact(DataAbstractModel):
-    owner = models.UUIDField(
-        help_text='employee is contact owner',
-        null=True,
+    owner = models.ForeignKey(
+        'hr.Employee',
+        verbose_name='Contact owner mapped',
+        on_delete=models.CASCADE,
+        null=True
     )
     biography = models.CharField(
         blank=True,
