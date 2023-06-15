@@ -150,14 +150,12 @@ class OpportunityProductCategory(SimpleAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_product_category_opportunity",
-        null=True
     )
 
     product_category = models.ForeignKey(
         'saledata.ProductCategory',
         on_delete=models.CASCADE,
         related_name="opportunity_product_category_product_category",
-        null=True
     )
 
     class Meta:
@@ -173,7 +171,6 @@ class OpportunityProduct(SimpleAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_product_opportunity",
-        null=True
     )
 
     product = models.ForeignKey(
@@ -233,7 +230,6 @@ class OpportunityCompetitor(SimpleAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_competitor_opportunity",
-        null=True
     )
 
     competitor = models.ForeignKey(
@@ -274,7 +270,6 @@ class OpportunityContactRole(SimpleAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_contact_role_opportunity",
-        null=True
     )
 
     type_customer = models.SmallIntegerField(
@@ -316,7 +311,6 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_customer_decision_factor_opportunity",
-        null=True
     )
 
     factor = models.ForeignKey(
@@ -324,7 +318,6 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='reason why customer buy product',
         related_query_name='opportunity_customer_decision_factor_factor',
-        null=True
     )
 
     class Meta:
