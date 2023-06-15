@@ -120,7 +120,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                     product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
                     fill__tenant=True, fill__company=True,
                 )
-            return obj.stock_amount
+            return obj.stock_amount - obj.sold_amount
         except cls.DoesNotExist:
             pass
         return 0
@@ -167,3 +167,26 @@ class ProductWareHouse(MasterDataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+# class ProductWareHousePeriod(MasterDataAbstractModel):
+#     product_warehouse = models.ForeignKey(
+#         ProductWareHouse,
+#         on_delete=models.CASCADE,
+#         verbose_name='Product WareHouse related',
+#     )
+#     opening_balance = models.FloatField()
+#     purchase_amount = models.FloatField()
+#     bought_amount = models.FloatField()
+#
+#     year = models.PositiveSmallIntegerField()
+#     order = models.PositiveSmallIntegerField()
+#     start_date = models.DateTimeField()
+#     end_date = models.DateTimeField()
+#
+#     class Meta:
+#         verbose_name = 'Product at WareHouse in Period'
+#         verbose_name_plural = 'Product at WareHouse in Period'
+#         ordering = ('-date_created',)
+#         default_permissions = ()
+#         permissions = ()

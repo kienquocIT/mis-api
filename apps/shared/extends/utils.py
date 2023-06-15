@@ -100,6 +100,22 @@ class TypeCheck:
             return True
         return False
 
+    @classmethod
+    def list_child_type(cls, data: list, child_type: type) -> bool:
+        if isinstance(data, list):
+            return all(isinstance(x, child_type) for x in data)
+        return False
+
+    @classmethod
+    def dict_child_type(cls, data: dict, key_type: type, value_type: type) -> bool:
+        if isinstance(data, dict):
+            return all(
+                all(
+                    [isinstance(key, key_type), isinstance(value, value_type)]
+                ) for key, value in data.items()
+            )
+        return False
+
 
 class FORMATTING:
     DATETIME = settings.REST_FRAMEWORK['DATETIME_FORMAT']

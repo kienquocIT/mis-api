@@ -354,6 +354,7 @@ class PromotionCreateSerializer(serializers.ModelSerializer):
 
 class PromotionDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
+    sale_order_used = serializers.SerializerMethodField()
 
     class Meta:
         model = Promotion
@@ -371,7 +372,8 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
             'is_discount',
             'is_gift',
             'discount_method',
-            'gift_method'
+            'gift_method',
+            'sale_order_used',
         )
 
     @classmethod
@@ -383,6 +385,18 @@ class PromotionDetailSerializer(serializers.ModelSerializer):
                 'abbreviation': obj.currency.abbreviation,
             }
         return {}
+
+    @classmethod
+    def get_sale_order_used(cls, obj):
+        return [
+            {
+                'customer_id': order_used[0],
+                'date_created': order_used[1],
+            } for order_used in obj.sale_order_product_promotion.values_list(
+                'sale_order__customer_id',
+                'sale_order__date_created'
+            )
+        ]
 
 
 class PromotionUpdateSerializer(serializers.ModelSerializer):

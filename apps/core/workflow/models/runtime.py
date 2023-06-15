@@ -6,7 +6,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.shared import (
-    SimpleAbstractModel, WORKFLOW_CONFIG_MODE,
+    SimpleAbstractModel, WORKFLOW_CONFIG_MODE, TypeCheck,
 )
 
 from .config import (
@@ -187,6 +187,29 @@ class Runtime(SimpleAbstractModel):
                 )
             )
         return []
+
+    @staticmethod
+    def parse_zone_and_properties(zone_and_properties: list[any]):
+        code_arr = []
+        if zone_and_properties and isinstance(zone_and_properties, list):
+            for item in zone_and_properties:
+                for detail in item['properties_detail']:
+                    code_arr.append(detail['code'])
+        return code_arr
+
+    def find_task_id_get_zones(
+            self,
+            task_id: Union[UUID, str],
+            employee_id: Union[UUID, str]
+    ) -> (bool, Union[None, list[any]]):
+        if TypeCheck.check_uuid(task_id):
+            try:
+                runtime_assignee_obj = RuntimeAssignee.objects.get(pk=task_id, employee_id=employee_id)
+                if runtime_assignee_obj.stage and runtime_assignee_obj.stage.runtime_id == self.id:
+                    return True, self.parse_zone_and_properties(runtime_assignee_obj.zone_and_properties)
+            except RuntimeAssignee.DoesNotExist:
+                return False, None
+        return False, None
 
     class Meta:
         verbose_name = 'Runtime'
