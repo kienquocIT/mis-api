@@ -363,6 +363,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
     title = serializers.CharField(required=False)
     is_input_rate = serializers.BooleanField(required=False)
+    sale_person = serializers.UUIDField(required=False)
 
     class Meta:
         model = Opportunity
@@ -370,6 +371,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
+            'sale_person',
             'budget_value',
             'open_date',
             'is_input_rate',
@@ -446,6 +448,17 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         if value < 0:
             raise serializers.ValidationError({'total product price': OpportunityMsg.VALUE_GREATER_THAN_ZERO})
         return value
+
+    @classmethod
+    def validate_sale_person(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def update(self, instance, validated_data):
         if 'product_category' in validated_data:
@@ -526,14 +539,10 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.customer:
-            data = []
-            for manager in obj.customer.manager:
-                data.append(
-                    {
-                        'id': manager['id'],
-                        'name': manager['fullname'],
-                    }
-                )
-            return data
-        return []
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'name': obj.sale_person.get_full_name(),
+                'code': obj.sale_person.code,
+            }
+        return {}
