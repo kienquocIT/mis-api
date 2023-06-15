@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, Indicator
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
+from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -127,3 +128,38 @@ class QuotationConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
         return self.update(request, *args, **kwargs)
+
+
+# Indicator
+class QuotationIndicatorList(
+    BaseListMixin,
+    BaseCreateMixin
+):
+    permission_classes = [IsAuthenticated]
+    queryset = Indicator.objects
+    filterset_fields = ['application_code']
+    serializer_list = IndicatorListSerializer
+    # serializer_create = QuotationCreateSerializer
+    # serializer_detail = QuotationListSerializer
+    list_hidden_field = ['company_id']
+    # create_hidden_field = ['company_id']
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="Quotation Indicator List",
+        operation_description="Get Quotation Indicator List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    # @swagger_auto_schema(
+    #     operation_summary="Create Quotation",
+    #     operation_description="Create new Quotation",
+    #     request_body=QuotationCreateSerializer,
+    # )
+    # @mask_view(login_require=True, auth_require=True, code_perm='')
+    # def post(self, request, *args, **kwargs):
+    #     return self.create(request, *args, **kwargs)
