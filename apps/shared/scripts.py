@@ -188,3 +188,16 @@ def make_sure_quotation_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).quotation_config()
     print('Make sure quotation config is done!')
+
+
+def set_null_contact_owner():
+    list_id = ["d0775ed8-93c6-4e3f-9325-a65fd9131472", "7dcaeee9-af82-4dc8-94d3-a1e09acdbf1a",
+               "7dcaeee9-af82-4dc8-94d3-a1e09acdbf1a", "d0775ed8-93c6-4e3f-9325-a65fd9131472",
+               "f7230502-922b-4285-b14a-0f08b244c818", "f7230502-922b-4285-b14a-0f08b244c818",
+               "f0933e51-8b6b-4dd6-9a7d-b6777d49b333", "5b0311d4-c1d0-467e-89c4-028498988b63",
+               "fa5e3399-e32e-4263-bf96-171f0c856288", "d0775ed8-93c6-4e3f-9325-a65fd9131472"]
+    contact = Contact.objects.filter(owner__in=list_id)
+    if contact:
+        contact.update(owner=None)
+    print("update contact_owner done.")
+    return True
