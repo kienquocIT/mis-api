@@ -135,7 +135,8 @@ ApplicationProperty_data = {
         'type': 5,
         'content_type': 'saledata.Account',
     },
-    # quotation
+
+    # fields of quotation
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'id': 'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f',
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
