@@ -72,8 +72,3 @@ class GoodReceiptDetail(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
-
-    @swagger_auto_schema(operation_summary='Destroy a good receipt')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def delete(self, request, *args, pk, **kwargs):
-        return self.destroy(request, *args, pk, **kwargs)

@@ -159,6 +159,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Contact", request_body=ContactUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
+        print('UPDATE BODY: ', request.data)
         return self.update(request, *args, **kwargs)
 
 

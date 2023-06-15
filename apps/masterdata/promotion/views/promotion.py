@@ -13,7 +13,7 @@ __all__ = ['PromotionList', 'PromotionDetail', 'PromotionCheckList']
 
 
 class PromotionList(BaseListMixin, BaseCreateMixin):
-    queryset = Promotion.objects.all()
+    queryset = Promotion.objects
     serializer_list = PromotionListSerializer
     serializer_create = PromotionCreateSerializer
     serializer_detail = PromotionListSerializer

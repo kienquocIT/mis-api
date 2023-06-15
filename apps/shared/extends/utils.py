@@ -100,6 +100,22 @@ class TypeCheck:
             return True
         return False
 
+    @classmethod
+    def list_child_type(cls, data: list, child_type: type) -> bool:
+        if isinstance(data, list):
+            return all(isinstance(x, child_type) for x in data)
+        return False
+
+    @classmethod
+    def dict_child_type(cls, data: dict, key_type: type, value_type: type) -> bool:
+        if isinstance(data, dict):
+            return all(
+                all(
+                    [isinstance(key, key_type), isinstance(value, value_type)]
+                ) for key, value in data.items()
+            )
+        return False
+
 
 class FORMATTING:
     DATETIME = settings.REST_FRAMEWORK['DATETIME_FORMAT']
@@ -113,7 +129,25 @@ class FORMATTING:
         return str(value)
 
     @classmethod
+    def parse_to_datetime(cls, value_str):
+        if value_str:
+            if isinstance(value_str, datetime):
+                return value_str
+            if isinstance(value_str, str):
+                return datetime.strptime(value_str, cls.DATETIME)
+        return None
+
+    @classmethod
     def parse_date(cls, value):
         if isinstance(value, date):
             return datetime.strftime(value, cls.DATE) if value else None
         return str(value)
+
+    @classmethod
+    def parse_to_date(cls, value_str):
+        if value_str:
+            if isinstance(value_str, date):
+                return value_str
+            if isinstance(value_str, str):
+                return datetime.strptime(value_str, cls.DATE)
+        return None

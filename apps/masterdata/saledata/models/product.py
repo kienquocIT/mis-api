@@ -110,6 +110,14 @@ class Product(DataAbstractModel):
         default=dict,
     )
 
+    warehouses = models.ManyToManyField(
+        'saledata.WareHouse',
+        through='saledata.ProductWareHouse',
+        symmetrical=False,
+        blank=True,
+        related_name='warehouses_of_product',
+    )
+
     class Meta:
         verbose_name = 'Product'
         verbose_name_plural = 'Products'

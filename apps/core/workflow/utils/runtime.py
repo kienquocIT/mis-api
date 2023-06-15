@@ -1,11 +1,14 @@
 import logging
+from datetime import timedelta
 from typing import Union
 from uuid import UUID
 
 from django.db import models
+from django.utils import timezone
 
+from apps.core.log.tasks import force_log_activity
 from apps.shared import (
-    FORMATTING, DisperseModel, MAP_FIELD_TITLE,
+    FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
 )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp,
@@ -20,6 +23,7 @@ __all__ = [
     'DocHandler',
     'RuntimeHandler',
     'RuntimeStageHandler',
+    'RuntimeLogHandler',
 ]
 
 
@@ -49,7 +53,6 @@ class DocHandler:
 
     @classmethod
     def force_added_with_runtime(cls, runtime_obj):
-        print('added_with_runtime: ', runtime_obj.doc_id)
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
                 'tenant_id': runtime_obj.tenant_id,
@@ -70,7 +73,6 @@ class DocHandler:
 
     @classmethod
     def force_finish_with_runtime(cls, runtime_obj):
-        print('finish_with_runtime: ', runtime_obj.doc_id)
         obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
             default_filter={
                 'tenant_id': runtime_obj.tenant_id,
@@ -182,6 +184,7 @@ class RuntimeHandler:
                     stage_currents=None,
                     doc_employee_created=cls.employee_created_obj(doc_obj=doc_obj),
                 )
+                # update runtime to doc
                 doc_obj.workflow_runtime = runtime_obj
                 doc_obj.save(update_fields=['workflow_runtime'])
                 return runtime_obj
@@ -231,7 +234,7 @@ class RuntimeHandler:
                         stage_obj=rt_assignee.stage,
                         actor_obj=employee_assignee_obj,
                         is_system=False,
-                    ).log_approval_doc()
+                    ).log_approval_task()
                     rt_assignee.is_done = True
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
@@ -272,12 +275,33 @@ class RuntimeStageHandler:
 
     @classmethod
     def __get_zone_and_properties(cls, zone_objs: list[Zone]) -> list[dict]:
-        return [{
-            "id": str(obj.id),
-            "title": obj.title,
-            "remark": obj.remark,
-            "properties": [str(x) for x in obj.properties.all().values_list('id', flat=True)]
-        } for obj in zone_objs]
+        result = []
+        for obj in zone_objs:
+            properties = []
+            properties_detail = []
+            for detail in obj.properties.all():
+                properties.append(str(detail.id))
+                properties_detail.append(
+                    {
+                        'id': str(detail.id),
+                        'code': str(detail.code),
+                        'type': str(detail.type),
+                        'content_type': str(detail.content_type),
+                        'properties': str(detail.properties),
+                        'compare_operator': str(detail.compare_operator),
+                        'remark': str(detail.remark),
+                    }
+                )
+            result.append(
+                {
+                    "id": str(obj.id),
+                    "title": obj.title,
+                    "remark": obj.remark,
+                    "properties": properties,
+                    "properties_detail": properties_detail,
+                }
+            )
+        return result
 
     @classmethod
     def __parse_collaboration(cls, node: Node, doc_params: dict = dict) -> dict:
@@ -421,18 +445,61 @@ class RuntimeStageHandler:
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
                 ).log_create_doc()
+                # force log run WF
+                call_task_background(
+                    force_log_activity,
+                    **{
+                        'tenant_id': self.runtime_obj.tenant_id,
+                        'company_id': self.runtime_obj.company_id,
+                        'request_method': '',
+                        'date_created': RuntimeLogHandler.get_correct_date_log(self.runtime_obj, 3),
+                        # + 10s for this crated after doc log created
+                        'doc_id': self.runtime_obj.doc_id,
+                        'doc_app': self.runtime_obj.app_code,
+                        'automated_logging': True,
+                        'user_id': None,
+                        'employee_id': None,
+                        'msg': 'Runtime Workflow is successfully',
+                        'data_change': {},
+                        'change_partial': False,
+                    },
+                )
             case 'approved':
                 RuntimeLogHandler(
                     stage_obj=stage_obj,
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
-                ).log_approval_doc()
+                ).log_approval_station()
+                call_task_background(
+                    force_log_activity,
+                    **{
+                        'tenant_id': self.runtime_obj.tenant_id,
+                        'company_id': self.runtime_obj.company_id,
+                        'date_created': RuntimeLogHandler.get_correct_date_log(self.runtime_obj, 6),
+                        'doc_id': stage_obj.runtime.doc_id,
+                        'doc_app': stage_obj.runtime.app_code,
+                        'automated_logging': True,
+                        'msg': 'Final approval station',
+                    },
+                )
             case 'completed':
                 RuntimeLogHandler(
                     stage_obj=stage_obj,
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
-                ).log_finish_doc()
+                ).log_finish_station_doc()
+                call_task_background(
+                    force_log_activity,
+                    **{
+                        'tenant_id': self.runtime_obj.tenant_id,
+                        'company_id': self.runtime_obj.company_id,
+                        'date_created': RuntimeLogHandler.get_correct_date_log(self.runtime_obj, 9),
+                        'doc_id': stage_obj.runtime.doc_id,
+                        'doc_app': stage_obj.runtime.app_code,
+                        'automated_logging': True,
+                        'msg': 'Final complete station',
+                    },
+                )
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj)
         if len(assignee_created) == 0:
@@ -559,6 +626,13 @@ class WFConfigSupport:
 
 
 class RuntimeLogHandler:
+    @staticmethod
+    def get_correct_date_log(runtime_obj: Runtime, seconds_compare_and_add: int):
+        delta_time = timezone.now() - runtime_obj.date_created
+        if delta_time.seconds > seconds_compare_and_add:
+            return timezone.now()
+        return timezone.now() + timedelta(seconds=seconds_compare_and_add)
+
     def __init__(
             self,
             stage_obj: RuntimeStage,
@@ -606,7 +680,7 @@ class RuntimeLogHandler:
             return RuntimeLog.objects.create(**data)
         return RuntimeLog(**data)
 
-    def log_approval_doc(self):
+    def log_approval_station(self):
         return RuntimeLog.objects.create(
             actor=self.actor_obj,
             runtime=self.stage_obj.runtime,
@@ -617,7 +691,33 @@ class RuntimeLogHandler:
             is_system=self.is_system,
         )
 
-    def log_finish_doc(self):
+    def log_approval_task(self):
+        call_task_background(
+            force_log_activity,
+            **{
+                'tenant_id': self.stage_obj.runtime.tenant_id,
+                'company_id': self.stage_obj.runtime.company_id,
+                'date_created': timezone.now(),
+                'doc_id': self.stage_obj.runtime.doc_id,
+                'doc_app': self.stage_obj.runtime.app_code,
+                'automated_logging': False,
+                'user_id': None,
+                'employee_id': self.actor_obj.id,
+                'msg': 'Approved',
+                'task_workflow_id': None,
+            },
+        )
+        return RuntimeLog.objects.create(
+            actor=self.actor_obj,
+            runtime=self.stage_obj.runtime,
+            stage=self.stage_obj,
+            kind=2,
+            action=0,
+            msg='Approved',
+            is_system=self.is_system,
+        )
+
+    def log_finish_station_doc(self):
         return RuntimeLog.objects.create(
             actor=self.actor_obj,
             runtime=self.stage_obj.runtime,
@@ -636,5 +736,16 @@ class RuntimeLogHandler:
             kind=2,
             action=0,
             msg='Perform a action',
+            is_system=self.is_system,
+        )
+
+    def log_update_at_zone(self):
+        return RuntimeLog.objects.create(
+            actor=self.actor_obj,
+            runtime=self.stage_obj.runtime,
+            stage=self.stage_obj,
+            kind=1,  # in doc
+            action=0,
+            msg='Update data at zone',
             is_system=self.is_system,
         )

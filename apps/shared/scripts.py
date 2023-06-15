@@ -7,7 +7,11 @@ from apps.masterdata.saledata.models.accounts import AccountType, Account
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.base.models import PlanApplication
 from ..core.tenant.models import Tenant, TenantPlan
-from ..sales.cashoutflow.models import AdvancePayment, ReturnAdvance
+from ..sales.cashoutflow.models import (
+    AdvancePayment, AdvancePaymentCost,
+    ReturnAdvance, ReturnAdvanceCost,
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder
+)
 from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
@@ -121,11 +125,23 @@ def update_account_billing_address():
 
 def delete_all_ap():
     AdvancePayment.objects.all().delete()
+    AdvancePaymentCost.objects.all().delete()
+    return True
+
+
+def delete_all_payment():
+    Payment.objects.all().delete()
+    PaymentCost.objects.all().delete()
+    PaymentCostItems.objects.all().delete()
+    PaymentCostItemsDetail.objects.all().delete()
+    PaymentSaleOrder.objects.all().delete()
+    PaymentQuotation.objects.all().delete()
     return True
 
 
 def delete_all_return():
     ReturnAdvance.objects.all().delete()
+    ReturnAdvanceCost.objects.all().delete()
     return True
 
 
@@ -171,3 +187,16 @@ def make_sure_quotation_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).quotation_config()
     print('Make sure quotation config is done!')
+
+
+def set_null_contact_owner():
+    list_id = ["d0775ed8-93c6-4e3f-9325-a65fd9131472", "7dcaeee9-af82-4dc8-94d3-a1e09acdbf1a",
+               "7dcaeee9-af82-4dc8-94d3-a1e09acdbf1a", "d0775ed8-93c6-4e3f-9325-a65fd9131472",
+               "f7230502-922b-4285-b14a-0f08b244c818", "f7230502-922b-4285-b14a-0f08b244c818",
+               "f0933e51-8b6b-4dd6-9a7d-b6777d49b333", "5b0311d4-c1d0-467e-89c4-028498988b63",
+               "fa5e3399-e32e-4263-bf96-171f0c856288", "d0775ed8-93c6-4e3f-9325-a65fd9131472"]
+    contact = Contact.objects.filter(owner__in=list_id)
+    if contact:
+        contact.update(owner=None)
+    print("update contact_owner done.")
+    return True

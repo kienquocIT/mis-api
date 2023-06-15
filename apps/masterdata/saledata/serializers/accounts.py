@@ -312,6 +312,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    manager = serializers.JSONField()
     contact_primary = serializers.UUIDField(required=False)
     parent_account = serializers.UUIDField(required=False, allow_null=True)
     name = serializers.CharField(max_length=150)
@@ -375,13 +376,14 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
 
-                account_mapped_tax_code = Account.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    tax_code=tax_code
-                ).exists()
-                if account_mapped_tax_code:
-                    raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
+                if tax_code:
+                    account_mapped_tax_code = Account.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        tax_code=tax_code
+                    ).exists()
+                    if account_mapped_tax_code:
+                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
             else:
                 raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
         validate_data['account_type'] = account_types
@@ -604,6 +606,7 @@ def add_credit_cards_information(instance, credit_cards_list):
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
+    manager = serializers.JSONField()
     account_type = serializers.JSONField()
     parent_account = serializers.UUIDField(required=False, allow_null=True)
     bank_accounts_information = serializers.JSONField()
@@ -673,13 +676,14 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
 
-                account_mapped_tax_code = Account.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    tax_code=tax_code
-                ).first()
-                if account_mapped_tax_code and account_mapped_tax_code != self.instance:
-                    raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
+                if tax_code:
+                    account_mapped_tax_code = Account.objects.filter_current(
+                        fill__tenant=True,
+                        fill__company=True,
+                        tax_code=tax_code
+                    ).first()
+                    if account_mapped_tax_code and account_mapped_tax_code != self.instance:
+                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
             else:
                 raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
         validate_data['account_type'] = account_types
