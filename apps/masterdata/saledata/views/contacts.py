@@ -119,7 +119,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('salutation', 'account_name')
+        return super().get_queryset().select_related('salutation', 'account_name', 'owner')
 
     @swagger_auto_schema(
         operation_summary="Contact list",

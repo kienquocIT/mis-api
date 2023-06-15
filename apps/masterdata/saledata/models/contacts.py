@@ -74,7 +74,6 @@ class Contact(DataAbstractModel):
         verbose_name='account name',
         on_delete=models.CASCADE,
         null=True,
-        blank=True,
         related_name='contact_account_name'
     )
     email = models.CharField(

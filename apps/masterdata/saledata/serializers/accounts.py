@@ -499,20 +499,15 @@ class AccountDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            contact_owner = Employee.objects.filter(
-                id=obj.owner.owner
-            ).first()
-
-            if contact_owner:
-                contact_owner_information = {'id': str(obj.owner.owner), 'fullname': contact_owner.get_full_name(2)}
-                return {
-                    'id': obj.owner_id,
-                    'fullname': obj.owner.fullname,
-                    'job_title': obj.owner.job_title,
-                    'email': obj.owner.email,
-                    'mobile': obj.owner.mobile,
-                    'owner': contact_owner_information
-                }
+            contact_owner_information = {'id': str(obj.owner.owner_id), 'fullname': obj.owner.owner.get_full_name(2)}
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.fullname,
+                'job_title': obj.owner.job_title,
+                'email': obj.owner.email,
+                'mobile': obj.owner.mobile,
+                'contact_owner': contact_owner_information
+            }
         return {}
 
     @classmethod
