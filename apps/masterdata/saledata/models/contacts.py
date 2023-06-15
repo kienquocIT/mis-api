@@ -33,14 +33,7 @@ class Interest(MasterDataAbstractModel):
 # Contact
 class Contact(DataAbstractModel):
     owner = models.UUIDField(
-        null=True,
         help_text='employee is contact owner'
-    )
-    owner_mapped = models.ForeignKey(
-        'hr.Employee',
-        verbose_name='Contact owner mapped',
-        on_delete=models.CASCADE,
-        null=True
     )
     biography = models.CharField(
         blank=True,
@@ -78,6 +71,7 @@ class Contact(DataAbstractModel):
         verbose_name='account name',
         on_delete=models.CASCADE,
         null=True,
+        blank=True,
         related_name='contact_account_name'
     )
     email = models.CharField(
@@ -96,12 +90,6 @@ class Contact(DataAbstractModel):
         null=True,
         blank=True,
         help_text='report to a contact'
-    )
-    report_to_mapped = models.ForeignKey(
-        'self',
-        null=True,
-        on_delete=models.CASCADE,
-        verbose_name='report to another contact'
     )
 
     # {

@@ -188,25 +188,3 @@ def make_sure_quotation_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).quotation_config()
     print('Make sure quotation config is done!')
-
-
-def update_contact_owner():
-    all_contacts = Contact.objects.all()
-    for item in all_contacts:
-        try:
-            item.owner_mapped_id = item.owner
-            item.save()
-        except Employee.DoesNotExist:
-            item.delete()
-    return True
-
-
-def update_report_to():
-    all_contacts = Contact.objects.all()
-    for item in all_contacts:
-        try:
-            item.report_to_mapped_id = item.report_to
-            item.save()
-        except Employee.DoesNotExist:
-            item.delete()
-    return True
