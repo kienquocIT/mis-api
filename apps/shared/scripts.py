@@ -1,5 +1,4 @@
 from apps.core.company.models import Company
-from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models.product import ProductType, Product
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
