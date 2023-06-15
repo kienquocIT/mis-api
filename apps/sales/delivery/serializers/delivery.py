@@ -213,9 +213,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 product=obj.product,
                 uom=obj.uom,
                 delivery_quantity=obj.delivery_quantity,
-                delivered_quantity_before=obj.picked_quantity,
-                remaining_quantity=obj.delivery_quantity - obj.picked_quantity,
-                ready_quantity=obj.delivery_quantity - obj.picked_quantity,
+                delivered_quantity_before=obj.delivered_quantity_before + obj.picked_quantity,
+                remaining_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
+                ready_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
                 picked_quantity=0
             )
             new_prod.before_save()
@@ -247,9 +247,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             previous_step=instance,
             times=instance.times + 1,
             delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=total_done,
-            remaining_quantity=instance.delivery_quantity - total_done,
-            ready_quantity=instance.delivery_quantity - total_done,
+            delivered_quantity_before=instance.delivered_quantity_before + total_done,
+            remaining_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
+            ready_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
             delivery_data=None,
             is_updated=False,
             state=0 if case == 4 else 1,
