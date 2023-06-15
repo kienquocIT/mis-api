@@ -4,6 +4,7 @@ from .views import QuotationList, QuotationDetail, QuotationExpenseList, Quotati
 
 urlpatterns = [
     path('config', QuotationConfigDetail.as_view(), name='QuotationConfigDetail'),
+    # path('indicator-lists', QuotationIndicatorList.as_view(), name='QuotationIndicatorList'),
     path('lists', QuotationList.as_view(), name='QuotationList'),
     path('<str:pk>', QuotationDetail.as_view(), name='QuotationDetail'),
     path('quotation-expense-list/lists', QuotationExpenseList.as_view(), name='QuotationExpenseList'),

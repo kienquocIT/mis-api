@@ -58,6 +58,11 @@ Application_data = {
         "code": "account",
         'app_label': 'saledata',
     },
+    "eeab5d9e-54c6-4e85-af75-477b740d7523": {
+        "title": "Quotation",
+        "code": "quotation",
+        'app_label': 'quotation',
+    },
 }
 
 PlanApplication_data = {
@@ -80,6 +85,10 @@ PlanApplication_data = {
     "f1aeea57-85e2-4349-9eb9-cc14aa4c74fd": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+    },
+    "b940dec6-2d45-4768-906b-4b15c0f9956c": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "eeab5d9e-54c6-4e85-af75-477b740d7523",  # Quotation
     },
 
 }
