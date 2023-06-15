@@ -230,9 +230,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "DELIVERY.CODE."
-        temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-        new_code = f"{char}{temper}"
+        char = "D"
+        temper = delivery + 1
+        new_code = f"{char}{temper:03d}"
         return new_code
 
     @classmethod

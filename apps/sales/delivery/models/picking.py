@@ -133,10 +133,10 @@ class OrderPicking(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "PICKING.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "P"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def before_save(self):
@@ -267,10 +267,10 @@ class OrderPickingSub(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "PICKING.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "P"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def before_save(self):
