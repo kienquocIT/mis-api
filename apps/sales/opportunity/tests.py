@@ -209,4 +209,49 @@ class TestCaseOpportunity(AdvanceTestCase):
             ['id', 'title', 'code', 'customer', 'sale_person', 'open_date'],
             check_sum_second=True,
         )
+
+        data1 = {
+            "title": "Dự Án Của Nam nè",
+            "customer": '83de3bab-edc2-4d72-ac11-dfa4540cec88',
+            "product_category": [],
+            "sale_person": emp
+        }
+        response1 = self.client.post(url, data1, format='json')
+
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['detail'],
+            check_sum_second=True,
+        )
+
+        data2 = {
+            "title": "Dự Án Của Nam nè",
+            "customer": customer,
+            "product_category": [],
+            "sale_person": '83de3bab-edc2-4d72-ac11-dfa4540cec88'
+        }
+        response2 = self.client.post(url, data2, format='json')
+
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response2.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['errors'],
+            ['detail'],
+            check_sum_second=True,
+        )
+
         return response
