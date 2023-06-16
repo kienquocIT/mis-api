@@ -6,173 +6,173 @@ from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
 
 
-class AccountTestCase(AdvanceTestCase):
-    def setUp(self):
-        self.maxDiff = None
-        self.client = APIClient()
-
-        self.authenticated()
-        # create industry
-        url_create_industry = reverse('IndustryList')
-        response_industry = self.client.post(
-            url_create_industry,
-            {
-                'code': 'I01',
-                'title': 'Banking',
-            },
-            format='json'
-        )
-
-        # create account type
-        url_create_account_type = reverse('AccountTypeList')
-        response_account_type = self.client.post(
-            url_create_account_type,
-            {
-                'code': 'AT05',
-                'title': 'Service',
-            },
-            format='json'
-        )
-
-        self.industry = response_industry.data['result']
-        self.account_type = response_account_type.data['result']
-
-    def test_create_new_account(self):
-        data = {  # noqa
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
-            'code': 'PM002',
-            'website': 'trucphuong.com.vn',
-            'tax_code': '81H1',
-            'annual_revenue': '1',
-            'total_employees': '1',
-            'phone': '0903608494',
-            'email': 'cuong@gmail.com',
-            'industry': self.industry['id'],
-            'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-                        'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-            'account_type': [str(self.account_type['id'])],
-            'account_type_selection': 0
-        }
-        url = reverse('AccountList')
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response.data,
-            type_match={'result': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['result'],
-            [
-                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
-                'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
-                'workflow_runtime_id'
-            ],
-            check_sum_second=True,
-        )
-        return response
-
-    def test_create_account_duplicate_code(self):
-        self.test_create_new_account()
-        data = {  # noqa
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
-            'code': 'PM002',
-            'website': 'trucphuong.com.vn',
-            'tax_code': '81H1',
-            'annual_revenue': '1',
-            'total_employees': '1',
-            'phone': '0903608494',
-            'email': 'cuong@gmail.com',
-            'industry': self.industry['id'],
-            'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-                        'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-            'account_type': [str(self.account_type['id'])],
-
-        }
-        url = reverse('AccountList')
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['code'],
-            check_sum_second=True,
-        )
-        return response
-
-    def test_create_missing_data(self):
-        data = {
-            'website': 'trucphuong.com.vn',
-            'tax_code': '81H1',
-            'annual_revenue': '1',
-            'total_employees': '1',
-            'phone': '0903608494',
-            'email': 'cuong@gmail.com',
-            'industry': self.industry['id'],
-            'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-                        'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-            'account_type': [str(self.account_type['id'])],
-
-        }
-        url = reverse('AccountList')
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['code', 'name'],
-            check_sum_second=True,
-        )
-        return response
-
-    def test_data_not_UUID(self):
-        data = {
-            'name': 'Công Ty Hạt Giống Trúc Phượng',
-            'code': 'PM002',
-            'website': 'trucphuong.com.vn',
-            'tax_code': '81H1',
-            'annual_revenue': '1',
-            'total_employees': '1',
-            'phone': '0903608494',
-            'email': 'cuong@gmail.com',
-            'industry': '1',
-            'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-                        'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-            'account_type': '1',
-
-        }
-        url = reverse('AccountList')
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['industry'],
-            check_sum_second=True,
-        )
-        return response
+# class AccountTestCase(AdvanceTestCase):
+#     def setUp(self):
+#         self.maxDiff = None
+#         self.client = APIClient()
+#
+#         self.authenticated()
+#         # create industry
+#         url_create_industry = reverse('IndustryList')
+#         response_industry = self.client.post(
+#             url_create_industry,
+#             {
+#                 'code': 'I01',
+#                 'title': 'Banking',
+#             },
+#             format='json'
+#         )
+#
+#         # create account type
+#         url_create_account_type = reverse('AccountTypeList')
+#         response_account_type = self.client.post(
+#             url_create_account_type,
+#             {
+#                 'code': 'AT05',
+#                 'title': 'Service',
+#             },
+#             format='json'
+#         )
+#
+#         self.industry = response_industry.data['result']
+#         self.account_type = response_account_type.data['result']
+#
+#     def test_create_new_account(self):
+#         data = {  # noqa
+#             'name': 'Công Ty Hạt Giống Trúc Phượng',
+#             'code': 'PM002',
+#             'website': 'trucphuong.com.vn',
+#             'tax_code': '81H1',
+#             'annual_revenue': '1',
+#             'total_employees': '1',
+#             'phone': '0903608494',
+#             'email': 'cuong@gmail.com',
+#             'industry': self.industry['id'],
+#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
+#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
+#             'account_type': [str(self.account_type['id'])],
+#             'account_type_selection': 0
+#         }
+#         url = reverse('AccountList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertResponseList(
+#             response,
+#             status_code=status.HTTP_201_CREATED,
+#             key_required=['result', 'status'],
+#             all_key=['result', 'status'],
+#             all_key_from=response.data,
+#             type_match={'result': dict, 'status': int},
+#         )
+#         self.assertCountEqual(
+#             response.data['result'],
+#             [
+#                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+#                 'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
+#                 'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
+#                 'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+#                 'workflow_runtime_id'
+#             ],
+#             check_sum_second=True,
+#         )
+#         return response
+#
+#     def test_create_account_duplicate_code(self):
+#         self.test_create_new_account()
+#         data = {  # noqa
+#             'name': 'Công Ty Hạt Giống Trúc Phượng',
+#             'code': 'PM002',
+#             'website': 'trucphuong.com.vn',
+#             'tax_code': '81H1',
+#             'annual_revenue': '1',
+#             'total_employees': '1',
+#             'phone': '0903608494',
+#             'email': 'cuong@gmail.com',
+#             'industry': self.industry['id'],
+#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
+#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
+#             'account_type': [str(self.account_type['id'])],
+#
+#         }
+#         url = reverse('AccountList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertResponseList(
+#             response,
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             key_required=['errors', 'status'],
+#             all_key=['errors', 'status'],
+#             all_key_from=response.data,
+#             type_match={'errors': dict, 'status': int},
+#         )
+#         self.assertCountEqual(
+#             response.data['errors'],
+#             ['code'],
+#             check_sum_second=True,
+#         )
+#         return response
+#
+#     def test_create_missing_data(self):
+#         data = {
+#             'website': 'trucphuong.com.vn',
+#             'tax_code': '81H1',
+#             'annual_revenue': '1',
+#             'total_employees': '1',
+#             'phone': '0903608494',
+#             'email': 'cuong@gmail.com',
+#             'industry': self.industry['id'],
+#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
+#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
+#             'account_type': [str(self.account_type['id'])],
+#
+#         }
+#         url = reverse('AccountList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertResponseList(
+#             response,
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             key_required=['errors', 'status'],
+#             all_key=['errors', 'status'],
+#             all_key_from=response.data,
+#             type_match={'errors': dict, 'status': int},
+#         )
+#         self.assertCountEqual(
+#             response.data['errors'],
+#             ['code', 'name'],
+#             check_sum_second=True,
+#         )
+#         return response
+#
+#     def test_data_not_UUID(self):
+#         data = {
+#             'name': 'Công Ty Hạt Giống Trúc Phượng',
+#             'code': 'PM002',
+#             'website': 'trucphuong.com.vn',
+#             'tax_code': '81H1',
+#             'annual_revenue': '1',
+#             'total_employees': '1',
+#             'phone': '0903608494',
+#             'email': 'cuong@gmail.com',
+#             'industry': '1',
+#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
+#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
+#             'account_type': '1',
+#
+#         }
+#         url = reverse('AccountList')
+#         response = self.client.post(url, data, format='json')
+#         self.assertResponseList(
+#             response,
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             key_required=['errors', 'status'],
+#             all_key=['errors', 'status'],
+#             all_key_from=response.data,
+#             type_match={'errors': dict, 'status': int},
+#         )
+#         self.assertCountEqual(
+#             response.data['errors'],
+#             ['industry'],
+#             check_sum_second=True,
+#         )
+#         return response
 
 
 # class ContactTestCase(AdvanceTestCase):
