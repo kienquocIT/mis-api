@@ -209,6 +209,21 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def validate(self, validate_data):
+        home_address_dict = self.initial_data.get('home_address_dict', [])[0]
+        work_address_dict = self.initial_data.get('work_address_dict', [])[0]
+        for key, value in home_address_dict.items():
+            if key not in ['home_detail_address']:
+                validate_data[key] = home_address_dict.get(key, None)
+            else:
+                validate_data[key] = home_address_dict.get(key, '')
+        for key, value in work_address_dict.items():
+            if key not in ['work_detail_address']:
+                validate_data[key] = work_address_dict.get(key, None)
+            else:
+                validate_data[key] = work_address_dict.get(key, '')
+        return validate_data
+
     @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
