@@ -237,7 +237,6 @@ class OpportunityCompetitor(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="competitor with customer",
         related_name="opportunity_competitor_competitor",
-        null=True
     )
 
     strength = models.CharField(
@@ -283,7 +282,6 @@ class OpportunityContactRole(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Contact of customer or end customer',
         related_name="opportunity_contact_role_contact",
-        null=True
     )
 
     job_title = models.CharField(
