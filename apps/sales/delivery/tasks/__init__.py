@@ -34,7 +34,7 @@ class SaleOrderActiveDeliverySerializer:
         m2m_obj_arr = []
         pickup_quantity = 0
         for m2m_obj in self.order_products:
-            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, int):
+            if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, (float, int)):
                 pickup_quantity += m2m_obj.product_quantity
             obj_tmp = OrderPickingProduct(
                 picking_sub_id=sub_id,
@@ -87,7 +87,7 @@ class SaleOrderActiveDeliverySerializer:
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
                 remaining_quantity=m2m_obj.product_quantity,
-                ready_quantity=m2m_obj.product_quantity,
+                ready_quantity=m2m_obj.product_quantity if self.config_obj.is_picking is False else 0,
                 picked_quantity=0,
             )
             obj_tmp.put_backup_data()
@@ -133,12 +133,20 @@ class SaleOrderActiveDeliverySerializer:
             date_done=None,
             previous_step=None,
             times=1,
-
+            code=obj.code,
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
             # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
             picked_quantity=0,
             pickup_data={},
+            sale_order_data=obj.sale_order_data,
+            ware_house=None,
+            ware_house_data={},
+            estimated_delivery_date=None,
+            state=0,
+            delivery_option=obj.delivery_option,
+            remarks='',
+
         )
         OrderPickingProduct.objects.bulk_create(m2m_obj_arr)
 
@@ -201,38 +209,37 @@ class SaleOrderActiveDeliverySerializer:
                         not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
                         and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
                 ):
+                    sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
                     if self.config_obj.is_picking is True:
                         obj_picking = self._create_order_picking()
                         obj_delivery = self._create_order_delivery(delivery_quantity=obj_picking.pickup_quantity)
-                        print(obj_picking, obj_delivery)
                     else:
-                        sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
                         obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                         # setup SUB
-                        sub_obj = OrderDeliverySub.objects.create(
-                            code=obj_delivery.code,
-                            tenant_id=self.tenant_id,
-                            company_id=self.company_id,
-                            id=sub_id,
-                            order_delivery=obj_delivery,
-                            date_done=None,
-                            previous_step=None,
-                            times=1,
-                            delivery_quantity=delivery_quantity,
-                            delivered_quantity_before=0,
-                            remaining_quantity=delivery_quantity,
-                            ready_quantity=delivery_quantity,
-                            delivery_data={},
-                            is_updated=False,
-                            state=obj_delivery.state,
-                            sale_order_data=obj_delivery.sale_order_data,
-                            customer_data=obj_delivery.customer_data,
-                            contact_data=obj_delivery.contact_data,
-                            date_created=obj_delivery.date_created
-                        )
-                        obj_delivery.sub = sub_obj
-                        obj_delivery.save(update_fields=['sub'])
-                        OrderDeliveryProduct.objects.bulk_create(_y)
+                    sub_obj = OrderDeliverySub.objects.create(
+                        code=obj_delivery.code,
+                        tenant_id=self.tenant_id,
+                        company_id=self.company_id,
+                        id=sub_id,
+                        order_delivery=obj_delivery,
+                        date_done=None,
+                        previous_step=None,
+                        times=1,
+                        delivery_quantity=delivery_quantity,
+                        delivered_quantity_before=0,
+                        remaining_quantity=delivery_quantity,
+                        ready_quantity=obj_delivery.ready_quantity,
+                        delivery_data={},
+                        is_updated=False,
+                        state=obj_delivery.state,
+                        sale_order_data=obj_delivery.sale_order_data,
+                        customer_data=obj_delivery.customer_data,
+                        contact_data=obj_delivery.contact_data,
+                        date_created=obj_delivery.date_created
+                    )
+                    obj_delivery.sub = sub_obj
+                    obj_delivery.save(update_fields=['sub'])
+                    OrderDeliveryProduct.objects.bulk_create(_y)
                     # raise ValueError('Cancel with check!')
                     if obj_delivery:
                         return True, ''

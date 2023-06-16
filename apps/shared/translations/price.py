@@ -19,5 +19,6 @@ class PriceMsg:
     PRICE_LIST_IS_ARRAY = _('Price list must be array.')
     DIFFERENT_PRICE_LIST_TYPE = _('New Price List and Source Price List have different type.')
     PARENT_PRICE_LIST_CANT_BE_DELETE = _('Source Price List can not be deleted.')
+    NON_EMPTY_PRICE_LIST_CANT_BE_DELETE = _('Non-empty Price List can not be deleted.')
     PRICE_LIST_EXPIRED = _('Price List is expired.')
     ITEM_EXIST = _('Item already exists')

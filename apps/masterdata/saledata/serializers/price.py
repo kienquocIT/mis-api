@@ -484,6 +484,8 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
+        if ProductPriceList.objects.filter(price_list=instance).exists():
+            raise serializers.ValidationError(PriceMsg.NON_EMPTY_PRICE_LIST_CANT_BE_DELETE)
         if not Price.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
