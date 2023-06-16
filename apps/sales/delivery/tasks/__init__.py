@@ -208,7 +208,7 @@ class SaleOrderActiveDeliverySerializer:
             delivered_quantity_before=0,
             remaining_quantity=delivery_quantity,
             ready_quantity=0,
-            delivery_data={},
+            delivery_data=[],
             date_created=timezone.now()
         )
 
@@ -239,7 +239,7 @@ class SaleOrderActiveDeliverySerializer:
                         delivered_quantity_before=0,
                         remaining_quantity=delivery_quantity,
                         ready_quantity=obj_delivery.ready_quantity,
-                        delivery_data={},
+                        delivery_data=[],
                         is_updated=False,
                         state=obj_delivery.state,
                         sale_order_data=obj_delivery.sale_order_data,

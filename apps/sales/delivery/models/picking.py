@@ -100,11 +100,6 @@ class OrderPicking(MasterDataAbstractModel):
             }
         )
     )
-    sub_list = models.JSONField(
-        default=list,
-        verbose_name='Sub list',
-        help_text='List of all sub in picking current'
-    )
 
     def set_and_check_quantity(self):
         if self.picked_quantity > self.remaining_quantity:

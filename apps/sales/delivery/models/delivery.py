@@ -84,11 +84,6 @@ class OrderDelivery(MasterDataAbstractModel):
         null=True,
         verbose_name='Only one sub in the current'
     )
-    sub_list = models.JSONField(
-        default=dict,
-        verbose_name='Sub list',
-        help_text='List of sub related to delivery'
-    )
     delivery_option = models.SmallIntegerField(
         choices=DELIVERY_OPTION,
         verbose_name='Delivery Option',
@@ -110,7 +105,7 @@ class OrderDelivery(MasterDataAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='Delivery Info',
         help_text=json.dumps(
             {
@@ -213,7 +208,7 @@ class OrderDeliverySub(MasterDataAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='Delivery Info',
         help_text=json.dumps(
             {
@@ -355,12 +350,12 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='data about product, warehouse, stock',
         help_text=json.dumps(
-            {
+            [{
                 'warehouse_id': 'stock number',
-            }
+            }]
         ),
         null=True
     )
