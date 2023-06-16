@@ -1,9 +1,10 @@
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
+from apps.core.log.models import Notifications
 from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
@@ -11,7 +12,7 @@ from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
 )
 from apps.sales.delivery.models import DeliveryConfig
-
+from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
 
@@ -206,3 +207,10 @@ def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
         ConfigDefaultData(company_obj=instance).call_new()
         SaleDefaultData(company_obj=instance)()
+
+
+@receiver(pre_delete, sender=Notifications)
+@receiver(post_save, sender=Notifications)
+def clear_cache_notify(sender, instance, **kwargs):  # pylint: disable=W0613
+    if getattr(instance, 'employee_id', None):
+        Caching().delete(instance.cache_base_key(my_obj=instance))

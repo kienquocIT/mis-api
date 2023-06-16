@@ -6,7 +6,36 @@ from django.utils import timezone
 
 __all__ = [
     'ActivityLog',
+    'Notifications',
 ]
+
+
+def parse_backup_user(user_obj) -> dict:
+    if user_obj:
+        return {
+            'id': str(user_obj.id),
+            'first_name': str(user_obj.first_name),
+            'last_name': str(user_obj.last_name),
+            'full_name': str(user_obj.get_full_name()),
+            'email': str(user_obj.email),
+            'phone': str(user_obj.phone),
+            'last_login': str(user_obj.last_login),
+        }
+    return {}
+
+
+def parse_backup_employee(employee_obj) -> dict:
+    if employee_obj:
+        return {
+            'id': str(employee_obj.id),
+            'first_name': str(employee_obj.first_name),
+            'last_name': str(employee_obj.last_name),
+            'full_name': str(employee_obj.get_full_name()),
+            'email': str(employee_obj.email),
+            'phone': str(employee_obj.phone),
+            'avatar': str(employee_obj.avatar),
+        }
+    return {}
 
 
 class ActivityLog(models.Model):
@@ -105,25 +134,9 @@ class ActivityLog(models.Model):
     def before_save(self, force_insert):
         if force_insert is True:
             if self.user:
-                self.user_data = {
-                    'id': str(self.user_id),
-                    'first_name': str(self.user.first_name),
-                    'last_name': str(self.user.last_name),
-                    'full_name': str(self.user.get_full_name()),
-                    'email': str(self.user.email),
-                    'phone': str(self.user.phone),
-                    'last_login': str(self.user.last_login),
-                }
+                self.user_data = parse_backup_user(self.user)
             if self.employee:
-                self.employee_data = {
-                    'id': str(self.employee_id),
-                    'first_name': str(self.employee.first_name),
-                    'last_name': str(self.employee.last_name),
-                    'full_name': str(self.employee.get_full_name()),
-                    'email': str(self.employee.email),
-                    'phone': str(self.employee.phone),
-                    'avatar': str(self.employee.avatar),
-                }
+                self.employee_data = parse_backup_employee(self.employee)
             if self.request_method:
                 self.request_method = self.request_method.upper()
         return True
@@ -142,4 +155,141 @@ class ActivityLog(models.Model):
             models.Index(fields=['doc_id']),
             models.Index(fields=['doc_app']),
             models.Index(fields=['doc_id', 'doc_app']),
+        ]
+
+
+class Notifications(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    user = models.ForeignKey(
+        'account.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='This user is performer',
+        related_name='notifies_of_user',
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='This employee is performer',
+        related_name='notifies_of_employee',
+    )
+    title = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='Title of Doc',
+    )
+    msg = models.TextField(
+        blank=True,
+        verbose_name='Message of notify',
+    )
+
+    # Object related
+    doc_id = models.UUIDField(
+        null=True,
+        verbose_name='ID of Object',
+        help_text="Null if it is log's general; otherwise, The value of ID field is required."
+    )
+    doc_app = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name='App Code of Object',
+        help_text='Format: {app_label}.{model_name}; '
+                  'It is empty when doc_id is null, otherwise the value is required to match the format.',
+    )
+
+    # Flag
+    automated_sending = models.BooleanField(
+        default=True,
+        verbose_name='Is automated sending',
+        help_text='Correct if it is an automated system log; '
+                  'otherwise, the values of the user and employee fields must have a value.'
+    )
+    employee_sender = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='Sender',
+        help_text='This employee sent notify',
+        related_name='notifies_send_by_employee',
+    )
+    is_done = models.BooleanField(
+        default=False,
+        verbose_name='Is Read notify',
+    )
+
+    # backup data
+    user_data = models.JSONField(
+        default=dict,
+        verbose_name='User backup data',
+    )
+    employee_data = models.JSONField(
+        default=dict,
+        verbose_name='Employee backup data',
+    )
+    employee_sender_data = models.JSONField(
+        default=dict,
+        verbose_name='Employee sender backup data',
+    )
+
+    @staticmethod
+    def cache_base_key(user_obj=None, my_obj=None):
+        if user_obj:
+            return f'{user_obj.tenant_current_id}_{user_obj.company_current_id}_{user_obj.employee_current_id}_True'
+        if my_obj:
+            return f'{my_obj.tenant_id}_{my_obj.company_id}_{my_obj.employee_id}_True'
+        raise ValueError('Need user_obj or my_obj has value.')
+
+    @classmethod
+    def call_seen_all(cls, tenant_id, company_id, employee_id):
+        cls.objects.filter(tenant_id=tenant_id, company_id=company_id, employee_id=employee_id, is_done=False).update(
+            is_done=True
+        )
+        return True
+
+    @classmethod
+    def call_clean_all_seen(cls, tenant_id, company_id, employee_id):
+        cls.objects.filter(tenant_id=tenant_id, company_id=company_id, employee_id=employee_id, is_done=True).delete()
+        return True
+
+    def __str__(self):
+        return f'Doc -> {self.doc_id} - {self.doc_app} : Actor -> {self.user_id} - {self.employee_id}'
+
+    def before_save(self, force_insert):
+        if force_insert is True:
+            if self.user:
+                self.user_data = parse_backup_user(self.user)
+            if self.employee:
+                self.employee_data = parse_backup_employee(self.employee)
+            if self.employee_sender:
+                self.employee_sender_data = parse_backup_employee(self.employee_sender)
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(force_insert=kwargs.get('force_insert', False))
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Notifications'
+        verbose_name_plural = 'Notifications'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+        indexes = [
+            models.Index(fields=['tenant_id', 'company_id', 'employee_id']),
+            models.Index(fields=['tenant_id', 'company_id', 'employee_id', 'is_done']),
         ]

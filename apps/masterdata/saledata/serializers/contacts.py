@@ -5,7 +5,10 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
-from apps.shared import AccountsMsg
+from apps.shared import (
+    AccountsMsg,
+    AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel,
+)
 
 
 # Salutation
@@ -126,14 +129,13 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 
 
 # Contact
-class ContactListSerializer(serializers.ModelSerializer):
+class ContactListSerializer(AbstractListSerializerModel):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
         fields = (
-            'id',
             'fullname',
             'job_title',
             'owner',
@@ -165,13 +167,8 @@ class ContactListSerializer(serializers.ModelSerializer):
         return {}
 
 
-class ContactCreateSerializer(serializers.ModelSerializer):
+class ContactCreateSerializer(AbstractCreateSerializerModel):
     account_name = serializers.UUIDField(required=False, allow_null=True)
-    system_status = serializers.ChoiceField(
-        choices=[0, 1],
-        help_text='0: draft, 1: created',
-        default=0,
-    )
 
     class Meta:
         model = Contact
@@ -237,7 +234,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         return contact
 
 
-class ContactDetailSerializer(serializers.ModelSerializer):
+class ContactDetailSerializer(AbstractDetailSerializerModel):
     salutation = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
@@ -248,7 +245,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            "id",
             "owner",
             "job_title",
             "biography",
@@ -262,7 +258,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             "address_information",
             "additional_information",
             "account_name",
-            "workflow_runtime_id",
         )
 
     @classmethod

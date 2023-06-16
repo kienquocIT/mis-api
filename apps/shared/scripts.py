@@ -158,20 +158,26 @@ def make_sure_workflow_apps():
             x.application for x in
             PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
         ]
+
         for company_obj in Company.objects.filter(tenant=tenant_obj):
+            for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
+                print('delete Workflow Config App: ', obj.application, obj.company)
+                obj.delete()
+
             for app in app_objs:
-                WorkflowConfigOfApp.objects.get_or_create(
-                    company=company_obj,
-                    application=app,
-                    defaults={
-                        'tenant': tenant_obj,
-                        'workflow_currently': Workflow.objects.filter(
-                            tenant=tenant_obj,
-                            company=company_obj,
-                            application=app,
-                        ).first()
-                    }
-                )
+                if app.is_workflow is True:
+                    WorkflowConfigOfApp.objects.get_or_create(
+                        company=company_obj,
+                        application=app,
+                        defaults={
+                            'tenant': tenant_obj,
+                            'workflow_currently': Workflow.objects.filter(
+                                tenant=tenant_obj,
+                                company=company_obj,
+                                application=app,
+                            ).first()
+                        }
+                    )
     print('Make sure workflow app is successfully.')
 
 
