@@ -22,6 +22,8 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
         model = OrderPickingProduct
         fields = (
             'id',
+            'order',
+            'is_promotion',
             'product_data',
             'uom_data',
             'pickup_quantity',
@@ -119,6 +121,7 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField()
+    order = serializers.IntegerField(min_value=1)
 
 
 class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
@@ -147,9 +150,10 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         # loop trong picking product
         for key, value in product_update.items():
             delivery_data = value['delivery_data'][0]
+            key_prod = key.split('___')[0]
             delivery_prod = OrderDeliveryProduct.objects.filter(
                 delivery_sub=delivery_sub,
-                product_id=key,
+                product_id=key_prod,
                 uom_id=delivery_data['uom']
             )
             if delivery_prod.exists():
@@ -172,17 +176,18 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         pickup_data_temp = {}
         for key, item in prod_update.items():
             delivery_data = item['delivery_data'][0]
+            key_prod = key.split('___')[0]
             # mỗi phiếu picking chỉ có 1 product match với warehouse nên có thể lấy value 0 của list delivery_data
             get_prod = OrderPickingProduct.objects.filter(
                 picking_sub=instance,
-                product_id=key,
+                product_id=key_prod,
                 uom_id=delivery_data['uom']
             )
             if get_prod.exists():
                 this_prod = get_prod.first()
                 this_prod.picked_quantity = item['stock']
 
-                pickup_data_temp[str(key)] = {
+                pickup_data_temp[key] = {
                     'remaining_quantity': this_prod.remaining_quantity,
                     'picked_quantity': item['stock'],
                     'pickup_quantity': this_prod.pickup_quantity,
@@ -235,7 +240,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 remaining_quantity=obj.pickup_quantity - (obj.picked_quantity_before + obj.picked_quantity),
                 picked_quantity=0,
                 picking_sub=new_sub,
-                product_id=obj.product_id
+                product_id=obj.product_id,
+                order=obj.order
             )
             new_item.before_save()
             obj_new_prod.append(new_item)
@@ -268,8 +274,9 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         picked_quantity_total = 0
         for item in validated_data['products']:
+            item_key = str(item['product_id'])+"___"+str(item['order'])
             picked_quantity_total += item['done']
-            product_done[str(item['product_id'])] = {
+            product_done[item_key] = {
                 'stock': item['done'],
                 'delivery_data': item['delivery_data']
             }

@@ -47,6 +47,10 @@ class ProductWareHouse(MasterDataAbstractModel):
         default=0,
         verbose_name='Sold Amount',
     )
+    picked_ready = models.FloatField(
+        default=0,
+        verbose_name='Picked Amount',
+    )
 
     # backup data
     product_data = models.JSONField(
@@ -121,6 +125,28 @@ class ProductWareHouse(MasterDataAbstractModel):
                     fill__tenant=True, fill__company=True,
                 )
             return obj.stock_amount - obj.sold_amount
+        except cls.DoesNotExist:
+            pass
+        return 0
+
+    @classmethod
+    def get_picked_ready(
+            cls,
+            product_id, warehouse_id, uom_id,
+            tenant_id=None, company_id=None,
+    ):
+        try:
+            if tenant_id and company_id:
+                obj = cls.objects.get(
+                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                    tenant_id=tenant_id, company_id=company_id,
+                )
+            else:
+                obj = cls.objects.get_current(
+                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                    fill__tenant=True, fill__company=True,
+                )
+            return obj.picked_ready
         except cls.DoesNotExist:
             pass
         return 0

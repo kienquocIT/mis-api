@@ -15,6 +15,8 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         model = OrderDeliveryProduct
         fields = (
             'id',
+            'order',
+            'is_promotion',
             'product_data',
             'uom_data',
             'delivery_quantity',
@@ -129,6 +131,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(allow_null=True)
+    order = serializers.IntegerField(min_value=1)
 
 
 class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
@@ -189,9 +192,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=sub
         ):
-            if str(obj.product_id) in product_done:
-                delivery_data = product_done[str(obj.product_id)]['delivery_data']  # list format
-                obj.picked_quantity = product_done[str(obj.product_id)]['picked_num']
+            obj_key = str(obj.product_id)+"___"+str(obj.order)
+            if obj_key in product_done:
+                delivery_data = product_done[obj_key]['delivery_data']  # list format
+                obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.delivery_data = delivery_data
                 # config case 1, 2, 3
                 cls.minus_product_warehouse_stock(
@@ -208,15 +212,18 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=instance
         ):
+            delivery_before = obj.delivered_quantity_before + obj.picked_quantity
+            remain = obj.delivery_quantity - delivery_before
             new_prod = OrderDeliveryProduct(
                 delivery_sub=new_sub,
                 product=obj.product,
                 uom=obj.uom,
                 delivery_quantity=obj.delivery_quantity,
-                delivered_quantity_before=obj.delivered_quantity_before + obj.picked_quantity,
-                remaining_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
-                ready_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
-                picked_quantity=0
+                delivered_quantity_before=delivery_before,
+                remaining_quantity=remain,
+                ready_quantity=remain,
+                picked_quantity=0,
+                order=obj.order
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
@@ -238,6 +245,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
         new_code = OrderDeliverySubUpdateSerializer.create_new_code()
+        delivered = instance.delivered_quantity_before + total_done
+        remain = instance.delivery_quantity - delivered
         new_sub = OrderDeliverySub.objects.create(
             company_id=instance.company_id,
             tenant_id=instance.tenant_id,
@@ -247,9 +256,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             previous_step=instance,
             times=instance.times + 1,
             delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=instance.delivered_quantity_before + total_done,
-            remaining_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
-            ready_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
+            delivered_quantity_before=delivered,
+            remaining_quantity=remain,
+            ready_quantity=remain,
             delivery_data=None,
             is_updated=False,
             state=0 if case == 4 else 1,
@@ -363,10 +372,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         total_done = 0
         for item in validated_product:
-            product_done[str(item['product_id'])] = {}
+            prod_key = str(item['product_id'])+"___"+str(item['order'])
             total_done += item['done']
-            product_done[str(item['product_id'])]['picked_num'] = item['done']
-            product_done[str(item['product_id'])]['delivery_data'] = item['delivery_data']
+            product_done[prod_key] = {}
+            product_done[prod_key]['picked_num'] = item['done']
+            product_done[prod_key]['delivery_data'] = item['delivery_data']
 
         # update instance info
         self.update_self_info(instance, validated_data)

@@ -56,6 +56,11 @@ class SaleOrderActiveDeliverySerializer:
                 picked_quantity_before=0,
                 remaining_quantity=m2m_obj.product_quantity,
                 picked_quantity=0,
+                order=m2m_obj.order,
+                is_promotion=m2m_obj.is_promotion,
+                product_unit_price=m2m_obj.product_unit_price,
+                product_tax_value=m2m_obj.product_tax_value,
+                product_subtotal_price=m2m_obj.product_subtotal_price,
             )
             obj_tmp.before_save()
             m2m_obj_arr.append(obj_tmp)
@@ -89,6 +94,11 @@ class SaleOrderActiveDeliverySerializer:
                 remaining_quantity=m2m_obj.product_quantity,
                 ready_quantity=m2m_obj.product_quantity if self.config_obj.is_picking is False else 0,
                 picked_quantity=0,
+                order=m2m_obj.order,
+                is_promotion=m2m_obj.is_promotion,
+                product_unit_price=m2m_obj.product_unit_price,
+                product_tax_value=m2m_obj.product_tax_value,
+                product_subtotal_price=m2m_obj.product_subtotal_price,
             )
             obj_tmp.put_backup_data()
             m2m_obj_arr.append(obj_tmp)

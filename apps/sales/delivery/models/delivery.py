@@ -364,6 +364,22 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         ),
         null=True
     )
+    order = models.IntegerField(
+        default=1
+    )
+    is_promotion = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for promotion (discount, gift,...)"
+    )
+    product_unit_price = models.FloatField(
+        default=0
+    )
+    product_tax_value = models.FloatField(
+        default=0
+    )
+    product_subtotal_price = models.FloatField(
+        default=0
+    )
 
     def put_backup_data(self):
         if self.product and not self.product_data:
@@ -396,7 +412,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
-        ordering = ('delivery_sub',)
+        ordering = ('order',)
         # unique_together = ('delivery_sub', 'product')
         default_permissions = ()
         permissions = ()
