@@ -100,11 +100,6 @@ class OrderPicking(MasterDataAbstractModel):
             }
         )
     )
-    sub_list = models.JSONField(
-        default=list,
-        verbose_name='Sub list',
-        help_text='List of all sub in picking current'
-    )
 
     def set_and_check_quantity(self):
         if self.picked_quantity > self.remaining_quantity:
@@ -133,10 +128,10 @@ class OrderPicking(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "PICKING.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "P"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def before_save(self):
@@ -267,10 +262,10 @@ class OrderPickingSub(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "PICKING.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "P"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def before_save(self):
@@ -348,6 +343,22 @@ class OrderPickingProduct(SimpleAbstractModel):
         default=0,
         verbose_name='Quantity was picked',
     )
+    order = models.IntegerField(
+        default=1
+    )
+    is_promotion = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for promotion (discount, gift,...)"
+    )
+    product_unit_price = models.FloatField(
+        default=0
+    )
+    product_tax_value = models.FloatField(
+        default=0
+    )
+    product_subtotal_price = models.FloatField(
+        default=0
+    )
 
     def _put_backup_data(self):
         if self.product and not self.product_data:
@@ -380,7 +391,7 @@ class OrderPickingProduct(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Product of Order Picking'
         verbose_name_plural = 'Product of Order Picking'
-        ordering = ('picking_sub',)
+        ordering = ('order',)
         # unique_together = ('picking_sub', 'product')
         default_permissions = ()
         permissions = ()

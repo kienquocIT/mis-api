@@ -84,11 +84,6 @@ class OrderDelivery(MasterDataAbstractModel):
         null=True,
         verbose_name='Only one sub in the current'
     )
-    sub_list = models.JSONField(
-        default=dict,
-        verbose_name='Sub list',
-        help_text='List of sub related to delivery'
-    )
     delivery_option = models.SmallIntegerField(
         choices=DELIVERY_OPTION,
         verbose_name='Delivery Option',
@@ -110,7 +105,7 @@ class OrderDelivery(MasterDataAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='Delivery Info',
         help_text=json.dumps(
             {
@@ -152,10 +147,10 @@ class OrderDelivery(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "DELIVERY.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "D"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def save(self, *args, **kwargs):
@@ -213,7 +208,7 @@ class OrderDeliverySub(MasterDataAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='Delivery Info',
         help_text=json.dumps(
             {
@@ -277,10 +272,10 @@ class OrderDeliverySub(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "DELIVERY.CODE."
         if not self.code:
-            temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
+            char = "D"
+            temper = delivery + 1
+            code = f"{char}{temper:03d}"
             self.code = code
 
     def save(self, *args, **kwargs):
@@ -355,14 +350,30 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name='Quantity was picked',
     )
     delivery_data = models.JSONField(
-        default=dict,
+        default=list,
         verbose_name='data about product, warehouse, stock',
         help_text=json.dumps(
-            {
+            [{
                 'warehouse_id': 'stock number',
-            }
+            }]
         ),
         null=True
+    )
+    order = models.IntegerField(
+        default=1
+    )
+    is_promotion = models.BooleanField(
+        default=False,
+        help_text="flag to know this product is for promotion (discount, gift,...)"
+    )
+    product_unit_price = models.FloatField(
+        default=0
+    )
+    product_tax_value = models.FloatField(
+        default=0
+    )
+    product_subtotal_price = models.FloatField(
+        default=0
     )
 
     def put_backup_data(self):
@@ -396,7 +407,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
-        ordering = ('delivery_sub',)
+        ordering = ('order',)
         # unique_together = ('delivery_sub', 'product')
         default_permissions = ()
         permissions = ()

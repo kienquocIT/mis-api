@@ -15,6 +15,8 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
         model = OrderDeliveryProduct
         fields = (
             'id',
+            'order',
+            'is_promotion',
             'product_data',
             'uom_data',
             'delivery_quantity',
@@ -129,6 +131,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField(allow_null=True)
+    order = serializers.IntegerField(min_value=1)
 
 
 class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
@@ -167,7 +170,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.remarks = validated_data['remarks']
 
     @classmethod
-    def minus_product_warehouse_stock(cls, tenant_com_info, product_id, stock_info):
+    def minus_product_warehouse_stock(cls, tenant_com_info, product_id, stock_info, config):
         save_list = []
         for data in stock_info:
             product_warehouse = ProductWareHouse.objects.filter(
@@ -180,24 +183,28 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             if product_warehouse.exists():
                 selected = product_warehouse.first()
                 selected.sold_amount += data['stock']
+                if config.is_picking:
+                    selected.picked_ready = selected.picked_ready - data['stock']
                 save_list.append(selected)
 
-        ProductWareHouse.objects.bulk_update(save_list, fields=['sold_amount'])
+        ProductWareHouse.objects.bulk_update(save_list, fields=['sold_amount', 'picked_ready'])
 
     @classmethod
-    def update_prod(cls, sub, product_done):
+    def update_prod(cls, sub, product_done, config):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=sub
         ):
-            if str(obj.product_id) in product_done:
-                delivery_data = product_done[str(obj.product_id)]['delivery_data']  # list format
-                obj.picked_quantity = product_done[str(obj.product_id)]['picked_num']
+            obj_key = str(obj.product_id)+"___"+str(obj.order)
+            if obj_key in product_done:
+                delivery_data = product_done[obj_key]['delivery_data']  # list format
+                obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.delivery_data = delivery_data
                 # config case 1, 2, 3
                 cls.minus_product_warehouse_stock(
                     {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
                     obj.product_id,
-                    delivery_data
+                    delivery_data,
+                    config
                 )
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
 
@@ -208,15 +215,18 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=instance
         ):
+            delivery_before = obj.delivered_quantity_before + obj.picked_quantity
+            remain = obj.delivery_quantity - delivery_before
             new_prod = OrderDeliveryProduct(
                 delivery_sub=new_sub,
                 product=obj.product,
                 uom=obj.uom,
                 delivery_quantity=obj.delivery_quantity,
-                delivered_quantity_before=obj.delivered_quantity_before + obj.picked_quantity,
-                remaining_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
-                ready_quantity=obj.delivery_quantity - (obj.delivered_quantity_before + obj.picked_quantity),
-                picked_quantity=0
+                delivered_quantity_before=delivery_before,
+                remaining_quantity=remain,
+                ready_quantity=remain,
+                picked_quantity=0,
+                order=obj.order
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
@@ -224,20 +234,21 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_new_code(cls):
-        new_code = ''
         delivery = OrderDeliverySub.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
             is_delete=False
         ).count()
-        char = "DELIVERY.CODE."
-        temper = "%04d" % (delivery + 1)  # pylint: disable=C0209
-        new_code = f"{char}{temper}"
+        char = "D"
+        temper = delivery + 1
+        new_code = f"{char}{temper:03d}"
         return new_code
 
     @classmethod
     def create_new_sub(cls, instance, total_done, case=0):
         new_code = OrderDeliverySubUpdateSerializer.create_new_code()
+        delivered = instance.delivered_quantity_before + total_done
+        remain = instance.delivery_quantity - delivered
         new_sub = OrderDeliverySub.objects.create(
             company_id=instance.company_id,
             tenant_id=instance.tenant_id,
@@ -247,9 +258,9 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             previous_step=instance,
             times=instance.times + 1,
             delivery_quantity=instance.delivery_quantity,
-            delivered_quantity_before=instance.delivered_quantity_before + total_done,
-            remaining_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
-            ready_quantity=instance.delivery_quantity - (instance.delivered_quantity_before + total_done),
+            delivered_quantity_before=delivered,
+            remaining_quantity=remain,
+            ready_quantity=remain,
             delivery_data=None,
             is_updated=False,
             state=0 if case == 4 else 1,
@@ -262,97 +273,81 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return new_sub
 
     @classmethod
-    def config_one(cls, instance, total_done, product_done):
-        try:
-            with transaction.atomic():
-                if instance.remaining_quantity == total_done:
-                    # update product and sub date_done
-                    cls.update_prod(instance, product_done)
-                    instance.date_done = timezone.now()
-                    instance.state = 2
-                    instance.is_updated = True
-                    instance.save(
-                        update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                                       'actual_delivery_date', 'remarks']
-                    )
-                else:
-                    raise serializers.ValidationError(
-                        {
-                            'products': _('Done quantity not equal remain quantity!')
-                        }
-                    )
-        except Exception as err:
-            print(err)
+    def config_one(cls, instance, total_done, product_done, config):
+        if instance.remaining_quantity == total_done:
+            # update product and sub date_done
+            cls.update_prod(instance, product_done, config)
+            instance.date_done = timezone.now()
+            instance.state = 2
+            instance.is_updated = True
+            instance.save(
+                update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
+                               'actual_delivery_date', 'remarks']
+            )
+        else:
+            raise serializers.ValidationError(
+                {
+                    'products': _('Done quantity not equal remain quantity!')
+                }
+            )
 
     @classmethod
-    def config_two(cls, instance, total_done, product_done):
-        try:
-            with transaction.atomic():
-                # cho phep giao nhieu lan and tạo sub mới
-                cls.update_prod(instance, product_done)
-                instance.date_done = timezone.now()
-                instance.state = 2
-                instance.is_updated = True
-                instance.save(
-                    update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                                   'actual_delivery_date', 'remarks']
-                )
-                if instance.remaining_quantity > total_done:
-                    new_sub = cls.create_new_sub(instance, total_done, 2)
-                    cls.create_prod(new_sub, instance)
-                    delivery_obj = instance.order_delivery
-                    delivery_obj.sub = new_sub
-                    delivery_obj.save(update_fields=['sub'])
-        except Exception as err:
-            print(err)
+    def config_two(cls, instance, total_done, product_done, config):
+        # cho phep giao nhieu lan and tạo sub mới
+        cls.update_prod(instance, product_done, config)
+        instance.date_done = timezone.now()
+        instance.state = 2
+        instance.is_updated = True
+        instance.save(
+            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
+                           'actual_delivery_date', 'remarks']
+        )
+        if instance.remaining_quantity > total_done:
+            new_sub = cls.create_new_sub(instance, total_done, 2)
+            cls.create_prod(new_sub, instance)
+            delivery_obj = instance.order_delivery
+            delivery_obj.sub = new_sub
+            delivery_obj.save(update_fields=['sub'])
 
     @classmethod
-    def config_three(cls, instance, total_done, product_done):
-        try:
-            with transaction.atomic():
-                order_delivery = instance.order_delivery
-                if instance.remaining_quantity == total_done:
-                    cls.update_prod(instance, product_done)
-                    instance.date_done = timezone.now()
-                    instance.state = 2
-                    instance.is_updated = True
-                    instance.save(
-                        update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                                       'actual_delivery_date', 'remarks']
-                    )
-                    order_delivery.state = 2
-                    order_delivery.save(update_fields=['state'])
-                else:
-                    raise serializers.ValidationError(
-                        {
-                            'products': _('Done quantity not equal remain quantity!')
-                        }
-                    )
-        except Exception as err:
-            print('err delivery config 3', err)
+    def config_three(cls, instance, total_done, product_done, config):
+        order_delivery = instance.order_delivery
+        if instance.remaining_quantity == total_done:
+            cls.update_prod(instance, product_done, config)
+            instance.date_done = timezone.now()
+            instance.state = 2
+            instance.is_updated = True
+            instance.save(
+                update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
+                               'actual_delivery_date', 'remarks']
+            )
+            order_delivery.state = 2
+            order_delivery.save(update_fields=['state'])
+        else:
+            raise serializers.ValidationError(
+                {
+                    'products': _('Done quantity not equal remain quantity!')
+                }
+            )
 
     @classmethod
-    def config_four(cls, instance, total_done, product_done):
-        try:
-            with transaction.atomic():
-                cls.update_prod(instance, product_done)
-                order_delivery = instance.order_delivery
-                if instance.remaining_quantity > total_done:
-                    new_sub = cls.create_new_sub(instance, total_done, 4)
-                    cls.create_prod(new_sub, instance)
-                    order_delivery.sub = new_sub
-                elif instance.remaining_quantity == total_done:
-                    instance.date_done = timezone.now()
-                    instance.is_updated = True
-                    instance.state = 2
-                    instance.ready_quantity += total_done
-                    order_delivery.state = 2
-                    instance.save(
-                       update_fields=['date_done', 'ready_quantity', 'state', 'is_updated']
-                    )
-                order_delivery.save(update_fields=['sub', 'state'])
-        except Exception as err:
-            print(err)
+    def config_four(cls, instance, total_done, product_done, config):
+        cls.update_prod(instance, product_done, config)
+        order_delivery = instance.order_delivery
+        if instance.remaining_quantity > total_done:
+            new_sub = cls.create_new_sub(instance, total_done, 4)
+            cls.create_prod(new_sub, instance)
+            order_delivery.sub = new_sub
+        elif instance.remaining_quantity == total_done:
+            instance.date_done = timezone.now()
+            instance.is_updated = True
+            instance.state = 2
+            instance.ready_quantity += total_done
+            order_delivery.state = 2
+            instance.save(
+                update_fields=['date_done', 'ready_quantity', 'state', 'is_updated']
+            )
+        order_delivery.save(update_fields=['sub', 'state'])
 
     def update(self, instance, validated_data):
         # declare default object
@@ -363,23 +358,29 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         total_done = 0
         for item in validated_product:
-            product_done[str(item['product_id'])] = {}
+            prod_key = str(item['product_id'])+"___"+str(item['order'])
             total_done += item['done']
-            product_done[str(item['product_id'])]['picked_num'] = item['done']
-            product_done[str(item['product_id'])]['delivery_data'] = item['delivery_data']
+            product_done[prod_key] = {}
+            product_done[prod_key]['picked_num'] = item['done']
+            product_done[prod_key]['delivery_data'] = item['delivery_data']
 
         # update instance info
         self.update_self_info(instance, validated_data)
-        if not is_partial and not is_picking:
-            # config 1
-            self.config_one(instance, total_done, product_done)
-        elif is_partial and not is_picking:
-            # config 2
-            self.config_two(instance, total_done, product_done)
-        elif is_picking and not is_partial:
-            # config 3
-            self.config_three(instance, total_done, product_done)
-        else:
-            # config 4
-            self.config_four(instance, total_done, product_done)
+        try:
+            with transaction.atomic():
+                if not is_partial and not is_picking:
+                    # config 1
+                    self.config_one(instance, total_done, product_done, config)
+                elif is_partial and not is_picking:
+                    # config 2
+                    self.config_two(instance, total_done, product_done, config)
+                elif is_picking and not is_partial:
+                    # config 3
+                    self.config_three(instance, total_done, product_done, config)
+                else:
+                    # config 4
+                    self.config_four(instance, total_done, product_done, config)
+        except Exception as err:
+            print(err)
+            raise err
         return instance

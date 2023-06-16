@@ -3,10 +3,10 @@ from django.db import transaction
 from rest_framework import serializers
 import django.utils.translation
 
+from apps.masterdata.saledata.models import ProductWareHouse
 from apps.sales.delivery.models import (
     OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
-
 
 __all__ = [
     'OrderPickingListSerializer',
@@ -22,6 +22,8 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
         model = OrderPickingProduct
         fields = (
             'id',
+            'order',
+            'is_promotion',
             'product_data',
             'uom_data',
             'pickup_quantity',
@@ -119,6 +121,7 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
     product_id = serializers.UUIDField()
     done = serializers.IntegerField(min_value=1)
     delivery_data = serializers.JSONField()
+    order = serializers.IntegerField(min_value=1)
 
 
 class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
@@ -136,8 +139,43 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             )
         return value
 
-    @staticmethod
-    def update_picking_to_delivery_prod(instance, total, product_update):
+    @classmethod
+    def plus_product_warehouse_picked(cls, instance, product_update):
+        prod_id_temp = {}
+        prod_update = []
+        for key, value in product_update.items():
+            delivery_data = value['delivery_data'][0]
+            key_prod = key.split('___')[0]
+            if key_prod not in prod_id_temp:
+                prod_id_temp[key_prod] = value['stock']
+            else:
+                prod_id_temp[key_prod] += value['stock']
+            product_warehouse = ProductWareHouse.objects.filter(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=key_prod,
+                warehouse_id=delivery_data['warehouse'],
+                uom_id=delivery_data['uom']
+            )
+            if product_warehouse.exists():
+                prod_warehouse = product_warehouse.first()
+                avail_stock = prod_warehouse.stock_amount - prod_warehouse.sold_amount
+                avail_stock = avail_stock - prod_warehouse.picked_ready
+                if avail_stock > 0 and avail_stock >= prod_id_temp[key_prod]:
+                    prod_warehouse.picked_ready += prod_id_temp[key_prod]
+                    prod_update.append(prod_warehouse)
+                else:
+                    raise serializers.ValidationError(
+                        {
+                            'products': django.utils.translation.gettext_lazy(
+                                'out of stock'
+                            )
+                        }
+                    )
+        ProductWareHouse.objects.bulk_update(prod_update, fields=['picked_ready'])
+
+    @classmethod
+    def update_picking_to_delivery_prod(cls, instance, total, product_update):
         delivery = OrderDelivery.objects.filter(
             sale_order_id=instance.sale_order_data['id']
         ).first()
@@ -147,10 +185,12 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         # loop trong picking product
         for key, value in product_update.items():
             delivery_data = value['delivery_data'][0]
+            key_prod = key.split('___')[0]
             delivery_prod = OrderDeliveryProduct.objects.filter(
                 delivery_sub=delivery_sub,
-                product_id=key,
-                uom_id=delivery_data['uom']
+                product_id=key_prod,
+                uom_id=delivery_data['uom'],
+                order=key.split('___')[1]
             )
             if delivery_prod.exists():
                 delivery_prod = delivery_prod.first()
@@ -159,6 +199,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 delivery_prod.delivery_data.append(delivery_data)
                 obj_update.append(delivery_prod)
 
+        cls.plus_product_warehouse_picked(instance, product_update)
         OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
         # update ready stock cho delivery sub
         delivery_sub.ready_quantity += total
@@ -172,17 +213,19 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         pickup_data_temp = {}
         for key, item in prod_update.items():
             delivery_data = item['delivery_data'][0]
+            key_prod = key.split('___')[0]
             # mỗi phiếu picking chỉ có 1 product match với warehouse nên có thể lấy value 0 của list delivery_data
             get_prod = OrderPickingProduct.objects.filter(
                 picking_sub=instance,
-                product_id=key,
-                uom_id=delivery_data['uom']
+                product_id=key_prod,
+                uom_id=delivery_data['uom'],
+                order=key.split('___')[1]
             )
             if get_prod.exists():
                 this_prod = get_prod.first()
                 this_prod.picked_quantity = item['stock']
 
-                pickup_data_temp[str(key)] = {
+                pickup_data_temp[key] = {
                     'remaining_quantity': this_prod.remaining_quantity,
                     'picked_quantity': item['stock'],
                     'pickup_quantity': this_prod.pickup_quantity,
@@ -194,14 +237,12 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(
-                {
-                    'products': django.utils.translation.gettext_lazy('Done quantity not equal remain quantity!')
-                }
+                {'products': django.utils.translation.gettext_lazy('Done quantity not equal remain quantity!')}
             )
         return pickup_data_temp
 
-    @staticmethod
-    def create_new_picking_sub(instance):
+    @classmethod
+    def create_new_picking_sub(cls, instance):
         picking = instance.order_picking
         # create new sub follow by prev sub
         new_sub = OrderPickingSub.objects.create(
@@ -235,7 +276,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 remaining_quantity=obj.pickup_quantity - (obj.picked_quantity_before + obj.picked_quantity),
                 picked_quantity=0,
                 picking_sub=new_sub,
-                product_id=obj.product_id
+                product_id=obj.product_id,
+                order=obj.order
             )
             new_item.before_save()
             obj_new_prod.append(new_item)
@@ -268,8 +310,9 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         picked_quantity_total = 0
         for item in validated_data['products']:
+            item_key = str(item['product_id']) + "___" + str(item['order'])
             picked_quantity_total += item['done']
-            product_done[str(item['product_id'])] = {
+            product_done[item_key] = {
                 'stock': item['done'],
                 'delivery_data': item['delivery_data']
             }
@@ -284,6 +327,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 self.update_current_sub(instance, pickup_data, picked_quantity_total)
         except Exception as err:
             print(err)
+            raise err
         return instance
 
     class Meta:
