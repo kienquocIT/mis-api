@@ -224,7 +224,7 @@ class ConfigDefaultData:
                 **long_sale_config
             )
 
-	
+
     def opportunity_config(self):
         OpportunityConfig.objects.get_or_create(
             company=self.company_obj,
@@ -234,13 +234,12 @@ class ConfigDefaultData:
             },
         )
 
-
     def call_new(self):
         self.company_config()
         self.delivery_config()
         self.quotation_config()
         self.sale_order_config()
-		self.opportunity_config()
+        self.opportunity_config()
         return True
 
 
