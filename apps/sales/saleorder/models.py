@@ -3,6 +3,88 @@ from django.db import models
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
+# CONFIG
+class SaleOrderAppConfig(SimpleAbstractModel):
+    company = models.OneToOneField(
+        'company.Company',
+        on_delete=models.CASCADE,
+        related_name='sales_order_config_detail',
+    )
+    short_sale_config = models.JSONField(
+        default=dict,
+        help_text="all config use for Sale Order without Opportunity, data record in ConfigShortSale"
+    )
+    long_sale_config = models.JSONField(
+        default=dict,
+        help_text="all config use for Sale Order with Opportunity, data record in ConfigLongSale"
+    )
+
+    class Meta:
+        verbose_name = 'Sale Order Config'
+        verbose_name_plural = 'Sale Order Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigOrderShortSale(SimpleAbstractModel):
+    sale_order_config = models.OneToOneField(
+        SaleOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="config short sale",
+        related_name="sale_order_config_short_sale"
+    )
+    is_choose_price_list = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can choose price in price list"
+    )
+    is_input_price = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input price for any product"
+    )
+    is_discount_on_product = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for any product"
+    )
+    is_discount_on_total = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for total of all products"
+    )
+
+    class Meta:
+        verbose_name = 'Sale Order Short Sale Config'
+        verbose_name_plural = 'Sale Order Short Sale Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class ConfigOrderLongSale(SimpleAbstractModel):
+    sale_order_config = models.OneToOneField(
+        SaleOrderAppConfig,
+        on_delete=models.CASCADE,
+        verbose_name="config long sale",
+        related_name="sale_order_config_long_sale"
+    )
+    is_not_input_price = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input price for any product"
+    )
+    is_not_discount_on_product = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for any product"
+    )
+    is_not_discount_on_total = models.BooleanField(
+        default=False,
+        help_text="flag to check if user can input discount for total of all products"
+    )
+
+    class Meta:
+        verbose_name = 'Sale Order Long Sale Config'
+        verbose_name_plural = 'Sale Order Long Sale Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+# BEGIN SALE ORDER
 class SaleOrder(DataAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',

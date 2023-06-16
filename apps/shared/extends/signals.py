@@ -12,7 +12,7 @@ from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
 )
 from apps.sales.delivery.models import DeliveryConfig
-
+from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
 
 logger = logging.getLogger(__name__)
 
@@ -195,6 +195,36 @@ class ConfigDefaultData:
                 **long_sale_config
             )
 
+    def sale_order_config(self):
+        short_sale_config = {
+            'is_choose_price_list': False,
+            'is_input_price': False,
+            'is_discount_on_product': False,
+            'is_discount_on_total': False
+        }
+        long_sale_config = {
+            'is_not_input_price': False,
+            'is_not_discount_on_product': False,
+            'is_not_discount_on_total': False,
+        }
+        config, created = SaleOrderAppConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'short_sale_config': short_sale_config,
+                'long_sale_config': long_sale_config,
+            },
+        )
+        if created:
+            ConfigOrderShortSale.objects.create(
+                sale_order_config=config,
+                **short_sale_config
+            )
+            ConfigOrderLongSale.objects.create(
+                sale_order_config=config,
+                **long_sale_config
+            )
+
+	
     def opportunity_config(self):
         OpportunityConfig.objects.get_or_create(
             company=self.company_obj,
@@ -204,11 +234,13 @@ class ConfigDefaultData:
             },
         )
 
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
         self.quotation_config()
-        self.opportunity_config()
+        self.sale_order_config()
+		self.opportunity_config()
         return True
 
 
