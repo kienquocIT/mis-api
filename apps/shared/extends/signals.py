@@ -224,7 +224,6 @@ class ConfigDefaultData:
                 **long_sale_config
             )
 
-
     def opportunity_config(self):
         OpportunityConfig.objects.get_or_create(
             company=self.company_obj,
