@@ -119,7 +119,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('salutation', 'account_name')
+        return super().get_queryset().select_related('salutation', 'account_name', 'owner', 'report_to')
 
     @swagger_auto_schema(
         operation_summary="Contact list",
@@ -149,7 +149,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = ['employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('salutation', 'account_name')
+        return super().get_queryset().select_related('salutation', 'account_name', 'owner', 'report_to')
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -159,6 +159,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Contact", request_body=ContactUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
+        print('UPDATE BODY: ', request.data)
         return self.update(request, *args, **kwargs)
 
 

@@ -11,6 +11,7 @@ __all__ = [
     'PaymentCostItemsDetail',
     'PaymentSaleOrder',
     'PaymentQuotation',
+    'PaymentOpportunity'
 ]
 
 SALE_CODE_TYPE = [
@@ -40,6 +41,13 @@ class Payment(DataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='quotation_mapped'
+    )
+    opportunity_mapped = models.ManyToManyField(
+        'opportunity.Opportunity',
+        through='PaymentOpportunity',
+        symmetrical=False,
+        blank=True,
+        related_name='opportunity_mapped'
     )
     sale_code_type = models.SmallIntegerField(
         choices=SALE_CODE_TYPE,
@@ -197,5 +205,16 @@ class PaymentQuotation(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Payment Quotation'
         verbose_name_plural = 'Payments Quotations'
+        default_permissions = ()
+        permissions = ()
+
+
+class PaymentOpportunity(SimpleAbstractModel):
+    payment_mapped = models.ForeignKey(Payment, on_delete=models.CASCADE)
+    opportunity_mapped = models.ForeignKey('opportunity.Opportunity', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Payment Opportunity'
+        verbose_name_plural = 'Payments Opportunitys'
         default_permissions = ()
         permissions = ()

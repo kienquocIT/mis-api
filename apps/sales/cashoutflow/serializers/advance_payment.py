@@ -37,6 +37,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'beneficiary',
             'sale_order_mapped',
             'quotation_mapped',
+            'opportunity_mapped',
             'expense_items'
         )
 
@@ -209,6 +210,8 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                     validate_data['sale_order_mapped_id'] = sale_code.get('id', None)
                 if sale_code.get('type', None) == '1':
                     validate_data['quotation_mapped_id'] = sale_code.get('id', None)
+                if sale_code.get('type', None) == '2':
+                    validate_data['opportunity_mapped_id'] = sale_code.get('id', None)
         else:
             if self.initial_data.get('sale_code_type', None) != 2:
                 raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
@@ -222,10 +225,12 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                 supplier.bank_accounts_information = bank_accounts_information
                 supplier.save()
                 add_banking_accounts_information(supplier, bank_accounts_information)
-        if AdvancePayment.objects.all().count() == 0:
+        if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
             new_code = 'AP.CODE.0001'
         else:
-            latest_code = AdvancePayment.objects.latest('date_created').code
+            latest_code = AdvancePayment.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
             new_code = 'AP.CODE.000' + str(new_code)
 
@@ -239,6 +244,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     expense_items = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
@@ -260,6 +266,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'sale_code_type',
             'quotation_mapped',
             'sale_order_mapped',
+            'opportunity_mapped',
             'supplier',
             'method',
             'beneficiary',
@@ -311,34 +318,51 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_mapped(cls, obj):
         if obj.sale_order_mapped:
-            return {
-                'id': obj.sale_order_mapped.id,
-                'code': obj.sale_order_mapped.code,
-                'title': obj.sale_order_mapped.title,
-                'opportunity': {
+            opportunity_obj = {}
+            if obj.sale_order_mapped.opportunity:
+                opportunity_obj = {
                     'id': obj.sale_order_mapped.opportunity.id,
                     'code': obj.sale_order_mapped.opportunity.code,
                     'title': obj.sale_order_mapped.opportunity.title,
                     'customer': obj.sale_order_mapped.opportunity.customer.name,
                 }
-            }
-        return None
+            return [{
+                'id': obj.sale_order_mapped.id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
+                'opportunity': opportunity_obj
+            }]
+        return []
 
     @classmethod
     def get_quotation_mapped(cls, obj):
         if obj.quotation_mapped:
-            return {
-                'id': obj.quotation_mapped.id,
-                'code': obj.quotation_mapped.code,
-                'title': obj.quotation_mapped.title,
-                'opportunity': {
+            opportunity_obj = {}
+            if obj.quotation_mapped.opportunity:
+                opportunity_obj = {
                     'id': obj.quotation_mapped.opportunity.id,
                     'code': obj.quotation_mapped.opportunity.code,
                     'title': obj.quotation_mapped.opportunity.title,
                     'customer': obj.quotation_mapped.opportunity.customer.name,
                 }
-            }
-        return None
+            return [{
+                'id': obj.quotation_mapped.id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
+                'opportunity': opportunity_obj
+            }]
+        return []
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        if obj.opportunity_mapped:
+            return [{
+                'id': obj.opportunity_mapped_id,
+                'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
+                'customer': obj.opportunity_mapped.customer.name,
+            }]
+        return []
 
     @classmethod
     def get_beneficiary(cls, obj):

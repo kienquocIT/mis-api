@@ -1,7 +1,5 @@
 from rest_framework import serializers
-from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact,
 )
@@ -145,14 +143,10 @@ class ContactListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
 
     @classmethod
@@ -166,7 +160,6 @@ class ContactListSerializer(serializers.ModelSerializer):
 
 
 class ContactCreateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False, allow_null=True)
     system_status = serializers.ChoiceField(
         choices=[0, 1],
         help_text='0: draft, 1: created',
@@ -191,18 +184,6 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             'account_name',
             'system_status',
         )
-
-    @classmethod
-    def validate_account_name(cls, attrs):
-        if attrs:
-            account = Account.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=attrs
-            ).first()
-            if account:
-                return account
-        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
     def validate_email(cls, attrs):
@@ -277,27 +258,19 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
 
     @classmethod
     def get_report_to(cls, obj):
         if obj.report_to:
-            owner = Contact.objects.filter(
-                id=obj.report_to
-            ).first()
-            if owner:
-                return {
-                    'id': obj.report_to,
-                    'fullname': owner.fullname
-                }
+            return {
+                'id': obj.report_to_id,
+                'fullname': obj.report_to.fullname
+            }
         return {}
 
     @classmethod
@@ -343,7 +316,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Contact
@@ -362,16 +334,6 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             "additional_information",
             'account_name'
         )
-
-    @classmethod
-    def validate_account_name(cls, value):
-        if value:
-            account = Account.objects.filter(
-                id=value
-            ).first()
-            if account:
-                return account
-        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
 
     def validate_email(self, attrs):
         if attrs:
@@ -428,12 +390,8 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
