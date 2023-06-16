@@ -210,18 +210,22 @@ class ContactCreateSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, validate_data):
-        home_address_dict = self.initial_data.get('home_address_dict', [])[0]
-        work_address_dict = self.initial_data.get('work_address_dict', [])[0]
-        for key, _ in home_address_dict.items():
-            if key not in ['home_detail_address']:
-                validate_data[key] = home_address_dict.get(key, None)
-            else:
-                validate_data[key] = home_address_dict.get(key, '')
-        for key, _ in work_address_dict.items():
-            if key not in ['work_detail_address']:
-                validate_data[key] = work_address_dict.get(key, None)
-            else:
-                validate_data[key] = work_address_dict.get(key, '')
+        home_address_dict = self.initial_data.get('home_address_dict', [])
+        work_address_dict = self.initial_data.get('work_address_dict', [])
+        if len(home_address_dict) > 0:
+            home_address_dict = home_address_dict[0]
+            for key, _ in home_address_dict.items():
+                if key not in ['home_detail_address']:
+                    validate_data[key] = home_address_dict.get(key, None)
+                else:
+                    validate_data[key] = home_address_dict.get(key, '')
+        if len(work_address_dict) > 0:
+            work_address_dict = work_address_dict[0]
+            for key, _ in work_address_dict.items():
+                if key not in ['work_detail_address']:
+                    validate_data[key] = work_address_dict.get(key, None)
+                else:
+                    validate_data[key] = work_address_dict.get(key, '')
         return validate_data
 
     @decorator_run_workflow
@@ -371,6 +375,25 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return attrs
         return None
+
+    def validate(self, validate_data):
+        home_address_dict = self.initial_data.get('home_address_dict', [])
+        work_address_dict = self.initial_data.get('work_address_dict', [])
+        if len(home_address_dict) > 0:
+            home_address_dict = home_address_dict[0]
+            for key, _ in home_address_dict.items():
+                if key not in ['home_detail_address']:
+                    validate_data[key] = home_address_dict.get(key, None)
+                else:
+                    validate_data[key] = home_address_dict.get(key, '')
+        if len(work_address_dict) > 0:
+            work_address_dict = work_address_dict[0]
+            for key, _ in work_address_dict.items():
+                if key not in ['work_detail_address']:
+                    validate_data[key] = work_address_dict.get(key, None)
+                else:
+                    validate_data[key] = work_address_dict.get(key, '')
+        return validate_data
 
     def update(self, instance, validated_data):
         if 'account_name' not in validated_data.keys():
