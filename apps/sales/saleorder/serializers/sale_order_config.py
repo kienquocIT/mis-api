@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderShortSale, ConfigOrderLongSale
 
 
-class ShortConfigSerializer(serializers.ModelSerializer):
+class OrderShortConfigSerializer(serializers.ModelSerializer):
     is_choose_price_list = serializers.BooleanField(default=False)
     is_input_price = serializers.BooleanField(default=False)
     is_discount_on_product = serializers.BooleanField(default=False)
@@ -19,7 +19,7 @@ class ShortConfigSerializer(serializers.ModelSerializer):
         )
 
 
-class LongConfigSerializer(serializers.ModelSerializer):
+class OrderLongConfigSerializer(serializers.ModelSerializer):
     is_not_input_price = serializers.BooleanField(default=False)
     is_not_discount_on_product = serializers.BooleanField(default=False)
     is_not_discount_on_total = serializers.BooleanField(default=False)
@@ -34,8 +34,8 @@ class LongConfigSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderConfigUpdateSerializer(serializers.ModelSerializer):
-    short_sale_config = ShortConfigSerializer()
-    long_sale_config = LongConfigSerializer()
+    short_sale_config = OrderShortConfigSerializer()
+    long_sale_config = OrderLongConfigSerializer()
 
     class Meta:
         model = SaleOrderAppConfig
