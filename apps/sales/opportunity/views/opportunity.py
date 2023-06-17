@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.opportunity.serializers import OpportunityListSerializer, OpportunityUpdateSerializer, \
-    OpportunityCreateSerializer
+    OpportunityCreateSerializer, OpportunityDetailSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -49,12 +49,13 @@ class OpportunityDetail(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
-    serializer_detail = OpportunityListSerializer
+    serializer_detail = OpportunityDetailSerializer
     serializer_update = OpportunityUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
+            "decision_maker"
         )
 
     @swagger_auto_schema(
