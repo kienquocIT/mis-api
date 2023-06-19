@@ -47,7 +47,7 @@ class TenantApplicationList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Application.objects.all()
+    queryset = Application.objects
 
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -57,6 +57,7 @@ class TenantApplicationList(
         operation_description="Get tenant application list",
     )
     def get(self, request, *args, **kwargs):
+        kwargs['is_workflow'] = True
         return self.tenant_application_list(request, *args, **kwargs)
 
 

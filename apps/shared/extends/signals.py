@@ -1,9 +1,10 @@
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
+from apps.core.log.models import Notifications
 from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
@@ -11,7 +12,8 @@ from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
 )
 from apps.sales.delivery.models import DeliveryConfig
-
+from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
+from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
 
@@ -194,10 +196,40 @@ class ConfigDefaultData:
                 **long_sale_config
             )
 
+    def sale_order_config(self):
+        short_sale_config = {
+            'is_choose_price_list': False,
+            'is_input_price': False,
+            'is_discount_on_product': False,
+            'is_discount_on_total': False
+        }
+        long_sale_config = {
+            'is_not_input_price': False,
+            'is_not_discount_on_product': False,
+            'is_not_discount_on_total': False,
+        }
+        config, created = SaleOrderAppConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'short_sale_config': short_sale_config,
+                'long_sale_config': long_sale_config,
+            },
+        )
+        if created:
+            ConfigOrderShortSale.objects.create(
+                sale_order_config=config,
+                **short_sale_config
+            )
+            ConfigOrderLongSale.objects.create(
+                sale_order_config=config,
+                **long_sale_config
+            )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
         self.quotation_config()
+        self.sale_order_config()
         return True
 
 
@@ -206,3 +238,10 @@ def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
         ConfigDefaultData(company_obj=instance).call_new()
         SaleDefaultData(company_obj=instance)()
+
+
+@receiver(pre_delete, sender=Notifications)
+@receiver(post_save, sender=Notifications)
+def clear_cache_notify(sender, instance, **kwargs):  # pylint: disable=W0613
+    if getattr(instance, 'employee_id', None):
+        Caching().delete(instance.cache_base_key(my_obj=instance))

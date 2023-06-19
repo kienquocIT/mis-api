@@ -317,3 +317,7 @@ msgstr ""
 #
 msgid "This record has been finalized and is not allow to any further modifications or destroy."
 msgstr "Phiếu này đã hoàn thành và không được phép chỉnh sửa hoặc xóa."
+
+#
+msgid "New Task"
+msgstr "Công việc mới"

@@ -66,9 +66,14 @@ class Application(CoreAbstractModel):
         help_text="application label ex. hr_employee"
     )
 
+    is_workflow = models.BooleanField(
+        default=True,
+        verbose_name='Application apply Workflow',
+    )
+
     class Meta:
         verbose_name = 'Application'
-        ordering = ('-date_created',)
+        ordering = ('title',)
         default_permissions = ()
         permissions = ()
 

@@ -79,10 +79,11 @@ class CacheManagement:
 
         """
         all_keys = self.sv_cache.get(self.KEY_SAVE_ALL)
-        all_keys = list(set(all_keys))
-        if key in all_keys:
-            all_keys.remove(str(key))
-            self.sv_cache.set(self.KEY_SAVE_ALL, all_keys, None)
+        if all_keys:
+            all_keys = list(set(all_keys))
+            if key in all_keys:
+                all_keys.remove(str(key))
+                self.sv_cache.set(self.KEY_SAVE_ALL, all_keys, None)
         return True
 
     def remove_from_all(self, keys: list[str]):

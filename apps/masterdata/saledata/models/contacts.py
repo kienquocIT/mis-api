@@ -119,6 +119,70 @@ class Contact(DataAbstractModel):
         default=False
     )
 
+    # home address fields
+    home_country = models.ForeignKey(
+        'base.Country',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_country'
+    )
+    home_detail_address = models.CharField(
+        verbose_name='Detail home address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    home_city = models.ForeignKey(
+        'base.City',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_city'
+    )
+    home_district = models.ForeignKey(
+        'base.District',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_district'
+    )
+    home_ward = models.ForeignKey(
+        'base.Ward',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_ward'
+    )
+
+    # work address fields
+    work_country = models.ForeignKey(
+        'base.Country',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_country'
+    )
+    work_detail_address = models.CharField(
+        verbose_name='Detail work address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    work_city = models.ForeignKey(
+        'base.City',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_city'
+    )
+    work_district = models.ForeignKey(
+        'base.District',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_district'
+    )
+    work_ward = models.ForeignKey(
+        'base.Ward',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_ward'
+    )
+
     class Meta:
         verbose_name = 'Contact'
         verbose_name_plural = 'Contacts'

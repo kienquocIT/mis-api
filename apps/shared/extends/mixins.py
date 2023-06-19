@@ -27,6 +27,9 @@ class BaseMixin(GenericAPIView):
     log_doc_app: str = ''
     log_msg: str = ''
 
+    # exception
+    query_extend_base_model = True
+
     def get_serializer_class(self):
         if getattr(self, 'serializer_list', None):
             return getattr(self, 'serializer_list', None)
@@ -75,6 +78,10 @@ class BaseMixin(GenericAPIView):
                     data = user.employee_current_id
                 case 'employee_modified_id':
                     data = user.employee_current_id
+                case 'employee_id':
+                    data = user.employee_current_id
+                case 'user_id':
+                    data = user.id
             if data is not None:
                 ctx[key] = data
         return ctx
@@ -269,11 +276,17 @@ class BaseMixin(GenericAPIView):
             )
         try:
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
-            obj = queryset.get(
-                **filter_kwargs,
-                **self.setup_retrieve_field_hidden(user=self.request.user),
-                force_cache=self.use_cache_object
-            )
+            if self.query_extend_base_model:
+                obj = queryset.get(
+                    **filter_kwargs,
+                    **self.setup_retrieve_field_hidden(user=self.request.user),
+                    force_cache=self.use_cache_object
+                )
+            else:
+                obj = queryset.get(
+                    **filter_kwargs,
+                    **self.setup_retrieve_field_hidden(user=self.request.user),
+                )
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
             return obj
@@ -361,12 +374,12 @@ class BaseListMixin(BaseMixin):
         filter_kwargs.update(self.setup_list_field_hidden(user))
 
         if is_minial_queryset is True:
-            if self.use_cache_minimal:
+            if self.use_cache_minimal and self.query_extend_base_model:
                 queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs)).cache()
             else:
                 queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs))
         else:
-            if self.use_cache_queryset:
+            if self.use_cache_queryset and self.query_extend_base_model:
                 queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs)).cache()
             else:
                 queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs))
@@ -401,6 +414,10 @@ class BaseListMixin(BaseMixin):
         serializer = self.get_serializer_list(queryset, many=True, is_minimal=is_minimal)
         return ResponseController.success_200(data=serializer.data, key_data='result')
 
+    @classmethod
+    def list_empty(cls):
+        return ResponseController.success_200(data=[], key_data='result')
+
 
 class BaseCreateMixin(BaseMixin):
     def create(self, request, *args, **kwargs):
@@ -421,6 +438,10 @@ class BaseRetrieveMixin(BaseMixin):
         instance = self.get_object()
         serializer = self.get_serializer_detail(instance)
         return ResponseController.success_200(data=serializer.data, key_data='result')
+
+    @classmethod
+    def retrieve_empty(cls):
+        return ResponseController.success_200(data={}, key_data='result')
 
 
 class BaseUpdateMixin(BaseMixin):

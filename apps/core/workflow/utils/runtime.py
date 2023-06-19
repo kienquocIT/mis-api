@@ -6,9 +6,13 @@ from uuid import UUID
 from django.db import models
 from django.utils import timezone
 
-from apps.core.log.tasks import force_log_activity
+from apps.core.log.tasks import (
+    force_log_activity,
+    force_new_notify_many,
+)
 from apps.shared import (
     FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
+    WorkflowMsgNotify,
 )
 from apps.core.workflow.models import (
     WorkflowConfigOfApp,
@@ -372,6 +376,11 @@ class RuntimeStageHandler:
 
             # create runtime assignee
             objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+
+            # active hook push notify
+            HookEventHandler(runtime_obj=self.runtime_obj).push_base_notify(
+                runtime_assignee_obj=objs_created,
+            )
 
             # update assignee and zone to Stage
             stage_obj.assignee_and_zone_data = employee_ids_zones
@@ -749,3 +758,33 @@ class RuntimeLogHandler:
             msg='Update data at zone',
             is_system=self.is_system,
         )
+
+
+class HookEventHandler:
+    def __init__(self, runtime_obj: Runtime):
+        self.runtime_obj = runtime_obj
+
+    def push_base_notify(self, runtime_assignee_obj: list[RuntimeAssignee]):
+        args_arr = []
+        for obj in runtime_assignee_obj:
+            if obj.is_done is False:
+                args_arr.append(
+                    {
+                        'tenant_id': self.runtime_obj.tenant_id,
+                        'company_id': self.runtime_obj.company_id,
+                        'title': self.runtime_obj.doc_title,
+                        'msg': WorkflowMsgNotify.new_task,
+                        'date_created': timezone.now(),
+                        'doc_id': self.runtime_obj.doc_id,
+                        'doc_app': self.runtime_obj.app_code,
+                        'user_id': None,
+                        'employee_id': obj.employee_id,
+                        'employee_sender_id': None,
+                    }
+                )
+        if len(args_arr) > 0:
+            call_task_background(
+                force_new_notify_many,
+                *[args_arr],
+            )
+        return True

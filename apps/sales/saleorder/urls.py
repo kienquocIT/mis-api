@@ -1,8 +1,9 @@
 from django.urls import path
 
-from .views import SaleOrderList, SaleOrderDetail, SaleOrderExpenseList
+from .views import SaleOrderList, SaleOrderDetail, SaleOrderExpenseList, SaleOrderConfigDetail
 
 urlpatterns = [
+    path('config', SaleOrderConfigDetail.as_view(), name='SaleOrderConfigDetail'),
     path('lists', SaleOrderList.as_view(), name='SaleOrderList'),
     path('<str:pk>', SaleOrderDetail.as_view(), name='SaleOrderDetail'),
     path('saleorder-expense-list/lists', SaleOrderExpenseList.as_view(), name='SaleOrderExpenseList'),

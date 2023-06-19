@@ -43,6 +43,16 @@ WORKFLOW_ACTION = (
     (5, WorkflowMsg.ACTION_TODO),
 )
 
+
+# translate attribute value of above class
+class WorkflowMsgNotify:
+    new_task = 'New Task'
+
+    @classmethod
+    def translate_msg(cls, msg):
+        return _(msg)
+
+
 OPTION_COLLABORATOR = (
     (0, WorkflowMsg.COLLABORATOR_IN),
     (1, WorkflowMsg.COLLABORATOR_OUT),
