@@ -262,7 +262,7 @@ class OrderDeliverySub(MasterDataAbstractModel):
         if self.times != 1 and not self.previous_step:
             raise ValueError('The previous step must be required when equal to or greater than second times')
         if self.ready_quantity > self.remaining_quantity:
-            raise ValueError("Products must have delivery quantity equal to or less than remaining quantity")
+            raise ValueError(_("Products must have delivery quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
     def create_code_delivery(self):
