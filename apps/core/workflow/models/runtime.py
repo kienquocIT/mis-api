@@ -417,16 +417,6 @@ class RuntimeAssignee(SimpleAbstractModel):
         help_text='True if assignee finish your task, False if assignee need action finish with approve, next,...'
     )
 
-    def push_action_perform(self, action_code, **kwargs):
-        if isinstance(self.action_perform, list):
-            self.action_perform.append(action_code)
-        else:
-            self.action_perform = [action_code]
-
-        if kwargs.get('force_save', False):
-            super().save(update_fields=['action_perform'])
-        return True
-
     class Meta:
         verbose_name = 'Stage map Employee plus Zone'
         verbose_name_plural = 'Stage map Employee plus Zone'
