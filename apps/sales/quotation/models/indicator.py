@@ -4,9 +4,10 @@ from apps.shared import SimpleAbstractModel
 
 
 class Indicator(SimpleAbstractModel):
-    company = models.OneToOneField(
+    company = models.ForeignKey(
         'company.Company',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='indicator_company',
     )
     title = models.CharField(
@@ -21,16 +22,10 @@ class Indicator(SimpleAbstractModel):
         max_length=100,
         blank=True
     )
-    is_indicator_param = models.BooleanField(default=False)
-    is_sale_param = models.BooleanField(default=False)
-    is_math_operator = models.BooleanField(default=False)
-    formula_indicator_params = models.JSONField(
-        default=list,
-        help_text="setup by indicator params, examples: ['indicatorID1', '-', 'indicatorID2', '+', 'indicatorID3',]"
-    )
-    formula_sale_params = models.JSONField(
-        default=list,
-        help_text="setup by sale params, examples: ['saleID1', '-', 'saleID2', '+', 'saleID3',...]"
+    formula_data = models.JSONField(default=list)
+    formula_data_show = models.TextField(
+        blank=True,
+        null=True
     )
     order = models.IntegerField(
         default=1

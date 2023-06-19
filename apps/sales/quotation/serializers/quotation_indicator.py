@@ -31,7 +31,7 @@ class IndicatorListSerializer(serializers.ModelSerializer):
 
 
 class IndicatorDetailSerializer(serializers.ModelSerializer):
-    indicator_formula = serializers.SerializerMethodField()
+    formula_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Indicator
@@ -40,11 +40,11 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'order',
-            'indicator_formula'
+            'formula_data'
         )
 
     @classmethod
-    def get_indicator_formula(cls, obj):
+    def get_formula_data(cls, obj):
         if obj:
             return {}
         return {}
@@ -59,6 +59,7 @@ class IndicatorCreateSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'order',
+            'application_code'
         )
 
     def create(self, validated_data):
@@ -67,18 +68,12 @@ class IndicatorCreateSerializer(serializers.ModelSerializer):
 
 
 class IndicatorUpdateSerializer(serializers.ModelSerializer):
-    # indicator_formula = IndicatorFormulaSerializer(
-    #     many=True,
-    #     required=False
-    # )
 
     class Meta:
         model = Indicator
         fields = (
-            'title',
-            'description',
-            # 'indicator_formula',
-            'order',
+            'formula_data',
+            'formula_data_show',
         )
 
     def update(self, instance, validated_data):
