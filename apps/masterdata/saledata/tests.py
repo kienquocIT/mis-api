@@ -1678,6 +1678,176 @@ class AccountTypeTestCase(AdvanceTestCase):
         return response
 
 
+class AccountGroupTestCase(AdvanceTestCase):
+    def setUp(self):  # noqa
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def test_create_new(self):
+        url = reverse("AccountGroupList")
+        data = {  # noqa
+            "code": "AG01",
+            "title": "Nhóm khách hàng dự án",
+            "description": ""
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'description'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_duplicate_code(self):
+        url = reverse("AccountGroupList")
+        self.test_create_new()
+
+        data2 = {  # noqa
+            "code": "AG01",
+            "title": "Đại lý cấp 1",
+            "description": ""
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response2.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
+        return None
+
+    def test_missing_data(self):
+        url = reverse("AccountGroupList")
+
+        data = {  # noqa
+            "code": "AG01",
+            "description": ""
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 400)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            ['title'],
+            check_sum_second=True,
+        )
+
+        data1 = {  # noqa
+            "title": "Nhóm khách hàng dự án",
+            "description": ""
+        }
+
+        response1 = self.client.post(url, data1, format='json')  # noqa
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response1.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['result'],
+            ['id', 'code', 'title', 'description'],
+            check_sum_second=True,
+        )
+
+        data2 = {  # noqa
+            "code": "AT09",
+            "title": "Đại lý cấp 1",
+        }
+
+        response2 = self.client.post(url, data2, format='json')  # noqa
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response2.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['result'],
+            ['id', 'code', 'title', 'description'],
+            check_sum_second=True,
+        )
+        return None
+
+    def test_get_account_group(self):
+        url = reverse("AccountGroupList")
+        account_type = self.test_create_new()  # noqa
+        response = self.client.get(url)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'title', 'code', 'description'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_create_new()
+            data_id = data_created.data['result']['id']
+        url = reverse("AccountGroupDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'description'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+
 class IndustryTestCase(AdvanceTestCase):
     def setUp(self):  # noqa
         self.maxDiff = None
@@ -1692,7 +1862,8 @@ class IndustryTestCase(AdvanceTestCase):
             "title": "IT Service",
             "description": "Dịch vụ"
         }
-        response = self.client.post(self.url, data, format='json')
+        url = reverse('IndustryList')
+        response = self.client.post(url, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_201_CREATED,

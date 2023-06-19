@@ -199,3 +199,9 @@ def make_sure_sale_order_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).sale_order_config()
     print('Make sure sale order config is done!')
+
+
+def make_sure_opportunity_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config()
+    print('Make sure opportunity is done!')
