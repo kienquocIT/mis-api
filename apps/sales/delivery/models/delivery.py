@@ -1,7 +1,7 @@
 import json
 
 from django.db import models
-
+from django.utils.translation import gettext_lazy as _
 from apps.shared import (
     SimpleAbstractModel, MasterDataAbstractModel,
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP,
@@ -393,7 +393,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
 
     def set_and_check_quantity(self):
         if self.picked_quantity > self.remaining_quantity:
-            raise ValueError("Products must have picked quantity equal to or less than remaining quantity")
+            raise ValueError(_("Products must have picked quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
     def before_save(self):
@@ -408,6 +408,5 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
         ordering = ('order',)
-        # unique_together = ('delivery_sub', 'product')
         default_permissions = ()
         permissions = ()

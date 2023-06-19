@@ -134,7 +134,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         if value == 1:
             raise serializers.ValidationError(
                 {
-                    'state': django.utils.translation.gettext_lazy('Can not update after status Done!')
+                    'state': django.utils.translation.gettext_lazy('Can not update when status is Done!')
                 }
             )
         return value
