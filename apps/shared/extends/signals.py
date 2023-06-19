@@ -14,6 +14,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
+from apps.sales.task.models.models import TaskConfig
 from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
@@ -232,6 +233,19 @@ class ConfigDefaultData:
             defaults={
                 'is_select_stage': False,
                 'is_input_win_rate': False,
+            },
+        )
+
+    def task_config(self):
+        TaskConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'list_status': [
+                    {'name': 'Todo', 'translate_name': 'Việc cần làm'},
+                    {'name': 'In Progress', 'translate_name': 'đang làm'},
+                    {'name': 'Completed', 'translate_name': 'đã hoàn thành'},
+                    {'name': 'Pending', 'translate_name': 'tạm ngưng'},
+                ]
             },
         )
 

@@ -205,3 +205,9 @@ def make_sure_opportunity_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).opportunity_config()
     print('Make sure opportunity is done!')
+
+
+def make_sure_task_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).task_config()
+    print('Make sure Task config is done!')
