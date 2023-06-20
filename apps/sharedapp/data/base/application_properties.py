@@ -97,7 +97,7 @@ AppProp_SaleData_Account_data = {
 }
 
 AppProp_SaleData_Quotation_data = {
-    # eeab5d9e-54c6-4e85-af75-477b740d7523 # SaleData.Account
+    # eeab5d9e-54c6-4e85-af75-477b740d7523 # Quotation.Quotation
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
         'title': 'Total revenue',
@@ -121,5 +121,5 @@ AppProp_SaleData_Quotation_data = {
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
-    **AppProp_SaleData_Quotation_data
+    # **AppProp_SaleData_Quotation_data
 }
