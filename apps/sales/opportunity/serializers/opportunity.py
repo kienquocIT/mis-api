@@ -384,6 +384,7 @@ class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
                 }
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': OpportunityMsg.NOT_EXIST})
+        return None
 
 
 class OpportunityUpdateSerializer(serializers.ModelSerializer):
