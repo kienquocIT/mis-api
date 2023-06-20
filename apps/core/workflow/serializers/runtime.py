@@ -171,8 +171,9 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     )
 
     def validate_action(self, attrs):
-        if attrs in self.instance.stage.actions:
-            return attrs
+        if self.instance.stage:
+            if attrs in self.instance.stage.actions:
+                return attrs
         raise serializers.ValidationError(
             {
                 'action': 'Action not support for you'

@@ -5,6 +5,7 @@ from django.db.models.signals import post_save, pre_delete
 from django.dispatch import receiver
 
 from apps.core.log.models import Notifications
+from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig
 from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
 from apps.core.base.models import Currency as BaseCurrency
@@ -256,3 +257,19 @@ def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
 def clear_cache_notify(sender, instance, **kwargs):  # pylint: disable=W0613
     if getattr(instance, 'employee_id', None):
         Caching().delete(instance.cache_base_key(my_obj=instance))
+
+
+@receiver(post_save, sender=RuntimeAssignee)
+def handler_runtime_task_update(sender, instance, **kwargs):  # pylint: disable=W0613
+    # update is_done notify when task assignee is done.
+    if instance and getattr(instance, 'is_done', False) is True:
+        stage_obj = instance.stage
+        if stage_obj:
+            runtime_obj = stage_obj.runtime
+            if runtime_obj:
+                obj = Notifications.objects.filter(
+                    employee_id=instance.employee_id,
+                    doc_id=runtime_obj.doc_id,
+                    doc_app=runtime_obj.app_code,
+                )
+                obj.update(is_done=True)

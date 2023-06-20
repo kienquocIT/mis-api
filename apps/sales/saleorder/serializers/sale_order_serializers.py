@@ -191,6 +191,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -203,7 +204,8 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'date_created',
             'total_product',
             'system_status',
-            'opportunity'
+            'opportunity',
+            'quotation'
         )
 
     @classmethod
@@ -233,6 +235,16 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+            }
+        return {}
+
+    @classmethod
+    def get_quotation(cls, obj):
+        if obj.quotation:
+            return {
+                'id': obj.quotation_id,
+                'title': obj.quotation.title,
+                'code': obj.quotation.code,
             }
         return {}
 
