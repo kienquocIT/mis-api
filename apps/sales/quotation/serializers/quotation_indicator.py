@@ -3,22 +3,9 @@ from rest_framework import serializers
 from apps.sales.quotation.models import Indicator
 
 
-# class IndicatorFormulaSerializer(serializers.ModelSerializer):
-#
-#     class Meta:
-#         model = IndicatorFormula
-#         fields = (
-#             'is_indicator_param',
-#             'is_sale_param',
-#             'is_math_operator',
-#             'indicator_param',
-#             'sale_param',
-#             'math_operator',
-#             'order',
-#         )
-
-
 class IndicatorListSerializer(serializers.ModelSerializer):
+    formula_data = serializers.JSONField()
+    formula_data_show = serializers.JSONField()
 
     class Meta:
         model = Indicator
@@ -27,11 +14,14 @@ class IndicatorListSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'order',
+            'formula_data',
+            'formula_data_show',
         )
 
 
 class IndicatorDetailSerializer(serializers.ModelSerializer):
-    formula_data = serializers.SerializerMethodField()
+    formula_data = serializers.JSONField()
+    formula_data_show = serializers.JSONField()
 
     class Meta:
         model = Indicator
@@ -40,14 +30,9 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
             'title',
             'description',
             'order',
-            'formula_data'
+            'formula_data',
+            'formula_data_show',
         )
-
-    @classmethod
-    def get_formula_data(cls, obj):
-        if obj:
-            return {}
-        return {}
 
 
 # Quotation
@@ -72,6 +57,8 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Indicator
         fields = (
+            'title',
+            'description',
             'formula_data',
             'formula_data_show',
         )

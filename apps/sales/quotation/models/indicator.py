@@ -91,13 +91,13 @@ class QuotationIndicator(SimpleAbstractModel):
         verbose_name="indicator",
         related_name="quotation_indicator_indicator",
     )
-    indicator_result = models.FloatField(
+    indicator_value = models.FloatField(
         default=0,
-        help_text="result of specific indicator for quotation"
+        help_text="value of specific indicator for quotation"
     )
-    indicator_rate_result = models.FloatField(
+    indicator_rate = models.FloatField(
         default=0,
-        help_text="rate result of specific indicator for quotation"
+        help_text="rate value of specific indicator for quotation"
     )
     order = models.IntegerField(
         default=1
