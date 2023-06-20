@@ -224,7 +224,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 delivery_quantity=obj.delivery_quantity,
                 delivered_quantity_before=delivery_before,
                 remaining_quantity=remain,
-                ready_quantity=remain,
+                ready_quantity=obj.ready_quantity - obj.picked_quantity if obj.ready_quantity > 0 else 0,
                 picked_quantity=0,
                 order=obj.order
             )
@@ -260,10 +260,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             delivery_quantity=instance.delivery_quantity,
             delivered_quantity_before=delivered,
             remaining_quantity=remain,
-            ready_quantity=remain,
+            ready_quantity=remain if case != 4 else instance.ready_quantity - total_done,
             delivery_data=None,
             is_updated=False,
-            state=0 if case == 4 else 1,
+            state=0 if case == 4 and instance.ready_quantity - total_done == 0 else 1,
             sale_order_data=instance.sale_order_data,
             estimated_delivery_date=instance.estimated_delivery_date,
             actual_delivery_date=instance.actual_delivery_date,
@@ -338,15 +338,20 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             new_sub = cls.create_new_sub(instance, total_done, 4)
             cls.create_prod(new_sub, instance)
             order_delivery.sub = new_sub
-        elif instance.remaining_quantity == total_done:
+            # update sub cũ
             instance.date_done = timezone.now()
             instance.is_updated = True
             instance.state = 2
             instance.ready_quantity += total_done
+        elif instance.remaining_quantity == total_done:
+            instance.date_done = timezone.now()
+            instance.is_updated = True
+            instance.state = 2
             order_delivery.state = 2
-            instance.save(
-                update_fields=['date_done', 'ready_quantity', 'state', 'is_updated']
-            )
+        instance.save(
+            update_fields=['date_done', 'ready_quantity', 'state', 'is_updated', 'estimated_delivery_date',
+                           'actual_delivery_date', 'remarks']
+        )
         order_delivery.save(update_fields=['sub', 'state'])
 
     def update(self, instance, validated_data):
