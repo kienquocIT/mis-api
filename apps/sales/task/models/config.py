@@ -10,7 +10,7 @@ __all__ = ['TaskConfig']
 class TaskConfig(SimpleAbstractModel):
     company = models.OneToOneField(
         'company.Company', on_delete=models.CASCADE,
-        related_name='sales_delivery_config_detail',
+        related_name='sales_task_config_detail',
     )
     list_status = models.JSONField(
         default=list,

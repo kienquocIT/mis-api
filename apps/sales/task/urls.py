@@ -1,6 +1,7 @@
 from django.urls import path
 
-urlpatterns = [
-    path('config', QuotationConfigDetail.as_view(), name='QuotationConfigDetail'),
+from apps.sales.task.views.config import TaskConfigDetail
 
+urlpatterns = [
+    path('config', TaskConfigDetail.as_view(), name='TaskConfigDetail'),
 ]
