@@ -96,7 +96,30 @@ AppProp_SaleData_Account_data = {
     },
 }
 
+AppProp_SaleData_Quotation_data = {
+    # eeab5d9e-54c6-4e85-af75-477b740d7523 # SaleData.Account
+    'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total revenue',
+        'code': 'total_product',
+        'type': 6,
+    },
+    '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total cost',
+        'code': 'total_cost',
+        'type': 6,
+    },
+    '78584833-3ad3-406a-8969-749e2c9b899c': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total expense',
+        'code': 'total_expense',
+        'type': 6,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
+    **AppProp_SaleData_Quotation_data
 }
