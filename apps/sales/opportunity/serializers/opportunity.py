@@ -4,7 +4,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
-    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor
+    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -287,6 +287,22 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         OpportunityContactRole.objects.bulk_create(bulk_data)
         return True
 
+    @classmethod
+    def update_opportunity_sale_team(cls, data, instance):
+        # delete old record
+        OpportunitySaleTeamMember.objects.filter(opportunity=instance).delete()
+        # create new
+        bulk_data = []
+        for item in data:
+            bulk_data.append(
+                OpportunitySaleTeamMember(
+                    opportunity=instance,
+                    member_id=item['member']['id']
+                )
+            )
+        OpportunitySaleTeamMember.objects.bulk_create(bulk_data)
+        return True
+
 
 class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
     competitor = serializers.UUIDField(allow_null=False)
@@ -345,6 +361,31 @@ class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
         return None
 
 
+class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
+    member = serializers.UUIDField(allow_null=False)
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = (
+            'member',
+        )
+
+    @classmethod
+    def validate_member(cls, value):
+        try:  # noqa
+            if value is not None:
+                obj = Employee.objects.get(
+                    id=value
+                )
+                return {
+                    'id': str(obj.id),
+                    'name': obj.get_full_name(),
+                    'email': obj.email,
+                }
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee': OpportunityMsg.NOT_EXIST})
+
+
 class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_product_datas = OpportunityProductCreateSerializer(required=False, many=True)
     opportunity_competitors_datas = OpportunityCompetitorCreateSerializer(required=False, many=True)
@@ -364,6 +405,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     is_input_rate = serializers.BooleanField(required=False)
     sale_person = serializers.UUIDField(required=False)
+    opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
 
     class Meta:
         model = Opportunity
@@ -386,6 +428,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'opportunity_competitors_datas',
             'opportunity_contact_role_datas',
             'customer_decision_factor',
+            'opportunity_sale_team_datas',
         )
 
     @classmethod
@@ -493,6 +536,12 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
                 instance
             )
 
+        if 'opportunity_sale_team_datas' in validated_data:
+            CommonOpportunityUpdate.update_opportunity_sale_team(
+                validated_data['opportunity_sale_team_datas'],
+                instance
+            )
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -525,7 +574,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'win_rate',
             'is_input_rate',
             'customer_decision_factor',
-            'sale_person'
+            'sale_person',
+            'opportunity_sale_team_datas'
         )
 
     @classmethod
