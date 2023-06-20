@@ -525,7 +525,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'win_rate',
             'is_input_rate',
             'customer_decision_factor',
-            'sale_person'
+            'sale_person',
         )
 
     @classmethod

@@ -26,7 +26,8 @@ class SaleOrderList(
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
-            "opportunity"
+            "opportunity",
+            "quotation"
         )
 
     @swagger_auto_schema(
