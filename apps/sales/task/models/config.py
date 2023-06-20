@@ -21,8 +21,8 @@ class TaskConfig(SimpleAbstractModel):
                 {'name': 'In Progress', 'translate_name': 'đang làm'},
                 {'name': 'Completed', 'translate_name': 'đã hoàn thành'},
                 {'name': 'Pending', 'translate_name': 'tạm ngưng'},
-            ]
-        )
+            ], ensure_ascii=False
+        ).encode('utf8')
     )
 
     class Meta:

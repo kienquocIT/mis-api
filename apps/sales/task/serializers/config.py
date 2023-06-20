@@ -8,6 +8,7 @@ __all__ = [
     'TaskConfigUpdateSerializer',
 ]
 
+
 class TaskConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskConfig
