@@ -205,6 +205,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         delivery_sub.ready_quantity += total
         if instance.delivery_option == 1 or instance.remaining_quantity == total:
             delivery_sub.state = 1
+
         delivery_sub.estimated_delivery_date = instance.estimated_delivery_date
         delivery_sub.save(update_fields=['state', 'estimated_delivery_date', 'ready_quantity'])
 
@@ -258,6 +259,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picked_quantity=0,
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
+            delivery_option=instance.delivery_option
         )
 
         picking.sub = new_sub
