@@ -47,6 +47,7 @@ WORKFLOW_ACTION = (
 # translate attribute value of above class
 class WorkflowMsgNotify:
     new_task = 'New Task'
+    was_return_begin = 'Was return owner'
 
     @classmethod
     def translate_msg(cls, msg):

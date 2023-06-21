@@ -121,6 +121,11 @@ class Opportunity(DataAbstractModel):
         related_name='decision_factor_map_opportunity',
     )
 
+    opportunity_sale_team_datas = models.JSONField(
+        default=list,
+        help_text="read data sale team member, use for get list or detail opportunity"
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'
@@ -315,12 +320,34 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         'opportunity.CustomerDecisionFactor',
         on_delete=models.CASCADE,
         verbose_name='reason why customer buy product',
-        related_query_name='opportunity_customer_decision_factor_factor',
+        related_name='opportunity_customer_decision_factor_factor',
     )
 
     class Meta:
-        verbose_name = 'Opportunity Contact Role'
-        verbose_name_plural = 'Opportunity Contacts Role'
+        verbose_name = 'Opportunity Customer Decision Factor'
+        verbose_name_plural = 'Opportunity Customer Decision Factors'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunitySaleTeamMember(SimpleAbstractModel):
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name="opportunity_sale_team_member_opportunity",
+    )
+
+    member = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        verbose_name='Member of Sale Team of Opportunity',
+        related_name='opportunity_sale_team_member_member',
+    )
+
+    class Meta:
+        verbose_name = 'Opportunity Sale Team Member'
+        verbose_name_plural = 'Opportunity Sale Team Members'
         ordering = ()
         default_permissions = ()
         permissions = ()

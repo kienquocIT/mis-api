@@ -134,7 +134,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         if value == 1:
             raise serializers.ValidationError(
                 {
-                    'state': django.utils.translation.gettext_lazy('Can not update after status Done!')
+                    'state': django.utils.translation.gettext_lazy('Can not update when status is Done!')
                 }
             )
         return value
@@ -205,6 +205,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         delivery_sub.ready_quantity += total
         if instance.delivery_option == 1 or instance.remaining_quantity == total:
             delivery_sub.state = 1
+
         delivery_sub.estimated_delivery_date = instance.estimated_delivery_date
         delivery_sub.save(update_fields=['state', 'estimated_delivery_date', 'ready_quantity'])
 
@@ -233,7 +234,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 }
                 this_prod.save(update_fields=['picked_quantity'])
 
-            cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
+        cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(
@@ -258,6 +259,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picked_quantity=0,
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
+            delivery_option=instance.delivery_option
         )
 
         picking.sub = new_sub
