@@ -70,7 +70,8 @@ class ApplicationPropertyList(
     filterset_fields = {
         'application': ['exact'],
         'type': ['exact'],
-        'id': ['in']
+        'id': ['in'],
+        'application__code': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 

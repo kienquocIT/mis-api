@@ -52,7 +52,7 @@ class ReturnAdvance(DataAbstractModel):
     class Meta:
         verbose_name = 'Return Advance'
         verbose_name_plural = 'Return Advances'
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 

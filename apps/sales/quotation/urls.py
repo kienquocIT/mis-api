@@ -1,10 +1,13 @@
 from django.urls import path
 
-from .views import QuotationList, QuotationDetail, QuotationExpenseList, QuotationConfigDetail, QuotationIndicatorList
+from .views import QuotationList, QuotationDetail, QuotationExpenseList, QuotationConfigDetail,\
+    QuotationIndicatorList, QuotationIndicatorDetail
 
 urlpatterns = [
     path('config', QuotationConfigDetail.as_view(), name='QuotationConfigDetail'),
-    path('indicator-lists', QuotationIndicatorList.as_view(), name='QuotationIndicatorList'),
+    path('indicators', QuotationIndicatorList.as_view(), name='QuotationIndicatorList'),
+    path('indicator/<str:pk>', QuotationIndicatorDetail.as_view(), name='QuotationIndicatorDetail'),
+
     path('lists', QuotationList.as_view(), name='QuotationList'),
     path('<str:pk>', QuotationDetail.as_view(), name='QuotationDetail'),
     path('quotation-expense-list/lists', QuotationExpenseList.as_view(), name='QuotationExpenseList'),
