@@ -133,21 +133,27 @@ def create_sale_code_object(payment_obj, initial_data):
                 PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
             if initial_data.get('sale_code_detail', None) == 2:
                 PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+        else:
+            raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL)
     if initial_data.get('sale_code_type', None) == 3:
-        sale_order_bulk_info = []
-        for item in initial_data.get('sale_order_selected_list', []):
-            sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
-        PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
+        sale_order_selected_list = initial_data.get('sale_order_selected_list', [])
+        if len(sale_order_selected_list) > 0:
+            sale_order_bulk_info = []
+            for item in sale_order_selected_list:
+                sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
+            PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
 
-        payment_quotation_bulk_info = []
-        for item in initial_data.get('quotation_selected_list', []):
-            payment_quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
-        PaymentQuotation.objects.bulk_create(payment_quotation_bulk_info)
+            quotation_bulk_info = []
+            for item in sale_order_selected_list:
+                quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
+            PaymentQuotation.objects.bulk_create(quotation_bulk_info)
 
-        opportunity_bulk_info = []
-        for item in initial_data.get('opportunity_selected_list', []):
-            opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
-        PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
+            opportunity_bulk_info = []
+            for item in sale_order_selected_list:
+                opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
+            PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
+        else:
+            raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL)
     return True
 
 

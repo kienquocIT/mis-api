@@ -204,7 +204,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                     if sale_code.get('type', None) == '2':
                         validate_data['opportunity_mapped_id'] = sale_code.get('id', None)
             else:
-                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_NOT_EXIST)
+                raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL)
         return validate_data
 
     def create(self, validated_data):
