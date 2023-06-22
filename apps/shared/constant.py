@@ -127,3 +127,10 @@ DELIVERY_WITH_KIND_PICKUP = (
     (0, 'Wait auto picking'),
     (1, 'Manual select product'),
 )
+
+# opportunity task
+TASK_PRIORITY = (
+    (0, 'Low'),
+    (1, 'Medium'),
+    (2, 'High')
+)

@@ -14,7 +14,7 @@ from apps.masterdata.saledata.models import (
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
-from apps.sales.task.models.config import TaskConfig
+from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
@@ -237,7 +237,7 @@ class ConfigDefaultData:
         )
 
     def task_config(self):
-        TaskConfig.objects.get_or_create(
+        OpportunityTaskConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={
                 'list_status': [
@@ -248,6 +248,20 @@ class ConfigDefaultData:
                 ]
             },
         )
+        temp_stt = []
+        is_config = OpportunityTaskConfig.objects.filter(company=self.company_obj)
+        if is_config.exists():
+            is_config = is_config.first()
+            for item in is_config.list_status:
+                temp_stt.append(OpportunityTaskStatus(
+                    title=item['name'],
+                    translate_name=item['translate_name'],
+                    task_config=is_config
+                ))
+            if len(temp_stt):
+                OpportunityTaskStatus.objects.bulk_create(temp_stt)
+            else:
+                return False
 
     def call_new(self):
         self.company_config()

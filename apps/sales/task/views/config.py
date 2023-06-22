@@ -1,22 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import serializers
-from rest_framework.views import APIView
 
-from apps.sales.task.models.config import TaskConfig
+from apps.sales.task.models.config import OpportunityTaskConfig
 from apps.sales.task.serializers.config import TaskConfigDetailSerializer, TaskConfigUpdateSerializer
 from apps.shared import (
     BaseRetrieveMixin, BaseUpdateMixin,
-    mask_view, DisperseModel, ResponseController, TypeCheck,
-    call_task_background,
-)
-from apps.sales.delivery.models import (
-    DeliveryConfig,
-)
-from apps.sales.delivery.serializers import (
-    DeliveryConfigDetailSerializer, DeliveryConfigUpdateSerializer,
-)
-from apps.sales.delivery.tasks import (
-    task_active_delivery_from_sale_order,
+    mask_view
 )
 
 __all__ = [
@@ -25,7 +13,7 @@ __all__ = [
 
 
 class TaskConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = TaskConfig.objects
+    queryset = OpportunityTaskConfig.objects
     serializer_detail = TaskConfigDetailSerializer
     serializer_update = TaskConfigUpdateSerializer
 

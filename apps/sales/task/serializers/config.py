@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sales.task.models.config import TaskConfig
+from apps.sales.task.models.config import OpportunityTaskConfig
 
 
 __all__ = [
@@ -11,11 +11,11 @@ __all__ = [
 
 class TaskConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TaskConfig
-        fields = ('id', 'list_status', )
+        model = OpportunityTaskConfig
+        fields = ('id', 'list_status')
 
 
 class TaskConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
-        model = TaskConfig
+        model = OpportunityTaskConfig
         fields = ('list_status', )

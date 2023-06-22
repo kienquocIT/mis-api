@@ -4,13 +4,13 @@ from django.db import models
 
 from apps.shared import SimpleAbstractModel
 
-__all__ = ['TaskConfig']
+__all__ = ['OpportunityTaskConfig']
 
 
-class TaskConfig(SimpleAbstractModel):
+class OpportunityTaskConfig(SimpleAbstractModel):
     company = models.OneToOneField(
         'company.Company', on_delete=models.CASCADE,
-        related_name='sales_task_config_detail',
+        related_name='opportunity_task_config_company',
     )
     list_status = models.JSONField(
         default=list,

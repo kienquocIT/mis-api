@@ -279,7 +279,6 @@ class OrderDeliverySub(MasterDataAbstractModel):
             self.code = code
 
     def save(self, *args, **kwargs):
-
         self.set_and_check_quantity()
         if kwargs.get('force_inserts', False):
             times_arr = OrderDeliverySub.objects.filter(order_delivery=self.order_delivery).values_list(
