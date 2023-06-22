@@ -41,7 +41,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
+        all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
@@ -269,7 +269,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
+        all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
