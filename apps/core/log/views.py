@@ -4,16 +4,19 @@ from rest_framework.views import APIView
 from apps.shared import (
     BaseListMixin, mask_view, BaseUpdateMixin,
     ResponseController,
-    Caching,
+    Caching, BaseCreateMixin, BaseRetrieveMixin, BaseDestroyMixin,
 )
 
 from apps.core.log.models import (
     ActivityLog,
     Notifications,
+    BookMark, DocPined,
 )
 from apps.core.log.serializers import (
     ActivityListSerializer,
     NotifyListSerializer, NotifyUpdateDoneSerializer,
+    BookMarkListSerializer, BookMarkCreateSerializer, BookMarkUpdateSerializer,
+    DocPinedListSerializer, DocPinedCreateSerializer,
 )
 
 __all__ = [
@@ -23,6 +26,10 @@ __all__ = [
     'MyNotifyDetail',
     'MyNotifySeenAll',
     'MyNotifyCleanAll',
+    'BookMarkList',
+    'BookMarkDetail',
+    'DocPinedList',
+    'DocPinedDetail',
 ]
 
 
@@ -134,3 +141,84 @@ class MyNotifyDetail(BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
+
+
+# BookMark
+class BookMarkList(BaseListMixin, BaseCreateMixin):
+    query_extend_base_model = False
+    queryset = BookMark.objects
+    list_hidden_field = ['employee_id']
+    create_hidden_field = ['employee_id']
+    serializer_list = BookMarkListSerializer
+    serializer_detail = BookMarkListSerializer
+    serializer_create = BookMarkCreateSerializer
+
+    @swagger_auto_schema(operation_summary='BookMark List')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary='BookMark Create')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class BookMarkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+    query_extend_base_model = False
+    queryset = BookMark.objects
+    retrieve_hidden_field = ['employee_id']
+    serializer_detail = BookMarkListSerializer
+    serializer_update = BookMarkUpdateSerializer
+
+    @swagger_auto_schema(operation_summary='BookMark Update')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
+
+    @swagger_auto_schema(operation_summary='BookMark Destroy')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)
+
+
+# -- BookMark
+
+# Pined
+class DocPinedList(BaseListMixin, BaseCreateMixin):
+    query_extend_base_model = False
+    queryset = DocPined.objects
+    serializer_list = DocPinedListSerializer
+    serializer_detail = DocPinedListSerializer
+    serializer_create = DocPinedCreateSerializer
+    list_hidden_field = ['tenant_id', 'company_id', 'employee_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('runtime', 'runtime__stage_currents').prefetch_related(
+            'runtime__stage_currents__assignee_of_runtime_stage'
+        )
+
+    @swagger_auto_schema(operation_summary='Doc Pined List')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary='Doc Pined Create', request_body=DocPinedCreateSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class DocPinedDetail(BaseDestroyMixin):
+    query_extend_base_model = False
+    queryset = DocPined.objects
+    serializer_detail = DocPinedListSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id', 'employee_id']
+
+    @swagger_auto_schema(operation_summary='Doc Pined Destroy')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def delete(self, request, *args, pk, **kwargs):
+        return self.destroy(request, *args, pk, **kwargs)
+
+# -- Pined

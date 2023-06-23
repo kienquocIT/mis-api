@@ -4,16 +4,17 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.base.models import PlanApplication
-from ..core.tenant.models import Tenant, TenantPlan
-from ..sales.cashoutflow.models import (
+from apps.core.base.models import PlanApplication
+from apps.core.tenant.models import Tenant, TenantPlan
+from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder
 )
-from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
-from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
+from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+
+from .extends.signals import SaleDefaultData, ConfigDefaultData
 
 
 def update_sale_default_data_old_company():
@@ -205,3 +206,21 @@ def make_sure_opportunity_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).opportunity_config()
     print('Make sure opportunity is done!')
+
+
+def fill_tenant_company_to_runtime():
+    print('Workflow Fill data processing:')
+    for obj in RuntimeStage.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Stage run done!')
+
+    for obj in RuntimeAssignee.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Assignee run done!')
+
+    for obj in RuntimeLog.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Log run done!')

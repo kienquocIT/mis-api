@@ -74,7 +74,9 @@ class AccountDestroyMixin(BaseDestroyMixin):
         return ResponseController.success_200({}, key_data='result')
 
     @staticmethod
-    def perform_destroy(instance):
+    def perform_destroy(instance, is_purge=False):
+        if is_purge is True:
+            ...
         if instance.company_current_id:
             company_current_id = instance.company_current_id
 

@@ -451,13 +451,14 @@ class RuntimeStageHandler:
             objs = []
             log_objs = []
             for emp_id, zone_and_properties in assignee_and_zone.items():
-                objs.append(
-                    RuntimeAssignee(
-                        stage=stage_obj,
-                        employee_id=emp_id,
-                        zone_and_properties=zone_and_properties,
-                    )
+                obj_assignee = RuntimeAssignee(
+                    stage=stage_obj,
+                    employee_id=emp_id,
+                    zone_and_properties=zone_and_properties,
                 )
+                obj_assignee.before_save(force_insert=True)
+                objs.append(obj_assignee)
+
                 # create instance log
                 log_obj_tmp = RuntimeLogHandler(
                     stage_obj=stage_obj,
@@ -468,7 +469,7 @@ class RuntimeStageHandler:
                     is_return=is_return,
                 )
                 # update some field need call save() (call bulk don't hit save())
-                log_obj_tmp.before_force(force_insert=True)
+                log_obj_tmp.before_save(force_insert=True)
                 # add to list for call bulk create
                 log_objs.append(log_obj_tmp)
                 # push employee to stages.assignees
