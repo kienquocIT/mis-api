@@ -20,6 +20,8 @@ from apps.shared import Caching
 logger = logging.getLogger(__name__)
 
 __all__ = [
+    'SaleDefaultData',
+    'ConfigDefaultData',
     'update_stock',
 ]
 
