@@ -14,7 +14,7 @@ class Indicator(SimpleAbstractModel):
         max_length=100,
         blank=True
     )
-    description = models.CharField(
+    remark = models.CharField(
         max_length=200,
         blank=True
     )

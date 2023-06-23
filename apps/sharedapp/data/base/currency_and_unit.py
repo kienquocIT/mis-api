@@ -1,6 +1,7 @@
 __all__ = [
     'Currency_data',
     'BaseItemUnit_data',
+    'IndicatorParam_data'
 ]
 
 Currency_data = {
@@ -78,4 +79,59 @@ BaseItemUnit_data = {
         "title": "volume",
         "measure": "cm³"
     },
+}
+
+# IndicatorFunction in Base model
+IndicatorParam_data = {
+    # property
+
+    # function
+    "9405719c-da51-440c-8e2b-e91d779dd80e": {
+        "title": "contains",
+        "code": "contains",
+        "remark": "Returns true if the second argument is found in the first.",
+        "syntax": "contains(text, text)",
+        "example": "contains('employee', 'emp') == true",
+        "param_type": 2,
+    },
+    "dfcddc32-73ba-401b-9d05-d4ce650048e4": {
+        "title": "empty",
+        "code": "empty",
+        "remark": "Tests if a value is empty.",
+        "syntax": "empty(number), empty(text), empty(boolean), empty(date)",
+        "example": "empty("") == true",
+        "param_type": 2,
+    },
+    "b13fab07-14dd-4aff-ae56-85b066299bbe": {
+        "title": "concat",
+        "code": "concat",
+        "remark": "Concatenates its arguments and returns the result.",
+        "syntax": "concat(text,...)",
+        "example": "concat('mon', 'key') == 'monkey'",
+        "param_type": 2,
+    },
+    "b134be26-c97e-412e-9865-5f080222d711": {
+        "title": "min",
+        "code": "min",
+        "remark": "Returns the smallest of zero or more numbers.",
+        "syntax": "min(number,...)",
+        "example": "min(4, 1, 5, 3) == 1",
+        "param_type": 2,
+    },
+    "14ed6103-b79a-4946-a143-87438a70826d": {
+        "title": "max",
+        "code": "max",
+        "remark": "Returns the largest of zero or more numbers.",
+        "syntax": "max(number...)",
+        "example": "max(5, 2, 9, 3) == 9",
+        "param_type": 2,
+    },
+    "aebaf647-49ff-4d59-a738-41ed6a583b50": {
+        "title": "sumItemIf",
+        "code": "sumItemIf",
+        "remark": "Returns total of items that pass condition.",
+        "syntax": "sumItemIf(item_check_list, condition, item_sum_list)",
+        "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
+        "param_type": 2,
+    }
 }

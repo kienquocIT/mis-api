@@ -102,18 +102,42 @@ AppProp_SaleData_Quotation_data = {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
         'title': 'Total revenue',
         'code': 'total_product',
+        'remark': 'Total revenue of quotation',
         'type': 6,
     },
     '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
         'title': 'Total cost',
         'code': 'total_cost',
+        'remark': 'Total cost of quotation',
         'type': 6,
     },
     '78584833-3ad3-406a-8969-749e2c9b899c': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
         'title': 'Total expense',
         'code': 'total_expense',
+        'remark': 'Total expense of quotation',
+        'type': 6,
+    },
+    '9a8bef37-6812-4d8b-ba6a-dc5669e61029': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total revenue before tax',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total revenue before tax of quotation',
+        'type': 6,
+    },
+    'd1dcd149-6fc8-4234-870d-29497f8cfb88': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total cost before tax',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost before tax of quotation',
+        'type': 6,
+    },
+    '490ecfee-30d2-468a-b075-84d44b8b150e': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Total expense before tax',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense before tax of quotation',
         'type': 6,
     },
 }
@@ -121,5 +145,5 @@ AppProp_SaleData_Quotation_data = {
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
-    # **AppProp_SaleData_Quotation_data
+    **AppProp_SaleData_Quotation_data
 }
