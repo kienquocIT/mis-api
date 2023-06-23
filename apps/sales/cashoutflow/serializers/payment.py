@@ -171,19 +171,19 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     def validate_sale_code_type(cls, attrs):
         if attrs in [0, 1, 2, 3]:
             return attrs
-        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+        raise serializers.ValidationError({'Sale code type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     @classmethod
     def validate_method(cls, attrs):
         if attrs in [0, 1]:
             return attrs
-        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+        raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
         sale_code = self.initial_data.get('sale_code', None)
         sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
         if not sale_code and len(sale_order_selected_list) < 1:
-            raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL)
+            raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
         return validate_data
 
     def create(self, validated_data):
