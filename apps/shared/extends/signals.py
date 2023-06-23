@@ -54,6 +54,170 @@ class SaleDefaultData:
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
 
+    opportunity_config_stage_data = [
+        {
+            'title': 'Qualification',
+            'description': 'Giai đoạn thẩm định thông tin cơ hội kinh doanh',
+            'win_rate': 10,
+            'is_default': True,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 0,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Needs Analysis',
+            'description': 'Giai đoạn phân tích, khảo sát các yêu cầu của khách hàng',
+            'win_rate': 20,
+            'is_default': True,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 0,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 1,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 4,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Proposal',
+            'description': 'Giai đoạn gửi đề xuất sản phẩm dịch vụ cho khách hàng',
+            'win_rate': 50,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 0,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 1,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 4,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 5,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 7,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Negotiation',
+            'description': 'Giai đoạn thương lượng giá, phạm vi cv, hợp đồng, các điều kiện thương mại...',
+            'win_rate': 80,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 9,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Qualification',
+            'description': 'Giai đoạn thẩm định thông tin cơ hội kinh doanh',
+            'win_rate': 10,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 0,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Closed Won',
+            'description': 'Đóng thành công cơ hội, khách hàng xác nhận mua hàng, ký hợp dồng..',
+            'win_rate': 100,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 10,
+                    'comparison_operators': 0,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Closed Lost',
+            'description': 'Cơ hội thất bại',
+            'win_rate': 0,
+            'is_default': 0,
+            'logical_operator': 1,
+            'condition': [
+                {
+                    'condition_attribute': 6,
+                    'comparison_operators': 0,
+                    'customer_annual_revenue': None,
+                },
+                {
+                    'condition_attribute': 8,
+                    'comparison_operators': 0,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Delivery',
+            'description': 'Đang giao hàng/triển khai',
+            'win_rate': 0,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 11,
+                    'comparison_operators': 1,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        },
+        {
+            'title': 'Deal Close',
+            'description': 'Kết thúc bán hàng/Dự án',
+            'win_rate': 0,
+            'is_default': 0,
+            'logical_operator': 0,
+            'condition': [
+                {
+                    'condition_attribute': 12,
+                    'comparison_operators': 0,
+                    'customer_annual_revenue': None,
+                }
+            ]
+        }
+    ]
+
     def __init__(self, company_obj):
         self.company_obj = company_obj
 
@@ -235,6 +399,12 @@ class ConfigDefaultData:
                 'is_input_win_rate': False,
             },
         )
+
+    # def opportunity_config_stage(self):
+    #     OpportunityConfigStage.objects.get_or_create(
+    #         company=self.company_obj,
+    #
+    #     )
 
     def call_new(self):
         self.company_config()
