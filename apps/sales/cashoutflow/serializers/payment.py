@@ -199,8 +199,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         payment_obj = Payment.objects.create(code=new_code, **validated_data)
 
         create_sale_code_object(payment_obj, self.initial_data)
-        if self.initial_data.get('expense_valid_list', None):
-            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', None))
+        if len(self.initial_data.get('expense_valid_list', [])) > 0:
+            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', []))
         return payment_obj
 
 
