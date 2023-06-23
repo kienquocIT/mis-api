@@ -82,9 +82,6 @@ def create_payment_cost_items(payment_obj, payment_cost_list):
                     expense_items_detail_list=expense_ap_detail.get('converted_value_detail', None)
                 )
             )
-            # ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
-            # ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(expense_ap.get('value', 0))
-            # ap_updated.save()
     PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
     payment_cost_item_list = PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
     create_payment_cost_detail_items(payment_obj, payment_cost_item_list)
@@ -124,6 +121,10 @@ def create_expense_items(instance, expense_valid_list):
 
 
 def create_sale_code_object(payment_obj, initial_data):
+    """
+    1. sale_code_type = 0 (Sale): get 'sale_code_detail', then sub-create Payment map with each SaleCode
+    2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
+    """
     if initial_data.get('sale_code_type', None) == 0:
         sale_code_id = initial_data.get('sale_code', None)
         if sale_code_id:
@@ -135,16 +136,18 @@ def create_sale_code_object(payment_obj, initial_data):
                 PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
     if initial_data.get('sale_code_type', None) == 3:
         sale_order_selected_list = initial_data.get('sale_order_selected_list', [])
+        quotation_selected_list = initial_data.get('quotation_selected_list', [])
+        opportunity_selected_list = initial_data.get('opportunity_selected_list', [])
         sale_order_bulk_info = []
         for item in sale_order_selected_list:
             sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
         PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
         quotation_bulk_info = []
-        for item in sale_order_selected_list:
+        for item in quotation_selected_list:
             quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
         PaymentQuotation.objects.bulk_create(quotation_bulk_info)
         opportunity_bulk_info = []
-        for item in sale_order_selected_list:
+        for item in opportunity_selected_list:
             opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
         PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
     return True
@@ -179,7 +182,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         sale_code = self.initial_data.get('sale_code', None)
         sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
-        if not sale_code or len(sale_order_selected_list) < 1:
+        if not sale_code and len(sale_order_selected_list) < 1:
             raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL)
         return validate_data
 
