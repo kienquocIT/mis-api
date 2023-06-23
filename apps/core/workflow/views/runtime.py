@@ -4,14 +4,17 @@ from rest_framework.views import APIView
 from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee
 from apps.core.workflow.serializers.runtime import (
     RuntimeListSerializer,
-    RuntimeStageListSerializer, RuntimeDetailSerializer, RuntimeAssigneeUpdateSerializer,
+    RuntimeStageListSerializer, RuntimeDetailSerializer, RuntimeAssigneeUpdateSerializer, RuntimeAssigneeListSerializer,
+    RuntimeMeListSerializer,
 )
 from apps.shared import ResponseController, mask_view, BaseListMixin, TypeCheck, HttpMsg
 
 __all__ = [
     'RuntimeDiagramDetail',
     'RuntimeListView',
+    'RuntimeMeListView',
     'RuntimeDetail',
+    'RuntimeAssigneeList',
     'RuntimeAssigneeDetail',
 ]
 
@@ -34,6 +37,27 @@ class RuntimeListView(BaseListMixin):
             kwargs['flow_id'] = params['flow_id']
             return self.list(request, *args, **kwargs)
         return ResponseController.notfound_404()
+
+
+class RuntimeMeListView(BaseListMixin):
+    queryset = Runtime.objects
+    serializer_list = RuntimeMeListSerializer
+    filterset_fields = {
+        'app_id': ['exact', 'in'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('stage_currents').prefetch_related(
+            'stage_currents__assignee_of_runtime_stage'
+        )
+
+    @swagger_auto_schema(operation_summary='Runtime of me')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        if request.user.employee_current_id:
+            kwargs['doc_employee_created_id'] = request.user.employee_current_id
+            return self.list(request, *args, **kwargs)
+        return self.list_empty()
 
 
 class RuntimeDiagramDetail(APIView):
@@ -81,8 +105,28 @@ class RuntimeDetail(APIView):
         return ResponseController.notfound_404()
 
 
+class RuntimeAssigneeList(BaseListMixin):
+    queryset = RuntimeAssignee.objects
+    serializer_list = RuntimeAssigneeListSerializer
+    list_hidden_field = ['company_id']
+    filterset_fields = {
+        'is_done': ['exact', 'in'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('stage', 'stage__runtime', 'employee')
+
+    @swagger_auto_schema(operation_summary='Runtime Task List')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        if request.user.employee_current_id:
+            kwargs['employee_id'] = request.user.employee_current_id
+            return self.list(request, *args, **kwargs)
+        return self.list_empty()
+
+
 class RuntimeAssigneeDetail(APIView):
-    @swagger_auto_schema(operation_description='Runtime Detail')
+    @swagger_auto_schema(operation_summary='Runtime Detail')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
         if TypeCheck.check_uuid(pk):

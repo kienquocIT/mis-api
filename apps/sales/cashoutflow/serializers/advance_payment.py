@@ -14,7 +14,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
-    available_value = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
@@ -32,7 +31,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'to_payment',
             'return_value',
             'remain_value',
-            'available_value',
             'money_gave',
             'beneficiary',
             'sale_order_mapped',
@@ -43,7 +41,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
+        all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
@@ -71,8 +69,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     'after_tax_price': item.after_tax_price,
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.after_tax_price - item.sum_return_value,
-                    'available_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
+                    'remain_total': item.after_tax_price - item.sum_return_value - item.sum_converted_value,
                 }
             )
         return expense_items
@@ -103,13 +100,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_remain_value(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
-        sum_return_value = sum(item.sum_return_value for item in all_items)
-        return sum_ap_value - sum_return_value
-
-    @classmethod
-    def get_available_value(cls, obj):
         all_items = obj.advance_payment.all()
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
@@ -250,7 +240,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
     advance_value = serializers.SerializerMethodField()
-    available_value = serializers.SerializerMethodField()
     converted_payment_list = serializers.SerializerMethodField()
 
     class Meta:
@@ -275,13 +264,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'to_payment',
             'return_value',
             'remain_value',
-            'available_value',
             'converted_payment_list'
         )
 
     @classmethod
     def get_expense_items(cls, obj):
-        all_item = obj.advance_payment.select_related('currency', 'expense', 'tax', 'expense_unit_of_measure').all()
+        all_item = obj.advance_payment.all()
         expense_items = []
         for item in all_item:
             tax_dict = None
@@ -309,8 +297,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'after_tax_price': item.after_tax_price,
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.after_tax_price - item.sum_return_value,
-                    'available_total': item.after_tax_price - item.sum_converted_value - item.sum_return_value,
+                    'remain_total': item.after_tax_price - item.sum_return_value - item.sum_converted_value,
                 }
             )
         return expense_items
@@ -391,13 +378,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_remain_value(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
-        sum_return_value = sum(item.sum_return_value for item in all_items)
-        return sum_ap_value - sum_return_value
-
-    @classmethod
-    def get_available_value(cls, obj):
         all_items = obj.advance_payment.all()
         sum_ap_value = sum(item.after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)

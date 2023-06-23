@@ -504,12 +504,15 @@ class BaseUpdateMixin(BaseMixin):
 
 class BaseDestroyMixin(BaseMixin):
     def destroy(self, request, *args, **kwargs):
+        is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            self.perform_destroy(instance)
+            self.perform_destroy(instance, is_purge)
             return ResponseController.no_content_204()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod
-    def perform_destroy(instance):
+    def perform_destroy(instance, is_purge=False):
+        if is_purge is True:
+            ...
         instance.delete()

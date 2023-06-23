@@ -77,6 +77,15 @@ def mask_view(**parent_kwargs):
             if auth_require and not AuthPermission(user=user, code_perm=code_perm).check():
                 return ResponseController.forbidden_403()
 
+            #
+            require_employee = parent_kwargs.get('require_employee', False)
+            if require_employee is True and (not user or (user and not getattr(user, 'employee_current_id', None))):
+                # required employee == true:
+                #   user is null => raise
+                #   user.employee_current is null => raise
+                # pass
+                return ResponseController.forbidden_403()
+
             # call view when access login and auth permission | Data returned is three case:
             #   1. ValidateError from valid --> convert to HTTP 400
             #   2. Exception another: Return 500 with msg is errors

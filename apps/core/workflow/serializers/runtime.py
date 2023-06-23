@@ -7,8 +7,10 @@ from apps.shared import call_task_background
 
 __all__ = [
     'RuntimeListSerializer',
+    'RuntimeMeListSerializer',
     'RuntimeStageListSerializer',
     'RuntimeDetailSerializer',
+    'RuntimeAssigneeListSerializer',
     'RuntimeAssigneeUpdateSerializer',
 ]
 
@@ -45,6 +47,42 @@ class RuntimeListSerializer(serializers.ModelSerializer):
             'id', 'doc_id', 'doc_title', 'app_id', 'doc_employee_created', 'flow_id', 'state', 'status',
             'date_created', 'date_finished',
             'stage_currents',
+        )
+
+
+class RuntimeMeListSerializer(serializers.ModelSerializer):
+    stage_currents = serializers.SerializerMethodField()
+    assignees = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_stage_currents(cls, obj):
+        if obj.stage_currents:
+            return {
+                'id': obj.stage_currents.id,
+                'title': obj.stage_currents.title,
+                'code': obj.stage_currents.code,
+            }
+        return {}
+
+    @classmethod
+    def get_assignees(cls, obj):
+        return [
+            {
+                'employee_id': x.employee_id,
+                'employee_data': x.employee_data,
+                'action_perform': x.action_perform,
+                'is_done': x.is_done,
+                'date_created': x.date_created,
+            } for x in obj.stage_currents.assignee_of_runtime_stage.all()
+        ]
+
+    class Meta:
+        model = Runtime
+        fields = (
+            'id', 'doc_id', 'doc_title', 'app_code', 'app_id', 'doc_employee_created_id', 'flow_id', 'state', 'status',
+            'date_created', 'date_finished',
+            'stage_currents', 'assignees',
+            'doc_pined_id',
         )
 
 
@@ -112,6 +150,71 @@ class ApplicationPropertySubDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = ApplicationProperty
         fields = ('id', 'remark', 'code', 'type', 'content_type', 'properties', 'compare_operator')
+
+
+class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
+    employee = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    stage__runtime = serializers.SerializerMethodField()
+    doc_title = serializers.SerializerMethodField()
+    app_code = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee(cls, obj):
+        if obj.employee:
+            return {
+                'id': obj.employee.id,
+                'fist_name': obj.employee.first_name,
+                'last_name': obj.employee.last_name,
+                'full_name': obj.employee.get_full_name(),
+            }
+        return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.stage:
+            return {
+                'id': obj.stage.id,
+                'title': obj.stage.title
+            }
+        return {}
+
+    @classmethod
+    def get_stage__runtime(cls, obj):
+        if obj.stage:
+            if obj.stage.runtime:
+                runtime_obj = obj.stage.runtime
+                return {
+                    'id': runtime_obj.id,
+                    'doc_id': runtime_obj.doc_id,
+                    'doc_title': runtime_obj.doc_title,
+                    'app_code': runtime_obj.app_code,
+                    'flow_id': runtime_obj.flow_id,
+                    'state': runtime_obj.state,
+                    'status': runtime_obj.status,
+                    'doc_pined_id': runtime_obj.doc_pined_id,
+                }
+        return {}
+
+    @classmethod
+    def get_doc_title(cls, obj):
+        if obj.stage:
+            if obj.stage.runtime:
+                return obj.stage.runtime.doc_title
+        return ''
+
+    @classmethod
+    def get_app_code(cls, obj):
+        if obj.stage:
+            if obj.stage.runtime:
+                return obj.stage.runtime.app_code
+        return {}
+
+    class Meta:
+        model = RuntimeAssignee
+        fields = (
+            'id', 'doc_title', 'app_code', 'stage', 'stage__runtime', 'employee', 'is_done', 'date_created'
+        )
 
 
 class RuntimeDetailSerializer(serializers.ModelSerializer):
