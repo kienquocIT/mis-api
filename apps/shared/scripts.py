@@ -224,3 +224,9 @@ def fill_tenant_company_to_runtime():
         obj.before_save(True)
         obj.save()
     print('Log run done!')
+
+
+def make_sure_opportunity_config_stage():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config_stage()
+    print('Make sure opportunity config stage is done!')

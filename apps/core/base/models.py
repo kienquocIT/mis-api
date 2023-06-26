@@ -153,6 +153,16 @@ class ApplicationProperty(CoreAbstractModel):
         default=dict,
     )
 
+    # use for Opp Stage
+    opp_stage_operator = models.JSONField(
+        default=list,
+        help_text='comparison operator (≠ and =)'
+    )
+    stage_compare_data = models.JSONField(
+        default=dict,
+        help_text='compare data format {"=": [...], "≠": [...]}'
+    )
+
     class Meta:
         verbose_name = 'Application property'
         ordering = ('-date_created',)

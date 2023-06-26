@@ -83,6 +83,11 @@ Application_data = {
         "app_label": "delivery",
         "is_workflow": True,
     },
+    "296a1410-8d72-46a8-a0a1-1821f196e66c": {
+        "title": "Opportunity",
+        "code": "opportunity",
+        "app_label": "opportunity",
+    },
 }
 
 PlanApplication_data = {

@@ -50,7 +50,9 @@ class ApplicationPropertyListSerializer(serializers.ModelSerializer):
             'remark',
             'type',
             'content_type',
-            'properties'
+            'properties',
+            'opp_stage_operator',
+            'stage_compare_data'
         )
 
 

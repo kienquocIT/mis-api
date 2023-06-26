@@ -126,6 +126,14 @@ class Opportunity(DataAbstractModel):
         help_text="read data sale team member, use for get list or detail opportunity"
     )
 
+    stage = models.ForeignKey(
+        'opportunity.OpportunityConfigStage',
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage",
+        null=True,
+        default=None,
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'

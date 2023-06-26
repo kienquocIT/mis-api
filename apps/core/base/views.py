@@ -232,3 +232,29 @@ class BaseItemUnitList(BaseListMixin):
     @mask_view(login_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyOpportunityList(
+    BaseListMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = ApplicationProperty.objects
+    serializer_list = ApplicationPropertyListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            content_type="sales_opportunity"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Property list have Opportunity config stage data",
+        operation_description="Property list have Opportunity config stage data",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=True,
+        code_perm=''
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig
+from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage, \
+    StageCondition
 
 
 class OpportunityConfigDetailSerializer(serializers.ModelSerializer):
@@ -10,6 +11,7 @@ class OpportunityConfigDetailSerializer(serializers.ModelSerializer):
             'id',
             'is_select_stage',
             'is_input_win_rate',
+            'is_AM_create',
         )
 
 
@@ -19,11 +21,11 @@ class OpportunityConfigUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'is_select_stage',
             'is_input_win_rate',
+            'is_AM_create',
         )
 
 
 class CustomerDecisionFactorListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CustomerDecisionFactor
         fields = (
@@ -34,7 +36,6 @@ class CustomerDecisionFactorListSerializer(serializers.ModelSerializer):
 
 
 class CustomerDecisionFactorCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CustomerDecisionFactor
         fields = (
@@ -49,3 +50,53 @@ class CustomerDecisionFactorDetailSerializer(serializers.ModelSerializer):
             'id',
             'title'
         )
+
+
+class OpportunityConfigStageListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityConfigStage
+        fields = '__all__'
+
+
+class OpportunityConfigStageCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityConfigStage
+        fields = (
+            'indicator',
+            'description',
+            'win_rate',
+        )
+
+
+class OpportunityConfigStageDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityConfigStage
+        fields = '__all__'
+
+
+class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityConfigStage
+        fields = (
+            'condition_datas',
+        )
+
+    @classmethod
+    def common_update_stage_condition(cls, instance, data):
+        StageCondition.objects.filter(stage=instance).delete()
+        bulk_data = []
+        [bulk_data.append(StageCondition(
+            stage=instance,
+            condition_property_id=item['condition_property']['id'],
+            comparison_operator=item['comparison_operator'],
+            compare_data=item['compare_data']
+        )) for item in data]
+        StageCondition.objects.bulk_create(bulk_data)
+        return True
+
+    def update(self, instance, validated_data):
+        self.common_update_stage_condition(instance, validated_data['condition_datas'])
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance

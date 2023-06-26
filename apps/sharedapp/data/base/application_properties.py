@@ -118,8 +118,323 @@ AppProp_SaleData_Quotation_data = {
     },
 }
 
+AppProp_SaleData_Opportunity_data = {
+    # 296a1410-8d72-46a8-a0a1-1821f196e66c # Opportunity.Opportunity
+    'e4e0c770-a0d1-492d-beae-3b31dcb391e1': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Customer',
+        'code': 'customer',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None
+                },
+                {
+                    'id': 1,
+                    'value': '1-10 billions'
+                },
+                {
+                    'id': 2,
+                    'value': '10-20 billions'
+                },
+                {
+                    'id': 3,
+                    'value': '20-50 billions'
+                },
+                {
+                    'id': 4,
+                    'value': '50-200 billions'
+                },
+                {
+                    'id': 5,
+                    'value': '200-1000 billions'
+                },
+                {
+                    'id': 6,
+                    'value': '> 1000 billions'
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Product Category',
+        'code': 'product_category',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '36233e9a-8dc9-4a7c-a6ad-504bac91d4cb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Budget',
+        'code': 'budget',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '195440c2-41bc-43f1-b387-fc5cd26401df': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Open Date',
+        'code': 'open_date',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '43009b1a-a25d-43be-ab97-47540a2f00cb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Close Date',
+        'code': 'close_date',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '35dbf6f2-78a8-4286-8cf3-b95de5c78873': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Decision maker',
+        'code': 'decision_maker',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '92c8035a-5372-41c1-9a8e-4b048d8af406': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Lost By Other Reason',
+        'code': 'lost_by_other_reason',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'checked',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'checked',
+                }
+            ]
+        }
+    },
+    '39b50254-e32d-473b-8380-f3b7765af434': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Product.Line.Detail',
+        'code': 'product_line_detail',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    'c8fa79ae-2490-4286-af25-3407e129fedb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Competitor.Win',
+        'code': 'competitor_win',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    'acab2c1e-74f2-421b-8838-7aa55c217f72': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Quotation.confirm',
+        'code': 'quotation_confirm',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ]
+        }
+    },
+    '9db4e835-c647-4de5-aa1c-43304ddeccd1': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'SaleOrder.status',
+        'code': 'sale_order_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ]
+        }
+    },
+    'b5aa8550-7fc5-4cb8-a952-b6904b2599e5': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'SaleOrder.Delivery.Status',
+        'code': 'sale_order_delivery_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ]
+        }
+    },
+    'f436053d-f15a-4505-b368-9ccdf5afb5f6': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Close Deal',
+        'code': 'close_deal',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ]
+        }
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     # **AppProp_SaleData_Quotation_data
+    **AppProp_SaleData_Opportunity_data
 }
