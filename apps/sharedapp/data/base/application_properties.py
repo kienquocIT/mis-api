@@ -98,6 +98,7 @@ AppProp_SaleData_Account_data = {
 
 AppProp_SaleData_Quotation_data = {
     # eeab5d9e-54c6-4e85-af75-477b740d7523 # Quotation.Quotation
+    # fields total
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
         'title': 'Total revenue',
@@ -138,6 +139,49 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Total expense before tax',
         'code': 'total_expense_pretax_amount',
         'remark': 'Total expense before tax of quotation',
+        'type': 6,
+    },
+    # field of tabs Product
+    '89621079-c323-4ef8-8b67-a713e40e5680': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product title',
+        'code': 'product_title',
+        'remark': 'Title product on quotation product line',
+        'type': 1,
+    },
+    '84c4e4c5-8d6b-4c0f-afa4-45163d4d4abb': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product code',
+        'code': 'product_code',
+        'remark': 'Code product on quotation product line',
+        'type': 1,
+    },
+    'f329d568-87a7-4304-98e8-0a09b8996591': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product unit title',
+        'code': 'product_uom_title',
+        'remark': 'Title product unit on quotation product line',
+        'type': 1,
+    },
+    '73a627ef-016a-4497-ae9f-0ba92e0f721d': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product quantity',
+        'code': 'product_quantity',
+        'remark': 'Quantity product on quotation product line',
+        'type': 6,
+    },
+    '67100057-ee5b-46ef-958f-5c15e5c5e5e2': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product unit price',
+        'code': 'product_unit_price',
+        'remark': 'Price product on quotation product line',
+        'type': 6,
+    },
+    '016a8435-b564-45cb-99b6-dae38d2df5f2': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Product subtotal',
+        'code': 'product_subtotal_price',
+        'remark': 'Subtotal product on quotation product line',
         'type': 6,
     },
 }

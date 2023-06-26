@@ -195,6 +195,11 @@ class Quotation(DataAbstractModel):
         default=False,
         help_text="flag to check customer confirm quotation"
     )
+    # quotation indicators
+    quotation_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
+    )
 
     class Meta:
         verbose_name = 'Quotation'

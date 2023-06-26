@@ -352,7 +352,13 @@ class IndicatorParam(SimpleAbstractModel):
     )
     syntax = models.CharField(
         max_length=200,
-        blank=True
+        blank=True,
+        help_text="syntax show in editor when user select this function"
+    )
+    syntax_show = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="syntax show in description"
     )
     example = models.CharField(
         max_length=300,

@@ -119,6 +119,7 @@ class IndicatorParamListSerializer(serializers.ModelSerializer):
             'code',
             'remark',
             'syntax',
+            'syntax_show',
             'example',
             'param_type'
         )

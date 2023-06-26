@@ -81,7 +81,7 @@ BaseItemUnit_data = {
     },
 }
 
-# IndicatorFunction in Base model
+# IndicatorParam in Base model
 IndicatorParam_data = {
     # property
 
@@ -90,7 +90,8 @@ IndicatorParam_data = {
         "title": "contains",
         "code": "contains",
         "remark": "Returns true if the second argument is found in the first.",
-        "syntax": "contains(text, text)",
+        "syntax": "contains(",
+        "syntax_show": "contains(text, text)",
         "example": "contains('employee', 'emp') == true",
         "param_type": 2,
     },
@@ -98,7 +99,8 @@ IndicatorParam_data = {
         "title": "empty",
         "code": "empty",
         "remark": "Tests if a value is empty.",
-        "syntax": "empty(number), empty(text), empty(boolean), empty(date)",
+        "syntax": "empty(",
+        "syntax_show": "empty(number), empty(text), empty(boolean), empty(date)",
         "example": "empty("") == true",
         "param_type": 2,
     },
@@ -106,7 +108,8 @@ IndicatorParam_data = {
         "title": "concat",
         "code": "concat",
         "remark": "Concatenates its arguments and returns the result.",
-        "syntax": "concat(text,...)",
+        "syntax": "concat(",
+        "syntax_show": "concat(text,...)",
         "example": "concat('mon', 'key') == 'monkey'",
         "param_type": 2,
     },
@@ -114,7 +117,8 @@ IndicatorParam_data = {
         "title": "min",
         "code": "min",
         "remark": "Returns the smallest of zero or more numbers.",
-        "syntax": "min(number,...)",
+        "syntax": "min(",
+        "syntax_show": "min(number,...)",
         "example": "min(4, 1, 5, 3) == 1",
         "param_type": 2,
     },
@@ -122,7 +126,8 @@ IndicatorParam_data = {
         "title": "max",
         "code": "max",
         "remark": "Returns the largest of zero or more numbers.",
-        "syntax": "max(number...)",
+        "syntax": "max(",
+        "syntax_show": "max(number...)",
         "example": "max(5, 2, 9, 3) == 9",
         "param_type": 2,
     },
@@ -130,7 +135,8 @@ IndicatorParam_data = {
         "title": "sumItemIf",
         "code": "sumItemIf",
         "remark": "Returns total of items that pass condition.",
-        "syntax": "sumItemIf(item_check_list, condition, item_sum_list)",
+        "syntax": "sumItemIf(",
+        "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
         "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
         "param_type": 2,
     }

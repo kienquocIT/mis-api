@@ -311,7 +311,7 @@ class SaleOrderCommonValidate:
                 'code': expense.code
             }
         except Expense.DoesNotExist:
-            raise serializers.ValidationError({'expense': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):

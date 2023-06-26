@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
-    QuotationCost, QuotationExpense
+    QuotationCost, QuotationExpense, QuotationIndicator
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
 
 
@@ -213,6 +213,25 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_tax(value=value)
 
 
+class QuotationIndicatorSerializer(serializers.ModelSerializer):
+    indicator = serializers.CharField(
+        max_length=550
+    )
+
+    class Meta:
+        model = QuotationIndicator
+        fields = (
+            'indicator',
+            'indicator_value',
+            'indicator_rate',
+            'order',
+        )
+
+    @classmethod
+    def validate_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
+
+
 # QUOTATION BEGIN
 class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
@@ -313,6 +332,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense',
             'is_customer_confirm',
             'date_created',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
@@ -415,6 +436,11 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # indicator tab
+    quotation_indicators_data = QuotationIndicatorSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Quotation
@@ -446,6 +472,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
@@ -513,6 +541,11 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # indicator tab
+    quotation_indicators_data = QuotationIndicatorSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Quotation
@@ -544,6 +577,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
