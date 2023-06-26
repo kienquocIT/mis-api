@@ -276,6 +276,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_opportunity(cls, value):
         try:
+            if value is None:
+                return value
             return Opportunity.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -442,14 +444,13 @@ class QuotationCommonValidate:
     def validate_indicator(cls, value):
         try:
             indicator = Indicator.objects.get_current(
-                fill__tenant=True,
                 fill__company=True,
                 id=value
             )
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
-                'code': indicator.code
+                'code': indicator.remark
             }
         except Indicator.DoesNotExist:
             raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})

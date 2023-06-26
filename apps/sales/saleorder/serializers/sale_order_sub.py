@@ -203,6 +203,8 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_opportunity(cls, value):
         try:
+            if value is None:
+                return value
             return Opportunity.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
