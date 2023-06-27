@@ -58,6 +58,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'customer',
             'product_category',
             'sale_person',
+            'open_date',
         )
 
     @classmethod
