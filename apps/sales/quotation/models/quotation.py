@@ -195,6 +195,11 @@ class Quotation(DataAbstractModel):
         default=False,
         help_text="flag to check customer confirm quotation"
     )
+    # quotation indicators
+    quotation_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
+    )
 
     class Meta:
         verbose_name = 'Quotation'
@@ -210,7 +215,7 @@ class Quotation(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "QUOTATION.CODE."
+        char = "QUO"
         if not self.code:
             temper = "%04d" % (quotation + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"

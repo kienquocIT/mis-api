@@ -21,7 +21,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'code',
             'customer',
             'sale_person',
-            'open_date'
+            'open_date',
+            'quotation_id',
+            'sale_order_id',
         )
 
     @classmethod

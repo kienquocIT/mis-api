@@ -15,6 +15,7 @@ from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, Ru
 from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..sales.opportunity.models import Opportunity
 
 
 def update_sale_default_data_old_company():
@@ -224,6 +225,19 @@ def fill_tenant_company_to_runtime():
         obj.before_save(True)
         obj.save()
     print('Log run done!')
+
+
+def update_quotation_sale_order_for_opportunity():
+    for opp in Opportunity.objects.all():
+        quotation = opp.quotation_opportunity.first()
+        if quotation:
+            opp.quotation = quotation
+        sale_order = opp.sale_order_opportunity.first()
+        if sale_order:
+            opp.sale_order = sale_order
+        opp.save(update_fields=['quotation', 'sale_order'])
+    print("update opportunity done.")
+    return True
 
 
 def make_sure_opportunity_config_stage():

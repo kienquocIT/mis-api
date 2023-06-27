@@ -23,6 +23,7 @@ class OpportunityList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
+            "sale_person"
         )
 
     @swagger_auto_schema(
@@ -55,7 +56,8 @@ class OpportunityDetail(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "decision_maker"
+            "decision_maker",
+            "sale_person",
         )
 
     @swagger_auto_schema(

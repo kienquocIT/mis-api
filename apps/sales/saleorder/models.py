@@ -213,7 +213,7 @@ class SaleOrder(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "ORDER.CODE."
+        char = "SO"
         if not self.code:
             temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"

@@ -125,6 +125,20 @@ class Opportunity(DataAbstractModel):
         default=list,
         help_text="read data sale team member, use for get list or detail opportunity"
     )
+    quotation = models.OneToOneField(
+        'quotation.Quotation',
+        on_delete=models.CASCADE,
+        null=True,
+        help_text="quotation use this opportunity",
+        related_name="opportunity_map_quotation"
+    )
+    sale_order = models.OneToOneField(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE,
+        null=True,
+        help_text="sale order use this opportunity",
+        related_name="opportunity_map_sale_order"
+    )
 
     stage = models.ForeignKey(
         'opportunity.OpportunityConfigStage',
