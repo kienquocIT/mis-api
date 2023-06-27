@@ -101,21 +101,21 @@ AppProp_SaleData_Quotation_data = {
     # fields total
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total revenue',
+        'title': 'Total revenue after tax',
         'code': 'total_product',
         'remark': 'Total revenue of quotation',
         'type': 6,
     },
     '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total cost',
+        'title': 'Total cost after tax',
         'code': 'total_cost',
         'remark': 'Total cost of quotation',
         'type': 6,
     },
     '78584833-3ad3-406a-8969-749e2c9b899c': {
         'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total expense',
+        'title': 'Total expense after tax',
         'code': 'total_expense',
         'remark': 'Total expense of quotation',
         'type': 6,
@@ -184,10 +184,67 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Subtotal product on quotation product line',
         'type': 6,
     },
+    # field of tabs Expense
+    '3c5113e2-da79-4371-af0a-63df34262731': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense title',
+        'code': 'expense_title',
+        'remark': 'Title expense on quotation expense line',
+        'type': 1,
+    },
+    'd26c8707-e014-4772-a9b6-ae5465a9832a': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense code',
+        'code': 'expense_code',
+        'remark': 'Code expense on quotation expense line',
+        'type': 1,
+    },
+    '8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense type',
+        'code': 'expense_type_title',
+        'remark': 'Type expense on quotation expense line',
+        'type': 1,
+    },
+    '2f468197-0132-44eb-9966-80deb69aa77a': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense unit title',
+        'code': 'expense_uom_title',
+        'remark': 'Title expense unit on quotation expense line',
+        'type': 1,
+    },
+    '195479c7-cf10-463f-95fb-8784f47041df': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense quantity',
+        'code': 'expense_quantity',
+        'remark': 'Quantity expense on quotation expense line',
+        'type': 6,
+    },
+    'ad5ca6e1-8788-40ce-acac-9850a49a6565': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense unit price',
+        'code': 'expense_price',
+        'remark': 'Price expense on quotation expense line',
+        'type': 6,
+    },
+    'f0251c13-0480-4ac1-94d3-ebe03afb93bf': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense subtotal before tax',
+        'code': 'expense_subtotal_price',
+        'remark': 'Subtotal before tax expense on quotation expense line',
+        'type': 6,
+    },
+    '6c6af508-c5b0-4295-b92a-bfc53dfad9d3': {
+        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
+        'title': 'Expense subtotal after tax',
+        'code': 'expense_subtotal_price_after_tax',
+        'remark': 'Subtotal after tax expense on quotation expense line',
+        'type': 6,
+    },
 }
 
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
-    # **AppProp_SaleData_Quotation_data
+    **AppProp_SaleData_Quotation_data
 }

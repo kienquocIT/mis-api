@@ -162,6 +162,7 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
             # expense information
             'expense_title',
             'expense_code',
+            'expense_type_title',
             'expense_uom_title',
             'expense_uom_code',
             'expense_quantity',

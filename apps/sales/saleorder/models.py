@@ -495,6 +495,11 @@ class SaleOrderExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    expense_type_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
     expense_uom_title = models.CharField(
         max_length=100,
         blank=True,
