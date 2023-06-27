@@ -3,7 +3,7 @@ import json
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import SimpleAbstractModel, TASK_PRIORITY, MasterDataAbstractModel
+from apps.shared import SimpleAbstractModel, TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND
 from apps.sales.opportunity.models import Opportunity
 from .config import OpportunityTaskConfig
 
@@ -18,10 +18,22 @@ class OpportunityTaskStatus(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Task Config',
     )
+    order = models.SmallIntegerField(
+        default=1
+    )
+    is_edit = models.BooleanField(
+        default=True,
+        verbose_name='User can edit or not',
+    )
+    task_kind = models.SmallIntegerField(
+        choices=TASK_KIND,
+        default=0,
+    )
 
     class Meta:
         verbose_name = 'Task Status'
         verbose_name_plural = 'Task Status'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
 
@@ -72,9 +84,11 @@ class OpportunityTask(MasterDataAbstractModel):
         default=list,
         verbose_name='Checklist',
         null=True,
-        help_text=json.dumps([
-            {"name": "read document", "done": False}
-        ])
+        help_text=json.dumps(
+            [
+                {"name": "read document", "done": False}
+            ]
+        )
     )
     parent_n = models.ForeignKey(
         'self',
@@ -166,4 +180,3 @@ class TaskAttachmentFile(SimpleAbstractModel):
         verbose_name_plural = 'Opportunity Attachment Task'
         default_permissions = ()
         permissions = ()
-

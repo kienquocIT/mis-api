@@ -1,11 +1,10 @@
 import re
+from datetime import datetime
 from django.conf import settings
 from rest_framework import serializers
-from django.utils import timezone
-from datetime import datetime
 
+import django.utils.translation
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork
-from django.utils.translation import gettext_lazy as _
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
            'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer']
@@ -29,7 +28,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_checklist(cls, obj):
         if obj.checklist:
-            return len(obj.checklist)
+            return obj.checklist
         return 0
 
     @classmethod
@@ -60,7 +59,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': _("Title is required.")}
+            {'title': django.utils.translation.gettext_lazy("Title is required.")}
         )
 
     def create(self, validated_data):
@@ -88,7 +87,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_checklist(cls, obj):
         if obj.checklist:
-            return len(obj.checklist)
+            return obj.checklist
         return 0
 
     @classmethod
@@ -131,7 +130,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': _("Title is required.")}
+            {'title': django.utils.translation.gettext_lazy("Title is required.")}
         )
 
     def update(self, instance, validated_data):
@@ -187,7 +186,9 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
         match = re.match(pattern, input_string)
         if match:
             return str(input_string)
-        raise serializers.ValidationError({'time_spent': _("Time spent is wrong format.")})
+        raise serializers.ValidationError(
+            {'time_spent': django.utils.translation.gettext_lazy("Time spent is wrong format.")}
+        )
 
     def create(self, validated_data):
         employee = self.context.get('employee', None)

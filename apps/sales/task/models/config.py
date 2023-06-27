@@ -14,19 +14,19 @@ class OpportunityTaskConfig(SimpleAbstractModel):
     )
     list_status = models.JSONField(
         default=list,
-        verbose_name='Delivery Config',
+        verbose_name='List of task status data backup',
         help_text=json.dumps(
             [
-                {'name': 'Todo', 'translate_name': 'Việc cần làm'},
-                {'name': 'In Progress', 'translate_name': 'đang làm'},
-                {'name': 'Completed', 'translate_name': 'đã hoàn thành'},
-                {'name': 'Pending', 'translate_name': 'tạm ngưng'},
+                {'name': 'To do', 'translate_name': 'Việc cần làm', 'id': 'id_str', 'order': 1},
+                {'name': 'In Progress', 'translate_name': 'đang làm', 'id': 'id_str', 'order': 2},
+                {'name': 'Completed', 'translate_name': 'đã hoàn thành', 'id': 'id_str', 'order': 3},
+                {'name': 'Pending', 'translate_name': 'tạm ngưng', 'id': 'id_str', 'order': 4},
             ], ensure_ascii=False
         ).encode('utf8')
     )
 
     class Meta:
-        verbose_name = 'Task Config of Company'
-        verbose_name_plural = 'Task Config of Company'
+        verbose_name = 'Opportunity task config'
+        verbose_name_plural = 'Opportunity task config'
         default_permissions = ()
         permissions = ()

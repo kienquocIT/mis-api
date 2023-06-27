@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.task.models.config import OpportunityTaskConfig
 from apps.sales.task.serializers.config import TaskConfigDetailSerializer, TaskConfigUpdateSerializer
@@ -13,6 +14,7 @@ __all__ = [
 
 
 class TaskConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    permission_classes = [IsAuthenticated]
     queryset = OpportunityTaskConfig.objects
     serializer_detail = TaskConfigDetailSerializer
     serializer_update = TaskConfigUpdateSerializer

@@ -241,10 +241,13 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={
                 'list_status': [
-                    {'name': 'Todo', 'translate_name': 'Việc cần làm'},
-                    {'name': 'In Progress', 'translate_name': 'Đang làm'},
-                    {'name': 'Completed', 'translate_name': 'Đã hoàn thành'},
-                    {'name': 'Pending', 'translate_name': 'Tạm ngưng'},
+                    {'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1},
+                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0},
+                    {
+                        'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
+                        'task_kind': 2
+                    },
+                    {'name': 'Pending', 'translate_name': 'Tạm ngưng', 'order': 4, 'is_edit': False, 'task_kind': 3},
                 ]
             },
         )
@@ -253,15 +256,18 @@ class ConfigDefaultData:
         if is_config.exists():
             is_config = is_config.first()
             for item in is_config.list_status:
-                temp_stt.append(OpportunityTaskStatus(
-                    title=item['name'],
-                    translate_name=item['translate_name'],
-                    task_config=is_config
-                ))
-            if len(temp_stt):
+                temp_stt.append(
+                    OpportunityTaskStatus(
+                        title=item['name'],
+                        translate_name=item['translate_name'],
+                        task_config=is_config,
+                        order=item['order'],
+                        is_edit=item['is_edit'],
+                        task_kind=item['task_kind']
+                    )
+                )
+            if temp_stt:
                 OpportunityTaskStatus.objects.bulk_create(temp_stt)
-            else:
-                return False
 
     def call_new(self):
         self.company_config()

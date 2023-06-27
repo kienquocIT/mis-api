@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models.config import Term, PaymentTerm
 from django.utils.translation import gettext_lazy as _
+from apps.masterdata.saledata.models.config import Term, PaymentTerm
 
 
 def create_term(data, instance):

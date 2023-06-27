@@ -134,3 +134,10 @@ TASK_PRIORITY = (
     (1, 'Medium'),
     (2, 'High')
 )
+
+TASK_KIND = (
+    (0, 'Normal'),
+    (1, 'To do'),
+    (2, 'Completed'),
+    (3, 'Pending')
+)
