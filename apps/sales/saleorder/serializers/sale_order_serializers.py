@@ -206,7 +206,8 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'total_product',
             'system_status',
             'opportunity',
-            'quotation'
+            'quotation',
+            'delivery_call',
         )
 
     @classmethod
