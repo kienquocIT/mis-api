@@ -368,9 +368,13 @@ class IndicatorParam(SimpleAbstractModel):
         choices=INDICATOR_PARAM_TYPE,
         default=0
     )
+    order = models.IntegerField(
+        default=1
+    )
 
     class Meta:
         verbose_name = 'Indicator Param'
         verbose_name_plural = 'Indicator Params'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
