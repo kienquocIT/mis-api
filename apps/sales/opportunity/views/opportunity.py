@@ -13,7 +13,7 @@ class OpportunityList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
-    filterset_fields = []
+    filterset_fields = {'sale_person_id': ['exact']}
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
