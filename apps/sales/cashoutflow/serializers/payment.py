@@ -82,9 +82,6 @@ def create_payment_cost_items(payment_obj, payment_cost_list):
                     expense_items_detail_list=expense_ap_detail.get('converted_value_detail', None)
                 )
             )
-            # ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
-            # ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(expense_ap.get('value', 0))
-            # ap_updated.save()
     PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
     payment_cost_item_list = PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
     create_payment_cost_detail_items(payment_obj, payment_cost_item_list)
@@ -124,27 +121,33 @@ def create_expense_items(instance, expense_valid_list):
 
 
 def create_sale_code_object(payment_obj, initial_data):
-    if 'sale_code' in initial_data:
-        sale_code_id = initial_data['sale_code']
-        if initial_data['sale_code_detail'] == 0:
-            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
-        if initial_data['sale_code_detail'] == 1:
-            PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
-        if initial_data['sale_code_detail'] == 2:
-            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
-    else:
+    """
+    1. sale_code_type = 0 (Sale): get 'sale_code_detail', then sub-create Payment map with each SaleCode
+    2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
+    """
+    if initial_data.get('sale_code_type', None) == 0:
+        sale_code_id = initial_data.get('sale_code', None)
+        if sale_code_id:
+            if initial_data.get('sale_code_detail', None) == 0:
+                PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+            if initial_data.get('sale_code_detail', None) == 1:
+                PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+            if initial_data.get('sale_code_detail', None) == 2:
+                PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+    if initial_data.get('sale_code_type', None) == 3:
+        sale_order_selected_list = initial_data.get('sale_order_selected_list', [])
+        quotation_selected_list = initial_data.get('quotation_selected_list', [])
+        opportunity_selected_list = initial_data.get('opportunity_selected_list', [])
         sale_order_bulk_info = []
-        for item in initial_data['sale_order_selected_list']:
+        for item in sale_order_selected_list:
             sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
         PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
-
-        payment_quotation_bulk_info = []
-        for item in initial_data['quotation_selected_list']:
-            payment_quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
-        PaymentQuotation.objects.bulk_create(payment_quotation_bulk_info)
-
+        quotation_bulk_info = []
+        for item in quotation_selected_list:
+            quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
+        PaymentQuotation.objects.bulk_create(quotation_bulk_info)
         opportunity_bulk_info = []
-        for item in initial_data['opportunity_selected_list']:
+        for item in opportunity_selected_list:
             opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
         PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
     return True
@@ -168,13 +171,20 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     def validate_sale_code_type(cls, attrs):
         if attrs in [0, 1, 2, 3]:
             return attrs
-        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+        raise serializers.ValidationError({'Sale code type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     @classmethod
     def validate_method(cls, attrs):
         if attrs in [0, 1]:
             return attrs
-        raise serializers.ValidationError(AdvancePaymentMsg.SALE_CODE_TYPE_ERROR)
+        raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+
+    def validate(self, validate_data):
+        sale_code = self.initial_data.get('sale_code', None)
+        sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
+        if not sale_code and len(sale_order_selected_list) < 1:
+            raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
+        return validate_data
 
     def create(self, validated_data):
         if Payment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
@@ -189,8 +199,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         payment_obj = Payment.objects.create(code=new_code, **validated_data)
 
         create_sale_code_object(payment_obj, self.initial_data)
-        if self.initial_data.get('expense_valid_list', None):
-            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', None))
+        if len(self.initial_data.get('expense_valid_list', [])) > 0:
+            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', []))
         return payment_obj
 
 

@@ -6,14 +6,14 @@ from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
 )
 
 from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    BaseItemUnitListSerializer
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
 )
 
 
@@ -70,7 +70,8 @@ class ApplicationPropertyList(
     filterset_fields = {
         'application': ['exact'],
         'type': ['exact'],
-        'id': ['in']
+        'id': ['in'],
+        'application__code': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
@@ -226,6 +227,21 @@ class BaseItemUnitList(BaseListMixin):
     search_fields = ('title',)
     use_cache_queryset = True
     serializer_list = BaseItemUnitListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class IndicatorParamList(BaseListMixin):
+    queryset = IndicatorParam.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "param_type": ["exact"],
+    }
+    use_cache_queryset = True
+    serializer_list = IndicatorParamListSerializer
 
     @swagger_auto_schema()
     @mask_view(login_require=False)

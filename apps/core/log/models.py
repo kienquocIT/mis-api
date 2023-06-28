@@ -1,3 +1,4 @@
+import json
 from uuid import uuid4
 
 from django.db import models
@@ -7,7 +8,14 @@ from django.utils import timezone
 __all__ = [
     'ActivityLog',
     'Notifications',
+    'BookMark',
+    'DocPined',
 ]
+
+BOOKMARKS_KIND = (
+    (0, 'View Name'),
+    (1, 'Custom URL')
+)
 
 
 def parse_backup_user(user_obj) -> dict:
@@ -293,3 +301,123 @@ class Notifications(models.Model):
             models.Index(fields=['tenant_id', 'company_id', 'employee_id']),
             models.Index(fields=['tenant_id', 'company_id', 'employee_id', 'is_done']),
         ]
+
+
+class BookMark(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name='This employee is performer',
+        related_name='bookmarks_of_employee',
+    )
+    title = models.CharField(
+        max_length=20,
+        verbose_name='Title of BookMark'
+    )
+    kind = models.PositiveSmallIntegerField(
+        choices=BOOKMARKS_KIND,
+        verbose_name='Type of Bookmarks',
+        help_text=json.dumps(BOOKMARKS_KIND),
+    )
+    view_name = models.CharField(
+        max_length=200,
+        null=True,
+        blank=True,
+        verbose_name='View Name UI'
+    )
+    customize_url = models.TextField(
+        null=True,
+        blank=True,
+        verbose_name='User URL Custom'
+    )
+    box_style = models.JSONField(
+        default=dict,
+        verbose_name='Style of Box display',
+        help_text=json.dumps(
+            {
+                'icon_cls': '',
+                'bg_cls': '',
+                'text_cls': '',
+            }
+        )
+    )
+    order = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name='Order of BookMark Display',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+
+    class Meta:
+        verbose_name = 'BookMark'
+        verbose_name_plural = 'BookMark'
+        ordering = ('order', '-date_created')
+        default_permissions = ()
+        permissions = ()
+
+
+class DocPined(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.CASCADE,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.CASCADE,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    # real field
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name='This employee is performer',
+        related_name='pined_of_employee',
+    )
+    title = models.TextField(
+        blank=True,
+        verbose_name='Title of BookMark'
+    )
+    runtime = models.ForeignKey(
+        'workflow.Runtime',
+        null=True,
+        on_delete=models.CASCADE,
+        verbose_name='Runtime Object',
+        related_name='doc_pined_of_runtime',
+    )
+
+    def __str__(self):
+        return self.title
+
+    def before_save(self, force_insert=False):
+        if force_insert is True:
+            if self.runtime:
+                self.title = self.runtime.doc_title
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(
+            force_insert=kwargs.get('force_insert', False),
+        )
+        super().save(*args, **kwargs)
+
+        if self.runtime:
+            self.runtime.doc_pined_id = self.id
+            self.runtime.save(update_fields=['doc_pined_id'])
+
+    class Meta:
+        verbose_name = 'Document Pined'
+        verbose_name_plural = 'Document Pined'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()

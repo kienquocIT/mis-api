@@ -1,7 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE
 
 from apps.core.models import CoreAbstractModel
 
@@ -341,3 +341,40 @@ class BaseItemUnit(SimpleAbstractModel):
         ordering = ('title',)
         verbose_name = 'BaseItemUnit'
         verbose_name_plural = 'BaseItemUnits'
+
+
+class IndicatorParam(SimpleAbstractModel):
+    title = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
+    remark = models.CharField(
+        max_length=200,
+        blank=True
+    )
+    syntax = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="syntax show in editor when user select this function"
+    )
+    syntax_show = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="syntax show in description"
+    )
+    example = models.CharField(
+        max_length=300,
+        blank=True
+    )
+    param_type = models.SmallIntegerField(
+        choices=INDICATOR_PARAM_TYPE,
+        default=0
+    )
+    order = models.IntegerField(
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Indicator Param'
+        verbose_name_plural = 'Indicator Params'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()

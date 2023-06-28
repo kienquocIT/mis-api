@@ -4,16 +4,17 @@ from apps.shared import SimpleAbstractModel
 
 
 class Indicator(SimpleAbstractModel):
-    company = models.OneToOneField(
+    company = models.ForeignKey(
         'company.Company',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name='indicator_company',
     )
     title = models.CharField(
         max_length=100,
         blank=True
     )
-    description = models.CharField(
+    remark = models.CharField(
         max_length=200,
         blank=True
     )
@@ -21,16 +22,10 @@ class Indicator(SimpleAbstractModel):
         max_length=100,
         blank=True
     )
-    is_indicator_param = models.BooleanField(default=False)
-    is_sale_param = models.BooleanField(default=False)
-    is_math_operator = models.BooleanField(default=False)
-    formula_indicator_params = models.JSONField(
-        default=list,
-        help_text="setup by indicator params, examples: ['indicatorID1', '-', 'indicatorID2', '+', 'indicatorID3',]"
-    )
-    formula_sale_params = models.JSONField(
-        default=list,
-        help_text="setup by sale params, examples: ['saleID1', '-', 'saleID2', '+', 'saleID3',...]"
+    formula_data = models.JSONField(default=list)
+    formula_data_show = models.TextField(
+        blank=True,
+        null=True
     )
     order = models.IntegerField(
         default=1
@@ -96,13 +91,13 @@ class QuotationIndicator(SimpleAbstractModel):
         verbose_name="indicator",
         related_name="quotation_indicator_indicator",
     )
-    indicator_result = models.FloatField(
+    indicator_value = models.FloatField(
         default=0,
-        help_text="result of specific indicator for quotation"
+        help_text="value of specific indicator for quotation"
     )
-    indicator_rate_result = models.FloatField(
+    indicator_rate = models.FloatField(
         default=0,
-        help_text="rate result of specific indicator for quotation"
+        help_text="rate value of specific indicator for quotation"
     )
     order = models.IntegerField(
         default=1

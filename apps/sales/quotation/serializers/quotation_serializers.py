@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
-    QuotationCost, QuotationExpense
+    QuotationCost, QuotationExpense, QuotationIndicator
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
+from apps.shared import SaleMsg
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -213,6 +214,25 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_tax(value=value)
 
 
+class QuotationIndicatorSerializer(serializers.ModelSerializer):
+    indicator = serializers.CharField(
+        max_length=550
+    )
+
+    class Meta:
+        model = QuotationIndicator
+        fields = (
+            'indicator',
+            'indicator_value',
+            'indicator_rate',
+            'order',
+        )
+
+    @classmethod
+    def validate_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
+
+
 # QUOTATION BEGIN
 class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
@@ -313,6 +333,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_expense',
             'is_customer_confirm',
             'date_created',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
@@ -386,7 +408,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     opportunity = serializers.CharField(
         max_length=550,
-        required=False
+        required=False,
+        allow_null=True,
     )
     customer = serializers.CharField(
         max_length=550
@@ -412,6 +435,11 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     quotation_expenses_data = QuotationExpenseSerializer(
+        many=True,
+        required=False
+    )
+    # indicator tab
+    quotation_indicators_data = QuotationIndicatorSerializer(
         many=True,
         required=False
     )
@@ -446,6 +474,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
@@ -467,6 +497,12 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
+
+    def validate(self, validate_data):
+        if 'opportunity' in validate_data:
+            if validate_data['opportunity'].quotation_opportunity.exists():
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+        return validate_data
 
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
@@ -474,13 +510,18 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=quotation
         )
+        # update field quotation for opportunity
+        if quotation.opportunity:
+            quotation.opportunity.quotation = quotation
+            quotation.opportunity.save(update_fields=['quotation'])
         return quotation
 
 
 class QuotationUpdateSerializer(serializers.ModelSerializer):
     opportunity = serializers.CharField(
         max_length=550,
-        required=False
+        required=False,
+        allow_null=True,
     )
     customer = serializers.CharField(
         max_length=550,
@@ -510,6 +551,11 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
     quotation_expenses_data = QuotationExpenseSerializer(
+        many=True,
+        required=False
+    )
+    # indicator tab
+    quotation_indicators_data = QuotationIndicatorSerializer(
         many=True,
         required=False
     )
@@ -544,6 +590,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
+            # indicator tab
+            'quotation_indicators_data',
         )
 
     @classmethod
@@ -566,7 +614,19 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
 
+    def validate(self, validate_data):
+        if 'opportunity' in validate_data:
+            if validate_data['opportunity'] is not None:
+                if validate_data['opportunity'].quotation_opportunity.exclude(id=self.instance.id).exists():
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+        return validate_data
+
     def update(self, instance, validated_data):
+        # remove flag is_quotation_used for opportunity if change opportunity
+        if instance.opportunity != validated_data.get('opportunity', None):
+            instance.opportunity.quotation = None
+            instance.opportunity.save(update_fields=['quotation'])
+        # update quotation
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -575,6 +635,10 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True
         )
+        # update field quotation for opportunity
+        if instance.opportunity:
+            instance.opportunity.quotation = instance
+            instance.opportunity.save(update_fields=['quotation'])
         return instance
 
 

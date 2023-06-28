@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
 )
 
 
@@ -108,3 +108,18 @@ class BaseItemUnitListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BaseItemUnit
         fields = ('id', 'title', 'measure')
+
+
+class IndicatorParamListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = IndicatorParam
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remark',
+            'syntax',
+            'syntax_show',
+            'example',
+            'param_type'
+        )

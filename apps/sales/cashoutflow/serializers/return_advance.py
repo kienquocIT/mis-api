@@ -58,18 +58,18 @@ class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_remain_value(cls, value):
         if value < 0:
-            raise serializers.ValidationError({'remain total': ReturnAdvanceMsg.GREATER_THAN_ZERO})
+            raise serializers.ValidationError({'Remain total': ReturnAdvanceMsg.GREATER_THAN_ZERO})
         return value
 
     @classmethod
     def validate_return_value(cls, value):
         if value < 0:
-            raise serializers.ValidationError({'input return': ReturnAdvanceMsg.GREATER_THAN_ZERO})
+            raise serializers.ValidationError({'Input return': ReturnAdvanceMsg.GREATER_THAN_ZERO})
         return value
 
     def validate(self, validate_data):
         if validate_data['remain_value'] < validate_data['return_value']:
-            raise serializers.ValidationError({'input return': ReturnAdvanceMsg.RETURN_GREATER_THAN_REMAIN})
+            raise serializers.ValidationError({'Input return': ReturnAdvanceMsg.RETURN_GREATER_THAN_REMAIN})
         return validate_data
 
 
@@ -95,7 +95,7 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             advance_payment_id=validate_data['advance_payment'],
         ).count()
         if len(validate_data['cost']) != count_expense:
-            raise serializers.ValidationError({'expense': ReturnAdvanceMsg.NOT_MAP_AP})
+            raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
         return validate_data
 
     @classmethod

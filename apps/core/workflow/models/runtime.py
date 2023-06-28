@@ -147,6 +147,14 @@ class Runtime(SimpleAbstractModel):
         default=None,
         null=True,
     )
+    # document pined
+    doc_pined = models.ForeignKey(
+        'log.DocPined',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Doc Pined relate',
+        related_name='runtime_of_doc_pined',
+    )
 
     def save(self, *args, **kwargs):
         if kwargs.get('force_insert', False) and self.app:
@@ -226,6 +234,17 @@ class RuntimeStage(SimpleAbstractModel):
     Node information was recorded to node_data (don't miss node data when related node was destroyed)
     Timeline arrange in order by ASC (ascending)
     """
+
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
 
     # overview of stage | management
     runtime = models.ForeignKey(
@@ -340,13 +359,6 @@ class RuntimeStage(SimpleAbstractModel):
         default=0
     )
 
-    class Meta:
-        verbose_name = 'Runtime Node'
-        verbose_name_plural = 'Runtime Node'
-        ordering = ('-order',)
-        default_permissions = ()
-        permissions = ()
-
     @classmethod
     def generate_order(cls, runtime_obj) -> int:
         """
@@ -379,14 +391,37 @@ class RuntimeStage(SimpleAbstractModel):
             }
         return True
 
-    def save(self, *args, **kwargs):
-        if kwargs.get('force_insert', False) and self.runtime:
+    def before_save(self, force_insert=False):
+        if force_insert and self.runtime:
+            self.tenant = self.runtime.tenant
+            self.company = self.runtime.company
             self.order = self.generate_order(self.runtime)
         self.set_association_passed_data()
+
+    def save(self, *args, **kwargs):
+        self.before_save(kwargs.get('force_insert', False))
         super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Runtime Node'
+        verbose_name_plural = 'Runtime Node'
+        ordering = ('-order',)
+        default_permissions = ()
+        permissions = ()
 
 
 class RuntimeAssignee(SimpleAbstractModel):
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+
     stage = models.ForeignKey(
         RuntimeStage,
         on_delete=models.CASCADE,
@@ -416,15 +451,61 @@ class RuntimeAssignee(SimpleAbstractModel):
         verbose_name='Flag status Task of assignee',
         help_text='True if assignee finish your task, False if assignee need action finish with approve, next,...'
     )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at time',
+    )
+
+    # backup data
+    employee_data = models.JSONField(
+        default=dict,
+        verbose_name='Employee backup data',
+        help_text=json.dumps(
+            {
+                'id': '', 'first_name': '', 'last_name': '', 'full_name': '', 'avatar': '',
+            }
+        ),
+    )
+
+    def before_save(self, force_insert=False):
+        if force_insert:
+            if self.stage:
+                self.tenant = self.stage.tenant
+                self.company = self.stage.company
+            if self.employee:
+                self.employee_data = {
+                    'id': str(self.employee_id),
+                    'first_name': str(self.employee.first_name),
+                    'last_name': str(self.employee.last_name),
+                    'full_name': str(self.employee.get_full_name()),
+                    'avatar': str(self.employee.avatar),
+                }
+        return True
+
+    def save(self, *args, **kwargs):
+        self.before_save(kwargs.get('force_insert', False))
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Stage map Employee plus Zone'
         verbose_name_plural = 'Stage map Employee plus Zone'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
 
 class RuntimeLog(SimpleAbstractModel):
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.SET_NULL,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.SET_NULL,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+
     is_system = models.BooleanField(
         default=False,
         verbose_name='Is system Log',
@@ -475,8 +556,10 @@ class RuntimeLog(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def before_force(self, **kwargs):
-        if kwargs.get('force_insert', False):
+    def before_save(self, force_insert=False):
+        if force_insert:
+            self.tenant = self.stage.tenant
+            self.company = self.stage.company
             if self.actor:
                 self.actor_data = {
                     "id": str(self.actor_id),
@@ -497,5 +580,5 @@ class RuntimeLog(SimpleAbstractModel):
             self.stage.save(update_fields=['log_count'])
 
     def save(self, *args, **kwargs):
-        self.before_force(**kwargs)
+        self.before_save(force_insert=kwargs.get('force_insert', False))
         super().save(*args, **kwargs)
