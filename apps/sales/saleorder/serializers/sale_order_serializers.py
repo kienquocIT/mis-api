@@ -473,8 +473,9 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
-            if validate_data['opportunity'].sale_order_opportunity.exists():
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+            if validate_data['opportunity'] is not None:
+                if validate_data['opportunity'].sale_order_opportunity.exists():
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
         return validate_data
 
     def create(self, validated_data):
