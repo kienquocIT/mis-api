@@ -11,7 +11,7 @@ class OpportunityConfigDetailSerializer(serializers.ModelSerializer):
             'id',
             'is_select_stage',
             'is_input_win_rate',
-            'is_AM_create',
+            'is_account_manager_create',
         )
 
 
@@ -21,7 +21,7 @@ class OpportunityConfigUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'is_select_stage',
             'is_input_win_rate',
-            'is_AM_create',
+            'is_account_manager_create',
         )
 
 
