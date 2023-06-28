@@ -43,7 +43,7 @@ class OpportunityConfig(SimpleAbstractModel):
         default=False,
         verbose_name='user input win rate of Opp',
     )
-    is_AM_create = models.BooleanField(
+    is_account_manager_create = models.BooleanField(
         default=False,
         verbose_name='only Am of Customer is allowed create Opportunity for Customer'
     )
