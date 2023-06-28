@@ -560,6 +560,6 @@ AppProp_SaleData_Opportunity_data = {
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
-    **AppProp_SaleData_Quotation_data,
+    # **AppProp_SaleData_Quotation_data,
     **AppProp_SaleData_Opportunity_data
 }
