@@ -195,6 +195,11 @@ class Quotation(DataAbstractModel):
         default=False,
         help_text="flag to check customer confirm quotation"
     )
+    # quotation indicators
+    quotation_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, use for get list or detail quotation, records in model QuotationIndicator"
+    )
 
     class Meta:
         verbose_name = 'Quotation'
@@ -210,7 +215,7 @@ class Quotation(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "QUOTATION.CODE."
+        char = "QUO"
         if not self.code:
             temper = "%04d" % (quotation + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
@@ -299,6 +304,9 @@ class QuotationProduct(SimpleAbstractModel):
         default=0
     )
     product_subtotal_price = models.FloatField(
+        default=0
+    )
+    product_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(
@@ -550,6 +558,9 @@ class QuotationCost(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
     order = models.IntegerField(
         default=1
     )
@@ -614,6 +625,11 @@ class QuotationExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    expense_type_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
     expense_uom_title = models.CharField(
         max_length=100,
         blank=True,
@@ -642,6 +658,9 @@ class QuotationExpense(SimpleAbstractModel):
         default=0
     )
     expense_subtotal_price = models.FloatField(
+        default=0
+    )
+    expense_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(

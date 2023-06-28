@@ -4,7 +4,8 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
-    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember
+    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
+    OpportunityConfigStage
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -21,7 +22,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'code',
             'customer',
             'sale_person',
-            'open_date'
+            'open_date',
+            'quotation_id',
+            'sale_order_id',
         )
 
     @classmethod
@@ -58,6 +61,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'customer',
             'product_category',
             'sale_person',
+            'open_date',
         )
 
     @classmethod
@@ -407,6 +411,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     is_input_rate = serializers.BooleanField(required=False)
     sale_person = serializers.UUIDField(required=False)
     opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
+    stage = serializers.UUIDField(required=False)
+    lost_by_other_reason = serializers.BooleanField(required=False)
 
     class Meta:
         model = Opportunity
@@ -430,6 +436,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'opportunity_contact_role_datas',
             'customer_decision_factor',
             'opportunity_sale_team_datas',
+            'stage',
+            'lost_by_other_reason',
         )
 
     @classmethod
@@ -442,6 +450,17 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             )
         except Account.DoesNotExist:
             raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_stage(cls, value):
+        try:
+            return OpportunityConfigStage.objects.get_current(
+                fill__tenant=False,
+                fill__company=True,
+                id=value
+            )
+        except OpportunityConfigStage.DoesNotExist:
+            raise serializers.ValidationError({'stage': OpportunityMsg.NOT_EXIST})
 
     @classmethod
     def validate_end_customer(cls, value):
@@ -576,7 +595,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'is_input_rate',
             'customer_decision_factor',
             'sale_person',
-            'opportunity_sale_team_datas'
+            'opportunity_sale_team_datas',
+            'stage',
+            'lost_by_other_reason'
         )
 
     @classmethod

@@ -20,7 +20,7 @@ class SaleOrderList(
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
