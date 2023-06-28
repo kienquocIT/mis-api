@@ -304,6 +304,9 @@ class SaleOrderProduct(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
     order = models.IntegerField(
         default=1
     )
@@ -431,6 +434,9 @@ class SaleOrderCost(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
     order = models.IntegerField(
         default=1
     )
@@ -528,6 +534,9 @@ class SaleOrderExpense(SimpleAbstractModel):
         default=0
     )
     expense_subtotal_price = models.FloatField(
+        default=0
+    )
+    expense_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(
