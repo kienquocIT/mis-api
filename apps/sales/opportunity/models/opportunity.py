@@ -140,6 +140,18 @@ class Opportunity(DataAbstractModel):
         related_name="opportunity_map_sale_order"
     )
 
+    stage = models.ForeignKey(
+        'opportunity.OpportunityConfigStage',
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage",
+        null=True,
+        default=None,
+    )
+
+    lost_by_other_reason = models.BooleanField(
+        default=False,
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'

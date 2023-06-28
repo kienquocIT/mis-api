@@ -16,7 +16,7 @@ from apps.core.company.serializers import (
     CompanyUpdateSerializer,
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
-    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer,
+    CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
 )
 
 
@@ -166,3 +166,21 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
             if kwargs['option'] == 1:
                 self.serializer_detail = CompanyOverviewConnectedSerializer
         return self.retrieve(request, *args, **kwargs)
+
+
+class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Company.objects
+    serializer_update = RestoreDefaultOpportunityConfigStageSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            "sales_opportunity_config_stage__stage_condition",
+        )
+
+    @swagger_auto_schema(
+        operation_summary='Restore Default Opportunity Config Stage'
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
