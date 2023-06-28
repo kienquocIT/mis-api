@@ -148,6 +148,10 @@ class Opportunity(DataAbstractModel):
         default=None,
     )
 
+    lost_by_other_reason = models.BooleanField(
+        default=False,
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'

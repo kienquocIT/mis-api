@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.masterdata.saledata.models import ANNUAL_REVENUE_SELECTION
 from apps.shared import SimpleAbstractModel
 
 STAGE_CONDITION_ATTRIBUTE = [
@@ -116,7 +115,7 @@ class OpportunityConfigStage(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Opportunity Config Stage'
         verbose_name_plural = 'Opportunity Config Stages'
-        ordering = ()
+        ordering = ('indicator',)
         default_permissions = ()
         permissions = ()
 

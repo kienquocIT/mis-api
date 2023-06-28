@@ -85,12 +85,14 @@ class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
     def common_update_stage_condition(cls, instance, data):
         StageCondition.objects.filter(stage=instance).delete()
         bulk_data = []
-        [bulk_data.append(StageCondition(
-            stage=instance,
-            condition_property_id=item['condition_property']['id'],
-            comparison_operator=item['comparison_operator'],
-            compare_data=item['compare_data']
-        )) for item in data]
+        for item in data:
+            stage_condition = StageCondition(
+                stage=instance,
+                condition_property_id=item['condition_property']['id'],
+                comparison_operator=item['comparison_operator'],
+                compare_data=item['compare_data']
+            )
+            bulk_data.append(stage_condition)
         StageCondition.objects.bulk_create(bulk_data)
         return True
 
