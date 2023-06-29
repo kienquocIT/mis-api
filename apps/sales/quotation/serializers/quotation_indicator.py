@@ -13,6 +13,7 @@ class IndicatorListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'remark',
+            'example',
             'order',
             'formula_data',
             'formula_data_show',
@@ -29,6 +30,7 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'remark',
+            'example',
             'order',
             'formula_data',
             'formula_data_show',
@@ -43,6 +45,7 @@ class IndicatorCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'remark',
+            'example',
             'order',
             'application_code'
         )
@@ -59,6 +62,7 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'remark',
+            'example',
             'formula_data',
             'formula_data_show',
         )

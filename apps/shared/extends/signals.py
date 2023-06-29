@@ -7,7 +7,8 @@ from django.dispatch import receiver
 from apps.core.log.models import Notifications
 from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
-from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
+from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale, Indicator, \
+    IndicatorDefaultData
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
@@ -480,6 +481,13 @@ class ConfigDefaultData:
                     compare_data=condition['compare_data']
                 )
 
+    def quotation_indicator_config(self):
+        for data in IndicatorDefaultData.INDICATOR_DATA:
+            Indicator.objects.create(
+                company=self.company_obj,
+                **data,
+            )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
@@ -487,6 +495,7 @@ class ConfigDefaultData:
         self.sale_order_config()
         self.opportunity_config()
         self.opportunity_config_stage()
+        self.quotation_indicator_config()
         return True
 
 
