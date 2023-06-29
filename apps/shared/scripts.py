@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from apps.core.base.models import PlanApplication
+from apps.core.base.models import PlanApplication, ApplicationProperty
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -247,8 +247,28 @@ def make_sure_opportunity_config_stage():
 
 
 def update_is_delete_opportunity_config_stage():
-    OpportunityConfigStage.objects.filter(
+    OpportunityConfigStage.objects.exclude(
         indicator__in=['Qualification', 'Closed Won', 'Closed Lost', 'Deal Close']
     ).update(is_delete=True)
 
     print('Done!')
+
+
+def update_data_application_property():
+    app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
+    app_property.stage_compare_data = {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    app_property.save()
+    print('Update Done!')
