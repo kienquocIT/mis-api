@@ -94,6 +94,7 @@ IndicatorParam_data = {
         "syntax_show": "contains(text, text)",
         "example": "contains('employee', 'emp') == true",
         "param_type": 2,
+        "order": 1,
     },
     "dfcddc32-73ba-401b-9d05-d4ce650048e4": {
         "title": "empty",
@@ -103,6 +104,7 @@ IndicatorParam_data = {
         "syntax_show": "empty(number), empty(text), empty(boolean), empty(date)",
         "example": "empty("") == true",
         "param_type": 2,
+        "order": 2,
     },
     "b13fab07-14dd-4aff-ae56-85b066299bbe": {
         "title": "concat",
@@ -112,6 +114,7 @@ IndicatorParam_data = {
         "syntax_show": "concat(text,...)",
         "example": "concat('mon', 'key') == 'monkey'",
         "param_type": 2,
+        "order": 3,
     },
     "b134be26-c97e-412e-9865-5f080222d711": {
         "title": "min",
@@ -121,6 +124,7 @@ IndicatorParam_data = {
         "syntax_show": "min(number,...)",
         "example": "min(4, 1, 5, 3) == 1",
         "param_type": 2,
+        "order": 4,
     },
     "14ed6103-b79a-4946-a143-87438a70826d": {
         "title": "max",
@@ -130,6 +134,7 @@ IndicatorParam_data = {
         "syntax_show": "max(number...)",
         "example": "max(5, 2, 9, 3) == 9",
         "param_type": 2,
+        "order": 5,
     },
     "aebaf647-49ff-4d59-a738-41ed6a583b50": {
         "title": "sumItemIf",
@@ -139,5 +144,6 @@ IndicatorParam_data = {
         "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
         "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
         "param_type": 2,
+        "order": 6,
     }
 }

@@ -235,7 +235,10 @@ class AccountForSaleList(BaseListMixin):
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
+    filterset_fields = {
+        'account_types_mapped__account_type_order': ['exact'],
+        'employee__id': ['exact']
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related(

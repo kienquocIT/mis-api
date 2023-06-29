@@ -238,3 +238,9 @@ def update_quotation_sale_order_for_opportunity():
         opp.save(update_fields=['quotation', 'sale_order'])
     print("update opportunity done.")
     return True
+
+
+def make_sure_opportunity_config_stage():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config_stage()
+    print('Make sure opportunity config stage is done!')

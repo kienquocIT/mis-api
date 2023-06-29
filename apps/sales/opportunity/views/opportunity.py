@@ -13,7 +13,7 @@ class OpportunityList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
-    filterset_fields = []
+    filterset_fields = {'sale_person_id': ['exact']}
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
@@ -23,6 +23,7 @@ class OpportunityList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
+            "sale_person"
         )
 
     @swagger_auto_schema(
@@ -55,7 +56,8 @@ class OpportunityDetail(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "decision_maker"
+            "decision_maker",
+            "sale_person",
         )
 
     @swagger_auto_schema(

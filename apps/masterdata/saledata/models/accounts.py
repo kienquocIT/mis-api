@@ -16,7 +16,8 @@ __all__ = [
     'AccountAccountTypes',
     'AccountShippingAddress',
     'AccountBillingAddress',
-    'Contact'
+    'Contact',
+    'ANNUAL_REVENUE_SELECTION',
 ]
 
 
