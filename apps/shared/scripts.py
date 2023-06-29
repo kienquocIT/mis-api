@@ -15,7 +15,7 @@ from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, Ru
 from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..sales.opportunity.models import Opportunity
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
 
 
 def update_sale_default_data_old_company():
@@ -244,3 +244,11 @@ def make_sure_opportunity_config_stage():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).opportunity_config_stage()
     print('Make sure opportunity config stage is done!')
+
+
+def update_is_delete_opportunity_config_stage():
+    OpportunityConfigStage.objects.filter(
+        indicator__in=['Qualification', 'Closed Won', 'Closed Lost', 'Deal Close']
+    ).update(is_delete=True)
+
+    print('Done!')

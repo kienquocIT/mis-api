@@ -111,6 +111,9 @@ class OpportunityConfigStage(SimpleAbstractModel):
     is_closed_lost = models.BooleanField(
         default=False
     )
+    is_delete = models.BooleanField(
+        default=False,
+    )
 
     class Meta:
         verbose_name = 'Opportunity Config Stage'

@@ -159,6 +159,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -179,6 +180,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': True,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -215,6 +217,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': True,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -267,6 +270,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': True,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -288,6 +292,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -308,6 +313,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': False,
             'is_closed_lost': True,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -337,6 +343,7 @@ class ConfigDefaultData:
             'is_deal_closed': False,
             'is_delivery': True,
             'is_closed_lost': False,
+            'is_delete': True,
             'condition_datas': [
                 {
                     'condition_property': {
@@ -357,6 +364,7 @@ class ConfigDefaultData:
             'is_deal_closed': True,
             'is_delivery': False,
             'is_closed_lost': False,
+            'is_delete': False,
             'condition_datas': [
                 {
                     'condition_property': {
