@@ -623,8 +623,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_sale_order(self, obj):
-        if (obj.sale_order):
+    @classmethod
+    def get_sale_order(cls, obj):
+        if obj.sale_order:
             try:
                 delivery = obj.sale_order.delivery_of_sale_order
                 print(delivery)
@@ -646,8 +647,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
-    def get_quotation(self, obj):
-        if (obj.quotation):
+    @classmethod
+    def get_quotation(cls, obj):
+        if obj.quotation:
             return {
                 'id': obj.quotation_id,
                 'code': obj.quotation.code,
