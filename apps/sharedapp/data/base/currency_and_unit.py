@@ -141,8 +141,8 @@ IndicatorParam_data = {
         "code": "sumItemIf",
         "remark": "Returns total of items that pass condition.",
         "syntax": "sumItemIf(",
-        "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
-        "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
+        "syntax_show": "sumItemIf(field_check_condition(==, !=, >, <, >=, <=)condition, field_sum_total)",
+        "example": "sumItemIf(prop(Expense type)=='operating cost',prop(Expense subtotal after tax))",
         "param_type": 2,
         "order": 6,
     }

@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from .config import OpportunityConfigStage
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 TYPE_CUSTOMER = [
@@ -171,7 +172,9 @@ class Opportunity(DataAbstractModel):
             temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
             self.code = code
-
+        stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
+        self.stage = stage
+        self.win_rate = stage.win_rate
         # hit DB
         super().save(*args, **kwargs)
 

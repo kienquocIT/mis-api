@@ -6,14 +6,14 @@ from rest_framework import serializers
 from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.sales.opportunity.models import StageCondition
+from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
 
 # Company Config
-class CurrencyRuleDetail(serializers.Serializer): # noqa
+class CurrencyRuleDetail(serializers.Serializer):  # noqa
     prefix = serializers.CharField()
     suffix = serializers.CharField()
     decimal = serializers.CharField()
@@ -357,14 +357,19 @@ class RestoreDefaultOpportunityConfigStageSerializer(serializers.ModelSerializer
         data = ConfigDefaultData.opportunity_config_stage_data
         list_stage = instance.sales_opportunity_config_stage.all()
         list_stage.filter(is_default=False).delete()
-        for stage in data:
-            obj = list_stage.get(indicator=stage['indicator'])
-            obj.description = stage['description']
-            obj.win_rate = stage['win_rate']
-            obj.condition_datas = stage['condition_datas']
-            obj.save()
-            obj.stage_condition.all().delete()
-            for condition in stage['condition_datas']:
+        # a = []
+        for stage_data in data:
+            stage = list_stage.filter(indicator=stage_data['indicator'])
+            if len(stage) != 0:
+                obj = stage[0]
+                obj.description = stage_data['description']
+                obj.win_rate = stage_data['win_rate']
+                obj.condition_datas = stage_data['condition_datas']
+                obj.save()
+                obj.stage_condition.all().delete()
+            else:
+                obj = OpportunityConfigStage.objects.create(**stage_data, company=instance)
+            for condition in stage_data['condition_datas']:
                 StageCondition.objects.create(
                     stage=obj,
                     condition_property_id=condition['condition_property']['id'],

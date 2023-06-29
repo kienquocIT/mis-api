@@ -58,6 +58,8 @@ class OpportunityDetail(
             "customer",
             "decision_maker",
             "sale_person",
+            "sale_order__delivery_of_sale_order",
+            "quotation"
         )
 
     @swagger_auto_schema(

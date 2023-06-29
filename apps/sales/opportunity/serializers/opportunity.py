@@ -571,6 +571,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 class OpportunityDetailSerializer(serializers.ModelSerializer):
     decision_maker = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -597,7 +599,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'sale_person',
             'opportunity_sale_team_datas',
             'stage',
-            'lost_by_other_reason'
+            'lost_by_other_reason',
+            'sale_order',
+            'quotation',
         )
 
     @classmethod
@@ -616,5 +620,38 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'id': obj.sale_person_id,
                 'name': obj.sale_person.get_full_name(),
                 'code': obj.sale_person.code,
+            }
+        return {}
+
+    def get_sale_order(self, obj):
+        if (obj.sale_order):
+            try:
+                delivery = obj.sale_order.delivery_of_sale_order
+                print(delivery)
+                return {
+                    'id': obj.sale_order_id,
+                    'code': obj.sale_order.code,
+                    'system_status': obj.sale_order.system_status,
+                    'delivery': {
+                        'id': delivery.id,
+                        'code': delivery.code,
+                    }
+                }
+            except Exception as err:
+                print(err)
+            return {
+                'id': obj.sale_order_id,
+                'code': obj.sale_order.code,
+                'system_status': obj.sale_order.system_status,
+            }
+        return {}
+
+    def get_quotation(self, obj):
+        if (obj.quotation):
+            return {
+                'id': obj.quotation_id,
+                'code': obj.quotation.code,
+                'system_status': obj.quotation.system_status,
+                'is_customer_confirm': obj.quotation.is_customer_confirm,
             }
         return {}

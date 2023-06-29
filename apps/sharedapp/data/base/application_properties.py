@@ -528,13 +528,13 @@ AppProp_SaleData_Opportunity_data = {
             '=': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': None,
                 }
             ],
             '≠': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': None,
                 }
             ]
         }
