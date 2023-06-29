@@ -7,7 +7,7 @@ from django.dispatch import receiver
 from apps.core.log.models import Notifications
 from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
-from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale, Indicator, \
+from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, \
     IndicatorDefaultData
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
@@ -483,7 +483,7 @@ class ConfigDefaultData:
 
     def quotation_indicator_config(self):
         for data in IndicatorDefaultData.INDICATOR_DATA:
-            Indicator.objects.create(
+            QuotationIndicatorConfig.objects.create(
                 company=self.company_obj,
                 **data,
             )

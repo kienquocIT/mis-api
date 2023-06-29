@@ -3,7 +3,7 @@ from django.db import models
 from apps.shared import SimpleAbstractModel
 
 
-class Indicator(SimpleAbstractModel):
+class QuotationIndicatorConfig(SimpleAbstractModel):
     company = models.ForeignKey(
         'company.Company',
         on_delete=models.SET_NULL,
@@ -36,8 +36,8 @@ class Indicator(SimpleAbstractModel):
     )
 
     class Meta:
-        verbose_name = 'Indicator'
-        verbose_name_plural = 'Indicators'
+        verbose_name = 'Quotation Indicator Config'
+        verbose_name_plural = 'Quotation Indicator Configs'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()
@@ -51,7 +51,7 @@ class QuotationIndicator(SimpleAbstractModel):
         related_name="quotation_indicator_quotation",
     )
     indicator = models.ForeignKey(
-        Indicator,
+        QuotationIndicatorConfig,
         on_delete=models.CASCADE,
         verbose_name="indicator",
         related_name="quotation_indicator_indicator",

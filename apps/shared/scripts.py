@@ -16,7 +16,7 @@ from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition,
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
-from ..sales.quotation.models import Indicator
+from ..sales.quotation.models import QuotationIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -256,7 +256,7 @@ def update_is_delete_opportunity_config_stage():
 
 
 def make_sure_quotation_indicator_config():
-    Indicator.objects.all().delete()
+    QuotationIndicatorConfig.objects.all().delete()
     for obj in Company.objects.all():
         ConfigDefaultData(obj).quotation_indicator_config()
     print('Make sure quotation indicator config is done!')

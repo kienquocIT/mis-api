@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sales.quotation.models import Indicator
+from apps.sales.quotation.models import QuotationIndicatorConfig
 
 
 class IndicatorListSerializer(serializers.ModelSerializer):
@@ -8,7 +8,7 @@ class IndicatorListSerializer(serializers.ModelSerializer):
     formula_data_show = serializers.JSONField()
 
     class Meta:
-        model = Indicator
+        model = QuotationIndicatorConfig
         fields = (
             'id',
             'title',
@@ -25,7 +25,7 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
     formula_data_show = serializers.JSONField()
 
     class Meta:
-        model = Indicator
+        model = QuotationIndicatorConfig
         fields = (
             'id',
             'title',
@@ -41,7 +41,7 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
 class IndicatorCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Indicator
+        model = QuotationIndicatorConfig
         fields = (
             'title',
             'remark',
@@ -51,14 +51,14 @@ class IndicatorCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        indicator = Indicator.objects.create(**validated_data)
+        indicator = QuotationIndicatorConfig.objects.create(**validated_data)
         return indicator
 
 
 class IndicatorUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = Indicator
+        model = QuotationIndicatorConfig
         fields = (
             'title',
             'remark',
