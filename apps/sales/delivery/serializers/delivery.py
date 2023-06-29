@@ -24,7 +24,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'remaining_quantity',
             'ready_quantity',
             'delivery_data',
-            'picked_quantity'
+            'picked_quantity',
         )
 
 
@@ -171,7 +171,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def minus_product_warehouse_stock(cls, tenant_com_info, product_id, stock_info, config):
-        save_list = []
+        # sử dụng vòng for trong delivery data để đảm bảo nếu như pick từ nhiều kho khác nhau, thì có thể trừ đúng kho
+        # bên picking đã pick
         for data in stock_info:
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=tenant_com_info['tenant_id'],
@@ -185,9 +186,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 selected.sold_amount += data['stock']
                 if config.is_picking:
                     selected.picked_ready = selected.picked_ready - data['stock']
-                save_list.append(selected)
-
-        ProductWareHouse.objects.bulk_update(save_list, fields=['sold_amount', 'picked_ready'])
+                selected.save(update_fields=['sold_amount', 'picked_ready'])
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -198,7 +197,14 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             if obj_key in product_done:
                 delivery_data = product_done[obj_key]['delivery_data']  # list format
                 obj.picked_quantity = product_done[obj_key]['picked_num']
-                obj.delivery_data = delivery_data
+                if config.is_picking and config.is_partial_ship:
+                    for obj_crt in obj.delivery_data:
+                        matching_objs = [obj_prod_done for obj_prod_done in delivery_data
+                                         if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
+                                         obj_prod_done['warehouse']]
+                        obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
+                else:
+                    obj.delivery_data = delivery_data
                 # config case 1, 2, 3
                 cls.minus_product_warehouse_stock(
                     {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
@@ -217,6 +223,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         ):
             delivery_before = obj.delivered_quantity_before + obj.picked_quantity
             remain = obj.delivery_quantity - delivery_before
+
             new_prod = OrderDeliveryProduct(
                 delivery_sub=new_sub,
                 product=obj.product,
@@ -226,7 +233,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 remaining_quantity=remain,
                 ready_quantity=obj.ready_quantity - obj.picked_quantity if obj.ready_quantity > 0 else 0,
                 picked_quantity=0,
-                order=obj.order
+                order=obj.order,
+                delivery_data=obj.delivery_data
             )
             new_prod.before_save()
             prod_arr.append(new_prod)
@@ -342,14 +350,13 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.date_done = timezone.now()
             instance.is_updated = True
             instance.state = 2
-            instance.ready_quantity += total_done
         elif instance.remaining_quantity == total_done:
             instance.date_done = timezone.now()
             instance.is_updated = True
             instance.state = 2
             order_delivery.state = 2
         instance.save(
-            update_fields=['date_done', 'ready_quantity', 'state', 'is_updated', 'estimated_delivery_date',
+            update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
                            'actual_delivery_date', 'remarks']
         )
         order_delivery.save(update_fields=['sub', 'state'])
