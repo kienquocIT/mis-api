@@ -10,7 +10,8 @@ from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
-    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, Indicator, QuotationIndicator
+    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
+    QuotationIndicator
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg
 
 
@@ -443,7 +444,7 @@ class QuotationCommonValidate:
     @classmethod
     def validate_indicator(cls, value):
         try:
-            indicator = Indicator.objects.get_current(
+            indicator = QuotationIndicatorConfig.objects.get_current(
                 fill__company=True,
                 id=value
             )
@@ -452,5 +453,5 @@ class QuotationCommonValidate:
                 'title': indicator.title,
                 'code': indicator.remark
             }
-        except Indicator.DoesNotExist:
+        except QuotationIndicatorConfig.DoesNotExist:
             raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})
