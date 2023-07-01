@@ -482,11 +482,13 @@ class ConfigDefaultData:
                 )
 
     def quotation_indicator_config(self):
+        bulk_info = []
         for data in IndicatorDefaultData.INDICATOR_DATA:
-            QuotationIndicatorConfig.objects.create(
+            bulk_info.append(QuotationIndicatorConfig(
                 company=self.company_obj,
                 **data,
-            )
+            ))
+        QuotationIndicatorConfig.objects.bulk_create(bulk_info)
 
     def call_new(self):
         self.company_config()

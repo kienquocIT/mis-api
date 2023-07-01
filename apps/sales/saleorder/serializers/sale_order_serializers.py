@@ -595,7 +595,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def update(self, instance, validated_data):
-        # remove flag is_quotation_used for opportunity if change opportunity
+        # check if change opportunity then update field sale_order in opportunity to None
         if instance.opportunity != validated_data.get('opportunity', None):
             instance.opportunity.sale_order = None
             instance.opportunity.save(update_fields=['sale_order'])
