@@ -9,12 +9,14 @@ from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..core.hr.models import Employee
 
 
 def update_sale_default_data_old_company():
@@ -224,3 +226,19 @@ def fill_tenant_company_to_runtime():
         obj.before_save(True)
         obj.save()
     print('Log run done!')
+
+
+def make_sure_sync_media():
+    for company_obj in Company.objects.all():
+        if not company_obj.media_company_id or not company_obj.media_company_code:
+            MediaForceAPI.call_regis_company_media_storage(company_obj)
+            print('Force media company: ', company_obj.media_company_id, company_obj.media_company_code)
+
+        # refresh company obj =
+        company_obj.refresh_from_db()
+
+        for employee_obj in Employee.objects.all():
+            if not employee_obj.media_user_id:
+                MediaForceAPI.call_regis_employee_media_storage(employee_obj)
+                print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
+    print('Sync media successfully')
