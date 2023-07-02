@@ -629,7 +629,6 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         if obj.sale_order:
             try:
                 delivery = obj.sale_order.delivery_of_sale_order
-                print(delivery)
                 return {
                     'id': obj.sale_order_id,
                     'code': obj.sale_order.code,
