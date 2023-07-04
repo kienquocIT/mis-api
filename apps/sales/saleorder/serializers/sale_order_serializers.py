@@ -1,8 +1,8 @@
 from rest_framework import serializers
 
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder, \
-    SaleOrderIndicator
+from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
+    SaleOrder, SaleOrderIndicator
 from apps.shared import SaleMsg
 
 
