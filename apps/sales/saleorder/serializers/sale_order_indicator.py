@@ -84,7 +84,7 @@ class SaleOrderIndicatorCompanyRestoreSerializer(serializers.ModelSerializer):
     @staticmethod
     def restore_company_indicator(company_obj):
         SaleOrderIndicatorConfig.objects.filter(company_id=company_obj.id).delete()
-        ConfigDefaultData(company_obj).quotation_indicator_config()
+        ConfigDefaultData(company_obj).sale_order_indicator_config()
         return True
 
     def update(self, instance, validated_data):

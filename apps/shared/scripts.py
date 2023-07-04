@@ -17,6 +17,7 @@ from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition,
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
 from ..sales.quotation.models import QuotationIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -261,6 +262,7 @@ def make_sure_quotation_indicator_config():
         ConfigDefaultData(obj).quotation_indicator_config()
     print('Make sure quotation indicator config is done!')
 
+
 def update_data_application_property():
     app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
     app_property.stage_compare_data = {
@@ -279,3 +281,10 @@ def update_data_application_property():
         }
     app_property.save()
     print('Update Done!')
+
+
+def make_sure_sale_order_indicator_config():
+    SaleOrderIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_indicator_config()
+    print('Make sure sale order indicator config is done!')
