@@ -1,12 +1,11 @@
 from django.db import models
 from apps.shared import SimpleAbstractModel
-from .opportunity import Opportunity
 
 
 class OpportunityCallLog(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
-        Opportunity,
+        'opportunity.Opportunity',
         on_delete=models.CASCADE,
         related_name="opportunity_calllog",
     )
