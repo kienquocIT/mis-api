@@ -1,10 +1,5 @@
 from rest_framework import serializers
-from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
-from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import OpportunityCallLog
-from apps.shared import AccountsMsg, HRMsg
-from apps.shared.translations.opportunity import OpportunityMsg
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
