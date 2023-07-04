@@ -645,4 +645,3 @@ class IndicatorDefaultData:
             "order": 5
         }
     ]
-
