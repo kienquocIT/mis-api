@@ -672,8 +672,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_is_close(cls, obj):
-        if(obj.stage):
-            if(obj.stage.is_deal_closed):
+        if obj.stage:
+            if obj.stage.is_deal_closed:
                 return True
             return False
         return False

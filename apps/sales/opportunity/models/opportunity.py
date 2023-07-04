@@ -160,7 +160,7 @@ class Opportunity(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, is_update=False, *args, **kwargs):
+    def save(self, *args, is_update=False, **kwargs):
         # auto create code (temporary)
         opportunity = Opportunity.objects.filter_current(
             fill__tenant=True,

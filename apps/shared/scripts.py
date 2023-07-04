@@ -289,4 +289,3 @@ def update_stage_for_opportunity():
         obj.stage = stage
         obj.save(is_update=True)
     print('!Done')
-
