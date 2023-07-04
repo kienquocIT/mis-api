@@ -160,7 +160,7 @@ class Opportunity(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
+    def save(self, is_update=False, *args, **kwargs):
         # auto create code (temporary)
         opportunity = Opportunity.objects.filter_current(
             fill__tenant=True,
@@ -172,9 +172,10 @@ class Opportunity(DataAbstractModel):
             temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
             self.code = code
-        stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
-        self.stage = stage
-        self.win_rate = stage.win_rate
+        if not is_update:
+            stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
+            self.stage = stage
+            self.win_rate = stage.win_rate
         # hit DB
         super().save(*args, **kwargs)
 

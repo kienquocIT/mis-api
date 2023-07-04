@@ -261,6 +261,7 @@ def make_sure_quotation_indicator_config():
         ConfigDefaultData(obj).quotation_indicator_config()
     print('Make sure quotation indicator config is done!')
 
+
 def update_data_application_property():
     app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
     app_property.stage_compare_data = {
@@ -279,3 +280,13 @@ def update_data_application_property():
         }
     app_property.save()
     print('Update Done!')
+
+
+def update_stage_for_opportunity():
+    opp = Opportunity.objects.filter(stage=None)
+    for obj in opp:
+        stage = OpportunityConfigStage.objects.get(company_id=obj.company_id, indicator='Qualification')
+        obj.stage = stage
+        obj.save(is_update=True)
+    print('!Done')
+

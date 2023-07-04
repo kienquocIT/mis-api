@@ -13,6 +13,7 @@ from apps.shared.translations.opportunity import OpportunityMsg
 class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -25,7 +26,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'open_date',
             'quotation_id',
             'sale_order_id',
-            'opportunity_sale_team_datas'
+            'opportunity_sale_team_datas',
+            'close_date',
+            'stage',
         )
 
     @classmethod
@@ -47,6 +50,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'code': obj.sale_person.code,
             }
         return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.stage:
+            return obj.stage.indicator
+        return None
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
@@ -415,6 +424,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
 
+
     class Meta:
         model = Opportunity
         fields = (
@@ -565,7 +575,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
-        instance.save()
+        instance.save(is_update=True)
         return instance
 
 
@@ -574,6 +584,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    is_close = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -603,6 +614,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'sale_order',
             'quotation',
+            'is_close'
         )
 
     @classmethod
@@ -657,3 +669,11 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'is_customer_confirm': obj.quotation.is_customer_confirm,
             }
         return {}
+
+    @classmethod
+    def get_is_close(cls, obj):
+        if(obj.stage):
+            if(obj.stage.is_deal_closed):
+                return True
+            return False
+        return False
