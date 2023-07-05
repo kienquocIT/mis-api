@@ -12,6 +12,7 @@ __all__ = [
     'WareHouseUpdateSerializer',
     'WarehouseStockListSerializer',
     'ProductWareHouseStockListSerializer',
+    'ProductWareHouseListSerializer'
 ]
 
 from apps.shared import TypeCheck
@@ -20,7 +21,13 @@ from apps.shared import TypeCheck
 class WareHouseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouse
-        fields = ('id', 'title', 'code', 'remarks', 'is_active')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'is_active',
+        )
 
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
@@ -54,9 +61,9 @@ class WarehouseStockListSerializer(serializers.ModelSerializer):
     def get_product(cls, obj):
         if obj:
             return {
-                'id': str(obj.product.id),
+                'id': str(obj.product_id),
                 'title': obj.product.title,
-                'code': obj.product.code
+                'code': obj.product.code,
             }
         return {}
 
@@ -64,7 +71,7 @@ class WarehouseStockListSerializer(serializers.ModelSerializer):
     def get_warehouse(cls, obj):
         if obj:
             return {
-                'id': str(obj.warehouse.id),
+                'id': str(obj.warehouse_id),
                 'title': obj.warehouse.title,
                 'code': obj.warehouse.code
             }
@@ -112,3 +119,9 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouse
         fields = ('id', 'title', 'code', 'remarks', 'product_amount', 'picked_ready')
+
+
+class ProductWareHouseListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductWareHouse
+        fields = '__all__'
