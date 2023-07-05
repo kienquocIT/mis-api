@@ -61,7 +61,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                     'is_current': stage.is_current,
                     'indicator': stage.stage.indicator
                 } for stage in stages]
-        return None
+        return []
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
@@ -676,7 +676,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'id': obj.decision_maker.id,
                 'name': obj.decision_maker.fullname,
             }
-        return None
+        return {}
 
     @classmethod
     def get_sale_person(cls, obj):
