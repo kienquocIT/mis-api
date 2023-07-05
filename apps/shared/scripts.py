@@ -19,6 +19,7 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
 from ..sales.quotation.models import QuotationIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -282,6 +283,13 @@ def update_data_application_property():
     }
     app_property.save()
     print('Update Done!')
+
+
+def make_sure_sale_order_indicator_config():
+    SaleOrderIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_indicator_config()
+    print('Make sure sale order indicator config is done!')
 
 
 def delete_delivery_picking():

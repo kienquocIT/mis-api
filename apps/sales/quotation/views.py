@@ -157,7 +157,7 @@ class QuotationIndicatorList(
     @swagger_auto_schema(
         operation_summary="Create Quotation Indicator",
         operation_description="Create new Quotation Indicator",
-        request_body=QuotationCreateSerializer,
+        request_body=IndicatorCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
