@@ -15,7 +15,8 @@ from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
 )
 from apps.sales.delivery.models import DeliveryConfig
-from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
+from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
+    SaleOrderIndicatorConfig
 from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
@@ -490,6 +491,15 @@ class ConfigDefaultData:
             ))
         QuotationIndicatorConfig.objects.bulk_create(bulk_info)
 
+    def sale_order_indicator_config(self):
+        bulk_info = []
+        for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
+            bulk_info.append(SaleOrderIndicatorConfig(
+                company=self.company_obj,
+                **data,
+            ))
+        SaleOrderIndicatorConfig.objects.bulk_create(bulk_info)
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
@@ -498,6 +508,7 @@ class ConfigDefaultData:
         self.opportunity_config()
         self.opportunity_config_stage()
         self.quotation_indicator_config()
+        self.sale_order_indicator_config()
         return True
 
 

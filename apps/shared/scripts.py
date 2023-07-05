@@ -12,11 +12,14 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
-from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping, \
+    ProductWareHouse
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
 from ..sales.quotation.models import QuotationIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -265,21 +268,46 @@ def make_sure_quotation_indicator_config():
 def update_data_application_property():
     app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
     app_property.stage_compare_data = {
-            '=': [
-                {
-                    'id': 0,
-                    'value': None,
-                }
-            ],
-            '?': [
-                {
-                    'id': 0,
-                    'value': None,
-                }
-            ]
-        }
+        '=': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ],
+        '?': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ]
+    }
     app_property.save()
     print('Update Done!')
+
+
+def make_sure_sale_order_indicator_config():
+    SaleOrderIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_indicator_config()
+    print('Make sure sale order indicator config is done!')
+
+
+def delete_delivery_picking():
+    # delete delivery
+    order_delivery = OrderDelivery.objects.all()
+    order_delivery.update(sub=None)
+    OrderDeliverySub.objects.all().delete()
+    order_delivery.delete()
+
+    # delete picking
+    order_picking = OrderPicking.objects.all()
+    order_picking.update(sub=None)
+    OrderPickingSub.objects.all().delete()
+    order_picking.delete()
+
+    # reset warehouse
+    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
+    print("delete done.")
 
 
 def update_stage_for_opportunity():
