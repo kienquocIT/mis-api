@@ -15,7 +15,7 @@ from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, Ru
 from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
 from ..sales.quotation.models import QuotationIndicatorConfig
 
 
@@ -284,8 +284,9 @@ def update_data_application_property():
 
 def update_stage_for_opportunity():
     opp = Opportunity.objects.filter(stage=None)
+    bulk_data = []
     for obj in opp:
         stage = OpportunityConfigStage.objects.get(company_id=obj.company_id, indicator='Qualification')
-        obj.stage = stage
-        obj.save(is_update=True)
+        bulk_data.append(OpportunityStage(opportunity=obj, stage=stage, is_current=True))
+    OpportunityStage.objects.bulk_create(bulk_data)
     print('!Done')

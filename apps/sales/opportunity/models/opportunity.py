@@ -141,12 +141,12 @@ class Opportunity(DataAbstractModel):
         related_name="opportunity_map_sale_order"
     )
 
-    stage = models.ForeignKey(
+    stage = models.ManyToManyField(
         'opportunity.OpportunityConfigStage',
-        on_delete=models.CASCADE,
-        related_name="opportunity_stage",
-        null=True,
-        default=None,
+        through="OpportunityStage",
+        symmetrical=False,
+        blank=True,
+        related_name='opportunity_map_stage'
     )
 
     lost_by_other_reason = models.BooleanField(
@@ -174,10 +174,12 @@ class Opportunity(DataAbstractModel):
             self.code = code
         if not is_update:
             stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
-            self.stage = stage
             self.win_rate = stage.win_rate
-        # hit DB
-        super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
+            OpportunityStage.objects.create(stage=stage, opportunity=self, is_current=True)
+        else:
+            # hit DB
+            super().save(*args, **kwargs)
 
 
 class OpportunityProductCategory(SimpleAbstractModel):
@@ -381,3 +383,23 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
         ordering = ()
         default_permissions = ()
         permissions = ()
+
+
+class OpportunityStage(SimpleAbstractModel):
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage_opportunity",
+    )
+
+    stage = models.ForeignKey(
+        'opportunity.OpportunityConfigStage',
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage_stage",
+        null=True,
+        default=None,
+    )
+
+    is_current = models.BooleanField(
+        default=False
+    )
