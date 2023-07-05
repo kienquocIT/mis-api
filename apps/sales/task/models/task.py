@@ -80,6 +80,7 @@ class OpportunityTask(MasterDataAbstractModel):
         related_name='opportunity_task_assign_to',
     )
     remark = models.TextField(blank=True)
+
     checklist = models.JSONField(
         default=list,
         verbose_name='Checklist',
@@ -95,6 +96,26 @@ class OpportunityTask(MasterDataAbstractModel):
         null=True,
         on_delete=models.CASCADE,
         verbose_name='Sub-task of parent task'
+    )
+    log_time = models.JSONField(
+        default=list,
+        verbose_name='self employee log time after create task',
+        null=True,
+        help_text=json.dumps(
+            {
+                "start_date": "YYYY-MM-DD",
+                "end_date": "YYYY-MM-DD",
+                "time_spent": 'eg. 3w 4d 12h'
+            }
+        )
+    )
+    attach = models.JSONField(
+        default=list,
+        verbose_name='attachment file',
+        null=True,
+        help_text=json.dumps(
+            ["attachment_id1", "attachment_id2"]
+        )
     )
 
     def create_code_task(self):
@@ -127,7 +148,7 @@ class OpportunityTask(MasterDataAbstractModel):
         verbose_name = 'Opportunity Task Log Work'
         verbose_name_plural = 'Opportunity Task Log Work'
         default_permissions = ()
-        ordering = ('-date_created',)
+        ordering = ('date_created',)
         permissions = ()
 
 

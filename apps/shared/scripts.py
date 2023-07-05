@@ -14,6 +14,7 @@ from ..sales.cashoutflow.models import (
 )
 from ..core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime
 from ..masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 
 
 def update_sale_default_data_old_company():
@@ -211,3 +212,4 @@ def make_sure_task_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).task_config()
     print('Make sure Task config is done!')
+

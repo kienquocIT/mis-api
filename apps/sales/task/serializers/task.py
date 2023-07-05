@@ -4,10 +4,15 @@ from django.conf import settings
 from rest_framework import serializers
 
 import django.utils.translation
-from apps.sales.task.models import OpportunityTask, OpportunityLogWork
+
+from apps.core.hr.models import Employee
+from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
-           'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer']
+           'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer',
+           'OpportunityTaskStatusListSerializer', 'OpportunityTaskUpdateSerializer']
+
+from apps.shared import HRMsg
 
 
 class OpportunityTaskListSerializer(serializers.ModelSerializer):
@@ -52,7 +57,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
-                  'priority', 'label', 'assign_to', 'checklist', 'parent_n', 'remark')
+                  'priority', 'label', 'assign_to', 'checklist', 'parent_n', 'remark', 'employee_created')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -61,6 +66,27 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(
             {'title': django.utils.translation.gettext_lazy("Title is required.")}
         )
+
+    @classmethod
+    def validate_end_time(cls, attrs):
+        if attrs:
+            return attrs
+        raise serializers.ValidationError(
+            {'title': django.utils.translation.gettext_lazy("End date is required.")}
+        )
+
+    @classmethod
+    def validate_employee_created(cls, value):
+        if value:
+            employee = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value.employee_created_id
+            ).count()
+            if employee == len(value):
+                return value
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
+        raise serializers.ValidationError({'detail': 'Assigner not found'})
 
     def create(self, validated_data):
         task = OpportunityTask.objects.create(**validated_data)
@@ -78,6 +104,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     def get_assign_to(cls, obj):
         if obj.assign_to:
             return {
+                'id': obj.assign_to.id,
                 'avatar': obj.assign_to.avatar,
                 'first_name': obj.assign_to.first_name,
                 'last_name': obj.assign_to.last_name
@@ -125,12 +152,27 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
                   'priority', 'label', 'assign_to', 'remark', 'checklist', 'parent_n', 'employee_created')
 
+
+class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityTask
+        fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
+                  'priority', 'label', 'assign_to', 'remark', 'checklist', 'parent_n', 'employee_created')
+
     @classmethod
     def validate_title(cls, attrs):
         if attrs:
             return attrs
         raise serializers.ValidationError(
             {'title': django.utils.translation.gettext_lazy("Title is required.")}
+        )
+
+    @classmethod
+    def validate_task_status(cls, attrs):
+        if attrs:
+            return attrs
+        raise serializers.ValidationError(
+            {'title': django.utils.translation.gettext_lazy("Status is required.")}
         )
 
     def update(self, instance, validated_data):
@@ -196,3 +238,9 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
             validated_data['employee_created'] = employee
         log_work = OpportunityLogWork.objects.create(**validated_data)
         return log_work
+
+
+class OpportunityTaskStatusListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityTaskStatus
+        fields = ('id', 'title', 'translate_name', 'order')
