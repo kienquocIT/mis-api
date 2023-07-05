@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeas
 from apps.masterdata.saledata.models import Account
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
-    OpportunityConfigStage
+    OpportunityConfigStage, OpportunityStage
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -13,6 +13,7 @@ from apps.shared.translations.opportunity import OpportunityMsg
 class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -25,7 +26,9 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'open_date',
             'quotation_id',
             'sale_order_id',
-            'opportunity_sale_team_datas'
+            'opportunity_sale_team_datas',
+            'close_date',
+            'stage',
         )
 
     @classmethod
@@ -47,6 +50,18 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'code': obj.sale_person.code,
             }
         return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.opportunity_stage_opportunity:
+            stages = obj.opportunity_stage_opportunity.all()
+            return [
+                {
+                    'id': stage.stage.id,
+                    'is_current': stage.is_current,
+                    'indicator': stage.stage.indicator
+                } for stage in stages]
+        return []
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
@@ -308,6 +323,21 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         OpportunitySaleTeamMember.objects.bulk_create(bulk_data)
         return True
 
+    @classmethod
+    def update_opportunity_stage(cls, data, instance):
+        OpportunityStage.objects.filter(opportunity=instance).delete()
+
+        data_bulk = []
+        for item in data:
+            opportunity_stage = OpportunityStage(
+                opportunity=instance,
+                stage_id=item['stage'],
+                is_current=item['is_current']
+            )
+            data_bulk.append(opportunity_stage)
+        OpportunityStage.objects.bulk_create(data_bulk)
+        return True
+
 
 class OpportunityCompetitorCreateSerializer(serializers.ModelSerializer):
     competitor = serializers.UUIDField(allow_null=False)
@@ -392,6 +422,30 @@ class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
         return None
 
 
+class OpportunityStageUpdateSerializer(serializers.ModelSerializer):
+    stage = serializers.UUIDField(allow_null=False)
+    is_current = serializers.BooleanField()
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = (
+            'stage',
+            'is_current'
+        )
+
+    @classmethod
+    def validate_stage(cls, value):
+        try:  # noqa
+            if value is not None:
+                obj = OpportunityConfigStage.objects.get(
+                    id=value
+                )
+                return obj.id
+        except OpportunityConfigStage.DoesNotExist:
+            raise serializers.ValidationError({'stage': OpportunityMsg.NOT_EXIST})
+        return None
+
+
 class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_product_datas = OpportunityProductCreateSerializer(required=False, many=True)
     opportunity_competitors_datas = OpportunityCompetitorCreateSerializer(required=False, many=True)
@@ -414,6 +468,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
+    list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
 
     class Meta:
         model = Opportunity
@@ -439,6 +494,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'opportunity_sale_team_datas',
             'stage',
             'lost_by_other_reason',
+            'list_stage',
         )
 
     @classmethod
@@ -563,9 +619,16 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
                 instance
             )
 
+        if 'list_stage' in validated_data:
+            list_stage = validated_data.pop('list_stage', [])
+            CommonOpportunityUpdate.update_opportunity_stage(
+                list_stage,
+                instance
+            )
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
-        instance.save()
+        instance.save(is_update=True)
         return instance
 
 
@@ -574,6 +637,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -612,7 +676,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'id': obj.decision_maker.id,
                 'name': obj.decision_maker.fullname,
             }
-        return None
+        return {}
 
     @classmethod
     def get_sale_person(cls, obj):
@@ -657,3 +721,16 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'is_customer_confirm': obj.quotation.is_customer_confirm,
             }
         return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        stage = obj.stage.all()
+        if stage:
+            return [
+                {
+                    'id': item.id,
+                    'is_deal_closed': item.is_deal_closed,
+                    'indicator': item.indicator,
+                } for item in stage
+            ]
+        return []

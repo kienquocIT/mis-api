@@ -17,7 +17,7 @@ from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition,
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
@@ -308,3 +308,13 @@ def delete_delivery_picking():
     # reset warehouse
     ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
     print("delete done.")
+
+
+def update_stage_for_opportunity():
+    opp = Opportunity.objects.filter(stage=None)
+    bulk_data = []
+    for obj in opp:
+        stage = OpportunityConfigStage.objects.get(company_id=obj.company_id, indicator='Qualification')
+        bulk_data.append(OpportunityStage(opportunity=obj, stage=stage, is_current=True))
+    OpportunityStage.objects.bulk_create(bulk_data)
+    print('!Done')

@@ -141,12 +141,12 @@ class Opportunity(DataAbstractModel):
         related_name="opportunity_map_sale_order"
     )
 
-    stage = models.ForeignKey(
+    stage = models.ManyToManyField(
         'opportunity.OpportunityConfigStage',
-        on_delete=models.CASCADE,
-        related_name="opportunity_stage",
-        null=True,
-        default=None,
+        through="OpportunityStage",
+        symmetrical=False,
+        blank=True,
+        related_name='opportunity_map_stage'
     )
 
     lost_by_other_reason = models.BooleanField(
@@ -162,6 +162,7 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)
+        is_update = kwargs.pop('is_update', True)
         opportunity = Opportunity.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -172,11 +173,14 @@ class Opportunity(DataAbstractModel):
             temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
             self.code = code
-        stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
-        self.stage = stage
-        self.win_rate = stage.win_rate
-        # hit DB
-        super().save(*args, **kwargs)
+        if not is_update:
+            super().save(*args, **kwargs)
+        else:
+            # hit DB
+            stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
+            self.win_rate = stage.win_rate
+            super().save(*args, **kwargs)
+            OpportunityStage.objects.create(stage=stage, opportunity=self, is_current=True)
 
 
 class OpportunityProductCategory(SimpleAbstractModel):
@@ -377,6 +381,33 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Opportunity Sale Team Member'
         verbose_name_plural = 'Opportunity Sale Team Members'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityStage(SimpleAbstractModel):
+    opportunity = models.ForeignKey(
+        Opportunity,
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage_opportunity",
+    )
+
+    stage = models.ForeignKey(
+        'opportunity.OpportunityConfigStage',
+        on_delete=models.CASCADE,
+        related_name="opportunity_stage_stage",
+        null=True,
+        default=None,
+    )
+
+    is_current = models.BooleanField(
+        default=False
+    )
+
+    class Meta:
+        verbose_name = 'Opportunity Stage'
+        verbose_name_plural = 'Opportunity Stages'
         ordering = ()
         default_permissions = ()
         permissions = ()

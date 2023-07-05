@@ -26,7 +26,9 @@ class OpportunityList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person"
+            "sale_person",
+        ).prefetch_related(
+            "opportunity_stage_opportunity__stage",
         )
 
     @swagger_auto_schema(
@@ -62,7 +64,10 @@ class OpportunityDetail(
             "decision_maker",
             "sale_person",
             "sale_order__delivery_of_sale_order",
-            "quotation"
+            "quotation",
+
+        ).prefetch_related(
+            "stage",
         )
 
     @swagger_auto_schema(
