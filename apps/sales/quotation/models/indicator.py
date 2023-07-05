@@ -229,7 +229,7 @@ class IndicatorDefaultData:
                 }
             ],
             "formula_data_show":
-                "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal before tax))",
+                'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
             "order": 4
         },
         {
@@ -353,7 +353,7 @@ class IndicatorDefaultData:
                     ],
                     "is_indicator": True,
                     "formula_data_show":
-                        "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal before tax))"
+                        'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))'
                 }
             ],
             "formula_data_show": "indicator(Gross profit) - indicator(Operating expense)",
@@ -514,7 +514,7 @@ class IndicatorDefaultData:
                 }
             ],
             "formula_data_show":
-                "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal before tax))",
+                'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
             "order": 4
         },
         {
@@ -638,7 +638,7 @@ class IndicatorDefaultData:
                     ],
                     "is_indicator": True,
                     "formula_data_show":
-                        "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal before tax))"
+                        'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))'
                 }
             ],
             "formula_data_show": "indicator(Gross profit) - indicator(Operating expense)",
