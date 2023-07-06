@@ -66,7 +66,7 @@ class Company(CoreAbstractModel):
         else:
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
 
-        if kwargs.get('force_insert', False) and not self.media_company_id:
+        if kwargs.get('force_insert', False) and not self.media_company_id and settings.ENABLE_PROD is True:
             MediaForceAPI.call_sync_company(self)
 
     @classmethod

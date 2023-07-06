@@ -427,7 +427,8 @@ if os.environ.get('ENABLE_LOGGING', False) in [1, '1']:
 # -- Logging
 
 # PROD configurations
-if os.environ.get('ENABLE_PROD', '0') in [1, '1']:
+ENABLE_PROD = True if os.environ.get('ENABLE_PROD', '0') in [1, '1'] else False
+if ENABLE_PROD is True:
     # allow host
     OS_ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '[]')
     ALLOWED_HOSTS = json.loads(OS_ALLOWED_HOSTS)
@@ -494,3 +495,6 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
+
+SHOW_API_DOCS = True
+DEBUG = True
