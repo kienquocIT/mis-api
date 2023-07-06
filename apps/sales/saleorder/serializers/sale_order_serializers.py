@@ -508,6 +508,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].sale_order_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+                if validate_data['opportunity'].is_close is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
     def create(self, validated_data):
