@@ -162,7 +162,7 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)
-        is_update = kwargs.pop('is_update', True)
+        is_update = kwargs.pop('is_update', False)
         opportunity = Opportunity.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
@@ -174,13 +174,13 @@ class Opportunity(DataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
         if not is_update:
-            super().save(*args, **kwargs)
-        else:
             # hit DB
             stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
             self.win_rate = stage.win_rate
             super().save(*args, **kwargs)
             OpportunityStage.objects.create(stage=stage, opportunity=self, is_current=True)
+        else:
+            super().save(*args, **kwargs)
 
 
 class OpportunityProductCategory(SimpleAbstractModel):
