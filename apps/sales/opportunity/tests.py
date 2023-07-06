@@ -207,7 +207,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'opportunity_sale_team_datas', 'close_date', 'stage'],
+             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
             check_sum_second=True,
         )
 
