@@ -153,6 +153,10 @@ class Opportunity(DataAbstractModel):
         default=False,
     )
 
+    is_close = models.BooleanField(
+        default=False
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'

@@ -495,6 +495,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'stage',
             'lost_by_other_reason',
             'list_stage',
+            'is_close',
         )
 
     @classmethod
