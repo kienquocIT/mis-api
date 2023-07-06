@@ -349,3 +349,7 @@ msgstr "Đã có báo giá được tạo với cơ hội kinh doanh này"
 #
 msgid "Opportunity is already used for sale order"
 msgstr "Đã có đơn hàng được tạo với cơ hội kinh doanh này"
+
+#
+msgid "Opportunity is closed"
+msgstr "Cơ hội kinh doanh đã đóng"

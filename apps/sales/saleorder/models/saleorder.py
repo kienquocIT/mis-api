@@ -198,6 +198,11 @@ class SaleOrder(DataAbstractModel):
         verbose_name='Called delivery',
         help_text='State call delivery of this',
     )
+    # sale order indicators
+    sale_order_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
+    )
 
     class Meta:
         verbose_name = 'Sale Order'

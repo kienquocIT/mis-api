@@ -528,13 +528,13 @@ AppProp_SaleData_Opportunity_data = {
             '=': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': None,
                 }
             ],
             '≠': [
                 {
                     'id': 0,
-                    'value': True,
+                    'value': None,
                 }
             ]
         }
@@ -563,9 +563,163 @@ AppProp_SaleData_Opportunity_data = {
     },
 }
 
+AppProp_SaleData_SaleOrder_data = {
+    # a870e392-9ad2-4fe2-9baa-298a38691cf2 # saleorder.SaleOrder
+    # fields total
+    '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total revenue after tax',
+        'code': 'total_product',
+        'remark': 'Total revenue of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '1b93c48c-fbbf-460e-8bd6-00df89439c1c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost after tax',
+        'code': 'total_cost',
+        'remark': 'Total cost of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    'f919ddc7-bcb1-42c0-a84d-01cd48c7e9b4': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense after tax',
+        'code': 'total_expense',
+        'remark': 'Total expense of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '474ae19c-7dde-4c6d-b9cd-ad6b19af21ce': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total revenue before tax',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total revenue before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '3b4cf21c-93fb-4e67-bb02-2eed12ef334f': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost before tax',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '9df853f6-522d-45cd-a37f-a8f18f3e496b': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense before tax',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    # field of tabs Product
+    'e43e140e-beb1-49f0-a776-404c491fc1da': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product title',
+        'code': 'product_title',
+        'remark': 'Title product on sale order product line',
+        'type': 1,
+    },
+    '1f521c5b-0d55-4562-afaa-620496ddd17c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product code',
+        'code': 'product_code',
+        'remark': 'Code product on sale order product line',
+        'type': 1,
+    },
+    '3da12483-3c54-4148-935c-bca881bffcaf': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product unit title',
+        'code': 'product_uom_title',
+        'remark': 'Title product unit on sale order product line',
+        'type': 1,
+    },
+    'ab6ef6bc-e836-400e-8a89-57503c21f79c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product quantity',
+        'code': 'product_quantity',
+        'remark': 'Quantity product on sale order product line',
+        'type': 6,
+    },
+    'f6e535a7-65ef-41ad-93c4-216bb82b87ae': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product unit price',
+        'code': 'product_unit_price',
+        'remark': 'Price product on sale order product line',
+        'type': 6,
+    },
+    '0d573721-bf7c-4281-aea4-60abf26c997e': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product subtotal',
+        'code': 'product_subtotal_price',
+        'remark': 'Subtotal product on sale order product line',
+        'type': 6,
+    },
+    # field of tabs Expense
+    'b9fe74bf-44b0-462c-bbfd-636efd480150': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense title',
+        'code': 'expense_title',
+        'remark': 'Title expense on sale order expense line',
+        'type': 1,
+    },
+    '4136e7d1-eed3-4e3b-93d8-80a7c04d2d26': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense code',
+        'code': 'expense_code',
+        'remark': 'Code expense on sale order expense line',
+        'type': 1,
+    },
+    '374d7846-99e0-4af0-8073-3e048cec8c9d': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense type',
+        'code': 'expense_type_title',
+        'remark': 'Type expense on sale order expense line',
+        'type': 1,
+    },
+    '39e65aee-bfcd-465e-ac0b-78604881549d': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense unit title',
+        'code': 'expense_uom_title',
+        'remark': 'Title expense unit on sale order expense line',
+        'type': 1,
+    },
+    '57933f39-3e0e-4754-8205-314573da97fe': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense quantity',
+        'code': 'expense_quantity',
+        'remark': 'Quantity expense on sale order expense line',
+        'type': 6,
+    },
+    'e4e6d755-4f14-402a-ac2c-d16b1cae7dbd': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense unit price',
+        'code': 'expense_price',
+        'remark': 'Price expense on sale order expense line',
+        'type': 6,
+    },
+    '09aa4090-762d-4942-9676-24da8340284e': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense subtotal before tax',
+        'code': 'expense_subtotal_price',
+        'remark': 'Subtotal before tax expense on sale order expense line',
+        'type': 6,
+    },
+    '8b4cdf06-400f-45a7-895f-fcf3886275d7': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense subtotal after tax',
+        'code': 'expense_subtotal_price_after_tax',
+        'remark': 'Subtotal after tax expense on sale order expense line',
+        'type': 6,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,
-    **AppProp_SaleData_Opportunity_data
+    **AppProp_SaleData_Opportunity_data,
+    **AppProp_SaleData_SaleOrder_data,
 }

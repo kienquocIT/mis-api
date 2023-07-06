@@ -173,10 +173,6 @@ class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
     queryset = Company.objects
     serializer_update = RestoreDefaultOpportunityConfigStageSerializer
 
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            "sales_opportunity_config_stage__stage_condition",
-        )
 
     @swagger_auto_schema(
         operation_summary='Restore Default Opportunity Config Stage'

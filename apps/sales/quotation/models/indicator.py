@@ -101,25 +101,25 @@ class IndicatorDefaultData:
             "order": 1
         },
         {
-            "title": "Cost price",
-            "remark": "Cost price",
-            "example": "indicator(Cost price)",
+            "title": "Total cost",
+            "remark": "Total cost",
+            "example": "indicator(Total cost)",
             "application_code": "quotation",
             "formula_data": [
                 {
-                    "id": "148843b4-97a9-47ea-a5cf-a5cf1d557abd",
-                    "code": "total_cost",
+                    "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
+                    "code": "total_cost_pretax_amount",
                     "type": 6,
-                    "title": "Total cost after tax",
-                    "remark": "Total cost of quotation",
-                    "syntax": "prop(Total cost after tax)",
+                    "title": "Total cost before tax",
+                    "remark": "Total cost before tax of quotation",
+                    "syntax": "prop(Total cost before tax)",
                     "properties": {},
                     "is_property": True,
-                    "syntax_show": "prop(Total cost after tax)",
+                    "syntax_show": "prop(Total cost before tax)",
                     "content_type": "quotation.Quotation",
                 }
             ],
-            "formula_data_show": "prop(Total cost after tax)",
+            "formula_data_show": "prop(Total cost before tax)",
             "order": 2
         },
         {
@@ -132,7 +132,7 @@ class IndicatorDefaultData:
                     "id": "1",
                     "order": 1,
                     "title": "Revenue",
-                    "remark": "Doanh thu",
+                    "remark": "Revenue",
                     "syntax": "indicator(Revenue)",
                     "example": "indicator(Revenue)",
                     "syntax_show": "indicator(Revenue)",
@@ -144,9 +144,7 @@ class IndicatorDefaultData:
                             "title": "Total revenue before tax",
                             "remark": "Total revenue before tax of quotation",
                             "syntax": "prop(Total revenue before tax)",
-                            "properties": {
-
-                            },
+                            "properties": {},
                             "is_property": True,
                             "syntax_show": "prop(Total revenue before tax)",
                             "content_type": "quotation.Quotation",
@@ -159,38 +157,36 @@ class IndicatorDefaultData:
                 {
                     "id": "2",
                     "order": 2,
-                    "title": "Cost price",
-                    "remark": "Giá vốn",
-                    "syntax": "indicator(Cost price)",
-                    "example": "indicator(Cost price)",
-                    "syntax_show": "indicator(Cost price)",
+                    "title": "Total cost",
+                    "remark": "Total cost",
+                    "syntax": "indicator(Total cost)",
+                    "example": "indicator(Total cost)",
+                    "syntax_show": "indicator(Total cost)",
                     "formula_data": [
                         {
-                            "id": "148843b4-97a9-47ea-a5cf-a5cf1d557abd",
-                            "code": "total_cost",
+                            "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
+                            "code": "total_cost_pretax_amount",
                             "type": 6,
-                            "title": "Total cost after tax",
-                            "remark": "Total cost of quotation",
-                            "syntax": "prop(Total cost after tax)",
-                            "properties": {
-
-                            },
+                            "title": "Total cost before tax",
+                            "remark": "Total cost before tax of quotation",
+                            "syntax": "prop(Total cost before tax)",
+                            "properties": {},
                             "is_property": True,
-                            "syntax_show": "prop(Total cost after tax)",
+                            "syntax_show": "prop(Total cost before tax)",
                             "content_type": "quotation.Quotation",
                         }
                     ],
                     "is_indicator": True,
-                    "formula_data_show": "prop(Total cost after tax)"
+                    "formula_data_show": "prop(Total cost before tax)"
                 }
             ],
-            "formula_data_show": "indicator(Revenue) - indicator(Cost price)",
+            "formula_data_show": "indicator(Revenue) - indicator(Total cost)",
             "order": 3
         },
         {
-            "title": "Operating costs",
-            "remark": "Operating costs",
-            "example": "indicator(Operating costs)",
+            "title": "Operating expense",
+            "remark": "Operating expense",
+            "example": "indicator(Operating expense)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -218,34 +214,35 @@ class IndicatorDefaultData:
                         "===",
                         "Chiphítriểnkhai",
                         {
-                            "id": "6c6af508-c5b0-4295-b92a-bfc53dfad9d3",
-                            "code": "expense_subtotal_price_after_tax",
+                            "id": "f0251c13-0480-4ac1-94d3-ebe03afb93bf",
+                            "code": "expense_subtotal_price",
                             "type": 6,
-                            "title": "Expense subtotal after tax",
-                            "remark": "Subtotal after tax expense on quotation expense line",
-                            "syntax": "prop(Expense subtotal after tax)",
+                            "title": "Expense subtotal before tax",
+                            "remark": "Subtotal before tax expense on quotation expense line",
+                            "syntax": "prop(Expense subtotal before tax)",
                             "properties": {},
                             "is_property": True,
-                            "syntax_show": "prop(Expense subtotal after tax)",
+                            "syntax_show": "prop(Expense subtotal before tax)",
                             "content_type": None,
                         }
                     ]
                 }
             ],
-            "formula_data_show": "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal after tax))",
+            "formula_data_show":
+                'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
             "order": 4
         },
         {
-            "title": "Net profit",
-            "remark": "Net profit",
-            "example": "indicator(Net profit)",
+            "title": "Net income",
+            "remark": "Net income",
+            "example": "indicator(Net income)",
             "application_code": "quotation",
             "formula_data": [
                 {
                     "id": "3",
                     "order": 3,
                     "title": "Gross profit",
-                    "remark": "Lợi nhuận gộp",
+                    "remark": "Gross profit",
                     "syntax": "indicator(Gross profit)",
                     "example": "indicator(Gross profit)",
                     "syntax_show": "indicator(Gross profit)",
@@ -254,7 +251,7 @@ class IndicatorDefaultData:
                             "id": "1",
                             "order": 1,
                             "title": "Revenue",
-                            "remark": "Doanh thu",
+                            "remark": "Revenue",
                             "syntax": "indicator(Revenue)",
                             "example": "indicator(Revenue)",
                             "syntax_show": "indicator(Revenue)",
@@ -279,41 +276,41 @@ class IndicatorDefaultData:
                         {
                             "id": "2",
                             "order": 2,
-                            "title": "Cost price",
-                            "remark": "Giá vốn",
-                            "syntax": "indicator(Cost price)",
-                            "example": "indicator(Cost price)",
-                            "syntax_show": "indicator(Cost price)",
+                            "title": "Total cost",
+                            "remark": "Total cost",
+                            "syntax": "indicator(Total cost)",
+                            "example": "indicator(Total cost)",
+                            "syntax_show": "indicator(Total cost)",
                             "formula_data": [
                                 {
-                                    "id": "148843b4-97a9-47ea-a5cf-a5cf1d557abd",
-                                    "code": "total_cost",
+                                    "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
+                                    "code": "total_cost_pretax_amount",
                                     "type": 6,
-                                    "title": "Total cost after tax",
-                                    "remark": "Total cost of quotation",
-                                    "syntax": "prop(Total cost after tax)",
+                                    "title": "Total cost before tax",
+                                    "remark": "Total cost before tax of quotation",
+                                    "syntax": "prop(Total cost before tax)",
                                     "properties": {},
                                     "is_property": True,
-                                    "syntax_show": "prop(Total cost after tax)",
+                                    "syntax_show": "prop(Total cost before tax)",
                                     "content_type": "quotation.Quotation",
                                 }
                             ],
                             "is_indicator": True,
-                            "formula_data_show": "prop(Total cost after tax)"
+                            "formula_data_show": "prop(Total cost before tax)"
                         }
                     ],
                     "is_indicator": True,
-                    "formula_data_show": "indicator(Revenue) - indicator(Cost price)"
+                    "formula_data_show": "indicator(Revenue) - indicator(Total cost)"
                 },
                 "-",
                 {
                     "id": "4",
                     "order": 4,
-                    "title": "Operating costs",
-                    "remark": "Chi phí hoạt động",
-                    "syntax": "indicator(Operating costs)",
-                    "example": "indicator(Operating costs)",
-                    "syntax_show": "indicator(Operating costs)",
+                    "title": "Operating expense",
+                    "remark": "Operating expense",
+                    "syntax": "indicator(Operating expense)",
+                    "example": "indicator(Operating expense)",
+                    "syntax_show": "indicator(Operating expense)",
                     "formula_data": [
                         {
                             "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
@@ -340,15 +337,15 @@ class IndicatorDefaultData:
                                 "===",
                                 "Chiphítriểnkhai",
                                 {
-                                    "id": "6c6af508-c5b0-4295-b92a-bfc53dfad9d3",
-                                    "code": "expense_subtotal_price_after_tax",
+                                    "id": "f0251c13-0480-4ac1-94d3-ebe03afb93bf",
+                                    "code": "expense_subtotal_price",
                                     "type": 6,
-                                    "title": "Expense subtotal after tax",
-                                    "remark": "Subtotal after tax expense on quotation expense line",
-                                    "syntax": "prop(Expense subtotal after tax)",
+                                    "title": "Expense subtotal before tax",
+                                    "remark": "Subtotal before tax expense on quotation expense line",
+                                    "syntax": "prop(Expense subtotal before tax)",
                                     "properties": {},
                                     "is_property": True,
-                                    "syntax_show": "prop(Expense subtotal after tax)",
+                                    "syntax_show": "prop(Expense subtotal before tax)",
                                     "content_type": None,
                                 }
                             ]
@@ -356,10 +353,295 @@ class IndicatorDefaultData:
                     ],
                     "is_indicator": True,
                     "formula_data_show":
-                    "sumItemIf(prop(Expense type)=='Chi phí triển khai',prop(Expense subtotal after tax))"
+                        'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))'
                 }
             ],
-            "formula_data_show": "indicator(Gross profit) - indicator(Operating costs)",
+            "formula_data_show": "indicator(Gross profit) - indicator(Operating expense)",
+            "order": 5
+        }
+    ]
+    ORDER_INDICATOR_DATA = [
+        {
+            "title": "Revenue",
+            "remark": "Revenue",
+            "example": "indicator(Revenue)",
+            "application_code": "saleorder",
+            "formula_data": [
+                {
+                    "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
+                    "code": "total_product_pretax_amount",
+                    "type": 6,
+                    "title": "Total revenue before tax",
+                    "remark": "Total revenue before tax of sale order",
+                    "syntax": "prop(Total revenue before tax)",
+                    "properties": {},
+                    "is_property": True,
+                    "syntax_show": "prop(Total revenue before tax)",
+                    "content_type": "saleorder.SaleOrder",
+                }
+            ],
+            "formula_data_show": "prop(Total revenue before tax)",
+            "order": 1
+        },
+        {
+            "title": "Total cost",
+            "remark": "Total cost",
+            "example": "indicator(Total cost)",
+            "application_code": "saleorder",
+            "formula_data": [
+                {
+                    "id": "3b4cf21c-93fb-4e67-bb02-2eed12ef334f",
+                    "code": "total_cost_pretax_amount",
+                    "type": 6,
+                    "title": "Total cost before tax",
+                    "remark": "Total cost before tax of sale order",
+                    "syntax": "prop(Total cost before tax)",
+                    "properties": {},
+                    "is_property": True,
+                    "syntax_show": "prop(Total cost before tax)",
+                    "content_type": "saleorder.SaleOrder",
+                }
+            ],
+            "formula_data_show": "prop(Total cost before tax)",
+            "order": 2
+        },
+        {
+            "title": "Gross profit",
+            "remark": "Gross profit",
+            "example": "indicator(Gross profit)",
+            "application_code": "saleorder",
+            "formula_data": [
+                {
+                    "id": "1",
+                    "order": 1,
+                    "title": "Revenue",
+                    "remark": "Revenue",
+                    "syntax": "indicator(Revenue)",
+                    "example": "indicator(Revenue)",
+                    "syntax_show": "indicator(Revenue)",
+                    "formula_data": [
+                        {
+                            "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
+                            "code": "total_product_pretax_amount",
+                            "type": 6,
+                            "title": "Total revenue before tax",
+                            "remark": "Total revenue before tax of sale order",
+                            "syntax": "prop(Total revenue before tax)",
+                            "properties": {
+
+                            },
+                            "is_property": True,
+                            "syntax_show": "prop(Total revenue before tax)",
+                            "content_type": "saleorder.SaleOrder",
+                        }
+                    ],
+                    "is_indicator": True,
+                    "formula_data_show": "prop(Total revenue before tax)"
+                },
+                "-",
+                {
+                    "id": "2",
+                    "order": 2,
+                    "title": "Total cost",
+                    "remark": "Total cost",
+                    "syntax": "indicator(Total cost)",
+                    "example": "indicator(Total cost)",
+                    "syntax_show": "indicator(Total cost)",
+                    "formula_data": [
+                        {
+                            "id": "3b4cf21c-93fb-4e67-bb02-2eed12ef334f",
+                            "code": "total_cost_pretax_amount",
+                            "type": 6,
+                            "title": "Total cost before tax",
+                            "remark": "Total cost before tax of sale order",
+                            "syntax": "prop(Total cost before tax)",
+                            "properties": {},
+                            "is_property": True,
+                            "syntax_show": "prop(Total cost before tax)",
+                            "content_type": "saleorder.SaleOrder",
+                        }
+                    ],
+                    "is_indicator": True,
+                    "formula_data_show": "prop(Total cost before tax)"
+                }
+            ],
+            "formula_data_show": "indicator(Revenue) - indicator(Total cost)",
+            "order": 3
+        },
+        {
+            "title": "Operating expense",
+            "remark": "Operating expense",
+            "example": "indicator(Operating expense)",
+            "application_code": "saleorder",
+            "formula_data": [
+                {
+                    "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
+                    "code": "sumItemIf",
+                    "title": "sumItemIf",
+                    "remark": "Returns total of items that pass condition.",
+                    "syntax": "sumItemIf(",
+                    "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
+                    "param_type": 2,
+                    "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
+                    "function_data": [
+                        {
+                            "id": "374d7846-99e0-4af0-8073-3e048cec8c9d",
+                            "code": "expense_type_title",
+                            "type": 1,
+                            "title": "Expense type",
+                            "remark": "Type expense on sale order expense line",
+                            "syntax": "prop(Expense type)",
+                            "properties": {},
+                            "is_property": True,
+                            "syntax_show": "prop(Expense type)",
+                            "content_type": None,
+                        },
+                        "===",
+                        "Chiphítriểnkhai",
+                        {
+                            "id": "09aa4090-762d-4942-9676-24da8340284e",
+                            "code": "expense_subtotal_price",
+                            "type": 6,
+                            "title": "Expense subtotal before tax",
+                            "remark": "Subtotal before tax expense on sale order expense line",
+                            "syntax": "prop(Expense subtotal before tax)",
+                            "properties": {},
+                            "is_property": True,
+                            "syntax_show": "prop(Expense subtotal before tax)",
+                            "content_type": None,
+                        }
+                    ]
+                }
+            ],
+            "formula_data_show":
+                'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
+            "order": 4
+        },
+        {
+            "title": "Net income",
+            "remark": "Net income",
+            "example": "indicator(Net income)",
+            "application_code": "saleorder",
+            "formula_data": [
+                {
+                    "id": "3",
+                    "order": 3,
+                    "title": "Gross profit",
+                    "remark": "Gross profit",
+                    "syntax": "indicator(Gross profit)",
+                    "example": "indicator(Gross profit)",
+                    "syntax_show": "indicator(Gross profit)",
+                    "formula_data": [
+                        {
+                            "id": "1",
+                            "order": 1,
+                            "title": "Revenue",
+                            "remark": "Revenue",
+                            "syntax": "indicator(Revenue)",
+                            "example": "indicator(Revenue)",
+                            "syntax_show": "indicator(Revenue)",
+                            "formula_data": [
+                                {
+                                    "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
+                                    "code": "total_product_pretax_amount",
+                                    "type": 6,
+                                    "title": "Total revenue before tax",
+                                    "remark": "Total revenue before tax of sale order",
+                                    "syntax": "prop(Total revenue before tax)",
+                                    "properties": {},
+                                    "is_property": True,
+                                    "syntax_show": "prop(Total revenue before tax)",
+                                    "content_type": "saleorder.SaleOrder",
+                                }
+                            ],
+                            "is_indicator": True,
+                            "formula_data_show": "prop(Total revenue before tax)"
+                        },
+                        "-",
+                        {
+                            "id": "2",
+                            "order": 2,
+                            "title": "Total cost",
+                            "remark": "Total cost",
+                            "syntax": "indicator(Total cost)",
+                            "example": "indicator(Total cost)",
+                            "syntax_show": "indicator(Total cost)",
+                            "formula_data": [
+                                {
+                                    "id": "3b4cf21c-93fb-4e67-bb02-2eed12ef334f",
+                                    "code": "total_cost_pretax_amount",
+                                    "type": 6,
+                                    "title": "Total cost before tax",
+                                    "remark": "Total cost before tax of sale order",
+                                    "syntax": "prop(Total cost before tax)",
+                                    "properties": {},
+                                    "is_property": True,
+                                    "syntax_show": "prop(Total cost before tax)",
+                                    "content_type": "saleorder.SaleOrder",
+                                }
+                            ],
+                            "is_indicator": True,
+                            "formula_data_show": "prop(Total cost before tax)"
+                        }
+                    ],
+                    "is_indicator": True,
+                    "formula_data_show": "indicator(Revenue) - indicator(Total cost)"
+                },
+                "-",
+                {
+                    "id": "4",
+                    "order": 4,
+                    "title": "Operating expense",
+                    "remark": "Operating expense",
+                    "syntax": "indicator(Operating expense)",
+                    "example": "indicator(Operating expense)",
+                    "syntax_show": "indicator(Operating expense)",
+                    "formula_data": [
+                        {
+                            "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
+                            "code": "sumItemIf",
+                            "title": "sumItemIf",
+                            "remark": "Returns total of items that pass condition.",
+                            "syntax": "sumItemIf(",
+                            "example": "sumItemIf((5, 2, 9, 3), '>3') == 14",
+                            "param_type": 2,
+                            "syntax_show": "sumItemIf(item_check_list, condition, item_sum_list)",
+                            "function_data": [
+                                {
+                                    "id": "374d7846-99e0-4af0-8073-3e048cec8c9d",
+                                    "code": "expense_type_title",
+                                    "type": 1,
+                                    "title": "Expense type",
+                                    "remark": "Type expense on sale order expense line",
+                                    "syntax": "prop(Expense type)",
+                                    "properties": {},
+                                    "is_property": True,
+                                    "syntax_show": "prop(Expense type)",
+                                    "content_type": None,
+                                },
+                                "===",
+                                "Chiphítriểnkhai",
+                                {
+                                    "id": "09aa4090-762d-4942-9676-24da8340284e",
+                                    "code": "expense_subtotal_price",
+                                    "type": 6,
+                                    "title": "Expense subtotal before tax",
+                                    "remark": "Subtotal before tax expense on sale order expense line",
+                                    "syntax": "prop(Expense subtotal before tax)",
+                                    "properties": {},
+                                    "is_property": True,
+                                    "syntax_show": "prop(Expense subtotal before tax)",
+                                    "content_type": None,
+                                }
+                            ]
+                        }
+                    ],
+                    "is_indicator": True,
+                    "formula_data_show":
+                        'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))'
+                }
+            ],
+            "formula_data_show": "indicator(Gross profit) - indicator(Operating expense)",
             "order": 5
         }
     ]

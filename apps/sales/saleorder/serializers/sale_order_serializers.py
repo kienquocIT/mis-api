@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder
+from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
+    SaleOrder, SaleOrderIndicator
 from apps.shared import SaleMsg
 
 
@@ -190,6 +191,28 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_tax(value=value)
 
 
+class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
+    indicator = serializers.CharField(
+        max_length=550
+    )
+
+    class Meta:
+        model = SaleOrderIndicator
+        fields = (
+            'indicator',
+            'indicator_value',
+            'indicator_rate',
+            'quotation_indicator_value',
+            'quotation_indicator_rate',
+            'difference_indicator_value',
+            'order',
+        )
+
+    @classmethod
+    def validate_indicator(cls, value):
+        return SaleOrderCommonValidate().validate_indicator(value=value)
+
+
 # SALE ORDER BEGIN
 class SaleOrderListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
@@ -304,6 +327,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'total_expense',
             'date_created',
             'delivery_call',
+            # indicator tab
+            'sale_order_indicators_data',
         )
 
     @classmethod
@@ -415,6 +440,11 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # indicator tab
+    sale_order_indicators_data = SaleOrderIndicatorSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -445,6 +475,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'sale_order_logistic_data',
             'sale_order_costs_data',
             'sale_order_expenses_data',
+            # indicator tab
+            'sale_order_indicators_data',
         )
 
     @classmethod
@@ -476,6 +508,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].sale_order_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+                if validate_data['opportunity'].is_close is True:
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
     def create(self, validated_data):
@@ -531,6 +565,11 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # indicator tab
+    sale_order_indicators_data = SaleOrderIndicatorSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -561,6 +600,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_logistic_data',
             'sale_order_costs_data',
             'sale_order_expenses_data',
+            # indicator tab
+            'sale_order_indicators_data',
         )
 
     @classmethod

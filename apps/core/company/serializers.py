@@ -6,14 +6,14 @@ from rest_framework import serializers
 from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.sales.opportunity.models import StageCondition
+from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
 
 # Company Config
-class CurrencyRuleDetail(serializers.Serializer): # noqa
+class CurrencyRuleDetail(serializers.Serializer):  # noqa
     prefix = serializers.CharField()
     suffix = serializers.CharField()
     decimal = serializers.CharField()
@@ -353,22 +353,77 @@ class RestoreDefaultOpportunityConfigStageSerializer(serializers.ModelSerializer
         model = Company
         fields = []
 
+    @classmethod
+    def update_stage_default(cls, list_stage_update, dict_data, bulk_data):
+        for stage in list_stage_update:
+            stage_data = dict_data[stage.indicator]
+            if stage.indicator == stage_data['indicator']:
+                obj = stage
+                is_changed = False
+
+                # Check data changed
+                if obj.description != stage_data['description']:
+                    obj.description = stage_data['description']
+                    is_changed = True
+
+                if obj.win_rate != stage_data['win_rate']:
+                    obj.win_rate = stage_data['win_rate']
+                    is_changed = True
+
+                if obj.condition_datas != stage_data['condition_datas']:
+                    obj.condition_datas = stage_data['condition_datas']
+                    is_changed = True
+
+                # Save if has changed
+                if is_changed:
+                    obj.save()
+                for condition in stage_data['condition_datas']:
+                    bulk_data.append(
+                        StageCondition(
+                            stage=obj,
+                            condition_property_id=condition['condition_property']['id'],
+                            comparison_operator=condition['comparison_operator'],
+                            compare_data=condition['compare_data']
+                        )
+                    )
+                del dict_data[stage.indicator]
+        return bulk_data
+
     def update(self, instance, validated_data):
+        # data default
         data = ConfigDefaultData.opportunity_config_stage_data
-        list_stage = instance.sales_opportunity_config_stage.all()
-        list_stage.filter(is_default=False).delete()
-        for stage in data:
-            obj = list_stage.get(indicator=stage['indicator'])
-            obj.description = stage['description']
-            obj.win_rate = stage['win_rate']
-            obj.condition_datas = stage['condition_datas']
-            obj.save()
-            obj.stage_condition.all().delete()
-            for condition in stage['condition_datas']:
-                StageCondition.objects.create(
-                    stage=obj,
-                    condition_property_id=condition['condition_property']['id'],
-                    comparison_operator=condition['comparison_operator'],
-                    compare_data=condition['compare_data']
+        dict_data = {item['indicator']: item for item in data}
+
+        # stage need delete
+        list_stage_delete = OpportunityConfigStage.objects.filter(company=instance, is_default=False)
+        list_stage_delete.delete()
+
+        # delete all condition of stage of company
+        StageCondition.objects.filter(stage__company=instance).delete()
+
+        # stage need update
+        list_stage_update = OpportunityConfigStage.objects.filter(company=instance, is_default=True)
+        bulk_data = []
+
+        # update stage need update
+        bulk_data = self.update_stage_default(list_stage_update, dict_data, bulk_data)
+
+        bulk_data_stage = []
+
+        # add again deleted default stage
+        for _, value in dict_data.items():
+            stage = OpportunityConfigStage(**value, company=instance)
+            bulk_data_stage.append(stage)
+            for condition in value['condition_datas']:
+                bulk_data.append(
+                    StageCondition(
+                        stage=stage,
+                        condition_property_id=condition['condition_property']['id'],
+                        comparison_operator=condition['comparison_operator'],
+                        compare_data=condition['compare_data']
+                    )
                 )
+
+        OpportunityConfigStage.objects.bulk_create(bulk_data_stage)
+        StageCondition.objects.bulk_create(bulk_data)
         return True

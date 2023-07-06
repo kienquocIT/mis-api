@@ -5,7 +5,7 @@ from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAp
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
-    IndicatorUpdateSerializer
+    IndicatorUpdateSerializer, IndicatorCompanyRestoreSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -157,7 +157,7 @@ class QuotationIndicatorList(
     @swagger_auto_schema(
         operation_summary="Create Quotation Indicator",
         operation_description="Create new Quotation Indicator",
-        request_body=QuotationCreateSerializer,
+        request_body=IndicatorCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
@@ -185,6 +185,24 @@ class QuotationIndicatorDetail(
         operation_summary="Update Quotation Indicator",
         operation_description="Update Quotation Indicator by ID",
         request_body=IndicatorUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class QuotationIndicatorCompanyRestore(
+    BaseUpdateMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = QuotationIndicatorConfig.objects
+    serializer_detail = IndicatorListSerializer
+    serializer_update = IndicatorCompanyRestoreSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Restore Quotation Indicator Of Company",
+        operation_description="Restore Quotation Indicator Of Company",
+        request_body=IndicatorCompanyRestoreSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):

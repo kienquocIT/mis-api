@@ -13,7 +13,10 @@ class OpportunityList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
-    filterset_fields = {'sale_person_id': ['exact']}
+    filterset_fields = {
+        'sale_person_id': ['exact'],
+        'is_close': ['exact'],
+    }
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
@@ -23,7 +26,9 @@ class OpportunityList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person"
+            "sale_person",
+        ).prefetch_related(
+            "opportunity_stage_opportunity__stage",
         )
 
     @swagger_auto_schema(
@@ -58,6 +63,11 @@ class OpportunityDetail(
             "customer",
             "decision_maker",
             "sale_person",
+            "sale_order__delivery_of_sale_order",
+            "quotation",
+
+        ).prefetch_related(
+            "stage",
         )
 
     @swagger_auto_schema(

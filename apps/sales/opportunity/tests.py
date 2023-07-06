@@ -206,7 +206,8 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id'],
+            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
+             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
             check_sum_second=True,
         )
 
@@ -214,7 +215,8 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": '83de3bab-edc2-4d72-ac11-dfa4540cec88',
             "product_category": [],
-            "sale_person": emp
+            "sale_person": emp,
+
         }
         response1 = self.client.post(url, data1, format='json')
 

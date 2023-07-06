@@ -1,15 +1,15 @@
 from rest_framework import serializers
 
-from apps.sales.quotation.models import QuotationIndicatorConfig
+from apps.sales.saleorder.models import SaleOrderIndicatorConfig
 from apps.shared.extends.signals import ConfigDefaultData
 
 
-class IndicatorListSerializer(serializers.ModelSerializer):
+class SaleOrderIndicatorListSerializer(serializers.ModelSerializer):
     formula_data = serializers.JSONField()
     formula_data_show = serializers.JSONField()
 
     class Meta:
-        model = QuotationIndicatorConfig
+        model = SaleOrderIndicatorConfig
         fields = (
             'id',
             'title',
@@ -21,12 +21,12 @@ class IndicatorListSerializer(serializers.ModelSerializer):
         )
 
 
-class IndicatorDetailSerializer(serializers.ModelSerializer):
+class SaleOrderIndicatorDetailSerializer(serializers.ModelSerializer):
     formula_data = serializers.JSONField()
     formula_data_show = serializers.JSONField()
 
     class Meta:
-        model = QuotationIndicatorConfig
+        model = SaleOrderIndicatorConfig
         fields = (
             'id',
             'title',
@@ -39,10 +39,10 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
 
 
 # Quotation
-class IndicatorCreateSerializer(serializers.ModelSerializer):
+class SaleOrderIndicatorCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = QuotationIndicatorConfig
+        model = SaleOrderIndicatorConfig
         fields = (
             'title',
             'remark',
@@ -52,14 +52,14 @@ class IndicatorCreateSerializer(serializers.ModelSerializer):
         )
 
     def create(self, validated_data):
-        indicator = QuotationIndicatorConfig.objects.create(**validated_data)
+        indicator = SaleOrderIndicatorConfig.objects.create(**validated_data)
         return indicator
 
 
-class IndicatorUpdateSerializer(serializers.ModelSerializer):
+class SaleOrderIndicatorUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = QuotationIndicatorConfig
+        model = SaleOrderIndicatorConfig
         fields = (
             'title',
             'remark',
@@ -75,16 +75,16 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-class IndicatorCompanyRestoreSerializer(serializers.ModelSerializer):
+class SaleOrderIndicatorCompanyRestoreSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = QuotationIndicatorConfig
+        model = SaleOrderIndicatorConfig
         fields = ('title',)
 
     @staticmethod
     def restore_company_indicator(company_obj):
-        QuotationIndicatorConfig.objects.filter(company_id=company_obj.id).delete()
-        ConfigDefaultData(company_obj).quotation_indicator_config()
+        SaleOrderIndicatorConfig.objects.filter(company_id=company_obj.id).delete()
+        ConfigDefaultData(company_obj).sale_order_indicator_config()
         return True
 
     def update(self, instance, validated_data):

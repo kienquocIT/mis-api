@@ -4,17 +4,17 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
 from apps.masterdata.saledata.models import (
-    WareHouse, WareHouseStock,
+    WareHouse, WareHouseStock, ProductWareHouse
 )
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer,
     WareHouseDetailSerializer, WareHouseUpdateSerializer, WarehouseStockListSerializer,
-    ProductWareHouseStockListSerializer,
+    ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
 )
 
 __all__ = [
     'WareHouseList', 'WareHouseDetail', 'WarehouseStockList',
-    'WareHouseCheckAvailableProductList',
+    'WareHouseCheckAvailableProductList', 'ProductWareHouseList'
 ]
 
 
@@ -29,6 +29,9 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         "is_active": ['exact'],
     }
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('warehouse_stock_warehouse')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -95,4 +98,18 @@ class WareHouseCheckAvailableProductList(BaseListMixin):
             'company_id': request.user.company_current_id,
             'tenant_id': request.user.tenant_current_id,
         }
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseList(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWareHouseListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('product', 'warehouse')
+
+    @swagger_auto_schema(operation_summary='Product WareHouse')
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

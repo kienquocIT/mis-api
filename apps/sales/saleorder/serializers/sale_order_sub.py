@@ -9,7 +9,8 @@ from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense
+from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
+    SaleOrderIndicatorConfig, SaleOrderIndicator
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
 
 
@@ -127,6 +128,19 @@ class SaleOrderCommonCreate:
         return True
 
     @classmethod
+    def create_indicator(cls, validated_data, instance):
+        for sale_order_indicator in validated_data['sale_order_indicators_data']:
+            indicator_id = sale_order_indicator.get('indicator', {}).get('id')
+            if indicator_id:
+                del sale_order_indicator['indicator']
+                SaleOrderIndicator.objects.create(
+                    sale_order=instance,
+                    indicator_id=indicator_id,
+                    **sale_order_indicator
+                )
+        return True
+
+    @classmethod
     def delete_old_product(cls, instance):
         old_product = SaleOrderProduct.objects.filter(sale_order=instance)
         if old_product:
@@ -152,6 +166,13 @@ class SaleOrderCommonCreate:
         old_expense = SaleOrderExpense.objects.filter(sale_order=instance)
         if old_expense:
             old_expense.delete()
+        return True
+
+    @classmethod
+    def delete_old_indicator(cls, instance):
+        old_indicator = SaleOrderIndicator.objects.filter(sale_order=instance)
+        if old_indicator:
+            old_indicator.delete()
         return True
 
     @classmethod
@@ -181,6 +202,14 @@ class SaleOrderCommonCreate:
             if is_update is True:
                 cls.delete_old_expense(instance=instance)
             cls.create_expense(
+                validated_data=validated_data,
+                instance=instance
+            )
+        # indicator tab
+        if 'sale_order_indicators_data' in validated_data:
+            if is_update is True:
+                cls.delete_old_indicator(instance=instance)
+            cls.create_indicator(
                 validated_data=validated_data,
                 instance=instance
             )
@@ -377,3 +406,18 @@ class SaleOrderCommonValidate:
             }
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
+
+    @classmethod
+    def validate_indicator(cls, value):
+        try:
+            indicator = SaleOrderIndicatorConfig.objects.get_current(
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(indicator.id),
+                'title': indicator.title,
+                'remark': indicator.remark
+            }
+        except SaleOrderIndicatorConfig.DoesNotExist:
+            raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})
