@@ -29,6 +29,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'opportunity_sale_team_datas',
             'close_date',
             'stage',
+            'is_close'
         )
 
     @classmethod
@@ -668,6 +669,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'sale_order',
             'quotation',
+            'is_close'
         )
 
     @classmethod
