@@ -1,5 +1,7 @@
 from typing import Union, Literal, TypedDict
 from uuid import UUID
+
+from django.conf import settings
 from jsonfield import JSONField
 
 from django.db import models
