@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, Indicator
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
@@ -22,7 +22,7 @@ class QuotationList(
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -138,7 +138,7 @@ class QuotationIndicatorList(
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Indicator.objects
+    queryset = QuotationIndicatorConfig.objects
     filterset_fields = ['application_code']
     serializer_list = IndicatorListSerializer
     serializer_create = IndicatorCreateSerializer
@@ -169,7 +169,7 @@ class QuotationIndicatorDetail(
     BaseUpdateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Indicator.objects
+    queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorUpdateSerializer
 

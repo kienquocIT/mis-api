@@ -213,7 +213,7 @@ class SaleOrder(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "ORDER.CODE."
+        char = "SO"
         if not self.code:
             temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
@@ -302,6 +302,9 @@ class SaleOrderProduct(SimpleAbstractModel):
         default=0
     )
     product_subtotal_price = models.FloatField(
+        default=0
+    )
+    product_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(
@@ -431,6 +434,9 @@ class SaleOrderCost(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
     order = models.IntegerField(
         default=1
     )
@@ -495,6 +501,11 @@ class SaleOrderExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    expense_type_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
     expense_uom_title = models.CharField(
         max_length=100,
         blank=True,
@@ -523,6 +534,9 @@ class SaleOrderExpense(SimpleAbstractModel):
         default=0
     )
     expense_subtotal_price = models.FloatField(
+        default=0
+    )
+    expense_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(

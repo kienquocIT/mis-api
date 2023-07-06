@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, SaleOrder
+from apps.shared import SaleMsg
 
 
 class SaleOrderProductSerializer(serializers.ModelSerializer):
@@ -46,6 +47,7 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
             'product_tax_value',
             'product_tax_amount',
             'product_subtotal_price',
+            'product_subtotal_price_after_tax',
             'order',
             'is_promotion',
             'promotion',
@@ -118,6 +120,7 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
             'product_tax_value',
             'product_tax_amount',
             'product_subtotal_price',
+            'product_subtotal_price_after_tax',
             'order',
             'is_shipping',
             'shipping',
@@ -161,6 +164,7 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
             # expense information
             'expense_title',
             'expense_code',
+            'expense_type_title',
             'expense_uom_title',
             'expense_uom_code',
             'expense_quantity',
@@ -169,6 +173,7 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
             'expense_tax_value',
             'expense_tax_amount',
             'expense_subtotal_price',
+            'expense_subtotal_price_after_tax',
             'order',
         )
 
@@ -205,7 +210,8 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'total_product',
             'system_status',
             'opportunity',
-            'quotation'
+            'quotation',
+            'delivery_call',
         )
 
     @classmethod
@@ -376,7 +382,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     opportunity = serializers.CharField(
         max_length=550,
-        required=False
+        required=False,
+        allow_null=True,
     )
     customer = serializers.CharField(
         max_length=550
@@ -463,6 +470,13 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
+
+    def validate(self, validate_data):
+        if 'opportunity' in validate_data:
+            if validate_data['opportunity'] is not None:
+                if validate_data['opportunity'].sale_order_opportunity.exists():
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+        return validate_data
 
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
@@ -470,13 +484,18 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=sale_order
         )
+        # update field sale_order for opportunity
+        if sale_order.opportunity:
+            sale_order.opportunity.sale_order = sale_order
+            sale_order.opportunity.save(update_fields=['sale_order'])
         return sale_order
 
 
 class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     opportunity = serializers.CharField(
         max_length=550,
-        required=False
+        required=False,
+        allow_null=True,
     )
     customer = serializers.CharField(
         max_length=550,
@@ -568,7 +587,19 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
 
+    def validate(self, validate_data):
+        if 'opportunity' in validate_data:
+            if validate_data['opportunity'] is not None:
+                if validate_data['opportunity'].sale_order_opportunity.exclude(id=self.instance.id).exists():
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+        return validate_data
+
     def update(self, instance, validated_data):
+        # check if change opportunity then update field sale_order in opportunity to None
+        if instance.opportunity != validated_data.get('opportunity', None):
+            instance.opportunity.sale_order = None
+            instance.opportunity.save(update_fields=['sale_order'])
+        # update sale order
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -577,6 +608,10 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             instance=instance,
             is_update=True
         )
+        # update field sale_order for opportunity
+        if instance.opportunity:
+            instance.opportunity.sale_order = instance
+            instance.opportunity.save(update_fields=['sale_order'])
         return instance
 
 

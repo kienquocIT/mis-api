@@ -203,6 +203,8 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_opportunity(cls, value):
         try:
+            if value is None:
+                return value
             return Opportunity.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -311,7 +313,7 @@ class SaleOrderCommonValidate:
                 'code': expense.code
             }
         except Expense.DoesNotExist:
-            raise serializers.ValidationError({'expense': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):

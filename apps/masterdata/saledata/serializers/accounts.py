@@ -211,6 +211,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "shipping_address",
             "billing_address",
             "bank_accounts_information",
+            'annual_revenue'
         )
 
     @classmethod

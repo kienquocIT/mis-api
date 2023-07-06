@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
+import json
 import sys
 import socket
 import os
@@ -60,6 +61,7 @@ INSTALLED_APPS = \
         'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
         'apps.core.log',  # all logged data, except Workflow Log
+        'apps.core.attachments',  # all files data | link to file media
     ] + [  # application
         'apps.core.base',
         'apps.core.account',
@@ -137,13 +139,12 @@ WSGI_APPLICATION = 'misapi.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {}
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
 
 DATABASE_ROUTERS = ['routers.LogRouter']
 
@@ -200,9 +201,48 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
+MEDIA_PREFIX_SITE = os.environ.get(
+    'MEDIA_PREFIX_SITE',
+    ''
+)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-
 MEDIA_URL = '/media/'
+MEDIA_PROTOCOL = os.environ.get('MEDIA_PROTOCOL', 'http')
+MEDIA_HOST = os.environ.get('MEDIA_HOST', '127.0.0.1')
+MEDIA_PORT = os.environ.get('MEDIA_PORT', '8881')
+MEDIA_SUFFIX = 'api'
+MEDIA_DOMAIN = f'{MEDIA_PROTOCOL}://{MEDIA_HOST}:{MEDIA_PORT}/{(MEDIA_SUFFIX + "/") if MEDIA_SUFFIX else ""}'
+
+# Media key and data private
+MEDIA_KEY_FLAG = os.environ.get('MEDIA_KEY_FLAG', 'MEDIA-APIRequest')
+MEDIA_KEY_SECRET_TOKEN_API = os.environ.get('MEDIA_KEY_SECRET_TOKEN_API', 'SECRET-KEY-APIRequest')
+MEDIA_SECRET_TOKEN_API = os.environ.get('MEDIA_SECRET_TOKEN_API', 'bhVpajC75NCEPwGs')
+
+# Key return resp after call API
+API_KEY_AUTH = 'Authorization'
+API_PREFIX_TOKEN = 'Bearer'
+API_KEY_RESPONSE_DATA = 'result'
+API_KEY_RESPONSE_ERRORS = 'errors'
+API_KEY_RESPONSE_STATUS = 'status'
+API_KEY_RESPONSE_PAGE_SIZE = 'page_size'
+API_KEY_RESPONSE_PAGE_COUNT = 'count'
+API_KEY_RESPONSE_PAGE_NEXT = 'next'
+API_KEY_RESPONSE_PAGE_PREVIOUS = 'previous'
+
+UI_RESP_KEY_STATE = 'state'
+UI_RESP_KEY_STATUS = 'status'
+UI_RESP_KEY_RESULT = 'result'
+UI_RESP_KEY_ERRORS = 'errors'
+UI_RESP_KEY_PAGE_SIZE = 'page_size'
+UI_RESP_KEY_PAGE_COUNT = 'page_count'
+UI_RESP_KEY_PAGE_NEXT = 'page_next'
+UI_RESP_KEY_PAGE_PREVIOUS = 'page_previous'
+
+# DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
+RAISE_EXCEPTION_DEBUG = True
+
+# FILE - AVATAR
+AVATAR_FILE_MAX_SIZE = 5 * 1024 * 1024  # 5MiB
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -211,8 +251,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # test runner override | runner for command: python manage.py test
 TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+# -- test runner override | runner for command: python manage.py test
 
-# REST API
+# REST API & JWT
 REST_FRAMEWORK = {
     'EXCEPTION_HANDLER': 'apps.shared.extends.exceptions.custom_exception_handler',
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
@@ -268,9 +309,9 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(hours=12),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=7),
 }
+# -- REST API & JWT
 
 # page API documentations
-
 SHOW_API_DOCS = False
 HEADER_MINIMAL_CODE = 'SuaD2m'
 HEADER_SKIP_AUTH_CODE = 'Wl46tj'
@@ -306,207 +347,150 @@ SWAGGER_SETTINGS = {
 }
 SWAGGER_URL = 'http://127.0.0.1:8000/api'
 FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
+# -- page API documentations
 
-#
+# Cache
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 CACHE_KEY_PREFIX = 'MiS'
+# -- Cache
 
 # option account user create
-
 ENABLE_TURN_ON_IS_EMAIL = False
-
-# DEBUG CODE enable: allow raise errors if it is enabled else return default value (value is correct type)
-DEBUG_HIT_DB = False
-
-# Tracing
-JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', '127.0.0.1')
-JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
-JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
-JAEGER_TRACING_ENABLE = os.environ.get('JAEGER_TRACING_ENABLE', False)
-JAEGER_TRACING_ENABLE = True if JAEGER_TRACING_ENABLE in ['True', 'true', '1'] else False
-JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
-
-# LOGGING
-
-LOG_DIR = os.path.join(BASE_DIR, "logs")
-if not os.path.exists(LOG_DIR):
-    os.makedirs(LOG_DIR)
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "verbose": {
-            "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            "datefmt": "%d/%b/%Y-%H:%M:%S",
-        },
-        "celery_formatter": {
-            "format": "%(asctime)s %(levelname)s module=%(module)s, process_id=%(process)d, %(message)s",
-        }
-    },
-    "handlers": {
-        "file": {
-            "level": "INFO",
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": os.path.join(LOG_DIR, "api.log"),
-            "when": "D",
-            "interval": 1,
-            "backupCount": 10,
-            "formatter": "verbose",
-        },
-        "celery_handler": {
-            "level": "INFO",
-            "class": "logging.handlers.TimedRotatingFileHandler",
-            "filename": os.path.join(LOG_DIR, "celery.log"),
-            "when": "D",
-            "interval": 1,
-            "backupCount": 10,
-            "formatter": "celery_formatter",
-        },
-    },
-    "loggers": {
-        "": {
-            "handlers": ["file"],
-            "level": "INFO",
-        },
-        "celery": {
-            "handlers": ["celery_handler"],
-            "level": "INFO",
-            "propagate": True
-        },
-    },
-}
+# -- option account user create
 
 # CELERY + RABBITMQ CONFIG
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'django-db'
 CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
-USE_CELERY_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
-
-# DATABASE CONFIG
-USE_DATABASE_CONFIG_OPTION = 0  # choices: 0=None,1=dev,2=online_site
-USE_MYSQL_POOL = os.environ.get('USE_MYSQL_POOL', False)
+# -- CELERY + RABBITMQ CONFIG
 
 # import local_settings
-LOG_ENABLE, LOG_BACKUP_ENABLE = True, True
 try:
     from .local_settings import *
 except ImportError:
     pass
 
-# change log config
-if LOG_ENABLE is False:
-    LOGGING['loggers'] = {}
-if LOG_BACKUP_ENABLE is False:
-    if 'handlers' in LOGGING:
-        for _key, handler in LOGGING['handlers'].items():
-            handler['backupCount'] = 1
+# -- import local_settings
 
-# debug toolbar IP Internal
+# Logging
+if os.environ.get('ENABLE_LOGGING', False) in [1, '1']:
+    LOG_DIR = os.path.join(BASE_DIR, "logs")
+    if not os.path.exists(LOG_DIR):
+        os.makedirs(LOG_DIR)
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "verbose": {
+                "format": "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
+                "datefmt": "%d/%b/%Y-%H:%M:%S",
+            },
+            "celery_formatter": {
+                "format": "%(asctime)s %(levelname)s module=%(module)s, process_id=%(process)d, %(message)s",
+            }
+        },
+        "handlers": {
+            "file": {
+                "level": "INFO",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": os.path.join(LOG_DIR, "api.log"),
+                "when": "D",
+                "interval": 1,
+                "backupCount": 5,
+                "formatter": "verbose",
+            },
+            "celery_handler": {
+                "level": "INFO",
+                "class": "logging.handlers.TimedRotatingFileHandler",
+                "filename": os.path.join(LOG_DIR, "celery.log"),
+                "when": "D",
+                "interval": 1,
+                "backupCount": 5,
+                "formatter": "celery_formatter",
+            },
+        },
+        "loggers": {
+            "": {
+                "handlers": ["file"],
+                "level": "INFO",
+            },
+            "celery": {
+                "handlers": ["celery_handler"],
+                "level": "INFO",
+                "propagate": True
+            },
+        },
+    }
+# -- Logging
 
-if DEBUG:
+# PROD configurations
+if os.environ.get('ENABLE_PROD', '0') in [1, '1']:
+    # allow host
+    OS_ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '[]')
+    ALLOWED_HOSTS = json.loads(OS_ALLOWED_HOSTS)
+
+    # set up celery prod
+    CELERY_RESULT_SERIALIZER = 'json'
+    CELERY_ACCEPT_CONTENT = ['json']
+    CELERY_TASK_SERIALIZER = 'json'
+    CELERY_RESULT_BACKEND = 'django-db'
+    CELERY_TASK_ALWAYS_EAGER = False
+    CELERY_BROKER_VHOST = os.environ.get('MSG_QUEUE_BROKER_VHOST', '/')
+    MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
+    MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
+    MSG_QUEUE_USER = os.environ.get("MSG_QUEUE_USER")  # default 'rabbitmq_user'
+    MSG_QUEUE_PASSWORD = os.environ.get("MSG_QUEUE_PASSWORD")  # default 'rabbitmq_password'
+    if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
+        CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_USER}:{MSG_QUEUE_PASSWORD}@{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}'
+    else:
+        raise ValueError('CELERY CONFIG must be required HOST & PORT.')
+
+    # setup database default prod
+    DATABASES.update(
+        {
+            'default': {
+                'ENGINE': 'django.db.backends.mysql',
+                'NAME': os.environ.get('DB_NAME'),
+                'USER': os.environ.get('DB_USER'),
+                'PASSWORD': os.environ.get('DB_PASSWORD'),
+                'HOST': os.environ.get('DB_HOST'),
+                'PORT': os.environ.get('DB_PORT'),
+            }
+        }
+    )
+
+    # API Documentations
+    SHOW_API_DOCS = os.environ.get('SHOW_API_DOCS', False)
+
+    # media domain
+    MEDIA_DOMAIN = os.environ.get('MEDIA_DOMAIN', MEDIA_DOMAIN)
+# -- PROD configurations
+
+# Tracing
+JAEGER_TRACING_ENABLE = os.environ.get('ENABLE_TRACING', False)
+if JAEGER_TRACING_ENABLE in [1, '1']:
+    JAEGER_TRACING_ENABLE = True
+    JAEGER_TRACING_HOST = os.environ.get('JAEGER_TRACING_HOST', 'jaeger_global')
+    JAEGER_TRACING_PORT = os.environ.get('JAEGER_TRACING_PORT', 6831)
+    JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
+    JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
+# -- Tracing
+
+# Display config about DB, Cache, CELERY,...
+OS_DEBUG = os.environ.get('DEBUG', DEBUG)
+if OS_DEBUG is True or OS_DEBUG in [1, '1']:
+    # debug toolbar IP Internal
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
-# Celery configurations
-if not CELERY_BROKER_URL:
-    match USE_CELERY_CONFIG_OPTION:
-        case 1:  # <<<DEVELOPMENT environment>>> | Auto config by docker container
-            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673'
-            CELERY_BROKER_VHOST = '/'
-        case 2:  # <<<PRODUCTION environment>>> | Auto config by docker-compose environment
-            CELERY_TASK_ALWAYS_EAGER = False
-            MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
-            MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
-            MSG_QUEUE_USER = os.environ.get("MSG_QUEUE_USER")  # default 'rabbitmq_user'
-            MSG_QUEUE_PASSWORD = os.environ.get("MSG_QUEUE_PASSWORD")  # default 'rabbitmq_password'
-            if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
-                CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_USER}:{MSG_QUEUE_PASSWORD}@{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}'
-            else:
-                raise ValueError('CELERY CONFIG must be required HOST & PORT.')
-
-            CELERY_BROKER_VHOST = os.environ.get('MSG_QUEUE_BROKER_VHOST', '/')
-        case _:  # <<<ANOTHER>>> | Auto config broker is none and execute task real-time.
-            CELERY_BROKER_URL = None
-            CELERY_TASK_ALWAYS_EAGER = True
-            CELERY_BROKER_VHOST = '/'
-
-# Database configurations
-if not DATABASES or (isinstance(DATABASES, dict) and 'default' not in DATABASES):
-    match USE_DATABASE_CONFIG_OPTION:
-        case 1:
-            DATABASES.update(
-                {
-                    'default': {
-                        'ENGINE': 'django.db.backends.mysql',
-                        'NAME': 'my_db',
-                        'USER': 'my_user',
-                        'PASSWORD': 'my_password',
-                        'HOST': '127.0.0.1',
-                        'PORT': '3307',
-                    }
-                }
-            )
-        case 2:
-            DATABASES.update(
-                {
-                    'default': {
-                        'ENGINE': 'django.db.backends.mysql',
-                        'NAME': os.environ.get('DB_NAME'),
-                        'USER': os.environ.get('DB_USER'),
-                        'PASSWORD': os.environ.get('DB_PASSWORD'),
-                        'HOST': os.environ.get('DB_HOST'),
-                        'PORT': os.environ.get('DB_PORT'),
-                    }
-                }
-            )
-        case _:
-            DATABASES['default'] = {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
-            }
-
-# Change to connection pool MySQL
-if USE_MYSQL_POOL is True:
-    for site, config in DATABASES.items():
-        if isinstance(config, dict) and config['ENGINE'] == 'django.db.backends.mysql':
-            config['CONN_MAX_AGE'] = 5  # connections alive in 5 seconds if not reused
-            config['CONN_HEALTH_CHECKS'] = True  # check healthy connection before query
-
-# Display config about DB, Cache, CELERY,...
-if DEBUG is True:
-    db_option = 'DOCKER-DEV' if USE_DATABASE_CONFIG_OPTION == 1 else 'DOCKER-PROD' if USE_DATABASE_CONFIG_OPTION == 2 \
-        else 'DB SERVICE'
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
-    match USE_DATABASE_CONFIG_OPTION:
-        case 1:
-            print(Fore.BLUE, '#  1. DATABASES:          [DOCKER-DEV]:          ', DATABASES, '\033[0m')
-        case 2:
-            print(Fore.BLUE, '#  1. DATABASES:          [DOCKER-PROD]:         ', DATABASES, '\033[0m')
-        case _:
-            print(Fore.BLUE, '#  1. DATABASES:          [LOCAL]:               ', DATABASES, '\033[0m')
-    match USE_CELERY_CONFIG_OPTION:
-        case 1:
-            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [DOCKER-DEV]:          ', str(CELERY_BROKER_URL), '\033[0m')
-        case 2:
-            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [DOCKER-PROD]:         ', str(CELERY_BROKER_URL), '\033[0m')
-        case _:
-            print(Fore.YELLOW, '#  2. CELERY_BROKER_URL   [LOCAL]:               ', str(CELERY_BROKER_URL), '\033[0m')
-    print(Fore.GREEN, '#  3. CELERY_TASK_ALWAYS_EAGER:                  ', str(CELERY_TASK_ALWAYS_EAGER), '\033[0m')
-    print(Fore.RED, '#  4. ALLOWED_HOSTS:                             ', str(ALLOWED_HOSTS), '\033[0m')
-    # START TRACING
-    if JAEGER_TRACING_ENABLE is True:
-        print(
-            Fore.LIGHTBLUE_EX,
-            '#  4. TRACING [JAEGER]:                          ',
-            f"{JAEGER_TRACING_HOST}:{JAEGER_TRACING_PORT} / {JAEGER_TRACING_PROJECT_NAME} \033[0m",
-        )
-    else:
-        print(Fore.LIGHTBLUE_EX, '#  4. TRACING [JAEGER]:                           Disable \033[0m')
+    print(Fore.BLUE, f'#  1. DATABASES: {DATABASES} \033[0m')
+    print(Fore.YELLOW, f'#  2. CELERY_BROKER_URL: {str(CELERY_BROKER_URL)} \033[0m')
+    print(Fore.GREEN, f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)} \033[0m')
+    print(Fore.RED, f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)} \033[0m')
+    print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
+# -- Display config about DB, Cache, CELERY,...

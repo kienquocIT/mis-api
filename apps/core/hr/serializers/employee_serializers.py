@@ -1,10 +1,12 @@
+from django.conf import settings
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
 from apps.core.base.models import SubscriptionPlan, Application, PermissionApplication
 from apps.core.tenant.models import TenantPlan
-from apps.shared import HRMsg, BaseMsg, AccountMsg, PERMISSION_OPTION
+from apps.shared import HRMsg, BaseMsg, AccountMsg, PERMISSION_OPTION, AttMsg
 
 
 class EmployeePlanAppCreateSerializer(serializers.Serializer):  # noqa
@@ -68,6 +70,24 @@ class RoleOfEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = ('id', 'title', 'code')
+
+
+class EmployeeUploadAvatarSerializer(serializers.Serializer):  # noqa
+    file = serializers.FileField()
+
+    @classmethod
+    def validate_file(cls, value):
+        max_size = settings.AVATAR_FILE_MAX_SIZE
+        if value.size > max_size:
+            raise ValidationError({'file': AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format('5MiB')})
+
+        file_name = value.name
+        if file_name.split('.')[-1].lower() not in ['jpeg', 'jpg', 'png', 'gif']:
+            raise ValidationError(
+                {'file': AttMsg.IMAGE_TYPE_SHOULD_BE_IMAGE_TYPE.format(", ".join(['jpeg', 'jpg', 'png', 'gif']))}
+            )
+
+        return value
 
 
 class EmployeeListSerializer(serializers.ModelSerializer):
