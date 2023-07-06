@@ -104,9 +104,16 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
     def create(self, validated_data):
+        # get data product_category
         product_categories = validated_data.pop('product_category', [])
-        opportunity = Opportunity.objects.create(**validated_data)
+
+        # get stage Qualification (auto assign stage Qualification when create Opportunity)
+        stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
+        win_rate = stage.win_rate
+
+        opportunity = Opportunity.objects.create(**validated_data, win_rate=win_rate)
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
+        OpportunityStage.objects.create(stage=stage, opportunity=opportunity, is_current=True)
         return opportunity
 
 
@@ -630,7 +637,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
-        instance.save(is_update=True)
+        instance.save()
         return instance
 
 
