@@ -2,7 +2,6 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.shared import DataAbstractModel, SimpleAbstractModel
-from .config import OpportunityConfigStage
 
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
