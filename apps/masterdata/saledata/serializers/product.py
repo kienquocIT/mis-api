@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.base.models import BaseItemUnit
@@ -655,7 +656,6 @@ def common_delete_product_information(instance):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -665,22 +665,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'title',
             'general_information',
             'sale_information',
-            'price_list'
         )
-
-    @classmethod
-    def get_price_list(cls, obj):
-        price_list = obj.product_price_product.all().values_list(
-            'price_list__id',
-            'price_list__title',
-            'price'
-        )
-        if price_list:
-            return [
-                {'id': price[0], 'title': price[1], 'value': price[2]}
-                for price in price_list
-            ]
-        return []
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -826,3 +811,52 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             if len(objs) > 0:
                 ProductPriceList.objects.bulk_create(objs)
         return instance
+
+
+class ProductForSaleListSerializer(serializers.ModelSerializer):
+    price_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            'sale_information',
+            'price_list'
+        )
+
+    @classmethod
+    def check_status_price(cls, valid_time_start, valid_time_end):
+        current_time = timezone.now()
+        if (not valid_time_start >= current_time) and (valid_time_end >= current_time):
+            return 'Valid'
+        if valid_time_end < current_time:
+            return 'Expired'
+        if valid_time_start >= current_time:
+            return 'Invalid'
+        return 'Undefined'
+
+    @classmethod
+    def get_price_list(cls, obj):
+        price_list = obj.product_price_product.all().values_list(
+            'price_list__id',
+            'price_list__title',
+            'price',
+            'price_list__is_default',
+            'price_list__valid_time_start',
+            'price_list__valid_time_end',
+        )
+        if price_list:
+            return [
+                {
+                    'id': price[0],
+                    'title': price[1],
+                    'value': price[2],
+                    'is_default': price[3],
+                    'price_status': cls.check_status_price(price[4], price[5])
+                }
+                for price in price_list
+            ]
+        return []
