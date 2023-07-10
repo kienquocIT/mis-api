@@ -1,12 +1,21 @@
 from django.urls import path
 
-from apps.core.hr.views.employee import EmployeeList, EmployeeDetail, EmployeeCompanyList, EmployeeTenantList
-from apps.core.hr.views.group import GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList
-from apps.core.hr.views.role import RoleList, RoleDetail
+from apps.core.hr.views.employee import (
+    EmployeeList, EmployeeDetail, EmployeeCompanyList, EmployeeTenantList,
+    EmployeeMediaToken, EmployeeUploadAvatar,
+)
+from apps.core.hr.views.group import (
+    GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList,
+)
+from apps.core.hr.views.role import (
+    RoleList, RoleDetail,
+)
 
 urlpatterns = [
+    path("employee/media-token", EmployeeMediaToken.as_view(), name="EmployeeMediaToken"),
     path("employee/tenant", EmployeeTenantList.as_view(), name="EmployeeTenantList"),
     path("employee/company/<str:company_id>", EmployeeCompanyList.as_view(), name="EmployeeCompanyList"),
+    path('employee/upload-avatar', EmployeeUploadAvatar.as_view(), name='EmployeeUploadAvatar'),
     path('employees', EmployeeList.as_view(), name='EmployeeList'),
     path("employee/<str:pk>", EmployeeDetail.as_view(), name="EmployeeDetail"),
 

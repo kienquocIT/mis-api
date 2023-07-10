@@ -6,7 +6,7 @@ from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 
-from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
+from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
 
 from apps.core.models import CoreAbstractModel
 
@@ -46,6 +46,10 @@ class Company(CoreAbstractModel):
         max_length=25
     )
 
+    # media
+    media_company_id = models.UUIDField(null=True)
+    media_company_code = models.TextField(null=True, blank=True)
+
     class Meta:
         verbose_name = 'Company'
         verbose_name_plural = 'Company'
@@ -61,6 +65,9 @@ class Company(CoreAbstractModel):
             self.tenant.save()
         else:
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
+
+        if kwargs.get('force_insert', False) and not self.media_company_id and settings.ENABLE_PROD is True:
+            MediaForceAPI.call_sync_company(self)
 
     @classmethod
     def refresh_total_user(cls, ids):

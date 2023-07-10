@@ -12,7 +12,7 @@ from apps.core.base.models import SubscriptionPlan
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
-    UserCreateSerializer, EmployeeSpaceCreateSerializer
+    UserCreateSerializer, EmployeeSpaceCreateSerializer,
 )
 
 
@@ -80,18 +80,18 @@ class TenantController:
                     #         is_system=True,
                     #     )
                     self.company_obj = self.create_company(
-                            title=self.tenant_obj.title,
-                            code=f'{self.tenant_obj.code}',
-                            tenant=self.tenant_obj.id,
-                            total_user=1,
-                        )
+                        title=self.tenant_obj.title,
+                        code=f'{self.tenant_obj.code}',
+                        tenant=self.tenant_obj.id,
+                        total_user=1,
+                    )
                     self.space_obj = self.create_space(
-                            title='Global',
-                            code=f'{tenant_code.upper()} Global',
-                            tenant=self.tenant_obj.id,
-                            company=self.company_obj.id,
-                            is_system=True,
-                        )
+                        title='Global',
+                        code=f'{tenant_code.upper()} Global',
+                        tenant=self.tenant_obj.id,
+                        company=self.company_obj.id,
+                        is_system=True,
+                    )
                     if create_company is False:
                         self.tenant_obj.company_quality_max = 1
                         self.tenant_obj.save()
@@ -119,10 +119,12 @@ class TenantController:
                                 self.create_space_employee(self.employee_obj, self.space_obj, **{})
 
                     return True
-                raise serializers.ValidationError({
-                    'detail': ProvisioningMsg.TENANT_READY.format(tenant_code),
-                    'step': 'Check tenant ready'
-                })
+                raise serializers.ValidationError(
+                    {
+                        'detail': ProvisioningMsg.TENANT_READY.format(tenant_code),
+                        'step': 'Check tenant ready'
+                    }
+                )
         except serializers.ValidationError as err:
             raise err
         except Exception as err:
@@ -175,10 +177,12 @@ class TenantController:
             err.detail['step'] = [ErrorDetail(string='In step setup tenant')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step setup tenant',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step setup tenant',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def update_tenant(cls, obj, **kwargs):
@@ -190,10 +194,12 @@ class TenantController:
                 setattr(obj, key, value)
             obj.save()
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step update tenant',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step update tenant',
+                    'detail': str(err),
+                }
+            )
         return obj
 
     @classmethod
@@ -201,15 +207,19 @@ class TenantController:
         try:
             ser = CompanyCreateSerializer(data=kwargs)
             ser.is_valid(raise_exception=True)
-            return ser.save()
+            obj = ser.save()
+            # MediaForceAPI.call_regis_company_media_storage(company_obj=obj)
+            return obj
         except serializers.ValidationError as err:
             err.detail['step'] = [ErrorDetail(string='In step setup company')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step setup company',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step setup company',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def create_space(cls, **kwargs):
@@ -221,28 +231,34 @@ class TenantController:
             err.detail['step'] = [ErrorDetail(string='In step setup space')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step setup space',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step setup space',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def create_employee(cls, **kwargs):
         try:
             ser = EmployeeCreateSerializer(data=kwargs)
             ser.is_valid(raise_exception=True)
-            return ser.save(
+            obj = ser.save(
                 tenant_id=kwargs.get('tenant'),
                 company_id=kwargs.get('company')
             )
+            # MediaForceAPI.call_regis_employee_media_storage(employee_obj=obj)
+            return obj
         except serializers.ValidationError as err:
             err.detail['step'] = [ErrorDetail(string='In step setup employee')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step setup employee',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step setup employee',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def update_employee(cls, obj, **kwargs):
@@ -253,10 +269,12 @@ class TenantController:
                 setattr(obj, key, value)
             obj.save()
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step update employee',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step update employee',
+                    'detail': str(err),
+                }
+            )
         return obj
 
     @classmethod
@@ -273,10 +291,12 @@ class TenantController:
             err.detail['step'] = [ErrorDetail(string='In step setup user')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step setup user',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step setup user',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def update_user(cls, obj, **kwargs):
@@ -286,30 +306,36 @@ class TenantController:
                 setattr(obj, key, value)
             obj.save()
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step update user',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step update user',
+                    'detail': str(err),
+                }
+            )
         return obj
 
     @classmethod
     def create_space_employee(cls, emp_obj, space_obj, **kwargs):
         try:
-            ser = EmployeeSpaceCreateSerializer(data={
-                **kwargs,
-                'space': space_obj.id,
-                'employee': emp_obj.id,
-            })
+            ser = EmployeeSpaceCreateSerializer(
+                data={
+                    **kwargs,
+                    'space': space_obj.id,
+                    'employee': emp_obj.id,
+                }
+            )
             ser.is_valid(raise_exception=True)
             return ser.save()
         except serializers.ValidationError as err:
             err.detail['step'] = [ErrorDetail(string='In step put employee to space')]
             raise err
         except Exception as err:
-            raise serializers.ValidationError({
-                'step': 'In step put employee to space',
-                'detail': str(err),
-            })
+            raise serializers.ValidationError(
+                {
+                    'step': 'In step put employee to space',
+                    'detail': str(err),
+                }
+            )
 
     @classmethod
     def check_and_create_plan(cls, plan_data):
@@ -319,10 +345,12 @@ class TenantController:
             plan_title = plan.get('title', None)
             plan_obj = SubscriptionPlan.objects.filter(code=plan_code).first()
             if not plan_obj:
-                plan_obj = SubscriptionPlan.objects.create(**{
-                    'title': plan_title,
-                    'code': plan_code,
-                })
+                plan_obj = SubscriptionPlan.objects.create(
+                    **{
+                        'title': plan_title,
+                        'code': plan_code,
+                    }
+                )
                 if plan_obj:
                     result.append(plan_obj)
             else:
@@ -346,18 +374,20 @@ class TenantController:
                     date_active = tenant_plan.get('date_active', None)
                     date_end = tenant_plan.get('date_end', None)
                     if plan:
-                        bulk_info.append(TenantPlan(
-                            **{
-                                'date_active': date_active,
-                                'date_end': date_end,
-                                'tenant': tenant_obj,
-                                'plan': plan,
-                                'is_limited': is_limited,
-                                'license_quantity': license_quantity,
-                                'license_used': 0,
-                                'purchase_order': purchase_order
-                            },
-                        ))
+                        bulk_info.append(
+                            TenantPlan(
+                                **{
+                                    'date_active': date_active,
+                                    'date_end': date_end,
+                                    'tenant': tenant_obj,
+                                    'plan': plan,
+                                    'is_limited': is_limited,
+                                    'license_quantity': license_quantity,
+                                    'license_used': 0,
+                                    'purchase_order': purchase_order
+                                },
+                            )
+                        )
             if bulk_info:
                 TenantPlan.objects.bulk_create(bulk_info)
         return True

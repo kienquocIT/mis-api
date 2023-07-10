@@ -9,13 +9,15 @@ from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping, \
     ProductWareHouse
+from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
 from ..sales.quotation.models import QuotationIndicatorConfig
@@ -318,3 +320,19 @@ def update_stage_for_opportunity():
         bulk_data.append(OpportunityStage(opportunity=obj, stage=stage, is_current=True))
     OpportunityStage.objects.bulk_create(bulk_data)
     print('!Done')
+
+
+def make_sure_sync_media(re_sync=False):
+    for company_obj in Company.objects.all():
+        if (not company_obj.media_company_id or not company_obj.media_company_code) or re_sync:
+            MediaForceAPI.call_sync_company(company_obj)
+            print('Force media company: ', company_obj.media_company_id, company_obj.media_company_code)
+
+        # refresh company obj =
+        company_obj.refresh_from_db()
+        if company_obj.media_company_id or company_obj.media_company_code:
+            for employee_obj in Employee.objects.filter(company=company_obj):
+                if not employee_obj.media_user_id or re_sync:
+                    MediaForceAPI.call_sync_employee(employee_obj)
+                    print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
+    print('Sync media successfully')

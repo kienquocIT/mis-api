@@ -73,14 +73,6 @@ Có 2 cách sử dụng:
         USER: 'rabbitmq_user'
         PASSWORD: 'rabbitmq_passwd'
         
-    - Notes:
-        + Thay đổi cấu hình BROKER của celery trong settings (đưa vào local_settings): 
-            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//' (Format: 'amqp://{user}:{passwd}@{host}:{port}//')
-            USE_CELERY_CONFIG_OPTION = 1  # xem settings cuối file
-            CELERY_TASK_ALWAYS_EAGER = False # xem settings cuối file
-        + Nếu không sử dụng Queue có thể thay đổi config trong settings để bỏ qua kết nối queue và thực thi task real-time.
-            USE_CELERY_CONFIG_OPTION = 0
-            CELERY_TASK_ALWAYS_EAGER = True
     Traceback:
         - Nếu đã chạy docker-compose build mà khởi động lại máy không kết nối source tới DB thì:
             B1: Khởi động docker
@@ -98,29 +90,13 @@ DEBUG = True
 
 # Bật trang API Docs
 SHOW_API_DOCS = True
-
-# Bật hiển thị các truy vấn đã thực hiện xuống DB theo mỗi request tới API.
-DEBUG_HIT_DB = True
-
-# True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
-CELERY_TASK_ALWAYS_EAGER = False
-
-# 0: Sử dụng sqlite3 làm database cho "default"
-# 1: Sử dụng mysql với docker container mysql đã cài và chạy container dưới local.
-# 2: Sử dụng mysql với server prod sử dụng biến môi trường làm thông tin kết nối.
-USE_DATABASE_CONFIG_OPTION = 1
-
-# 0: Bỏ qua sử dụng Celery, 
-# 1: Bật celery với docker container rabbit đã cài và chạy container dưới local.
-# 2: Bật celery với server prod sử dụng biến môi trường làm thông tin kết nối.
-USE_CELERY_CONFIG_OPTION = 1
 ```
 5. 
 
 ### Khởi động source code
 1. Khởi chạy celery nhận và thực hiện task
 ```text
-a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True
+a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True # changed
 b. Sử dụng queue:
     B1: Mở terminal (với shell path là git bash)
     B2: command: celery -A misapi worker --loglevel=INFO
@@ -338,25 +314,14 @@ DATABASES = {
 
 2. Celery:
 
-```properties
-MSG_QUEUE_HOST='127.0.0.1'
-MSG_QUEUE_PORT='5672'
-```
-
 ```python
-import os
-
-MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
-MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
-if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
-    CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}//'  # 'amqp://127.0.0.1:5672//'
-else:
-    CELERY_BROKER_URL = None
-
-USE_CELERY_CONFIG_OPTION = 1
-CELERY_TASK_ALWAYS_EAGER = False
-# Khi bật celery sẽ thực hiện task ngay lập tức trước khi close thread request.
-# Vì không đẩy task vào queue nên không yêu cầu có Queue Message Server tồn tại.
+# .env
+MSG_QUEUE_HOST=host_name
+MSG_QUEUE_PORT=sv_port
+MSG_QUEUE_API_PORT=sv_api_port
+MSG_QUEUE_USER=user
+MSG_QUEUE_PASSWORD=passwd
+MSG_QUEUE_BROKER_VHOST=vhost
 ```
 
 3. Cache
@@ -500,4 +465,61 @@ MAP_FIELD_TITLE = {
 }
 
 ```
+---
+#### MEDIA CLOUD Config
+<p style="font-weight: bold;color: red;">JSON trong value của .env luôn sử dunng `"`, không được sử dụng `'`.</p>
+
+```text
+# .env
+MEDIA_PREFIX_SITE=prod
+MEDIA_DOMAIN=http://127.0.0.1:8881/api
+MEDIA_SECRET_TOKEN_API={KEY_MAP_WITH_SETTING_MEDIA_CLOUD_SV}
+```
+---
+
+#### Media cloud get check file
+ 
+UI upload file --> tới Media Cloud --> trả về {file_id} --> thêm {file_id} vào body post
+--> API lấy giá trị {file_media} gọi đến MediaForceAPI.get_file_check --> kiểm tra trả về
+   1. True: --> **Tạo records trong API Files để lưu trữ** và liên kết với các models khác theo M2M
+   2. False: --> Trả lỗi cho người dùng 
+
+```python
+from apps.shared.media_cloud_apis import MediaForceAPI
+
+media_file_id = "eefbf700763e49c3bbb7d7bb250dbc69"
+employee_id = "5ba531cceead4220a5ebe5f01d5d1bb1"
+
+MediaForceAPI.get_file_check(media_file_id=media_file_id, media_user_id=employee_obj.media_user_id)
+
+# return
+# (bool, result)
+#   1. True: Success, False: Errors
+#   2. Result of True: {
+#       'id': 'eefbf700-763e-49c3-bbb7-d7bb250dbc69', 
+#       'name': 'avt.gif', 
+#       'descriptions': '', 
+#       'date_created': '2023-07-10 10:02:18', 
+#       'date_modified': '2023-07-10 10:02:18', 
+#       'file_name': 'avt.gif', 
+#       'file_size': 930108, 
+#       'file_type': 'gif', 
+#       'file_tags': '', 
+#       'belong_folder': 'c4e05d24-9ae0-4a1e-9af1-111a33a431df', 
+#       'api_file_id': None, 
+#       'api_app_code': None, 
+#       'linked_date': None, 
+#       'un_linked_date': None
+#       }
+#   3. Result of Errors: {
+#             errors: {}
+#       }
+```
+
+---
+
+#### Media check from Model Files
+
+1. Check exist: Files.check_media_file()
+2. Create new: Files.regis_media_file()
 ---

@@ -9,8 +9,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 from apps.core.account.models import User
-from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer
-from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel
+from apps.core.company.models import CompanyUserEmployee
+from apps.core.auths.serializers import (
+    AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer,
+    AuthValidAccessCodeSerializer,
+)
+from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, MediaForceAPI, TypeCheck
 
 
 # LOGIN:
@@ -98,6 +102,9 @@ class AuthLogin(generics.GenericAPIView):
         # get user object from serializer
         user_obj = ser.validated_data
         if user_obj:
+            # info employee_id, space_id make sure correct
+            self.check_and_update_globe(user_obj)
+
             # generate token
             generate_token = MyTokenObtainPairSerializer.get_full_token(user_obj)
             token_data = {
@@ -108,12 +115,35 @@ class AuthLogin(generics.GenericAPIView):
             result = user_obj.get_detail()
             result['token'] = token_data
 
-            # info employee_id, space_id make sure correct
-            self.check_and_update_globe(user_obj)
-
             # append user detail to result , then return response
             return ResponseController.success_200(result, key_data='result')
         return ResponseController.bad_request_400(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
+
+
+class AuthValidAccessCode(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(operation_summary='Valid access code', request_body=AuthValidAccessCodeSerializer)
+    @mask_view(login_require=True)
+    def post(self, request, *args, **kwargs):
+        company_id = request.data.get('company_id', None)
+        user_agent = request.data.get('user_agent', None)
+        public_ip = request.data.get('public_ip', None)
+        access_id = request.data.get('access_id', None)
+        if TypeCheck.check_uuid(company_id) and user_agent and public_ip and TypeCheck.check_uuid(access_id):
+            obj = CompanyUserEmployee.objects.filter(user=request.user, company_id=company_id).first()
+            if obj and obj.company.media_company_id and obj.employee.media_user_id:
+                state, result_or_errs = MediaForceAPI.valid_access_code_login(
+                    employee_media_id=obj.employee.media_user_id,
+                    company_media_id=obj.company.media_company_id,
+                    user_agent=user_agent,
+                    public_ip=public_ip,
+                    access_id=access_id,
+                )
+                if state:
+                    return ResponseController.success_200(data=result_or_errs, key_data='result')
+                return ResponseController.bad_request_400(msg=result_or_errs)
+        return ResponseController.forbidden_403()
 
 
 class AuthRefreshLogin(generics.GenericAPIView):
