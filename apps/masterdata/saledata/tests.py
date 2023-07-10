@@ -2218,6 +2218,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2242,7 +2243,7 @@ class ExpenseTestCase(AdvanceTestCase):
             response.data['result'],
             ['id', 'title', 'code', 'date_created', 'date_modified', 'is_active', 'is_delete',
              'employee_created', 'employee_modified', 'tenant', 'company', 'price_list', 'expense_type', 'uom_group',
-             'uom', 'general_information'],
+             'uom', 'general_information', 'role'],
             check_sum_second=True,
         )
         return response, price_list
@@ -2258,6 +2259,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2289,6 +2291,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2319,6 +2322,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "title": "Chi phí nhân công sản xuất",
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2357,6 +2361,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2387,6 +2392,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2419,6 +2425,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": "",
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2487,6 +2494,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
@@ -2508,6 +2516,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
+            "role": [],
             "data_price_list": [
                 {
                     'id': price_list['id'],
