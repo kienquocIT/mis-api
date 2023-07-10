@@ -78,7 +78,16 @@ class Files(MasterDataAbstractModel):
             employee_created_id = getattr(user_obj, 'employee_current_id', None)
 
             # check then call create
-            if relate_app and relate_doc_id and relate_app_code and employee_created_id and tenant_id and company_id:
+            if all(
+                    [
+                        relate_app,
+                        relate_doc_id,
+                        relate_app_code,
+                        employee_created_id,
+                        tenant_id,
+                        company_id,
+                    ]
+            ):
                 return cls.objects.create(
                     relate_app=relate_app, relate_app_code=relate_app_code, relate_doc_id=relate_doc_id,
                     employee_created_id=employee_created_id,
