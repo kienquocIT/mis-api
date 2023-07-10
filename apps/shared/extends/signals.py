@@ -1,7 +1,7 @@
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save, pre_delete, post_delete
+from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
 from django.dispatch import receiver
 
 from apps.core.attachments.models import Files
@@ -547,13 +547,13 @@ def handler_runtime_task_update(sender, instance, **kwargs):  # pylint: disable=
                 obj.update(is_done=True)
 
 
-@receiver(post_save, sender=Files)
-def move_media_file_to_folder_app(sender, instance, created, **kwargs):  # pylint: disable=W0613
+@receiver(pre_save, sender=Files)
+def move_media_file_to_folder_app(sender, instance, **kwargs):  # pylint: disable=W0613
     MediaForceAPI.regis_link_to_file(
         media_file_id=instance.media_file_id,
         api_file_id=instance.id,
         api_app_code=instance.relate_app_code,
-        employee_id=instance.employee_created_id,
+        media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
     )
 
 
@@ -563,5 +563,5 @@ def destroy_files(sender, instance, **kwargs):  # pylint: disable=W0613
         media_file_id=instance.media_file_id,
         api_file_id=instance.id,
         api_app_code=instance.relate_app_code,
-        employee_id=instance.employee_created_id,
+        media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
     )

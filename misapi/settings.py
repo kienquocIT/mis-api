@@ -18,10 +18,16 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# override recursion limit
 sys.setrecursionlimit(10000)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# load environment from .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -495,6 +501,3 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
-
-SHOW_API_DOCS = True
-DEBUG = True
