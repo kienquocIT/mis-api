@@ -4,7 +4,7 @@ from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
-    'ExpensePrice', 'ProductGeneral', 'ProductSale', 'ProductInventory',
+    'ExpensePrice', 'ProductGeneral', 'ProductSale', 'ProductInventory', 'ExpenseGeneral'
 ]
 
 

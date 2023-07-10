@@ -1,5 +1,5 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, Expense, ExpenseGeneral
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ExpenseGeneral
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account

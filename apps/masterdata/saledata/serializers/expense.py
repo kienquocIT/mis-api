@@ -2,7 +2,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models.product import (
     Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice
 )
-from apps.masterdata.saledata.models.price import Tax, Currency
+from apps.masterdata.saledata.models.price import Currency
 from apps.masterdata.saledata.models.product import ExpenseType
 from apps.shared.translations.expense import ExpenseMsg
 
@@ -24,7 +24,7 @@ class ExpenseListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_expense_type(cls, obj):
-        if (obj.expense_type):
+        if obj.expense_type:
             return {
                 'id': obj.expense_type_id,
                 'title': obj.expense_type.title,
