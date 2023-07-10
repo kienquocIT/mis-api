@@ -15,7 +15,7 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
@@ -60,6 +60,9 @@ class SaleDefaultData:
         {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
+    UoM_Group_data = [
+        {'title': 'Labor', 'is_default': 1},
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -72,6 +75,7 @@ class SaleDefaultData:
                 self.create_currency()
                 self.create_price_default()
                 self.create_account_types()
+                self.create_uom_group()
             return True
         except Exception as err:
             logger.error(
@@ -148,6 +152,14 @@ class SaleDefaultData:
             Price.objects.bulk_create(objs)
             return True
         return False
+
+    def create_uom_group(self):
+        objs = [
+            UnitOfMeasureGroup(tenant=self.company_obj.tenant, company=self.company_obj, **uom_group_item)
+            for uom_group_item in self.UoM_Group_data
+        ]
+        UnitOfMeasureGroup.objects.bulk_create(objs)
+        return True
 
 
 class ConfigDefaultData:

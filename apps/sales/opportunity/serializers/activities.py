@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.sales.opportunity.models import OpportunityCallLog
+from apps.shared.translations.opportunity import OpportunityMsg
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -16,7 +17,7 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'call_date',
-            'result',
+            'input_result',
             'repeat'
         )
 
@@ -51,6 +52,8 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
+    input_result = serializers.CharField(required=True)
+
     class Meta:
         model = OpportunityCallLog
         fields = (
@@ -59,9 +62,16 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'call_date',
-            'result',
+            'input_result',
             'repeat'
         )
+
+    @classmethod
+    def validate_input_result(cls, value):
+        if value:
+            return value
+        else:
+            raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
 
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
@@ -74,6 +84,6 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'customer',
             'contact',
             'call_date',
-            'result',
+            'input_result',
             'repeat'
         )
