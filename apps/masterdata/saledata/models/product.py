@@ -257,13 +257,6 @@ class Expense(MasterDataAbstractModel):
         related_name='expense_uom',
         default=None,
     )
-    tax_code = models.ForeignKey(
-        'saledata.Tax',
-        verbose_name='Tax Code apply for expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_tax_code',
-    )
     price_list = models.ManyToManyField(
         'saledata.Price',
         through="ExpensePrice",

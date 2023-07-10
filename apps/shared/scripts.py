@@ -358,6 +358,5 @@ def update_data_expense():
         item.expense.expense_type = item.expense_type
         item.expense.uom_group = item.uom_group
         item.expense.uom = item.uom
-        item.expense.tax_code = item.tax_code
         item.expense.save()
     print('Done !')
