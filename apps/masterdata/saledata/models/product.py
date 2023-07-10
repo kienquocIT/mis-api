@@ -227,6 +227,7 @@ class ProductInventory(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
 class Expense(MasterDataAbstractModel):
     general_information = models.JSONField(
         default=dict,
@@ -263,6 +264,14 @@ class Expense(MasterDataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='expenses_map_prices',
+        default=None,
+    )
+    role = models.ManyToManyField(
+        'hr.Role',
+        through="ExpenseRole",
+        symmetrical=False,
+        blank=True,
+        related_name='expenses_map_roles',
         default=None,
     )
 
@@ -365,6 +374,28 @@ class ExpensePrice(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
+
+class ExpenseRole(SimpleAbstractModel):
+    expense = models.ForeignKey(
+        Expense,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_role_expense',
+        default=None,
+    )
+    role = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_role_role',
+        default=None,
+    )
+
+    class Meta:
+        verbose_name = 'Expense Role'
+        verbose_name_plural = 'Expense Roles'
+        default_permissions = ()
+        permissions = ()
 
 # class Expense(MasterDataAbstractModel):
 #     expense_type = models.ForeignKey(

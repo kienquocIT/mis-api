@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import (
-    Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice
+    Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice, ExpenseRole
 )
 from apps.masterdata.saledata.models.price import Currency
 from apps.masterdata.saledata.models.product import ExpenseType
@@ -41,6 +41,7 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField(allow_null=False, required=True)
     data_price_list = serializers.ListField()
     currency_using = serializers.UUIDField()
+    role = serializers.ListField(child=serializers.UUIDField())
 
     class Meta:
         model = Expense
@@ -51,7 +52,8 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             'uom_group',
             'uom',
             'data_price_list',
-            'currency_using'
+            'currency_using',
+            'role'
         )
 
     @classmethod
@@ -115,9 +117,23 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data_price_list = validated_data.pop('data_price_list')
         currency_using = validated_data.pop('currency_using')
+        data_role = validated_data.pop('role', [])
         expense = Expense.objects.create(**validated_data)
         self.common_create_expense_price(data_price_list, currency_using, validated_data['uom'], expense)
+        self.common_create_expense_role(data_role, expense)
         return expense
+
+    @staticmethod
+    def common_create_expense_role(data, instance):
+        data_bulk = []
+        for role_id in data:
+            expense_role = ExpenseRole(
+                role_id=role_id,
+                expense=instance
+            )
+            data_bulk.append(expense_role)
+        ExpenseRole.objects.bulk_create(data_bulk)
+
 
     @staticmethod
     def common_create_expense_price(data_price_list, currency_using, uom, instance):
@@ -168,6 +184,7 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
     uom_group = serializers.UUIDField(required=False)
     data_price_list = serializers.ListField(required=False)
     currency_using = serializers.UUIDField(required=False)
+    role = serializers.ListField(child=serializers.UUIDField(), required=False)
 
     class Meta:
         model = Expense
@@ -177,7 +194,8 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
             'uom_group',
             'uom',
             'data_price_list',
-            'currency_using'
+            'currency_using',
+            'role'
         )
 
     @classmethod
@@ -238,6 +256,12 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
         return instance
 
     @classmethod
+    def common_update_expense_role(cls, instance, data):
+        ExpenseRole.objects.filter(expense=instance).delete()
+        ExpenseCreateSerializer.common_create_expense_role(data, instance)
+        return True
+
+    @classmethod
     def common_delete_expense_price(cls, instance, validate_data):
         expense_price_delete = ExpensePrice.objects.filter(
             expense=instance,
@@ -255,6 +279,8 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def common_update_expense_general(cls, validated_data, instance):
         cls.common_delete_expense_price(instance=instance, validate_data=validated_data)
+        data_role = validated_data.pop('role', [])
+        cls.common_update_expense_role(instance=instance, data=data_role)
         ExpenseCreateSerializer.common_create_expense_price(
             validated_data['data_price_list'],
             validated_data['currency_using'],
