@@ -70,8 +70,7 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
     def validate_input_result(cls, value):
         if value:
             return value
-        else:
-            raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
+        raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
 
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
