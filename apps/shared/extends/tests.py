@@ -133,6 +133,8 @@ class AdvanceTestCase(TestCase):
             "plan_data": {}
         }
         response = self.client.post(url, data, format='json')
+        if response.status_code not in [200, 201]:
+            print(response.status_code, response.data)
         resp_data = self.reload_json(response.data)
         self.assertResponseList(
             response,

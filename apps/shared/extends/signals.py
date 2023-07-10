@@ -1,14 +1,17 @@
 import logging
 
 from django.db import transaction
-from django.db.models.signals import post_save, pre_delete
+from django.db.models.signals import post_save, pre_delete, post_delete
 from django.dispatch import receiver
 
+from apps.core.attachments.models import Files
 from apps.core.log.models import Notifications
 from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
-from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, \
-    IndicatorDefaultData
+from apps.sales.quotation.models import (
+    QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
+    IndicatorDefaultData,
+)
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
@@ -17,7 +20,7 @@ from apps.masterdata.saledata.models import (
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
     SaleOrderIndicatorConfig
-from apps.shared import Caching
+from apps.shared import Caching, MediaForceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -485,10 +488,12 @@ class ConfigDefaultData:
     def quotation_indicator_config(self):
         bulk_info = []
         for data in IndicatorDefaultData.INDICATOR_DATA:
-            bulk_info.append(QuotationIndicatorConfig(
-                company=self.company_obj,
-                **data,
-            ))
+            bulk_info.append(
+                QuotationIndicatorConfig(
+                    company=self.company_obj,
+                    **data,
+                )
+            )
         QuotationIndicatorConfig.objects.bulk_create(bulk_info)
 
     def sale_order_indicator_config(self):
@@ -540,3 +545,23 @@ def handler_runtime_task_update(sender, instance, **kwargs):  # pylint: disable=
                     doc_app=runtime_obj.app_code,
                 )
                 obj.update(is_done=True)
+
+
+@receiver(post_save, sender=Files)
+def move_media_file_to_folder_app(sender, instance, created, **kwargs):  # pylint: disable=W0613
+    MediaForceAPI.regis_link_to_file(
+        media_file_id=instance.media_file_id,
+        api_file_id=instance.id,
+        api_app_code=instance.relate_app_code,
+        employee_id=instance.employee_created_id,
+    )
+
+
+@receiver(post_delete, sender=Files)
+def destroy_files(sender, instance, **kwargs):  # pylint: disable=W0613
+    MediaForceAPI.destroy_link_to_file(
+        media_file_id=instance.media_file_id,
+        api_file_id=instance.id,
+        api_app_code=instance.relate_app_code,
+        employee_id=instance.employee_created_id,
+    )

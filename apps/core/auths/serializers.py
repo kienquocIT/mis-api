@@ -115,3 +115,10 @@ class SwitchCompanySerializer(Serializer):  # pylint: disable=W0223 # noqa
                     pass
             raise serializers.ValidationError({"detail": AccountMsg.COMPANY_NOT_EXIST})
         raise serializers.ValidationError({"detail": AccountMsg.USER_NOT_EXIST})
+
+
+class AuthValidAccessCodeSerializer(serializers.Serializer): # noqa
+    company_id = serializers.UUIDField()
+    access_id = serializers.UUIDField()
+    user_agent = serializers.CharField()
+    public_ip = serializers.CharField()

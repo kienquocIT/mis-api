@@ -99,9 +99,6 @@ DEBUG = True
 # Bật trang API Docs
 SHOW_API_DOCS = True
 
-# Bật hiển thị các truy vấn đã thực hiện xuống DB theo mỗi request tới API.
-DEBUG_HIT_DB = True
-
 # True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
 CELERY_TASK_ALWAYS_EAGER = False
 
@@ -499,5 +496,15 @@ MAP_FIELD_TITLE = {
     '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
 }
 
+```
+---
+#### MEDIA CLOUD Config
+<p style="font-weight: bold;color: red;">JSON trong value của .env luôn sử dunng `"`, không được sử dụng `'`.</p>
+
+```text
+# .env
+MEDIA_PREFIX_SITE=prod
+MEDIA_DOMAIN=http://127.0.0.1:8881/api
+MEDIA_SECRET_TOKEN_API={KEY_MAP_WITH_SETTING_MEDIA_CLOUD_SV}
 ```
 ---

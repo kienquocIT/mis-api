@@ -1,14 +1,48 @@
-from rest_framework import generics, serializers
-from rest_framework.permissions import IsAuthenticated
+from datetime import timedelta
+
+from django.utils import timezone
+
 from drf_yasg.utils import swagger_auto_schema
+
+from rest_framework import generics, serializers
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 
 from apps.core.hr.models import Employee
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
+    EmployeeUploadAvatarSerializer,
 )
-from apps.shared import BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg
+from apps.shared import (
+    BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
+    ResponseController, HttpMsg,
+)
+from apps.shared.media_cloud_apis import APIUtil, MediaForceAPI
+
+
+class EmployeeUploadAvatar(APIView):
+    parser_classes = [MultiPartParser]
+
+    @swagger_auto_schema(request_body=EmployeeUploadAvatarSerializer)
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        employee_obj = request.user.employee_current
+        if employee_obj:
+            ser = EmployeeUploadAvatarSerializer(data=request.data)
+            ser.is_valid(raise_exception=True)
+            uploaded_file = request.FILES.get('file')
+            resp = MediaForceAPI.call_upload_avatar(employee_obj=employee_obj, f_img=uploaded_file)
+            if resp.state:
+                employee_obj.media_avatar_hash = resp.result['media_path_hash']
+                employee_obj.save(update_fields=['media_avatar_hash'])
+                return ResponseController.success_200(
+                    data={'detail': HttpMsg.SUCCESSFULLY, 'media_path_hash': resp.result['media_path_hash']}
+                )
+            return ResponseController.bad_request_400(msg=resp.errors)
+        return ResponseController.forbidden_403()
 
 
 class EmployeeList(
@@ -130,6 +164,46 @@ class EmployeeTenantList(
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
             return self.list(request, *args, **kwargs)
-        raise serializers.ValidationError({
-            'detail': HRMsg.FILTER_COMPANY_ID_REQUIRED
-        })
+        raise serializers.ValidationError(
+            {
+                'detail': HRMsg.FILTER_COMPANY_ID_REQUIRED
+            }
+        )
+
+
+class EmployeeMediaToken(APIView):
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        if request.user.employee_current:
+            employee_obj = request.user.employee_current
+            access_token = employee_obj.media_access_token
+            access_expired = employee_obj.media_access_token_expired
+            if access_expired and access_expired > (timezone.now() + timedelta(minutes=10)) and access_token:
+                return ResponseController.success_200(
+                    data={
+                        'access_token': employee_obj.media_access_token
+                    }
+                )
+            refresh_token = employee_obj.media_refresh_token_expired
+            refresh_expired = employee_obj.media_refresh_token_expired
+            if refresh_token and refresh_expired and refresh_expired > (timezone.now() + timedelta(minutes=10)):
+                access_token = APIUtil.get_new_token(
+                    media_refresh_token=employee_obj.media_refresh_token,
+                    employee_obj=employee_obj,
+                )
+                if access_token:
+                    return ResponseController.success_200(
+                        data={
+                            'access_token': access_token
+                        }
+                    )
+            access_token = APIUtil.get_new_token_by_login(employee_obj)
+            if access_token:
+                return ResponseController.success_200(
+                    data={
+                        'access_token': employee_obj.media_access_token
+                    }
+                )
+
+        return ResponseController.forbidden_403()

@@ -1,14 +1,16 @@
 from typing import Union, Literal, TypedDict
 from uuid import UUID
+
 from jsonfield import JSONField
 
+from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantAbstractModel
 from apps.shared import (
     SimpleAbstractModel, PERMISSION_OPTION,
     DisperseModel,
-    GENDER_CHOICE, TypeCheck,
+    GENDER_CHOICE, TypeCheck, MediaForceAPI,
 )
 
 
@@ -229,6 +231,16 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         related_name='employee_map_plan'
     )
 
+    # media
+    media_user_id = models.UUIDField(null=True)
+    media_refresh_token = models.TextField(blank=True)
+    media_refresh_token_expired = models.DateTimeField(null=True)
+    media_access_token = models.TextField(blank=True)
+    media_access_token_expired = models.DateTimeField(null=True)
+    media_username = models.TextField(blank=True)
+    media_password = models.TextField(blank=True)
+    media_avatar_hash = models.TextField(blank=True)
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -313,6 +325,8 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
 
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
+        if kwargs.get('force_insert', False) and not self.media_user_id and settings.ENABLE_PROD is True:
+            MediaForceAPI.call_sync_employee(self)
 
     def get_detail(self, *args):
         return {
@@ -324,6 +338,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             'phone': self.phone,
             'is_delete': self.is_delete,
             'avatar': self.avatar,
+            'media_avatar_hash': self.media_avatar_hash,
         }
 
     def get_full_name(self, order_arrange=2):
