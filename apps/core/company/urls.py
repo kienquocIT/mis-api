@@ -4,7 +4,7 @@ from apps.core.company.views import (
     CompanyDetail,
     CompanyListOverview,
     CompanyUserNotMapEmployeeList, CompanyOverviewDetail,
-    CompanyConfigDetail,
+    CompanyConfigDetail, RestoreDefaultOpportunityConfigStage,
 )
 
 
@@ -17,4 +17,9 @@ urlpatterns = [
     path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),
     path('overview/<str:pk>/<int:option>', CompanyOverviewDetail.as_view(), name='CompanyOverviewDetail'),
     path('user-available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
+    path(
+        'default-opportunity-stage/<str:pk>',
+        RestoreDefaultOpportunityConfigStage.as_view(),
+        name='RestoreDefaultOpportunityConfigStage'
+    ),
 ]

@@ -128,3 +128,11 @@ DELIVERY_WITH_KIND_PICKUP = (
     (0, 'Wait auto picking'),
     (1, 'Manual select product'),
 )
+
+# base IndicatorParam
+INDICATOR_PARAM_TYPE = (
+    (0, 'Indicator'),
+    (1, 'Property'),
+    (2, 'Function'),
+    (3, 'Operator'),
+)

@@ -1,11 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig
+from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
+from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
+    SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer, SaleOrderIndicatorCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -20,7 +22,7 @@ class SaleOrderList(
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -132,4 +134,81 @@ class SaleOrderConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
+        return self.update(request, *args, **kwargs)
+
+
+# Indicator
+class SaleOrderIndicatorList(
+    BaseListMixin,
+    BaseCreateMixin
+):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderIndicatorConfig.objects
+    filterset_fields = ['application_code']
+    serializer_list = SaleOrderIndicatorListSerializer
+    serializer_create = SaleOrderIndicatorCreateSerializer
+    serializer_detail = SaleOrderIndicatorListSerializer
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order Indicator List",
+        operation_description="Get Sale Order Indicator List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Sale Order Indicator",
+        operation_description="Create new Sale Order Indicator",
+        request_body=SaleOrderIndicatorCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class SaleOrderIndicatorDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderIndicatorConfig.objects
+    serializer_detail = SaleOrderIndicatorListSerializer
+    serializer_update = SaleOrderIndicatorUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order Indicator detail",
+        operation_description="Get Sale Order Indicator detail by ID",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Sale Order Indicator",
+        operation_description="Update Sale Order Indicator by ID",
+        request_body=SaleOrderIndicatorUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class SaleOrderIndicatorCompanyRestore(
+    BaseUpdateMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderIndicatorConfig.objects
+    serializer_detail = SaleOrderIndicatorListSerializer
+    serializer_update = SaleOrderIndicatorCompanyRestoreSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Restore Sale Order Indicator Of Company",
+        operation_description="Restore Sale Order Indicator Of Company",
+        request_body=SaleOrderIndicatorCompanyRestoreSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

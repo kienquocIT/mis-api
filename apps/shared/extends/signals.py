@@ -6,15 +6,17 @@ from django.dispatch import receiver
 
 from apps.core.log.models import Notifications
 from apps.core.workflow.models import RuntimeAssignee
-from apps.sales.opportunity.models import OpportunityConfig
-from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale
+from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
+from apps.sales.quotation.models import QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, \
+    IndicatorDefaultData
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price,
 )
 from apps.sales.delivery.models import DeliveryConfig
-from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale
+from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
+    SaleOrderIndicatorConfig
 from apps.shared import Caching
 
 logger = logging.getLogger(__name__)
@@ -149,6 +151,234 @@ class ConfigDefaultData:
     """
     Class support create all config of company when signal new Company just created
     """
+    opportunity_config_stage_data = [
+        {
+            'indicator': 'Qualification',
+            'description': 'Giai đoạn thẩm định thông tin cơ hội kinh doanh',
+            'win_rate': 10,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': False,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
+                        'title': 'Customer'
+                    },  # id application property Customer
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                }
+            ]
+        },
+        {
+            'indicator': 'Needs Analysis',
+            'description': 'Giai đoạn phân tích, khảo sát các yêu cầu của khách hàng',
+            'win_rate': 20,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': True,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
+                        'title': 'Customer'
+                    },  # application property Customer
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8',
+                        'title': 'Product Category'
+                    },  # application property Product Category
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '43009b1a-a25d-43be-ab97-47540a2f00cb',
+                        'title': 'Close Date'
+                    },  # application property Close Date
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+            ]
+        },
+        {
+            'indicator': 'Proposal',
+            'description': 'Giai đoạn gửi đề xuất sản phẩm dịch vụ cho khách hàng',
+            'win_rate': 50,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': True,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'e4e0c770-a0d1-492d-beae-3b31dcb391e1',
+                        'title': 'Customer'
+                    },  # application property Customer
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8',
+                        'title': 'Product Category'
+                    },  # application property Product Category
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '43009b1a-a25d-43be-ab97-47540a2f00cb',
+                        'title': 'Close Date'
+                    },  # application property Close Date
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '35dbf6f2-78a8-4286-8cf3-b95de5c78873',
+                        'title': 'Decision maker'
+                    },  # application property Decision maker
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': '39b50254-e32d-473b-8380-f3b7765af434',
+                        'title': 'Product.Line.Detail'
+                    },  # application property Product.Line.Detail
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+            ]
+        },
+        {
+            'indicator': 'Negotiation',
+            'description': 'Giai đoạn thương lượng giá, phạm vi cv, hợp đồng, các điều kiện thương mại...',
+            'win_rate': 80,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': True,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'acab2c1e-74f2-421b-8838-7aa55c217f72',
+                        'title': 'Quotation.confirm'
+                    },  # application property Quotation.confirm
+                    'comparison_operator': '=',
+                    'compare_data': 0,
+                },
+
+            ]
+        },
+        {
+            'indicator': 'Closed Won',
+            'description': 'Đóng thành công cơ hội, khách hàng xác nhận mua hàng, ký hợp dồng..',
+            'win_rate': 100,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': False,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': '9db4e835-c647-4de5-aa1c-43304ddeccd1',
+                        'title': 'SaleOlder.status'
+                    },  # application property SaleOlder.status
+                    'comparison_operator': '=',
+                    'compare_data': 0,
+                },
+            ]
+        },
+        {
+            'indicator': 'Closed Lost',
+            'description': 'Cơ hội thất bại',
+            'win_rate': 0,
+            'is_default': True,
+            'logical_operator': 1,
+            'is_deal_closed': False,
+            'is_delivery': False,
+            'is_closed_lost': True,
+            'is_delete': False,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': '92c8035a-5372-41c1-9a8e-4b048d8af406',
+                        'title': 'Lost By Other Reason'
+                    },  # application property Lost By Other Reason
+
+                    'comparison_operator': '=',
+                    'compare_data': 0,
+                },
+                {
+                    'condition_property': {
+                        'id': 'c8fa79ae-2490-4286-af25-3407e129fedb',
+                        'title': 'Competitor.Win'
+                    },  # application property Competitor.Win
+                    'comparison_operator': '=',
+                    'compare_data': 0,
+                },
+            ]
+        },
+        {
+            'indicator': 'Delivery',
+            'description': 'Đang giao hàng/triển khai',
+            'win_rate': 0,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': False,
+            'is_delivery': True,
+            'is_closed_lost': False,
+            'is_delete': True,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'b5aa8550-7fc5-4cb8-a952-b6904b2599e5',
+                        'title': 'SaleOrder.Delivery.Status'
+                    },  # application property SaleOrder.Delivery.Status
+                    'comparison_operator': '≠',
+                    'compare_data': 0,
+                },
+            ]
+        },
+        {
+            'indicator': 'Deal Close',
+            'description': 'Kết thúc bán hàng/Dự án',
+            'win_rate': 0,
+            'is_default': True,
+            'logical_operator': 0,
+            'is_deal_closed': True,
+            'is_delivery': False,
+            'is_closed_lost': False,
+            'is_delete': False,
+            'condition_datas': [
+                {
+                    'condition_property': {
+                        'id': 'f436053d-f15a-4505-b368-9ccdf5afb5f6',
+                        'title': 'Close Deal'
+                    },  # application property Close Deal
+                    'comparison_operator': '=',
+                    'compare_data': 0,
+                },
+            ]
+        }
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -238,12 +468,47 @@ class ConfigDefaultData:
             },
         )
 
+    def opportunity_config_stage(self):
+        for stage in self.opportunity_config_stage_data:
+            config_stage = OpportunityConfigStage.objects.create(
+                company=self.company_obj,
+                **stage
+            )
+            for condition in stage['condition_datas']:
+                StageCondition.objects.create(
+                    stage=config_stage,
+                    condition_property_id=condition['condition_property']['id'],
+                    comparison_operator=condition['comparison_operator'],
+                    compare_data=condition['compare_data']
+                )
+
+    def quotation_indicator_config(self):
+        bulk_info = []
+        for data in IndicatorDefaultData.INDICATOR_DATA:
+            bulk_info.append(QuotationIndicatorConfig(
+                company=self.company_obj,
+                **data,
+            ))
+        QuotationIndicatorConfig.objects.bulk_create(bulk_info)
+
+    def sale_order_indicator_config(self):
+        bulk_info = []
+        for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
+            bulk_info.append(SaleOrderIndicatorConfig(
+                company=self.company_obj,
+                **data,
+            ))
+        SaleOrderIndicatorConfig.objects.bulk_create(bulk_info)
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
         self.quotation_config()
         self.sale_order_config()
         self.opportunity_config()
+        self.opportunity_config_stage()
+        self.quotation_indicator_config()
+        self.sale_order_indicator_config()
         return True
 
 

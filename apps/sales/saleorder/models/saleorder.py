@@ -198,6 +198,11 @@ class SaleOrder(DataAbstractModel):
         verbose_name='Called delivery',
         help_text='State call delivery of this',
     )
+    # sale order indicators
+    sale_order_indicators_data = models.JSONField(
+        default=list,
+        help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
+    )
 
     class Meta:
         verbose_name = 'Sale Order'
@@ -213,7 +218,7 @@ class SaleOrder(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "ORDER.CODE."
+        char = "SO"
         if not self.code:
             temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
@@ -302,6 +307,9 @@ class SaleOrderProduct(SimpleAbstractModel):
         default=0
     )
     product_subtotal_price = models.FloatField(
+        default=0
+    )
+    product_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(
@@ -431,6 +439,9 @@ class SaleOrderCost(SimpleAbstractModel):
     product_subtotal_price = models.FloatField(
         default=0
     )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
     order = models.IntegerField(
         default=1
     )
@@ -495,6 +506,11 @@ class SaleOrderExpense(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    expense_type_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
     expense_uom_title = models.CharField(
         max_length=100,
         blank=True,
@@ -523,6 +539,9 @@ class SaleOrderExpense(SimpleAbstractModel):
         default=0
     )
     expense_subtotal_price = models.FloatField(
+        default=0
+    )
+    expense_subtotal_price_after_tax = models.FloatField(
         default=0
     )
     order = models.IntegerField(

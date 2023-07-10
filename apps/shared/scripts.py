@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from apps.core.base.models import PlanApplication
+from apps.core.base.models import PlanApplication, ApplicationProperty
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -12,11 +12,15 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
-from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping
+from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping, \
+    ProductWareHouse
 from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.hr.models import Employee
+from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
+from ..sales.quotation.models import QuotationIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -228,17 +232,90 @@ def fill_tenant_company_to_runtime():
     print('Log run done!')
 
 
-def make_sure_sync_media():
-    for company_obj in Company.objects.all():
-        if not company_obj.media_company_id or not company_obj.media_company_code:
-            MediaForceAPI.call_regis_company_media_storage(company_obj)
-            print('Force media company: ', company_obj.media_company_id, company_obj.media_company_code)
+def update_quotation_sale_order_for_opportunity():
+    for opp in Opportunity.objects.all():
+        quotation = opp.quotation_opportunity.first()
+        if quotation:
+            opp.quotation = quotation
+        sale_order = opp.sale_order_opportunity.first()
+        if sale_order:
+            opp.sale_order = sale_order
+        opp.save(update_fields=['quotation', 'sale_order'])
+    print("update opportunity done.")
+    return True
 
-        # refresh company obj =
-        company_obj.refresh_from_db()
 
-        for employee_obj in Employee.objects.all():
-            if not employee_obj.media_user_id:
-                MediaForceAPI.call_regis_employee_media_storage(employee_obj)
-                print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
-    print('Sync media successfully')
+def make_sure_opportunity_config_stage():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config_stage()
+    print('Make sure opportunity config stage is done!')
+
+
+def update_is_delete_opportunity_config_stage():
+    OpportunityConfigStage.objects.exclude(
+        indicator__in=['Qualification', 'Closed Won', 'Closed Lost', 'Deal Close']
+    ).update(is_delete=True)
+
+    print('Done!')
+
+
+def make_sure_quotation_indicator_config():
+    QuotationIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).quotation_indicator_config()
+    print('Make sure quotation indicator config is done!')
+
+
+def update_data_application_property():
+    app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
+    app_property.stage_compare_data = {
+        '=': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ],
+        '?': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ]
+    }
+    app_property.save()
+    print('Update Done!')
+
+
+def make_sure_sale_order_indicator_config():
+    SaleOrderIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_indicator_config()
+    print('Make sure sale order indicator config is done!')
+
+
+def delete_delivery_picking():
+    # delete delivery
+    order_delivery = OrderDelivery.objects.all()
+    order_delivery.update(sub=None)
+    OrderDeliverySub.objects.all().delete()
+    order_delivery.delete()
+
+    # delete picking
+    order_picking = OrderPicking.objects.all()
+    order_picking.update(sub=None)
+    OrderPickingSub.objects.all().delete()
+    order_picking.delete()
+
+    # reset warehouse
+    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
+    print("delete done.")
+
+
+def update_stage_for_opportunity():
+    opp = Opportunity.objects.filter(stage=None)
+    bulk_data = []
+    for obj in opp:
+        stage = OpportunityConfigStage.objects.get(company_id=obj.company_id, indicator='Qualification')
+        bulk_data.append(OpportunityStage(opportunity=obj, stage=stage, is_current=True))
+    OpportunityStage.objects.bulk_create(bulk_data)
+    print('!Done')

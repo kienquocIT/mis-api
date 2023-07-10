@@ -10,7 +10,8 @@ from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import QuotationProduct, QuotationTerm, QuotationTermPrice, \
-    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense
+    QuotationTermDiscount, QuotationLogistic, QuotationCost, QuotationExpense, QuotationIndicatorConfig, \
+    QuotationIndicator
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg
 
 
@@ -152,6 +153,19 @@ class QuotationCommonCreate:
         return True
 
     @classmethod
+    def create_indicator(cls, validated_data, instance):
+        for quotation_indicator in validated_data['quotation_indicators_data']:
+            indicator_id = quotation_indicator.get('indicator', {}).get('id')
+            if indicator_id:
+                del quotation_indicator['indicator']
+                QuotationIndicator.objects.create(
+                    quotation=instance,
+                    indicator_id=indicator_id,
+                    **quotation_indicator
+                )
+        return True
+
+    @classmethod
     def delete_old_product(cls, instance):
         old_product = QuotationProduct.objects.filter(quotation=instance)
         if old_product:
@@ -192,7 +206,15 @@ class QuotationCommonCreate:
         return True
 
     @classmethod
+    def delete_old_indicator(cls, instance):
+        old_indicator = QuotationIndicator.objects.filter(quotation=instance)
+        if old_indicator:
+            old_indicator.delete()
+        return True
+
+    @classmethod
     def create_quotation_sub_models(cls, validated_data, instance, is_update=False):
+        # quotation tabs
         if 'quotation_products_data' in validated_data:
             if is_update is True:
                 cls.delete_old_product(instance=instance)
@@ -228,6 +250,14 @@ class QuotationCommonCreate:
                 validated_data=validated_data,
                 instance=instance
             )
+        # indicator tab
+        if 'quotation_indicators_data' in validated_data:
+            if is_update is True:
+                cls.delete_old_indicator(instance=instance)
+            cls.create_indicator(
+                validated_data=validated_data,
+                instance=instance
+            )
         return True
 
 
@@ -247,6 +277,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_opportunity(cls, value):
         try:
+            if value is None:
+                return value
             return Opportunity.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
@@ -344,7 +376,7 @@ class QuotationCommonValidate:
                 'code': expense.code
             }
         except Expense.DoesNotExist:
-            raise serializers.ValidationError({'expense': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
     def validate_price_list(cls, value):
@@ -408,3 +440,18 @@ class QuotationCommonValidate:
             }
         except Shipping.DoesNotExist:
             raise serializers.ValidationError({'shipping': ShippingMsg.SHIPPING_NOT_EXIST})
+
+    @classmethod
+    def validate_indicator(cls, value):
+        try:
+            indicator = QuotationIndicatorConfig.objects.get_current(
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(indicator.id),
+                'title': indicator.title,
+                'remark': indicator.remark
+            }
+        except QuotationIndicatorConfig.DoesNotExist:
+            raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})

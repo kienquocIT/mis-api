@@ -30,3 +30,4 @@ class ProductMsg:
     UOM_MISSING_REFERENCED_UNIT = _('Unit of Measure is missing referenced unit.')
     VALUE_GREATER_THAN_ZERO = _("Must greater than zero")
     NOT_SAVE = _('Not save value in database')
+    EXPENSE_DOES_NOT_EXIST = _('Expense does not exist.')

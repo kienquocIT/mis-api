@@ -97,23 +97,621 @@ AppProp_SaleData_Account_data = {
 }
 
 AppProp_SaleData_Quotation_data = {
-    # eeab5d9e-54c6-4e85-af75-477b740d7523 # Quotation.Quotation
+    # b9650500-aba7-44e3-b6e0-2542622702a3 # Quotation.Quotation
+    # fields total
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
-        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total revenue',
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total revenue after tax',
         'code': 'total_product',
+        'remark': 'Total revenue of quotation',
         'type': 6,
+        "content_type": "quotation.Quotation",
     },
     '148843b4-97a9-47ea-a5cf-a5cf1d557abd': {
-        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total cost',
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total cost after tax',
         'code': 'total_cost',
+        'remark': 'Total cost of quotation',
         'type': 6,
+        "content_type": "quotation.Quotation",
     },
     '78584833-3ad3-406a-8969-749e2c9b899c': {
-        'application_id': 'eeab5d9e-54c6-4e85-af75-477b740d7523',
-        'title': 'Total expense',
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total expense after tax',
         'code': 'total_expense',
+        'remark': 'Total expense of quotation',
+        'type': 6,
+        "content_type": "quotation.Quotation",
+    },
+    '9a8bef37-6812-4d8b-ba6a-dc5669e61029': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total revenue before tax',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total revenue before tax of quotation',
+        'type': 6,
+        "content_type": "quotation.Quotation",
+    },
+    'd1dcd149-6fc8-4234-870d-29497f8cfb88': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total cost before tax',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost before tax of quotation',
+        'type': 6,
+        "content_type": "quotation.Quotation",
+    },
+    '490ecfee-30d2-468a-b075-84d44b8b150e': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total expense before tax',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense before tax of quotation',
+        'type': 6,
+        "content_type": "quotation.Quotation",
+    },
+    # field of tabs Product
+    '89621079-c323-4ef8-8b67-a713e40e5680': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product title',
+        'code': 'product_title',
+        'remark': 'Title product on quotation product line',
+        'type': 1,
+    },
+    '84c4e4c5-8d6b-4c0f-afa4-45163d4d4abb': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product code',
+        'code': 'product_code',
+        'remark': 'Code product on quotation product line',
+        'type': 1,
+    },
+    'f329d568-87a7-4304-98e8-0a09b8996591': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product unit title',
+        'code': 'product_uom_title',
+        'remark': 'Title product unit on quotation product line',
+        'type': 1,
+    },
+    '73a627ef-016a-4497-ae9f-0ba92e0f721d': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product quantity',
+        'code': 'product_quantity',
+        'remark': 'Quantity product on quotation product line',
+        'type': 6,
+    },
+    '67100057-ee5b-46ef-958f-5c15e5c5e5e2': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product unit price',
+        'code': 'product_unit_price',
+        'remark': 'Price product on quotation product line',
+        'type': 6,
+    },
+    '016a8435-b564-45cb-99b6-dae38d2df5f2': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Product subtotal',
+        'code': 'product_subtotal_price',
+        'remark': 'Subtotal product on quotation product line',
+        'type': 6,
+    },
+    # field of tabs Expense
+    '3c5113e2-da79-4371-af0a-63df34262731': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense title',
+        'code': 'expense_title',
+        'remark': 'Title expense on quotation expense line',
+        'type': 1,
+    },
+    'd26c8707-e014-4772-a9b6-ae5465a9832a': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense code',
+        'code': 'expense_code',
+        'remark': 'Code expense on quotation expense line',
+        'type': 1,
+    },
+    '8ecc50e2-e7d6-4b0d-9cd5-92eec83f8f95': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense type',
+        'code': 'expense_type_title',
+        'remark': 'Type expense on quotation expense line',
+        'type': 1,
+    },
+    '2f468197-0132-44eb-9966-80deb69aa77a': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense unit title',
+        'code': 'expense_uom_title',
+        'remark': 'Title expense unit on quotation expense line',
+        'type': 1,
+    },
+    '195479c7-cf10-463f-95fb-8784f47041df': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense quantity',
+        'code': 'expense_quantity',
+        'remark': 'Quantity expense on quotation expense line',
+        'type': 6,
+    },
+    'ad5ca6e1-8788-40ce-acac-9850a49a6565': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense unit price',
+        'code': 'expense_price',
+        'remark': 'Price expense on quotation expense line',
+        'type': 6,
+    },
+    'f0251c13-0480-4ac1-94d3-ebe03afb93bf': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense subtotal before tax',
+        'code': 'expense_subtotal_price',
+        'remark': 'Subtotal before tax expense on quotation expense line',
+        'type': 6,
+    },
+    '6c6af508-c5b0-4295-b92a-bfc53dfad9d3': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Expense subtotal after tax',
+        'code': 'expense_subtotal_price_after_tax',
+        'remark': 'Subtotal after tax expense on quotation expense line',
+        'type': 6,
+    },
+}
+
+AppProp_SaleData_Opportunity_data = {
+    # 296a1410-8d72-46a8-a0a1-1821f196e66c # Opportunity.Opportunity
+    'e4e0c770-a0d1-492d-beae-3b31dcb391e1': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Customer',
+        'code': 'customer',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None
+                },
+                {
+                    'id': 1,
+                    'value': '1-10 billions'
+                },
+                {
+                    'id': 2,
+                    'value': '10-20 billions'
+                },
+                {
+                    'id': 3,
+                    'value': '20-50 billions'
+                },
+                {
+                    'id': 4,
+                    'value': '50-200 billions'
+                },
+                {
+                    'id': 5,
+                    'value': '200-1000 billions'
+                },
+                {
+                    'id': 6,
+                    'value': '> 1000 billions'
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '496aca60-bf3d-4879-a4cb-6eb1ebaf4ce8': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Product Category',
+        'code': 'product_category',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '36233e9a-8dc9-4a7c-a6ad-504bac91d4cb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Budget',
+        'code': 'budget',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '195440c2-41bc-43f1-b387-fc5cd26401df': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Open Date',
+        'code': 'open_date',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '43009b1a-a25d-43be-ab97-47540a2f00cb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Close Date',
+        'code': 'close_date',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '35dbf6f2-78a8-4286-8cf3-b95de5c78873': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Decision maker',
+        'code': 'decision_maker',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    '92c8035a-5372-41c1-9a8e-4b048d8af406': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Lost By Other Reason',
+        'code': 'lost_by_other_reason',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'checked',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'checked',
+                }
+            ]
+        }
+    },
+    '39b50254-e32d-473b-8380-f3b7765af434': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Product.Line.Detail',
+        'code': 'product_line_detail',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    'c8fa79ae-2490-4286-af25-3407e129fedb': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Competitor.Win',
+        'code': 'competitor_win',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    'acab2c1e-74f2-421b-8838-7aa55c217f72': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Quotation.confirm',
+        'code': 'quotation_confirm',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ]
+        }
+    },
+    '9db4e835-c647-4de5-aa1c-43304ddeccd1': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'SaleOrder.status',
+        'code': 'sale_order_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': 'Approved',
+                }
+            ]
+        }
+    },
+    'b5aa8550-7fc5-4cb8-a952-b6904b2599e5': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'SaleOrder.Delivery.Status',
+        'code': 'sale_order_delivery_status',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': None,
+                }
+            ]
+        }
+    },
+    'f436053d-f15a-4505-b368-9ccdf5afb5f6': {
+        'application_id': '296a1410-8d72-46a8-a0a1-1821f196e66c',
+        'title': 'Close Deal',
+        'code': 'close_deal',
+        'type': 1,
+        "content_type": "sales_opportunity",
+        'opp_stage_operator': ['=', '≠'],
+        'stage_compare_data': {
+            '=': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ],
+            '≠': [
+                {
+                    'id': 0,
+                    'value': True,
+                }
+            ]
+        }
+    },
+}
+
+AppProp_SaleData_SaleOrder_data = {
+    # a870e392-9ad2-4fe2-9baa-298a38691cf2 # saleorder.SaleOrder
+    # fields total
+    '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total revenue after tax',
+        'code': 'total_product',
+        'remark': 'Total revenue of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '1b93c48c-fbbf-460e-8bd6-00df89439c1c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost after tax',
+        'code': 'total_cost',
+        'remark': 'Total cost of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    'f919ddc7-bcb1-42c0-a84d-01cd48c7e9b4': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense after tax',
+        'code': 'total_expense',
+        'remark': 'Total expense of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '474ae19c-7dde-4c6d-b9cd-ad6b19af21ce': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total revenue before tax',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total revenue before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '3b4cf21c-93fb-4e67-bb02-2eed12ef334f': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost before tax',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    '9df853f6-522d-45cd-a37f-a8f18f3e496b': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense before tax',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense before tax of sale order',
+        'type': 6,
+        "content_type": "saleorder.SaleOrder",
+    },
+    # field of tabs Product
+    'e43e140e-beb1-49f0-a776-404c491fc1da': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product title',
+        'code': 'product_title',
+        'remark': 'Title product on sale order product line',
+        'type': 1,
+    },
+    '1f521c5b-0d55-4562-afaa-620496ddd17c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product code',
+        'code': 'product_code',
+        'remark': 'Code product on sale order product line',
+        'type': 1,
+    },
+    '3da12483-3c54-4148-935c-bca881bffcaf': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product unit title',
+        'code': 'product_uom_title',
+        'remark': 'Title product unit on sale order product line',
+        'type': 1,
+    },
+    'ab6ef6bc-e836-400e-8a89-57503c21f79c': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product quantity',
+        'code': 'product_quantity',
+        'remark': 'Quantity product on sale order product line',
+        'type': 6,
+    },
+    'f6e535a7-65ef-41ad-93c4-216bb82b87ae': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product unit price',
+        'code': 'product_unit_price',
+        'remark': 'Price product on sale order product line',
+        'type': 6,
+    },
+    '0d573721-bf7c-4281-aea4-60abf26c997e': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Product subtotal',
+        'code': 'product_subtotal_price',
+        'remark': 'Subtotal product on sale order product line',
+        'type': 6,
+    },
+    # field of tabs Expense
+    'b9fe74bf-44b0-462c-bbfd-636efd480150': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense title',
+        'code': 'expense_title',
+        'remark': 'Title expense on sale order expense line',
+        'type': 1,
+    },
+    '4136e7d1-eed3-4e3b-93d8-80a7c04d2d26': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense code',
+        'code': 'expense_code',
+        'remark': 'Code expense on sale order expense line',
+        'type': 1,
+    },
+    '374d7846-99e0-4af0-8073-3e048cec8c9d': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense type',
+        'code': 'expense_type_title',
+        'remark': 'Type expense on sale order expense line',
+        'type': 1,
+    },
+    '39e65aee-bfcd-465e-ac0b-78604881549d': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense unit title',
+        'code': 'expense_uom_title',
+        'remark': 'Title expense unit on sale order expense line',
+        'type': 1,
+    },
+    '57933f39-3e0e-4754-8205-314573da97fe': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense quantity',
+        'code': 'expense_quantity',
+        'remark': 'Quantity expense on sale order expense line',
+        'type': 6,
+    },
+    'e4e6d755-4f14-402a-ac2c-d16b1cae7dbd': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense unit price',
+        'code': 'expense_price',
+        'remark': 'Price expense on sale order expense line',
+        'type': 6,
+    },
+    '09aa4090-762d-4942-9676-24da8340284e': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense subtotal before tax',
+        'code': 'expense_subtotal_price',
+        'remark': 'Subtotal before tax expense on sale order expense line',
+        'type': 6,
+    },
+    '8b4cdf06-400f-45a7-895f-fcf3886275d7': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Expense subtotal after tax',
+        'code': 'expense_subtotal_price_after_tax',
+        'remark': 'Subtotal after tax expense on sale order expense line',
         'type': 6,
     },
 }
@@ -121,5 +719,7 @@ AppProp_SaleData_Quotation_data = {
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
-    # **AppProp_SaleData_Quotation_data
+    **AppProp_SaleData_Quotation_data,
+    **AppProp_SaleData_Opportunity_data,
+    **AppProp_SaleData_SaleOrder_data,
 }

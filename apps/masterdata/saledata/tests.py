@@ -916,7 +916,7 @@ class UoMTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'group'],
+            ['id', 'code', 'title', 'group', 'ratio'],
             check_sum_second=True,
         )
         return response

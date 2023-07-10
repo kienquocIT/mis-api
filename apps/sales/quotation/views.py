@@ -1,11 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, Indicator
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
-    IndicatorUpdateSerializer
+    IndicatorUpdateSerializer, IndicatorCompanyRestoreSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -22,7 +22,7 @@ class QuotationList(
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -138,7 +138,7 @@ class QuotationIndicatorList(
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Indicator.objects
+    queryset = QuotationIndicatorConfig.objects
     filterset_fields = ['application_code']
     serializer_list = IndicatorListSerializer
     serializer_create = IndicatorCreateSerializer
@@ -157,7 +157,7 @@ class QuotationIndicatorList(
     @swagger_auto_schema(
         operation_summary="Create Quotation Indicator",
         operation_description="Create new Quotation Indicator",
-        request_body=QuotationCreateSerializer,
+        request_body=IndicatorCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
@@ -169,7 +169,7 @@ class QuotationIndicatorDetail(
     BaseUpdateMixin,
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Indicator.objects
+    queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorUpdateSerializer
 
@@ -185,6 +185,24 @@ class QuotationIndicatorDetail(
         operation_summary="Update Quotation Indicator",
         operation_description="Update Quotation Indicator by ID",
         request_body=IndicatorUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class QuotationIndicatorCompanyRestore(
+    BaseUpdateMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = QuotationIndicatorConfig.objects
+    serializer_detail = IndicatorListSerializer
+    serializer_update = IndicatorCompanyRestoreSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Restore Quotation Indicator Of Company",
+        operation_description="Restore Quotation Indicator Of Company",
+        request_body=IndicatorCompanyRestoreSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):

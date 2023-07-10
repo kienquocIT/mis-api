@@ -80,9 +80,4 @@ class PaymentCostItemsList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
-        kwargs.update(
-            {
-                'sale_code_mapped': request.query_params['filter_sale_code'],
-            }
-        )
         return self.list(request, *args, **kwargs)
