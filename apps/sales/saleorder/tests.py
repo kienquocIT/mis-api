@@ -1,3 +1,157 @@
-from django.test import TestCase
+from django.urls import reverse
+from rest_framework import status
+
+from apps.masterdata.saledata.tests import ProductTestCase, TaxAndTaxCategoryTestCase, IndustryTestCase
+from apps.shared import AdvanceTestCase
+from rest_framework.test import APIClient
+
 
 # Create your tests here.
+
+
+class TestCaseSaleOrder(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_industry(self):
+        response = IndustryTestCase.test_create_new(self)
+        return response
+
+    def get_account_type(self):
+        url = reverse("AccountTypeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_config_payment_term(self):
+        data = {
+            'title': 'config payment term 01',
+            'apply_for': 1,
+            'remark': 'lorem ipsum dolor sit amet.',
+            'term': [
+                {
+                    "value": '100% sau khi ký HD',
+                    "unit_type": 1,
+                    "day_type": 1,
+                    "no_of_days": "1",
+                    "after": 1
+                }
+            ],
+        }
+        url = reverse('ConfigPaymentTermList')
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_create_sale_order(self):
+        data_salutation = {  # noqa
+            "code": "S01ORDER",
+            "title": "MrORDER",
+            "description": "A man"
+        }
+        url_salutation = reverse('SalutationList')
+        response_salutation = self.client.post(url_salutation, data_salutation, format='json')
+        url_contact = reverse("ContactList")
+        salutation = response_salutation.data['result']['id']
+        employee = self.get_employee().data['result'][0]['id']
+        data_contact = {
+            "owner": employee,
+            "job_title": "Giám đốc nè",
+            "biography": "không có",
+            "fullname": "Trịnh Tuấn Nam",
+            "salutation": salutation,
+            "phone": "string",
+            "mobile": "string",
+            "email": "string",
+            "report_to": None,
+            "address_information": {},
+            "additional_information": {},
+            "account_name": None,
+            "system_status": 0
+        }
+        response_contact = self.client.post(url_contact, data_contact, format='json')
+        url_account_group = reverse("AccountGroupList")
+        data_account_group = {  # noqa
+            "code": "AG01ORDER",
+            "title": "Nhóm khách hàng test đơn hàng",
+            "description": ""
+        }
+        response_account_group = self.client.post(url_account_group, data_account_group, format='json')
+        account_type = self.get_account_type().data['result'][0]['id']
+        account_group = response_account_group.data['result']['id']
+        contact = response_contact.data['result']['id']
+        industry = self.create_industry().data['result']['id']
+        data_account = {
+            "name": "Công ty hạt giống, phân bón Trúc Phượng",
+            "code": "AC01ORDER",
+            "website": "trucphuong.com.vn",
+            "account_type": [account_type],
+            "owner": contact,
+            "manager": {employee},
+            "parent_account": None,
+            "account_group": account_group,
+            "tax_code": "string",
+            "industry": industry,
+            "annual_revenue": 1,
+            "total_employees": 1,
+            "phone": "string",
+            "email": "string",
+            "shipping_address": {},
+            "billing_address": {},
+            "contact_select_list": [
+                contact
+            ],
+            "contact_primary": contact,
+            "account_type_selection": 0,
+            "system_status": 0
+        }
+        url = reverse("AccountList")
+        response_account = self.client.post(url, data_account, format='json')
+        opportunity = None
+        customer = response_account.data['result']['id']
+        employee = self.get_employee().data['result'][0]['id']
+        payment_term = self.test_create_config_payment_term().data['result']['id']
+        data = {
+            "title": "Đơn hàng test",
+            "opportunity": opportunity,
+            "customer": customer,
+            "contact": contact,
+            "sale_person": employee,
+            "payment_term": payment_term,
+        }
+        url = reverse("SaleOrderList")
+        response = self.client.post(url, data, format='json')
+
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'date_created',
+                'total_product',
+                'system_status',
+                'opportunity',
+                'quotation',
+                'delivery_call',
+            ],
+            check_sum_second=True,
+        )
+        return response
