@@ -51,7 +51,9 @@ class Files(MasterDataAbstractModel):
 
     @classmethod
     def regis_media_file(
-            cls, relate_app, relate_doc_id, relate_app_code=None, employee_created_id=None, **kwargs
+            cls, relate_app, relate_doc_id, relate_app_code=None,
+            user_obj=None,
+            **kwargs
     ) -> Union[ValueError, models.Model]:
         # get file properties from media_result
         media_result = kwargs.pop('media_result', {})
@@ -64,23 +66,24 @@ class Files(MasterDataAbstractModel):
                     'file_type': media_result['file_type'],
                 }
             )
-        print(kwargs)
         # get relate_app_code from relate_app if dont have value
         if relate_app and not relate_app_code:
             relate_app_code = relate_app.code
         # get employee_id from current_user if dont have value
-        if not employee_created_id:
+        if not user_obj:
             user_obj = get_current_user()
-            if user_obj and isinstance(user_obj, models.Model):
-                employee_created_id = getattr(user_obj, 'employee_current_id', None)
-        # check then call create
-        print(relate_app, relate_doc_id, relate_app_code, employee_created_id)
-        if relate_app and relate_doc_id and relate_app_code and employee_created_id:
-            return cls.objects.create(
-                relate_app=relate_app, relate_app_code=relate_app_code, relate_doc_id=relate_doc_id,
-                employee_created_id=employee_created_id,
-                **kwargs
-            )
+        if user_obj and isinstance(user_obj, models.Model) and hasattr(user_obj, 'tenant_current'):
+            tenant_id = getattr(user_obj, 'tenant_current_id', None)
+            company_id = getattr(user_obj, 'company_current_id', None)
+            employee_created_id = getattr(user_obj, 'employee_current_id', None)
+
+            # check then call create
+            if relate_app and relate_doc_id and relate_app_code and employee_created_id and tenant_id and company_id:
+                return cls.objects.create(
+                    relate_app=relate_app, relate_app_code=relate_app_code, relate_doc_id=relate_doc_id,
+                    employee_created_id=employee_created_id,
+                    **kwargs
+                )
         raise ValueError('SOME_REQUIRED_DATA_DONT_HAVE_VALUE')
 
     def save(self, *args, **kwargs):
