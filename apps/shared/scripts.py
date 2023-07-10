@@ -1,5 +1,5 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, Expense, ExpenseGeneral
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
@@ -336,3 +336,28 @@ def make_sure_sync_media(re_sync=False):
                     MediaForceAPI.call_sync_employee(employee_obj)
                     print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
     print('Sync media successfully')
+
+
+def update_fk_expense_price():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense = item.expense_general.expense
+        item.save()
+    print('!Done')
+
+def update_fk_expense_price_expense_general():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense_general = None
+        item.save()
+    print('!Done')
+
+def update_data_expense():
+    expense = ExpenseGeneral.objects.all()
+    for item in expense:
+        item.expense.expense_type = item.expense_type
+        item.expense.uom_group = item.uom_group
+        item.expense.uom = item.uom
+        item.expense.tax_code = item.tax_code
+        item.expense.save()
+    print('Done !')
