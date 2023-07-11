@@ -1,5 +1,5 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ExpenseGeneral
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
@@ -345,21 +345,13 @@ def update_fk_expense_price():
         item.save()
     print('!Done')
 
+
 def update_fk_expense_price_expense_general():
     expense_price = ExpensePrice.objects.select_related('expense_general').all()
     for item in expense_price:
         item.expense_general = None
         item.save()
     print('!Done')
-
-def update_data_expense():
-    expense = ExpenseGeneral.objects.all()
-    for item in expense:
-        item.expense.expense_type = item.expense_type
-        item.expense.uom_group = item.uom_group
-        item.expense.uom = item.uom
-        item.expense.save()
-    print('Done !')
 
 
 def edit_uom_group_field_to_default():

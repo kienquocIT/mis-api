@@ -2243,7 +2243,7 @@ class ExpenseTestCase(AdvanceTestCase):
             response.data['result'],
             ['id', 'title', 'code', 'date_created', 'date_modified', 'is_active', 'is_delete',
              'employee_created', 'employee_modified', 'tenant', 'company', 'price_list', 'expense_type', 'uom_group',
-             'uom', 'general_information', 'role'],
+             'uom', 'role'],
             check_sum_second=True,
         )
         return response, price_list
