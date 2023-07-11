@@ -313,6 +313,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, **kwargs)
 
 
+# Products use for sale applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     serializer_list = ProductForSaleListSerializer

@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models.product import Expense
 from apps.masterdata.saledata.serializers.expense import ExpenseListSerializer, ExpenseCreateSerializer, \
-    ExpenseDetailSerializer, ExpenseUpdateSerializer
+    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -14,6 +14,14 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ExpenseDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'expense_type',
+        ).prefetch_related(
+            'price_list',
+            'role'
+        )
 
     @swagger_auto_schema(
         operation_summary="Expense list",
@@ -43,7 +51,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             'expense_type',
         ).prefetch_related(
-            'expense'
+            'expense',
         )
 
     @swagger_auto_schema(
@@ -62,3 +70,24 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# Expenses use for sale applications
+class ExpenseForSaleList(BaseListMixin):
+    queryset = Expense.objects
+    serializer_list = ExpenseForSaleListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "expense_type",
+            "uom",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Expense for sale list",
+        operation_description="Expense for sale list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

@@ -293,7 +293,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         instance.picked_quantity = total
         instance.state = 1
         instance.save(
-            update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'to_location', 'remarks',
+            update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'ware_house_data', 'to_location', 'remarks',
                            'date_done', 'state', 'estimated_delivery_date']
         )
 
