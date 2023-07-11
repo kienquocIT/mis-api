@@ -29,6 +29,7 @@ class OpportunityTaskStatus(SimpleAbstractModel):
         choices=TASK_KIND,
         default=0,
     )
+    task_color = models.CharField(verbose_name='Status color', max_length=100, default=None, null=True)
 
     class Meta:
         verbose_name = 'Task Status'
@@ -58,6 +59,7 @@ class OpportunityTask(MasterDataAbstractModel):
         Opportunity,
         on_delete=models.CASCADE,
         verbose_name='Opportunity code',
+        null=True,
     )
     opportunity_data = models.JSONField(
         default=dict,

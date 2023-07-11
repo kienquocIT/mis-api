@@ -141,3 +141,15 @@ TASK_KIND = (
     (2, 'Completed'),
     (3, 'Pending')
 )
+
+TASK_IN_OPTION = (
+    (0, 'None'),
+    (1, 'only member in'),
+    (2, 'only staff in dept'),
+    (3, '1 & 2 both')
+)
+TASK_OUT_OPTION = (
+    (0, 'None'),
+    (1, 'only member in dept'),
+    (2, 'only staff in dept'),
+)

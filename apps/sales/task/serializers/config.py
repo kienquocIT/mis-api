@@ -19,26 +19,30 @@ class TaskConfigDetailSerializer(serializers.ModelSerializer):
         if tasks_stt.exists():
             for status in tasks_stt:
                 count = OpportunityTask.objects.filter(task_status=status, is_delete=False).count()
-                task_list.append({
-                    'id': str(status.id),
-                    'name': status.title,
-                    'translate_name': status.translate_name,
-                    'order': status.order,
-                    'is_edit': status.is_edit,
-                    'count': count
-                })
+                task_list.append(
+                    {
+                        'id': str(status.id),
+                        'name': status.title,
+                        'translate_name': status.translate_name,
+                        'order': status.order,
+                        'is_edit': status.is_edit,
+                        'count': count,
+                        'task_color': status.task_color
+                    }
+                )
         return task_list
 
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('id', 'list_status')
+        fields = ('id', 'list_status', 'is_edit_date', 'is_edit_est', 'is_in_assign', 'in_assign_opt', 'is_out_assign',
+                  'out_assign_opt')
 
 
 class TaskConfigUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('list_status', )
+        fields = ('list_status', 'is_edit_date', 'is_edit_est', 'is_in_assign', 'in_assign_opt', 'is_out_assign',
+                  'out_assign_opt')
 
     @classmethod
     def handle_task_before(cls, obj_status, instance):
@@ -58,6 +62,7 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                 task.task_status = todo_status
                 task_edited.append(task)
             OpportunityTask.objects.bulk_update(task_edited, fields=['task_status'])
+
     @classmethod
     def update_task_status(cls, lst_status, instance):
         if lst_status and isinstance(lst_status, list):
@@ -72,6 +77,7 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                             title=item['name'],
                             translate_name=item['translate_name'],
                             order=item['order'],
+                            task_color=item['task_color'],
                         )
                     )
                     dict_status[item['id']] = item
@@ -82,14 +88,16 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                             translate_name=item['translate_name'],
                             order=item['order'],
                             is_edit=True,
-                            task_config=instance
+                            task_config=instance,
+                            task_color=item['task_color'],
                         )
                     )
-            '''
-                1 xử lý các stt bị xoá
-                2 update các stt đang có
-                3 tạo mới các status chưa có
-            '''
+
+            # update status step by step
+            #
+            # 1 xử lý các stt bị xoá
+            # 2 update các stt đang có
+            # 3 tạo mới các status chưa có
 
             check_stt_list = OpportunityTaskStatus.objects.filter(task_config=instance, is_edit=1)
             if check_stt_list.count():
@@ -98,7 +106,8 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                     if stt_id not in dict_status:
                         cls.handle_task_before(stt, instance)
                         stt.delete()
-            OpportunityTaskStatus.objects.bulk_update(has_status, fields=['title', 'translate_name', 'order'])
+            OpportunityTaskStatus.objects.bulk_update(has_status, fields=['title', 'translate_name', 'order',
+                                                                          'task_color'])
             OpportunityTaskStatus.objects.bulk_create(new_status)
 
     def update(self, instance, validated_data):

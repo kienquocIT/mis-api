@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig
+from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus
 from apps.sales.task.serializers import OpportunityTaskListSerializer, OpportunityTaskCreateSerializer, \
     OpportunityTaskDetailSerializer, OpportunityTaskUpdateSTTSerializer, OpportunityTaskLogWorkSerializer, \
     OpportunityTaskStatusListSerializer, OpportunityTaskUpdateSerializer
@@ -43,6 +43,8 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     queryset = OpportunityTask.objects
     serializer_detail = OpportunityTaskDetailSerializer
     serializer_update = OpportunityTaskUpdateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return self.queryset.select_related('parent_n', 'assign_to', 'employee_created')
@@ -61,6 +63,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee': request.user.employee_current
+        }
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(
@@ -114,8 +119,7 @@ class OpportunityTaskStatusList(BaseListMixin):
         task_config = self.request.user.company_current.opportunity_task_config_company
         if task_config:
             return super().get_queryset().filter(task_config_id=task_config.id)
-        else:
-            return super().get_queryset().none()
+        return super().get_queryset().none()
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Status List",
