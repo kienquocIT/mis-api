@@ -370,4 +370,3 @@ def update_win_rate_delivery_stage():
         indicator='Delivery'
     ).update(win_rate=100)
     print('Done!')
-
