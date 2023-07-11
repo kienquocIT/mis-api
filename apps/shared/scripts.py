@@ -363,3 +363,9 @@ def edit_uom_group_field_to_default():
 def delete_all_opportunity_call_log():
     OpportunityCallLog.objects.all().delete()
     return True
+
+
+def make_sure_task_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).task_config()
+    print('Make sure Task config is done!')
