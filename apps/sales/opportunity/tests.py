@@ -257,3 +257,59 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
 
         return response
+
+    def test_get_list_opportunity(self):
+        self.test_create_opportunity()
+        url = reverse('OpportunityList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
+             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
+            check_sum_second=True,
+        )
+
+    def test_get_detail_opportunity(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_create_opportunity()
+            data_id = data_created.data['result']['id']
+        url = reverse("OpportunityDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'customer', 'end_customer', 'product_category', 'budget_value', 'open_date',
+             'close_date', 'decision_maker', 'opportunity_product_datas', 'total_product_pretax_amount',
+             'total_product_tax', 'total_product', 'opportunity_competitors_datas', 'opportunity_contact_role_datas',
+             'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person', 'opportunity_sale_team_datas',
+             'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+

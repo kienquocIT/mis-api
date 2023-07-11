@@ -336,3 +336,10 @@ def make_sure_sync_media(re_sync=False):
                     MediaForceAPI.call_sync_employee(employee_obj)
                     print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
     print('Sync media successfully')
+
+
+def update_win_rate_delivery_stage():
+    OpportunityConfigStage.objects.filter(
+        indicator='Delivery'
+    ).update(win_rate=100)
+    print('Done!')

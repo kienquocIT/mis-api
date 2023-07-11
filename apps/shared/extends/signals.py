@@ -342,7 +342,7 @@ class ConfigDefaultData:
         {
             'indicator': 'Delivery',
             'description': 'Đang giao hàng/triển khai',
-            'win_rate': 0,
+            'win_rate': 100,
             'is_default': True,
             'logical_operator': 0,
             'is_deal_closed': False,
