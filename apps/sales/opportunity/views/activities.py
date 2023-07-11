@@ -28,8 +28,8 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Create Opportunity",
-        operation_description="Create new Opportunity",
+        operation_summary="Create OpportunityCallLog",
+        operation_description="Create new OpportunityCallLog",
         request_body=OpportunityCallLogCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')

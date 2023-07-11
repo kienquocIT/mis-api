@@ -40,9 +40,9 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = ExpenseUpdateSerializer
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            'expense__expenseprice_set'
-        ).select_related(
+        return super().get_queryset().select_related(
+            'expense_type',
+        ).prefetch_related(
             'expense'
         )
 

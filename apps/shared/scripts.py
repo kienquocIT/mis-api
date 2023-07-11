@@ -1,6 +1,6 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ExpenseGeneral
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -19,7 +19,7 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
@@ -338,8 +338,44 @@ def make_sure_sync_media(re_sync=False):
     print('Sync media successfully')
 
 
+def update_fk_expense_price():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense = item.expense_general.expense
+        item.save()
+    print('!Done')
+
+def update_fk_expense_price_expense_general():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense_general = None
+        item.save()
+    print('!Done')
+
+def update_data_expense():
+    expense = ExpenseGeneral.objects.all()
+    for item in expense:
+        item.expense.expense_type = item.expense_type
+        item.expense.uom_group = item.uom_group
+        item.expense.uom = item.uom
+        item.expense.save()
+    print('Done !')
+
+
+def edit_uom_group_field_to_default():
+    UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
+    UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    return True
+
+
+def delete_all_opportunity_call_log():
+    OpportunityCallLog.objects.all().delete()
+    return True
+
+
 def update_win_rate_delivery_stage():
     OpportunityConfigStage.objects.filter(
         indicator='Delivery'
     ).update(win_rate=100)
     print('Done!')
+
