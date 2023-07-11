@@ -45,6 +45,8 @@ class ExpenseType(MasterDataAbstractModel):
 
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
+    is_default = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'
         verbose_name_plural = 'UnitsOfMeasureGroup'

@@ -162,7 +162,7 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('id', 'title', 'referenced_unit')
+        fields = ('id', 'title', 'is_default', 'referenced_unit')
 
     @classmethod
     def get_referenced_unit(cls, obj):

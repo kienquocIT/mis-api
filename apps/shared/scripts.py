@@ -1,6 +1,6 @@
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ExpenseGeneral
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -19,7 +19,7 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
@@ -360,3 +360,14 @@ def update_data_expense():
         item.expense.uom = item.uom
         item.expense.save()
     print('Done !')
+
+
+def edit_uom_group_field_to_default():
+    UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
+    UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    return True
+
+
+def delete_all_opportunity_call_log():
+    OpportunityCallLog.objects.all().delete()
+    return True

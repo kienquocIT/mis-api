@@ -20,7 +20,7 @@ class OpportunityCallLog(SimpleAbstractModel):
         related_name="opportunity_calllog_contact",
     )
     call_date = models.DateTimeField()
-    result = models.CharField(max_length=250, null=True)
+    input_result = models.CharField(max_length=250, null=True)
     repeat = models.BooleanField(default=False)
 
     class Meta:

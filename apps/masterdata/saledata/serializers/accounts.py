@@ -188,6 +188,7 @@ class IndustryUpdateSerializer(serializers.ModelSerializer):
 
 # Account
 class AccountListSerializer(serializers.ModelSerializer):
+    contact_mapped = serializers.SerializerMethodField()
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
@@ -211,7 +212,8 @@ class AccountListSerializer(serializers.ModelSerializer):
             "shipping_address",
             "billing_address",
             "bank_accounts_information",
-            'annual_revenue'
+            'annual_revenue',
+            'contact_mapped'
         )
 
     @classmethod
@@ -241,6 +243,20 @@ class AccountListSerializer(serializers.ModelSerializer):
                 'title': obj.industry.title
             }
         return {}
+
+    @classmethod
+    def get_contact_mapped(cls, obj):
+        contact_mapped = Contact.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            account_name=obj
+        )
+        if contact_mapped.count() > 0:
+            list_contact_mapped = []
+            for i in contact_mapped:
+                list_contact_mapped.append(str(i.id))
+            return list_contact_mapped
+        return []
 
 
 def create_employee_map_account(instance):
