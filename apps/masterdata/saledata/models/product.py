@@ -285,6 +285,7 @@ class ExpensePrice(SimpleAbstractModel):
         Expense,
         on_delete=models.CASCADE,
         related_name='expense',
+        null=True,
     )
 
     price = models.ForeignKey(
