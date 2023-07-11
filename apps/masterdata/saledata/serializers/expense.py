@@ -288,3 +288,39 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
             instance
         )
         return True
+
+
+class ExpenseForSaleListSerializer(serializers.ModelSerializer):
+    expense_type = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Expense
+        fields = (
+            'id',
+            'code',
+            'title',
+            'price_list',
+            'expense_type',
+            'uom',
+        )
+
+    @classmethod
+    def get_expense_type(cls, obj):
+        if obj.expense_type:
+            return {
+                'id': obj.expense_type_id,
+                'title': obj.expense_type.title,
+                'code': obj.expense_type.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
+            }
+        return {}
