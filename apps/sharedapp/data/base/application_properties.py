@@ -126,8 +126,8 @@ AppProp_SaleData_Quotation_data = {
     '9a8bef37-6812-4d8b-ba6a-dc5669e61029': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Total revenue before tax',
-        'code': 'total_product_pretax_amount',
-        'remark': 'Total revenue before tax of quotation',
+        'code': 'total_product_revenue_before_tax',
+        'remark': 'Total revenue before tax of quotation (after discount on total, apply promotion,...)',
         'type': 6,
         "content_type": "quotation.Quotation",
     },
@@ -593,8 +593,8 @@ AppProp_SaleData_SaleOrder_data = {
     '474ae19c-7dde-4c6d-b9cd-ad6b19af21ce': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Total revenue before tax',
-        'code': 'total_product_pretax_amount',
-        'remark': 'Total revenue before tax of sale order',
+        'code': 'total_product_revenue_before_tax',
+        'remark': 'Total revenue before tax of sale order (after discount on total, apply promotion,...)',
         'type': 6,
         "content_type": "saleorder.SaleOrder",
     },

@@ -165,6 +165,10 @@ class Quotation(DataAbstractModel):
         default=0,
         help_text="total amount of tab product"
     )
+    total_product_revenue_before_tax = models.FloatField(
+        default=0,
+        help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
+    )
     # total amount of costs
     total_cost_pretax_amount = models.FloatField(
         default=0,

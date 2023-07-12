@@ -300,7 +300,7 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'price_list',
+            # 'price_list',
             'expense_type',
             'uom',
         )
