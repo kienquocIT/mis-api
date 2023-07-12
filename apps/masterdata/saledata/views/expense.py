@@ -18,9 +18,6 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'expense_type',
-        ).prefetch_related(
-            'price_list',
-            'role'
         )
 
     @swagger_auto_schema(

@@ -16,7 +16,6 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'price_list',
             'expense_type',
             'uom_group',
             'uom',
