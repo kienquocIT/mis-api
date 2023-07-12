@@ -372,7 +372,12 @@ def make_sure_task_config():
 
 
 def update_win_rate_delivery_stage():
-    OpportunityConfigStage.objects.filter(
-        indicator='Delivery'
-    ).update(win_rate=100)
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        for stage in opp.stage.all():
+            if stage.indicator == 'Delivery':
+                stage.win_rate = 100
+                stage.save()
+                opp.win_rate = 100
+                opp.save()
     print('Done!')
