@@ -67,6 +67,10 @@ class OpportunityConfigStageCreateSerializer(serializers.ModelSerializer):
             'win_rate',
         )
 
+    def create(self, validated_data):
+        stage = OpportunityConfigStage.objects.create(**validated_data, is_delete=True)
+        return stage
+
 
 class OpportunityConfigStageDetailSerializer(serializers.ModelSerializer):
     class Meta:
