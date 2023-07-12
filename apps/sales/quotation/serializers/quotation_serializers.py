@@ -327,6 +327,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -463,6 +464,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -582,6 +584,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',

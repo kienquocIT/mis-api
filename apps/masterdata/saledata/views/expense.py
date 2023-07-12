@@ -15,6 +15,11 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'expense_type',
+        )
+
     @swagger_auto_schema(
         operation_summary="Expense list",
         operation_description="Expense list",
@@ -43,7 +48,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             'expense_type',
         ).prefetch_related(
-            'expense'
+            'expense',
         )
 
     @swagger_auto_schema(

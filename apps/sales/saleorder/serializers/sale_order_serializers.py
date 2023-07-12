@@ -306,7 +306,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'payment_term',
             'quotation',
             'system_status',
-            # quotation tabs
+            # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
             'sale_order_costs_data',
@@ -317,6 +317,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -462,6 +463,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -587,6 +589,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',

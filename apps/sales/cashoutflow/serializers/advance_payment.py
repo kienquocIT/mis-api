@@ -54,7 +54,10 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                         'id': item.expense_id,
                         'code': item.expense.code,
                         'title': item.expense.title,
-                        'type': item.expense.general_information['expense_type'],
+                        'type': {
+                            'id': item.expense.expense_type.id,
+                            'title': item.expense.expense_type.title
+                        },
                     },
                     'tax': tax_dict,
                     'expense_quantity': item.expense_quantity,
@@ -282,7 +285,10 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'id': item.expense_id,
                         'code': item.expense.code,
                         'title': item.expense.title,
-                        'type': item.expense.general_information['expense_type'],
+                        'type': {
+                            'id': item.expense.expense_type.id,
+                            'title': item.expense.expense_type.title
+                        },
                     },
                     'tax': tax_dict,
                     'expense_quantity': item.expense_quantity,
