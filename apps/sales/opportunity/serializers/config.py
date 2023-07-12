@@ -81,6 +81,7 @@ class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityConfigStage
         fields = (
+            'logical_operator',
             'condition_datas',
             'win_rate',
         )
