@@ -16,7 +16,6 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'price_list',
             'expense_type',
             'uom_group',
             'uom',
@@ -133,7 +132,6 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             )
             data_bulk.append(expense_role)
         ExpenseRole.objects.bulk_create(data_bulk)
-
 
     @staticmethod
     def common_create_expense_price(data_price_list, currency_using, uom, instance):

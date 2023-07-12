@@ -102,8 +102,8 @@ class OpportunityConfigStageList(
         )
 
     @swagger_auto_schema(
-        operation_summary="Opportunity Customer Decision Factor List",
-        operation_description="Get Opportunity Customer Decision Factor",
+        operation_summary="Opportunity Config Stage List",
+        operation_description="Get Opportunity Config Stage",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

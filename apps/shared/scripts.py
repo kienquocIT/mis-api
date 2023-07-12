@@ -369,3 +369,15 @@ def make_sure_task_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).task_config()
     print('Make sure Task config is done!')
+
+
+def update_win_rate_delivery_stage():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        for stage in opp.stage.all():
+            if stage.indicator == 'Delivery':
+                opp.win_rate = 100
+                opp.save()
+
+    OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
+    print('Done!')
