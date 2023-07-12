@@ -376,8 +376,8 @@ def update_win_rate_delivery_stage():
     for opp in opps:
         for stage in opp.stage.all():
             if stage.indicator == 'Delivery':
-                stage.win_rate = 100
-                stage.save()
                 opp.win_rate = 100
                 opp.save()
+
+    OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
     print('Done!')
