@@ -259,7 +259,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picked_quantity=0,
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
-            delivery_option=instance.delivery_option
+            delivery_option=instance.delivery_option,
+            config_at_that_point=instance.config_at_that_point
         )
 
         picking.sub = new_sub

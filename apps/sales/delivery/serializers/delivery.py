@@ -123,7 +123,8 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'estimated_delivery_date',
             'actual_delivery_date',
             'customer_data',
-            'contact_data'
+            'contact_data',
+            'config_at_that_point'
         )
 
 
@@ -195,16 +196,19 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         ):
             obj_key = str(obj.product_id)+"___"+str(obj.order)
             if obj_key in product_done:
+                # kiểm tra product id và order trùng với product update ko
                 delivery_data = product_done[obj_key]['delivery_data']  # list format
                 obj.picked_quantity = product_done[obj_key]['picked_num']
-                if config.is_picking and config.is_partial_ship:
-                    for obj_crt in obj.delivery_data:
-                        matching_objs = [obj_prod_done for obj_prod_done in delivery_data
-                                         if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
-                                         obj_prod_done['warehouse']]
-                        obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
-                else:
-                    obj.delivery_data = delivery_data
+                # if config.is_picking and config.is_partial_ship:
+                #     for obj_crt in obj.delivery_data:
+
+
+                        # matching_objs = [obj_prod_done for obj_prod_done in delivery_data
+                        #                  if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
+                        #                  obj_prod_done['warehouse']]
+                        # obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
+                # else:
+                obj.delivery_data = delivery_data
                 # config case 1, 2, 3
                 cls.minus_product_warehouse_stock(
                     {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
@@ -276,7 +280,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             estimated_delivery_date=instance.estimated_delivery_date,
             actual_delivery_date=instance.actual_delivery_date,
             customer_data=instance.customer_data,
-            contact_data=instance.contact_data
+            contact_data=instance.contact_data,
+            config_at_that_point=instance.config_at_that_point
         )
         return new_sub
 

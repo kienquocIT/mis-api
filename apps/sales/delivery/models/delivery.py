@@ -257,6 +257,13 @@ class OrderDeliverySub(MasterDataAbstractModel):
         null=True
     )
     remarks = models.TextField(blank=True)
+    config_at_that_point = models.JSONField(
+        default=dict,
+        verbose_name='this is config was created at that time',
+        help_text=json.dumps(
+            {'is_picking': True, 'is_partial_ship': False}
+        ),
+    )
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:
