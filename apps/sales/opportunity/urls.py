@@ -3,7 +3,7 @@ from django.urls import path
 from .views import (
     OpportunityList, OpportunityDetail, CustomerDecisionFactorList, OpportunityConfigDetail,
     CustomerDecisionFactorDetail, OpportunityConfigStageList, OpportunityConfigStageDetail,
-    OpportunityCallLogList, OpportunityCallLogDetail
+    OpportunityCallLogList, OpportunityCallLogDetail, OpportunityEmailList, OpportunityEmailDetail
 )
 
 urlpatterns = [
@@ -20,4 +20,7 @@ urlpatterns = [
 ] + [
     path('call-log/lists', OpportunityCallLogList.as_view(), name='OpportunityCallLogList'),
     path('call-log/<str:pk>', OpportunityCallLogDetail.as_view(), name='OpportunityCallLogDetail'),
+] + [
+    path('send-email/lists', OpportunityEmailList.as_view(), name='OpportunityEmailList'),
+    path('send-email/<str:pk>', OpportunityEmailDetail.as_view(), name='OpportunityEmailDetail'),
 ]
