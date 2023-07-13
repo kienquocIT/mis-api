@@ -302,7 +302,7 @@ class TestCaseOpportunity(AdvanceTestCase):
              'close_date', 'decision_maker', 'opportunity_product_datas', 'total_product_pretax_amount',
              'total_product_tax', 'total_product', 'opportunity_competitors_datas', 'opportunity_contact_role_datas',
              'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person', 'opportunity_sale_team_datas',
-             'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close'],
+             'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close_lost', 'is_deal_close'],
             check_sum_second=True,
         )
         if not data_id:

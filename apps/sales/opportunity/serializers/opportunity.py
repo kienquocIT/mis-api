@@ -14,6 +14,7 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
+    is_close = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -63,6 +64,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                     'indicator': stage.stage.indicator
                 } for stage in stages]
         return []
+
+    @classmethod
+    def get_is_close(cls, obj):
+        if obj.is_deal_close or obj.is_close_lost:
+            return True
+        return False
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
@@ -503,7 +510,8 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'stage',
             'lost_by_other_reason',
             'list_stage',
-            'is_close',
+            'is_close_lost',
+            'is_deal_close'
         )
 
     @classmethod
@@ -676,7 +684,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'sale_order',
             'quotation',
-            'is_close'
+            'is_close_lost',
+            'is_deal_close',
         )
 
     @classmethod
