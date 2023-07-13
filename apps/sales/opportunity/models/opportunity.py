@@ -445,19 +445,23 @@ class Opportunity(DataAbstractModel):
             list_stage.append(stage_close)
 
         # check stage
-        bulk_data = []
-        for item in list_stage:
+        index = 0
+        for idx, item in enumerate(list_stage):
             if item.logical_operator == 0:
                 if all(element in list_property for element in item.condition_datas):
-                    bulk_data.append(OpportunityStage(opportunity=obj, stage=item, is_current=False))
+                    index = idx
             else:
                 if any(element in list_property for element in item.condition_datas):
-                    bulk_data.append(OpportunityStage(opportunity=obj, stage=item, is_current=False))
-
+                    index = idx
+        bulk_data = [
+            OpportunityStage(
+                opportunity=obj,
+                stage_id=item.id,
+                is_current=False
+            ) for item in list_stage[:index + 1]]
         bulk_data[-1].is_current = True
-        obj.stage.all().delete()
+        obj.stage.clear()
         OpportunityStage.objects.bulk_create(bulk_data)
-        return stages
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)
@@ -472,23 +476,27 @@ class Opportunity(DataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
 
-        if 'quotation_confirm' in kwargs:
+        if 'quotation_confirm' in kwargs and not self.is_close_lost and not self.is_deal_close:
             self.auto_update_stage(
                 self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
                 self
             )
+            del kwargs['quotation_confirm']
 
-        if 'sale_order_status' in kwargs:
+        if 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             self.auto_update_stage(
                 self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
                 self
             )
+            del kwargs['sale_order_status']
 
-        if 'delivery_status' in kwargs:
+        if 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             self.auto_update_stage(
                 self.check_property_stage_when_saving_delivery(self, kwargs['sale_order_status']),
                 self
             )
+            del kwargs['sale_order_status']
+
         super().save(*args, **kwargs)
 
 
