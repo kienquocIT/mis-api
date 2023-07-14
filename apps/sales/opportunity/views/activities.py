@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.opportunity.models import OpportunityCallLog
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail
 from apps.sales.opportunity.serializers import (
-    OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
-    OpportunityCallLogDetailSerializer
+    OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer, OpportunityCallLogDetailSerializer,
+    OpportunityEmailListSerializer, OpportunityEmailCreateSerializer, OpportunityEmailDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -48,6 +48,52 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog detail",
         operation_description="Get OpportunityCallLog detail by ID",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityEmail.objects
+
+    serializer_list = OpportunityEmailListSerializer
+    serializer_create = OpportunityEmailCreateSerializer
+    serializer_detail = OpportunityEmailDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("opportunity", "email_to_contact")
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityEmail List",
+        operation_description="Get OpportunityEmail List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create OpportunityEmail",
+        operation_description="Create new OpportunityEmail",
+        request_body=OpportunityEmailCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityEmail.objects
+    serializer_detail = OpportunityEmailDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("opportunity", "email_to_contact")
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityEmail detail",
+        operation_description="Get OpportunityEmail detail by ID",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
