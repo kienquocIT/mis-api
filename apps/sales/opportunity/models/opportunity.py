@@ -161,6 +161,14 @@ class Opportunity(DataAbstractModel):
         default=False
     )
 
+    delivery = models.OneToOneField(
+        'delivery.OrderDelivery',
+        on_delete=models.CASCADE,
+        null=True,
+        help_text="Delivery use this opportunity",
+        related_name="opportunity_map_delivery"
+    )
+
     class Meta:
         verbose_name = 'Opportunity'
         verbose_name_plural = 'Opportunities'
@@ -496,7 +504,7 @@ class Opportunity(DataAbstractModel):
             kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
             del kwargs['quotation_confirm']
 
-        if 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
+        elif 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(
                     self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
@@ -505,14 +513,14 @@ class Opportunity(DataAbstractModel):
             kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
             del kwargs['sale_order_status']
 
-        if 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
+        elif 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(
-                    self.check_property_stage_when_saving_delivery(self, kwargs['sale_order_status']),
+                    self.check_property_stage_when_saving_delivery(self, kwargs['delivery_status']),
                     self
                 )
             kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
-            del kwargs['sale_order_status']
+            del kwargs['delivery_status']
         super().save(*args, **kwargs)
 
 
