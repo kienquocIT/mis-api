@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.shared import DataAbstractModel, SimpleAbstractModel
-from .config import OpportunityConfigStage
+from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
     (0, _('Direct Customer')),
@@ -446,13 +446,16 @@ class Opportunity(DataAbstractModel):
 
         # check stage
         index = 0
+        win_rate = 0
         for idx, item in enumerate(list_stage):
             if item.logical_operator == 0:
                 if all(element in list_property for element in item.condition_datas):
                     index = idx
+                    win_rate = item.win_rate
             else:
                 if any(element in list_property for element in item.condition_datas):
                     index = idx
+                    win_rate = item.win_rate
         bulk_data = [
             OpportunityStage(
                 opportunity=obj,
@@ -462,6 +465,14 @@ class Opportunity(DataAbstractModel):
         bulk_data[-1].is_current = True
         obj.stage.clear()
         OpportunityStage.objects.bulk_create(bulk_data)
+        return win_rate
+
+    @classmethod
+    def check_config_auto_update_stage(cls):
+        config = OpportunityConfig.objects.filter_current(fill__company=True).first()
+        if config.is_select_stage:
+            return False
+        return True
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)
@@ -477,26 +488,31 @@ class Opportunity(DataAbstractModel):
             self.code = code
 
         if 'quotation_confirm' in kwargs and not self.is_close_lost and not self.is_deal_close:
-            self.auto_update_stage(
-                self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
-                self
-            )
+            if self.check_config_auto_update_stage():
+                self.win_rate = self.auto_update_stage(
+                    self.check_property_stage_when_saving_quotation(self, kwargs['quotation_confirm']),
+                    self
+                )
+            kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
             del kwargs['quotation_confirm']
 
         if 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
-            self.auto_update_stage(
-                self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
-                self
-            )
+            if self.check_config_auto_update_stage():
+                self.win_rate = self.auto_update_stage(
+                    self.check_property_stage_when_saving_sale_order(self, kwargs['sale_order_status']),
+                    self
+                )
+            kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
             del kwargs['sale_order_status']
 
         if 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
-            self.auto_update_stage(
-                self.check_property_stage_when_saving_delivery(self, kwargs['sale_order_status']),
-                self
-            )
+            if self.check_config_auto_update_stage():
+                self.win_rate = self.auto_update_stage(
+                    self.check_property_stage_when_saving_delivery(self, kwargs['sale_order_status']),
+                    self
+                )
+            kwargs['update_fields'] = kwargs['update_fields'].append('win_rate')
             del kwargs['sale_order_status']
-
         super().save(*args, **kwargs)
 
 
