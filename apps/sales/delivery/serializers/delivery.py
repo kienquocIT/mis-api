@@ -3,8 +3,10 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
+from apps.core.attachments.models import Files
+from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse
-from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct
+from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
@@ -95,6 +97,7 @@ class OrderDeliveryListSerializer(serializers.ModelSerializer):
 
 class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -103,6 +106,36 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             many=True,
         ).data
         return prod
+
+    @classmethod
+    def get_attachments(cls, obj):
+        if obj.attachments:
+            attach = OrderDeliveryAttachment.objects.filter(
+                delivery_sub=obj,
+                media_file=obj.attachments
+            )
+            if attach.exists():
+                # obj.attachments = list((lambda x: x.files, attach))
+                attachments = []
+                # obj.attachments = list(map(lambda x: x['files'], attach))
+                for item in attach:
+                    files = item.files
+                    attachments.append(
+                        {
+                            'files': {
+                                "id": str(files.id),
+                                "relate_app_id": str(files.relate_app_id),
+                                "relate_app_code": files.relate_app_code,
+                                "relate_doc_id": str(files.relate_doc_id),
+                                "media_file_id": str(files.media_file_id),
+                                "file_name": files.file_name,
+                                "file_size": int(files.file_size),
+                                "file_type": files.file_type
+                            }
+                        }
+                    )
+                return attachments
+        return []
 
     class Meta:
         model = OrderDeliverySub
@@ -124,7 +157,8 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'actual_delivery_date',
             'customer_data',
             'contact_data',
-            'config_at_that_point'
+            'config_at_that_point',
+            'attachments'
         )
 
 
@@ -152,6 +186,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             'actual_delivery_date',
             'remarks',
             'products',
+            'attachments'
         )
 
     @classmethod
@@ -163,6 +198,42 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 'State': _('Can not update when status is Done!')
             }
         )
+
+    def handle_attach_file(self, instance, validate_data):
+        if validate_data['attachments']:
+            user = self.context.get('user', None)
+            relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
+            relate_app_code = 'orderdeliverysub'
+            delivery_sub_id = str(self.instance.id)
+            if not user.employee_current:
+                raise serializers.ValidationError(
+                    {'User': _('User still not map with The employee please contact your Admin!')}
+                )
+            is_check, attach_check = Files.check_media_file(
+                media_file_id=validate_data['attachments'],
+                media_user_id=str(user.employee_current.media_user_id)
+            )
+            if is_check:
+                # tạo file
+                files_id = Files.regis_media_file(
+                    relate_app, delivery_sub_id, relate_app_code, user, media_result=attach_check
+                )
+
+                # tạo phiếu attachment
+                OrderDeliveryAttachment.objects.create(
+                    delivery_sub=self.instance,
+                    files=files_id,
+                    media_file=validate_data['attachments']
+                )
+                instance.attachments = validate_data['attachments']
+                return validate_data
+
+            raise serializers.ValidationError(
+                {
+                    'Attachment': _('attachment can not verify please try again or contact your admin!')
+                }
+            )
+        return True
 
     @classmethod
     def update_self_info(cls, instance, validated_data):
@@ -194,7 +265,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         for obj in OrderDeliveryProduct.objects.filter_current(
                 delivery_sub=sub
         ):
-            obj_key = str(obj.product_id)+"___"+str(obj.order)
+            obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
                 # kiểm tra product id và order trùng với product update ko
                 delivery_data = product_done[obj_key]['delivery_data']  # list format
@@ -202,11 +273,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 # if config.is_picking and config.is_partial_ship:
                 #     for obj_crt in obj.delivery_data:
 
-
-                        # matching_objs = [obj_prod_done for obj_prod_done in delivery_data
-                        #                  if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
-                        #                  obj_prod_done['warehouse']]
-                        # obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
+                # matching_objs = [obj_prod_done for obj_prod_done in delivery_data
+                #                  if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
+                #                  obj_prod_done['warehouse']]
+                # obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
                 # else:
                 obj.delivery_data = delivery_data
                 # config case 1, 2, 3
@@ -295,7 +365,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.is_updated = True
             instance.save(
                 update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks']
+                               'actual_delivery_date', 'remarks', 'attachments']
             )
         else:
             raise serializers.ValidationError(
@@ -313,7 +383,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.is_updated = True
         instance.save(
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks']
+                           'actual_delivery_date', 'remarks', 'attachments']
         )
         if instance.remaining_quantity > total_done:
             new_sub = cls.create_new_sub(instance, total_done, 2)
@@ -332,7 +402,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.is_updated = True
             instance.save(
                 update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks']
+                               'actual_delivery_date', 'remarks', 'attachments']
             )
             order_delivery.state = 2
             order_delivery.save(update_fields=['state'])
@@ -362,7 +432,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             order_delivery.state = 2
         instance.save(
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks']
+                           'actual_delivery_date', 'remarks', 'attachments']
         )
         order_delivery.save(update_fields=['sub', 'state'])
 
@@ -375,7 +445,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         product_done = {}
         total_done = 0
         for item in validated_product:
-            prod_key = str(item['product_id'])+"___"+str(item['order'])
+            prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item['done']
@@ -385,6 +455,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         self.update_self_info(instance, validated_data)
         try:
             with transaction.atomic():
+                self.handle_attach_file(instance, validated_data)
                 if not is_partial and not is_picking:
                     # config 1
                     self.config_one(instance, total_done, product_done, config)

@@ -11,6 +11,7 @@ __all__ = [
     'OrderDelivery',
     'OrderDeliverySub',
     'OrderDeliveryProduct',
+    'OrderDeliveryAttachment',
 ]
 
 
@@ -264,6 +265,12 @@ class OrderDeliverySub(MasterDataAbstractModel):
             {'is_picking': True, 'is_partial_ship': False}
         ),
     )
+    attachments = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='order delivery attachment',
+        help_text=json.dumps(['uuid4', 'uuid4']),
+    )
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:
@@ -414,5 +421,30 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         verbose_name = 'Delivery Product'
         verbose_name_plural = 'Delivery Product'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OrderDeliveryAttachment(SimpleAbstractModel):
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery attachment file",
+        related_name="order_delivery_attachment",
+        help_text="foreigner key to order delivery sub"
+    )
+    files = models.OneToOneField(
+        'attachments.Files',
+        on_delete=models.CASCADE,
+        verbose_name='Order delivery attachment files',
+        help_text='Delivery sub had one/many attachment file',
+        related_name='order_delivery_attachment_files',
+    )
+    media_file = models.UUIDField(unique=True)
+
+    class Meta:
+        verbose_name = 'Order Delivery Attachment'
+        verbose_name_plural = 'Order Delivery Attachment'
+        # ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
