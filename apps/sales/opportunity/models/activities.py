@@ -31,7 +31,7 @@ class OpportunityCallLog(SimpleAbstractModel):
     class Meta:
         verbose_name = 'OpportunityCallLog'
         verbose_name_plural = 'OpportunitiesCallLogges'
-        ordering = ('call_date', 'date_created')
+        ordering = ('-call_date', '-date_created')
         default_permissions = ()
         permissions = ()
 
@@ -60,6 +60,6 @@ class OpportunityEmail(SimpleAbstractModel):
     class Meta:
         verbose_name = 'OpportunityEmail'
         verbose_name_plural = 'OpportunitiesEmails'
-        ordering = ('date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
