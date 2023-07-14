@@ -15,7 +15,7 @@ class OpportunityList(
     queryset = Opportunity.objects
     filterset_fields = {
         'sale_person_id': ['exact'],
-        'is_close': ['exact'],
+        # 'is_close': ['exact'],
     }
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
