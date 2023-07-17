@@ -67,8 +67,18 @@ class OpportunityMeeting(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="opportunity_meeting",
     )
-    employee_attended_list = models.JSONField(default=list)
-    customer_member_list = models.JSONField(default=list)
+    employee_attended_list = models.ManyToManyField(
+        'hr.Employee',
+        through='OpportunityMeetingEmployeeAttended',
+        symmetrical=False,
+        related_name='all_employee_attended'
+    )
+    customer_member_list = models.ManyToManyField(
+        'saledata.Contact',
+        through='OpportunityMeetingCustomerMember',
+        symmetrical=False,
+        related_name='all_customer_member'
+    )
     meeting_date = models.DateTimeField()
     meeting_address = models.CharField(max_length=250)
     room_location = models.CharField(max_length=250, null=True)

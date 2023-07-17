@@ -141,7 +141,10 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityMeetingDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity")
+        return super().get_queryset().select_related("opportunity").prefetch_related(
+            'employee_attended_list',
+            'customer_member_list'
+        )
 
     @swagger_auto_schema(
         operation_summary="OpportunityMeeting List",
