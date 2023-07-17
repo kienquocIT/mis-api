@@ -10,11 +10,6 @@ class OpportunityCallLog(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name="opportunity_calllog",
     )
-    customer = models.ForeignKey(
-        'saledata.Account',
-        on_delete=models.CASCADE,
-        related_name="opportunity_calllog_customer",
-    )
     contact = models.ForeignKey(
         'saledata.Contact',
         on_delete=models.CASCADE,
@@ -63,3 +58,36 @@ class OpportunityEmail(SimpleAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+
+class OpportunityMeeting(SimpleAbstractModel):
+    subject = models.CharField(max_length=250)
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name="opportunity_meeting",
+    )
+    employee_attended_list = models.JSONField(default=list)
+    customer_member_list = models.JSONField(default=list)
+    meeting_date = models.DateTimeField()
+    meeting_address = models.CharField(max_length=250)
+    room_location = models.CharField(max_length=250, null=True)
+    input_result = models.CharField(max_length=250, null=True)
+    repeat = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'OpportunityMeeting'
+        verbose_name_plural = 'OpportunitiesMeetings'
+        ordering = ('-meeting_date',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityMeetingEmployeeAttended(SimpleAbstractModel):
+    meeting_mapped = models.ForeignKey(OpportunityMeeting, on_delete=models.CASCADE)
+    employee_attended_mapped = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+
+
+class OpportunityMeetingCustomerMember(SimpleAbstractModel):
+    meeting_mapped = models.ForeignKey(OpportunityMeeting, on_delete=models.CASCADE)
+    customer_member_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE)

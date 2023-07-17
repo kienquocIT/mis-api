@@ -1,5 +1,8 @@
 from rest_framework import serializers
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail
+from apps.sales.opportunity.models import (
+    OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember
+)
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
@@ -33,11 +36,11 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_customer(cls, obj):
-        if obj.customer:
+        if obj.opportunity.customer:
             return {
-                'id': obj.customer_id,
-                'code': obj.customer.code,
-                'title': obj.customer.name
+                'id': obj.opportunity.customer_id,
+                'code': obj.opportunity.customer.code,
+                'title': obj.opportunity.customer.name
             }
         return {}
 
@@ -166,4 +169,108 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'date_created',
             'opportunity',
             'email_to_contact'
+        )
+
+
+class OpportunityMeetingListSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OpportunityMeeting
+        fields = (
+            'id',
+            'subject',
+            'opportunity',
+            'employee_attended_list',
+            'customer_member_list',
+            'meeting_date',
+            'meeting_address',
+            'room_location',
+            'input_result',
+            'repeat'
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return {}
+
+
+def create_employee_attended_map_meeting(meeting_id, employee_attended_list):
+    bulk_info = []
+    for employee_attended_item in employee_attended_list:
+        bulk_info.append(
+            OpportunityMeetingEmployeeAttended(
+                meeting_mapped=meeting_id,
+                employee_attended_mapped_id=employee_attended_item['id']
+            )
+        )
+    OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=meeting_id).delete()
+    OpportunityMeetingEmployeeAttended.objects.bulk_create(bulk_info)
+    return True
+
+
+def create_customer_member_map_meeting(meeting_id, customer_member_list):
+    bulk_info = []
+    for customer_member_item in customer_member_list:
+        bulk_info.append(
+            OpportunityMeetingCustomerMember(
+                meeting_mapped=meeting_id,
+                customer_member_mapped_id=customer_member_item['id']
+            )
+        )
+    OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=meeting_id).delete()
+    OpportunityMeetingCustomerMember.objects.bulk_create(bulk_info)
+    return True
+
+
+class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
+    input_result = serializers.CharField(required=True)
+
+    class Meta:
+        model = OpportunityMeeting
+        fields = (
+            'subject',
+            'opportunity',
+            'employee_attended_list',
+            'customer_member_list',
+            'meeting_date',
+            'meeting_address',
+            'room_location',
+            'input_result',
+            'repeat'
+        )
+
+    @classmethod
+    def validate_input_result(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_MEETING_RESULT_NOT_NULL})
+
+    def create(self, validated_data):
+        meeting_obj = OpportunityMeeting.objects.create(**validated_data)
+        create_employee_attended_map_meeting(meeting_obj, validated_data.get('employee_attended_list', []))
+        create_customer_member_map_meeting(meeting_obj, validated_data.get('customer_member_list', []))
+        return meeting_obj
+
+
+class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityMeeting
+        fields = (
+            'id',
+            'subject',
+            'opportunity',
+            'employee_attended_list',
+            'customer_member_list',
+            'meeting_date',
+            'meeting_address',
+            'room_location',
+            'input_result',
+            'repeat'
         )

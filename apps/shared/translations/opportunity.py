@@ -7,3 +7,4 @@ class OpportunityMsg:
     ACTIVITIES_CALL_LOG_RESULT_NOT_NULL = _('Result must not be null')
     EMAIL_TO_NOT_VALID = _('Email to is not valid.')
     EMAIL_CC_NOT_VALID = _('Email Cc is not valid.')
+    ACTIVITIES_MEETING_RESULT_NOT_NULL = _('Result must not be null')

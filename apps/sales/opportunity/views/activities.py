@@ -1,9 +1,10 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer, OpportunityCallLogDetailSerializer,
-    OpportunityEmailListSerializer, OpportunityEmailCreateSerializer, OpportunityEmailDetailSerializer
+    OpportunityEmailListSerializer, OpportunityEmailCreateSerializer, OpportunityEmailDetailSerializer,
+    OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer, OpportunityMeetingDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -17,7 +18,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityCallLogDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "customer", "contact")
+        return super().get_queryset().select_related("opportunity", "contact")
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog List",
@@ -43,7 +44,7 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     serializer_detail = OpportunityCallLogDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "customer", "contact")
+        return super().get_queryset().select_related("opportunity", "contact")
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog detail",
@@ -94,6 +95,52 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     @swagger_auto_schema(
         operation_summary="OpportunityEmail detail",
         operation_description="Get OpportunityEmail detail by ID",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+
+class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityMeeting.objects
+
+    serializer_list = OpportunityMeetingListSerializer
+    serializer_create = OpportunityMeetingCreateSerializer
+    serializer_detail = OpportunityMeetingDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("opportunity")
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityMeeting List",
+        operation_description="Get OpportunityMeeting List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create OpportunityMeeting",
+        operation_description="Create new OpportunityMeeting",
+        request_body=OpportunityMeetingCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityMeeting.objects
+    serializer_detail = OpportunityMeetingDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("opportunity")
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityMeeting detail",
+        operation_description="Get OpportunityMeeting detail by ID",
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
