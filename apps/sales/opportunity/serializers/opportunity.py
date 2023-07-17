@@ -39,7 +39,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.customer_id,
                 'title': obj.customer.name,
-                'code': obj.customer.code
+                'code': obj.customer.code,
+                'shipping_address': obj.customer.shipping_address
             }
         return {}
 
