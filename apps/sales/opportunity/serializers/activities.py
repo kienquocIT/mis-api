@@ -302,5 +302,7 @@ class OpportunityMeetingDeleteSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
+        OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=instance).delete()
+        OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=instance).delete()
         instance.delete()
         return True
