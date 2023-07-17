@@ -291,6 +291,7 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
 class ExpenseForSaleListSerializer(serializers.ModelSerializer):
     expense_type = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -298,9 +299,9 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            # 'price_list',
             'expense_type',
             'uom',
+            'uom_group'
         )
 
     @classmethod
@@ -320,5 +321,15 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
                 'id': obj.uom_id,
                 'title': obj.uom.title,
                 'code': obj.uom.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+                'code': obj.uom_group.code,
             }
         return {}

@@ -79,6 +79,7 @@ class ExpenseForSaleList(BaseListMixin):
         return super().get_queryset().select_related(
             "expense_type",
             "uom",
+            "uom_group"
         )
 
     @swagger_auto_schema(
