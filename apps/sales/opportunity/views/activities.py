@@ -63,7 +63,10 @@ class OpportunityCallLogDelete(BaseUpdateMixin):
     serializer_detail = OpportunityCallLogDetailSerializer
     serializer_update = OpportunityCallLogDeleteSerializer
 
-    @swagger_auto_schema(operation_summary="Delete Opportunity Call Log List", request_body=OpportunityCallLogDeleteSerializer)
+    @swagger_auto_schema(
+        operation_summary="Delete Opportunity Call Log List",
+        request_body=OpportunityCallLogDeleteSerializer
+    )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
