@@ -510,7 +510,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].sale_order_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
-                if validate_data['opportunity'].is_close is True:
+                if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
@@ -523,7 +523,10 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if sale_order.opportunity:
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(update_fields=['sale_order'])
+            sale_order.opportunity.save(**{
+                'update_fields': ['sale_order'],
+                'sale_order_status': sale_order.system_status,
+            })
         return sale_order
 
 
@@ -655,7 +658,10 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(update_fields=['sale_order'])
+            instance.opportunity.save(**{
+                'update_fields': ['sale_order'],
+                'sale_order_status': instance.system_status,
+            })
         return instance
 
 

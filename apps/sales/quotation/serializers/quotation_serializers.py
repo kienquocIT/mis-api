@@ -509,7 +509,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].quotation_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
-                if validate_data['opportunity'].is_close is True:
+                if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
@@ -522,7 +522,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         # update field quotation for opportunity
         if quotation.opportunity:
             quotation.opportunity.quotation = quotation
-            quotation.opportunity.save(update_fields=['quotation'])
+            quotation.opportunity.save(**{
+                'update_fields': ['quotation'],
+                'quotation_confirm': quotation.is_customer_confirm,
+            })
         return quotation
 
 
@@ -648,7 +651,10 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         # update field quotation for opportunity
         if instance.opportunity:
             instance.opportunity.quotation = instance
-            instance.opportunity.save(update_fields=['quotation'])
+            instance.opportunity.save(**{
+                'update_fields': ['quotation'],
+                'quotation_confirm': instance.is_customer_confirm,
+            })
         return instance
 
 
