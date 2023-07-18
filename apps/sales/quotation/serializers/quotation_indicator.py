@@ -39,7 +39,6 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
         )
 
 
-# Quotation
 class IndicatorCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
