@@ -64,6 +64,7 @@ INSTALLED_APPS = \
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
     ] + [  # integrate some service management or tracing
+        'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
         'apps.core.log',  # all logged data, except Workflow Log
@@ -190,6 +191,10 @@ TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 
 USE_TZ = False
+
+# Mail config
+MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
