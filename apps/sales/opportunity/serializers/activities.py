@@ -62,7 +62,6 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         fields = (
             'subject',
             'opportunity',
-            'customer',
             'contact',
             'call_date',
             'input_result',
@@ -83,7 +82,6 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
-            'customer',
             'contact',
             'call_date',
             'input_result',
