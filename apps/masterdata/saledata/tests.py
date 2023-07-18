@@ -2213,7 +2213,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
