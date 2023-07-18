@@ -86,16 +86,17 @@ class AdvancePaymentCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='advance_payment'
     )
-    expense = models.ForeignKey(
-        'saledata.Expense',
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        null=True
+    )
+    product_unit_of_measure = models.ForeignKey(
+        'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
     )
-    expense_unit_of_measure = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE
-    )
-    expense_quantity = models.IntegerField()
-    expense_unit_price = models.FloatField(default=0)
+    product_quantity = models.IntegerField()
+    product_unit_price = models.FloatField(default=0)
     tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
