@@ -156,7 +156,10 @@ class SaleOrderActiveDeliverySerializer:
             state=0,
             delivery_option=obj.delivery_option,
             remarks='',
-
+            config_at_that_point={
+                "is_picking": self.config_obj.is_picking,
+                "is_partial_ship": self.config_obj.is_partial_ship
+            }
         )
         OrderPickingProduct.objects.bulk_create(m2m_obj_arr)
 
@@ -245,7 +248,11 @@ class SaleOrderActiveDeliverySerializer:
                         sale_order_data=obj_delivery.sale_order_data,
                         customer_data=obj_delivery.customer_data,
                         contact_data=obj_delivery.contact_data,
-                        date_created=obj_delivery.date_created
+                        date_created=obj_delivery.date_created,
+                        config_at_that_point={
+                            "is_picking": self.config_obj.is_picking,
+                            "is_partial_ship": self.config_obj.is_partial_ship
+                        }
                     )
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])

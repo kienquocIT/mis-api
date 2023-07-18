@@ -86,10 +86,10 @@ class IndicatorDefaultData:
             "formula_data": [
                 {
                     "id": "9a8bef37-6812-4d8b-ba6a-dc5669e61029",
-                    "code": "total_product_pretax_amount",
+                    "code": "total_product_revenue_before_tax",
                     "type": 6,
                     "title": "Total revenue before tax",
-                    "remark": "Total revenue before tax of quotation",
+                    "remark": "Total revenue before tax of quotation (after discount on total, apply promotion,...)",
                     "syntax": "prop(Total revenue before tax)",
                     "properties": {},
                     "is_property": True,
@@ -139,10 +139,11 @@ class IndicatorDefaultData:
                     "formula_data": [
                         {
                             "id": "9a8bef37-6812-4d8b-ba6a-dc5669e61029",
-                            "code": "total_product_pretax_amount",
+                            "code": "total_product_revenue_before_tax",
                             "type": 6,
                             "title": "Total revenue before tax",
-                            "remark": "Total revenue before tax of quotation",
+                            "remark": "Total revenue before tax of quotation "
+                                      "(after discount on total, apply promotion,...)",
                             "syntax": "prop(Total revenue before tax)",
                             "properties": {},
                             "is_property": True,
@@ -258,10 +259,11 @@ class IndicatorDefaultData:
                             "formula_data": [
                                 {
                                     "id": "9a8bef37-6812-4d8b-ba6a-dc5669e61029",
-                                    "code": "total_product_pretax_amount",
+                                    "code": "total_product_revenue_before_tax",
                                     "type": 6,
                                     "title": "Total revenue before tax",
-                                    "remark": "Total revenue before tax of quotation",
+                                    "remark": "Total revenue before tax of quotation "
+                                              "(after discount on total, apply promotion,...)",
                                     "syntax": "prop(Total revenue before tax)",
                                     "properties": {},
                                     "is_property": True,
@@ -369,10 +371,10 @@ class IndicatorDefaultData:
             "formula_data": [
                 {
                     "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
-                    "code": "total_product_pretax_amount",
+                    "code": "total_product_revenue_before_tax",
                     "type": 6,
                     "title": "Total revenue before tax",
-                    "remark": "Total revenue before tax of sale order",
+                    "remark": "Total revenue before tax of sale order (after discount on total, apply promotion,...)",
                     "syntax": "prop(Total revenue before tax)",
                     "properties": {},
                     "is_property": True,
@@ -422,10 +424,11 @@ class IndicatorDefaultData:
                     "formula_data": [
                         {
                             "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
-                            "code": "total_product_pretax_amount",
+                            "code": "total_product_revenue_before_tax",
                             "type": 6,
                             "title": "Total revenue before tax",
-                            "remark": "Total revenue before tax of sale order",
+                            "remark": "Total revenue before tax of sale order "
+                                      "(after discount on total, apply promotion,...)",
                             "syntax": "prop(Total revenue before tax)",
                             "properties": {
 
@@ -543,10 +546,11 @@ class IndicatorDefaultData:
                             "formula_data": [
                                 {
                                     "id": "474ae19c-7dde-4c6d-b9cd-ad6b19af21ce",
-                                    "code": "total_product_pretax_amount",
+                                    "code": "total_product_revenue_before_tax",
                                     "type": 6,
                                     "title": "Total revenue before tax",
-                                    "remark": "Total revenue before tax of sale order",
+                                    "remark": "Total revenue before tax of sale order "
+                                              "(after discount on total, apply promotion,...)",
                                     "syntax": "prop(Total revenue before tax)",
                                     "properties": {},
                                     "is_property": True,

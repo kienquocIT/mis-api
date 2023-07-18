@@ -19,6 +19,7 @@ from apps.masterdata.saledata.serializers.product import (
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
 
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
+    ProductForSaleListSerializer,
 )
 
 
@@ -310,3 +311,18 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# Products use for sale applications
+class ProductForSaleList(BaseListMixin):
+    queryset = Product.objects
+    serializer_list = ProductForSaleListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Product for sale list",
+        operation_description="Product for sale list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

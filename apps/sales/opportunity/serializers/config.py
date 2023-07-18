@@ -67,6 +67,10 @@ class OpportunityConfigStageCreateSerializer(serializers.ModelSerializer):
             'win_rate',
         )
 
+    def create(self, validated_data):
+        stage = OpportunityConfigStage.objects.create(**validated_data, is_delete=True)
+        return stage
+
 
 class OpportunityConfigStageDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -75,10 +79,15 @@ class OpportunityConfigStageDetailSerializer(serializers.ModelSerializer):
 
 
 class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
+    condition_datas = serializers.ListField(required=False)
+    win_rate = serializers.FloatField(required=False)
+
     class Meta:
         model = OpportunityConfigStage
         fields = (
+            'logical_operator',
             'condition_datas',
+            'win_rate',
         )
 
     @classmethod
@@ -97,7 +106,8 @@ class OpportunityConfigStageUpdateSerializer(serializers.ModelSerializer):
         return True
 
     def update(self, instance, validated_data):
-        self.common_update_stage_condition(instance, validated_data['condition_datas'])
+        if 'condition_datas' in validated_data:
+            self.common_update_stage_condition(instance, validated_data['condition_datas'])
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

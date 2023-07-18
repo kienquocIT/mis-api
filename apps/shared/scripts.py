@@ -1,6 +1,6 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -19,7 +19,7 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
@@ -336,3 +336,48 @@ def make_sure_sync_media(re_sync=False):
                     MediaForceAPI.call_sync_employee(employee_obj)
                     print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
     print('Sync media successfully')
+
+
+def update_fk_expense_price():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense = item.expense_general.expense
+        item.save()
+    print('!Done')
+
+
+def update_fk_expense_price_expense_general():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense_general = None
+        item.save()
+    print('!Done')
+
+
+def edit_uom_group_field_to_default():
+    UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
+    UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    return True
+
+
+def delete_all_opportunity_call_log():
+    OpportunityCallLog.objects.all().delete()
+    return True
+
+
+def make_sure_task_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).task_config()
+    print('Make sure Task config is done!')
+
+
+def update_win_rate_delivery_stage():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        for stage in opp.stage.all():
+            if stage.indicator == 'Delivery':
+                opp.win_rate = 100
+                opp.save()
+
+    OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
+    print('Done!')

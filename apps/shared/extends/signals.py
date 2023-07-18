@@ -15,12 +15,13 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price,
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup
 )
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
     SaleOrderIndicatorConfig
 from apps.shared import Caching, MediaForceAPI
+from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,9 @@ class SaleDefaultData:
         {'title': 'Partner', 'code': 'AT003', 'is_default': 1, 'account_type_order': 2},
         {'title': 'Competitor', 'code': 'AT004', 'is_default': 1, 'account_type_order': 3}
     ]
+    UoM_Group_data = [
+        {'title': 'Labor', 'is_default': 1},
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -72,6 +76,7 @@ class SaleDefaultData:
                 self.create_currency()
                 self.create_price_default()
                 self.create_account_types()
+                self.create_uom_group()
             return True
         except Exception as err:
             logger.error(
@@ -148,6 +153,14 @@ class SaleDefaultData:
             Price.objects.bulk_create(objs)
             return True
         return False
+
+    def create_uom_group(self):
+        objs = [
+            UnitOfMeasureGroup(tenant=self.company_obj.tenant, company=self.company_obj, **uom_group_item)
+            for uom_group_item in self.UoM_Group_data
+        ]
+        UnitOfMeasureGroup.objects.bulk_create(objs)
+        return True
 
 
 class ConfigDefaultData:
@@ -342,7 +355,7 @@ class ConfigDefaultData:
         {
             'indicator': 'Delivery',
             'description': 'Đang giao hàng/triển khai',
-            'win_rate': 0,
+            'win_rate': 100,
             'is_default': True,
             'logical_operator': 0,
             'is_deal_closed': False,
@@ -504,6 +517,50 @@ class ConfigDefaultData:
                 **data,
             ))
         SaleOrderIndicatorConfig.objects.bulk_create(bulk_info)
+
+    def task_config(self):
+        # create config default for company
+        config, created = OpportunityTaskConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'list_status': [
+                    {
+                        'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1,
+                        'task_color': '#007bff'
+                    },
+                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0},
+                    {
+                        'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
+                        'task_kind': 2, 'task_color': '#28a745'
+                    },
+                    {
+                        'name': 'Pending', 'translate_name': 'Tạm ngưng', 'order': 4, 'is_edit': False, 'task_kind': 3,
+                        'task_color': '#ffc107',
+                    },
+                ],
+                'is_edit_date': False,
+                'is_edit_est': False,
+                'is_in_assign': True,
+                'in_assign_opt': 0,
+                'is_out_assign': True,
+                'out_assign_opt': 0
+            },
+        )
+        if created:
+            temp_stt = []
+            for item in config.list_status:
+                temp_stt.append(
+                    OpportunityTaskStatus(
+                        title=item['name'],
+                        translate_name=item['translate_name'],
+                        task_config=config,
+                        order=item['order'],
+                        is_edit=item['is_edit'],
+                        task_kind=item['task_kind'],
+                        task_color=None,
+                    )
+                )
+            OpportunityTaskStatus.objects.bulk_create(temp_stt)
 
     def call_new(self):
         self.company_config()

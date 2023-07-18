@@ -259,7 +259,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picked_quantity=0,
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
-            delivery_option=instance.delivery_option
+            delivery_option=instance.delivery_option,
+            config_at_that_point=instance.config_at_that_point
         )
 
         picking.sub = new_sub
@@ -293,7 +294,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         instance.picked_quantity = total
         instance.state = 1
         instance.save(
-            update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'to_location', 'remarks',
+            update_fields=['picked_quantity', 'pickup_data', 'ware_house', 'ware_house_data', 'to_location', 'remarks',
                            'date_done', 'state', 'estimated_delivery_date']
         )
 

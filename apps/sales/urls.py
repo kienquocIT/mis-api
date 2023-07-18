@@ -6,4 +6,5 @@ urlpatterns = [
     path('saleorder/', include('apps.sales.saleorder.urls')),
     path('cashoutflow/', include('apps.sales.cashoutflow.urls')),
     path('delivery/', include('apps.sales.delivery.urls')),
+    path('task/', include('apps.sales.task.urls')),
 ]

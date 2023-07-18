@@ -4,7 +4,7 @@ from apps.shared import MasterDataAbstractModel
 
 __all__ = [
     'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
-    'ExpensePrice', 'ProductGeneral', 'ProductSale', 'ProductInventory', 'ExpenseGeneral'
+    'ExpensePrice', 'ProductGeneral', 'ProductSale', 'ProductInventory', 'ExpenseRole'
 ]
 
 
@@ -45,6 +45,8 @@ class ExpenseType(MasterDataAbstractModel):
 
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
+    is_default = models.BooleanField(default=False)
+
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'
         verbose_name_plural = 'UnitsOfMeasureGroup'
@@ -229,9 +231,45 @@ class ProductInventory(SimpleAbstractModel):
 
 
 class Expense(MasterDataAbstractModel):
-    general_information = models.JSONField(
-        default=dict,
-        help_text="information of tab general for Expense"
+    expense_type = models.ForeignKey(
+        ExpenseType,
+        verbose_name='Type of Expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_type',
+        default=None,
+    )
+    uom_group = models.ForeignKey(
+        UnitOfMeasureGroup,
+        verbose_name='Unit of Measure Group apply for expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_uom_group',
+        default=None,
+    )
+    uom = models.ForeignKey(
+        UnitOfMeasure,
+        verbose_name='Unit of Measure apply for expense',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_uom',
+        default=None,
+    )
+    price_list = models.ManyToManyField(
+        'saledata.Price',
+        through="ExpensePrice",
+        symmetrical=False,
+        blank=True,
+        related_name='expenses_map_prices',
+        default=None,
+    )
+    role = models.ManyToManyField(
+        'hr.Role',
+        through="ExpenseRole",
+        symmetrical=False,
+        blank=True,
+        related_name='expenses_map_roles',
+        default=None,
     )
 
     class Meta:
@@ -242,60 +280,12 @@ class Expense(MasterDataAbstractModel):
         permissions = ()
 
 
-class ExpenseGeneral(SimpleAbstractModel):
-    expense = models.OneToOneField(  # noqa
+class ExpensePrice(SimpleAbstractModel):
+    expense = models.ForeignKey(
         Expense,
         on_delete=models.CASCADE,
-        null=False,
         related_name='expense',
-    )
-    expense_type = models.ForeignKey(
-        ExpenseType,
-        verbose_name='Type of Expense',
-        on_delete=models.CASCADE,
         null=True,
-        related_name='expense_type',
-    )
-    uom_group = models.ForeignKey(
-        UnitOfMeasureGroup,
-        verbose_name='Unit of Measure Group apply for expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_uom_group',
-    )
-    uom = models.ForeignKey(
-        UnitOfMeasure,
-        verbose_name='Unit of Measure apply for expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_uom',
-    )
-    tax_code = models.ForeignKey(
-        'saledata.Tax',
-        verbose_name='Tax Code apply for expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_tax_code',
-    )
-    price_list = models.ManyToManyField(
-        'saledata.Price',
-        through="ExpensePrice",
-        symmetrical=False,
-        blank=True,
-        related_name='expenses_map_prices'
-    )
-
-    class Meta:
-        verbose_name = 'Expense General'
-        verbose_name_plural = 'Expenses General'
-        default_permissions = ()
-        permissions = ()
-
-
-class ExpensePrice(SimpleAbstractModel):
-    expense_general = models.ForeignKey(
-        ExpenseGeneral,
-        on_delete=models.CASCADE,
     )
 
     price = models.ForeignKey(
@@ -321,6 +311,29 @@ class ExpensePrice(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Expense Price'
         verbose_name_plural = 'Expense Prices'
+        default_permissions = ()
+        permissions = ()
+
+
+class ExpenseRole(SimpleAbstractModel):
+    expense = models.ForeignKey(
+        Expense,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_role_expense',
+        default=None,
+    )
+    role = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='expense_role_role',
+        default=None,
+    )
+
+    class Meta:
+        verbose_name = 'Expense Role'
+        verbose_name_plural = 'Expense Roles'
         default_permissions = ()
         permissions = ()
 
