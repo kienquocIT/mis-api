@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.sales.quotation.models import QuotationIndicatorConfig
+from apps.shared import SaleMsg
 from apps.shared.extends.signals import ConfigDefaultData
 
 
@@ -73,7 +74,7 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
     def validate_order(cls, value):
         if isinstance(value, int):
             if value > QuotationIndicatorConfig.objects.filter_current(fill__company=True).count() or value == 0:
-                raise serializers.ValidationError({'detail': 'order is out of range'})
+                raise serializers.ValidationError({'detail': SaleMsg.INDICATOR_ORDER_OUT_OF_RANGE})
         return value
 
     @classmethod
