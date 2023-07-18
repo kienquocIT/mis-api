@@ -5,6 +5,7 @@ python builder/init_db.py
 python manage.py makemigrations --check --dry-run --noinput
 python manage.py migrate
 python manage.py init_data
+python manage.py init_system_data
 echo "yes" | python manage.py collectstatic
 celery -A misapi worker -l info &
 gunicorn misapi.wsgi:application --bind 0.0.0.0:8000

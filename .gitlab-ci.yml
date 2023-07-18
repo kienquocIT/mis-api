@@ -31,6 +31,7 @@ migrations_init:
       python manage.py makemigrations --check --dry-run --noinput;
       python manage.py migrate;
       python manage.py init_data;
+      python manage.py init_system_data;
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH != null'
