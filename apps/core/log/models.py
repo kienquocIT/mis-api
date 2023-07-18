@@ -10,6 +10,7 @@ __all__ = [
     'Notifications',
     'BookMark',
     'DocPined',
+    'MailLog',
 ]
 
 BOOKMARKS_KIND = (
@@ -418,6 +419,52 @@ class DocPined(models.Model):
     class Meta:
         verbose_name = 'Document Pined'
         verbose_name_plural = 'Document Pined'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class MailLog(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    tenant = models.ForeignKey(
+        'tenant.Tenant', null=True, on_delete=models.CASCADE,
+        help_text='The tenant claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_tenant',
+    )
+    company = models.ForeignKey(
+        'company.Company', null=True, on_delete=models.CASCADE,
+        help_text='The company claims that this record belongs to them',
+        related_name='%(app_label)s_%(class)s_belong_to_company',
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name='This employee is performer',
+        related_name='mail_log_of_employee',
+    )
+    mail_template = models.TextField(verbose_name='Template Using')
+    mail_context = models.JSONField(verbose_name='Context Using')
+    mail_html = models.TextField(verbose_name='HTML Parsed')
+    mail_text = models.TextField(verbose_name='Text Parsed')
+    mail_to = models.JSONField(verbose_name='Receiver')
+    mail_cc = models.JSONField(verbose_name='Carbon Copy or Follower')
+    mail_bcc = models.JSONField(verbose_name='Blind Carbon Copy | Blind Follower')
+    mail_receiver_data = models.JSONField(
+        default=dict, help_text=json.dumps({'to': [], 'cc': [], 'bcc': []}), verbose_name='As Sum Receiver Data'
+    )
+    mail_id = models.CharField(max_length=50, verbose_name='Mail ID Returned')
+    mail_thread_id = models.CharField(max_length=50, verbose_name='Mail Thread ID Returned')
+    mail_label_ids = models.JSONField(default=list, verbose_name='Mail Label IDs returned')
+    is_sent = models.BooleanField(default=False, verbose_name='Flag Status Sent')
+
+    class Meta:
+        verbose_name = 'Mail Log'
+        verbose_name_plural = 'Mail Log'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
