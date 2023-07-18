@@ -1,5 +1,5 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, Expense
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice
 from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
@@ -381,8 +381,3 @@ def update_win_rate_delivery_stage():
 
     OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
     print('Done!')
-
-
-def delete_all_expense():
-    Expense.objects.all().delete()
-    return True
