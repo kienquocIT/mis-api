@@ -1,6 +1,6 @@
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -390,3 +390,124 @@ def update_plan_application_quotation():
     Application.objects.filter(id="eeab5d9e-54c6-4e85-af75-477b740d7523").delete()
     print("update done.")
     return True
+
+
+def update_data_product_inventory(product):
+    if len(product.inventory_information) != 0:
+        if isinstance(product.inventory_information['uom'], str):
+            obj_currency = UnitOfMeasure.objects.get(id=product.inventory_information['uom'])
+            product.inventory_information['uom'] = {
+                'id': obj_currency.id,
+                'code': obj_currency.code,
+                'title': obj_currency.title,
+                'abbreviation': obj_currency.abbreviation
+            }
+            product.inventory_uom_id = product.inventory_information['uom']
+        else:
+            product.inventory_uom_id = product.inventory_information[
+                'uom']['id'] if 'uom' in product.inventory_information and product.inventory_information[
+                'uom'] is not None else None
+        product.inventory_level_min = product.inventory_information['inventory_level_min']
+        product.inventory_level_max = product.inventory_information['inventory_level_max']
+        return True
+    return False
+
+
+def update_data_product_sale(product):
+    if len(product.sale_information) != 0:
+        if isinstance(product.sale_information['default_uom'], str):
+            obj_uom = UnitOfMeasure.objects.get(id=product.sale_information['default_uom'])
+            product.sale_information['default_uom'] = {
+                'id': obj_uom.id,
+                'code': obj_uom.code,
+                'title': obj_uom.title
+            }
+            product.default_uom_id = obj_uom.id
+        else:
+            product.default_uom_id = product.sale_information[
+                'default_uom']['id'] if 'default_uom' in product.sale_information and product.sale_information[
+                'default_uom'] is not None else None
+
+        if isinstance(product.sale_information['tax_code'], str):
+            obj_tax = Tax.objects.get(id=product.sale_information['tax_code'])
+            product.sale_information['tax_code'] = {
+                'id': obj_tax.id,
+                'code': obj_tax.code,
+                'title': obj_tax.title
+            }
+            product.tax_code_id = obj_tax.id
+        else:
+            product.tax_code_id = product.sale_information[
+                'tax_code']['id'] if 'tax_code' in product.sale_information and product.sale_information[
+                'tax_code'] is not None else None
+
+        if isinstance(product.sale_information['currency_using'], str):
+            obj_currency = Currency.objects.get(id=product.sale_information['currency_using'])
+            product.sale_information['currency_using'] = {
+                'id': obj_currency.id,
+                'code': obj_currency.code,
+                'title': obj_currency.title
+            }
+            product.currency_using_id = product.sale_information['currency_using']
+        else:
+            product.currency_using_id = product.sale_information[
+                'currency_using']['id'] if 'currency_using' in product.sale_information and \
+                                           product.sale_information['currency_using'] is not None else None
+
+        product.length = product.sale_information['length'] if 'length' in product.sale_information else None
+        product.width = product.sale_information['width'] if 'width' in product.sale_information else None
+        product.height = product.sale_information['height'] if 'height' in product.sale_information else None
+        return True
+    return False
+
+
+def update_data_product():
+    Product.objects.filter(
+        company_id__in=['5e56aa92c9e044779ac744883ac7e901', '5052f1d6c1f1409f96e586e048f19319']
+    ).delete()
+    products = Product.objects.all()
+    for product in products:
+
+        if isinstance(product.general_information['product_type'], str):
+            obj_product_type = ProductType.objects.get(id=product.general_information['product_type'])
+            product.general_information['product_type'] = {
+                'id': obj_product_type.id,
+                'code': obj_product_type.code,
+                'title': obj_product_type.title
+            }
+            product.product_type_id = obj_product_type.id
+        else:
+            product.product_type_id = product.general_information['product_type']['id']
+
+        if isinstance(product.general_information['product_category'], str):
+            obj_product_category = ProductCategory.objects.get(id=product.general_information['product_category'])
+            product.general_information['product_category'] = {
+                'id': obj_product_category.id,
+                'code': obj_product_category.code,
+                'title': obj_product_category.title
+            }
+            product.product_category_id = obj_product_category.id
+        else:
+            product.product_category_id = product.general_information['product_category']['id']
+
+        if isinstance(product.general_information['uom_group'], str):
+            obj_uom_group = ProductCategory.objects.get(id=product.general_information['uom_group'])
+            product.general_information['uom_group'] = {
+                'id': obj_uom_group.id,
+                'code': obj_uom_group.code,
+                'title': obj_uom_group.title
+            }
+            product.uom_group_id = obj_uom_group.id
+        else:
+            product.uom_group_id = product.general_information['uom_group']['id']
+        is_sale = update_data_product_sale(product)
+        is_inventory = update_data_product_inventory(product)
+        list_option = []
+        if is_sale:
+            list_option.append(0)
+        if is_inventory:
+            list_option.append(1)
+        product.product_choice = list_option
+        product.save()
+
+    print('Done !')
