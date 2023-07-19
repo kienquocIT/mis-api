@@ -2253,7 +2253,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {
-            "code": "E01",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2316,7 +2315,6 @@ class ExpenseTestCase(AdvanceTestCase):
         )
 
         data2 = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2354,7 +2352,6 @@ class ExpenseTestCase(AdvanceTestCase):
         price_list = self.create_price_list(self, currency).data['result']
         url = reverse("ExpenseList")
         data = {
-            "code": "E01",
             "title": "",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2385,7 +2382,6 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "code": "",
             "title": "Chi phis nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2418,7 +2414,6 @@ class ExpenseTestCase(AdvanceTestCase):
         )
 
         data2 = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": "",
@@ -2432,7 +2427,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         response2 = self.client.post(url, data2, format='json')
         self.assertResponseList(
@@ -2487,7 +2481,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2509,7 +2502,6 @@ class ExpenseTestCase(AdvanceTestCase):
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
         data_update = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2523,7 +2515,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         response_update = self.client.put(url_update, data_update, format='json')
         self.assertEqual(response_update.status_code, status.HTTP_200_OK)
