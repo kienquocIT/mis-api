@@ -2226,7 +2226,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
