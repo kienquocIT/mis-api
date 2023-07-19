@@ -47,15 +47,20 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             tax_dict = None
             if item.tax:
                 tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+
+            product_obj = {}
+            if item.product_id:
+                product_obj = {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title,
+                    'type': item.product.general_information['product_type'],
+                }
+
             product_items.append(
                 {
                     'id': item.id,
-                    'product': {
-                        'id': item.product_id,
-                        'code': item.product.code,
-                        'title': item.product.title,
-                        'type': item.product.general_information['product_type'],
-                    },
+                    'product': product_obj,
                     'tax': tax_dict,
                     'product_quantity': item.product_quantity,
                     'product_uom': {
