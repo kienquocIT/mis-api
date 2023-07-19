@@ -9,3 +9,4 @@ class SaleMsg:
     OPPORTUNITY_QUOTATION_USED = _('Opportunity is already used for quotation')
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
+    INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')

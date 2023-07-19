@@ -213,7 +213,7 @@ class IndicatorDefaultData:
                             "content_type": None,
                         },
                         "===",
-                        "Chiphítriểnkhai",
+                        "chiphítriểnkhai",
                         {
                             "id": "f0251c13-0480-4ac1-94d3-ebe03afb93bf",
                             "code": "expense_subtotal_price",
@@ -337,7 +337,7 @@ class IndicatorDefaultData:
                                     "content_type": None,
                                 },
                                 "===",
-                                "Chiphítriểnkhai",
+                                "chiphítriểnkhai",
                                 {
                                     "id": "f0251c13-0480-4ac1-94d3-ebe03afb93bf",
                                     "code": "expense_subtotal_price",
@@ -500,7 +500,7 @@ class IndicatorDefaultData:
                             "content_type": None,
                         },
                         "===",
-                        "Chiphítriểnkhai",
+                        "chiphítriểnkhai",
                         {
                             "id": "09aa4090-762d-4942-9676-24da8340284e",
                             "code": "expense_subtotal_price",
@@ -624,7 +624,7 @@ class IndicatorDefaultData:
                                     "content_type": None,
                                 },
                                 "===",
-                                "Chiphítriểnkhai",
+                                "chiphítriểnkhai",
                                 {
                                     "id": "09aa4090-762d-4942-9676-24da8340284e",
                                     "code": "expense_subtotal_price",

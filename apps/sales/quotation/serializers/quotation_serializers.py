@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense, QuotationIndicator
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
@@ -368,7 +369,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                     'id': obj.customer.payment_term_mapped_id,
                     'title': obj.customer.payment_term_mapped.title,
                     'code': obj.customer.payment_term_mapped.code,
-                } if obj.customer.payment_term_mapped else {}
+                } if obj.customer.payment_term_mapped else {},
+                'customer_price_list': obj.customer.price_list_mapped_id,
             }
         return {}
 
@@ -483,6 +485,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -514,6 +518,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    # @decorator_run_workflow
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(
