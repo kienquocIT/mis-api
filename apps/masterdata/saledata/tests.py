@@ -2283,7 +2283,6 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "title": "",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
