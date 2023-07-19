@@ -2213,7 +2213,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2227,7 +2226,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
@@ -2255,7 +2253,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {
-            "code": "E01",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2268,7 +2265,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         url = reverse("ExpenseList")
 
@@ -2287,7 +2283,6 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "title": "Chi phis nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2313,12 +2308,11 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response1.data['errors'],
-            ['code'],
+            ['title'],
             check_sum_second=True,
         )
 
         data2 = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2348,140 +2342,6 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         return response
 
-    def test_create_expense_empty_data(self):
-        currency = self.get_currency(self).data['result']  # noqa
-        expense_type = self.create_expense_type(self).data['result']
-        uom_group = self.create_uom_group(self).data['result']
-        uom = self.create_uom(self, uom_group).data['result']
-        price_list = self.create_price_list(self, currency).data['result']
-        url = reverse("ExpenseList")
-        data = {
-            "code": "E01",
-            "title": "",
-            "expense_type": expense_type['id'],
-            "uom_group": uom_group['id'],
-            "uom": uom['id'],
-            "role": [],
-            "data_price_list": [
-                {
-                    'id': price_list['id'],
-                    'value': 0,
-                    'is_auto_update': False,
-                }
-            ],
-            "currency_using": currency[0]['id']
-        }
-
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['title'],
-            check_sum_second=True,
-        )
-        data1 = {  # noqa
-            "code": "",
-            "title": "Chi phis nhân công sản xuất",
-            "expense_type": expense_type['id'],
-            "uom_group": uom_group['id'],
-            "uom": uom['id'],
-            "role": [],
-            "data_price_list": [
-                {
-                    'id': price_list['id'],
-                    'value': 0,
-                    'is_auto_update': False,
-                }
-            ],
-            "currency_using": currency[0]['id']
-
-        }
-
-        response1 = self.client.post(url, data1, format='json')
-        self.assertResponseList(
-            response1,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response1.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response1.data['errors'],
-            ['code'],
-            check_sum_second=True,
-        )
-
-        data2 = {  # noqa
-            "code": "E01",
-            "title": "Chi phí nhân công sản xuất",
-            "expense_type": expense_type['id'],
-            "uom_group": "",
-            "uom": uom['id'],
-            "role": [],
-            "data_price_list": [
-                {
-                    'id': price_list['id'],
-                    'value': 0,
-                    'is_auto_update': False,
-                }
-            ],
-            "currency_using": currency[0]['id']
-
-        }
-        response2 = self.client.post(url, data2, format='json')
-        self.assertResponseList(
-            response2,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response2.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response2.data['errors'],
-            ['uom_group'],
-            check_sum_second=True,
-        )
-
-        # data3 = {  # noqa
-        #     "code": "E01",
-        #     "title": "Chi phí nhân công sản xuất",
-        #     "expense_type": expense_type['id'],
-        #     "uom_group": uom_group['id'],
-        #     "uom": uom['id'],
-        #     "data_price_list": [
-        #         {
-        #             'value': 0,
-        #             'is_auto_update': False
-        #         }
-        #     ],
-        #     "currency_using": currency[0]['id']
-        #
-        # }
-        # response3 = self.client.post(url, data3, format='json')
-        # self.assertResponseList(
-        #     response3,
-        #     status_code=status.HTTP_400_BAD_REQUEST,
-        #     key_required=['errors', 'status'],
-        #     all_key=['errors', 'status'],
-        #     all_key_from=response3.data,
-        #     type_match={'errors': dict, 'status': int},
-        # )
-        # self.assertCountEqual(
-        #     response3.data['errors'],
-        #     ['price list'],
-        #     check_sum_second=True,
-        # )
-        return response
-
     def test_update_expense(self):
         currency = self.get_currency(self).data['result']  # noqa
         expense_type = self.create_expense_type(self).data['result']
@@ -2489,7 +2349,6 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2511,7 +2370,6 @@ class ExpenseTestCase(AdvanceTestCase):
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
         data_update = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
@@ -2525,7 +2383,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         response_update = self.client.put(url_update, data_update, format='json')
         self.assertEqual(response_update.status_code, status.HTTP_200_OK)

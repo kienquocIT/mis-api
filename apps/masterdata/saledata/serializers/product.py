@@ -748,6 +748,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     'id': item.price_list_id,
                     'price': item.price,
                     'currency_using': item.currency_using.abbreviation,
+                    'is_primary': item.currency_using.is_primary,
+                    'title': item.price_list.title,
                     'is_auto_update': item.get_price_from_source
                 }
             )

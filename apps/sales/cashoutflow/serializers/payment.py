@@ -4,7 +4,7 @@ from apps.sales.cashoutflow.models import (
     AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder, PaymentOpportunity
 )
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg
+from apps.shared import AdvancePaymentMsg, ProductMsg
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -48,38 +48,38 @@ class PaymentListSerializer(serializers.ModelSerializer):
 
 
 def create_payment_cost_detail_items(payment_obj, payment_cost_item_list):
-    expense_ap_bulk_info = []
+    product_ap_bulk_info = []
     for payment_cost_item in payment_cost_item_list:
-        for expense_ap in payment_cost_item.expense_items_detail_list:
-            if expense_ap.get('id', None):
-                expense_ap_bulk_info.append(
+        for product_ap in payment_cost_item.product_items_detail_list:
+            if product_ap.get('id', None):
+                product_ap_bulk_info.append(
                     PaymentCostItemsDetail(
                         payment_cost_item=payment_cost_item,
                         payment_mapped=payment_obj,
-                        expense_converted_id=expense_ap['id'],
-                        expense_value_converted=expense_ap.get('value', 0),
+                        product_converted_id=product_ap['id'],
+                        product_value_converted=product_ap.get('value', 0),
                     )
                 )
-                ap_updated = AdvancePaymentCost.objects.filter(id=expense_ap['id']).first()
-                ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(expense_ap.get('value', 0))
+                ap_updated = AdvancePaymentCost.objects.filter(id=product_ap['id']).first()
+                ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(product_ap.get('value', 0))
                 ap_updated.save()
     PaymentCostItemsDetail.objects.filter(payment_cost_item__in=payment_cost_item_list).delete()
-    PaymentCostItemsDetail.objects.bulk_create(expense_ap_bulk_info)
+    PaymentCostItemsDetail.objects.bulk_create(product_ap_bulk_info)
     return True
 
 
 def create_payment_cost_items(payment_obj, payment_cost_list):
     payment_cost_bulk_info = []
     for payment_cost in payment_cost_list:
-        for expense_ap_detail in payment_cost.expense_ap_detail_list:
+        for product_ap_detail in payment_cost.product_ap_detail_list:
             payment_cost_bulk_info.append(
                 PaymentCostItems(
                     payment_cost=payment_cost,
-                    sale_code_mapped=expense_ap_detail.get('sale_code_mapped', None),
-                    real_value=expense_ap_detail.get('real_value', 0),
-                    converted_value=expense_ap_detail.get('converted_value', 0),
-                    sum_value=expense_ap_detail.get('sum_value', 0),
-                    expense_items_detail_list=expense_ap_detail.get('converted_value_detail', None)
+                    sale_code_mapped=product_ap_detail.get('sale_code_mapped', None),
+                    real_value=product_ap_detail.get('real_value', 0),
+                    converted_value=product_ap_detail.get('converted_value', 0),
+                    sum_value=product_ap_detail.get('sum_value', 0),
+                    product_items_detail_list=product_ap_detail.get('converted_value_detail', None)
                 )
             )
     PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
@@ -88,7 +88,7 @@ def create_payment_cost_items(payment_obj, payment_cost_list):
     return True
 
 
-def create_expense_items(instance, expense_valid_list):
+def create_product_items(instance, product_valid_list):
     vnd_currency = Currency.objects.filter_current(
         fill__tenant=True,
         fill__company=True,
@@ -96,21 +96,21 @@ def create_expense_items(instance, expense_valid_list):
     ).first()
     if vnd_currency:
         bulk_info = []
-        for item in expense_valid_list:
+        for item in product_valid_list:
             bulk_info.append(
                 PaymentCost(
                     payment=instance,
-                    expense_id=item.get('expense_id', None),
-                    expense_unit_of_measure_id=item.get('unit_of_measure_id', None),
-                    expense_quantity=item.get('quantity', None),
-                    expense_unit_price=item.get('unit_price', 0),
+                    product_id=item.get('product_id', None),
+                    product_unit_of_measure_id=item.get('unit_of_measure_id', None),
+                    product_quantity=item.get('quantity', None),
+                    product_unit_price=item.get('unit_price', 0),
                     tax_id=item.get('tax_id', None),
                     tax_price=item.get('tax_price', 0),
                     subtotal_price=item.get('subtotal_price', 0),
                     after_tax_price=item.get('after_tax_price', 0),
                     currency=vnd_currency,
                     document_number=item.get('document_number', ''),
-                    expense_ap_detail_list=item.get('expense_ap_detail_list', None),
+                    product_ap_detail_list=item.get('product_ap_detail_list', None),
                 )
             )
         PaymentCost.objects.filter(payment=instance).delete()
@@ -187,6 +187,10 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         if not sale_code:
             if len(sale_order_selected_list) < 1 and len(quotation_selected_list) < 1 and len(opp_selected_list) < 1:
                 raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
+        if self.initial_data.get('product_valid_list', []):
+            for item in self.initial_data['product_valid_list']:
+                if not item.get('product_id', None):
+                    raise serializers.ValidationError({'Product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
         return validate_data
 
     def create(self, validated_data):
@@ -202,8 +206,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         payment_obj = Payment.objects.create(code=new_code, **validated_data)
 
         create_sale_code_object(payment_obj, self.initial_data)
-        if len(self.initial_data.get('expense_valid_list', [])) > 0:
-            create_expense_items(payment_obj, self.initial_data.get('expense_valid_list', []))
+        if len(self.initial_data.get('product_valid_list', [])) > 0:
+            create_product_items(payment_obj, self.initial_data.get('product_valid_list', []))
         return payment_obj
 
 
@@ -211,7 +215,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    expense_mapped = serializers.SerializerMethodField()
+    product_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -227,7 +231,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
             'method',
             'sale_code_type',
             'supplier',
-            'expense_mapped'
+            'product_mapped'
         )
 
     @classmethod
@@ -289,42 +293,42 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
         return all_opportunity_mapped
 
     @classmethod
-    def get_expense_mapped(cls, obj):
-        all_expense_mapped = []
+    def get_product_mapped(cls, obj):
+        all_product_mapped = []
         for item in obj.payment.all():
             tax_obj = None
             if item.tax:
                 tax_obj = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
-            all_expense_mapped.append({
+            all_product_mapped.append({
                 'id': item.id,
-                'expense': {
-                    'id': item.expense_id,
-                    'code': item.expense.code,
-                    'title': item.expense.title
+                'product': {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title
                 },
-                'expense_unit_of_measure': {
-                    'id': item.expense_unit_of_measure_id,
-                    'code': item.expense_unit_of_measure.code,
-                    'title': item.expense_unit_of_measure.title
+                'product_unit_of_measure': {
+                    'id': item.product_unit_of_measure_id,
+                    'code': item.product_unit_of_measure.code,
+                    'title': item.product_unit_of_measure.title
                 },
-                'expense_quantity': item.expense_quantity,
-                'expense_unit_price': item.expense_unit_price,
+                'product_quantity': item.product_quantity,
+                'product_unit_price': item.product_unit_price,
                 'tax': tax_obj,
                 'subtotal_price': item.subtotal_price,
                 'after_tax_price': item.after_tax_price,
                 'document_number': item.document_number,
-                'expense_ap_detail_list': item.expense_ap_detail_list
+                'product_ap_detail_list': item.product_ap_detail_list
             })
-        return all_expense_mapped
+        return all_product_mapped
 
 
 class PaymentCostItemsListSerializer(serializers.ModelSerializer):
-    expense_id = serializers.SerializerMethodField()
+    product_id = serializers.SerializerMethodField()
 
     class Meta:
         model = PaymentCostItems
         fields = (
-            'expense_id',
+            'product_id',
             'payment_cost',
             'sale_code_mapped',
             'real_value',
@@ -333,5 +337,5 @@ class PaymentCostItemsListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_expense_id(cls, obj):
-        return obj.payment_cost.expense_id
+    def get_product_id(cls, obj):
+        return obj.payment_cost.product_id
