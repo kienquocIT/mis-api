@@ -2265,7 +2265,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
         url = reverse("ExpenseList")
 
@@ -2284,7 +2283,7 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "title": "Chi phis nhân công sản xuất",
+            "title": "",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
