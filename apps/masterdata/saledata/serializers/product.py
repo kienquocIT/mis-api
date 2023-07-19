@@ -576,7 +576,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return CommonCreateUpdateProduct.validate_inventory_level_max(value)
 
     def validate(self, validated_data):
-        inventory_level_min = validated_data.get('inventory_level_min', None) # noqa
+        inventory_level_min = validated_data.get('inventory_level_min', None)  # noqa
         inventory_level_max = validated_data.get('inventory_level_max', None)
         if inventory_level_min and inventory_level_max:
             if validated_data['inventory_level_min'] > validated_data['inventory_level_max']:
@@ -629,6 +629,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'id': item.price_list_id,
                         'price': item.price,
                         'currency_using': item.currency_using.abbreviation,
+                        'is_primary': item.currency_using.is_primary,
+                        'title': item.price_list.title,
                         'is_auto_update': item.get_price_from_source
                     }
                 )

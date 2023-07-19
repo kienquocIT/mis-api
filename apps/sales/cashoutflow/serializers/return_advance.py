@@ -170,12 +170,12 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             result.append(
                 {
                     'id': item.advance_payment_cost_id,
-                    'expense': {
-                        'id': item.advance_payment_cost.expense_id,
-                        'code': item.advance_payment_cost.expense.code,
-                        'title': item.advance_payment_cost.expense.title
+                    'product': {
+                        'id': item.advance_payment_cost.product_id,
+                        'code': item.advance_payment_cost.product.code,
+                        'title': item.advance_payment_cost.product.title
                     },
-                    'expense_type': item.advance_payment_cost.expense.expense.expense_type.title,
+                    'product_type': item.advance_payment_cost.product.general_information['product_type']['title'],
                     'remain_total': remain_total,
                     'return_price': item.return_value,
                 }

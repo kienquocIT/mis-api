@@ -52,7 +52,6 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related(
             'advance_payment'
         ).prefetch_related(
-            'return_advance__advance_payment_cost__expense__expense__expense_type',
             'advance_payment__return_advance_payment__advance_payment',
             'advance_payment__return_advance_payment__return_advance'
         )

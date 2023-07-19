@@ -33,7 +33,6 @@ class ExpenseListSerializer(serializers.ModelSerializer):
 
 class ExpenseCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
-    code = serializers.CharField(max_length=150)
 
     expense_type = serializers.UUIDField(required=True, allow_null=False)
     uom_group = serializers.UUIDField(allow_null=False, required=True)
@@ -45,7 +44,6 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Expense
         fields = (
-            'code',
             'title',
             'expense_type',
             'uom_group',
@@ -54,16 +52,6 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             'currency_using',
             'role'
         )
-
-    @classmethod
-    def validate_code(cls, value):
-        if Expense.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exists():
-            raise serializers.ValidationError(ExpenseMsg.CODE_EXIST)
-        return value
 
     @classmethod
     def validate_expense_type(cls, value):
@@ -114,10 +102,18 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         return None
 
     def create(self, validated_data):
+        if Expense.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
+            new_code = 'EXPENSE.CODE.0001'
+        else:
+            latest_code = Expense.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
+            new_code = int(latest_code.split('.')[-1]) + 1
+            new_code = 'EXPENSE.CODE.000' + str(new_code)
         data_price_list = validated_data.pop('data_price_list')
         currency_using = validated_data.pop('currency_using')
         data_role = validated_data.pop('role', [])
-        expense = Expense.objects.create(**validated_data)
+        expense = Expense.objects.create(**validated_data, code=new_code)
         self.common_create_expense_price(data_price_list, currency_using, validated_data['uom'], expense)
         self.common_create_expense_role(data_role, expense)
         return expense
