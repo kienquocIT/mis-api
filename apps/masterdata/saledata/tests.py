@@ -2308,7 +2308,7 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response1.data['errors'],
-            ['code'],
+            ['title'],
             check_sum_second=True,
         )
 
