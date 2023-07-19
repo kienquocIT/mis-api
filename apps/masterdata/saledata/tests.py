@@ -2381,7 +2381,7 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "title": "Chi phis nhân công sản xuất",
+            "title": "",
             "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
@@ -2394,7 +2394,6 @@ class ExpenseTestCase(AdvanceTestCase):
                 }
             ],
             "currency_using": currency[0]['id']
-
         }
 
         response1 = self.client.post(url, data1, format='json')
@@ -2413,7 +2412,7 @@ class ExpenseTestCase(AdvanceTestCase):
         )
 
         data2 = {  # noqa
-            "title": "Chi phí nhân công sản xuất",
+            "title": "",
             "expense_type": expense_type['id'],
             "uom_group": "",
             "uom": uom['id'],
