@@ -57,6 +57,7 @@ class QuotationDetail(
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
     serializer_update = QuotationUpdateSerializer
+    update_hidden_field = ['employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

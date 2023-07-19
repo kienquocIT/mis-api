@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, 
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from apps.core.base.models import PlanApplication, ApplicationProperty
+from apps.core.base.models import PlanApplication, ApplicationProperty, Application
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -381,3 +381,12 @@ def update_win_rate_delivery_stage():
 
     OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
     print('Done!')
+
+
+def update_plan_application_quotation():
+    PlanApplication.objects.filter(
+        application_id="eeab5d9e-54c6-4e85-af75-477b740d7523"
+    ).delete()
+    Application.objects.filter(id="eeab5d9e-54c6-4e85-af75-477b740d7523").delete()
+    print("update done.")
+    return True

@@ -68,6 +68,8 @@ CONDITION_LOGIC = (
 MAP_FIELD_TITLE = {
     'saledata.contact': 'fullname',
     'saledata.account': 'name',
+    'quotation.quotation': 'title',
+    'saleorder.saleorder': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
