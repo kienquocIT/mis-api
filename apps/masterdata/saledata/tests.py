@@ -344,7 +344,7 @@ class ProductTestCase(AdvanceTestCase):
 
     def create_uom(self):
         data_uom_gr = self.create_uom_group()
-        url = reverse('UnitOfMeasureGroupList')
+        url = reverse('UnitOfMeasureList')
         response = self.client.post(
             url,
             {
@@ -367,18 +367,30 @@ class ProductTestCase(AdvanceTestCase):
         data = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
         }
         response = self.client.post(
             self.url,
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'general_information', 'sale_information', 'inventory_information',
+             'purchase_information'],
+            check_sum_second=True,
+        )
         return response
 
     def test_create_product_missing_code(self):
@@ -387,26 +399,35 @@ class ProductTestCase(AdvanceTestCase):
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
 
         return None
 
     def test_create_product_missing_title(self):
         data = {
             "code": "P01",
-            "general_information": {
-            }
         }
         response = self.client.post(
             self.url,
@@ -419,37 +440,47 @@ class ProductTestCase(AdvanceTestCase):
         product_type = self.create_product_type().data['result']  # noqa
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
-        data1 = {
+        data = {
             "code": "P01",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            "title": "Laptop HP Asus",
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
         }
-        response1 = self.client.post(
+        response = self.client.post(
             self.url,
-            data1,
+            data,
             format='json'
         )
-        self.assertEqual(response1.status_code, 201)
 
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
+
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
         return None
 
     def test_create_product_not_UUID(self):
@@ -459,57 +490,61 @@ class ProductTestCase(AdvanceTestCase):
         data = {
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
-            "general_information": {
-                'product_type': {
-                    'id': product_type['id'],
-                    'title': product_type['title'],
-                    'code': "",
-                },
-                'product_category': {
-                    'id': product_category['id'],
-                    'title': product_category['title'],
-                    'code': "",
-                },
-                'uom_group': {
-                    'id': uom_group.data['result']['id'],
-                    'title': uom_group.data['result']['title'],
-                    'code': "",
-                },
-            },
-            "sale_information": {
-                'default_uom_id': unit_of_measure.data['result']['id']
-            },
-            "inventory_information": {
-                'uom': unit_of_measure.data['result']['id'],
-                'inventory_level_min': 5,
-                'inventory_level_max': 20
-            }
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id'],
+            'default_uom': unit_of_measure.data['result']['id'],
+            'inventory_uom': '1',
+            'inventory_level_min': 5,
+            'inventory_level_max': 20
+
         }
         response = self.client.post(
             self.url,
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            ['inventory_uom'],
+            check_sum_second=True,
+        )
 
         data1 = {
             "code": "P02",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': '1',
-                'product_category': '1',
-                'uom_group': '1'
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {},
+            "product_choice": [],
+            'product_type': '1',
+            'product_category': '1',
+            'uom_group': '1'
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['product_type', 'product_category', 'uom_group'],
+            check_sum_second=True,
+        )
         return None
 
 

@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ProductMsg:
+    DOES_NOT_EXIST = _('Does not exist')
     PRODUCT_TYPE_EXIST = _('Product type is already exist.')
     PRODUCT_TYPE_DOES_NOT_EXIST = _('Product type does not exist.')
     PRODUCT_DOES_NOT_EXIST = _('Product does not exist.')
