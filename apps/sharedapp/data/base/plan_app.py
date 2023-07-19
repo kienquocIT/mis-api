@@ -88,6 +88,11 @@ Application_data = {
         "code": "opportunity",
         "app_label": "opportunity",
     },
+    "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {
+        "title": "Task",
+        "code": "task",
+        "app_label": "task",
+    },
 }
 
 PlanApplication_data = {

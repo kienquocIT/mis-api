@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -7,7 +8,7 @@ from apps.shared import SimpleAbstractModel, TASK_PRIORITY, MasterDataAbstractMo
 from apps.sales.opportunity.models import Opportunity
 from .config import OpportunityTaskConfig
 
-__all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork']
+__all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
 
 
 class OpportunityTaskStatus(SimpleAbstractModel):
@@ -113,10 +114,10 @@ class OpportunityTask(MasterDataAbstractModel):
     )
     attach = models.JSONField(
         default=list,
-        verbose_name='attachment file',
         null=True,
+        verbose_name='attachment file',
         help_text=json.dumps(
-            ["attachment_id1", "attachment_id2"]
+            ["uuid4", "uuid4"]
         )
     )
 
@@ -188,7 +189,13 @@ class OpportunityLogWork(SimpleAbstractModel):
 
 
 class TaskAttachmentFile(SimpleAbstractModel):
-    attachment = models.FileField(verbose_name="Attachment file", upload_to='', storage=None, max_length=100)
+    attachment = models.OneToOneField(
+        'attachments.Files',
+        on_delete=models.CASCADE,
+        verbose_name='Task attachment files',
+        help_text='Task had one/many attachment file',
+        related_name='task_attachment_file',
+    )
     task = models.ForeignKey(
         OpportunityTask,
         on_delete=models.CASCADE,
@@ -197,6 +204,7 @@ class TaskAttachmentFile(SimpleAbstractModel):
     order = models.SmallIntegerField(
         default=1
     )
+    media_file = models.UUIDField(unique=True, default=uuid.uuid4)
 
     class Meta:
         verbose_name = 'Opportunity Attachment Task'
