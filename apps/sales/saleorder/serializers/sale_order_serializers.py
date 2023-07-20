@@ -270,11 +270,15 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_opportunity(cls, obj):
         if obj.opportunity:
+            is_close = False
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+                is_close = True
             return {
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
-                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
+                'is_close': is_close
             }
         return {}
 
