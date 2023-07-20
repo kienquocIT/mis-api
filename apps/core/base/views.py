@@ -72,6 +72,7 @@ class ApplicationPropertyList(
         'type': ['exact'],
         'id': ['in'],
         'application__code': ['exact'],
+        'is_sale_indicator': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 

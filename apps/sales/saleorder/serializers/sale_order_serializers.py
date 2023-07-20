@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
     SaleOrder, SaleOrderIndicator
@@ -479,6 +480,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -514,6 +517,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    # @decorator_run_workflow
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(
