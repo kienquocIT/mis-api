@@ -265,6 +265,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas
             }
         return {}
 
