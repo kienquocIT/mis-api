@@ -7,7 +7,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.shared import AccountsMsg, HRMsg
+from apps.shared import AccountsMsg, HRMsg, AbstractDetailSerializerModel
 
 
 # Account Type
@@ -533,7 +533,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return account
 
 
-class AccountDetailSerializer(serializers.ModelSerializer):
+class AccountDetailSerializer(AbstractDetailSerializerModel):
     contact_mapped = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
 

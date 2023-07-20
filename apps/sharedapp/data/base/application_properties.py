@@ -91,7 +91,7 @@ AppProp_SaleData_Account_data = {
     "6609da8f-66d0-4d90-ba20-711ef6e8e49e": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Name",
-        "code": "title",
+        "code": "name",
         "type": 1,
     },
     "8937c428-66dd-4c97-a325-88bae5d68056": {
@@ -121,10 +121,47 @@ AppProp_SaleData_Account_data = {
     },
     "30490c0b-69f8-49c3-a79e-0a466b3f20da": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
-        "title": "Account group",
+        "title": "Account Group",
         "code": "account_group",
         "type": 5,
         "content_type": "saledata.AccountGroup",
+    },
+    "64dca30b-2a99-4135-9349-a739b0b83ef7": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Tax Code",
+        "code": "tax_code",
+        "type": 1,
+    },
+    "f743952a-f39e-4203-a123-0823606628a1": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Industry",
+        "code": "industry",
+        "type": 5,
+        "content_type": "saledata.Industry",
+    },
+    "196c67ce-1c48-446a-ae81-e40b24d83cd3": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Phone",
+        "code": "phone",
+        "type": 1,
+    },
+    "ce285eae-b1b7-4edd-af9e-d699cdf1f130": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Email",
+        "code": "email",
+        "type": 1,
+    },
+    "b0b2ca8d-659b-46da-81b8-449f0fcf8acf": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Shipping Address",
+        "code": "shipping_address",
+        "type": 1,
+    },
+    "0d3511e9-7d86-4d4c-a249-f43a0144b406": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Billing Address",
+        "code": "billing_address",
+        "type": 1,
     },
 }
 
