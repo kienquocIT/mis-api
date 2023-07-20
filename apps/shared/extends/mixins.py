@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Union
 from uuid import UUID
 
@@ -421,11 +422,12 @@ class BaseListMixin(BaseMixin):
 
 class BaseCreateMixin(BaseMixin):
     def create(self, request, *args, **kwargs):
+        log_data = deepcopy(request.data)
         serializer = self.get_serializer_create(data=request.data)
         serializer.is_valid(raise_exception=True)
         field_hidden = self.setup_create_field_hidden(request.user)
         obj = self.perform_create(serializer, extras=field_hidden)
-        self.write_log(doc_obj=obj)
+        self.write_log(doc_obj=obj, request_data=log_data)
         return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
 
     @staticmethod

@@ -36,6 +36,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user': request.user
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -64,7 +67,7 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         self.ser_context = {
-            'employee': request.user.employee_current
+            'user': request.user
         }
         return self.update(request, *args, **kwargs)
 
