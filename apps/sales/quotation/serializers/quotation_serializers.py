@@ -288,15 +288,10 @@ class QuotationListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_opportunity(cls, obj):
         if obj.opportunity:
-            is_close = False
-            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
-                is_close = True
             return {
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
-                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
-                'is_close': is_close
             }
         return {}
 
@@ -691,3 +686,65 @@ class QuotationExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_after_tax(cls, obj):
         return obj.expense_subtotal_price + obj.expense_tax_amount
+
+
+class QuotationListSerializerForCashOutFlow(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'date_created',
+            'total_product',
+            'system_status',
+            'opportunity'
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(2),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status:
+            return "Open"
+        return "Open"
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            is_close = False
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
+                'is_close': is_close
+            }
+        return {}
