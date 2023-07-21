@@ -93,6 +93,11 @@ Application_data = {
         "code": "task",
         "app_label": "task",
     },
+    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": {
+        "title": "Good receipt",
+        "code": "goodreceipt",
+        "app_label": "good_receipt",
+    },
 }
 
 PlanApplication_data = {
@@ -135,5 +140,9 @@ PlanApplication_data = {
     "bd17c9bd-a7b8-4603-9b8f-d17da94b9aae": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
+    },
+    "63f83f34-b0e7-4461-8c19-609824ef8d1e": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Task
     },
 }
