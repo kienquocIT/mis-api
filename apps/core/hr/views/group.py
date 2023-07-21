@@ -7,7 +7,7 @@ from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import (
     GroupLevelListSerializer,
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer,
+    GroupUpdateSerializer, GroupDetailSerializer, GroupParentListSerializer, GroupLevelCreateSerializer,
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
 
@@ -16,7 +16,6 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseU
 class GroupLevelList(
     BaseListMixin,
     BaseCreateMixin,
-    generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
@@ -28,7 +27,7 @@ class GroupLevelList(
 
     serializer_list = GroupLevelListSerializer
     serializer_detail = GroupLevelListSerializer
-    serializer_create = GroupLevelMainCreateSerializer
+    serializer_create = GroupLevelCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
     use_cache_queryset = True
@@ -44,7 +43,7 @@ class GroupLevelList(
     @swagger_auto_schema(
         operation_summary="Create Group Level",
         operation_description="Create new group level",
-        request_body=GroupLevelMainCreateSerializer,
+        request_body=GroupLevelCreateSerializer,
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
@@ -54,7 +53,6 @@ class GroupLevelList(
 class GroupLevelDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
-    generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
