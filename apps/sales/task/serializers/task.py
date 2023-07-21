@@ -164,6 +164,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     checklist = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
     task_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
 
     @classmethod
     def get_assign_to(cls, obj):
@@ -200,9 +201,31 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return {}
+
     class Meta:
         model = OpportunityTask
-        fields = ('id', 'title', 'code', 'task_status', 'end_date', 'priority', 'assign_to', 'checklist', 'parent_n')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'task_status',
+            'opportunity',
+            'start_date',
+            'end_date',
+            'priority',
+            'assign_to',
+            'checklist',
+            'parent_n'
+        )
 
 
 class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
