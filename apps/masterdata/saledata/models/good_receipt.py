@@ -1,15 +1,16 @@
 import json
+import uuid
 
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, DataAbstractModel
+from apps.shared import MasterDataAbstractModel, DataAbstractModel, SimpleAbstractModel
 
 from .accounts import Account
 from .product import Product, UnitOfMeasure
 from .inventory import WareHouse
 from .price import Tax
 
-__all__ = ['GoodReceipt', 'GoodReceiptProduct']
+__all__ = ['GoodReceipt', 'GoodReceiptProduct', 'GoodReceiptAttachment']
 
 
 class GoodReceipt(DataAbstractModel):
@@ -40,6 +41,44 @@ class GoodReceipt(DataAbstractModel):
     total_amount = models.FloatField(
         verbose_name="Total amount",
         help_text='pretax amount + taxes'
+    )
+    attachments = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='attachment file',
+        help_text=json.dumps(
+            ["uuid4", "uuid4"]
+        )
+    )
+    po_code = models.CharField(
+        max_length=50,
+        verbose_name="PO code",
+        help_text='relate to PO code',
+        null=True
+    )
+    # copy_form_po = models.ForeignKey( coming soon
+    #     '',
+    #     on_delete=models.CASCADE,
+    #     verbose_name="Supplier",
+    #     related_name="good_receipt_supplier",
+    #     null=True
+    # )
+    po_data = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='product list from PO',
+        help_text=json.dumps(
+            [
+                {
+                    "id": "uuid4",
+                    "uom": "uuid4",
+                    "quantity": 1,
+                    "unit_price": 10.000,
+                    "tax": 1.2,
+                    "sub_total": 10.000
+                },
+            ]
+        )
     )
 
     class Meta:
@@ -177,5 +216,27 @@ class GoodReceiptProduct(MasterDataAbstractModel):
         verbose_name = 'Good receipt'
         verbose_name_plural = 'Good receipt'
         ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class GoodReceiptAttachment(SimpleAbstractModel):
+    good_receipt = models.ForeignKey(
+        GoodReceipt,
+        on_delete=models.CASCADE,
+        verbose_name='good receipt'
+    )
+    attachment = models.OneToOneField(
+        'attachments.Files',
+        on_delete=models.CASCADE,
+        verbose_name='Good receipt attachment files',
+        help_text='Good receipt had one/many attachment file',
+        related_name='good_receipt_attachment_file',
+    )
+    media_file = models.UUIDField(unique=True, default=uuid.uuid4)
+
+    class Meta:
+        verbose_name = 'Good receipt Attachment'
+        verbose_name_plural = 'Good receipt Attachment'
         default_permissions = ()
         permissions = ()

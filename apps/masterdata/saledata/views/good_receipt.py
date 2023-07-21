@@ -46,6 +46,9 @@ class GoodReceiptList(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user': request.user
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -71,4 +74,7 @@ class GoodReceiptDetail(
     @swagger_auto_schema(operation_summary='Update a good receipt', request_body=GoodReceiptUpdateSerializer)
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {
+            'user': request.user
+        }
         return self.update(request, *args, pk, **kwargs)
