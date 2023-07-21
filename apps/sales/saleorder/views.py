@@ -2,7 +2,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
-from apps.sales.saleorder.serializers import SaleOrderListSerializer, \
+from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
@@ -20,7 +20,7 @@ class SaleOrderList(
     filterset_fields = []
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
-    serializer_detail = SaleOrderListSerializer
+    serializer_detail = SaleOrderDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
@@ -212,3 +212,22 @@ class SaleOrderIndicatorCompanyRestore(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class SaleOrderListForCashOutFlow(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrder.objects
+    filterset_fields = []
+    serializer_list = SaleOrderListSerializerForCashOutFlow
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("customer", "sale_person", "opportunity", "quotation")
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order List For Cash Outflow",
+        operation_description="Get Sale Order List For Cash Outflow",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

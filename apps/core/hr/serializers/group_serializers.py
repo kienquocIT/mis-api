@@ -42,6 +42,10 @@ class GroupLevelCreateSerializer(serializers.ModelSerializer):
             'second_manager_description',
         )
 
+    def create(self, validated_data):
+        group_level = GroupLevel.objects.create(**validated_data)
+        return group_level
+
 
 class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
     group_level_data = GroupLevelCreateSerializer(
@@ -51,9 +55,9 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
 
     @classmethod
     def create_new_update_old_group_level(cls, validated_data, group_level_old_level_list, bulk_info):
-        group_level_old_level = GroupLevel.objects.filter(
-            tenant_id=validated_data.get('tenant_id', None),
-            company_id=validated_data.get('company_id', None),
+        group_level_old_level = GroupLevel.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
         ).values_list('level', flat=True)
         for level in group_level_old_level:
             group_level_old_level_list.append(level)
@@ -62,12 +66,14 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
             if data['level'] not in group_level_old_level:
                 bulk_info.append(GroupLevel(
                     **data,
-                    tenant_id=validated_data.get('tenant_id', None),
-                    company_id=validated_data.get('company_id', None),
                 ))
             # update old
             else:
-                group_level_instance = GroupLevel.objects.filter(level=data['level']).first()
+                group_level_instance = GroupLevel.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    level=data['level'],
+                ).first()
                 if group_level_instance:
                     for key, value in data.items():
                         setattr(group_level_instance, key, value)
@@ -87,28 +93,16 @@ class GroupLevelMainCreateSerializer(serializers.Serializer):   # noqa
                         group_level_old_level_list=group_level_old_level_list,
                         bulk_info=bulk_info
                     )
-                # delete all group level if data from UI == []
-                else:
-                    group_level_old_level = GroupLevel.objects.filter(
-                        tenant_id=validated_data.get('tenant_id', None),
-                        company_id=validated_data.get('company_id', None),
-                    )
-                    if group_level_old_level:
-                        group_level_old_level.delete()
-        # delete group level
-        if group_level_old_level_list:
-            group_level_delete = GroupLevel.objects.filter(
-                tenant_id=validated_data.get('tenant_id', None),
-                company_id=validated_data.get('company_id', None),
-                level__in=group_level_old_level_list
-            )
-            if group_level_delete:
-                group_level_delete.delete()
-        group_level = GroupLevel.objects.bulk_create(bulk_info)
-        return group_level
+        GroupLevel.objects.bulk_create(bulk_info)
+        return GroupLevel.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            level=1
+        ).first()
 
 
 class GroupLevelUpdateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = GroupLevel
         fields = (
@@ -118,10 +112,51 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
             'second_manager_description',
         )
 
+    @classmethod
+    def validate_level(cls, value):
+        if isinstance(value, int):
+            if value > GroupLevel.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+            ).count() or value == 0:
+                raise serializers.ValidationError({'detail': ""})
+        return value
+
+    @classmethod
+    def update_other_instance_if_change_level(cls, instance, validated_data):
+        # change level to lower level => update level of records after instance += 1
+        if validated_data['level'] < instance.level:
+            other_instances = GroupLevel.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                level__gte=validated_data['level'],
+                level__lte=instance.level,
+            ).exclude(id=instance.id)
+            for other_instance in other_instances:
+                other_instance.level = other_instance.level + 1
+                other_instance.save(update_fields=['level'])
+        # change level to higher level => update level of records after instance -= 1
+        elif validated_data['level'] > instance.level:
+            other_instances = GroupLevel.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                level__lte=validated_data['level'],
+                level__gte=instance.level,
+            ).exclude(id=instance.id)
+            for other_instance in other_instances:
+                other_instance.level = other_instance.level - 1
+                other_instance.save(update_fields=['level'])
+        return True
+
     def update(self, instance, validated_data):
+        # update other group level if change level
+        if 'level' in validated_data:
+            self.update_other_instance_if_change_level(instance=instance, validated_data=validated_data)
+        # update
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        return instance
 
 
 # Group Serializer
