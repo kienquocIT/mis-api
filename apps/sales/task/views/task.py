@@ -19,7 +19,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'assign_to')
+        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity')
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task List",
