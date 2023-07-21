@@ -57,7 +57,7 @@ class TestCaseOpportunity(AdvanceTestCase):
 
     def create_uom(self):
         data_uom_gr = self.create_uom_group()
-        url = reverse('UnitOfMeasureGroupList')
+        url = reverse('UnitOfMeasureList')
         response = self.client.post(
             url,
             {
@@ -73,12 +73,18 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response, data_uom_gr
 
-    def test_create_new_tax_category(self):
+    def get_base_unit_measure(self):
+        url = reverse('BaseItemUnitList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
         data = {
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
-        response = self.client.post(reverse('TaxCategoryList'), data, format='json')
+        response = self.client.post(url_tax_category, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_201_CREATED,
@@ -94,9 +100,41 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         return response
 
-    def create_tax(self):
-        tax = TaxAndTaxCategoryTestCase.test_create_new_tax(self)
-        return tax
+    def create_new_tax(self):
+        url_tax = reverse("TaxList")
+        tax_category = self.create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(url_tax, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            check_sum_second=True,
+        )
+        return response
+
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_currency(self):
+        url = reverse('CurrencyList')
+        response = self.client.get(url, format='json')
+        return response
 
     def test_create_product(self):
         self.url = reverse("ProductList")
@@ -184,7 +222,6 @@ class TestCaseOpportunity(AdvanceTestCase):
         return response
 
     def test_create_opportunity(self):
-        self.url_tax = reverse('TaxList')
         emp = self.get_employee().data['result'][0]['id']
         customer = self.test_create_account().data['result']['id']
         data = {
@@ -279,6 +316,7 @@ class TestCaseOpportunity(AdvanceTestCase):
              'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
             check_sum_second=True,
         )
+        return response
 
     def test_get_detail_opportunity(self, data_id=None):
         data_created = None

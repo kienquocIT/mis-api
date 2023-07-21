@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.sales.quotation.serializers import QuotationCommonValidate
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
     SaleOrder, SaleOrderIndicator
@@ -192,14 +194,18 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
+    # indicator = serializers.CharField(
+    #     max_length=550
+    # )
+    quotation_indicator = serializers.CharField(
         max_length=550
     )
 
     class Meta:
         model = SaleOrderIndicator
         fields = (
-            'indicator',
+            # 'indicator',
+            'quotation_indicator',
             'indicator_value',
             'indicator_rate',
             'quotation_indicator_value',
@@ -208,9 +214,13 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    # @classmethod
+    # def validate_indicator(cls, value):
+    #     return SaleOrderCommonValidate().validate_indicator(value=value)
+
     @classmethod
-    def validate_indicator(cls, value):
-        return SaleOrderCommonValidate().validate_indicator(value=value)
+    def validate_quotation_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
 
 
 # SALE ORDER BEGIN
@@ -479,6 +489,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -514,6 +526,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    # @decorator_run_workflow
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(
