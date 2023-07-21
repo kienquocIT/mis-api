@@ -130,12 +130,16 @@ class SaleOrderCommonCreate:
     @classmethod
     def create_indicator(cls, validated_data, instance):
         for sale_order_indicator in validated_data['sale_order_indicators_data']:
-            indicator_id = sale_order_indicator.get('indicator', {}).get('id')
-            if indicator_id:
-                del sale_order_indicator['indicator']
+            # indicator_id = sale_order_indicator.get('indicator', {}).get('id')
+            quotation_indicator_id = sale_order_indicator.get('quotation_indicator', {}).get('id')
+            # if indicator_id:
+            if quotation_indicator_id:
+                # del sale_order_indicator['indicator']
+                del sale_order_indicator['quotation_indicator']
                 SaleOrderIndicator.objects.create(
                     sale_order=instance,
-                    indicator_id=indicator_id,
+                    # indicator_id=indicator_id,
+                    quotation_indicator_id=quotation_indicator_id,
                     **sale_order_indicator
                 )
         return True
@@ -420,4 +424,4 @@ class SaleOrderCommonValidate:
                 'remark': indicator.remark
             }
         except SaleOrderIndicatorConfig.DoesNotExist:
-            raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})

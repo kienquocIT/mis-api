@@ -55,6 +55,7 @@ class SaleOrderIndicator(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="indicator",
         related_name="sale_order_indicator_indicator",
+        null=True
     )
     indicator_value = models.FloatField(
         default=0,
@@ -63,6 +64,13 @@ class SaleOrderIndicator(SimpleAbstractModel):
     indicator_rate = models.FloatField(
         default=0,
         help_text="rate value of specific indicator for sale order"
+    )
+    quotation_indicator = models.ForeignKey(
+        'quotation.QuotationIndicatorConfig',
+        on_delete=models.CASCADE,
+        verbose_name="quotation indicator",
+        related_name="sale_order_indicator_quotation_indicator",
+        null=True
     )
     quotation_indicator_value = models.FloatField(
         default=0,

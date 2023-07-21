@@ -163,4 +163,5 @@ TASK_OUT_OPTION = (
     (0, 'None'),
     (1, 'only member in dept'),
     (2, 'only staff in dept'),
+    (3, 'both 1 & 2'),
 )

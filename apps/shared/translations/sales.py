@@ -10,3 +10,13 @@ class SaleMsg:
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
+
+
+class SaleTask:
+    ERROR_ASSIGNER = _('Assigner not found')
+    ERROR_CONFIG_NOT_FOUND = _('Config not found please contact admin')
+    ERROR_TEAM_MEMBER_EMPTY = _('Team member is empty')
+    ERROR_NOT_IN_MEMBER = _('Assignee not in team member')
+    ERROR_NOT_IN_DEPARTMENT = _('Assignee not in department')
+    ERROR_1_OR_2_OPT = _('Assignee not in department or not in team member')
+    ERROR_NOT_STAFF = _('Assignee is not staff of the assigner')

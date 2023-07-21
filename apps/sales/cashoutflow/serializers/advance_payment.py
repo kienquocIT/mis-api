@@ -16,6 +16,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     remain_value = serializers.SerializerMethodField()
     product_items = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -38,6 +41,44 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'product_items'
         )
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        if obj.sale_order_mapped:
+            if obj.sale_order_mapped.opportunity:
+                is_close = False
+                if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.sale_order_mapped_id,
+                    'is_close': is_close
+                }
+        return None
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        if obj.quotation_mapped:
+            if obj.quotation_mapped.opportunity:
+                is_close = False
+                if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.quotation_mapped_id,
+                    'is_close': is_close
+                }
+        return None
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        if obj.opportunity_mapped:
+            is_close = False
+            if obj.opportunity_mapped.is_close_lost or obj.opportunity_mapped.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_mapped_id,
+                'is_close': is_close
+            }
+        return None
 
     @classmethod
     def get_product_items(cls, obj):
