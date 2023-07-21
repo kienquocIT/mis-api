@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.sales.quotation.serializers import QuotationCommonValidate
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
@@ -193,14 +194,18 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
+    # indicator = serializers.CharField(
+    #     max_length=550
+    # )
+    quotation_indicator = serializers.CharField(
         max_length=550
     )
 
     class Meta:
         model = SaleOrderIndicator
         fields = (
-            'indicator',
+            # 'indicator',
+            'quotation_indicator',
             'indicator_value',
             'indicator_rate',
             'quotation_indicator_value',
@@ -209,9 +214,13 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    # @classmethod
+    # def validate_indicator(cls, value):
+    #     return SaleOrderCommonValidate().validate_indicator(value=value)
+
     @classmethod
-    def validate_indicator(cls, value):
-        return SaleOrderCommonValidate().validate_indicator(value=value)
+    def validate_quotation_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
 
 
 # SALE ORDER BEGIN
@@ -261,11 +270,15 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_opportunity(cls, obj):
         if obj.opportunity:
+            is_close = False
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+                is_close = True
             return {
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
-                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
+                'is_close': is_close
             }
         return {}
 

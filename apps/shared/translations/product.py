@@ -32,3 +32,4 @@ class ProductMsg:
     VALUE_GREATER_THAN_ZERO = _("Must greater than zero")
     NOT_SAVE = _('Not save value in database')
     EXPENSE_DOES_NOT_EXIST = _('Expense does not exist.')
+    INDICATOR_NOT_EXIST = _('Indicator does not exist.')
