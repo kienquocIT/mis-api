@@ -18,3 +18,5 @@ class HRMsg:
     PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT = _("Permission item is incorrect.")
 
     FILTER_COMPANY_ID_REQUIRED = _('The data must be filter by company.')
+
+    GROUP_LEVEL_OUT_OF_RANGE = _('Level is out of range')
