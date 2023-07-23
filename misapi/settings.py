@@ -18,10 +18,16 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+# override recursion limit
 sys.setrecursionlimit(10000)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# load environment from .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -58,6 +64,7 @@ INSTALLED_APPS = \
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
     ] + [  # integrate some service management or tracing
+        'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
         'apps.core.provisioning',  # config receive request from PROVISIONING server
         'apps.core.log',  # all logged data, except Workflow Log
@@ -79,6 +86,7 @@ INSTALLED_APPS = \
         'apps.sales.saleorder',
         'apps.sales.cashoutflow',
         'apps.sales.delivery',
+        'apps.sales.task',
     ]
 
 MIDDLEWARE = [
@@ -184,6 +192,9 @@ TIME_ZONE = 'Asia/Ho_Chi_Minh'
 USE_I18N = True
 
 USE_TZ = False
+
+# Mail config
+MAIL_CONFIG_OBJ_PK = os.environ.get('MAIL_CONFIG_OBJ_PK', '6db50f86-055d-4fc6-9235-208b0fbc0ef9')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
@@ -427,7 +438,8 @@ if os.environ.get('ENABLE_LOGGING', False) in [1, '1']:
 # -- Logging
 
 # PROD configurations
-if os.environ.get('ENABLE_PROD', '0') in [1, '1']:
+ENABLE_PROD = True if os.environ.get('ENABLE_PROD', '0') in [1, '1'] else False
+if ENABLE_PROD is True:
     # allow host
     OS_ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '[]')
     ALLOWED_HOSTS = json.loads(OS_ALLOWED_HOSTS)
@@ -437,7 +449,7 @@ if os.environ.get('ENABLE_PROD', '0') in [1, '1']:
     CELERY_ACCEPT_CONTENT = ['json']
     CELERY_TASK_SERIALIZER = 'json'
     CELERY_RESULT_BACKEND = 'django-db'
-    CELERY_TASK_ALWAYS_EAGER = False
+    CELERY_TASK_ALWAYS_EAGER = True if os.environ.get('CELERY_TASK_ALWAYS_EAGER', 0) in [1, '1'] else False
     CELERY_BROKER_VHOST = os.environ.get('MSG_QUEUE_BROKER_VHOST', '/')
     MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
     MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
@@ -494,3 +506,5 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
     print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
+
+CELERY_TASK_ALWAYS_EAGER = True

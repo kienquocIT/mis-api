@@ -41,11 +41,11 @@ class PromotionTestCase(AdvanceTestCase):
         data1 = {
             "code": "P01",
             "title": "Laptop HP 6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            "product_choice": [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
+
         }
         product = self.client.post(reverse("ProductList"), data1, format='json')
         data = {

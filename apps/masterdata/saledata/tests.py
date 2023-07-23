@@ -344,7 +344,7 @@ class ProductTestCase(AdvanceTestCase):
 
     def create_uom(self):
         data_uom_gr = self.create_uom_group()
-        url = reverse('UnitOfMeasureGroupList')
+        url = reverse('UnitOfMeasureList')
         response = self.client.post(
             url,
             {
@@ -360,25 +360,130 @@ class ProductTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response, data_uom_gr
 
+    def get_base_unit_measure(self):
+        url = reverse('BaseItemUnitList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(url_tax_category, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default'],
+            check_sum_second=True,
+        )
+        return response
+
+    def create_new_tax(self):
+        url_tax = reverse("TaxList")
+        tax_category = self.create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(url_tax, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            check_sum_second=True,
+        )
+        return response
+
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_currency(self):
+        url = reverse('CurrencyList')
+        response = self.client.get(url, format='json')
+        return response
+
     def test_create_product(self):
+        price_list = self.get_price_list().data['result'][0]
+        tax_code = self.create_new_tax()
+        base_item_unit = self.get_base_unit_measure()
+        weight_unit = base_item_unit.data['result'][3]
+        volume_unit = base_item_unit.data['result'][2]
+        currency = self.get_currency().data['result'][3]
         product_type = self.create_product_type().data['result']  # noqa
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [0, 1],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id'],
+            'default_uom': unit_of_measure.data['result']['id'],
+            'tax_code': tax_code.data['result']['id'],
+            'currency_using': currency['id'],
+            'length': 50,
+            'width': 30,
+            'height': 10,
+            'price_list': [{
+                'price_list_id': price_list['id'],
+                'price_value': 20000000,
+                'is_auto_update': False,
+            }],
+            'measure': [
+                {
+                    'unit': weight_unit['id'],
+                    'value': 5000,
+                },
+                {
+                    'unit': volume_unit['id'],
+                    'value': 15000,
+                },
+            ],
+            'inventory_uom': unit_of_measure.data['result']['id'],
+            'inventory_level_min': 5,
+            'inventory_level_max': 20,
         }
         response = self.client.post(
             self.url,
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, 201)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'general_information', 'sale_information', 'inventory_information',
+             'purchase_information'],
+            check_sum_second=True,
+        )
         return response
 
     def test_create_product_missing_code(self):
@@ -387,26 +492,35 @@ class ProductTestCase(AdvanceTestCase):
         unit_of_measure, uom_group = self.create_uom()
         data1 = {
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
 
         return None
 
     def test_create_product_missing_title(self):
         data = {
             "code": "P01",
-            "general_information": {
-            }
         }
         response = self.client.post(
             self.url,
@@ -419,37 +533,47 @@ class ProductTestCase(AdvanceTestCase):
         product_type = self.create_product_type().data['result']  # noqa
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
-        data1 = {
+        data = {
             "code": "P01",
-            "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            "title": "Laptop HP Asus",
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
         }
-        response1 = self.client.post(
+        response = self.client.post(
             self.url,
-            data1,
+            data,
             format='json'
         )
-        self.assertEqual(response1.status_code, 201)
 
         data1 = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': product_type['id'],
-                'product_category': product_category['id'],
-                'uom_group': uom_group.data['result']['id']
-            },
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id']
+
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response1.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['code'],
+            check_sum_second=True,
+        )
         return None
 
     def test_create_product_not_UUID(self):
@@ -459,58 +583,164 @@ class ProductTestCase(AdvanceTestCase):
         data = {
             "code": "P01",
             "title": "Laptop Dell HLVVL6R",
-            "general_information": {
-                'product_type': {
-                    'id': product_type['id'],
-                    'title': product_type['title'],
-                    'code': "",
-                },
-                'product_category': {
-                    'id': product_category['id'],
-                    'title': product_category['title'],
-                    'code': "",
-                },
-                'uom_group': {
-                    'id': uom_group.data['result']['id'],
-                    'title': uom_group.data['result']['title'],
-                    'code': "",
-                },
-            },
-            "sale_information": {
-                'default_uom_id': unit_of_measure.data['result']['id']
-            },
-            "inventory_information": {
-                'uom': unit_of_measure.data['result']['id'],
-                'inventory_level_min': 5,
-                'inventory_level_max': 20
-            }
+            'product_choice': [],
+            'product_type': product_type['id'],
+            'product_category': product_category['id'],
+            'uom_group': uom_group.data['result']['id'],
+            'default_uom': unit_of_measure.data['result']['id'],
+            'inventory_uom': '1',
+            'inventory_level_min': 5,
+            'inventory_level_max': 20
+
         }
         response = self.client.post(
             self.url,
             data,
             format='json'
         )
-        self.assertEqual(response.status_code, 400)
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            ['inventory_uom'],
+            check_sum_second=True,
+        )
 
         data1 = {
             "code": "P02",
             "title": "Laptop HP HLVVL6R",
-            "general_information": {
-                'product_type': '1',
-                'product_category': '1',
-                'uom_group': '1'
-            },
-            "inventory_information": {},
-            "sale_information": {},
-            "purchase_information": {},
+            "product_choice": [],
+            'product_type': '1',
+            'product_category': '1',
+            'uom_group': '1'
         }
         response1 = self.client.post(
             self.url,
             data1,
             format='json'
         )
-        self.assertEqual(response1.status_code, 400)
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['errors'],
+            ['product_type', 'product_category', 'uom_group'],
+            check_sum_second=True,
+        )
         return None
+
+    def test_get_list_product(self):
+        self.test_create_product()
+        url = reverse('ProductList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'code', 'title', 'general_information', 'sale_information',],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_detail_product(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_create_product()
+            data_id = data_created.data['result']['id']
+        url = reverse("ProductDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'general_information', 'inventory_information', 'sale_information',
+             'purchase_information', ],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_update_product(self):
+        price_list = self.get_price_list().data['result'][0]
+        base_item_unit = self.get_base_unit_measure()
+        weight_unit = base_item_unit.data['result'][3]
+        volume_unit = base_item_unit.data['result'][2]
+        data_created = self.test_create_product().data['result']
+
+        title_change = 'Laptop Dell'
+        length_change = 100
+        measure = [
+            {
+                'unit': weight_unit['id'],
+                'value': 6000,
+            },
+            {
+                'unit': volume_unit['id'],
+                'value': 30000,
+            },
+        ]
+        data = {
+            'code': 'P01',
+            'title': title_change,
+            'product_choice': [0, 1],
+            'product_type': data_created['general_information']['product_type']['id'],
+            'product_category': data_created['general_information']['product_category']['id'],
+            'uom_group': data_created['general_information']['uom_group']['id'],
+            'default_uom': data_created['sale_information']['default_uom']['id'],
+            'tax_code': data_created['sale_information']['tax_code']['id'],
+            'currency_using': data_created['sale_information']['currency_using']['id'],
+            'length': length_change,
+            'width': data_created['sale_information']['width'],
+            'height': data_created['sale_information']['height'],
+            'price_list': [{
+                'price_list_id': price_list['id'],
+                'price_value': 20000000,
+                'is_auto_update': False,
+            }],
+            'measure': measure,
+            'inventory_uom': data_created['inventory_information']['uom']['id'],
+            'inventory_level_min': 5,
+            'inventory_level_max': 20,
+        }
+
+        url = reverse("ProductDetail", kwargs={'pk': data_created['id']})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_get_detail_product(data_id=data_created['id'])
+        self.assertEqual(data_changed.data['result']['title'], title_change)
+        return response
 
 
 class SalutationTestCase(AdvanceTestCase):
@@ -1022,20 +1252,18 @@ class CurrencyTestCase(AdvanceTestCase):
 
 
 class TaxAndTaxCategoryTestCase(AdvanceTestCase):
-    url_tax_category = reverse("TaxCategoryList")
-    url_tax = reverse("TaxList")
-
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
         self.authenticated()
 
     def test_create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
         data = {
             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
         }
-        response = self.client.post(self.url_tax_category, data, format='json')
+        response = self.client.post(url_tax_category, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_201_CREATED,
@@ -1052,6 +1280,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         return response
 
     def test_create_new_tax(self):
+        url_tax = reverse("TaxList")
         tax_category = self.test_create_new_tax_category()
         data = {
             "title": "Thuế bán hành VAT-10%",
@@ -1060,7 +1289,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "type": 0
         }
-        response = self.client.post(self.url_tax, data, format='json')
+        response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_201_CREATED,
@@ -1077,6 +1306,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         return response
 
     def test_create_tax_missing_data(self):
+        url_tax = reverse("TaxList")
         tax_category = self.test_create_new_tax_category()
 
         # missing title
@@ -1086,7 +1316,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "type": 0
         }
-        response = self.client.post(self.url_tax, data, format='json')
+        response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1108,7 +1338,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "type": 0
         }
-        response1 = self.client.post(self.url_tax, data1, format='json')
+        response1 = self.client.post(url_tax, data1, format='json')
         self.assertResponseList(
             response1,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1130,7 +1360,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "rate": 10,
             "type": 0
         }
-        response2 = self.client.post(self.url_tax, data2, format='json')
+        response2 = self.client.post(url_tax, data2, format='json')
         self.assertResponseList(
             response2,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1152,7 +1382,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "rate": 10,
         }
-        response3 = self.client.post(self.url_tax, data3, format='json')
+        response3 = self.client.post(url_tax, data3, format='json')
         self.assertResponseList(
             response3,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1169,6 +1399,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         return None
 
     def test_create_tax_empty_data(self):
+        url_tax = reverse("TaxList")
         tax_category = self.test_create_new_tax_category()
 
         # title
@@ -1179,7 +1410,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "type": 0
         }
-        response = self.client.post(self.url_tax, data, format='json')
+        response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1202,7 +1433,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": tax_category.data['result']['id'],
             "type": 0
         }
-        response1 = self.client.post(self.url_tax, data1, format='json')
+        response1 = self.client.post(url_tax, data1, format='json')
         self.assertResponseList(
             response1,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1225,7 +1456,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "category": "",
             "type": 0
         }
-        response2 = self.client.post(self.url_tax, data2, format='json')
+        response2 = self.client.post(url_tax, data2, format='json')
         self.assertResponseList(
             response2,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -2213,22 +2444,19 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "expense_type": expense_type['id'],
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 0,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
@@ -2242,8 +2470,9 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'general_information', 'title', 'code', 'date_created', 'date_modified', 'is_active', 'is_delete',
-             'employee_created', 'employee_modified', 'tenant', 'company'],
+            ['id', 'title', 'code', 'date_created', 'date_modified', 'is_active', 'is_delete',
+             'employee_created', 'employee_modified', 'tenant', 'company', 'price_list', 'expense_type', 'uom_group',
+             'uom', 'role'],
             check_sum_second=True,
         )
         return response, price_list
@@ -2255,21 +2484,18 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {
-            "code": "E01",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "expense_type": expense_type['id'],
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 0,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
         url = reverse("ExpenseList")
 
@@ -2288,21 +2514,18 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "title": "Chi phis nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "expense_type": expense_type['id'],
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 0,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
 
         response1 = self.client.post(url, data1, format='json')
@@ -2316,26 +2539,23 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response1.data['errors'],
-            ['code'],
+            ['title'],
             check_sum_second=True,
         )
 
         data2 = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
-            "general_information": {
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 0,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
         response2 = self.client.post(url, data2, format='json')
         self.assertResponseList(
@@ -2353,146 +2573,6 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         return response
 
-    def test_create_expense_empty_data(self):
-        currency = self.get_currency(self).data['result']  # noqa
-        expense_type = self.create_expense_type(self).data['result']
-        uom_group = self.create_uom_group(self).data['result']
-        uom = self.create_uom(self, uom_group).data['result']
-        price_list = self.create_price_list(self, currency).data['result']
-        url = reverse("ExpenseList")
-        data = {
-            "code": "E01",
-            "title": "",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
-        }
-
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['title'],
-            check_sum_second=True,
-        )
-        data1 = {  # noqa
-            "code": "",
-            "title": "Chi phis nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
-        }
-
-        response1 = self.client.post(url, data1, format='json')
-        self.assertResponseList(
-            response1,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response1.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response1.data['errors'],
-            ['code'],
-            check_sum_second=True,
-        )
-
-        data2 = {  # noqa
-            "code": "E01",
-            "title": "Chi phí nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": "",
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
-        }
-        response2 = self.client.post(url, data2, format='json')
-        self.assertResponseList(
-            response2,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response2.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response2.data['errors'],
-            ['uom_group'],
-            check_sum_second=True,
-        )
-
-        data3 = {  # noqa
-            "code": "E01",
-            "title": "Chi phí nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'value': 0,
-                        'is_auto_update': False
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
-        }
-        response3 = self.client.post(url, data3, format='json')
-        self.assertResponseList(
-            response3,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response3.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response3.data['errors'],
-            ['price list'],
-            check_sum_second=True,
-        )
-        return response
-
     def test_update_expense(self):
         currency = self.get_currency(self).data['result']  # noqa
         expense_type = self.create_expense_type(self).data['result']
@@ -2500,22 +2580,19 @@ class ExpenseTestCase(AdvanceTestCase):
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công sản xuất",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 0,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "expense_type": expense_type['id'],
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 0,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
@@ -2524,22 +2601,19 @@ class ExpenseTestCase(AdvanceTestCase):
         url_update = reverse("ExpenseDetail", args=[response.data['result']['id']])
 
         data_update = {  # noqa
-            "code": "E01",
             "title": "Chi phí nhân công vệ sinh",
-            "general_information": {
-                "expense_type": expense_type['id'],
-                "uom_group": uom_group['id'],
-                "uom": uom['id'],
-                "tax_code": None,
-                "price_list": [
-                    {
-                        'id': price_list['id'],
-                        'value': 100000,
-                        'is_auto_update': False,
-                    }
-                ],
-                "currency_using": currency[0]['id']
-            }
+            "expense_type": expense_type['id'],
+            "uom_group": uom_group['id'],
+            "uom": uom['id'],
+            "role": [],
+            "data_price_list": [
+                {
+                    'id': price_list['id'],
+                    'value': 100000,
+                    'is_auto_update': False,
+                }
+            ],
+            "currency_using": currency[0]['id']
         }
         response_update = self.client.put(url_update, data_update, format='json')
         self.assertEqual(response_update.status_code, status.HTTP_200_OK)

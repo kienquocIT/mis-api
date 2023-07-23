@@ -8,12 +8,12 @@ from apps.masterdata.saledata.views.accounts import (
     AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
-from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
+from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail, ProductForSaleList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -68,6 +68,7 @@ urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+    path('products-sale', ProductForSaleList.as_view(), name='ProductForSaleList'),
 ]
 
 urlpatterns += [
@@ -105,7 +106,8 @@ urlpatterns += [
 
 urlpatterns += [
     path('expenses', ExpenseList.as_view(), name='ExpenseList'),
-    path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail')
+    path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail'),
+    path('expenses-sale', ExpenseForSaleList.as_view(), name='ExpenseForSaleList'),
 ]
 
 urlpatterns += [

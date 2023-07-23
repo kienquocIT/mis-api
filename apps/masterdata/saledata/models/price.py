@@ -10,6 +10,7 @@ __all__ = [
     'Price',
     'ProductPriceList',
     'Discount',
+    'UnitOfMeasureGroup'
 ]
 
 # Create your models here.

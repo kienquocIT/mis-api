@@ -68,6 +68,8 @@ CONDITION_LOGIC = (
 MAP_FIELD_TITLE = {
     'saledata.contact': 'fullname',
     'saledata.account': 'name',
+    'quotation.quotation': 'title',
+    'saleorder.saleorder': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -135,4 +137,31 @@ INDICATOR_PARAM_TYPE = (
     (1, 'Property'),
     (2, 'Function'),
     (3, 'Operator'),
+)
+
+# opportunity task
+TASK_PRIORITY = (
+    (0, 'Low'),
+    (1, 'Medium'),
+    (2, 'High')
+)
+
+TASK_KIND = (
+    (0, 'Normal'),
+    (1, 'To do'),
+    (2, 'Completed'),
+    (3, 'Pending')
+)
+
+TASK_IN_OPTION = (
+    (0, 'None'),
+    (1, 'only member in'),
+    (2, 'only staff in dept'),
+    (3, '1 & 2 both')
+)
+TASK_OUT_OPTION = (
+    (0, 'None'),
+    (1, 'only member in dept'),
+    (2, 'only staff in dept'),
+    (3, 'both 1 & 2'),
 )

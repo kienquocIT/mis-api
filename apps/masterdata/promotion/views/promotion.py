@@ -45,6 +45,7 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     serializer_update = PromotionUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
     @swagger_auto_schema(
         operation_summary="Promotion detail",
         operation_description="get detail, update and delete promotion by ID",

@@ -50,4 +50,7 @@ class OrderDeliverySubDetail(
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, pk, **kwargs):
+        self.ser_context = {
+            'user': request.user
+        }
         return self.update(request, *args, pk, **kwargs)

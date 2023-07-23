@@ -1,7 +1,9 @@
 from typing import Union, Literal, TypedDict
 from uuid import UUID
+
 from jsonfield import JSONField
 
+from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantAbstractModel
@@ -323,7 +325,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
 
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
-        if kwargs.get('force_insert', False) and not self.media_user_id:
+        if kwargs.get('force_insert', False) and not self.media_user_id and settings.ENABLE_PROD is True:
             MediaForceAPI.call_sync_employee(self)
 
     def get_detail(self, *args):

@@ -761,7 +761,7 @@ class MediaForceAPI:
         return resp
 
     @classmethod
-    def get_file_check(cls, media_file_id, employee_id) -> (bool, dict):
+    def get_file_check(cls, media_file_id, media_user_id) -> (bool, dict):
         # sys/f/check
         # {
         #     "media_file_id": "4a713342-a123-4a26-bcd9-f2abb659790e",
@@ -773,7 +773,7 @@ class MediaForceAPI:
         ).post(
             data={
                 'media_file_id': media_file_id,
-                'owner_id': employee_id,
+                'owner_id': media_user_id,
             }
         )
         if resp.state:
@@ -781,7 +781,7 @@ class MediaForceAPI:
         return False, resp.errors
 
     @classmethod
-    def regis_link_to_file(cls, media_file_id, api_file_id, api_app_code, employee_id) -> (bool, dict):
+    def regis_link_to_file(cls, media_file_id, api_file_id, api_app_code, media_user_id) -> (bool, dict):
         # sys/f/link
         # {
         #     "media_file_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -794,10 +794,10 @@ class MediaForceAPI:
             is_secret_api=True,
         ).post(
             data={
-                'media_file_id': media_file_id,
-                'api_file_id': api_file_id,
-                'api_app_code': api_app_code,
-                'owner_id': employee_id,
+                'media_file_id': str(media_file_id),
+                'api_file_id': str(api_file_id),
+                'api_app_code': str(api_app_code),
+                'owner_id': str(media_user_id),
             }
         )
         if resp.state:
@@ -805,7 +805,7 @@ class MediaForceAPI:
         return False, resp.errors
 
     @classmethod
-    def destroy_link_to_file(cls, media_file_id, api_file_id, api_app_code, employee_id) -> (bool, dict):
+    def destroy_link_to_file(cls, media_file_id, api_file_id, api_app_code, media_user_id) -> (bool, dict):
         # sys/f/un-link
         # {
         #     "media_file_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
@@ -818,10 +818,10 @@ class MediaForceAPI:
             is_secret_api=True,
         ).post(
             data={
-                'media_file_id': media_file_id,
-                'api_file_id': api_file_id,
-                'api_app_code': api_app_code,
-                'employee_id': employee_id,
+                'media_file_id': str(media_file_id),
+                'api_file_id': str(api_file_id),
+                'api_app_code': str(api_app_code),
+                'owner_id': str(media_user_id),
             }
         )
         if resp.state:

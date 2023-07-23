@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from apps.sales.quotation.serializers import QuotationCommonValidate
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
     SaleOrder, SaleOrderIndicator
@@ -192,14 +194,18 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
+    # indicator = serializers.CharField(
+    #     max_length=550
+    # )
+    quotation_indicator = serializers.CharField(
         max_length=550
     )
 
     class Meta:
         model = SaleOrderIndicator
         fields = (
-            'indicator',
+            # 'indicator',
+            'quotation_indicator',
             'indicator_value',
             'indicator_rate',
             'quotation_indicator_value',
@@ -208,9 +214,13 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
             'order',
         )
 
+    # @classmethod
+    # def validate_indicator(cls, value):
+    #     return SaleOrderCommonValidate().validate_indicator(value=value)
+
     @classmethod
-    def validate_indicator(cls, value):
-        return SaleOrderCommonValidate().validate_indicator(value=value)
+    def validate_quotation_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
 
 
 # SALE ORDER BEGIN
@@ -306,7 +316,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'payment_term',
             'quotation',
             'system_status',
-            # quotation tabs
+            # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
             'sale_order_costs_data',
@@ -317,6 +327,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -462,6 +473,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -477,6 +489,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -508,10 +522,11 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].sale_order_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
-                if validate_data['opportunity'].is_close is True:
+                if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    # @decorator_run_workflow
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(
@@ -521,7 +536,10 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if sale_order.opportunity:
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(update_fields=['sale_order'])
+            sale_order.opportunity.save(**{
+                'update_fields': ['sale_order'],
+                'sale_order_status': sale_order.system_status,
+            })
         return sale_order
 
 
@@ -587,6 +605,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -652,7 +671,10 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(update_fields=['sale_order'])
+            instance.opportunity.save(**{
+                'update_fields': ['sale_order'],
+                'sale_order_status': instance.system_status,
+            })
         return instance
 
 
@@ -679,3 +701,78 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_after_tax(cls, obj):
         return obj.expense_subtotal_price + obj.expense_tax_amount
+
+
+class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'date_created',
+            'total_product',
+            'system_status',
+            'opportunity',
+            'quotation',
+            'delivery_call',
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(2),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            is_close = False
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
+                'is_close': is_close
+            }
+        return {}
+
+    @classmethod
+    def get_quotation(cls, obj):
+        if obj.quotation:
+            return {
+                'id': obj.quotation_id,
+                'title': obj.quotation.title,
+                'code': obj.quotation.code,
+            }
+        return {}
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status:
+            return "Open"
+        return "Open"

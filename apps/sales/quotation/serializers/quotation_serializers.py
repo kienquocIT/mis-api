@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense, QuotationIndicator
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
@@ -327,6 +328,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -366,7 +368,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                     'id': obj.customer.payment_term_mapped_id,
                     'title': obj.customer.payment_term_mapped.title,
                     'code': obj.customer.payment_term_mapped.code,
-                } if obj.customer.payment_term_mapped else {}
+                } if obj.customer.payment_term_mapped else {},
+                'customer_price_list': obj.customer.price_list_mapped_id,
             }
         return {}
 
@@ -463,6 +466,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -480,6 +484,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'is_customer_confirm',
             # indicator tab
             'quotation_indicators_data',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -507,10 +513,11 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             if validate_data['opportunity'] is not None:
                 if validate_data['opportunity'].quotation_opportunity.exists():
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
-                if validate_data['opportunity'].is_close is True:
+                if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    # @decorator_run_workflow
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(
@@ -520,7 +527,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         # update field quotation for opportunity
         if quotation.opportunity:
             quotation.opportunity.quotation = quotation
-            quotation.opportunity.save(update_fields=['quotation'])
+            quotation.opportunity.save(**{
+                'update_fields': ['quotation'],
+                'quotation_confirm': quotation.is_customer_confirm,
+            })
         return quotation
 
 
@@ -582,6 +592,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'total_product_discount',
             'total_product_tax',
             'total_product',
+            'total_product_revenue_before_tax',
             # total amount of costs
             'total_cost_pretax_amount',
             'total_cost_tax',
@@ -645,7 +656,10 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         # update field quotation for opportunity
         if instance.opportunity:
             instance.opportunity.quotation = instance
-            instance.opportunity.save(update_fields=['quotation'])
+            instance.opportunity.save(**{
+                'update_fields': ['quotation'],
+                'quotation_confirm': instance.is_customer_confirm,
+            })
         return instance
 
 
@@ -672,3 +686,65 @@ class QuotationExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_after_tax(cls, obj):
         return obj.expense_subtotal_price + obj.expense_tax_amount
+
+
+class QuotationListSerializerForCashOutFlow(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Quotation
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'date_created',
+            'total_product',
+            'system_status',
+            'opportunity'
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(2),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status:
+            return "Open"
+        return "Open"
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            is_close = False
+            if obj.opportunity.is_close_lost or obj.opportunity.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title,
+                'code': obj.opportunity.code,
+                'opportunity_sale_team_datas': obj.opportunity.opportunity_sale_team_datas,
+                'is_close': is_close
+            }
+        return {}
