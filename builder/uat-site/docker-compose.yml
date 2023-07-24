@@ -1,7 +1,7 @@
 version: '2.12'
 
 services:
-  api-sit:
+  api-uat:
     build:
       context: ../../
       dockerfile: builder/Dockerfile
