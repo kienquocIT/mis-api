@@ -119,7 +119,7 @@ class GroupLevelUpdateSerializer(serializers.ModelSerializer):
                     fill__tenant=True,
                     fill__company=True,
             ).count() or value == 0:
-                raise serializers.ValidationError({'detail': ""})
+                raise serializers.ValidationError({'detail': HRMsg.GROUP_LEVEL_OUT_OF_RANGE})
         return value
 
     @classmethod
