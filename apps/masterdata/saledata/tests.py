@@ -481,7 +481,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'code', 'title', 'general_information', 'sale_information', 'inventory_information',
-             'purchase_information'],
+             'purchase_information', 'product_choice'],
             check_sum_second=True,
         )
         return response
@@ -681,7 +681,7 @@ class ProductTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'code', 'title', 'general_information', 'inventory_information', 'sale_information',
-             'purchase_information', ],
+             'purchase_information', 'product_choice'],
             check_sum_second=True,
         )
         if not data_id:

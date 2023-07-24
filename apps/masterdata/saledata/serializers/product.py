@@ -616,6 +616,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'inventory_information',
             'sale_information',
             'purchase_information',
+            'product_choice',
         )
 
     @classmethod
