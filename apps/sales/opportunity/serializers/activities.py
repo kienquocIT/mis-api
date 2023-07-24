@@ -130,15 +130,12 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
 def send_email(email_obj):
     GmailController(
-        subject="Subject mail",
-        to=["email1@gmail.com"],
-        cc=["email_cc@gmail.com"],
-        bcc=["email_bcc@gmail.com"],
-        template="<table><tr><td><h1>This is content mail.</h1></td><td>{{abc}}</td></tr></table>",
-        context={"abc": "manual content"},
-        tenant_id='',
-        company_id='',
-        employee_ud='',
+        subject=email_obj.subject,
+        to=email_obj.email_to,
+        cc=email_obj.email_cc_list,
+        bcc=[],
+        template="<table><tr><td><h1>" + email_obj.subject + "</h1></td><td>" + email_obj.content + "</td></tr></table>",
+        context=email_obj.content,
     ).send()
     return True
 
