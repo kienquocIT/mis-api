@@ -4,17 +4,16 @@ from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
 from apps.masterdata.saledata.models import (
-    WareHouse, WareHouseStock, ProductWareHouse
+    WareHouse, ProductWareHouse
 )
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer,
-    WareHouseDetailSerializer, WareHouseUpdateSerializer, WarehouseStockListSerializer,
+    WareHouseDetailSerializer, WareHouseUpdateSerializer,
     ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
 )
 
 __all__ = [
-    'WareHouseList', 'WareHouseDetail', 'WarehouseStockList',
-    'WareHouseCheckAvailableProductList', 'ProductWareHouseList'
+    'WareHouseList', 'WareHouseDetail', 'WareHouseCheckAvailableProductList', 'ProductWareHouseList'
 ]
 
 
@@ -29,9 +28,6 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         "is_active": ['exact'],
     }
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related('warehouse_stock_warehouse')
 
     @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(login_require=True, auth_require=True, code_perm='')
@@ -63,25 +59,6 @@ class WareHouseDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
-
-
-class WarehouseStockList(BaseListMixin):
-    queryset = WareHouseStock.objects
-    serializer_list = WarehouseStockListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
-    filterset_fields = {
-        "product": ['exact', 'in'],
-        "warehouse": ['exact', 'in'],
-    }
-
-    def get_queryset(self):
-        return super().get_queryset().select_related('product', 'warehouse')
-
-    @swagger_auto_schema(operation_summary='WareHouse stock product')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
 
 
 class WareHouseCheckAvailableProductList(BaseListMixin):
