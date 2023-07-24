@@ -1,8 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
-    WareHouse, WareHouseStock,
-    ProductWareHouse,
+    WareHouse, ProductWareHouse,
 )
 
 __all__ = [
@@ -10,7 +9,6 @@ __all__ = [
     'WareHouseCreateSerializer',
     'WareHouseDetailSerializer',
     'WareHouseUpdateSerializer',
-    'WarehouseStockListSerializer',
     'ProductWareHouseStockListSerializer',
     'ProductWareHouseListSerializer'
 ]
@@ -51,35 +49,6 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = WareHouse
         fields = ('title', 'code', 'remarks', 'is_active')
-
-
-class WarehouseStockListSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
-    warehouse = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_product(cls, obj):
-        if obj:
-            return {
-                'id': str(obj.product_id),
-                'title': obj.product.title,
-                'code': obj.product.code,
-            }
-        return {}
-
-    @classmethod
-    def get_warehouse(cls, obj):
-        if obj:
-            return {
-                'id': str(obj.warehouse_id),
-                'title': obj.warehouse.title,
-                'code': obj.warehouse.code
-            }
-        return {}
-
-    class Meta:
-        model = WareHouseStock
-        fields = ('product', 'warehouse', 'stock')
 
 
 class ProductWareHouseStockListSerializer(serializers.ModelSerializer):

@@ -357,6 +357,9 @@ def update_fk_expense_price_expense_general():
 def edit_uom_group_field_to_default():
     UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
     UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    for item in UnitOfMeasure.objects.filter(rounding=0):
+        item.rounding = 4
+        item.save()
     return True
 
 

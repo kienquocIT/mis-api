@@ -1,10 +1,10 @@
 __all__ = [
-    'ProductWareHouse',
+    'ProductWareHouse'
 ]
-
 from django.db import models
 
 from apps.shared import MasterDataAbstractModel
+from .product import UnitOfMeasure
 
 
 class ProductWareHouse(MasterDataAbstractModel):
@@ -114,17 +114,23 @@ class ProductWareHouse(MasterDataAbstractModel):
             tenant_id=None, company_id=None,
     ):
         try:
+            uom = UnitOfMeasure.objects.get(id=uom_id)
+            uom_ratio = uom.ratio
             if tenant_id and company_id:
-                obj = cls.objects.get(
-                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                objs = cls.objects.filter(
+                    product_id=product_id, warehouse_id=warehouse_id,
                     tenant_id=tenant_id, company_id=company_id,
                 )
             else:
-                obj = cls.objects.get_current(
-                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                objs = cls.objects.filter_current(
+                    product_id=product_id, warehouse_id=warehouse_id,
                     fill__tenant=True, fill__company=True,
                 )
-            return obj.stock_amount - obj.sold_amount
+            count = 0
+            for obj in objs:
+                count += ((obj.stock_amount - obj.sold_amount) * obj.uom.ratio) / uom_ratio
+            count = round(count, uom.rounding)
+            return count
         except cls.DoesNotExist:
             pass
         return 0
@@ -136,17 +142,23 @@ class ProductWareHouse(MasterDataAbstractModel):
             tenant_id=None, company_id=None,
     ):
         try:
+            uom = UnitOfMeasure.objects.get(id=uom_id)
+            uom_ratio = uom.ratio
             if tenant_id and company_id:
-                obj = cls.objects.get(
-                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                objs = cls.objects.filter(
+                    product_id=product_id, warehouse_id=warehouse_id,
                     tenant_id=tenant_id, company_id=company_id,
                 )
             else:
-                obj = cls.objects.get_current(
-                    product_id=product_id, warehouse_id=warehouse_id, uom_id=uom_id,
+                objs = cls.objects.filter_current(
+                    product_id=product_id, warehouse_id=warehouse_id,
                     fill__tenant=True, fill__company=True,
                 )
-            return obj.picked_ready
+            count = 0
+            for obj in objs:
+                count += (obj.picked_ready * obj.uom.ratio) / uom_ratio
+            count = round(count, uom.rounding)
+            return count
         except cls.DoesNotExist:
             pass
         return 0
