@@ -725,7 +725,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             contact.account_name = instance
             contact.is_primary = item['is_primary']
             contact.save()
-        return None
+        return True
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
