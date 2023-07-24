@@ -89,16 +89,6 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class OpportunityCallLogDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityCallLog
-        fields = ()
-
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
-
-
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     email_to_contact = serializers.SerializerMethodField()
@@ -178,16 +168,6 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'opportunity',
             'email_to_contact'
         )
-
-
-class OpportunityEmailDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityEmail
-        fields = ()
-
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
 
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
@@ -312,15 +292,3 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat'
         )
-
-
-class OpportunityMeetingDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityMeeting
-        fields = ()
-
-    def update(self, instance, validated_data):
-        OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=instance).delete()
-        OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=instance).delete()
-        instance.delete()
-        return True

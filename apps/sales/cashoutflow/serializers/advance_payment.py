@@ -45,27 +45,27 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_mapped(cls, obj):
         if obj.sale_order_mapped:
+            is_close = False
             if obj.sale_order_mapped.opportunity:
-                is_close = False
                 if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_close:
                     is_close = True
-                return {
-                    'id': obj.sale_order_mapped_id,
-                    'is_close': is_close
-                }
+            return {
+                'id': obj.sale_order_mapped_id,
+                'is_close': is_close
+            }
         return None
 
     @classmethod
     def get_quotation_mapped(cls, obj):
         if obj.quotation_mapped:
+            is_close = False
             if obj.quotation_mapped.opportunity:
-                is_close = False
                 if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_close:
                     is_close = True
-                return {
-                    'id': obj.quotation_mapped_id,
-                    'is_close': is_close
-                }
+            return {
+                'id': obj.quotation_mapped_id,
+                'is_close': is_close
+            }
         return None
 
     @classmethod

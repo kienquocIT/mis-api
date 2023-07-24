@@ -2,14 +2,11 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting
 from apps.sales.opportunity.serializers import (
-    OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
-    OpportunityCallLogDetailSerializer, OpportunityCallLogDeleteSerializer,
-    OpportunityEmailListSerializer, OpportunityEmailCreateSerializer,
-    OpportunityEmailDetailSerializer, OpportunityEmailDeleteSerializer,
-    OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
-    OpportunityMeetingDetailSerializer, OpportunityMeetingDeleteSerializer
+    OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer, OpportunityCallLogDetailSerializer,
+    OpportunityEmailListSerializer, OpportunityEmailCreateSerializer, OpportunityEmailDetailSerializer,
+    OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer, OpportunityMeetingDetailSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
 
 class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
@@ -21,7 +18,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityCallLogDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "contact")
+        return super().get_queryset().select_related("opportunity__customer", "contact")
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog List",
@@ -58,18 +55,15 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         return self.retrieve(request, *args, **kwargs)
 
 
-class OpportunityCallLogDelete(BaseUpdateMixin):
+class OpportunityCallLogDelete(BaseDestroyMixin):
     queryset = OpportunityCallLog.objects
-    serializer_detail = OpportunityCallLogDetailSerializer
-    serializer_update = OpportunityCallLogDeleteSerializer
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Call Log List",
-        request_body=OpportunityCallLogDeleteSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
@@ -118,18 +112,15 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         return self.retrieve(request, *args, **kwargs)
 
 
-class OpportunityEmailDelete(BaseUpdateMixin):
+class OpportunityEmailDelete(BaseDestroyMixin):
     queryset = OpportunityEmail.objects
-    serializer_detail = OpportunityEmailDetailSerializer
-    serializer_update = OpportunityEmailDeleteSerializer
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Email List",
-        request_body=OpportunityEmailDeleteSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
 
 
 class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
@@ -181,15 +172,12 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         return self.retrieve(request, *args, **kwargs)
 
 
-class OpportunityMeetingDelete(BaseUpdateMixin):
+class OpportunityMeetingDelete(BaseDestroyMixin):
     queryset = OpportunityMeeting.objects
-    serializer_detail = OpportunityMeetingDetailSerializer
-    serializer_update = OpportunityMeetingDeleteSerializer
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Meeting List",
-        request_body=OpportunityMeetingDeleteSerializer
     )
     @mask_view(login_require=True, auth_require=True, code_perm='')
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)

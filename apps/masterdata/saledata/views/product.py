@@ -302,6 +302,12 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'product_price_product__currency_using',
+            'product_price_product__price_list',
+        )
+
     @swagger_auto_schema(operation_summary='Detail Product')
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):

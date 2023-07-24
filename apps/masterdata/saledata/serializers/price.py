@@ -486,15 +486,11 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
     def update(self, instance, validated_data):
         if ProductPriceList.objects.filter(price_list=instance).exists():
             raise serializers.ValidationError(PriceMsg.NON_EMPTY_PRICE_LIST_CANT_BE_DELETE)
-        if not Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                price_list_mapped=instance.id
-        ).exists():
-            ProductPriceList.objects.filter(price_list=instance).delete()  # delete all item in M2M table
-            instance.delete()  # delete price list
-            return True
-        raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
+        if Price.objects.filter_current(fill__tenant=True, fill__company=True, price_list_mapped=instance.id).exists():
+            raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
+        instance.delete()  # delete price list
+        return True
+
 
 
 class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
