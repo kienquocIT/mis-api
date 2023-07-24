@@ -46,7 +46,6 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AccountType
         fields = ('id', 'title', 'code', 'is_default', 'description')
@@ -105,7 +104,6 @@ class AccountGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class AccountGroupDetailsSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = AccountGroup
         fields = ('id', 'title', 'code', 'description')
@@ -593,15 +591,27 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         if contact_mapped.count() > 0:
             list_contact_mapped = []
             for i in contact_mapped:
-                list_contact_mapped.append(
-                    {
-                        'id': i.id,
-                        'fullname': i.fullname,
-                        'job_title': i.job_title,
-                        'email': i.email,
-                        'mobile': i.mobile
-                    }
-                )
+                if i.is_primary:
+                    list_contact_mapped.insert(
+                        0, (
+                            {
+                                'id': i.id,
+                                'fullname': i.fullname,
+                                'job_title': i.job_title,
+                                'email': i.email,
+                                'mobile': i.mobile
+                            })
+                    )
+                else:
+                    list_contact_mapped.append(
+                        {
+                            'id': i.id,
+                            'fullname': i.fullname,
+                            'job_title': i.job_title,
+                            'email': i.email,
+                            'mobile': i.mobile
+                        }
+                    )
             return list_contact_mapped
         return []
 
@@ -613,6 +623,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     parent_account = serializers.UUIDField(required=False, allow_null=True)
     bank_accounts_information = serializers.JSONField()
     credit_cards_information = serializers.JSONField()
+    contact_list = serializers.ListField(required=False)
+    owner_id = serializers.CharField(required=False)
 
     class Meta:
         model = Account
@@ -621,7 +633,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'website',
             'account_type',
             'manager',
-            'owner',
+            'owner_id',
             'parent_account',
             'account_group',
             'tax_code',
@@ -638,7 +650,8 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'credit_limit',
             'bank_accounts_information',
             'credit_cards_information',
-            'account_type_selection'
+            'account_type_selection',
+            'contact_list'
         )
 
     @classmethod
@@ -704,15 +717,21 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         validate_data['account_type'] = account_types
         return validate_data
 
+    @classmethod
+    def update_contact(cls, instance, data):
+        Contact.objects.filter(account_name=instance).update(account_name=None)
+        for item in data:
+            contact = Contact.objects.get(id=item['id'])
+            contact.account_name = instance
+            contact.is_primary = item['is_primary']
+            contact.save()
+        return None
+
     def update(self, instance, validated_data):
-        if self.initial_data.get('account-owner', None):
-            validated_data['owner_id'] = self.initial_data['account-owner']
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        # update account owner
-        update_account_owner(instance, self.initial_data.get('account-owner', None))
         # recreate in AccountEmployee (Account Manager)
         create_employee_map_account(instance)
         # add account type detail information
@@ -725,6 +744,11 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', []))
         # add credit cards
         add_credit_cards_information(instance, validated_data.get('credit_cards_information', []))
+
+        # update contact
+        if 'contact_list' in validated_data:
+            data_contact = validated_data.pop('contact_list')
+            self.update_contact(instance, data_contact)
         return instance
 
 
