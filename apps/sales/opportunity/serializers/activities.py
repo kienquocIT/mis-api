@@ -4,6 +4,7 @@ from apps.sales.opportunity.models import (
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember
 )
 from apps.shared.translations.opportunity import OpportunityMsg
+from apps.shared.mail import GmailController
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -127,6 +128,21 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         return {}
 
 
+def send_email(email_obj):
+    GmailController(
+        subject="Subject mail",
+        to=["email1@gmail.com"],
+        cc=["email_cc@gmail.com"],
+        bcc=["email_bcc@gmail.com"],
+        template="<table><tr><td><h1>This is content mail.</h1></td><td>{{abc}}</td></tr></table>",
+        context={"abc": "manual content"},
+        tenant_id='',
+        company_id='',
+        employee_ud='',
+    ).send()
+    return True
+
+
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     content = serializers.CharField(required=True)
 
@@ -143,16 +159,16 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email_to(cls, value):
-        if len(value.split(' ')) > 1 or not value.endswith("@gmail.com"):
-            raise serializers.ValidationError({'To': OpportunityMsg.EMAIL_TO_NOT_VALID})
         return value
 
     @classmethod
     def validate_email_cc_list(cls, value):
-        for item in value:
-            if len(item.split(' ')) > 1 or not item.endswith("@gmail.com"):
-                raise serializers.ValidationError({'Cc': OpportunityMsg.EMAIL_CC_NOT_VALID})
         return value
+
+    def create(self, validated_data):
+        email_obj = OpportunityEmail.objects.create(**validated_data)
+        send_email(email_obj)
+        return email_obj
 
 
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
