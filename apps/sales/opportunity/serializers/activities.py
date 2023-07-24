@@ -134,7 +134,7 @@ def send_email(email_obj):
         to=email_obj.email_to,
         cc=email_obj.email_cc_list,
         bcc=[],
-        template="<table><tr><td><h1>" + email_obj.subject + "</h1></td><td>" + email_obj.content + "</td></tr></table>",
+        template="<table><tr><td><h1>"+email_obj.subject+"</h1></td><td>"+email_obj.content+"</td></tr></table>",
         context=email_obj.content,
     ).send()
     return True
