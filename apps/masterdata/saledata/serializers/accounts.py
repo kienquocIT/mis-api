@@ -246,11 +246,7 @@ class AccountListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_contact_mapped(cls, obj):
-        contact_mapped = Contact.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            account_name=obj
-        )
+        contact_mapped = obj.contact_account_name.all()
         if contact_mapped.count() > 0:
             list_contact_mapped = []
             for i in contact_mapped:
