@@ -139,6 +139,18 @@ AppProp_SaleData_Account_data = {
         "type": 5,
         "content_type": "saledata.Industry",
     },
+    "bb05d49e-4825-43cf-81c1-633a03a4a1ab": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Annual Revenue",
+        "code": "annual_revenue",
+        "type": 3,
+    },
+    "8d079e31-323a-46c5-97bb-dcfe1278e356": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Total Employees",
+        "code": "total_employees",
+        "type": 3,
+    },
     "196c67ce-1c48-446a-ae81-e40b24d83cd3": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Phone",
@@ -151,6 +163,13 @@ AppProp_SaleData_Account_data = {
         "code": "email",
         "type": 1,
     },
+    "ad5561aa-b3aa-49d2-8282-2d8b7a277929": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Currency",
+        "code": "currency",
+        "type": 5,
+        "content_type": "saledata.Currency",
+    },
     "b0b2ca8d-659b-46da-81b8-449f0fcf8acf": {
         "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
         "title": "Shipping Address",
@@ -162,6 +181,44 @@ AppProp_SaleData_Account_data = {
         "title": "Billing Address",
         "code": "billing_address",
         "type": 1,
+    },
+    "dff7b13f-67d2-45a6-b4ff-b4aa40d7dcde": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Payment Term",
+        "code": "payment_term_mapped",
+        "type": 5,
+        "content_type": "saledata.PaymentTerm",
+    },
+    "208d94a5-8756-4f45-ae14-184a035bc33d": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Price list",
+        "code": "price_list_mapped",
+        "type": 5,
+        "content_type": "saledata.Price",
+    },
+    "9a7e9c1e-7b41-409c-802e-b60473023017": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Credit Limit",
+        "code": "credit_limit",
+        "type": 6,
+    },
+    "41b9f085-9510-4163-90c1-cd3249ded458": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Bank Accounts Information",
+        "code": "bank_accounts_information",
+        "type": 1,
+    },
+    "7b5803b4-2f40-4149-9c9d-4229ee6ad51f": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Credit Cards Information",
+        "code": "credit_cards_information",
+        "type": 1,
+    },
+    "5ca5ca1e-010a-48d2-810d-62ddc0d2da69": {
+        "application_id": "4e48c863-861b-475a-aa5e-97a4ed26f294",
+        "title": "Account Type Selection",
+        "code": "account_type_selection",
+        "type": 3,
     },
 }
 
@@ -208,6 +265,12 @@ AppProp_SaleData_Quotation_data = {
         'code': 'payment_term',
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
+    },
+    'fda17a32-9f16-4e7c-b7db-53f007f6467b': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Logistic',
+        'code': 'quotation_logistic_data',
+        'type': 1,
     },
     # Total fields
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
@@ -690,6 +753,54 @@ AppProp_SaleData_Opportunity_data = {
 
 AppProp_SaleData_SaleOrder_data = {
     # a870e392-9ad2-4fe2-9baa-298a38691cf2 # saleorder.SaleOrder
+    # General fields
+    '81f37376-b62a-4dd9-bc97-50c5c49ba4fe': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+    },
+    '031519a6-3c40-4eb2-845a-32f869a2e903': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Opportunity',
+        'code': 'opportunity',
+        'type': 5,
+        'content_type': 'opportunity.Opportunity',
+    },
+    'b24e175d-4faf-4689-ae8f-aba3972ac70f': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Customer',
+        'code': 'customer',
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    '77357c24-b809-42bf-a190-f216d3df7206': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Contact',
+        'code': 'contact',
+        'type': 5,
+        'content_type': 'saledata.Contact',
+    },
+    'fa8df51a-fb69-4887-9de4-e5e3c933d3b5': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Sale person',
+        'code': 'sale_person',
+        'type': 5,
+        'content_type': 'hr.Employee',
+    },
+    '60464a8f-5261-4446-940f-69746784dc6a': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Payment term',
+        'code': 'payment_term',
+        'type': 5,
+        'content_type': 'saledata.PaymentTerm',
+    },
+    'd13549a8-a1c1-450e-818a-613cde814d6a': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Logistic',
+        'code': 'sale_order_logistic_data',
+        'type': 1,
+    },
     # total fields
     '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',

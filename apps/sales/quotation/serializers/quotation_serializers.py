@@ -4,7 +4,7 @@ from rest_framework import serializers
 from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
     QuotationCost, QuotationExpense, QuotationIndicator
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
-from apps.shared import SaleMsg
+from apps.shared import SaleMsg, SYSTEM_STATUS
 
 
 class QuotationProductSerializer(serializers.ModelSerializer):
@@ -281,9 +281,9 @@ class QuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status:
-            return "Open"
-        return "Open"
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
     @classmethod
     def get_opportunity(cls, obj):
