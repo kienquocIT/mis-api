@@ -571,6 +571,8 @@ class ConfigDefaultData:
         self.opportunity_config_stage()
         self.quotation_indicator_config()
         self.sale_order_indicator_config()
+        self.delivery_config()
+        self.task_config()
         return True
 
 

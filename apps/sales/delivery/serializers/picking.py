@@ -3,7 +3,7 @@ from django.db import transaction
 from rest_framework import serializers
 import django.utils.translation
 
-from apps.masterdata.saledata.models import ProductWareHouse
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from apps.sales.delivery.models import (
     OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
@@ -150,19 +150,20 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 prod_id_temp[key_prod] = value['stock']
             else:
                 prod_id_temp[key_prod] += value['stock']
+            picked_uom = UnitOfMeasure.objects.get(id=delivery_data['uom'])
+            picked_unit = prod_id_temp[key_prod] * picked_uom.ratio
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 product_id=key_prod,
-                warehouse_id=delivery_data['warehouse'],
-                uom_id=delivery_data['uom']
+                warehouse_id=delivery_data['warehouse']
             )
             if product_warehouse.exists():
                 prod_warehouse = product_warehouse.first()
-                avail_stock = prod_warehouse.stock_amount - prod_warehouse.sold_amount
-                avail_stock = avail_stock - prod_warehouse.picked_ready
-                if avail_stock > 0 and avail_stock >= prod_id_temp[key_prod]:
-                    prod_warehouse.picked_ready += prod_id_temp[key_prod]
+                in_stock = prod_warehouse.stock_amount - prod_warehouse.sold_amount
+                in_stock = (in_stock - prod_warehouse.picked_ready)*prod_warehouse.uom.ratio
+                if in_stock > 0 and in_stock >= picked_unit:
+                    prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
                     prod_update.append(prod_warehouse)
                 else:
                     raise serializers.ValidationError(

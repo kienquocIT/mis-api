@@ -1,15 +1,70 @@
 from django.db import transaction
 from django.utils import timezone
+
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
-from apps.masterdata.saledata.models import ProductWareHouse
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
+
+
+class WarehouseQuantityHandle:
+    @classmethod
+    def minus_tock(cls, source, target, config):
+        # sản phầm trong phiếu
+        # source: dict { uom: uuid, quantity: number }
+        # sản phẩm trong kho
+        # target: object of warehouse has prod (all prod)
+        # kiểm tra kho còn hàng và trừ kho nếu ko đủ return failure
+        source_uom = UnitOfMeasure.objects.filter(id=source['uom'])
+        if source_uom.exists():
+            source_uom = source_uom.first()
+            source_ratio = source_uom.ratio
+        else:
+            # return if source uom not found
+            raise ValueError(
+                {'detail': _('Products UoM not found please verify Sale Order or contact your admin')}
+            )
+        # số lượng prod đã quy đổi
+        mediate_number = source['quantity'] * source_ratio
+
+        if hasattr(config, 'is_fifo_lifo') and config.is_fifo_lifo:
+            target = target.reverse()
+        is_done = False
+        list_update = []
+        for item in target:
+            if is_done:
+                # nếu trừ đủ update vào warehouse, return true
+                break
+            target_ratio = item.uom.ratio
+            in_stock = item.stock_amount - item.sold_amount
+            if in_stock > 0:
+                # số lượng trong kho đã quy đổi
+                in_stock_unit = in_stock*target_ratio
+                calc = in_stock_unit - mediate_number
+                if calc >= 0:
+                    # đủ hàng
+                    is_done = True
+                    item_sold = mediate_number / target_ratio
+                    item.sold_amount += item_sold
+                    if config.is_picking:
+                        item.picked_ready = item.picked_ready - item_sold
+                    list_update.append(item)
+                elif calc < 0:
+                    # else < 0 ko đù
+                    # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)
+                    # trừ kho tất cả của record này
+                    mediate_number = abs(calc)
+                    item.sold_amount += in_stock_unit
+                    if config.is_picking:
+                        item.picked_ready = item.picked_ready - in_stock_unit
+                    list_update.append(item)
+        ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready'])
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
@@ -242,23 +297,22 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.remarks = validated_data['remarks']
 
     @classmethod
-    def minus_product_warehouse_stock(cls, tenant_com_info, product_id, stock_info, config):
+    def minus_product_warehouse_stock(cls, tenant_com_info, product, stock_info, config):
         # sử dụng vòng for trong delivery data để đảm bảo nếu như pick từ nhiều kho khác nhau, thì có thể trừ đúng kho
-        # bên picking đã pick
+        # bên picking đã pick, một trong các prod ko dc trừ sẽ trã vể lỗi phiếu
         for data in stock_info:
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=tenant_com_info['tenant_id'],
                 company_id=tenant_com_info['company_id'],
-                product_id=product_id,
+                product_id=product.product_id,
                 warehouse_id=data['warehouse'],
-                uom_id=data['uom']
             )
             if product_warehouse.exists():
-                selected = product_warehouse.first()
-                selected.sold_amount += data['stock']
-                if config.is_picking:
-                    selected.picked_ready = selected.picked_ready - data['stock']
-                selected.save(update_fields=['sold_amount', 'picked_ready'])
+                source = {
+                    "uom": data['uom'],
+                    "quantity": data['stock']
+                }
+                WarehouseQuantityHandle.minus_tock(source, product_warehouse, config)
 
     @classmethod
     def update_prod(cls, sub, product_done, config):
@@ -270,19 +324,18 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 # kiểm tra product id và order trùng với product update ko
                 delivery_data = product_done[obj_key]['delivery_data']  # list format
                 obj.picked_quantity = product_done[obj_key]['picked_num']
-                # if config.is_picking and config.is_partial_ship:
-                #     for obj_crt in obj.delivery_data:
-
-                # matching_objs = [obj_prod_done for obj_prod_done in delivery_data
-                #                  if obj_crt['uom'] == obj_prod_done['uom'] and obj_crt['warehouse'] ==
-                #                  obj_prod_done['warehouse']]
-                # obj_crt['stock'] -= sum(obj_prod_done['stock'] for obj_prod_done in matching_objs)
-                # else:
                 obj.delivery_data = delivery_data
+
+                if (config.is_picking and config.is_partial_ship and
+                        obj.picked_quantity > obj.remaining_quantity):
+                    raise serializers.ValidationError(
+                        {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
+                    )
+
                 # config case 1, 2, 3
                 cls.minus_product_warehouse_stock(
                     {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
-                    obj.product_id,
+                    obj,
                     delivery_data,
                     config
                 )
