@@ -23,3 +23,4 @@ class PriceMsg:
     PRICE_LIST_EXPIRED = _('Price List is expired.')
     ITEM_EXIST = _('Item already exists')
     AUTO_UPDATE_CONFLICT_CAN_DELETE = _('When auto_update is False, can_delete nust not be True')
+    AUTO_UPDATE_CAN_DELETE_ARE_FALSE = _('If not map with another price list, auto_update and can_delete are False')

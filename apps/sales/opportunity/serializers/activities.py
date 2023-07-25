@@ -288,8 +288,8 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         meeting_obj = OpportunityMeeting.objects.create(**validated_data)
-        create_employee_attended_map_meeting(meeting_obj, validated_data.get('employee_attended_list', []))
-        create_customer_member_map_meeting(meeting_obj, validated_data.get('customer_member_list', []))
+        create_employee_attended_map_meeting(meeting_obj, self.initial_data.get('employee_attended_list', []))
+        create_customer_member_map_meeting(meeting_obj, self.initial_data.get('customer_member_list', []))
         return meeting_obj
 
 
