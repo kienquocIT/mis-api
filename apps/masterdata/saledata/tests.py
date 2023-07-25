@@ -3035,3 +3035,72 @@ class ShippingTestCase(AdvanceTestCase):
         self.assertEqual(data_changed.data['result']['title'], title_change)
         self.assertEqual(data_changed.data['result']['fixed_price'], fixed_price_change)
         return response
+
+
+class PriceListTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def create_new_currency(self):
+        data1 = {
+            "abbreviation": "CAD",
+            "title": "CANADIAN DOLLAR",
+            "rate": 0.45
+        }
+        data2 = {
+            "abbreviation": "ABC",
+            "title": "ABC DOLLAR",
+            "rate": 2.15
+        }
+        response1 = self.client.post(reverse("CurrencyList"), data1, format='json')
+        response2 = self.client.post(reverse("CurrencyList"), data2, format='json')
+        self.assertEqual(response1.status_code, 201)
+        self.assertEqual(response2.status_code, 201)
+        return response1, response2
+
+    def test_price_list_create(self):
+        url = reverse("PriceList")
+        currency_list = self.create_new_currency()
+        currency1 = currency_list[0].data['result']['id']
+        currency2 = currency_list[1].data['result']['id']
+        data = {
+            'title': 'Bang gia thang quy 1',
+            'auto_update': False,  # auto_update = None -> price_list_mapped must = None
+            'can_delete': True,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'title',
+                'auto_update',
+                'can_delete',
+                'factor',
+                'currency',
+                'price_list_type',
+                'price_list_mapped',
+                'is_default',
+                'products_mapped',
+                'valid_time_start',
+                'valid_time_end',
+                'status'
+            ],
+            check_sum_second=True,
+        )
+        return response
