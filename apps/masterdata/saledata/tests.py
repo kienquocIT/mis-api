@@ -3065,9 +3065,9 @@ class PriceListTestCase(AdvanceTestCase):
         currency_list = self.create_new_currency()
         currency1 = currency_list[0].data['result']['id']
         currency2 = currency_list[1].data['result']['id']
-        data = {
+        data1 = {
             'title': 'Bang gia thang quy 1',
-            'auto_update': False,  # auto_update = None -> price_list_mapped must = None
+            'auto_update': True,  # auto_update = None -> price_list_mapped (X)
             'can_delete': True,  # T-T/F, F-F
             'factor': 1.0,
             'currency': [currency1, currency2],
@@ -3075,32 +3075,103 @@ class PriceListTestCase(AdvanceTestCase):
             'valid_time_start': '2023-06-06 11:21:00.000000',
             'valid_time_end': '2023-07-07 11:21:00.000000'
         }
-        response = self.client.post(url, data, format='json')
+        response1 = self.client.post(url, data1, format='json')
         self.assertResponseList(
-            response,
+            response1,
             status_code=status.HTTP_201_CREATED,
             key_required=['result', 'status'],
             all_key=['result', 'status'],
-            all_key_from=response.data,
+            all_key_from=response1.data,
             type_match={'result': dict, 'status': int},
         )
         self.assertCountEqual(
-            response.data['result'],
+            response1.data['result'],
             [
-                'id',
-                'title',
-                'auto_update',
-                'can_delete',
-                'factor',
-                'currency',
-                'price_list_type',
-                'price_list_mapped',
-                'is_default',
-                'products_mapped',
-                'valid_time_start',
-                'valid_time_end',
-                'status'
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
             ],
             check_sum_second=True,
         )
-        return response
+
+        data2 = {
+            'title': 'Bang gia thang quy 2',
+            'auto_update': True,  # auto_update = None -> price_list_mapped (X)
+            'can_delete': False,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response2.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data3 = {
+            'title': 'Bang gia thang quy 3',
+            'auto_update': False,  # auto_update = None -> price_list_mapped (X)
+            'can_delete': False,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertResponseList(
+            response3,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response3.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response3.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data4 = {
+            'title': 'Bang gia thang quy 4',
+            'auto_update': False,  # auto_update = None -> price_list_mapped (X)
+            'can_delete': True,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response4 = self.client.post(url, data4, format='json')
+        self.assertResponseList(
+            response4,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response4.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response4.data['errors'],
+            ['non_field_errors'],
+            check_sum_second=True,
+        )
+
+        return response1, response2, response3, response4

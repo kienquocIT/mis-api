@@ -282,17 +282,20 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def validate(self, validate_data):
-        if 'price_list_mapped' in validate_data:
+        price_list_mapped_id = validate_data.get('price_list_mapped', None)
+        if price_list_mapped_id:
             price_list_mapped = Price.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=validate_data['price_list_mapped']
-            ).first()
-            if price_list_mapped:
-                if price_list_mapped.price_list_type != validate_data.get('price_list_type', None):
+                id=price_list_mapped_id
+            )
+            if len(price_list_mapped) > 0:
+                if price_list_mapped[0].price_list_type != validate_data.get('price_list_type', None):
                     raise serializers.ValidationError(PriceMsg.DIFFERENT_PRICE_LIST_TYPE)
             else:
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
+        if validate_data.get('auto_update') is False and validate_data.get('can_delete') is True:
+            raise serializers.ValidationError(PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE)
         return validate_data
 
     def create(self, validated_data):
