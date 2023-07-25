@@ -9,3 +9,4 @@ class OpportunityMsg:
     EMAIL_TO_NOT_VALID = _('Email to is not valid.')
     EMAIL_CC_NOT_VALID = _('Email Cc is not valid.')
     ACTIVITIES_MEETING_RESULT_NOT_NULL = _('Result must not be null')
+    CAN_NOT_SEND_EMAIL = _('Can not send email')

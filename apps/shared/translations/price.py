@@ -22,3 +22,4 @@ class PriceMsg:
     NON_EMPTY_PRICE_LIST_CANT_BE_DELETE = _('Non-empty Price List can not be deleted.')
     PRICE_LIST_EXPIRED = _('Price List is expired.')
     ITEM_EXIST = _('Item already exists')
+    AUTO_UPDATE_CONFLICT_CAN_DELETE = _('When auto_update is False, can_delete nust not be True')

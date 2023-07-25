@@ -168,7 +168,11 @@ class AccountList(BaseListMixin, BaseCreateMixin): # noqa
     filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
 
     def get_queryset(self):
-        return super().get_queryset().select_related('industry', 'owner', 'payment_term_mapped')
+        return super().get_queryset().select_related(
+            'industry', 'owner', 'payment_term_mapped'
+        ).prefetch_related(
+            'contact_account_name'
+        )
 
     @swagger_auto_schema(
         operation_summary="Account list",

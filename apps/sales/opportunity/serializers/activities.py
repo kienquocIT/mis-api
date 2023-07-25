@@ -9,6 +9,7 @@ from apps.sales.opportunity.models import (
 )
 from apps.shared import BaseMsg
 from apps.shared.translations.opportunity import OpportunityMsg
+from apps.shared.mail import GmailController
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -94,16 +95,6 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class OpportunityCallLogDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityCallLog
-        fields = ()
-
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
-
-
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     email_to_contact = serializers.SerializerMethodField()
@@ -142,6 +133,18 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         return {}
 
 
+def send_email(email_obj):
+    GmailController(
+        subject=email_obj.subject,
+        to=email_obj.email_to,
+        cc=email_obj.email_cc_list,
+        bcc=[],
+        template="<table><tr><td><h1>"+email_obj.subject+"</h1></td><td>"+email_obj.content+"</td></tr></table>",
+        context=email_obj.content,
+    ).send()
+    return True
+
+
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     content = serializers.CharField(required=True)
 
@@ -158,16 +161,19 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_email_to(cls, value):
-        if len(value.split(' ')) > 1 or not value.endswith("@gmail.com"):
-            raise serializers.ValidationError({'To': OpportunityMsg.EMAIL_TO_NOT_VALID})
         return value
 
     @classmethod
     def validate_email_cc_list(cls, value):
-        for item in value:
-            if len(item.split(' ')) > 1 or not item.endswith("@gmail.com"):
-                raise serializers.ValidationError({'Cc': OpportunityMsg.EMAIL_CC_NOT_VALID})
         return value
+
+    def create(self, validated_data):
+        email_obj = OpportunityEmail.objects.create(**validated_data)
+        try:
+            send_email(email_obj)
+        except Exception:
+            raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        return email_obj
 
 
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
@@ -183,16 +189,6 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'opportunity',
             'email_to_contact'
         )
-
-
-class OpportunityEmailDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityEmail
-        fields = ()
-
-    def update(self, instance, validated_data):
-        instance.delete()
-        return True
 
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
@@ -359,7 +355,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_sub_document(cls, user, instance, data):
-        # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
+        # attachments: list -> danh s�ch id t? cloud tr? v?, t?m th?i chi c� 1 n�n l?y [0]
         relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
         relate_app_code = 'documentforcustomer'
         instance_id = str(instance.id)
@@ -369,7 +365,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             )
         bulk_data = []
         for doc in data:
-        # check file trên cloud
+        # check file tr�n cloud
             if not doc['attachment']:
                 return False
             is_check, attach_check = Files.check_media_file(
@@ -379,11 +375,11 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             if not is_check:
                 raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
 
-            # step 1: tạo mới file trong File API
+            # step 1: t?o m?i file trong File API
             files = Files.regis_media_file(
                 relate_app, instance_id, relate_app_code, user, media_result=attach_check
             )
-            # step 2: tạo mới file trong table M2M
+            # step 2: t?o m?i file trong table M2M
             bulk_data.append(OpportunitySubDocument(
                 document=instance,
                 attachment=files,
