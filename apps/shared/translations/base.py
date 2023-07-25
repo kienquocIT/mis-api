@@ -12,4 +12,3 @@ class BaseMsg:
 
 class PermissionMsg:
     PERMISSION_INCORRECT = _('Permission format is incorrect')
-
