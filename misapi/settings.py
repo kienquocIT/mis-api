@@ -223,6 +223,7 @@ MEDIA_HOST = os.environ.get('MEDIA_HOST', '127.0.0.1')
 MEDIA_PORT = os.environ.get('MEDIA_PORT', '8881')
 MEDIA_SUFFIX = 'api'
 MEDIA_DOMAIN = f'{MEDIA_PROTOCOL}://{MEDIA_HOST}:{MEDIA_PORT}/{(MEDIA_SUFFIX + "/") if MEDIA_SUFFIX else ""}'
+MEDIA_ENABLED = False
 
 # Media key and data private
 MEDIA_KEY_FLAG = os.environ.get('MEDIA_KEY_FLAG', 'MEDIA-APIRequest')
@@ -479,6 +480,7 @@ if ENABLE_PROD is True:
 
     # media domain
     MEDIA_DOMAIN = os.environ.get('MEDIA_DOMAIN', MEDIA_DOMAIN)
+    MEDIA_ENABLED = True if os.environ.get('MEDIA_ENABLED', '0') in [1, '1'] else False
 # -- PROD configurations
 
 # Tracing
