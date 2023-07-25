@@ -5,7 +5,8 @@ from .views import (
     CustomerDecisionFactorDetail, OpportunityConfigStageList, OpportunityConfigStageDetail,
     OpportunityCallLogList, OpportunityCallLogDetail, OpportunityCallLogDelete,
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
-    OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete
+    OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
+    OpportunityDocumentDetail
 )
 
 urlpatterns = [
@@ -31,4 +32,7 @@ urlpatterns = [
     path('meeting/lists', OpportunityMeetingList.as_view(), name='OpportunityMeetingList'),
     path('meeting/<str:pk>', OpportunityMeetingDetail.as_view(), name='OpportunityMeetingDetail'),
     path('delete-meeting/<str:pk>', OpportunityMeetingDelete.as_view(), name='OpportunityMeetingDelete'),
+] + [
+    path('document/list', OpportunityDocumentList.as_view(), name='OpportunityDocumentList'),
+    path('document/<str:pk>', OpportunityDocumentDetail.as_view(), name='OpportunityDocumentDetail'),
 ]

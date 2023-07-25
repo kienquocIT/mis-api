@@ -1,3 +1,6 @@
+import json
+import uuid
+
 from django.db import models
 from django.utils import timezone
 from apps.shared import SimpleAbstractModel
@@ -101,3 +104,77 @@ class OpportunityMeetingEmployeeAttended(SimpleAbstractModel):
 class OpportunityMeetingCustomerMember(SimpleAbstractModel):
     meeting_mapped = models.ForeignKey(OpportunityMeeting, on_delete=models.CASCADE)
     customer_member_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE)
+
+
+class OpportunityDocument(SimpleAbstractModel):
+    subject = models.CharField(max_length=250)
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name="opportunity_document",
+    )
+    request_completed_date = models.DateTimeField()
+    kind_of_product = models.CharField(max_length=250)
+    person_in_charge = models.ManyToManyField(
+        'hr.Employee',
+        through='OpportunityDocumentPersonInCharge',
+        symmetrical=False,
+        related_name='opp_document_map_employees',
+    )
+    data_documents = models.JSONField(
+        default=list,
+    )
+
+    class Meta:
+        verbose_name = 'OpportunityDocument'
+        verbose_name_plural = 'OpportunityDocuments'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityDocumentPersonInCharge(SimpleAbstractModel):
+    document = models.ForeignKey(
+        OpportunityDocument,
+        on_delete=models.CASCADE,
+        related_name="opportunity_document_1",
+    )
+
+    person = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        related_name="person",
+    )
+
+    class Meta:
+        verbose_name = 'OpportunityDocumentPersonInCharge'
+        verbose_name_plural = 'OpportunityDocumentPersonsInCharge'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunitySubDocument(SimpleAbstractModel):
+    document = models.ForeignKey(
+        OpportunityDocument,
+        on_delete=models.CASCADE,
+        related_name="opportunity_document",
+    )
+
+    attachment = models.OneToOneField(
+        'attachments.Files',
+        on_delete=models.CASCADE,
+        verbose_name='Sub Opportunity document attachment files',
+        help_text='Sub Opportunity document had one/many attachment file',
+        related_name='sub_document_attachment_file',
+    )
+    media_file = models.UUIDField(unique=True, default=uuid.uuid4)
+
+    description = models.CharField(max_length=1000)
+
+    class Meta:
+        verbose_name = 'OpportunitySubDocument'
+        verbose_name_plural = 'OpportunitySubsDocument'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()

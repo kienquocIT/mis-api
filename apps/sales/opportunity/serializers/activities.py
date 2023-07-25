@@ -1,8 +1,13 @@
 from rest_framework import serializers
+
+from apps.core.attachments.models import Files
+from apps.core.base.models import Application
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
-    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityDocument,
+    OpportunitySubDocument, OpportunityDocumentPersonInCharge
 )
+from apps.shared import BaseMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
@@ -324,3 +329,91 @@ class OpportunityMeetingDeleteSerializer(serializers.ModelSerializer):  # noqa
         OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=instance).delete()
         instance.delete()
         return True
+
+
+class OpportunityDocumentListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityDocument
+        fields = '__all__'
+
+
+class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
+    person_in_charge = serializers.ListField(child=serializers.UUIDField())
+
+    class Meta:
+        model = OpportunityDocument
+        fields = (
+            'subject',
+            'opportunity',
+            'request_completed_date',
+            'kind_of_product',
+            'data_documents',
+            'person_in_charge'
+        )
+
+    @classmethod
+    def validate_person_in_charge(cls, value):
+        if not value:
+            raise serializers.ValidationError({'person_in_charge': OpportunityMsg.NOT_BLANK})
+        return value
+
+    @classmethod
+    def create_sub_document(cls, user, instance, data):
+        # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
+        relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
+        relate_app_code = 'documentforcustomer'
+        instance_id = str(instance.id)
+        if not user.employee_current:
+            raise serializers.ValidationError(
+                {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
+            )
+        bulk_data = []
+        for doc in data:
+        # check file trên cloud
+            if not doc['attachment']:
+                return False
+            is_check, attach_check = Files.check_media_file(
+                media_file_id=doc['attachment'],
+                media_user_id=str(user.employee_current.media_user_id)
+            )
+            if not is_check:
+                raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
+
+            # step 1: tạo mới file trong File API
+            files = Files.regis_media_file(
+                relate_app, instance_id, relate_app_code, user, media_result=attach_check
+            )
+            # step 2: tạo mới file trong table M2M
+            bulk_data.append(OpportunitySubDocument(
+                document=instance,
+                attachment=files,
+                media_file=doc['attachment'],
+                description=doc['description']
+            ))
+        OpportunitySubDocument.objects.bulk_create(bulk_data)
+        return True
+
+    @classmethod
+    def create_person_in_charge(cls, data, instance):
+        bulk_data = [OpportunityDocumentPersonInCharge(
+            person_id=person_id,
+            document=instance,
+        ) for person_id in data]
+        OpportunityDocumentPersonInCharge.objects.bulk_create(bulk_data)
+        return True
+
+    def create(self, validated_data):
+        user = self.context.get('user', None)
+        data_documents = validated_data.pop('data_documents')
+        data_person_in_charge = validated_data.pop('person_in_charge')
+        instance = OpportunityDocument.objects.create(**validated_data)
+        if instance:
+            self.create_person_in_charge(data_person_in_charge, instance)
+            self.create_sub_document(user, instance, data_documents)
+        return instance
+
+
+class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OpportunityDocument
+        fields = '__all__'

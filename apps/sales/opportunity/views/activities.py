@@ -1,13 +1,14 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, OpportunityDocument
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
     OpportunityCallLogDetailSerializer, OpportunityCallLogDeleteSerializer,
     OpportunityEmailListSerializer, OpportunityEmailCreateSerializer,
     OpportunityEmailDetailSerializer, OpportunityEmailDeleteSerializer,
     OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
-    OpportunityMeetingDetailSerializer, OpportunityMeetingDeleteSerializer
+    OpportunityMeetingDetailSerializer, OpportunityMeetingDeleteSerializer, OpportunityDocumentListSerializer,
+    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -193,3 +194,52 @@ class OpportunityMeetingDelete(BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
+    permission_classes = [IsAuthenticated] # noqa
+    queryset = OpportunityDocument.objects
+
+    serializer_list = OpportunityDocumentListSerializer
+    serializer_create = OpportunityDocumentCreateSerializer
+    serializer_detail = OpportunityDocumentDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityDocument List",
+        operation_description="Get OpportunityDocument List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create OpportunityDocument",
+        operation_description="Create new OpportunityDocument",
+        request_body=OpportunityMeetingCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'user': request.user
+        }
+        return self.create(request, *args, **kwargs)
+
+
+class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityDocument.objects
+    serializer_detail = OpportunityMeetingDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    @swagger_auto_schema(
+        operation_summary="OpportunityDocument detail",
+        operation_description="Get OpportunityDocument detail by ID",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
