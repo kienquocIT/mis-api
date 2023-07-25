@@ -1,14 +1,12 @@
-from typing import Union, Literal, TypedDict
+from typing import Union, TypedDict
 from uuid import UUID
-
-from jsonfield import JSONField
 
 from django.conf import settings
 from django.db import models
 
 from apps.core.models import TenantAbstractModel
 from apps.shared import (
-    SimpleAbstractModel, PERMISSION_OPTION,
+    SimpleAbstractModel,
     DisperseModel,
     GENDER_CHOICE, TypeCheck, MediaForceAPI,
 )
@@ -21,17 +19,46 @@ class PermOption(TypedDict, total=False):
 class PermissionAbstractModel(models.Model):
     # by ID
     permission_by_id_sample = {
-        '{code}__{app_label}__{model}': ['id1', 'id2', ]
+        'hrm': {
+            'employee': {
+                'create': ['{id}'], 'view': ['{id}'], 'edit': ['{id}'], 'delete': ['{id}']
+            }
+        },
     }
-    permission_by_id = JSONField(default={})
+    permission_by_id = models.JSONField(default=dict, verbose_name='Special Permissions with ID Doc')
 
     # by be configured
-    permission_by_configured_sample = {
-        '{code}__{app_label}__{model}': {
-            'option': PERMISSION_OPTION
+    permission_by_configured_sample = [
+        {
+            "id": "e388f95e-457b-4cf6-8689-0171e71fa58f",
+            "app_id": "50348927-2c4f-4023-b638-445469c66953",
+            "app_data": {
+                "id": "50348927-2c4f-4023-b638-445469c66953", "title": "Employee", "code": "employee"
+            },
+            "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
+            "plan_data": {"id": "395eb68e-266f-45b9-b667-bd2086325522", "title": "HRM", "code": "hrm"},
+            "create": True, "view": True, "edit": False, "delete": False, "range": "4",
         }
+    ]
+    permission_by_configured = models.JSONField(
+        default=list, verbose_name='Permissions was configured by Administrator'
+    )
+
+    # as sum data permissions
+    permissions_parsed_sample = {
+        '': {
+            'hrm': {
+                'employee': {
+                    'create': {
+                        '4': {},
+                    }, 'view': {'4': {}}, 'edit': {'4': {}}, 'delete': {'4': {}}
+                }
+            },
+            'sale': {'account': {'view': {'4': {}}}}
+        },
+        '{space_code}': {},
     }
-    permission_by_configured = JSONField(default={})
+    permissions_parsed = models.JSONField(default=dict, verbose_name='Data was parsed')
 
     # summary keys
     permission_keys = ('permission_by_id', 'permission_by_configured')
@@ -41,139 +68,8 @@ class PermissionAbstractModel(models.Model):
         default_permissions = ()
         permissions = ()
 
-    @property
-    def permissions(self):
-        return {
-            'by_id': self.permission_by_id,
-            'by_configured': self.permission_by_configured,
-        }
-
-    def save_permissions(self, field_name: list[str] = None) -> bool:
-        if field_name is None:
-            field_name = self.permission_keys
-        elif isinstance(field_name, list):
-            for key in field_name:
-                if key not in self.permission_keys:
-                    return False
-        else:
-            return False
-
-        super().save(update_fields=field_name, force_update=True)
-        return True
-
     def save(self, *args, **kwargs):
-        if kwargs.get('force_update', False):
-            update_fields = kwargs.get('update_fields', None)
-            if isinstance(update_fields, list):
-                for key in self.permission_keys:
-                    if key in update_fields:
-                        update_fields.remove(key)
-            else:
-                update_fields = []
-                for f_cls in self.__class__._meta.get_fields():
-                    if f_cls.name not in self.permission_keys and not f_cls.auto_created and f_cls.name != 'id':
-                        if f_cls.many_to_many is False:
-                            update_fields.append(f_cls.name)
-            kwargs['update_fields'] = update_fields
         super().save(*args, **kwargs)
-
-    @staticmethod
-    def check_perm_code(data) -> bool:
-        if data and isinstance(data, str) and len(data.split('__')) == 3:
-            return True
-        return False
-
-    def force_permission_by_id(
-            self,
-            code_perm: str, action: Literal['add', 'remove', 'drop'],
-            data: list[Union[str, UUID]] = None,
-            force_fetch: bool = False,
-            force_save: bool = False,
-    ) -> bool:
-        if code_perm and self.check_perm_code(code_perm) and action and action in ['add', 'remove', 'drop']:
-            # active force fetch real-data from db
-            if force_fetch is True:
-                self.refresh_from_db()
-
-            # handle data
-            state = False
-            match action:
-                case 'add':
-                    if data and TypeCheck.check_uuid_list(data):
-                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
-                        data_id += data
-                        self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
-                        state = True
-                case 'remove':
-                    if data and TypeCheck.check_uuid_list(data):
-                        data_id = self.permission_by_id.get(code_perm, [])  # pylint: disable=E1101
-                        if data_id and isinstance(data_id, list):
-                            for idx_val in data:
-                                if str(idx_val) in data_id:
-                                    data_id.remove(str(idx_val))
-                                    state = True
-                            if state is True:
-                                self.permission_by_id[code_perm] = list(set(data_id))  # pylint: disable=E1101,E1137
-                case 'drop':
-                    data_id = self.permission_by_id.pop(code_perm, None)  # pylint: disable=E1101
-                    if data_id is not None:
-                        state = True
-
-            # the end with active save with force hit db and return state
-            if state is True:
-                if force_save is True:
-                    self.save_permissions(['permission_by_id'])
-                return True
-        return False
-
-    @staticmethod
-    def check_perm_option(data: PermOption) -> bool:
-        if isinstance(data, dict):
-            if 'option' in data:
-                if data['option'] in [x[0] for x in PERMISSION_OPTION]:
-                    return True
-        return False
-
-    def force_permission_by_configured(
-            self,
-            code_perm: str, action: Literal['update', 'override', 'drop'],
-            data: PermOption = None,
-            force_fetch: bool = False,
-            force_save: bool = False,
-    ) -> bool:
-        if code_perm and self.check_perm_code(code_perm) and action and action in ['update', 'override', 'drop']:
-            # active force fetch real-data from db
-            if force_fetch is True:
-                self.refresh_from_db()
-
-            # handle data
-            state = False
-            match action:
-                case 'update':
-                    if self.check_perm_option(data):
-                        data_configured = self.permission_by_configured.get(  # pylint: disable=E1101
-                            code_perm, {}
-                        )
-                        data_configured.update(data)
-                        self.permission_by_configured[code_perm] = data_configured  # pylint: disable=E1101,E1137
-                        state = True
-                case 'override':
-                    if self.check_perm_option(data):
-                        self.permission_by_configured[code_perm] = data  # pylint: disable=E1101,E1137
-                        state = True
-                case 'drop':
-                    data_configured = self.permission_by_configured.pop(  # pylint: disable=E1101
-                        code_perm, None
-                    )
-                    if data_configured is not None:
-                        state = True
-
-            # the end with active save with force hit db and return state
-            if state is True:
-                if force_save is True:
-                    self.save_permissions(['permission_by_id'])
-                return True
-        return False
 
 
 class Employee(TenantAbstractModel, PermissionAbstractModel):
@@ -208,7 +104,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
     # {
     #       '{code_Plan}': [app1, app2, ...]
     # }
-    plan_application = JSONField(default={})
+    plan_application = models.JSONField(default=dict)
     group = models.ForeignKey(
         'hr.Group',
         on_delete=models.CASCADE,
@@ -371,7 +267,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
 class SpaceEmployee(SimpleAbstractModel):
     space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
-    application = JSONField(default=[])
+    application = models.JSONField(default=list)
 
     class Meta:
         verbose_name = 'Space of Employee'
@@ -389,7 +285,7 @@ class PlanEmployee(SimpleAbstractModel):
         'hr.Employee',
         on_delete=models.CASCADE
     )
-    application = JSONField(default=[])
+    application = models.JSONField(default=list)
 
     class Meta:
         verbose_name = 'Plan of Employee'
@@ -398,6 +294,7 @@ class PlanEmployee(SimpleAbstractModel):
         permissions = ()
 
 
+# role | job position
 class Role(TenantAbstractModel, PermissionAbstractModel):
     abbreviation = models.CharField(
         verbose_name='abbreviation of role (Business analysis -> BA)',
@@ -468,7 +365,7 @@ class GroupLevel(TenantAbstractModel):
         permissions = ()
 
 
-# group
+# group | department
 class Group(TenantAbstractModel):
     group_level = models.ForeignKey(
         'hr.GroupLevel',
@@ -488,10 +385,10 @@ class Group(TenantAbstractModel):
         blank=True,
         null=True
     )
-    group_employee = JSONField(
+    group_employee = models.JSONField(
         verbose_name="group employee",
         null=True,
-        default=[]
+        default=list
     )
     first_manager = models.ForeignKey(
         'hr.Employee',

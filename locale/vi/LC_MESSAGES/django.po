@@ -353,3 +353,7 @@ msgstr "Đã có đơn hàng được tạo với cơ hội kinh doanh này"
 #
 msgid "Opportunity is closed"
 msgstr "Cơ hội kinh doanh đã đóng"
+
+#
+msgid "Permission format is incorrect"
+msgstr "Thiết lập quyền không đúng"

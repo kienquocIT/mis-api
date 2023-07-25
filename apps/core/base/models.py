@@ -1,7 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE
+from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
 
 from apps.core.models import CoreAbstractModel
 
@@ -69,6 +69,12 @@ class Application(CoreAbstractModel):
     is_workflow = models.BooleanField(
         default=True,
         verbose_name='Application apply Workflow',
+    )
+    option_permission = models.PositiveSmallIntegerField(
+        default=0,
+        choices=PERMISSION_OPTION_RANGE,
+        verbose_name='Allow Type Permission',
+        help_text='0: Allow full control range, 1: Allow only company'
     )
 
     class Meta:
