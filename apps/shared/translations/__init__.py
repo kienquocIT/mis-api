@@ -4,7 +4,7 @@ from .http import HttpMsg
 from .provisioning import ProvisioningMsg
 from .api import APIMsg
 from .hr import HRMsg
-from .base import BaseMsg
+from .base import BaseMsg, PermissionMsg
 from .account import AccountMsg
 from .workflow import WorkflowMsg
 from .core import *

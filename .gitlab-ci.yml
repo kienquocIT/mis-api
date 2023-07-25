@@ -1,6 +1,6 @@
 # docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
 
-image: localhost:5000/python3-11-gitlab-ci
+image: localhost:5000/python3-11-gitlab-ci-full
 
 variables:
   MYSQL_DATABASE: $MYSQL_DB

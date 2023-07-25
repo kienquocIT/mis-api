@@ -5,7 +5,7 @@ from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
     SaleOrder, SaleOrderIndicator
-from apps.shared import SaleMsg
+from apps.shared import SaleMsg, SYSTEM_STATUS
 
 
 class SaleOrderProductSerializer(serializers.ModelSerializer):
@@ -289,9 +289,9 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status:
-            return "Open"
-        return "Open"
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class SaleOrderDetailSerializer(serializers.ModelSerializer):

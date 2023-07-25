@@ -790,7 +790,8 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'title',
             'general_information',
             'sale_information',
-            'price_list'
+            'price_list',
+            'product_type',
         )
 
     @classmethod
