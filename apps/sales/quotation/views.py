@@ -7,7 +7,8 @@ from apps.sales.quotation.serializers.quotation_config import QuotationConfigDet
 from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
     IndicatorUpdateSerializer, IndicatorCompanyRestoreSerializer
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
-    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
+    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,\
+    QuotationListSerializerForCashOutFlow
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -57,6 +58,7 @@ class QuotationDetail(
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
     serializer_update = QuotationUpdateSerializer
+    update_hidden_field = ['employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -207,3 +209,22 @@ class QuotationIndicatorCompanyRestore(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class QuotationListForCashOutFlow(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = Quotation.objects
+    filterset_fields = ['opportunity', 'sale_person']
+    serializer_list = QuotationListSerializerForCashOutFlow
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("customer", "sale_person", "opportunity")
+
+    @swagger_auto_schema(
+        operation_summary="Quotation List For Cash OutFlow",
+        operation_description="Get Quotation List For Cash OutFlow",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

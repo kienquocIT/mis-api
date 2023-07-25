@@ -130,6 +130,7 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 class ContactListSerializer(AbstractListSerializerModel):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
+    report_to = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
@@ -139,7 +140,8 @@ class ContactListSerializer(AbstractListSerializerModel):
             'owner',
             'account_name',
             'mobile',
-            'email'
+            'email',
+            'report_to'
         )
 
     @classmethod
@@ -157,6 +159,15 @@ class ContactListSerializer(AbstractListSerializerModel):
             return {
                 'id': obj.account_name_id,
                 'name': obj.account_name.name
+            }
+        return {}
+
+    @classmethod
+    def get_report_to(cls, obj):
+        if obj.report_to:
+            return {
+                'id': obj.report_to_id,
+                'name': obj.report_to.fullname
             }
         return {}
 

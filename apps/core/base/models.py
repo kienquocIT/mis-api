@@ -158,7 +158,6 @@ class ApplicationProperty(CoreAbstractModel):
     compare_operator = models.JSONField(
         default=dict,
     )
-
     # use for Opp Stage
     opp_stage_operator = models.JSONField(
         default=list,
@@ -167,6 +166,10 @@ class ApplicationProperty(CoreAbstractModel):
     stage_compare_data = models.JSONField(
         default=dict,
         help_text='compare data format {"=": [...], "≠": [...]}'
+    )
+    is_sale_indicator = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config sale indicators"
     )
 
     class Meta:

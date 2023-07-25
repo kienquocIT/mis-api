@@ -1,7 +1,9 @@
 from django.urls import path
 
-from .views import SaleOrderList, SaleOrderDetail, SaleOrderExpenseList, SaleOrderConfigDetail, \
+from .views import (
+    SaleOrderList, SaleOrderDetail, SaleOrderExpenseList, SaleOrderConfigDetail, SaleOrderListForCashOutFlow,
     SaleOrderIndicatorList, SaleOrderIndicatorDetail, SaleOrderIndicatorCompanyRestore
+)
 
 urlpatterns = [
     path('config', SaleOrderConfigDetail.as_view(), name='SaleOrderConfigDetail'),
@@ -11,6 +13,7 @@ urlpatterns = [
          name='SaleOrderIndicatorCompanyRestore'),
 
     path('lists', SaleOrderList.as_view(), name='SaleOrderList'),
+    path('list-for-cashoutflow', SaleOrderListForCashOutFlow.as_view(), name='SaleOrderListForCashOutFlow'),
     path('<str:pk>', SaleOrderDetail.as_view(), name='SaleOrderDetail'),
     path('saleorder-expense-list/lists', SaleOrderExpenseList.as_view(), name='SaleOrderExpenseList'),
 ]

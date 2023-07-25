@@ -68,6 +68,8 @@ CONDITION_LOGIC = (
 MAP_FIELD_TITLE = {
     'saledata.contact': 'fullname',
     'saledata.account': 'name',
+    'quotation.quotation': 'title',
+    'saleorder.saleorder': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -161,6 +163,7 @@ TASK_OUT_OPTION = (
     (0, 'None'),
     (1, 'only member in dept'),
     (2, 'only staff in dept'),
+    (3, 'both 1 & 2'),
 )
 
 # permissions

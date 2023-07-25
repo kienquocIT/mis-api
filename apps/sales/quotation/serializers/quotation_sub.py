@@ -454,4 +454,4 @@ class QuotationCommonValidate:
                 'remark': indicator.remark
             }
         except QuotationIndicatorConfig.DoesNotExist:
-            raise serializers.ValidationError({'indicator': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})

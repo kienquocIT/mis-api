@@ -88,16 +88,17 @@ class PaymentCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='payment'
     )
-    expense = models.ForeignKey(
-        'saledata.Expense',
+    product = models.ForeignKey(
+        'saledata.Product',
         on_delete=models.CASCADE,
+        null=True
     )
-    expense_unit_of_measure = models.ForeignKey(
+    product_unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE
     )
-    expense_quantity = models.IntegerField()
-    expense_unit_price = models.FloatField(default=0)
+    product_quantity = models.IntegerField()
+    product_unit_price = models.FloatField(default=0)
     tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
@@ -113,7 +114,7 @@ class PaymentCost(SimpleAbstractModel):
     document_number = models.CharField(
         max_length=150
     )
-    expense_ap_detail_list = models.JSONField(default=list)
+    product_ap_detail_list = models.JSONField(default=list)
     date_created = models.DateTimeField(
         default=timezone.now,
         editable=False,
@@ -138,7 +139,7 @@ class PaymentCostItems(SimpleAbstractModel):
     real_value = models.FloatField(default=0, help_text='Value which is NOT CONVERTED from Advance Payment')
     converted_value = models.FloatField(default=0, help_text='Value which is CONVERTED from Advance Payment')
     sum_value = models.FloatField(default=0, help_text='Sum value (include real_value and value_converted')
-    expense_items_detail_list = models.JSONField(default=list)
+    product_items_detail_list = models.JSONField(default=list)
     date_created = models.DateTimeField(
         default=timezone.now,
         editable=False,
@@ -163,15 +164,15 @@ class PaymentCostItemsDetail(SimpleAbstractModel):
         Payment,
         on_delete=models.CASCADE,
     )
-    expense_converted = models.ForeignKey(
+    product_converted = models.ForeignKey(
         AdvancePaymentCost,
         on_delete=models.CASCADE,
-        related_name='expense_converted',
+        related_name='product_converted',
         null=True
     )
-    expense_value_converted = models.FloatField(
+    product_value_converted = models.FloatField(
         default=0,
-        help_text='Value which is CONVERTED from Advance Payment Expense'
+        help_text='Value which is CONVERTED from Advance Payment product'
     )
     date_created = models.DateTimeField(
         default=timezone.now,
@@ -215,6 +216,6 @@ class PaymentOpportunity(SimpleAbstractModel):
 
     class Meta:
         verbose_name = 'Payment Opportunity'
-        verbose_name_plural = 'Payments Opportunitys'
+        verbose_name_plural = 'Payments Opportunities'
         default_permissions = ()
         permissions = ()
