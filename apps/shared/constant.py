@@ -165,3 +165,9 @@ TASK_OUT_OPTION = (
     (2, 'only staff in dept'),
     (3, 'both 1 & 2'),
 )
+
+# permissions
+PERMISSION_OPTION_RANGE = (
+    (0, 'All option range'),
+    (1, 'Only company range'),
+)

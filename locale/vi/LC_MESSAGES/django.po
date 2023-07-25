@@ -361,3 +361,6 @@ msgstr "Thứ tự ngoài phạm vi"
 #
 msgid "Level is out of range"
 msgstr "Cấp bậc ngoài phạm vi"
+#
+msgid "Permission format is incorrect"
+msgstr "Thiết lập quyền không đúng"
