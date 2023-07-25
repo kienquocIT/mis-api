@@ -887,7 +887,8 @@ class MediaForceAPI:
             return False, resp.errors
         if settings.DEBUG is True:
             print(
-                '[Media] Skip valid access code login: ', str(employee_media_id), str(company_media_id), str(user_agent),
+                '[Media] Skip valid access code login: ', str(employee_media_id), str(company_media_id),
+                str(user_agent),
                 str(public_ip), str(access_id)
             )
         return False, RespData(_errors={'detail': 'Skip valid access code login'}).errors
