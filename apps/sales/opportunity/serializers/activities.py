@@ -164,10 +164,10 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-        try:
-            send_email(email_obj)
-        except Exception:
-            raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        # try:
+        #     send_email(email_obj)
+        # except Exception:
+        #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
         return email_obj
 
 
