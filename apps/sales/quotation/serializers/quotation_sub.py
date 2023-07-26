@@ -54,6 +54,7 @@ class QuotationCommonCreate:
         if is_expense is True:
             return {
                 'expense': expense,
+                'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
             }
@@ -146,6 +147,7 @@ class QuotationCommonCreate:
                 QuotationExpense.objects.create(
                     quotation=instance,
                     expense_id=data['expense'].get('id', None),
+                    product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
                     **quotation_expense
@@ -365,6 +367,8 @@ class QuotationCommonValidate:
     @classmethod
     def validate_expense(cls, value):
         try:
+            if value is None:
+                return {}
             expense = Expense.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,

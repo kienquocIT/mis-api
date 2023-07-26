@@ -485,6 +485,13 @@ class SaleOrderExpense(SimpleAbstractModel):
         related_name="sale_order_expense_expense",
         null=True
     )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="sale_order_expense_product",
+        null=True
+    )
     unit_of_measure = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -506,6 +513,16 @@ class SaleOrderExpense(SimpleAbstractModel):
         null=True
     )
     expense_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
         max_length=100,
         blank=True,
         null=True
@@ -550,6 +567,10 @@ class SaleOrderExpense(SimpleAbstractModel):
     )
     order = models.IntegerField(
         default=1
+    )
+    is_product = models.BooleanField(
+        default=False,
+        help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
 
     class Meta:
