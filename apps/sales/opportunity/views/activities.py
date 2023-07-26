@@ -226,9 +226,6 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     queryset = OpportunityDocument.objects
     serializer_detail = OpportunityDocumentDetailSerializer
 
-    def get_queryset(self):
-        return super().get_queryset()
-
     @swagger_auto_schema(
         operation_summary="OpportunityDocument detail",
         operation_description="Get OpportunityDocument detail by ID",
