@@ -2261,8 +2261,8 @@ class ExpenseTestCase(AdvanceTestCase):
     def create_price_list(self, currency):
         data = {
             "title": "chi phí nhân công sản xuất",
-            "auto_update": True,
-            "can_delete": True,
+            "auto_update": False,
+            "can_delete": False,
             "factor": 1,
             "currency": [currency[0], currency[1]],
             "price_list_type": 2,
