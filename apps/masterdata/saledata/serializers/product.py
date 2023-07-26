@@ -781,6 +781,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
+    product_choice = serializers.JSONField()
 
     class Meta:
         model = Product
@@ -791,7 +792,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'general_information',
             'sale_information',
             'price_list',
-            'product_type',
+            'product_choice',
         )
 
     @classmethod

@@ -148,7 +148,12 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
     expense = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True,
+    )
+    product = serializers.CharField(
+        max_length=550,
+        allow_null=True,
     )
     unit_of_measure = serializers.CharField(
         max_length=550
@@ -162,11 +167,14 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
         model = SaleOrderExpense
         fields = (
             'expense',
+            'product',
             'unit_of_measure',
             'tax',
             # expense information
             'expense_title',
             'expense_code',
+            'product_title',
+            'product_code',
             'expense_type_title',
             'expense_uom_title',
             'expense_uom_code',
@@ -178,11 +186,16 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
             'expense_subtotal_price',
             'expense_subtotal_price_after_tax',
             'order',
+            'is_product',
         )
 
     @classmethod
     def validate_expense(cls, value):
         return SaleOrderCommonValidate().validate_expense(value=value)
+
+    @classmethod
+    def validate_product(cls, value):
+        return QuotationCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure(cls, value):
@@ -349,6 +362,10 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'customer': {
+                    'id': obj.opportunity.customer_id,
+                    'title': obj.opportunity.customer.title
+                } if obj.opportunity.customer else {}
             }
         return {}
 
@@ -409,9 +426,9 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status:
-            return "Open"
-        return "Open"
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):

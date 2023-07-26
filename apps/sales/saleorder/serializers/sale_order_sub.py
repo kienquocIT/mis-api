@@ -53,6 +53,7 @@ class SaleOrderCommonCreate:
         if is_expense is True:
             return {
                 'expense': expense,
+                'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
             }
@@ -121,6 +122,7 @@ class SaleOrderCommonCreate:
                 SaleOrderExpense.objects.create(
                     sale_order=instance,
                     expense_id=data['expense'].get('id', None),
+                    product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
                     **sale_order_expense
@@ -335,6 +337,8 @@ class SaleOrderCommonValidate:
     @classmethod
     def validate_expense(cls, value):
         try:
+            if value is None:
+                return {}
             expense = Expense.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,

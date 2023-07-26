@@ -174,25 +174,33 @@ class QuotationCostSerializer(serializers.ModelSerializer):
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
     expense = serializers.CharField(
-        max_length=550
+        max_length=550,
+        allow_null=True,
+    )
+    product = serializers.CharField(
+        max_length=550,
+        allow_null=True,
     )
     unit_of_measure = serializers.CharField(
         max_length=550
     )
     tax = serializers.CharField(
         max_length=550,
-        required=False
+        required=False,
     )
 
     class Meta:
         model = QuotationExpense
         fields = (
             'expense',
+            'product',
             'unit_of_measure',
             'tax',
             # expense information
             'expense_title',
             'expense_code',
+            'product_title',
+            'product_code',
             'expense_type_title',
             'expense_uom_title',
             'expense_uom_code',
@@ -204,11 +212,16 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
             'expense_subtotal_price',
             'expense_subtotal_price_after_tax',
             'order',
+            'is_product',
         )
 
     @classmethod
     def validate_expense(cls, value):
         return QuotationCommonValidate().validate_expense(value=value)
+
+    @classmethod
+    def validate_product(cls, value):
+        return QuotationCommonValidate().validate_product(value=value)
 
     @classmethod
     def validate_unit_of_measure(cls, value):
@@ -350,6 +363,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'is_close_lost': obj.opportunity.is_close_lost,
+                'is_deal_close': obj.opportunity.is_deal_close,
+                'sale_order_id': obj.opportunity.sale_order_id,
                 'customer': {
                     'id': obj.opportunity.customer_id,
                     'title': obj.opportunity.customer.title
@@ -405,9 +421,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status:
-            return "Open"
-        return "Open"
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
 
 # Quotation
