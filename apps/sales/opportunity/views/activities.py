@@ -3,11 +3,11 @@ from rest_framework.permissions import IsAuthenticated
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, OpportunityDocument
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
-    OpportunityCallLogDetailSerializer, OpportunityCallLogDeleteSerializer,
+    OpportunityCallLogDetailSerializer,
     OpportunityEmailListSerializer, OpportunityEmailCreateSerializer,
-    OpportunityEmailDetailSerializer, OpportunityEmailDeleteSerializer,
+    OpportunityEmailDetailSerializer,
     OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
-    OpportunityMeetingDetailSerializer, OpportunityMeetingDeleteSerializer, OpportunityDocumentListSerializer,
+    OpportunityMeetingDetailSerializer, OpportunityDocumentListSerializer,
     OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
@@ -196,7 +196,9 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityDocumentDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset()
+        return super().get_queryset().select_related(
+            'opportunity'
+        )
 
     @swagger_auto_schema(
         operation_summary="OpportunityDocument List",
@@ -222,7 +224,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
 class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     permission_classes = [IsAuthenticated]
     queryset = OpportunityDocument.objects
-    serializer_detail = OpportunityMeetingDetailSerializer
+    serializer_detail = OpportunityDocumentDetailSerializer
 
     def get_queryset(self):
         return super().get_queryset()

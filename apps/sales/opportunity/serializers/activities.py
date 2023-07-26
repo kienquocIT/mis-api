@@ -4,8 +4,8 @@ from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
-    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityDocument,
-    OpportunitySubDocument, OpportunityDocumentPersonInCharge
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
+    OpportunityDocumentPersonInCharge, OpportunityDocument
 )
 from apps.shared import BaseMsg
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -139,7 +139,7 @@ def send_email(email_obj):
         to=email_obj.email_to,
         cc=email_obj.email_cc_list,
         bcc=[],
-        template="<table><tr><td><h1>"+email_obj.subject+"</h1></td><td>"+email_obj.content+"</td></tr></table>",
+        template="<table><tr><td><h1>" + email_obj.subject + "</h1></td><td>" + email_obj.content + "</td></tr></table>",
         context=email_obj.content,
     ).send()
     return True
@@ -315,22 +315,33 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
         )
 
 
-class OpportunityMeetingDeleteSerializer(serializers.ModelSerializer):  # noqa
-    class Meta:
-        model = OpportunityMeeting
-        fields = ()
-
-    def update(self, instance, validated_data):
-        OpportunityMeetingEmployeeAttended.objects.filter(meeting_mapped=instance).delete()
-        OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=instance).delete()
-        instance.delete()
-        return True
-
-
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
+    to_contact = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityDocument
-        fields = '__all__'
+        fields = (
+            'id',
+            'to_contact',
+            'opportunity',
+            'subject',
+            'request_completed_date'
+        )
+
+    @classmethod
+    def get_to_contact(cls, obj):
+        return None
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity.id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return None
 
 
 class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
@@ -355,7 +366,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_sub_document(cls, user, instance, data):
-        # attachments: list -> danh sách id t? cloud tr? v?, t?m th?i chi có 1 nên l?y [0]
+        # attachments: list -> danh sï¿½ch id t? cloud tr? v?, t?m th?i chi cï¿½ 1 nï¿½n l?y [0]
         relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
         relate_app_code = 'documentforcustomer'
         instance_id = str(instance.id)
@@ -365,7 +376,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             )
         bulk_data = []
         for doc in data:
-        # check file trên cloud
+            # check file trï¿½n cloud
             if not doc['attachment']:
                 return False
             is_check, attach_check = Files.check_media_file(
@@ -380,12 +391,14 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
                 relate_app, instance_id, relate_app_code, user, media_result=attach_check
             )
             # step 2: t?o m?i file trong table M2M
-            bulk_data.append(OpportunitySubDocument(
-                document=instance,
-                attachment=files,
-                media_file=doc['attachment'],
-                description=doc['description']
-            ))
+            bulk_data.append(
+                OpportunitySubDocument(
+                    document=instance,
+                    attachment=files,
+                    media_file=doc['attachment'],
+                    description=doc['description']
+                )
+            )
         OpportunitySubDocument.objects.bulk_create(bulk_data)
         return True
 
@@ -400,7 +413,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context.get('user', None)
-        data_documents = validated_data.pop('data_documents')
+        data_documents = validated_data.get('data_documents', [])
         data_person_in_charge = validated_data.pop('person_in_charge')
         instance = OpportunityDocument.objects.create(**validated_data)
         if instance:
@@ -410,6 +423,38 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
+    files = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityDocument
-        fields = '__all__'
+        fields = (
+            'subject',
+            'opportunity',
+            'request_completed_date',
+            'kind_of_product',
+            'data_documents',
+            'person_in_charge',
+            'files',
+        )
+
+    @classmethod
+    def get_files(cls, obj):
+        file = OpportunitySubDocument.objects.select_related('attachment').filter(document=obj)
+        if file.exists():  # noqa
+            attachments = []
+            for item in file:
+                files = item.attachment
+                attachments.append(
+                    {
+                        "id": str(files.id),
+                        "relate_app_id": str(files.relate_app_id),
+                        "relate_app_code": files.relate_app_code,
+                        "relate_doc_id": str(files.relate_doc_id),
+                        "media_file_id": str(files.media_file_id),
+                        "file_name": files.file_name,
+                        "file_size": int(files.file_size),
+                        "file_type": files.file_type
+                    }
+                )
+            return attachments
+        return []
