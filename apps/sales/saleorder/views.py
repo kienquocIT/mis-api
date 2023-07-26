@@ -62,6 +62,7 @@ class SaleOrderDetail(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "opportunity",
+            "opportunity__customer",
             "customer",
             "contact",
             "sale_person",

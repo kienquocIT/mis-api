@@ -363,6 +363,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'is_close_lost': obj.opportunity.is_close_lost,
+                'is_deal_close': obj.opportunity.is_deal_close,
+                'sale_order_id': obj.opportunity.sale_order_id,
                 'customer': {
                     'id': obj.opportunity.customer_id,
                     'title': obj.opportunity.customer.title

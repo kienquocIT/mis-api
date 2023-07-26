@@ -362,6 +362,10 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'title': obj.opportunity.title,
                 'code': obj.opportunity.code,
+                'customer': {
+                    'id': obj.opportunity.customer_id,
+                    'title': obj.opportunity.customer.title
+                } if obj.opportunity.customer else {}
             }
         return {}
 
