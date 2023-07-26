@@ -331,7 +331,9 @@ class OpportunityDocumentListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_to_contact(cls):
+    def get_to_contact(cls, obj):
+        if obj:
+            return None
         return None
 
     @classmethod
