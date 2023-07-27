@@ -21,6 +21,7 @@ class PurchaseRequest(DataAbstractModel):
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
         related_name="sale_order",
+        null=True,
     )
 
     supplier = models.ForeignKey(
@@ -50,7 +51,7 @@ class PurchaseRequest(DataAbstractModel):
         max_length=1000
     )
 
-    purchase_product_datas = models.JSONField(
+    purchase_request_product_datas = models.JSONField(
         default=list,
         help_text="read data product, use for get list or detail purchase",
     )
@@ -73,6 +74,22 @@ class PurchaseRequest(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        purchase_request = PurchaseRequest.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "PR"
+        if not self.code:
+            temper = "%04d" % (purchase_request + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class PurchaseRequestProduct(SimpleAbstractModel):
