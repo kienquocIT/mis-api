@@ -247,7 +247,7 @@ class OpportunityActivityLogList(BaseListMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related("task")
+        return super().get_queryset().select_related("task", "call", "meeting", "document", "email")
 
     @swagger_auto_schema(
         operation_summary="Opportunity activity logs list",
