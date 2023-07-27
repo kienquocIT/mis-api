@@ -220,6 +220,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = (
+            'id',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
