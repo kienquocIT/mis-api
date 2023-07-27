@@ -5,7 +5,8 @@ from apps.core.base.models import Application
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
-    OpportunityDocumentPersonInCharge, OpportunityDocument
+    OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
+    OpportunityActivityLogs
 )
 from apps.shared import BaseMsg
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -369,7 +370,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_sub_document(cls, user, instance, data):
-        # attachments: list -> danh s�ch id t? cloud tr? v?, t?m th?i chi c� 1 n�n l?y [0]
+        # attachments: list -> danh s?ch id t? cloud tr? v?, t?m th?i chi c? 1 n?n l?y [0]
         relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
         relate_app_code = 'documentforcustomer'
         instance_id = str(instance.id)
@@ -379,7 +380,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             )
         bulk_data = []
         for doc in data:
-            # check file tr�n cloud
+            # check file tr?n cloud
             if not doc['attachment']:
                 return False
             is_check, attach_check = Files.check_media_file(
@@ -461,3 +462,52 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
                 )
             return attachments
         return []
+
+
+class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'id': obj.task.id,
+                'title': obj.task.title,
+                'code': obj.task.code
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogTask
+        fields = (
+            'subject',
+            'task',
+            'activity_name',
+            'activity_type',
+            'date_created'
+        )
+
+
+class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'subject': obj.task.subject,
+                'id': str(obj.task.task_id),
+                'activity_name': obj.task.activity_name,
+                'activity_type': obj.task.activity_type,
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogs
+        fields = (
+            'call',
+            'email',
+            'meeting',
+            'task',
+            'date_created'
+        )
