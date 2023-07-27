@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
-    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember
+    OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunityActivityLogTask,
+    OpportunityActivityLogs
 )
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -324,3 +325,52 @@ class OpportunityMeetingDeleteSerializer(serializers.ModelSerializer):  # noqa
         OpportunityMeetingCustomerMember.objects.filter(meeting_mapped=instance).delete()
         instance.delete()
         return True
+
+
+class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'id': obj.task.id,
+                'title': obj.task.title,
+                'code': obj.task.code
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogTask
+        fields = (
+            'subject',
+            'task',
+            'activity_name',
+            'activity_type',
+            'date_created'
+        )
+
+
+class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'subject': obj.task.subject,
+                'id': str(obj.task.task_id),
+                'activity_name': obj.task.activity_name,
+                'activity_type': obj.task.activity_type,
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogs
+        fields = (
+            'call',
+            'email',
+            'meeting',
+            'task',
+            'date_created'
+        )
