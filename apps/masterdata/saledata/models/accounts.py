@@ -181,7 +181,7 @@ class Account(DataAbstractModel):
     total_employees = models.CharField(
         choices=TOTAL_EMPLOYEES_SELECTION,
         verbose_name='total employees of account',
-        null=False,
+        null=True,
         max_length=150
     )
     phone = models.CharField(
