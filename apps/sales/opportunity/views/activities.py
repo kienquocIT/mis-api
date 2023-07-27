@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, OpportunityDocument
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
+    OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
     OpportunityCallLogDetailSerializer,
@@ -8,7 +9,7 @@ from apps.sales.opportunity.serializers import (
     OpportunityEmailDetailSerializer,
     OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
     OpportunityMeetingDetailSerializer, OpportunityDocumentListSerializer,
-    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer
+    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
@@ -233,3 +234,25 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class OpportunityActivityLogList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityActivityLogs.objects
+    serializer_list = OpportunityActivityLogsListSerializer
+    filterset_fields = {
+        'opportunity': ['exact'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("task")
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity activity logs list",
+        operation_description="Opportunity activity logs list",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

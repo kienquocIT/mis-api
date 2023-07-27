@@ -17,6 +17,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityTaskDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+    filterset_fields = {
+        'parent_n': ['exact'],
+    }
 
     def get_queryset(self):
         return self.queryset.select_related('parent_n', 'assign_to', 'opportunity')
