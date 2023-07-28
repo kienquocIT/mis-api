@@ -60,12 +60,24 @@ class SaleOrderActiveDelivery(APIView):
         if cls_model and cls_m2m_product_model and TypeCheck.check_uuid(pk):
             try:
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
-                if cls_m2m_product_model.objects.filter(sale_order=obj).count() <= 0:
+                is_not_picking = False
+                if cls_m2m_product_model.objects.filter(sale_order=obj).count() > 0:
+                    prod_so = cls_m2m_product_model.objects.filter(sale_order=obj)
+                    count_prod = prod_so.count()
+                    is_services = 0
+                    for item in prod_so:
+                        if 1 not in item.product.product_choice:
+                            is_services += 1
+                    if count_prod == is_services:
+                        is_not_picking = True
+
+                else:
                     raise serializers.ValidationError(
                         {
                             'detail': 'Need at least once product for delivery process run'
                         }
                     )
+
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,
                     **{'sale_order_id': str(obj.id)}
@@ -73,7 +85,7 @@ class SaleOrderActiveDelivery(APIView):
                 config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
                 serializer = DeliveryConfigDetailSerializer(config)
                 return ResponseController.success_200(
-                    data={'state': 'Successfully', 'config': serializer.data},
+                    data={'state': 'Successfully', 'config': serializer.data, 'is_not_picking': is_not_picking},
                     key_data='result'
                 )
             except cls_model.DoesNotExist:
