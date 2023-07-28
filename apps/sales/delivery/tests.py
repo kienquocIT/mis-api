@@ -23,18 +23,22 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         company_req = self.client.post(reverse("AccountTypeList"), company_data, format='json')
 
         config_data = {
-            'company': company_req.data['result'],
+            'company': company_req.data['result']['id'],
             'is_picking': False,
             'is_partial_ship': False,
         }
-        config = DeliveryConfig.objects.create(config_data)
+        config = DeliveryConfig.objects.create(
+            company_id=company_req.data['result']['id'],
+            is_picking=False,
+            is_partial_ship=False
+        )
         self.config = config.data['result']
 
         sale_order = TestCaseSaleOrder.test_create_sale_order()
 
         self.sale_order_id = sale_order.data['result']['id']
 
-    def create_picking_and_delivery_from_order(self):
+    def test_create_picking_and_delivery_from_order(self):
         url = reverse('SaleOrderActiveDelivery', args=[self.sale_order_id])
         create = self.client.post(url, {}, format='json')
         self.assertEqual(create.status_code, 201)
