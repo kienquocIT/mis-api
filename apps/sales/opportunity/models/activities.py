@@ -4,6 +4,10 @@ from django.db import models
 from django.utils import timezone
 from apps.shared import SimpleAbstractModel
 
+__all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'OpportunityMeetingEmployeeAttended',
+           'OpportunityMeetingCustomerMember', 'OpportunityActivityLogTask', 'OpportunityActivityLogs',
+           'OpportunityDocument', 'OpportunityDocumentPersonInCharge', 'OpportunitySubDocument']
+
 
 class OpportunityCallLog(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
@@ -175,5 +179,81 @@ class OpportunitySubDocument(SimpleAbstractModel):
         verbose_name = 'OpportunitySubDocument'
         verbose_name_plural = 'OpportunitySubsDocument'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityActivityLogTask(SimpleAbstractModel):
+    subject = models.CharField(max_length=250)
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_task_opportunity",
+    )
+    task = models.ForeignKey(
+        'task.OpportunityTask',
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_task_task",
+    )
+    activity_name = models.CharField(max_length=50, null=True, default='Task')
+    activity_type = models.CharField(max_length=50, null=True, default='task')
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='date created after task created',
+    )
+
+    class Meta:
+        verbose_name = 'Activity log task'
+        verbose_name_plural = 'Activity log task'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class OpportunityActivityLogs(SimpleAbstractModel):
+    call = models.ForeignKey(
+        OpportunityCallLog,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_calls",
+        null=True
+    )
+    email = models.ForeignKey(
+        OpportunityEmail,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_email",
+        null=True
+    )
+    meeting = models.ForeignKey(
+        OpportunityMeeting,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_meeting",
+        null=True
+    )
+    task = models.ForeignKey(
+        OpportunityActivityLogTask,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_task",
+        null=True
+    )
+    document = models.ForeignKey(
+        OpportunityDocument,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_document",
+        null=True
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_opportunity",
+    )
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='date created after record created',
+    )
+
+    class Meta:
+        verbose_name = 'Opportunity activity log'
+        verbose_name_plural = 'Opportunity activity log'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

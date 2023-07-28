@@ -6,7 +6,7 @@ from .views import (
     OpportunityCallLogList, OpportunityCallLogDetail, OpportunityCallLogDelete,
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
-    OpportunityDocumentDetail
+    OpportunityDocumentDetail, OpportunityActivityLogList
 )
 
 urlpatterns = [
@@ -35,4 +35,6 @@ urlpatterns = [
 ] + [
     path('document/list', OpportunityDocumentList.as_view(), name='OpportunityDocumentList'),
     path('document/<str:pk>', OpportunityDocumentDetail.as_view(), name='OpportunityDocumentDetail'),
+] + [  # opportunity activity log
+    path('activity-log/lists', OpportunityActivityLogList.as_view(), name='OpportunityActivityLogList'),
 ]

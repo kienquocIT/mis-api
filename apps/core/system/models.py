@@ -11,6 +11,7 @@ __all__ = [
 
 
 class MailServerConfig(SimpleAbstractModel):
+    creds_data = models.JSONField(default=dict)
     token_data = models.JSONField()
 
     token = models.TextField()
