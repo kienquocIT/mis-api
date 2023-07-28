@@ -73,7 +73,11 @@ class RuntimeMeListSerializer(serializers.ModelSerializer):
                 'action_perform': x.action_perform,
                 'is_done': x.is_done,
                 'date_created': x.date_created,
-            } for x in obj.stage_currents.assignee_of_runtime_stage.all()
+            } for x in (
+                obj.stage_currents.assignee_of_runtime_stage.all()
+                if obj.stage_currents.assignee_of_runtime_stage
+                else []
+            )
         ]
 
     class Meta:
@@ -120,7 +124,11 @@ class RuntimeStageListSerializer(serializers.ModelSerializer):
                 "full_name": str(y.employee.get_full_name()),
                 "zone_and_properties": y.zone_and_properties,
                 "is_done": y.is_done,
-            } for y in obj.assignee_of_runtime_stage.all()
+            } for y in (
+                obj.assignee_of_runtime_stage.all()
+                if obj.assignee_of_runtime_stage
+                else []
+            )
         ]
 
     @classmethod
