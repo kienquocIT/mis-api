@@ -235,6 +235,12 @@ class OpportunityActivityLogs(SimpleAbstractModel):
         related_name="opportunity_activity_log_task",
         null=True
     )
+    document = models.ForeignKey(
+        OpportunityDocument,
+        on_delete=models.CASCADE,
+        related_name="opportunity_activity_log_document",
+        null=True
+    )
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
         on_delete=models.CASCADE,

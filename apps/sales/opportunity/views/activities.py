@@ -234,8 +234,6 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class OpportunityActivityLogList(BaseListMixin):
@@ -247,7 +245,7 @@ class OpportunityActivityLogList(BaseListMixin):
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related("task")
+        return super().get_queryset().select_related("task", "call", "meeting", "document", "email")
 
     @swagger_auto_schema(
         operation_summary="Opportunity activity logs list",

@@ -81,6 +81,15 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
 
+    def create(self, validated_data):
+        call_log_obj = OpportunityCallLog.objects.create(**validated_data)
+        OpportunityActivityLogs.objects.create(
+            call=call_log_obj,
+            opportunity=validated_data['opportunity'],
+            date_created=validated_data['call_date']
+        )
+        return call_log_obj
+
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -175,6 +184,10 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         #     send_email(email_obj)
         # except Exception:
         #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        OpportunityActivityLogs.objects.create(
+            email=email_obj,
+            opportunity=validated_data['opportunity'],
+        )
         return email_obj
 
 
@@ -297,6 +310,11 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         meeting_obj = OpportunityMeeting.objects.create(**validated_data)
         create_employee_attended_map_meeting(meeting_obj, self.initial_data.get('employee_attended_list', []))
         create_customer_member_map_meeting(meeting_obj, self.initial_data.get('customer_member_list', []))
+        OpportunityActivityLogs.objects.create(
+            meeting=meeting_obj,
+            opportunity=validated_data['opportunity'],
+            date_created=validated_data['meeting_date']
+        )
         return meeting_obj
 
 
@@ -423,6 +441,11 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
         if instance:
             self.create_person_in_charge(data_person_in_charge, instance)
             self.create_sub_document(user, instance, data_documents)
+            OpportunityActivityLogs.objects.create(
+                document=instance,
+                opportunity_id=validated_data['opportunity'],
+                date_created=validated_data['request_completed_date']
+            )
         return instance
 
 
@@ -490,6 +513,10 @@ class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
 
 class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
     task = serializers.SerializerMethodField()
+    call_log = serializers.SerializerMethodField()
+    meeting = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    document = serializers.SerializerMethodField()
 
     @classmethod
     def get_task(cls, obj):
@@ -502,12 +529,57 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_call_log(cls, obj):
+        if obj.call:
+            return {
+                'subject': obj.call.subject,
+                'id': str(obj.call_id),
+                'activity_name': 'Call to customer',
+                'activity_type': 'call',
+            }
+        return {}
+
+    @classmethod
+    def get_meeting(cls, obj):
+        if obj.meeting:
+            return {
+                'subject': obj.meeting.subject,
+                'id': str(obj.meeting_id),
+                'activity_name': 'Meeting with customer',
+                'activity_type': 'meeting',
+            }
+        return {}
+
+    @classmethod
+    def get_email(cls, obj):
+        if obj.email:
+            return {
+                'subject': obj.email.subject,
+                'id': str(obj.email_id),
+                'activity_name': 'Send email',
+                'activity_type': 'email',
+            }
+        return {}
+
+    @classmethod
+    def get_document(cls, obj):
+        if obj.document:
+            return {
+                'subject': obj.document.subject,
+                'id': str(obj.document_id),
+                'activity_name': 'Upload document',
+                'activity_type': 'document',
+            }
+        return {}
+
     class Meta:
         model = OpportunityActivityLogs
         fields = (
-            'call',
+            'call_log',
             'email',
             'meeting',
+            'document',
             'task',
             'date_created'
         )
