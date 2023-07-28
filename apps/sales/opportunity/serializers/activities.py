@@ -143,15 +143,17 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         return {}
 
 
-def send_email(email_obj):
+def send_email(email_obj, employee_id, tenant_id, company_id):
     GmailController(
         subject=email_obj.subject,
         to=email_obj.email_to,
         cc=email_obj.email_cc_list,
         bcc=[],
-        template="<table><tr><td><h1>" + email_obj.subject + "</h1></td><td>" + email_obj.content + "</td></tr></table>"
-        ,
+        template="<table><tr><td><h1>" +email_obj.subject+ "</h1></td><td>" +email_obj.content+ "</td></tr></table>",
         context=email_obj.content,
+        tenant_id=tenant_id,
+        company_id=company_id,
+        employee_id=employee_id,
     ).send()
     return True
 
@@ -180,10 +182,13 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-        # try:
-        #     send_email(email_obj)
-        # except Exception:
-        #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        try:
+            employee_id = self.context.get('user', None)
+            tenant_id = self.context.get('tenant', None)
+            company_id = self.context.get('company', None)
+            send_email(email_obj, employee_id, tenant_id, company_id)
+        except Exception:
+            raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
         OpportunityActivityLogs.objects.create(
             email=email_obj,
             opportunity=validated_data['opportunity'],
