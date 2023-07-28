@@ -75,7 +75,7 @@ class RuntimeMeListSerializer(serializers.ModelSerializer):
                 'date_created': x.date_created,
             } for x in (
                 obj.stage_currents.assignee_of_runtime_stage.all()
-                if obj.stage_currents.assignee_of_runtime_stage
+                if obj.stage_currents and obj.stage_currents.assignee_of_runtime_stage
                 else []
             )
         ]
