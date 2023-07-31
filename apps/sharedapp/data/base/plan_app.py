@@ -293,7 +293,7 @@ PlanApplication_data = {
 
 def get_full_permissions_by_configured():
     result = []
-    for key, value in PlanApplication_data.items():
+    for _key, value in PlanApplication_data.items():
         plan_data = {'id': value['plan_id'], **SubscriptionPlan_data[value['plan_id']]}
         app_data = {'id': value['application_id'], **Application_data[value['application_id']]}
         result.append(
