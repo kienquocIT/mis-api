@@ -966,10 +966,40 @@ AppProp_SaleData_SaleOrder_data = {
     },
 }
 
+AppProp_SaleData_Delivery_data = {
+    # 1373e903-909c-4b77-9957-8bcf97e8d6d3 # delivery.OrderDelivery
+    # General fields
+    'ea3fbbdb-3325-4293-8e67-f04c50792e36': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Estimated Delivery Date',
+        'code': 'estimated_delivery_date',
+        'type': 2,
+    },
+    '041840f5-fb3d-47af-bf35-cdb0ec630593': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Actual Delivery Data',
+        'code': 'actual_delivery_date',
+        'type': 2,
+    },
+    '0fded793-1f2a-4402-9da9-1afb30c1133c': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Remarks',
+        'code': 'remarks',
+        'type': 1,
+    },
+    'fd4dd2f6-fc4c-4d44-a065-af8618baeba0': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Pickup Quantity',
+        'code': 'pickup_quantity',
+        'type': 6,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,
     **AppProp_SaleData_Opportunity_data,
     **AppProp_SaleData_SaleOrder_data,
+    **AppProp_SaleData_Delivery_data,
 }
