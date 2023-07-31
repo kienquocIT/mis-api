@@ -2,6 +2,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail
 
@@ -14,6 +15,7 @@ from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
     UserCreateSerializer, EmployeeSpaceCreateSerializer,
 )
+from apps.shared import FORMATTING
 
 
 class TenantController:
@@ -361,33 +363,48 @@ class TenantController:
     def create_tenant_plan(cls, plan_obj_list, tenant_obj):
         if plan_obj_list and tenant_obj:
             tenant_plan_json = {}
-            bulk_info = []
+            bulk_info = [
+                TenantPlan(
+                    **{
+                        'date_active': FORMATTING.parse_datetime(timezone.now()),
+                        'date_end': None,
+                        'tenant': tenant_obj,
+                        'plan': SubscriptionPlan.objects.get(code='base'),  # plan: base
+                        'is_limited': False,
+                        'license_quantity': None,
+                        'license_used': 0,
+                        'purchase_order': ''
+                    },
+                )
+            ]
             if tenant_obj.plan:
                 tenant_plan_json = tenant_obj.plan
                 tenant_plan_json = json.loads(tenant_plan_json)
             if tenant_plan_json:
                 for tenant_plan in tenant_plan_json:
-                    is_limited = tenant_plan.get('is_limited', None)
-                    license_quantity = tenant_plan.get('quantity', None)
-                    plan = SubscriptionPlan.objects.get(code=tenant_plan.get('code', None))
-                    purchase_order = tenant_plan.get('purchase_order', None)
-                    date_active = tenant_plan.get('date_active', None)
-                    date_end = tenant_plan.get('date_end', None)
-                    if plan:
-                        bulk_info.append(
-                            TenantPlan(
-                                **{
-                                    'date_active': date_active,
-                                    'date_end': date_end,
-                                    'tenant': tenant_obj,
-                                    'plan': plan,
-                                    'is_limited': is_limited,
-                                    'license_quantity': license_quantity,
-                                    'license_used': 0,
-                                    'purchase_order': purchase_order
-                                },
+                    plan_code = tenant_plan.get('code', None).lower()
+                    if plan_code and plan_code != 'base':
+                        is_limited = tenant_plan.get('is_limited', None)
+                        license_quantity = tenant_plan.get('quantity', None)
+                        plan = SubscriptionPlan.objects.get(code=plan_code)
+                        purchase_order = tenant_plan.get('purchase_order', None)
+                        date_active = tenant_plan.get('date_active', None)
+                        date_end = tenant_plan.get('date_end', None)
+                        if plan:
+                            bulk_info.append(
+                                TenantPlan(
+                                    **{
+                                        'date_active': date_active,
+                                        'date_end': date_end,
+                                        'tenant': tenant_obj,
+                                        'plan': plan,
+                                        'is_limited': is_limited,
+                                        'license_quantity': license_quantity,
+                                        'license_used': 0,
+                                        'purchase_order': purchase_order
+                                    },
+                                )
                             )
-                        )
             if bulk_info:
                 TenantPlan.objects.bulk_create(bulk_info)
         return True

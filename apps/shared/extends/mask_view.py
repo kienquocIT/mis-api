@@ -25,12 +25,12 @@ class PermissionChecking:  # pylint: disable=R0902
 
         self.user_obj = user_obj
         self.employee_obj = employee_obj
-        if self.user_obj and self.employee_obj:
+        if self.employee_obj:
             self.tenant_id = self.employee_obj.tenant_id
             self.company_id = self.employee_obj.company_id
-        else:
-            self.tenant_id = None
-            self.company_id = None
+        elif self.user_obj:
+            self.tenant_id = self.user_obj.tenant_current_id
+            self.company_id = self.user_obj.company_current_id
 
         self.permissions_parsed = getattr(self.employee_obj, 'permissions_parsed', {})
 
@@ -65,24 +65,30 @@ class PermissionChecking:  # pylint: disable=R0902
                 filter_dict['employee_created_id__in'] = [str(self.employee_obj.id)]
         return filter_dict
 
-    def check_and_get_filter(self) -> (bool, Union[None, dict]):
+    def check_and_get_filter(self) -> (Union[None, dict], Union[None, dict]):
         if self.plan_code in self.permissions_parsed:
             if self.app_code in self.permissions_parsed[self.plan_code]:
                 if self.perm_code in self.permissions_parsed[self.plan_code][self.app_code]:
                     config_data = self.permissions_parsed[self.plan_code][self.app_code][self.perm_code]
                     filter_dict = self._parse_config_append_filter(config_data=config_data)
                     if filter_dict:
-                        return True, {
-                            'tenant_id': str(self.tenant_id),
-                            **filter_dict
-                        }
+                        return (
+                            config_data,
+                            {
+                                'tenant_id': str(self.tenant_id),
+                                **filter_dict
+                            }
+                        )
                     print('[Permission][Valid] Generate filter was return empty.')
-        return False, None
+        return None, None
 
-    def get_filter_of_admin(self) -> (bool, dict):
+    def get_filter_of_admin(self) -> (Union[None, dict], Union[None, dict]):
         if self.tenant_id and self.company_id:
-            return True, {'tenant_id': str(self.tenant_id), 'company_id': str(self.company_id)}
-        return False, None
+            return (
+                {"4": {}},  # everyone in company
+                {'tenant_id': str(self.tenant_id), 'company_id': str(self.company_id)}
+            )
+        return None, None
 
 
 class AuthPermission:
@@ -115,26 +121,27 @@ class AuthPermission:
 
         """
         if self.check_allow['_is_allow_admin']:
-            state, filter_get = PermissionChecking(
+            config_data, filter_dict = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=None,
                 plan_code=self.perm_data.get('plan_code', None),
                 app_code=self.perm_data.get('app_code', None),
                 perm_code=self.perm_data.get('perm_code', None),
             ).get_filter_of_admin()
-            if state:
-                return filter_get
-            return False
+            if config_data and filter_dict:
+                self.set_perm_config_mapped(config_data=config_data)
+                return filter_dict
         employee_obj = getattr(self.user, 'employee_current', None)
         if employee_obj:
-            state, filter_dict = PermissionChecking(
+            config_data, filter_dict = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=employee_obj,
                 plan_code=self.perm_data.get('plan_code', None),
                 app_code=self.perm_data.get('app_code', None),
                 perm_code=self.perm_data.get('perm_code', None),
             ).check_and_get_filter()
-            if state:
+            if config_data and filter_dict:
+                self.set_perm_config_mapped(config_data=config_data)
                 return filter_dict
         return False
 
@@ -155,6 +162,14 @@ class AuthPermission:
         if hasattr(self.view_this, 'error_auth_require'):
             return getattr(self.view_this, 'error_auth_require')()
         return ResponseController.forbidden_403()
+
+    def set_filter_dict(self, result_filter):
+        setattr(self.view_this, 'filter_dict', result_filter)
+        return result_filter
+
+    def set_perm_config_mapped(self, config_data):
+        setattr(self.view_this, 'perm_config_mapped', config_data)
+        return config_data
 
     def __init__(self, view_this, request, **kwargs):
         self.view_this = view_this
@@ -209,7 +224,7 @@ class AuthPermission:
 
         return True
 
-    def     auth_check(self, auth_require: bool) -> Union[True, ResponseController]:
+    def auth_check(self, auth_require: bool) -> Union[True, ResponseController]:
         has_check_perm = self.has_check_perm
         result_filter = {}
         admin_skip_filter = False
@@ -230,7 +245,7 @@ class AuthPermission:
 
         if self.use_custom['get_filter_auth'] and hasattr(self.view_this, 'get_filter_auth'):
             result_filter = self.view_this.get_filter_auth()
-        return result_filter
+        return self.set_filter_dict(result_filter)
 
 
 def mask_view(**parent_kwargs):
@@ -242,6 +257,7 @@ def mask_view(**parent_kwargs):
 
     def decorated(func_view):
         def wrapper(self, request, *args, **kwargs):  # pylint: disable=R0911,R0912,R0914
+            print(request)
             # request.user.employee_current: required
             employee_require: bool = parent_kwargs.get('employee_require', False)
 
