@@ -28,6 +28,7 @@ jsonfield==3.1.0
 gunicorn==20.1.0
 MarkupSafe==2.1.1
 mysqlclient==2.1.1
+numpy-1.25.1
 opentracing==2.4.0
 google-api-python-client
 google-auth-httplib2

@@ -350,6 +350,11 @@ SWAGGER_SETTINGS = {
             'name': 'DATAISSKIPAUTH',
             'in': 'header',
         },
+        f'Dropdown List: "true"': {
+            'type': 'apiKey',
+            'name': 'DATAISDD',
+            'in': 'header',
+        },
     },
     'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
     'APIS_SORTER': 'alpha',

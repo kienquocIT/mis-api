@@ -35,7 +35,9 @@ class GoodReceiptList(
         operation_summary="Good receipt list",
         operation_description="List of Good receipt",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -44,7 +46,10 @@ class GoodReceiptList(
         operation_description="Create new Good receipt",
         request_body=GoodReceiptCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -67,12 +72,17 @@ class GoodReceiptDetail(
         )
 
     @swagger_auto_schema(operation_summary='Detail a good receipt')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary='Update a good receipt', request_body=GoodReceiptUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
             'user': request.user

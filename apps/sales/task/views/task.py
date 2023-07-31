@@ -25,7 +25,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         operation_summary="Opportunity Task List",
         operation_description="List of opportunity task",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -34,7 +34,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         operation_description="Lead create task for member of team via opportunity page or via Task page",
         request_body=OpportunityTaskCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -56,7 +56,7 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         operation_summary="Opportunity Task Detail",
         operation_description="Detail opportunity task",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -64,7 +64,7 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         operation_summary="Opportunity Task Update",
         operation_description="Opportunity task update",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -74,7 +74,7 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Task",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -88,7 +88,7 @@ class OpportunityTaskSwitchSTT(BaseUpdateMixin):
         operation_summary="Opportunity Task Update status",
         operation_description="Opportunity task update status",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -103,7 +103,7 @@ class OpportunityTaskLogWork(BaseCreateMixin, BaseRetrieveMixin):
         operation_description="Opportunity task Log Work",
         request_body=OpportunityTaskLogWorkSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', require_employee=True)
+    @mask_view(login_require=True, auth_require=True, code_perm='', employee_require=True)
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee': request.user.employee_current
@@ -128,6 +128,6 @@ class OpportunityTaskStatusList(BaseListMixin):
         operation_summary="Opportunity Task Status List",
         operation_description="List of opportunity task status",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

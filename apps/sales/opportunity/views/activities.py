@@ -27,7 +27,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityCallLog List",
         operation_description="Get OpportunityCallLog List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -36,7 +36,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityCallLog",
         request_body=OpportunityCallLogCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -53,7 +53,7 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityCallLog detail",
         operation_description="Get OpportunityCallLog detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -67,7 +67,7 @@ class OpportunityCallLogDelete(BaseUpdateMixin):
         operation_summary="Delete Opportunity Call Log List",
         request_body=OpportunityCallLogDeleteSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -87,7 +87,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityEmail List",
         operation_description="Get OpportunityEmail List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -96,7 +96,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityEmail",
         request_body=OpportunityEmailCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -113,7 +113,7 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityEmail detail",
         operation_description="Get OpportunityEmail detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -127,7 +127,7 @@ class OpportunityEmailDelete(BaseUpdateMixin):
         operation_summary="Delete Opportunity Email List",
         request_body=OpportunityEmailDeleteSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -150,7 +150,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityMeeting List",
         operation_description="Get OpportunityMeeting List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -159,7 +159,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityMeeting",
         request_body=OpportunityMeetingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -176,7 +176,7 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityMeeting detail",
         operation_description="Get OpportunityMeeting detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -190,6 +190,6 @@ class OpportunityMeetingDelete(BaseUpdateMixin):
         operation_summary="Delete Opportunity Meeting List",
         request_body=OpportunityMeetingDeleteSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

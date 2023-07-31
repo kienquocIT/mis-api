@@ -4,7 +4,6 @@ from apps.core.tenant.models import TenantPlan
 
 
 class TenantPlanSerializer(serializers.ModelSerializer):
-    # tenant = serializers.SerializerMethodField()
     plan = serializers.SerializerMethodField()
     license_used = serializers.SerializerMethodField()
 
@@ -17,16 +16,6 @@ class TenantPlanSerializer(serializers.ModelSerializer):
             'license_quantity',
             'license_used'
         )
-
-    # @classmethod
-    # def get_tenant(cls, obj):
-    #     if obj.tenant_id:
-    #         return {
-    #             'id': obj.tenant_id,
-    #             'title': obj.tenant.title,
-    #             'code': obj.tenant.code,
-    #         }
-    #     return {}
 
     @classmethod
     def get_plan(cls, obj):

@@ -31,7 +31,7 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=True)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -41,7 +41,7 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Delivery Config Update",
         request_body=DeliveryConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -53,7 +53,7 @@ class SaleOrderActiveDelivery(APIView):
         operation_summary='Call delivery at SaleOrder Detail',
         operation_description='"id" is Sale Order ID - Start delivery process of this'
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, pk, **kwargs):
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()
         cls_m2m_product_model = DisperseModel(app_model='saleorder.SaleOrderProduct').get_model()
