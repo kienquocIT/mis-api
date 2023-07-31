@@ -1,9 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
+from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
+    SaleOrderProduct
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
-    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer
+    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
+    SaleOrderProductListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
@@ -232,3 +234,27 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class SaleOrderProductList(
+    BaseListMixin
+):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderProduct.objects
+    serializer_list = SaleOrderProductListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product'
+        ).filter(
+            product__isnull=False
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order Product List",
+        operation_description="Get Sale Order Product List",
+    )
+    @mask_view(login_require=True, auth_require=True, code_perm='')
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
