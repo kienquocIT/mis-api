@@ -9,7 +9,6 @@ from .models import (
 )
 from .managers import NormalManager
 from .utils import LinkListHandler, StringHandler, CustomizeEncoder, TypeCheck, FORMATTING
-from .tests import AdvanceTestCase
 from .serializers import AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel
 
 __all__ = [
@@ -21,6 +20,5 @@ __all__ = [
     'LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
     'NormalManager',
-    'AdvanceTestCase',
     'AbstractListSerializerModel', 'AbstractDetailSerializerModel', 'AbstractCreateSerializerModel',
 ]

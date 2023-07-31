@@ -26,7 +26,7 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         operation_summary="Payment list",
         operation_description="Payment list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -35,7 +35,7 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Payment",
         request_body=PaymentCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -54,12 +54,12 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     @swagger_auto_schema(operation_summary='Detail Payment')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     # @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=PaymentUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=True, code_perm='')
+    # @mask_view(login_require=True, auth_require=False)
     # def put(self, request, *args, **kwargs):
     #     self.serializer_class = PaymentUpdateSerializer
     #     return self.update(request, *args, **kwargs)
@@ -78,6 +78,6 @@ class PaymentCostItemsList(BaseListMixin):
         operation_summary="Payment Cost Items list",
         operation_description="Payment Cost Items list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

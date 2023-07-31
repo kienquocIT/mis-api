@@ -1,12 +1,12 @@
 from copy import deepcopy
 from typing import Union
 from uuid import UUID
-
 from django.conf import settings
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
 
 from apps.core.log.tasks import force_log_activity
 from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
@@ -19,7 +19,7 @@ from .tasks import call_task_background
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
 
-class BaseMixin(GenericAPIView):
+class BaseMixin(GenericAPIView):    # pylint: disable=R0904
     ser_context: dict[str, any] = {}
     search_fields: list
     filterset_fields: dict
@@ -30,6 +30,29 @@ class BaseMixin(GenericAPIView):
 
     # exception
     query_extend_base_model = True
+
+    filter_dict: dict = None
+
+    def get_filter_auth(self) -> dict:
+        """
+        Function customize get_filter (self.filter_dict) in view for special case
+        Returns:
+            dict
+        Notes:
+            You need override it when use_get_filter=True in view | or take care to *_filter_hidden attribute
+        """
+        return {}
+
+    def append_filter_authenticate(self, main_filter: dict) -> dict:
+        if self.filter_dict:
+            return {
+                **main_filter,
+                **self.filter_dict
+            }
+        return main_filter
+
+    class Meta:
+        abstract = True
 
     def get_serializer_class(self):
         if getattr(self, 'serializer_list', None):
@@ -139,7 +162,7 @@ class BaseMixin(GenericAPIView):
         Returns:
 
         """
-        return self.setup_hidden(self.list_hidden_field, user)
+        return self.append_filter_authenticate(self.setup_hidden(self.list_hidden_field, user))
 
     def setup_retrieve_field_hidden(self, user) -> dict:
         """
@@ -356,8 +379,21 @@ class BaseMixin(GenericAPIView):
             )
         return True
 
+    def error_employee_require(self):
+        return ResponseController.forbidden_403()
+
+    def error_auth_require(self):
+        return ResponseController.forbidden_403()
+
+    def error_login_require(self):
+        return ResponseController.unauthorized_401()
+
 
 class BaseListMixin(BaseMixin):
+    @classmethod
+    def list_empty(cls) -> Response:
+        return ResponseController.success_200(data=[], key_data='result')
+
     def get_object(self):
         raise TypeError("Not allow use get_object() for List Mixin.")
 
@@ -401,7 +437,6 @@ class BaseListMixin(BaseMixin):
         Returns:
 
         """
-
         is_minimal, _is_skip_auth = self.parse_header(request)
         queryset, page = self.setup_filter_queryset(
             user=request.user,
@@ -414,10 +449,6 @@ class BaseListMixin(BaseMixin):
 
         serializer = self.get_serializer_list(queryset, many=True, is_minimal=is_minimal)
         return ResponseController.success_200(data=serializer.data, key_data='result')
-
-    @classmethod
-    def list_empty(cls):
-        return ResponseController.success_200(data=[], key_data='result')
 
 
 class BaseCreateMixin(BaseMixin):
@@ -436,14 +467,14 @@ class BaseCreateMixin(BaseMixin):
 
 
 class BaseRetrieveMixin(BaseMixin):
+    @classmethod
+    def retrieve_empty(cls) -> Response:
+        return ResponseController.success_200(data={}, key_data='result')
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer_detail(instance)
         return ResponseController.success_200(data=serializer.data, key_data='result')
-
-    @classmethod
-    def retrieve_empty(cls):
-        return ResponseController.success_200(data={}, key_data='result')
 
 
 class BaseUpdateMixin(BaseMixin):

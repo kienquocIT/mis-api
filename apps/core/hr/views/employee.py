@@ -27,7 +27,9 @@ class EmployeeUploadAvatar(APIView):
     parser_classes = [MultiPartParser]
 
     @swagger_auto_schema(request_body=EmployeeUploadAvatarSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, employee_require=True,
+    )
     def post(self, request, *args, **kwargs):
         employee_obj = request.user.employee_current
         if employee_obj:
@@ -45,11 +47,7 @@ class EmployeeUploadAvatar(APIView):
         return ResponseController.forbidden_403()
 
 
-class EmployeeList(
-    BaseListMixin,
-    BaseCreateMixin,
-    generics.GenericAPIView
-):
+class EmployeeList(BaseListMixin, BaseCreateMixin, generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     search_fields = ["search_content"]
@@ -65,9 +63,17 @@ class EmployeeList(
             'group',
         ).prefetch_related('role')
 
+    def error_auth_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(
         operation_summary="Employee list",
         operation_description="Get employee list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        plan_code='base', app_code='employee', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -77,15 +83,16 @@ class EmployeeList(
         operation_description="Create a new employee",
         request_body=EmployeeCreateSerializer,
     )
+    @mask_view(
+        login_require=True, auth_require=True,
+        # allow_admin_tenant=True, allow_admin_company=False,
+        plan_code='base', app_code='employee', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class EmployeeDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-    generics.GenericAPIView
-):
+class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     serializer_detail = EmployeeDetailSerializer
@@ -98,6 +105,11 @@ class EmployeeDetail(
         operation_summary="Employee detail",
         operation_description="Get employee detail by ID",
     )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        plan_code='base', app_code='employee', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -106,15 +118,17 @@ class EmployeeDetail(
         operation_description="Update employee by ID",
         request_body=EmployeeUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        plan_code='base', app_code='employee', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
+        print(request.data)
         return self.update(request, *args, **kwargs)
 
 
-class EmployeeCompanyList(
-    BaseListMixin,
-    generics.GenericAPIView
-):
+class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
 
@@ -132,14 +146,16 @@ class EmployeeCompanyList(
         operation_summary="Employee Company list",
         operation_description="Get employee Company list",
     )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        plan_code='base', app_code='employee', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class EmployeeTenantList(
-    BaseListMixin,
-    generics.GenericAPIView
-):
+class EmployeeTenantList(BaseListMixin, generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
 
@@ -161,6 +177,11 @@ class EmployeeTenantList(
         operation_summary="Employee Company list",
         operation_description="Get employee Company list",
     )
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        plan_code='base', app_code='employee', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
             return self.list(request, *args, **kwargs)
@@ -173,7 +194,7 @@ class EmployeeTenantList(
 
 class EmployeeMediaToken(APIView):
     @swagger_auto_schema()
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, employee_require=True)
     def get(self, request, *args, **kwargs):
         if request.user.employee_current:
             employee_obj = request.user.employee_current

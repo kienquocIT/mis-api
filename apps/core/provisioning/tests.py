@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from apps.shared import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase
 
 
 class TestCaseProvisioning(AdvanceTestCase):
