@@ -21,7 +21,7 @@ from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.quotation.models import QuotationIndicatorConfig
-from ..sales.saleorder.models import SaleOrderIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
 
 
 def update_sale_default_data_old_company():
@@ -514,3 +514,11 @@ def update_data_product():
         product.save()
 
     print('Done !')
+
+
+def update_data_sale_order_product():
+    objs = SaleOrderProduct.objects.all()
+    for obj in objs:
+        obj.remain_for_purchase_request = obj.product_quantity
+        obj.save()
+    print('Done!')
