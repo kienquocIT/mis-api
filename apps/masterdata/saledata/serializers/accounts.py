@@ -440,9 +440,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
                 if validate_data['account_type_selection'] == 1:  # tax_code is required
                     if not tax_code:
                         raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
+                    if not validate_data.get('total_employees', None):
+                        raise serializers.ValidationError(AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE)
                 elif validate_data['account_type_selection'] == 0:
                     validate_data.update({'parent_account': None})
-
                 if tax_code:
                     account_mapped_tax_code = Account.objects.filter_current(
                         fill__tenant=True,

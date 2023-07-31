@@ -31,7 +31,7 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=True)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -41,7 +41,7 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Delivery Config Update",
         request_body=DeliveryConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -53,19 +53,31 @@ class SaleOrderActiveDelivery(APIView):
         operation_summary='Call delivery at SaleOrder Detail',
         operation_description='"id" is Sale Order ID - Start delivery process of this'
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, pk, **kwargs):
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()
         cls_m2m_product_model = DisperseModel(app_model='saleorder.SaleOrderProduct').get_model()
         if cls_model and cls_m2m_product_model and TypeCheck.check_uuid(pk):
             try:
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
-                if cls_m2m_product_model.objects.filter(sale_order=obj).count() <= 0:
+                is_not_picking = False
+                if cls_m2m_product_model.objects.filter(sale_order=obj).count() > 0:
+                    prod_so = cls_m2m_product_model.objects.filter(sale_order=obj)
+                    count_prod = prod_so.count()
+                    is_services = 0
+                    for item in prod_so:
+                        if 1 not in item.product.product_choice:
+                            is_services += 1
+                    if count_prod == is_services:
+                        is_not_picking = True
+
+                else:
                     raise serializers.ValidationError(
                         {
                             'detail': 'Need at least once product for delivery process run'
                         }
                     )
+
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,
                     **{'sale_order_id': str(obj.id)}
@@ -73,7 +85,7 @@ class SaleOrderActiveDelivery(APIView):
                 config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
                 serializer = DeliveryConfigDetailSerializer(config)
                 return ResponseController.success_200(
-                    data={'state': 'Successfully', 'config': serializer.data},
+                    data={'state': 'Successfully', 'config': serializer.data, 'is_not_picking': is_not_picking},
                     key_data='result'
                 )
             except cls_model.DoesNotExist:

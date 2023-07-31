@@ -473,13 +473,7 @@ class RuntimeAssignee(SimpleAbstractModel):
                 self.tenant = self.stage.tenant
                 self.company = self.stage.company
             if self.employee:
-                self.employee_data = {
-                    'id': str(self.employee_id),
-                    'first_name': str(self.employee.first_name),
-                    'last_name': str(self.employee.last_name),
-                    'full_name': str(self.employee.get_full_name()),
-                    'avatar': str(self.employee.avatar),
-                }
+                self.employee_data = self.employee.get_detail_minimal()
         return True
 
     def save(self, *args, **kwargs):

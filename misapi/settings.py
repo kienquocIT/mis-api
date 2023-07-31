@@ -87,6 +87,7 @@ INSTALLED_APPS = \
         'apps.sales.cashoutflow',
         'apps.sales.delivery',
         'apps.sales.task',
+        'apps.sales.purchasing'
     ]
 
 MIDDLEWARE = [
@@ -348,6 +349,11 @@ SWAGGER_SETTINGS = {
         f'SKIP AUTH: {HEADER_SKIP_AUTH_CODE}': {
             'type': 'apiKey',
             'name': 'DATAISSKIPAUTH',
+            'in': 'header',
+        },
+        f'Dropdown List: "true"': {
+            'type': 'apiKey',
+            'name': 'DATAISDD',
             'in': 'header',
         },
     },

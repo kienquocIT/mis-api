@@ -137,6 +137,11 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
     media_password = models.TextField(blank=True)
     media_avatar_hash = models.TextField(blank=True)
 
+    is_admin_company = models.BooleanField(
+        default=False,
+        verbose_name='Is Admin Company',
+    )
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -223,6 +228,15 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
         if kwargs.get('force_insert', False) and not self.media_user_id and settings.ENABLE_PROD is True:
             MediaForceAPI.call_sync_employee(self)
+
+    def get_detail_minimal(self):
+        return {
+            'id': str(self.id),
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'full_name': self.get_full_name(),
+            'avatar': self.media_avatar_hash,
+        }
 
     def get_detail(self, *args):
         return {

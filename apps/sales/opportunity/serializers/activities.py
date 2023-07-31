@@ -5,7 +5,8 @@ from apps.core.base.models import Application
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
-    OpportunityDocumentPersonInCharge, OpportunityDocument
+    OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
+    OpportunityActivityLogs
 )
 from apps.shared import BaseMsg
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -80,6 +81,15 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
             return value
         raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
 
+    def create(self, validated_data):
+        call_log_obj = OpportunityCallLog.objects.create(**validated_data)
+        OpportunityActivityLogs.objects.create(
+            call=call_log_obj,
+            opportunity=validated_data['opportunity'],
+            date_created=validated_data['call_date']
+        )
+        return call_log_obj
+
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -133,17 +143,24 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         return {}
 
 
-def send_email(email_obj):
-    GmailController(
-        subject=email_obj.subject,
-        to=email_obj.email_to,
-        cc=email_obj.email_cc_list,
-        bcc=[],
-        template="<table><tr><td><h1>" + email_obj.subject + "</h1></td><td>" + email_obj.content + "</td></tr></table>"
-        ,
-        context=email_obj.content,
-    ).send()
-    return True
+def send_email(email_obj, employee_id, tenant_id, company_id):
+    try:
+        template = f"<table><tr><td><h1>{email_obj.subject}</h1></td><td>{email_obj.content}</td></tr></table>"
+        GmailController(
+            subject=email_obj.subject,
+            to=email_obj.email_to,
+            cc=email_obj.email_cc_list,
+            bcc=[],
+            template=template,
+            context=email_obj.content,
+            tenant_id=tenant_id,
+            company_id=company_id,
+            employee_id=employee_id,
+        ).send()
+        return True
+    except Exception as err:
+        print(err)
+    return False
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
@@ -170,10 +187,17 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
-        # try:
-        #     send_email(email_obj)
-        # except Exception:
-        #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+
+        employee_id = self.context.get('employee_id', None)
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        send_mail_state = send_email(email_obj, employee_id, tenant_id, company_id)
+        if not send_mail_state:
+            raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        OpportunityActivityLogs.objects.create(
+            email=email_obj,
+            opportunity=validated_data['opportunity'],
+        )
         return email_obj
 
 
@@ -296,6 +320,11 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         meeting_obj = OpportunityMeeting.objects.create(**validated_data)
         create_employee_attended_map_meeting(meeting_obj, self.initial_data.get('employee_attended_list', []))
         create_customer_member_map_meeting(meeting_obj, self.initial_data.get('customer_member_list', []))
+        OpportunityActivityLogs.objects.create(
+            meeting=meeting_obj,
+            opportunity=validated_data['opportunity'],
+            date_created=validated_data['meeting_date']
+        )
         return meeting_obj
 
 
@@ -369,7 +398,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_sub_document(cls, user, instance, data):
-        # attachments: list -> danh s�ch id t? cloud tr? v?, t?m th?i chi c� 1 n�n l?y [0]
+        # attachments: list -> danh s?ch id t? cloud tr? v?, t?m th?i chi c? 1 n?n l?y [0]
         relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
         relate_app_code = 'documentforcustomer'
         instance_id = str(instance.id)
@@ -379,7 +408,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             )
         bulk_data = []
         for doc in data:
-            # check file tr�n cloud
+            # check file tr?n cloud
             if not doc['attachment']:
                 return False
             is_check, attach_check = Files.check_media_file(
@@ -422,6 +451,11 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
         if instance:
             self.create_person_in_charge(data_person_in_charge, instance)
             self.create_sub_document(user, instance, data_documents)
+            OpportunityActivityLogs.objects.create(
+                document=instance,
+                opportunity_id=validated_data['opportunity'],
+                date_created=validated_data['request_completed_date']
+            )
         return instance
 
 
@@ -461,3 +495,101 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
                 )
             return attachments
         return []
+
+
+class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'id': obj.task.id,
+                'title': obj.task.title,
+                'code': obj.task.code
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogTask
+        fields = (
+            'subject',
+            'task',
+            'activity_name',
+            'activity_type',
+            'date_created'
+        )
+
+
+class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
+    task = serializers.SerializerMethodField()
+    call_log = serializers.SerializerMethodField()
+    meeting = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    document = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_task(cls, obj):
+        if obj.task:
+            return {
+                'subject': obj.task.subject,
+                'id': str(obj.task.task_id),
+                'activity_name': obj.task.activity_name,
+                'activity_type': obj.task.activity_type,
+            }
+        return {}
+
+    @classmethod
+    def get_call_log(cls, obj):
+        if obj.call:
+            return {
+                'subject': obj.call.subject,
+                'id': str(obj.call_id),
+                'activity_name': 'Call to customer',
+                'activity_type': 'call',
+            }
+        return {}
+
+    @classmethod
+    def get_meeting(cls, obj):
+        if obj.meeting:
+            return {
+                'subject': obj.meeting.subject,
+                'id': str(obj.meeting_id),
+                'activity_name': 'Meeting with customer',
+                'activity_type': 'meeting',
+            }
+        return {}
+
+    @classmethod
+    def get_email(cls, obj):
+        if obj.email:
+            return {
+                'subject': obj.email.subject,
+                'id': str(obj.email_id),
+                'activity_name': 'Send email',
+                'activity_type': 'email',
+            }
+        return {}
+
+    @classmethod
+    def get_document(cls, obj):
+        if obj.document:
+            return {
+                'subject': obj.document.subject,
+                'id': str(obj.document_id),
+                'activity_name': 'Upload document',
+                'activity_type': 'document',
+            }
+        return {}
+
+    class Meta:
+        model = OpportunityActivityLogs
+        fields = (
+            'call_log',
+            'email',
+            'meeting',
+            'document',
+            'task',
+            'date_created'
+        )

@@ -17,7 +17,7 @@ class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Opportunity Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -27,7 +27,7 @@ class OpportunityConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Opportunity Config Update",
         request_body=OpportunityConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -55,7 +55,7 @@ class CustomerDecisionFactorList(
         operation_summary="Opportunity Customer Decision Factor List",
         operation_description="Get Opportunity Customer Decision Factor",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -64,7 +64,7 @@ class CustomerDecisionFactorList(
         operation_description="Create new Opportunity Customer Decision Factor",
         request_body=CustomerDecisionFactorCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -77,7 +77,7 @@ class CustomerDecisionFactorDetail(
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Customer Decision Factor",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -105,7 +105,7 @@ class OpportunityConfigStageList(
         operation_summary="Opportunity Config Stage List",
         operation_description="Get Opportunity Config Stage",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -114,7 +114,7 @@ class OpportunityConfigStageList(
         operation_description="Create new Opportunity Customer Decision Factor",
         request_body=CustomerDecisionFactorCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -131,7 +131,7 @@ class OpportunityConfigStageDetail(
     @swagger_auto_schema(
         operation_summary="Opportunity Config Stage Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', require_employee=True)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -139,13 +139,13 @@ class OpportunityConfigStageDetail(
         operation_summary="Opportunity Config Stage Update",
         request_body=OpportunityConfigStageUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', require_employee=True)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Config Stage",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

@@ -1,6 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, OpportunityDocument
+from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
+    OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
     OpportunityCallLogDetailSerializer,
@@ -8,7 +9,7 @@ from apps.sales.opportunity.serializers import (
     OpportunityEmailDetailSerializer,
     OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
     OpportunityMeetingDetailSerializer, OpportunityDocumentListSerializer,
-    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer
+    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
@@ -28,7 +29,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityCallLog List",
         operation_description="Get OpportunityCallLog List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -37,7 +38,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityCallLog",
         request_body=OpportunityCallLogCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -54,7 +55,7 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityCallLog detail",
         operation_description="Get OpportunityCallLog detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -65,7 +66,7 @@ class OpportunityCallLogDelete(BaseDestroyMixin):
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Call Log List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -85,7 +86,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityEmail List",
         operation_description="Get OpportunityEmail List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -94,8 +95,13 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityEmail",
         request_body=OpportunityEmailCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'employee_id': request.user.employee_current_id,
+            'tenant_id': request.user.tenant_current_id,
+            'company_id': request.user.company_current_id
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -111,7 +117,7 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityEmail detail",
         operation_description="Get OpportunityEmail detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -122,7 +128,7 @@ class OpportunityEmailDelete(BaseDestroyMixin):
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Email List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -145,7 +151,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityMeeting List",
         operation_description="Get OpportunityMeeting List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -154,7 +160,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityMeeting",
         request_body=OpportunityMeetingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -171,7 +177,7 @@ class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityMeeting detail",
         operation_description="Get OpportunityMeeting detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -182,7 +188,7 @@ class OpportunityMeetingDelete(BaseDestroyMixin):
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Meeting List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -204,7 +210,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityDocument List",
         operation_description="Get OpportunityDocument List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -213,7 +219,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityDocument",
         request_body=OpportunityMeetingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -230,6 +236,26 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityDocument detail",
         operation_description="Get OpportunityDocument detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class OpportunityActivityLogList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = OpportunityActivityLogs.objects
+    serializer_list = OpportunityActivityLogsListSerializer
+    filterset_fields = {
+        'opportunity': ['exact'],
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("task", "call", "meeting", "document", "email")
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity activity logs list",
+        operation_description="Opportunity activity logs list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

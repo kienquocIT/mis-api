@@ -17,7 +17,7 @@ class OrderDeliveryList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary='Order Delivery List',
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -39,7 +39,7 @@ class OrderDeliverySubDetail(
         operation_summary='Order Delivery Sub Detail',
         operation_description="Get delivery Sub detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -48,7 +48,7 @@ class OrderDeliverySubDetail(
         operation_description="Put delivery sub detail by ID update done field of product",
         serializer_update=OrderDeliverySubUpdateSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
             'user': request.user

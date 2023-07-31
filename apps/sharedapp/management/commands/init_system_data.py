@@ -18,12 +18,15 @@ class Command(BaseCommand):
             sys.stdout.write('---- Skip load system mail config! \n')
         else:
             tokens_data = os.environ.get('MAIL_SERVER_TOKENS')
+            creds_data = os.environ.get('MAIL_SERVER_CREDS', '{}')
             if tokens_data:
                 tokens_data = json.loads(tokens_data)
+                creds_data = json.loads(creds_data)
                 if tokens_data:
                     dt_data = datetime.strptime(tokens_data['expiry'], '%Y-%m-%dT%H:%M:%S.%fZ')
                     obj = MailServerConfig.objects.create(
                         id=settings.MAIL_CONFIG_OBJ_PK,
+                        creds_data=creds_data,
                         token_data=tokens_data,
                         token=tokens_data['token'],
                         refresh_token=tokens_data['refresh_token'],

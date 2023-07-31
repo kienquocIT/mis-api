@@ -19,7 +19,9 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
         operation_summary="Payment terms list",
         operation_description="Payment terms list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -28,7 +30,10 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Payment terms",
         request_body=PaymentTermCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -45,14 +50,22 @@ class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
         operation_summary="Payment terms detail",
         operation_description="Get config payment terms detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

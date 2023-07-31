@@ -27,7 +27,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
         operation_summary="Return Advance list",
         operation_description="Return Advance list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -36,7 +36,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Return Advance",
         request_body=ReturnAdvanceCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -57,11 +57,11 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Return Advance", request_body=ReturnAdvanceUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

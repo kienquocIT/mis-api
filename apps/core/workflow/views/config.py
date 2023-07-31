@@ -36,7 +36,7 @@ class WorkflowOfAppList(
         operation_summary="Workflow of Feature List",
         operation_description="Get Workflow of feature List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -47,15 +47,12 @@ class WorkflowOfAppDetail(BaseUpdateMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(request_body=WorkflowOfAppUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
 
-class WorkflowList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class WorkflowList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Workflow.objects
     filterset_fields = ['application', 'is_active']
@@ -74,7 +71,10 @@ class WorkflowList(
         operation_summary="Workflow List",
         operation_description="Get Workflow List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='workflow', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -83,7 +83,10 @@ class WorkflowList(
         operation_description="Create new Workflow",
         request_body=WorkflowCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='workflow', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -107,7 +110,10 @@ class WorkflowDetail(
         operation_summary="Workflow detail",
         operation_description="Get workflow detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='workflow', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -116,7 +122,10 @@ class WorkflowDetail(
         operation_description="Update workflow by ID",
         request_body=WorkflowUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='workflow', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 

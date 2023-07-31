@@ -103,7 +103,11 @@ class DocPinedListSerializer(serializers.ModelSerializer):
                     'action_perform': x.action_perform,
                     'is_done': x.is_done,
                     'date_created': x.date_created,
-                } for x in stage_current_obj.assignee_of_runtime_stage.all()
+                } for x in (
+                    stage_current_obj.assignee_of_runtime_stage.all()
+                    if stage_current_obj.assignee_of_runtime_stage
+                    else []
+                )
             ] if stage_current_obj else []
             return {
                 'id': str(obj.runtime_id),

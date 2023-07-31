@@ -4,7 +4,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from apps.core.provisioning.tests import TestCaseProvisioning
-from apps.shared import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase
 
 
 class TestCaseAuth(AdvanceTestCase):
