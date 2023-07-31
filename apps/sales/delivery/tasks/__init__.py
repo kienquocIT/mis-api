@@ -1,8 +1,9 @@
 from uuid import uuid4
+
+from django.db import transaction
 from django.utils import timezone
 
 from celery import shared_task
-import django.db
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -29,13 +30,16 @@ class SaleOrderActiveDeliverySerializer:
         else:
             raise AttributeError('instance must be required')
 
+        self.check_has_prod_services = 0
+
     def __create_order_picking_sub_map_product(self):
         sub_id = uuid4()
         m2m_obj_arr = []
         pickup_quantity = 0
         for m2m_obj in self.order_products:
             if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, (float, int)):
-                pickup_quantity += m2m_obj.product_quantity
+                if 1 in m2m_obj.product.product_choice:
+                    pickup_quantity += m2m_obj.product_quantity
             obj_tmp = OrderPickingProduct(
                 picking_sub_id=sub_id,
                 product=m2m_obj.product,
@@ -63,16 +67,29 @@ class SaleOrderActiveDeliverySerializer:
                 product_subtotal_price=m2m_obj.product_subtotal_price,
             )
             obj_tmp.before_save()
-            m2m_obj_arr.append(obj_tmp)
+            if 1 in m2m_obj.product.product_choice:
+                # nếu product có trong kho thì mới thêm vào picking còn delivery thì vẫn show
+                m2m_obj_arr.append(obj_tmp)
+            else:
+                self.check_has_prod_services += 1
         return sub_id, pickup_quantity, m2m_obj_arr
 
     def __prepare_order_delivery_product(self):
         sub_id = uuid4()
         m2m_obj_arr = []
         delivery_quantity = 0
+
         for m2m_obj in self.order_products:
             if m2m_obj.product_quantity and isinstance(m2m_obj.product_quantity, float):
                 delivery_quantity += m2m_obj.product_quantity
+
+            if 1 not in m2m_obj.product.product_choice:
+                self.check_has_prod_services += 1
+
+            stock_ready = 0
+            if self.config_obj.is_picking is False or self.check_has_prod_services > 0:
+                stock_ready = m2m_obj.product_quantity
+
             obj_tmp = OrderDeliveryProduct(
                 delivery_sub_id=sub_id,
                 product=m2m_obj.product,
@@ -92,7 +109,7 @@ class SaleOrderActiveDeliverySerializer:
                 delivery_quantity=m2m_obj.product_quantity,
                 delivered_quantity_before=0,
                 remaining_quantity=m2m_obj.product_quantity,
-                ready_quantity=m2m_obj.product_quantity if self.config_obj.is_picking is False else 0,
+                ready_quantity=stock_ready,
                 picked_quantity=0,
                 order=m2m_obj.order,
                 is_promotion=m2m_obj.is_promotion,
@@ -107,7 +124,6 @@ class SaleOrderActiveDeliverySerializer:
     def _create_order_picking(self):
         # data
         sub_id, pickup_quantity, m2m_obj_arr = self.__create_order_picking_sub_map_product()
-
         # setup MAIN
         obj = OrderPicking.objects.create(
             tenant_id=self.tenant_id,
@@ -176,7 +192,8 @@ class SaleOrderActiveDeliverySerializer:
         logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
         state = 0
         if not self.config_obj.is_partial_ship and not self.config_obj.is_picking \
-                or self.config_obj.is_partial_ship and not self.config_obj.is_picking:
+                or self.config_obj.is_partial_ship and not self.config_obj.is_picking or \
+                self.check_has_prod_services:
             state = 1
 
         return OrderDelivery.objects.create(
@@ -210,22 +227,24 @@ class SaleOrderActiveDeliverySerializer:
             delivery_quantity=delivery_quantity,
             delivered_quantity_before=0,
             remaining_quantity=delivery_quantity,
-            ready_quantity=0,
+            ready_quantity=delivery_quantity if self.check_has_prod_services > 0 else 0,
             delivery_data=[],
             date_created=timezone.now()
         )
 
     def active(self) -> (bool, str):
         try:
-            with django.db.transaction.atomic():
+            with transaction.atomic():
                 if (
                         not OrderPicking.objects.filter(sale_order=self.order_obj).exists()
                         and not OrderDelivery.objects.filter(sale_order=self.order_obj).exists()
                 ):
                     sub_id, delivery_quantity, _y = self.__prepare_order_delivery_product()
                     if self.config_obj.is_picking is True:
-                        obj_picking = self._create_order_picking()
-                        obj_delivery = self._create_order_delivery(delivery_quantity=obj_picking.pickup_quantity)
+                        if self.check_has_prod_services != len(self.order_products):
+                            # nếu saleorder product toàn là dịch vụ thì ko cần tạo delivery
+                            self._create_order_picking()
+                        obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                     else:
                         obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                         # setup SUB
@@ -260,7 +279,7 @@ class SaleOrderActiveDeliverySerializer:
                     # raise ValueError('Cancel with check!')
                     if obj_delivery:
                         return True, ''
-                    raise ValueError('Have exception in create picking or deliver process')
+                    raise ValueError('Have exception in create picking or delivery process')
                 return False, 'Sale Order had exist delivery'
         except Exception as err:
             print(err)

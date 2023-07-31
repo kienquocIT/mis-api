@@ -31,15 +31,15 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):
         model = ProductType
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ProductType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
+    #     return value
 
 
 class ProductTypeDetailSerializer(serializers.ModelSerializer):
@@ -55,14 +55,14 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):
         model = ProductType
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ProductType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
+    #     return value
 
 
 # Product Category
@@ -80,15 +80,15 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):
         model = ProductCategory
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ProductCategory.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
+    #     return value
 
 
 class ProductCategoryDetailSerializer(serializers.ModelSerializer):
@@ -104,14 +104,14 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
         model = ProductCategory
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ProductCategory.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
+    #     return value
 
 
 # Expense Type
@@ -129,15 +129,15 @@ class ExpenseTypeCreateSerializer(serializers.ModelSerializer):
         model = ExpenseType
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ExpenseType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ExpenseType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
+    #     return value
 
 
 class ExpenseTypeDetailSerializer(serializers.ModelSerializer):
@@ -153,14 +153,14 @@ class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):
         model = ExpenseType
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ExpenseType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ExpenseType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
+    #     return value
 
 
 # Unit Of Measure Group
@@ -188,15 +188,15 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):
         model = UnitOfMeasureGroup
         fields = ('title',)
 
-    @classmethod
-    def validate_title(cls, value):
-        if UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if UnitOfMeasureGroup.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
+    #     return value
 
 
 class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):
@@ -228,14 +228,14 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
         model = UnitOfMeasureGroup
         fields = ('title',)
 
-    def validate_title(self, value):
-        if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
+    #     return value
 
 
 # Unit Of Measure
@@ -276,15 +276,15 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
-    @classmethod
-    def validate_title(cls, value):
-        if UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if UnitOfMeasure.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
@@ -370,14 +370,14 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
-    def validate_title(self, value):
-        if value != self.instance.title and UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and UnitOfMeasure.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
@@ -781,6 +781,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
+    product_choice = serializers.JSONField()
 
     class Meta:
         model = Product
@@ -791,7 +792,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'general_information',
             'sale_information',
             'price_list',
-            'product_type',
+            'product_choice',
         )
 
     @classmethod

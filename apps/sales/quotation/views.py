@@ -18,7 +18,13 @@ class QuotationList(
 ):
     permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
-    filterset_fields = ['opportunity', 'sale_person']
+    filterset_fields = {
+        'opportunity': ['exact'],
+        'sale_person': ['exact'],
+        'opportunity__sale_order': ['exact', 'isnull'],
+        'opportunity__is_close_lost': ['exact'],
+        'opportunity__is_deal_close': ['exact'],
+    }
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
@@ -63,6 +69,7 @@ class QuotationDetail(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "opportunity",
+            "opportunity__customer",
             "customer",
             "contact",
             "sale_person",

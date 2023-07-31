@@ -6,273 +6,109 @@ from apps.shared import AdvanceTestCase
 from rest_framework.test import APIClient
 
 
-# class AccountTestCase(AdvanceTestCase):
-#     def setUp(self):
-#         self.maxDiff = None
-#         self.client = APIClient()
-#
-#         self.authenticated()
-#         # create industry
-#         url_create_industry = reverse('IndustryList')
-#         response_industry = self.client.post(
-#             url_create_industry,
-#             {
-#                 'code': 'I01',
-#                 'title': 'Banking',
-#             },
-#             format='json'
-#         )
-#
-#         # create account type
-#         url_create_account_type = reverse('AccountTypeList')
-#         response_account_type = self.client.post(
-#             url_create_account_type,
-#             {
-#                 'code': 'AT05',
-#                 'title': 'Service',
-#             },
-#             format='json'
-#         )
-#
-#         self.industry = response_industry.data['result']
-#         self.account_type = response_account_type.data['result']
-#
-#     def test_create_new_account(self):
-#         data = {  # noqa
-#             'name': 'Công Ty Hạt Giống Trúc Phượng',
-#             'code': 'PM002',
-#             'website': 'trucphuong.com.vn',
-#             'tax_code': '81H1',
-#             'annual_revenue': '1',
-#             'total_employees': '1',
-#             'phone': '0903608494',
-#             'email': 'cuong@gmail.com',
-#             'industry': self.industry['id'],
-#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-#             'account_type': [str(self.account_type['id'])],
-#             'account_type_selection': 0
-#         }
-#         url = reverse('AccountList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
-#                 'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-#                 'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-#                 'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
-#                 'workflow_runtime_id'
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_create_account_duplicate_code(self):
-#         self.test_create_new_account()
-#         data = {  # noqa
-#             'name': 'Công Ty Hạt Giống Trúc Phượng',
-#             'code': 'PM002',
-#             'website': 'trucphuong.com.vn',
-#             'tax_code': '81H1',
-#             'annual_revenue': '1',
-#             'total_employees': '1',
-#             'phone': '0903608494',
-#             'email': 'cuong@gmail.com',
-#             'industry': self.industry['id'],
-#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-#             'account_type': [str(self.account_type['id'])],
-#
-#         }
-#         url = reverse('AccountList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['errors'],
-#             ['code'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_create_missing_data(self):
-#         data = {
-#             'website': 'trucphuong.com.vn',
-#             'tax_code': '81H1',
-#             'annual_revenue': '1',
-#             'total_employees': '1',
-#             'phone': '0903608494',
-#             'email': 'cuong@gmail.com',
-#             'industry': self.industry['id'],
-#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-#             'account_type': [str(self.account_type['id'])],
-#
-#         }
-#         url = reverse('AccountList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['errors'],
-#             ['code', 'name'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_data_not_UUID(self):
-#         data = {
-#             'name': 'Công Ty Hạt Giống Trúc Phượng',
-#             'code': 'PM002',
-#             'website': 'trucphuong.com.vn',
-#             'tax_code': '81H1',
-#             'annual_revenue': '1',
-#             'total_employees': '1',
-#             'phone': '0903608494',
-#             'email': 'cuong@gmail.com',
-#             'industry': '1',
-#             'manager': ['a2c0cf06-5221-417c-8d4d-149c015b428e',
-#                         'ca3f9aae-884f-4791-a1b9-c7a33d51dbdf'],
-#             'account_type': '1',
-#
-#         }
-#         url = reverse('AccountList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['errors'],
-#             ['industry'],
-#             check_sum_second=True,
-#         )
-#         return response
+class AccountTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
 
+        self.authenticated()
+        # create industry
+        url_create_industry = reverse('IndustryList')
+        response_industry = self.client.post(
+            url_create_industry,
+            {
+                'code': 'I01',
+                'title': 'Banking',
+            },
+            format='json'
+        )
 
-# class ContactTestCase(AdvanceTestCase):
-#     def setUp(self):
-#         self.maxDiff = None
-#         self.client = APIClient()
-#
-#         login_data = TestCaseAuth.test_login(self)
-#         self.authenticated(login_data)
-#
-#         # create salutation
-#         url_create_salutation = reverse('SalutationList')
-#         response_salutation = self.client.post(
-#             url_create_salutation,
-#             {
-#                 'code': 'SA01',
-#                 'title': 'Mr',
-#             },
-#             format='json'
-#         )
-#
-#         # create salutation
-#         url_create_interest = reverse('InterestsList')
-#         response_interest = self.client.post(
-#             url_create_interest,
-#             {
-#                 'code': 'IN01',
-#                 'title': 'Traveling',
-#             },
-#             format='json'
-#         )
-#
-#         self.salutation = response_salutation.data['result']
-#         self.interest = response_interest.data['result']
-#
-#     def test_create_new_contact(self):
-#         data = {
-#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
-#             'fullname': 'Nguyễn Văn Thanh',
-#             'salutation': self.salutation['id'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 201)
-#         return response
-#
-#     def test_create_contact_with_numeric_fullname(self):
-#         data = {
-#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
-#             'fullname': '9876543210',
-#             'salutation': self.salutation['id'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 400)
-#         return response
-#
-#     def test_create_missing_owner(self):
-#         data = {
-#             'owner': None,
-#             'fullname': 'Nguyễn Văn Thanh',
-#             'salutation': self.salutation['id'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 400)
-#         return response
-#
-#     def test_create_missing_fullname(self):
-#         data = {
-#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
-#             'fullname': None,
-#             'salutation': self.salutation['id'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 400)
-#         return response
-#
-#     def test_data_not_owner_UUID(self):
-#         data = {
-#             'owner': '1',
-#             'fullname': 'Nguyễn Văn Nam',
-#             'salutation': self.salutation['id'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 400)
-#         return response
-#
-#     def test_data_not_salutation_UUID(self):
-#         data = {
-#             'owner': 'a0635b66-6b56-40ad-b2d6-0d67156cbc99',
-#             'fullname': 'Nguyễn Văn Nam',
-#             'salutation': self.salutation['title'],
-#         }
-#         url = reverse('ContactList')
-#         response = self.client.post(url, data, format='json')
-#         self.assertEqual(response.status_code, 400)
-#         return response
+        # create account type
+        url_create_account_type = reverse('AccountTypeList')
+        response_account_type = self.client.post(
+            url_create_account_type,
+            {
+                'code': 'AT05',
+                'title': 'Service',
+            },
+            format='json'
+        )
+
+        self.industry = response_industry.data['result']
+        self.account_type = response_account_type.data['result']
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_new_account(self):
+        data = {  # noqa
+            'name': 'Công Ty Hạt Giống Trúc Phượng',
+            'code': 'PM002',
+            'website': 'trucphuong.com.vn',
+            'tax_code': '81H1',
+            'annual_revenue': '1',
+            'total_employees': '1',
+            'phone': '0903608494',
+            'email': 'cuong@gmail.com',
+            'industry': self.industry['id'],
+            'manager': [self.get_employee().data['result'][0]['id']],
+            'account_type': [str(self.account_type['id'])],
+            'account_type_selection': 0
+        }
+        url = reverse('AccountList')
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+                'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
+                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
+                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+                'workflow_runtime_id', 'system_status'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_create_missing_data(self):
+        data = {
+            'code': 'PM002',
+            'website': 'trucphuong.com.vn',
+            'tax_code': '81H1',
+            'annual_revenue': '1',
+            'total_employees': '1',
+            'phone': '0903608494',
+            'email': 'cuong@gmail.com',
+            'industry': self.industry['id'],
+            'manager': [self.get_employee().data['result'][0]['id']],
+            'account_type': [str(self.account_type['id'])],
+        }
+        url = reverse('AccountList')
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            ['name'],
+            check_sum_second=True,
+        )
+        return response
 
 
 class ProductTestCase(AdvanceTestCase):
@@ -2425,8 +2261,8 @@ class ExpenseTestCase(AdvanceTestCase):
     def create_price_list(self, currency):
         data = {
             "title": "chi phí nhân công sản xuất",
-            "auto_update": True,
-            "can_delete": True,
+            "auto_update": False,
+            "can_delete": False,
             "factor": 1,
             "currency": [currency[0], currency[1]],
             "price_list_type": 2,
@@ -3198,4 +3034,238 @@ class ShippingTestCase(AdvanceTestCase):
         data_changed = self.test_get_detail(data_id=data_created.data['result']['id'])
         self.assertEqual(data_changed.data['result']['title'], title_change)
         self.assertEqual(data_changed.data['result']['fixed_price'], fixed_price_change)
+        return response
+
+
+class PriceListTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def get_general_price_list(self):
+        url = reverse("PriceList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_currency(self):
+        data1 = {
+            "abbreviation": "CAD",
+            "title": "CANADIAN DOLLAR",
+            "rate": 0.45
+        }
+        data2 = {
+            "abbreviation": "ABC",
+            "title": "ABC DOLLAR",
+            "rate": 2.15
+        }
+        response1 = self.client.post(reverse("CurrencyList"), data1, format='json')
+        response2 = self.client.post(reverse("CurrencyList"), data2, format='json')
+        self.assertEqual(response1.status_code, 201)
+        self.assertEqual(response2.status_code, 201)
+        return response1, response2
+
+    def test_price_list_create(self):
+        general_price_list = self.get_general_price_list().data['result'][0]['id']
+        url = reverse("PriceList")
+        currency_list = self.create_new_currency()
+        currency1 = currency_list[0].data['result']['id']
+        currency2 = currency_list[1].data['result']['id']
+        data1 = {
+            'title': 'Bang gia thang quy 1',
+            'auto_update': True,
+            'can_delete': True,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_mapped': general_price_list,
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response1 = self.client.post(url, data1, format='json')
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response1.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data2 = {
+            'title': 'Bang gia thang quy 2',
+            'auto_update': True,
+            'can_delete': False,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_mapped': general_price_list,
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response2 = self.client.post(url, data2, format='json')
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response2.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data3 = {
+            'title': 'Bang gia thang quy 3',
+            'auto_update': False,
+            'can_delete': False,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_mapped': None,
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response3 = self.client.post(url, data3, format='json')
+        self.assertResponseList(
+            response3,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response3.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response3.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data4 = {
+            'title': 'Bang gia thang quy 4',
+            'auto_update': False,
+            'can_delete': False,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_mapped': general_price_list,
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response4 = self.client.post(url, data4, format='json')
+        self.assertResponseList(
+            response4,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response4.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response4.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+
+        data5 = {
+            'title': 'Bang gia thang quy 5',
+            'auto_update': False,
+            'can_delete': True,  # T-T/F, F-F
+            'factor': 1.0,
+            'currency': [currency1, currency2],
+            'price_list_mapped': general_price_list,
+            'price_list_type': 0,
+            'valid_time_start': '2023-06-06 11:21:00.000000',
+            'valid_time_end': '2023-07-07 11:21:00.000000'
+        }
+        response5 = self.client.post(url, data5, format='json')
+        self.assertResponseList(
+            response5,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response5.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response5.data['errors'],
+            ['non_field_errors'],
+            check_sum_second=True,
+        )
+
+        return response1, response2, response3, response4, response5
+
+    def test_price_list_list(self):
+        self.test_price_list_create()
+        url = reverse("PriceList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 5
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'status'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_price_list_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_price_list_create()[0]
+            data_id = data_created.data['result']['id']
+        url = reverse("PriceDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'title', 'auto_update', 'can_delete', 'factor', 'currency', 'price_list_type',
+                'price_list_mapped', 'is_default', 'products_mapped', 'valid_time_start', 'valid_time_end', 'status'
+            ],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
         return response

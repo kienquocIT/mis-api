@@ -12,6 +12,7 @@ VALID_TIME = (
     (3, 'Month'),
 )
 
+
 class Promotion(MasterDataAbstractModel):
     valid_date_start = models.DateField(
         verbose_name="Valid date start", help_text="promotion valid time from, with format '%Y-%m-%d'"
