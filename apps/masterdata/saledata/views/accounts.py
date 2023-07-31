@@ -43,7 +43,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='add',
+        plan_code='sale', app_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -95,7 +95,7 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='add'
+        plan_code='sale', app_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -147,7 +147,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='add',
+        plan_code='sale', app_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -213,7 +213,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     @mask_view(
         login_require=True, auth_require=True,
         employee_require=True,
-        plan_code='sale', app_code='account', perm_code='add'
+        plan_code='sale', app_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)

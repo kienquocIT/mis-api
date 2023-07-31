@@ -208,7 +208,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_summary="Company list",
         operation_description="Company list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')  # hỗ trợ kiểm tra trung gian trước khi vào view
+    @mask_view(login_require=True, auth_require=False)  # hỗ trợ kiểm tra trung gian trước khi vào view
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -217,12 +217,12 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_description="Create new Company",
         request_body=CompanyCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-# @mask_view(login_require=True, auth_require=True, code_perm='')
+# @mask_view(login_require=True, auth_require=False)
 # 1. login_require: Yêu cầu đã đăng nhập (token còn hạn sử dụng - định danh người dùng) --> Đảm bảo lúc chạy view request.user là đã xác thực
 # 2. auth_require: Yêu cầu kiểm tra quyền trước khi vào view (bắt buộc login_require = True khi dùng option này)
 # 3. code_perm: mã để kiểm tra quyền ==> Đang được phát triển

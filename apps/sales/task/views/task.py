@@ -106,7 +106,7 @@ class OpportunityTaskLogWork(BaseCreateMixin, BaseRetrieveMixin):
         operation_description="Opportunity task Log Work",
         request_body=OpportunityTaskLogWorkSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', employee_require=True)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'employee': request.user.employee_current

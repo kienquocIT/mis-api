@@ -2,6 +2,8 @@ __all__ = [
     "SubscriptionPlan_data",
     "Application_data",
     "PlanApplication_data",
+    "FULL_PERMISSIONS_BY_CONFIGURED",
+    "FULL_PLAN_ID",
 ]
 
 SubscriptionPlan_data = {
@@ -204,6 +206,7 @@ _Application_crm_data = {
         "title": "Document For Customer",
         "code": "documentforcustomer",
         "app_label": "document_for_customer",
+        "option_permission": 1,
     }
 }
 
@@ -286,3 +289,32 @@ PlanApplication_data = {
     **_PlanApplication_hrm_data,
     **_PlanApplication_sale_data,
 }
+
+
+def get_full_permissions_by_configured():
+    result = []
+    for key, value in PlanApplication_data.items():
+        plan_data = {'id': value['plan_id'], **SubscriptionPlan_data[value['plan_id']]}
+        app_data = {'id': value['application_id'], **Application_data[value['application_id']]}
+        result.append(
+            {
+                'id': None,
+                'app_id': app_data['id'],
+                'app_data': {
+                    'id': app_data['id'], 'title': app_data['title'], 'code': app_data['code'],
+                    'option_permission': app_data['option_permission'],
+                },
+                'plan_id': plan_data['id'],
+                'plan_data': {'id': plan_data['id'], 'title': plan_data['title'], 'code': plan_data['code']},
+                'create': True,
+                'view': True,
+                'edit': True,
+                'delete': True,
+                'range': '4',
+            }
+        )
+    return result
+
+
+FULL_PERMISSIONS_BY_CONFIGURED = get_full_permissions_by_configured()
+FULL_PLAN_ID = SubscriptionPlan_data.keys()

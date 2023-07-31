@@ -210,7 +210,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityDocument List",
         operation_description="Get OpportunityDocument List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -219,7 +219,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new OpportunityDocument",
         request_body=OpportunityMeetingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -236,7 +236,7 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
         operation_summary="OpportunityDocument detail",
         operation_description="Get OpportunityDocument detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -256,6 +256,6 @@ class OpportunityActivityLogList(BaseListMixin):
         operation_summary="Opportunity activity logs list",
         operation_description="Opportunity activity logs list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

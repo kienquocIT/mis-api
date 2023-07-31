@@ -131,7 +131,7 @@ class OpportunityConfigStageDetail(
     @swagger_auto_schema(
         operation_summary="Opportunity Config Stage Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', employee_require=True)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -139,7 +139,7 @@ class OpportunityConfigStageDetail(
         operation_summary="Opportunity Config Stage Update",
         request_body=OpportunityConfigStageUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='', employee_require=True)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
