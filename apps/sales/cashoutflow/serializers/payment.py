@@ -1,0 +1,342 @@
+from rest_framework import serializers
+from apps.sales.cashoutflow.models import (
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail,
+    AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder, PaymentOpportunity
+)
+from apps.masterdata.saledata.models import Currency
+from apps.shared import AdvancePaymentMsg, ProductMsg
+
+
+class PaymentListSerializer(serializers.ModelSerializer):
+    converted_value_list = serializers.SerializerMethodField()
+    return_value_list = serializers.SerializerMethodField()
+    payment_value = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = (
+            'id',
+            'code',
+            'title',
+            'sale_code_type',
+            'supplier',
+            'method',
+            'creator_name',
+            'beneficiary',
+            'converted_value_list',
+            'return_value_list',
+            'payment_value',
+            'date_created'
+        )
+
+    @classmethod
+    def get_converted_value_list(cls, obj):
+        all_items = obj.payment.all()
+        sum_payment_value = sum(item.after_tax_price for item in all_items)
+        return sum_payment_value
+
+    @classmethod
+    def get_return_value_list(cls, obj):
+        obj.return_value_list = {}
+        return obj.return_value_list
+
+    @classmethod
+    def get_payment_value(cls, obj):
+        all_items = obj.payment.all()
+        sum_payment_value = sum(item.after_tax_price for item in all_items)
+        return sum_payment_value
+
+
+def create_payment_cost_detail_items(payment_obj, payment_cost_item_list):
+    product_ap_bulk_info = []
+    for payment_cost_item in payment_cost_item_list:
+        for product_ap in payment_cost_item.product_items_detail_list:
+            if product_ap.get('id', None):
+                product_ap_bulk_info.append(
+                    PaymentCostItemsDetail(
+                        payment_cost_item=payment_cost_item,
+                        payment_mapped=payment_obj,
+                        product_converted_id=product_ap['id'],
+                        product_value_converted=product_ap.get('value', 0),
+                    )
+                )
+                ap_updated = AdvancePaymentCost.objects.filter(id=product_ap['id']).first()
+                ap_updated.sum_converted_value = ap_updated.sum_converted_value + float(product_ap.get('value', 0))
+                ap_updated.save()
+    PaymentCostItemsDetail.objects.filter(payment_cost_item__in=payment_cost_item_list).delete()
+    PaymentCostItemsDetail.objects.bulk_create(product_ap_bulk_info)
+    return True
+
+
+def create_payment_cost_items(payment_obj, payment_cost_list):
+    payment_cost_bulk_info = []
+    for payment_cost in payment_cost_list:
+        for product_ap_detail in payment_cost.product_ap_detail_list:
+            payment_cost_bulk_info.append(
+                PaymentCostItems(
+                    payment_cost=payment_cost,
+                    sale_code_mapped=product_ap_detail.get('sale_code_mapped', None),
+                    real_value=product_ap_detail.get('real_value', 0),
+                    converted_value=product_ap_detail.get('converted_value', 0),
+                    sum_value=product_ap_detail.get('sum_value', 0),
+                    product_items_detail_list=product_ap_detail.get('converted_value_detail', None)
+                )
+            )
+    PaymentCostItems.objects.filter(payment_cost__in=payment_cost_list).delete()
+    payment_cost_item_list = PaymentCostItems.objects.bulk_create(payment_cost_bulk_info)
+    create_payment_cost_detail_items(payment_obj, payment_cost_item_list)
+    return True
+
+
+def create_product_items(instance, product_valid_list):
+    vnd_currency = Currency.objects.filter_current(
+        fill__tenant=True,
+        fill__company=True,
+        abbreviation='VND'
+    ).first()
+    if vnd_currency:
+        bulk_info = []
+        for item in product_valid_list:
+            bulk_info.append(
+                PaymentCost(
+                    payment=instance,
+                    product_id=item.get('product_id', None),
+                    product_unit_of_measure_id=item.get('unit_of_measure_id', None),
+                    product_quantity=item.get('quantity', None),
+                    product_unit_price=item.get('unit_price', 0),
+                    tax_id=item.get('tax_id', None),
+                    tax_price=item.get('tax_price', 0),
+                    subtotal_price=item.get('subtotal_price', 0),
+                    after_tax_price=item.get('after_tax_price', 0),
+                    currency=vnd_currency,
+                    document_number=item.get('document_number', ''),
+                    product_ap_detail_list=item.get('product_ap_detail_list', None),
+                )
+            )
+        PaymentCost.objects.filter(payment=instance).delete()
+        payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
+        create_payment_cost_items(instance, payment_cost_list)
+        return True
+    return False
+
+
+def create_sale_code_object(payment_obj, initial_data):
+    """
+    1. sale_code_type = 0 (Sale): get 'sale_code_detail', then sub-create Payment map with each SaleCode
+    2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
+    """
+    if initial_data.get('sale_code_type', None) == 0:
+        sale_code_id = initial_data.get('sale_code', None)
+        if sale_code_id:
+            if initial_data.get('sale_code_detail', None) == 0:
+                PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+            if initial_data.get('sale_code_detail', None) == 1:
+                PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+            if initial_data.get('sale_code_detail', None) == 2:
+                PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+    if initial_data.get('sale_code_type', None) == 3:
+        sale_order_selected_list = initial_data.get('sale_order_selected_list', [])
+        quotation_selected_list = initial_data.get('quotation_selected_list', [])
+        opportunity_selected_list = initial_data.get('opportunity_selected_list', [])
+        sale_order_bulk_info = []
+        for item in sale_order_selected_list:
+            sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
+        PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
+        quotation_bulk_info = []
+        for item in quotation_selected_list:
+            quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
+        PaymentQuotation.objects.bulk_create(quotation_bulk_info)
+        opportunity_bulk_info = []
+        for item in opportunity_selected_list:
+            opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
+        PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
+    return True
+
+
+class PaymentCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = Payment
+        fields = (
+            'title',
+            'sale_code_type',
+            'supplier',
+            'method',
+            'creator_name',
+            'beneficiary',
+        )
+
+    @classmethod
+    def validate_sale_code_type(cls, attrs):
+        if attrs in [0, 1, 2, 3]:
+            return attrs
+        raise serializers.ValidationError({'Sale code type': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+
+    @classmethod
+    def validate_method(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+
+    def validate(self, validate_data):
+        sale_code = self.initial_data.get('sale_code', None)
+        sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
+        quotation_selected_list = self.initial_data.get('quotation_selected_list', [])
+        opp_selected_list = self.initial_data.get('opportunity_selected_list', [])
+        if not sale_code:
+            if len(sale_order_selected_list) < 1 and len(quotation_selected_list) < 1 and len(opp_selected_list) < 1:
+                raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
+        if self.initial_data.get('product_valid_list', []):
+            for item in self.initial_data['product_valid_list']:
+                if not item.get('product_id', None):
+                    raise serializers.ValidationError({'Product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+        return validate_data
+
+    def create(self, validated_data):
+        if Payment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
+            new_code = 'PAYMENT.CODE.0001'
+        else:
+            latest_code = Payment.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
+            new_code = int(latest_code.split('.')[-1]) + 1
+            new_code = 'PAYMENT.CODE.000' + str(new_code)
+
+        payment_obj = Payment.objects.create(code=new_code, **validated_data)
+
+        create_sale_code_object(payment_obj, self.initial_data)
+        if len(self.initial_data.get('product_valid_list', [])) > 0:
+            create_product_items(payment_obj, self.initial_data.get('product_valid_list', []))
+        return payment_obj
+
+
+class PaymentDetailSerializer(serializers.ModelSerializer):
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
+    product_mapped = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Payment
+        fields = (
+            'id',
+            'sale_order_mapped',
+            'quotation_mapped',
+            'opportunity_mapped',
+            'title',
+            'code',
+            'creator_name',
+            'beneficiary',
+            'date_created',
+            'method',
+            'sale_code_type',
+            'supplier',
+            'product_mapped'
+        )
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        all_sale_order_mapped = []
+        for item in obj.sale_order_mapped.all().select_related('opportunity'):
+            opportunity_obj = {}
+            if item.opportunity:
+                opportunity_obj = {
+                    'id': item.opportunity.id,
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title,
+                    'customer': item.opportunity.customer.name,
+                }
+            all_sale_order_mapped.append({
+                'id': str(item.id),
+                'code': item.code,
+                'title': item.title,
+                'opportunity': opportunity_obj
+            })
+        return all_sale_order_mapped
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        all_quotation_mapped = []
+        for item in obj.quotation_mapped.all().select_related('opportunity'):
+            opportunity_obj = {}
+            if item.opportunity:
+                opportunity_obj = {
+                    'id': item.opportunity.id,
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title,
+                    'customer': item.opportunity.customer.name,
+                }
+            all_quotation_mapped.append(
+                {
+                    'id': str(item.id),
+                    'code': item.code,
+                    'title': item.title,
+                    'opportunity': opportunity_obj
+                }
+            )
+        return all_quotation_mapped
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        all_opportunity_mapped = []
+        for item in obj.opportunity_mapped.all():
+            all_opportunity_mapped.append(
+                {
+                    'id': str(item.id),
+                    'code': item.code,
+                    'title': item.title,
+                    'opportunity': {
+                        'id': str(item.id), 'code': item.code, 'title': item.title
+                    }
+                }
+            )
+        return all_opportunity_mapped
+
+    @classmethod
+    def get_product_mapped(cls, obj):
+        all_product_mapped = []
+        for item in obj.payment.all():
+            tax_obj = None
+            if item.tax:
+                tax_obj = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+            all_product_mapped.append({
+                'id': item.id,
+                'product': {
+                    'id': item.product_id,
+                    'code': item.product.code,
+                    'title': item.product.title
+                },
+                'product_unit_of_measure': {
+                    'id': item.product_unit_of_measure_id,
+                    'code': item.product_unit_of_measure.code,
+                    'title': item.product_unit_of_measure.title
+                },
+                'product_quantity': item.product_quantity,
+                'product_unit_price': item.product_unit_price,
+                'tax': tax_obj,
+                'subtotal_price': item.subtotal_price,
+                'after_tax_price': item.after_tax_price,
+                'document_number': item.document_number,
+                'product_ap_detail_list': item.product_ap_detail_list
+            })
+        return all_product_mapped
+
+
+class PaymentCostItemsListSerializer(serializers.ModelSerializer):
+    product_id = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentCostItems
+        fields = (
+            'product_id',
+            'payment_cost',
+            'sale_code_mapped',
+            'real_value',
+            'converted_value',
+            'sum_value',
+        )
+
+    @classmethod
+    def get_product_id(cls, obj):
+        return obj.payment_cost.product_id

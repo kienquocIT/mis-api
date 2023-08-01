@@ -6,13 +6,14 @@ from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
 )
 
 from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
-    CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer
+    CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
 )
 
 
@@ -34,7 +35,7 @@ class PlanList(generics.GenericAPIView):
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
@@ -46,7 +47,7 @@ class TenantApplicationList(
     generics.GenericAPIView
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Application.objects.all()
+    queryset = Application.objects
 
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
@@ -55,7 +56,9 @@ class TenantApplicationList(
         operation_summary="Tenant Application list",
         operation_description="Get tenant application list",
     )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        kwargs['is_workflow'] = True
         return self.tenant_application_list(request, *args, **kwargs)
 
 
@@ -68,7 +71,9 @@ class ApplicationPropertyList(
     filterset_fields = {
         'application': ['exact'],
         'type': ['exact'],
-        'id': ['in']
+        'id': ['in'],
+        'application__code': ['exact'],
+        'is_sale_indicator': ['exact'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
@@ -78,8 +83,7 @@ class ApplicationPropertyList(
     )
     @mask_view(
         login_require=True,
-        auth_require=True,
-        code_perm=''
+        auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -104,8 +108,7 @@ class ApplicationPropertyEmployeeList(
     )
     @mask_view(
         login_require=True,
-        auth_require=True,
-        code_perm=''
+        auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -118,7 +121,7 @@ class ApplicationList(generics.GenericAPIView):
     serializer_class = ApplicationListSerializer
 
     @swagger_auto_schema()
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
@@ -142,7 +145,7 @@ class PermissionApplicationList(generics.GenericAPIView):
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
         ser = self.serializer_class(queryset, many=True)
@@ -215,5 +218,55 @@ class BaseCurrencyList(BaseListMixin):
 
     @swagger_auto_schema()
     @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class BaseItemUnitList(BaseListMixin):
+    queryset = BaseItemUnit.objects
+    search_fields = ('title',)
+    use_cache_queryset = True
+    serializer_list = BaseItemUnitListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class IndicatorParamList(BaseListMixin):
+    queryset = IndicatorParam.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "param_type": ["exact"],
+    }
+    use_cache_queryset = True
+    serializer_list = IndicatorParamListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyOpportunityList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = ApplicationProperty.objects
+    serializer_list = ApplicationPropertyListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            content_type="sales_opportunity"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Property list have Opportunity config stage data",
+        operation_description="Property list have Opportunity config stage data",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

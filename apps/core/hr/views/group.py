@@ -1,4 +1,3 @@
-from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
@@ -7,17 +6,13 @@ from apps.core.hr.models import GroupLevel, Group
 from apps.core.hr.serializers.group_serializers import (
     GroupLevelListSerializer,
     GroupListSerializer, GroupCreateSerializer, GroupLevelDetailSerializer, GroupLevelUpdateSerializer,
-    GroupUpdateSerializer, GroupDetailSerializer, GroupLevelMainCreateSerializer, GroupParentListSerializer,
+    GroupUpdateSerializer, GroupDetailSerializer, GroupParentListSerializer, GroupLevelCreateSerializer,
 )
 from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, mask_view
 
 
 # Group Level
-class GroupLevelList(
-    BaseListMixin,
-    BaseCreateMixin,
-    generics.GenericAPIView
-):
+class GroupLevelList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
     search_fields = [
@@ -28,34 +23,39 @@ class GroupLevelList(
 
     serializer_list = GroupLevelListSerializer
     serializer_detail = GroupLevelListSerializer
-    serializer_create = GroupLevelMainCreateSerializer
+    serializer_create = GroupLevelCreateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
     use_cache_queryset = True
+
+    def error_auth_require(self):
+        return self.list_empty()
 
     @swagger_auto_schema(
         operation_summary="Group Level list",
         operation_description="Get group level list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='grouplevel', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Create Group Level",
         operation_description="Create new group level",
-        request_body=GroupLevelMainCreateSerializer,
+        request_body=GroupLevelCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='grouplevel', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class GroupLevelDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-    generics.GenericAPIView
-):
+class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
     serializer_detail = GroupLevelDetailSerializer
@@ -65,7 +65,10 @@ class GroupLevelDetail(
         operation_summary="Group Level detail",
         operation_description="Get Group level detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='grouplevel', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -74,17 +77,16 @@ class GroupLevelDetail(
         operation_description="Update Group Level by ID",
         request_body=GroupLevelUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='grouplevel', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
 
 # Group
-class GroupList(
-    BaseListMixin,
-    BaseCreateMixin,
-    generics.GenericAPIView
-):
+class GroupList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Group.objects
     search_fields = [
@@ -113,7 +115,10 @@ class GroupList(
         operation_summary="Group list",
         operation_description="Get group list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='view'
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -122,17 +127,15 @@ class GroupList(
         operation_description="Create new group",
         request_body=GroupCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-class GroupDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-    HRDestroyMixin,
-    generics.GenericAPIView
-):
+class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
     permission_classes = [IsAuthenticated]
     queryset = Group.objects
     serializer_detail = GroupDetailSerializer
@@ -142,7 +145,10 @@ class GroupDetail(
         operation_summary="Group detail",
         operation_description="Get Group detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -151,7 +157,10 @@ class GroupDetail(
         operation_description="Update Group by ID",
         request_body=GroupUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -159,15 +168,15 @@ class GroupDetail(
         operation_summary="Delete Group",
         operation_description="Delete Group by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='delete',
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
 
-class GroupParentList(
-    BaseListMixin,
-    generics.GenericAPIView
-):
+class GroupParentList(BaseListMixin):
     permission_classes = [IsAuthenticated]
     queryset = Group.objects
     search_fields = []
@@ -188,11 +197,17 @@ class GroupParentList(
             data['group_level__level__lt'] = level
         return data
 
+    def error_auth_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(
         operation_summary="Group parent list",
         operation_description="Get group parent list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='group', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         if 'level' in kwargs:
             del kwargs['level']

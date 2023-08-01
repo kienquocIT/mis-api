@@ -1,7 +1,7 @@
 from django.db import models
 from jsonfield import JSONField
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
 
 from apps.core.models import CoreAbstractModel
 
@@ -66,9 +66,20 @@ class Application(CoreAbstractModel):
         help_text="application label ex. hr_employee"
     )
 
+    is_workflow = models.BooleanField(
+        default=True,
+        verbose_name='Application apply Workflow',
+    )
+    option_permission = models.PositiveSmallIntegerField(
+        default=0,
+        choices=PERMISSION_OPTION_RANGE,
+        verbose_name='Allow Type Permission',
+        help_text='0: Allow full control range, 1: Allow only company'
+    )
+
     class Meta:
         verbose_name = 'Application'
-        ordering = ('-date_created',)
+        ordering = ('title',)
         default_permissions = ()
         permissions = ()
 
@@ -146,6 +157,19 @@ class ApplicationProperty(CoreAbstractModel):
     )
     compare_operator = models.JSONField(
         default=dict,
+    )
+    # use for Opp Stage
+    opp_stage_operator = models.JSONField(
+        default=list,
+        help_text='comparison operator (≠ and =)'
+    )
+    stage_compare_data = models.JSONField(
+        default=dict,
+        help_text='compare data format {"=": [...], "≠": [...]}'
+    )
+    is_sale_indicator = models.BooleanField(
+        default=False,
+        help_text="property which is only used for config sale indicators"
     )
 
     class Meta:
@@ -320,3 +344,56 @@ class Currency(SimpleAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save(**kwargs)
         super().save(*args, **kwargs)
+
+
+class BaseItemUnit(SimpleAbstractModel):
+    title = models.CharField(
+        max_length=20,
+    )
+    measure = models.CharField(
+        max_length=20,
+    )
+
+    class Meta:
+        default_permissions = ()
+        permissions = ()
+        ordering = ('title',)
+        verbose_name = 'BaseItemUnit'
+        verbose_name_plural = 'BaseItemUnits'
+
+
+class IndicatorParam(SimpleAbstractModel):
+    title = models.CharField(max_length=100)
+    code = models.CharField(max_length=100, unique=True)
+    remark = models.CharField(
+        max_length=200,
+        blank=True
+    )
+    syntax = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="syntax show in editor when user select this function"
+    )
+    syntax_show = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="syntax show in description"
+    )
+    example = models.CharField(
+        max_length=300,
+        blank=True
+    )
+    param_type = models.SmallIntegerField(
+        choices=INDICATOR_PARAM_TYPE,
+        default=0
+    )
+    order = models.IntegerField(
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Indicator Param'
+        verbose_name_plural = 'Indicator Params'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()

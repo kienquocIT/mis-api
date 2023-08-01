@@ -1,133 +1,29 @@
-from apps.core.account.models import User
-from apps.core.company.models import CompanyUserEmployee, Company, CompanyLicenseTracking
-from apps.core.hr.models import PlanEmployee
-from apps.core.tenant.models import TenantPlan, Tenant
-from apps.masterdata.saledata.models.product import ProductType, Product
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price
+from apps.core.company.models import Company
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType
+from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from .extends.signals import SaleDefaultData
+from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan
+from apps.core.tenant.models import Tenant, TenantPlan
+from apps.sales.cashoutflow.models import (
+    AdvancePayment, AdvancePaymentCost,
+    ReturnAdvance, ReturnAdvanceCost,
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
+)
+from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
+from apps.masterdata.saledata.models import (
+    ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
+    ProductWareHouse,
+)
+from . import MediaForceAPI
 
-
-def update_company_created_user():
-    company_user_emp = CompanyUserEmployee.objects.filter(user__isnull=False)
-    if company_user_emp:
-        for item in company_user_emp:
-            item.is_created_company = True
-            item.save()
-    print('update done.')
-    return True
-
-
-def update_tenant_plan():
-    data_list = [
-        {
-            'id': "d3bd3202-d92c-427a-a4da-9b2043dc2615",
-            'tenant_id': "98730aaf-efd4-403d-9da7-418fc49696e2",
-            'plan_id': "4e082324-45e2-4c27-a5aa-e16a758d5627",
-            'purchase_order': "PO022",
-            'is_limited': False,
-            'license_quantity': None,
-            'date_active': "2023-02-06 07:39:00.000000",
-            'date_end': "2023-08-06 07:39:00.000000",
-        },
-        {
-            'id': "30e78436-091a-4a2a-a96e-92f2d27b64ea",
-            'tenant_id': "98730aaf-efd4-403d-9da7-418fc49696e2",
-            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
-            'purchase_order': "PO022",
-            'is_limited': False,
-            'license_quantity': None,
-            'date_active': "2023-02-06 07:39:00.000000",
-            'date_end': "2023-08-06 07:39:00.000000",
-        },
-        {
-            'id': "a256580d-298e-4d2b-a6dd-307a6be22b87",
-            'tenant_id': "c4c3a81a-3bc4-4ae3-ad10-f010f1d2bdac",
-            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
-            'purchase_order': "PO023",
-            'is_limited': True,
-            'license_quantity': 30,
-            'date_active': "2023-02-08 02:00:00.000000",
-            'date_end': "2023-08-08 02:00:00.000000"
-        },
-        {
-            'id': "76beb796-fcbb-4231-9a55-ed21b9f16d0d",
-            'tenant_id': "4aa530c3-bd4b-4165-bbbb-f89735a1c66a",
-            'plan_id': "395eb68e-266f-45b9-b667-bd2086325522",
-            'purchase_order': "PO001",
-            'is_limited': True,
-            'license_quantity': 10,
-            'date_active': "2023-01-13 07:44:00.000000",
-            'date_end': "2023-03-13 07:44:00.000000"
-        },
-        {
-            'id': "6d08677a-df6d-4ee2-b18c-ee5c21fdf6ab",
-            'tenant_id': "9a600efe-7214-446c-9154-1dec004c8de9",
-            'plan_id': "a939c80b-6cb6-422c-bd42-34e0adf91802",
-            'purchase_order': "PO008",
-            'is_limited': True,
-            'license_quantity': 10,
-            'date_active': "2023-01-16 04:16:00.000000",
-            'date_end': "2023-06-16 04:16:00.000000",
-            'license_buy_type': 1,
-        }
-    ]
-    for data in data_list:
-        if not TenantPlan.objects.filter(
-                tenant_id=data['tenant_id'],
-                plan_id=data['plan_id']
-        ).exists():
-            TenantPlan.objects.create(**data)
-
-    print('update done.')
-    return True
-
-
-def mapping_user_to_company_user_employee():
-    user_list = User.objects.filter(
-        tenant_current_id="c4c3a81a-3bc4-4ae3-ad10-f010f1d2bdac"
-    )
-    if user_list:
-        for user in user_list:
-            if not CompanyUserEmployee.objects.filter(user_id=user.id).exists():
-                CompanyUserEmployee.objects.create(
-                    user_id=user.id,
-                    company_id=user.company_current_id
-                )
-
-    print('update done.')
-    return True
-
-
-def update_data_company_license_tracking():
-    plan_employee = PlanEmployee.objects.all()
-    if plan_employee:
-        plan_employee.delete()
-    tenant_list = Tenant.objects.all()
-    if tenant_list:
-        for tenant in tenant_list:
-            tenant_plan_list = TenantPlan.objects.filter(tenant=tenant)
-            tenant_company_list = Company.objects.filter(tenant=tenant)
-            if tenant_company_list:
-                for company in tenant_company_list:
-                    bulk_info = []
-                    for tenant_plan in tenant_plan_list:
-                        bulk_info.append(
-                            CompanyLicenseTracking(
-                                **{
-                                    'company_id': company.id,
-                                    'license_plan': tenant_plan.plan.code,
-                                    'license_use_count': 0
-                                }
-                            )
-                        )
-                    if bulk_info:
-                        CompanyLicenseTracking.objects.bulk_create(bulk_info)
-
-    print('update done.')
-    return True
+from .extends.signals import SaleDefaultData, ConfigDefaultData
+from ..core.hr.models import Employee
+from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
+from ..sales.quotation.models import QuotationIndicatorConfig
+from ..sales.saleorder.models import SaleOrderIndicatorConfig
 
 
 def update_sale_default_data_old_company():
@@ -209,10 +105,423 @@ def delete_data_old():
     delete_all_product()
 
 
-def update_is_super_user():
-    users = User.objects.all()
-    for user in users:
-        if CompanyUserEmployee.objects.filter(user=user).count() > 1:
-            user.save(is_superuser=True)
-    print('update done.')
+def delete_data_shipping():
+    ConditionLocation.objects.all().delete()
+    FormulaCondition.objects.all().delete()
+    ShippingCondition.objects.all().delete()
+    Shipping.objects.all().delete()
     return True
+
+
+def update_account_annual_revenue():
+    Account.objects.all().update(annual_revenue=1)
+    return True
+
+
+def update_account_total_employees():
+    Account.objects.all().update(total_employees=1)
+    return True
+
+
+def update_account_shipping_address():
+    Account.objects.all().update(shipping_address=[])
+    return True
+
+
+def update_account_billing_address():
+    Account.objects.all().update(billing_address=[])
+    return True
+
+
+def delete_all_ap():
+    AdvancePayment.objects.all().delete()
+    AdvancePaymentCost.objects.all().delete()
+    return True
+
+
+def delete_all_payment():
+    Payment.objects.all().delete()
+    PaymentCost.objects.all().delete()
+    PaymentCostItems.objects.all().delete()
+    PaymentCostItemsDetail.objects.all().delete()
+    PaymentSaleOrder.objects.all().delete()
+    PaymentQuotation.objects.all().delete()
+    return True
+
+
+def delete_all_return():
+    ReturnAdvance.objects.all().delete()
+    ReturnAdvanceCost.objects.all().delete()
+    return True
+
+
+def make_sure_delivery_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).delivery_config()
+    print('Make sure delivery config is done!')
+
+
+def make_sure_workflow_apps():
+    for tenant_obj in Tenant.objects.all():
+        plan_ids = TenantPlan.objects.filter(tenant=tenant_obj).values_list('plan_id', flat=True)
+        app_objs = [
+            x.application for x in
+            PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
+        ]
+
+        for company_obj in Company.objects.filter(tenant=tenant_obj):
+            for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
+                print('delete Workflow Config App: ', obj.application, obj.company)
+                obj.delete()
+
+            for app in app_objs:
+                if app.is_workflow is True:
+                    WorkflowConfigOfApp.objects.get_or_create(
+                        company=company_obj,
+                        application=app,
+                        defaults={
+                            'tenant': tenant_obj,
+                            'workflow_currently': Workflow.objects.filter(
+                                tenant=tenant_obj,
+                                company=company_obj,
+                                application=app,
+                            ).first()
+                        }
+                    )
+    print('Make sure workflow app is successfully.')
+
+
+def refill_app_code_workflow_runtime():
+    for obj in Runtime.objects.all():
+        if obj.app:
+            obj.app_code = obj.app.app_label
+            obj.save(update_fields=['app_code'])
+    print('App_code was updated for runtime!')
+
+
+def make_sure_quotation_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).quotation_config()
+    print('Make sure quotation config is done!')
+
+
+def make_sure_sale_order_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_config()
+    print('Make sure sale order config is done!')
+
+
+def make_sure_opportunity_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config()
+    print('Make sure opportunity is done!')
+
+
+def fill_tenant_company_to_runtime():
+    print('Workflow Fill data processing:')
+    for obj in RuntimeStage.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Stage run done!')
+
+    for obj in RuntimeAssignee.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Assignee run done!')
+
+    for obj in RuntimeLog.objects.all():
+        obj.before_save(True)
+        obj.save()
+    print('Log run done!')
+
+
+def update_quotation_sale_order_for_opportunity():
+    for opp in Opportunity.objects.all():
+        quotation = opp.quotation_opportunity.first()
+        if quotation:
+            opp.quotation = quotation
+        sale_order = opp.sale_order_opportunity.first()
+        if sale_order:
+            opp.sale_order = sale_order
+        opp.save(update_fields=['quotation', 'sale_order'])
+    print("update opportunity done.")
+    return True
+
+
+def make_sure_opportunity_config_stage():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).opportunity_config_stage()
+    print('Make sure opportunity config stage is done!')
+
+
+def update_is_delete_opportunity_config_stage():
+    OpportunityConfigStage.objects.exclude(
+        indicator__in=['Qualification', 'Closed Won', 'Closed Lost', 'Deal Close']
+    ).update(is_delete=True)
+
+    print('Done!')
+
+
+def make_sure_quotation_indicator_config():
+    QuotationIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).quotation_indicator_config()
+    print('Make sure quotation indicator config is done!')
+
+
+def update_data_application_property():
+    app_property = ApplicationProperty.objects.get(id='b5aa8550-7fc5-4cb8-a952-b6904b2599e5')
+    app_property.stage_compare_data = {
+        '=': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ],
+        '?': [
+            {
+                'id': 0,
+                'value': None,
+            }
+        ]
+    }
+    app_property.save()
+    print('Update Done!')
+
+
+def make_sure_sale_order_indicator_config():
+    SaleOrderIndicatorConfig.objects.all().delete()
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).sale_order_indicator_config()
+    print('Make sure sale order indicator config is done!')
+
+
+def delete_delivery_picking():
+    # delete delivery
+    order_delivery = OrderDelivery.objects.all()
+    order_delivery.update(sub=None)
+    OrderDeliverySub.objects.all().delete()
+    order_delivery.delete()
+
+    # delete picking
+    order_picking = OrderPicking.objects.all()
+    order_picking.update(sub=None)
+    OrderPickingSub.objects.all().delete()
+    order_picking.delete()
+
+    # reset warehouse
+    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
+    print("delete done.")
+
+
+def update_stage_for_opportunity():
+    opp = Opportunity.objects.filter(stage=None)
+    bulk_data = []
+    for obj in opp:
+        stage = OpportunityConfigStage.objects.get(company_id=obj.company_id, indicator='Qualification')
+        bulk_data.append(OpportunityStage(opportunity=obj, stage=stage, is_current=True))
+    OpportunityStage.objects.bulk_create(bulk_data)
+    print('!Done')
+
+
+def make_sure_sync_media(re_sync=False):
+    for company_obj in Company.objects.all():
+        if (not company_obj.media_company_id or not company_obj.media_company_code) or re_sync:
+            MediaForceAPI.call_sync_company(company_obj)
+            print('Force media company: ', company_obj.media_company_id, company_obj.media_company_code)
+
+        # refresh company obj =
+        company_obj.refresh_from_db()
+        if company_obj.media_company_id or company_obj.media_company_code:
+            for employee_obj in Employee.objects.filter(company=company_obj):
+                if not employee_obj.media_user_id or re_sync:
+                    MediaForceAPI.call_sync_employee(employee_obj)
+                    print('Force media employee: ', employee_obj.media_user_id, employee_obj.media_access_token)
+    print('Sync media successfully')
+
+
+def update_fk_expense_price():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense = item.expense_general.expense
+        item.save()
+    print('!Done')
+
+
+def update_fk_expense_price_expense_general():
+    expense_price = ExpensePrice.objects.select_related('expense_general').all()
+    for item in expense_price:
+        item.expense_general = None
+        item.save()
+    print('!Done')
+
+
+def edit_uom_group_field_to_default():
+    UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
+    UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    for item in UnitOfMeasure.objects.filter(rounding=0):
+        item.rounding = 4
+        item.save()
+    return True
+
+
+def delete_all_opportunity_call_log():
+    OpportunityCallLog.objects.all().delete()
+    return True
+
+
+def make_sure_task_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).task_config()
+    print('Make sure Task config is done!')
+
+
+def update_win_rate_delivery_stage():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        for stage in opp.stage.all():
+            if stage.indicator == 'Delivery':
+                opp.win_rate = 100
+                opp.save()
+
+    OpportunityConfigStage.objects.filter(indicator='Delivery').update(win_rate=100)
+    print('Done!')
+
+
+def update_plan_application_quotation():
+    PlanApplication.objects.filter(
+        application_id="eeab5d9e-54c6-4e85-af75-477b740d7523"
+    ).delete()
+    Application.objects.filter(id="eeab5d9e-54c6-4e85-af75-477b740d7523").delete()
+    print("update done.")
+    return True
+
+
+def update_data_product_inventory(product):
+    if len(product.inventory_information) != 0:
+        if isinstance(product.inventory_information['uom'], str):
+            obj_currency = UnitOfMeasure.objects.get(id=product.inventory_information['uom'])
+            product.inventory_information['uom'] = {
+                'id': obj_currency.id,
+                'code': obj_currency.code,
+                'title': obj_currency.title,
+                'abbreviation': obj_currency.abbreviation
+            }
+            product.inventory_uom_id = product.inventory_information['uom']
+        else:
+            product.inventory_uom_id = product.inventory_information[
+                'uom']['id'] if 'uom' in product.inventory_information and product.inventory_information[
+                'uom'] is not None else None
+        product.inventory_level_min = product.inventory_information['inventory_level_min']
+        product.inventory_level_max = product.inventory_information['inventory_level_max']
+        return True
+    return False
+
+
+def update_data_product_sale(product):
+    if len(product.sale_information) != 0:
+        if isinstance(product.sale_information['default_uom'], str):
+            obj_uom = UnitOfMeasure.objects.get(id=product.sale_information['default_uom'])
+            product.sale_information['default_uom'] = {
+                'id': obj_uom.id,
+                'code': obj_uom.code,
+                'title': obj_uom.title
+            }
+            product.default_uom_id = obj_uom.id
+        else:
+            product.default_uom_id = product.sale_information[
+                'default_uom']['id'] if 'default_uom' in product.sale_information and product.sale_information[
+                'default_uom'] is not None else None
+
+        if isinstance(product.sale_information['tax_code'], str):
+            obj_tax = Tax.objects.get(id=product.sale_information['tax_code'])
+            product.sale_information['tax_code'] = {
+                'id': obj_tax.id,
+                'code': obj_tax.code,
+                'title': obj_tax.title
+            }
+            product.tax_code_id = obj_tax.id
+        else:
+            product.tax_code_id = product.sale_information[
+                'tax_code']['id'] if 'tax_code' in product.sale_information and product.sale_information[
+                'tax_code'] is not None else None
+
+        if isinstance(product.sale_information['currency_using'], str):
+            obj_currency = Currency.objects.get(id=product.sale_information['currency_using'])
+            product.sale_information['currency_using'] = {
+                'id': obj_currency.id,
+                'code': obj_currency.code,
+                'title': obj_currency.title
+            }
+            product.currency_using_id = product.sale_information['currency_using']
+        else:
+            product.currency_using_id = product.sale_information[
+                'currency_using']['id'] if 'currency_using' in product.sale_information and \
+                                           product.sale_information['currency_using'] is not None else None
+
+        product.length = product.sale_information['length'] if 'length' in product.sale_information else None
+        product.width = product.sale_information['width'] if 'width' in product.sale_information else None
+        product.height = product.sale_information['height'] if 'height' in product.sale_information else None
+        return True
+    return False
+
+
+def update_data_product():
+    Product.objects.filter(
+        company_id__in=['5e56aa92c9e044779ac744883ac7e901', '5052f1d6c1f1409f96e586e048f19319']
+    ).delete()
+    products = Product.objects.all()
+    for product in products:
+
+        if isinstance(product.general_information['product_type'], str):
+            obj_product_type = ProductType.objects.get(id=product.general_information['product_type'])
+            product.general_information['product_type'] = {
+                'id': obj_product_type.id,
+                'code': obj_product_type.code,
+                'title': obj_product_type.title
+            }
+            product.product_type_id = obj_product_type.id
+        else:
+            product.product_type_id = product.general_information['product_type']['id']
+
+        if isinstance(product.general_information['product_category'], str):
+            obj_product_category = ProductCategory.objects.get(id=product.general_information['product_category'])
+            product.general_information['product_category'] = {
+                'id': obj_product_category.id,
+                'code': obj_product_category.code,
+                'title': obj_product_category.title
+            }
+            product.product_category_id = obj_product_category.id
+        else:
+            product.product_category_id = product.general_information['product_category']['id']
+
+        if isinstance(product.general_information['uom_group'], str):
+            obj_uom_group = ProductCategory.objects.get(id=product.general_information['uom_group'])
+            product.general_information['uom_group'] = {
+                'id': obj_uom_group.id,
+                'code': obj_uom_group.code,
+                'title': obj_uom_group.title
+            }
+            product.uom_group_id = obj_uom_group.id
+        else:
+            product.uom_group_id = product.general_information['uom_group']['id']
+        is_sale = update_data_product_sale(product)
+        is_inventory = update_data_product_inventory(product)
+        list_option = []
+        if is_sale:
+            list_option.append(0)
+        if is_inventory:
+            list_option.append(1)
+        product.product_choice = list_option
+        product.save()
+
+    print('Done !')
+
+
+def make_full_plan():
+    TenantPlan.objects.all().delete()
+    plan_objs = SubscriptionPlan.objects.all()
+    for tenant in Tenant.objects.all():
+        for plan in plan_objs:
+            TenantPlan.objects.create(tenant=tenant, plan=plan, is_limited=False)
+    print('Make full plan is successfully!')

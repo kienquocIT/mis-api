@@ -307,3 +307,65 @@ msgstr "In workflow"
 #
 msgid "Username is exist, please choose another user name"
 msgstr "Tên đăng nhập đã tồn tại, vui lòng chọn tên đăng nhập khác"
+
+#
+msgid "The workflow currently is required when mode is apply"
+msgstr ""
+"Quy trình áp dụng cho chức năng cần được chọn trước khi chọn chế độ sử dụng "
+"quy trình"
+
+#
+msgid "This record has been finalized and is not allow to any further modifications or destroy."
+msgstr "Phiếu này đã hoàn thành và không được phép chỉnh sửa hoặc xóa."
+
+#
+msgid "New Task"
+msgstr "Công việc mới"
+
+#
+msgid "Products must have picked quantity equal to or less than remaining quantity"
+msgstr "Số lượng lấy hàng phải nhỏ hơn hoặc bằng số lượng còn lại trên mỗi sản phẩm"
+
+#
+msgid "Products must have delivery quantity equal to or less than remaining quantity"
+msgstr "Số lượng giao hàng phải nhỏ hơn hoặc bằng số lượng còn lại trên mỗi sản phẩm"
+
+#
+msgid "Can not update when status is Done!"
+msgstr "Không thể lưu khi phiếu đã hoàn tất"
+
+#
+msgid "Done quantity not equal remain quantity!"
+msgstr "số lượng giao hàng không bằng số lượng còn lại!"
+
+#
+msgid "out of stock"
+msgstr "hết hàng"
+
+#
+msgid "Opportunity is already used for quotation"
+msgstr "Đã có báo giá được tạo với cơ hội kinh doanh này"
+
+#
+msgid "Opportunity is already used for sale order"
+msgstr "Đã có đơn hàng được tạo với cơ hội kinh doanh này"
+
+#
+msgid "Opportunity is closed"
+msgstr "Cơ hội kinh doanh đã đóng"
+
+#
+msgid "Order is out of range"
+msgstr "Thứ tự ngoài phạm vi"
+
+#
+msgid "Level is out of range"
+msgstr "Cấp bậc ngoài phạm vi"
+
+#
+msgid "Permission format is incorrect"
+msgstr "Thiết lập quyền không đúng"
+
+#
+msgid "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or reconfigure old flow."
+msgstr "Không cho phép chỉnh sửa khi quy trình này đang có {} đang thực thi. Đi tới trang hướng dẫn để dđược hướng dẫn cách áp dụng quy trình mới hoặc cấu hình lại quy trình cũ."

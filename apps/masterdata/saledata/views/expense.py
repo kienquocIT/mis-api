@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models.product import Expense
 from apps.masterdata.saledata.serializers.expense import ExpenseListSerializer, ExpenseCreateSerializer, \
-    ExpenseDetailSerializer, ExpenseUpdateSerializer
+    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -15,11 +15,18 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'expense_type',
+        )
+
     @swagger_auto_schema(
         operation_summary="Expense list",
         operation_description="Expense list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -28,7 +35,10 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Expense",
         request_body=ExpenseCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -39,11 +49,20 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_detail = ExpenseDetailSerializer
     serializer_update = ExpenseUpdateSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'expense_type',
+        ).prefetch_related(
+            'expense',
+        )
+
     @swagger_auto_schema(
         operation_summary="Expense detail",
         operation_description="Get Expense detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -52,6 +71,33 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Update Expense by ID",
         request_body=ExpenseUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# Expenses use for sale applications
+class ExpenseForSaleList(BaseListMixin):
+    queryset = Expense.objects
+    serializer_list = ExpenseForSaleListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "expense_type",
+            "uom",
+            "uom_group"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Expense for sale list",
+        operation_description="Expense for sale list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

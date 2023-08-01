@@ -129,6 +129,30 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"detail": AccountMsg.USER_DATA_VALID})
 
 
+class UserResetPasswordSerializer(serializers.ModelSerializer):
+    re_password = serializers.CharField()
+
+    def validate(self, attrs):
+        if attrs['password'] == attrs['re_password']:
+            return attrs
+        raise serializers.ValidationError({
+            'detail': AccountMsg.VALID_PASSWORD
+        })
+
+    def update(self, instance, validated_data):
+        password = validated_data['password']
+        instance.set_password(password)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = User
+        fields = (
+            'password',
+            're_password',
+        )
+
+
 class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(max_length=128, allow_blank=True)
     email = serializers.EmailField(max_length=150, allow_blank=True, allow_null=True)
@@ -148,7 +172,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_username(cls, attrs):
-        if User.objects.filter_current(username=attrs, fill__tenant=True).exists():
+        if User.objects.filter_current(
+                username=attrs,
+                fill__tenant=True, fill__map_key={'fill__tenant': 'tenant_current_id'}
+        ).exists():
             raise serializers.ValidationError({'username': AccountMsg.USERNAME_EXISTS})
         return attrs
 
@@ -248,104 +275,6 @@ class CompanyUserDetailSerializer(serializers.ModelSerializer):
             except Company.DoesNotExist:
                 raise serializers.ValidationError({'companies': AccountMsg.COMPANY_NOT_EXIST})
         return companies
-
-
-class CompanyUserUpdateSerializer(serializers.ModelSerializer):
-    companies = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False,
-    )
-
-    class Meta:
-        model = User
-        fields = (
-            'companies',
-        )
-
-    @classmethod
-    def get_company_list_added(cls, instance, company_id_list, company_old_id_list):
-        bulk_info_add = []
-        for company_id in company_id_list:
-            if company_id != instance.company_current_id:
-                if company_id not in company_old_id_list:
-                    bulk_info_add.append(
-                        CompanyUserEmployee(
-                            company_id=company_id,
-                            user_id=instance.id
-                        )
-                    )
-        return bulk_info_add
-
-    @classmethod
-    def add_company(cls, bulk_info_add):
-        if bulk_info_add:
-            company_user_add = CompanyUserEmployee.objects.bulk_create(bulk_info_add)
-            if company_user_add:
-                for company_add in company_user_add:
-                    company_add.company.total_user += 1
-                    company_add.company.save()
-
-    @classmethod
-    def get_company_list_delete(cls, company_id_list, company_old_id_list):
-        remove_list = []
-        for company_old_id in company_old_id_list:
-            if company_old_id not in company_id_list:
-                remove_list.append(company_old_id)
-        return remove_list
-
-    @classmethod
-    def delete_user(cls, instance, remove_list):
-        if remove_list:
-            company_user_remove = CompanyUserEmployee.objects.filter(
-                company_id__in=remove_list,
-                user=instance
-            ).select_related(
-                'employee',
-                'company'
-            )
-            if company_user_remove:
-                for data_remove in company_user_remove:
-                    if data_remove.employee:
-                        data_remove.employee.user = None
-                        data_remove.employee.save()
-                        data_remove.delete()
-
-                        if data_remove.company.total_user > 0:
-                            data_remove.company.total_user -= 1
-                            data_remove.company.save()
-                    else:
-                        if data_remove.company.total_user > 0:
-                            data_remove.company.total_user -= 1
-                            data_remove.company.save()
-                        data_remove.delete()
-
-    def update(self, instance, validated_data):
-        if 'companies' in validated_data:
-            company_id_list = validated_data['companies']
-            company_old_id_list = CompanyUserEmployee.objects.filter(
-                user=instance
-            ).exclude(
-                company_id=instance.company_current_id
-            ).values_list(
-                'company_id',
-                flat=True
-            )
-            # add company for user
-            bulk_info_add = self.get_company_list_added(instance, company_id_list, company_old_id_list)
-            self.add_company(bulk_info_add)
-            # remove user
-            remove_list = self.get_company_list_delete(company_id_list, company_old_id_list)
-            self.delete_user(instance, remove_list)
-
-            num_company = CompanyUserEmployee.objects.filter(user=instance).count()
-
-            if num_company > 1:
-                instance.save(is_superuser=True)
-            else:
-                instance.save()
-
-            return instance
-        raise serializers.ValidationError({"detail": AccountMsg.USER_DATA_VALID})
 
 
 class CompanyUserEmployeeUpdateSerializer(serializers.ModelSerializer):

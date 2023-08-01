@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.config import Term, PaymentTerm
 
 
@@ -50,7 +51,7 @@ class PaymentTermCreateSerializer(serializers.ModelSerializer):
     def validate_title(cls, value):
         if value:
             return value
-        raise serializers.ValidationError("Title is required")
+        raise serializers.ValidationError(_("Title is required."))
 
     @classmethod
     def validate_term(cls, value):

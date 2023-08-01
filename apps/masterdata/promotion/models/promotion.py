@@ -12,6 +12,7 @@ VALID_TIME = (
     (3, 'Month'),
 )
 
+
 class Promotion(MasterDataAbstractModel):
     valid_date_start = models.DateField(
         verbose_name="Valid date start", help_text="promotion valid time from, with format '%Y-%m-%d'"
@@ -33,6 +34,13 @@ class Promotion(MasterDataAbstractModel):
     customer_by_list = models.JSONField(
         verbose_name="Customer by list",
         help_text="list of customer follow by customer type (option = 1) example: [uuid1, uuid2]", default=list
+    )
+    customers_map_promotion = models.ManyToManyField(
+        'saledata.Account',
+        through="CustomerByList",
+        symmetrical=False,
+        blank=True,
+        related_name='customers_map_promotion'
     )
     customer_by_condition = models.JSONField(
         verbose_name="Customer by condition",
@@ -121,13 +129,9 @@ class CustomerByCondition(SimpleAbstractModel):
         verbose_name="Customer result", max_length=50,
         help_text="Customer value field follow by value of property"
     )
-    property_type = models.CharField(
-        verbose_name="Customer property type", max_length=50,
-        help_text="Customer property type field for format result field purpose.", null=True, blank=True
-    )
     logic = models.CharField(
         verbose_name="Logic", max_length=50,
-        help_text="Logic between condition for connect 2 or many condition purpose",null=True, blank=True
+        help_text="Logic between condition for connect 2 or many condition purpose", null=True, blank=True
     )
     order = models.IntegerField(
         verbose_name="Order",

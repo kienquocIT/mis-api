@@ -9,21 +9,23 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django_celery_results.models import TaskResult
 
+from misapi import celery_app
+
 logger = get_task_logger(__name__)
 
-__all__ = ['call_task_background']
+__all__ = ['call_task_background', 'check_active_celery_worker']
 
 
 def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception, bool]:
     """
     Function support call task with async. Then update args and kwargs of log records by Task ID.
+    countdown: seconds
     """
     countdown = kwargs.pop('countdown', 0)
-
+    _id = kwargs.pop('task_id', str(uuid4()))
     if isinstance(my_task, Task):
         if settings.CELERY_TASK_ALWAYS_EAGER is True:
             return my_task(*args, **kwargs)
-        _id = str(uuid4())
         my_task.apply_async(
             args=args, kwargs=kwargs,
             task_id=_id,
@@ -32,7 +34,7 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
             ),
             countdown=countdown,
         )
-        return True
+        return _id
     raise AttributeError('my_task must be celery task function that have decorator is shared_task')
 
 
@@ -58,3 +60,13 @@ def my_task_result(sender, task_id, task_path, task_args, task_kwargs):  # pylin
         return True
     except Exception as err:
         raise my_task_result.retry(exc=err)
+
+
+def check_active_celery_worker():
+    try:
+        state = celery_app.control.inspect().active()
+        if state:
+            return True
+    except Exception as err:
+        print(err)
+    return False

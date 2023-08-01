@@ -1,6 +1,6 @@
 # docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
 
-image: localhost:5000/python3-11-gitlab-ci
+image: localhost:5000/python3-11-gitlab-ci-full
 
 variables:
   MYSQL_DATABASE: $MYSQL_DB
@@ -31,6 +31,7 @@ migrations_init:
       python manage.py makemigrations --check --dry-run --noinput;
       python manage.py migrate;
       python manage.py init_data;
+      python manage.py init_system_data;
       fi
   rules:
     - if: '$CI_COMMIT_BRANCH != null'

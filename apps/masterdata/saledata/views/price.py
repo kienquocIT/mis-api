@@ -27,7 +27,9 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
         operation_summary="TaxCategory list",
         operation_description="TaxCategory list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -36,7 +38,10 @@ class TaxCategoryList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new TaxCategory",
         request_body=TaxCategoryCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -50,12 +55,17 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail TaxCategory')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update TaxCategory", request_body=TaxCategoryUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -75,7 +85,9 @@ class TaxList(BaseListMixin, BaseCreateMixin):
         operation_summary="Tax list",
         operation_description="Tax list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -84,7 +96,10 @@ class TaxList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Tax",
         request_body=TaxCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -101,12 +116,17 @@ class TaxDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().select_related('category')
 
     @swagger_auto_schema(operation_summary='Detail Tax')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Tax", request_body=TaxUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -126,7 +146,9 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
         operation_summary="Currency list",
         operation_description="Currency list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -135,7 +157,10 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Currency",
         request_body=CurrencyCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -149,12 +174,17 @@ class CurrencyDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Currency')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Currency", request_body=CurrencyUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -168,7 +198,10 @@ class SyncWithVCB(BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary="Sync With VCB Currency", request_body=CurrencySyncWithVCBSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -185,7 +218,9 @@ class PriceList(BaseListMixin, BaseCreateMixin):
         operation_summary="Price list",
         operation_description="Price list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -194,7 +229,10 @@ class PriceList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Price",
         request_body=PriceCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -208,12 +246,17 @@ class PriceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Price ')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Price List Setting", request_body=PriceUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -226,7 +269,10 @@ class PriceDelete(BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary="Delete Price List", request_body=PriceDeleteSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -240,7 +286,9 @@ class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Price List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -248,7 +296,10 @@ class UpdateItemsForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Update Price List's Products",
         request_body=PriceListUpdateItemsSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -262,7 +313,9 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
     create_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(operation_summary='Detail Price List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -270,7 +323,10 @@ class DeleteItemForPriceList(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Delete Price List's Products",
         request_body=PriceListDeleteItemSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -288,6 +344,9 @@ class ItemAddFromPriceList(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Create new Product from Price List",
         request_body=CreateItemInPriceListSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

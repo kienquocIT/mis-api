@@ -73,14 +73,6 @@ Có 2 cách sử dụng:
         USER: 'rabbitmq_user'
         PASSWORD: 'rabbitmq_passwd'
         
-    - Notes:
-        + Thay đổi cấu hình BROKER của celery trong settings (đưa vào local_settings): 
-            CELERY_BROKER_URL = 'amqp://rabbitmq_user:rabbitmq_passwd@127.0.0.1:15673//' (Format: 'amqp://{user}:{passwd}@{host}:{port}//')
-            USE_CELERY_CONFIG_OPTION = 1  # xem settings cuối file
-            CELERY_TASK_ALWAYS_EAGER = False # xem settings cuối file
-        + Nếu không sử dụng Queue có thể thay đổi config trong settings để bỏ qua kết nối queue và thực thi task real-time.
-            USE_CELERY_CONFIG_OPTION = 0
-            CELERY_TASK_ALWAYS_EAGER = True
     Traceback:
         - Nếu đã chạy docker-compose build mà khởi động lại máy không kết nối source tới DB thì:
             B1: Khởi động docker
@@ -98,29 +90,13 @@ DEBUG = True
 
 # Bật trang API Docs
 SHOW_API_DOCS = True
-
-# Bật hiển thị các truy vấn đã thực hiện xuống DB theo mỗi request tới API.
-DEBUG_HIT_DB = True
-
-# True: Không thực hiện push task vào queue và thực hiện real-time. False ngược lại.
-CELERY_TASK_ALWAYS_EAGER = False
-
-# 0: Sử dụng sqlite3 làm database cho "default"
-# 1: Sử dụng mysql với docker container mysql đã cài và chạy container dưới local.
-# 2: Sử dụng mysql với server prod sử dụng biến môi trường làm thông tin kết nối.
-USE_DATABASE_CONFIG_OPTION = 1
-
-# 0: Bỏ qua sử dụng Celery, 
-# 1: Bật celery với docker container rabbit đã cài và chạy container dưới local.
-# 2: Bật celery với server prod sử dụng biến môi trường làm thông tin kết nối.
-USE_CELERY_CONFIG_OPTION = 1
 ```
 5. 
 
 ### Khởi động source code
 1. Khởi chạy celery nhận và thực hiện task
 ```text
-a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True
+a. Không sử dụng và thực thi task real-time --> thay đổi cấu hình settings: CELERY_TASK_ALWAYS_EAGER = True # changed
 b. Sử dụng queue:
     B1: Mở terminal (với shell path là git bash)
     B2: command: celery -A misapi worker --loglevel=INFO
@@ -232,7 +208,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_summary="Company list",
         operation_description="Company list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')  # hỗ trợ kiểm tra trung gian trước khi vào view
+    @mask_view(login_require=True, auth_require=False)  # hỗ trợ kiểm tra trung gian trước khi vào view
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -241,12 +217,12 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_description="Create new Company",
         request_body=CompanyCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-# @mask_view(login_require=True, auth_require=True, code_perm='')
+# @mask_view(login_require=True, auth_require=False)
 # 1. login_require: Yêu cầu đã đăng nhập (token còn hạn sử dụng - định danh người dùng) --> Đảm bảo lúc chạy view request.user là đã xác thực
 # 2. auth_require: Yêu cầu kiểm tra quyền trước khi vào view (bắt buộc login_require = True khi dùng option này)
 # 3. code_perm: mã để kiểm tra quyền ==> Đang được phát triển
@@ -338,25 +314,14 @@ DATABASES = {
 
 2. Celery:
 
-```properties
-MSG_QUEUE_HOST='127.0.0.1'
-MSG_QUEUE_PORT='5672'
-```
-
 ```python
-import os
-
-MSG_QUEUE_HOST = os.environ.get("MSG_QUEUE_HOST")  # '127.0.0.1' or host_name
-MSG_QUEUE_PORT = os.environ.get("MSG_QUEUE_PORT")  # default '5672'
-if MSG_QUEUE_HOST and MSG_QUEUE_PORT:
-    CELERY_BROKER_URL = f'amqp://{MSG_QUEUE_HOST}:{MSG_QUEUE_PORT}//'  # 'amqp://127.0.0.1:5672//'
-else:
-    CELERY_BROKER_URL = None
-
-USE_CELERY_CONFIG_OPTION = 1
-CELERY_TASK_ALWAYS_EAGER = False
-# Khi bật celery sẽ thực hiện task ngay lập tức trước khi close thread request.
-# Vì không đẩy task vào queue nên không yêu cầu có Queue Message Server tồn tại.
+# .env
+MSG_QUEUE_HOST=host_name
+MSG_QUEUE_PORT=sv_port
+MSG_QUEUE_API_PORT=sv_api_port
+MSG_QUEUE_USER=user
+MSG_QUEUE_PASSWORD=passwd
+MSG_QUEUE_BROKER_VHOST=vhost
 ```
 
 3. Cache
@@ -444,5 +409,175 @@ Trong ví dụ này, ta đã tạo ra một APIClient để gửi các request H
 Trong setUp(), ta đã tạo một đối tượng sản phẩm Product mới bằng cách gọi phương thức POST đến API endpoint /products/, và lưu lại response để kiểm tra xem sản phẩm đã được tạo thành công hay chưa.
 
 Trong các phương thức test, ta sử dụng các phương thức khác của APIClient như `get
+
+---
+## Cách áp dụng WF cho chức năng:
+#### API
+```python
+# serializer.py
+from apps.core.workflow.tasks import decorator_run_workflow
+
+class XCreateSerializer(serializers.ModelSerializer):
+    system_status = serializers.ChoiceField(
+        choices=[0, 1],
+        help_text='0: draft, 1: created',
+        default=0,
+    )
+
+     class Meta:
+        ...
+        fields = (..., "system_status")
+
+    @decorator_run_workflow
+    def create(self, validated_data):
+        ...
+        instance = X.objects.create(**validated_data)
+        ...
+        return instance
+
+class XDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        ...
+        fields = (..., "workflow_runtime_id")
+```
+```python
+# views.py
+from .serializers import XCreateSerializer, XDetailSerializer
+
+class XList(BaseCreateMixin): # noqa
+    serializer_create = XCreateSerializer
+    serializer_detail = XDetailSerializer
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+
+    ....
+
+class XDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    serializer_detail = XDetailSerializer
+    update_hidden_field = ['employee_modified_id']
+
+```
+```python
+# apps\shared\constant.py
+MAP_FIELD_TITLE = {
+    'saledata.contact': 'fullname',
+    'saledata.account': 'name',
+    '{app_label}.{model name}': 'title', # trường đại diện để lấy dữ liệu hiển thị title
+}
+
+```
+---
+#### MEDIA CLOUD Config
+<p style="font-weight: bold;color: red;">JSON trong value của .env luôn sử dunng `"`, không được sử dụng `'`.</p>
+
+```text
+# .env
+MEDIA_PREFIX_SITE=prod
+MEDIA_DOMAIN=http://127.0.0.1:8881/api
+MEDIA_SECRET_TOKEN_API={KEY_MAP_WITH_SETTING_MEDIA_CLOUD_SV}
+```
+---
+
+#### Media cloud get check file
+ 
+UI upload file --> tới Media Cloud --> trả về {file_id} --> thêm {file_id} vào body post
+--> API lấy giá trị {file_media} gọi đến MediaForceAPI.get_file_check --> kiểm tra trả về
+   1. True: --> **Tạo records trong API Files để lưu trữ** và liên kết với các models khác theo M2M
+   2. False: --> Trả lỗi cho người dùng 
+
+```python
+from apps.shared.media_cloud_apis import MediaForceAPI
+
+media_file_id = "eefbf700763e49c3bbb7d7bb250dbc69"
+employee_id = "5ba531cceead4220a5ebe5f01d5d1bb1"
+
+MediaForceAPI.get_file_check(media_file_id=media_file_id, media_user_id=employee_obj.media_user_id)
+
+# return
+# (bool, result)
+#   1. True: Success, False: Errors
+#   2. Result of True: {
+#       'id': 'eefbf700-763e-49c3-bbb7-d7bb250dbc69', 
+#       'name': 'avt.gif', 
+#       'descriptions': '', 
+#       'date_created': '2023-07-10 10:02:18', 
+#       'date_modified': '2023-07-10 10:02:18', 
+#       'file_name': 'avt.gif', 
+#       'file_size': 930108, 
+#       'file_type': 'gif', 
+#       'file_tags': '', 
+#       'belong_folder': 'c4e05d24-9ae0-4a1e-9af1-111a33a431df', 
+#       'api_file_id': None, 
+#       'api_app_code': None, 
+#       'linked_date': None, 
+#       'un_linked_date': None
+#       }
+#   3. Result of Errors: {
+#             errors: {}
+#       }
+```
+
+---
+
+#### Media check from Model Files
+
+1. Check exist: Files.check_media_file()
+2. Create new: Files.regis_media_file()
+---
+
+#### Phân Quyền
+** Mọi quyền hành sẽ được gộp lại (merge) để thành quyền cao nhất nếu trùng lặp về loại quyền và khác quy mô.
+
+I. Quyền mặc định
+1. [TENANT] Đối với is_admin_tenant || is_admin_company:
+   - Công Ty: List, Detail, Create, Edit, Destroy, Overview
+   - Công Ty & Người Dùng: Thêm, Xóa
+
+2. [COMPANY] Đối với is_admin:
+   - Công Ty: List, Detail, Create, Edit
+   - Người dùng: List, Detail, Create, Edit, Destroy
+   - Nhân viên: List, Detail, Create, Edit, Destroy
+
+II. Quick Setup (Cấu hình nhanh)
+1. Simple: Sử dụng cho nhân viên bình thường
+   -  Task: List, Detail, Create, Edit, Delete | Owner
+   - 
+2. Administror: Sử dụng cho người quản trị
+   - Workflow: List, Detail, Create, Edit, Destroy
+   - 
+3. HR Manager: Sử dụng cho người quản trị nhân sự
+   - Vai Trò: List, Detail, Create, Edit, Delete | company
+   - Phòng Ban: List, Detail, Create, Edit, Delete | company
+   - 
+4. Warehouse Manager: Sử dụng cho người quản trị kho bãi hàng hóa
+   - Warehouse: List, Detail, Create, Edit, Delete | company
+   - 
+5. 
+
+III. Kiểm tra quyền
+1. VIEW (LIST)
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện lọc
+> 3. Trả danh sách theo điều kiện lọc
+2. VIEW (DETAIL)
+> 1. Truy vấn OBJ
+> 2. Kiểm tra quyền
+> 3. Lấy điều kiện quyền
+> 4. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+3. CREATE
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện quyền
+> 3. Kiểm tra điều kiện quyền với request.data.employee_inherit || request.data.employee_created
+4. EDIT
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép EDIT
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+5. DELETE
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép DELETE | Cancel
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
 
 ---

@@ -1,3 +1,7 @@
+from typing import Union
+
+from django.db import models
+from django.utils import translation
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -5,8 +9,12 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
 from apps.core.account.models import User
-from apps.core.auths.serializers import AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer
-from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg
+from apps.core.company.models import CompanyUserEmployee
+from apps.core.auths.serializers import (
+    AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer,
+    AuthValidAccessCodeSerializer,
+)
+from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, MediaForceAPI, TypeCheck
 
 
 # LOGIN:
@@ -26,12 +34,67 @@ class AuthLogin(generics.GenericAPIView):
 
     serializer_class = AuthLoginSerializer
 
+    @classmethod
+    def force_company_currently(cls, user_obj: User) -> tuple[User, Union[None, models.Model], bool, list[str]]:
+        if not user_obj.company_current_id:
+            if user_obj.employee_current_id:
+                company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
+                    user_id=user_obj.id,
+                    employee_id=user_obj.employee_current_id,
+                )
+            else:
+                company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
+                    user_id=user_obj.id,
+                )
+            if company_user_emp.count() > 0:
+                obj_first = company_user_emp.first()
+                user_obj.company_current_id = obj_first.company_id
+                return user_obj, obj_first, True, ['company_current_id']
+        if user_obj.company_current_id:
+            company_user_emp = DisperseModel(app_model='company.companyuseremployee').get_model().objects.filter(
+                user_id=user_obj.id,
+                company_id=user_obj.company_current_id,
+            )
+            if company_user_emp.count() > 0:
+                obj_first = company_user_emp.first()
+                return user_obj, obj_first, True, ['company_current_id']
+            return user_obj, None, True, ['company_current_id']
+        return user_obj, None, False, ['company_current_id']
+
+    @classmethod
+    def force_employee_currently(cls, user_obj: User, company_user_emp_obj: models.Model = None) -> list[str]:
+        if company_user_emp_obj:
+            if hasattr(company_user_emp_obj, 'employee_id'):
+                user_obj.employee_current_id = company_user_emp_obj.employee_id
+                return ['employee_current_id']
+        else:
+            emp_objs = DisperseModel(app_model='hr.employee').get_model().objects.filter(
+                company_id=user_obj.company_current_id,
+                user_id=user_obj.id,
+            )
+            if emp_objs.count() > 0:
+                user_obj.employee_current_id = emp_objs.first().id
+                return ['employee_current_id']
+        return []
+
+    @classmethod
+    def check_and_update_globe(cls, user_obj: User):
+        user_obj, company_user_emp_obj, exist_company, update_fields = cls.force_company_currently(user_obj=user_obj)
+        if exist_company:
+            update_fields += cls.force_employee_currently(user_obj=user_obj, company_user_emp_obj=company_user_emp_obj)
+        if update_fields:
+            user_obj.save(update_fields=update_fields)
+        return user_obj
+
     @swagger_auto_schema(
         operation_summary='Authenticated with username and password',
         operation_description='',
         request_body=AuthLoginSerializer
     )
     def post(self, request, *args, **kwargs):
+        # active translate vietnamese default
+        translation.activate('vi')
+
         # validate username and password
         ser = self.get_serializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -39,6 +102,9 @@ class AuthLogin(generics.GenericAPIView):
         # get user object from serializer
         user_obj = ser.validated_data
         if user_obj:
+            # info employee_id, space_id make sure correct
+            self.check_and_update_globe(user_obj)
+
             # generate token
             generate_token = MyTokenObtainPairSerializer.get_full_token(user_obj)
             token_data = {
@@ -52,6 +118,32 @@ class AuthLogin(generics.GenericAPIView):
             # append user detail to result , then return response
             return ResponseController.success_200(result, key_data='result')
         return ResponseController.bad_request_400(AuthMsg.USERNAME_OR_PASSWORD_INCORRECT)
+
+
+class AuthValidAccessCode(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(operation_summary='Valid access code', request_body=AuthValidAccessCodeSerializer)
+    @mask_view(login_require=True)
+    def post(self, request, *args, **kwargs):
+        company_id = request.data.get('company_id', None)
+        user_agent = request.data.get('user_agent', None)
+        public_ip = request.data.get('public_ip', None)
+        access_id = request.data.get('access_id', None)
+        if TypeCheck.check_uuid(company_id) and user_agent and public_ip and TypeCheck.check_uuid(access_id):
+            obj = CompanyUserEmployee.objects.filter(user=request.user, company_id=company_id).first()
+            if obj and obj.company.media_company_id and obj.employee.media_user_id:
+                state, result_or_errs = MediaForceAPI.valid_access_code_login(
+                    employee_media_id=obj.employee.media_user_id,
+                    company_media_id=obj.company.media_company_id,
+                    user_agent=user_agent,
+                    public_ip=public_ip,
+                    access_id=access_id,
+                )
+                if state:
+                    return ResponseController.success_200(data=result_or_errs, key_data='result')
+                return ResponseController.bad_request_400(msg=result_or_errs)
+        return ResponseController.forbidden_403()
 
 
 class AuthRefreshLogin(generics.GenericAPIView):
@@ -103,9 +195,7 @@ class SwitchCompanyView(APIView):
     def put(self, request, *args, **kwargs):
         user_obj = request.user
         if user_obj and hasattr(user_obj, 'switch_company'):
-            body_data = request.data
-            body_data['user_id'] = request.user.id
-            ser = SwitchCompanySerializer(data=request.data)
+            ser = SwitchCompanySerializer(data=request.data, context={'user_obj': request.user})
             ser.is_valid(raise_exception=True)
             user_obj.switch_company(ser.validated_data['company_user_employee'])
             return ResponseController.success_200(

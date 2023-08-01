@@ -10,4 +10,5 @@ logs/*
 *.sqlite3
 /html_jampack/**
 .env
+.env*
 */.env

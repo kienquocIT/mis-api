@@ -32,8 +32,11 @@ class Interest(MasterDataAbstractModel):
 
 # Contact
 class Contact(DataAbstractModel):
-    owner = models.UUIDField(
-        help_text='employee is contact owner'
+    owner = models.ForeignKey(
+        'hr.Employee',
+        verbose_name='Contact owner mapped',
+        on_delete=models.CASCADE,
+        null=True
     )
     biography = models.CharField(
         blank=True,
@@ -71,7 +74,6 @@ class Contact(DataAbstractModel):
         verbose_name='account name',
         on_delete=models.CASCADE,
         null=True,
-        blank=True,
         related_name='contact_account_name'
     )
     email = models.CharField(
@@ -86,10 +88,11 @@ class Contact(DataAbstractModel):
         null=True,
         max_length=150
     )
-    report_to = models.UUIDField(
+    report_to = models.ForeignKey(
+        'self',
         null=True,
-        blank=True,
-        help_text='report to a contact'
+        on_delete=models.CASCADE,
+        verbose_name='report to another contact'
     )
 
     # {
@@ -114,6 +117,70 @@ class Contact(DataAbstractModel):
     is_primary = models.BooleanField(
         help_text='is account owner',
         default=False
+    )
+
+    # home address fields
+    home_country = models.ForeignKey(
+        'base.Country',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_country'
+    )
+    home_detail_address = models.CharField(
+        verbose_name='Detail home address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    home_city = models.ForeignKey(
+        'base.City',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_city'
+    )
+    home_district = models.ForeignKey(
+        'base.District',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_district'
+    )
+    home_ward = models.ForeignKey(
+        'base.Ward',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='home_ward'
+    )
+
+    # work address fields
+    work_country = models.ForeignKey(
+        'base.Country',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_country'
+    )
+    work_detail_address = models.CharField(
+        verbose_name='Detail work address',
+        blank=True,
+        null=True,
+        max_length=150
+    )
+    work_city = models.ForeignKey(
+        'base.City',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_city'
+    )
+    work_district = models.ForeignKey(
+        'base.District',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_district'
+    )
+    work_ward = models.ForeignKey(
+        'base.Ward',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='work_ward'
     )
 
     class Meta:

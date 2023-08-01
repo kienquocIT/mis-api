@@ -5,14 +5,15 @@ from apps.masterdata.saledata.views.contacts import (
 )
 from apps.masterdata.saledata.views.accounts import (
     AccountTypeList, AccountTypeDetail, IndustryList, IndustryDetail,
-    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList,
+    AccountList, AccountDetail, AccountGroupList, AccountGroupDetail, AccountsMapEmployeesList, AccountForSaleList,
 )
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
-from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail
+from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
+from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail,
+    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail, ProductForSaleList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -20,7 +21,8 @@ from apps.masterdata.saledata.views.price import (
 )
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail,
-    WareHouseList, WareHouseDetail,
+    WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
+    WareHouseCheckAvailableProductList,
 )
 
 urlpatterns = [
@@ -44,6 +46,7 @@ urlpatterns = [
     path('accounts', AccountList.as_view(), name='AccountList'),
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
+    path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),
 ]
 
 urlpatterns += [
@@ -65,6 +68,7 @@ urlpatterns += [
     path('products', ProductList.as_view(), name='ProductList'),
     path('create-product-from-price-list/<str:pk>', ItemAddFromPriceList.as_view(), name='ItemAddFromPriceList'),
     path('product/<str:pk>', ProductDetail.as_view(), name='ProductDetail'),
+    path('products-sale', ProductForSaleList.as_view(), name='ProductForSaleList'),
 ]
 
 urlpatterns += [
@@ -102,17 +106,32 @@ urlpatterns += [
 
 urlpatterns += [
     path('expenses', ExpenseList.as_view(), name='ExpenseList'),
-    path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail')
+    path('expense/<str:pk>', ExpenseDetail.as_view(), name='ExpenseDetail'),
+    path('expenses-sale', ExpenseForSaleList.as_view(), name='ExpenseForSaleList'),
 ]
 
 urlpatterns += [
     path('shippings', ShippingList.as_view(), name='ShippingList'),
-    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail')
+    path('shipping/<str:pk>', ShippingDetail.as_view(), name='ShippingDetail'),
+    path('shippings-check', ShippingCheckList.as_view(), name='ShippingCheckList'),
 ]
 
 # warehouse
 urlpatterns += [
     path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
+    path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
+    path(
+        'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
+        name='WareHouseCheckAvailableProductList'
+    ),
 ]
 # // warehouse
+
+
+# good receipt
+urlpatterns += [
+    path('good-receipt', GoodReceiptList.as_view(), name='GoodReceiptList'),
+    path('good-receipt/<str:pk>', GoodReceiptDetail.as_view(), name='GoodReceiptDetail'),
+]
+# // end good receipt

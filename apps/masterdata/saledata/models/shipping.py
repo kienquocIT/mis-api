@@ -92,6 +92,12 @@ class ShippingCondition(SimpleAbstractModel):
         related_name='location_map_condition',
     )
 
+    class Meta:
+        verbose_name = 'Shipping Condition'
+        verbose_name_plural = 'Shipping Conditions'
+        default_permissions = ()
+        permissions = ()
+
 
 class ConditionLocation(SimpleAbstractModel):
     location = models.ForeignKey(
@@ -107,6 +113,12 @@ class ConditionLocation(SimpleAbstractModel):
         related_name="condition",
     )
 
+    class Meta:
+        verbose_name = 'Condition Location'
+        verbose_name_plural = 'Condition Locations'
+        default_permissions = ()
+        permissions = ()
+
 
 class FormulaCondition(SimpleAbstractModel):
     condition = models.ForeignKey(
@@ -116,15 +128,11 @@ class FormulaCondition(SimpleAbstractModel):
         related_name="formula_condition",
     )
 
-    uom_group = models.ForeignKey(
-        'saledata.UnitOfMeasureGroup',
+    unit = models.ForeignKey(
+        'base.BaseItemUnit',
         on_delete=models.CASCADE,
-        related_name='uom_group_condition',
-    )
-    uom = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-        related_name='uom_condition',
+        related_name='unit_condition',
+        default=None,
     )
     comparison_operators = models.IntegerField(
         default=1,
@@ -147,3 +155,9 @@ class FormulaCondition(SimpleAbstractModel):
         help_text='extra for amount condition',
         null=True,
     )
+
+    class Meta:
+        verbose_name = 'Formula Condition'
+        verbose_name_plural = 'Formula Conditions'
+        default_permissions = ()
+        permissions = ()

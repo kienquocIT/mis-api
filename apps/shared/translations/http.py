@@ -9,3 +9,4 @@ class HttpMsg:
     NOT_FOUND = _("Not found")
     SUCCESSFULLY = _("Successfully")
     GOTO_LOGIN = _('Redirect to the Login page.')
+    OBJ_DONE_NO_EDIT = _("This record has been finalized and is not allow to any further modifications or destroy.")

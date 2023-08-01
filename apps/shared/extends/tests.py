@@ -7,7 +7,12 @@ from rest_framework import status
 
 from rest_framework.test import APIClient
 
+from apps.core.tenant.models import TenantPlan
+from apps.core.hr.models import Employee
+from apps.sharedapp.data.base import FULL_PERMISSIONS_BY_CONFIGURED, FULL_PLAN_ID
+
 from .utils import CustomizeEncoder
+from ..permissions import PermissionsUpdateSerializer
 
 __all__ = ['AdvanceTestCase']
 
@@ -133,8 +138,9 @@ class AdvanceTestCase(TestCase):
             "plan_data": {}
         }
         response = self.client.post(url, data, format='json')
+        if response.status_code not in [200, 201]:
+            print(response.status_code, response.data)
         resp_data = self.reload_json(response.data)
-
         self.assertResponseList(
             response,
             status_code=status.HTTP_200_OK,
@@ -207,4 +213,16 @@ class AdvanceTestCase(TestCase):
             ['access_token', 'refresh_token'],
             list(response.data['result']['token'].keys())
         )
+
+        employee_current_id = response.data['result']['employee_current']['id']
+        employee_obj = Employee.objects.get(pk=employee_current_id)
+        tenant_current_id = response.data['result']['tenant_current']['id']
+        if employee_current_id and tenant_current_id:
+            TenantPlan.objects.bulk_create([
+                TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
+            ])
+            PermissionsUpdateSerializer.force_permissions(
+                instance=employee_obj, validated_data={'permission_by_configured': FULL_PERMISSIONS_BY_CONFIGURED}
+            )
+            employee_obj.save()
         return response.data['result']

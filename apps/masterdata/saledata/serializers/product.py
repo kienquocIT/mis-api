@@ -1,10 +1,20 @@
+from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
+
+from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
-    ProductGeneral, ProductSale, ProductInventory
+    ProductMeasurements
 )
-from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency
 from apps.shared import ProductMsg
+from .product_sub import CommonCreateUpdateProduct
+
+PRODUCT_OPTION = [
+    (0, _('Sale')),
+    (1, _('Inventory')),
+    (2, _('Purchase')),
+]
 
 
 # Product Type
@@ -21,19 +31,18 @@ class ProductTypeCreateSerializer(serializers.ModelSerializer):
         model = ProductType
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ProductType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
+    #     return value
 
 
 class ProductTypeDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = ProductType
         fields = ('id', 'title', 'description', 'is_default')
@@ -46,14 +55,14 @@ class ProductTypeUpdateSerializer(serializers.ModelSerializer):
         model = ProductType
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ProductType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ProductType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_TYPE_EXIST})
+    #     return value
 
 
 # Product Category
@@ -71,39 +80,38 @@ class ProductCategoryCreateSerializer(serializers.ModelSerializer):
         model = ProductCategory
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ProductCategory.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
+    #     return value
 
 
 class ProductCategoryDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = ProductCategory
         fields = ('id', 'title', 'description')
 
 
-class ProductCategoryUpdateSerializer(serializers.ModelSerializer):
+class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     title = serializers.CharField(max_length=150)
 
     class Meta:
         model = ProductCategory
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ProductCategory.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ProductCategory.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
+    #     return value
 
 
 # Expense Type
@@ -121,19 +129,18 @@ class ExpenseTypeCreateSerializer(serializers.ModelSerializer):
         model = ExpenseType
         fields = ('title', 'description')
 
-    @classmethod
-    def validate_title(cls, value):
-        if ExpenseType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if ExpenseType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
+    #     return value
 
 
 class ExpenseTypeDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = ExpenseType
         fields = ('id', 'title', 'description')
@@ -146,14 +153,14 @@ class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):
         model = ExpenseType
         fields = ('title', 'description')
 
-    def validate_title(self, value):
-        if value != self.instance.title and ExpenseType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and ExpenseType.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
+    #     return value
 
 
 # Unit Of Measure Group
@@ -162,20 +169,16 @@ class UnitOfMeasureGroupListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasureGroup
-        fields = ('id', 'title', 'referenced_unit')
+        fields = ('id', 'title', 'is_default', 'referenced_unit')
 
     @classmethod
     def get_referenced_unit(cls, obj):
-        uom_obj = UnitOfMeasure.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            group=obj,
-            is_referenced_unit=True
-        ).first()
-
-        if uom_obj:
-            return {'id': uom_obj.id, 'title': uom_obj.title}
-        return {}
+        uom_list = obj.unitofmeasure_group.all()
+        result = {}
+        for item in uom_list:
+            if item.is_referenced_unit:
+                result = {'id': item.id, 'title': item.title}
+        return result
 
 
 class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):
@@ -185,15 +188,15 @@ class UnitOfMeasureGroupCreateSerializer(serializers.ModelSerializer):
         model = UnitOfMeasureGroup
         fields = ('title',)
 
-    @classmethod
-    def validate_title(cls, value):
-        if UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if UnitOfMeasureGroup.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
+    #     return value
 
 
 class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):
@@ -205,11 +208,7 @@ class UnitOfMeasureGroupDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom(cls, obj):
-        uom = UnitOfMeasure.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            group=obj,
-        )
+        uom = obj.unitofmeasure_group.all()
         uom_list = []
         for item in uom:
             uom_list.append(
@@ -229,14 +228,14 @@ class UnitOfMeasureGroupUpdateSerializer(serializers.ModelSerializer):
         model = UnitOfMeasureGroup
         fields = ('title',)
 
-    def validate_title(self, value):
-        if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and UnitOfMeasureGroup.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_EXIST)
+    #     return value
 
 
 # Unit Of Measure
@@ -245,7 +244,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group')
+        fields = ('id', 'code', 'title', 'group', 'ratio')
 
     @classmethod
     def get_group(cls, obj):
@@ -277,15 +276,15 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
-    @classmethod
-    def validate_title(cls, value):
-        if UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-        return value
+    # @classmethod
+    # def validate_title(cls, value):
+    #     if UnitOfMeasure.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
@@ -371,14 +370,14 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
-    def validate_title(self, value):
-        if value != self.instance.title and UnitOfMeasure.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value
-        ).exists():
-            raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-        return value
+    # def validate_title(self, value):
+    #     if value != self.instance.title and UnitOfMeasure.objects.filter_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             title=value
+    #     ).exists():
+    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
+    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
@@ -427,164 +426,40 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
-# Product
-class ProductGeneralInformationCreateSerializer(serializers.ModelSerializer):
-    product_type = serializers.JSONField(required=True)
-    product_category = serializers.JSONField(required=True)
-    uom_group = serializers.JSONField(required=True)
+class ProductMeasurementsCreateSerializer(serializers.ModelSerializer):
+    unit = serializers.UUIDField(required=True, allow_null=False)
 
     class Meta:
-        model = ProductGeneral
-        fields = ('product_type', 'product_category', 'uom_group',)
+        model = ProductMeasurements
+        fields = (
+            'unit',
+            'value',
+        )
 
     @classmethod
-    def validate_product_type(cls, value):
-        if value:
-            product_type = ProductType.objects.filter(id=value).first()
-            if product_type:
-                return {'id': str(product_type.id), 'title': product_type.title, 'code': product_type.code}
-        raise serializers.ValidationError(ProductMsg.PRODUCT_TYPE_DOES_NOT_EXIST)
-
-    @classmethod
-    def validate_product_category(cls, value):
-        if value:
-            product_category = ProductCategory.objects.filter(id=value).first()
-            if product_category:
-                return {'id': str(product_category.id), 'title': product_category.title, 'code': product_category.code}
-        raise serializers.ValidationError(ProductMsg.PRODUCT_CATEGORY_DOES_NOT_EXIST)
-
-    @classmethod
-    def validate_uom_group(cls, value):
-        if value:
-            uom_group = UnitOfMeasureGroup.objects.filter(id=value).first()
-            if uom_group:
-                return {'id': str(uom_group.id), 'title': uom_group.title, 'code': uom_group.code}
-        raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_GROUP_NOT_EXIST)
-
-
-class ProductSaleInformationCreateSerializer(serializers.ModelSerializer):
-    default_uom = serializers.JSONField(required=True)
-    tax_code = serializers.JSONField(required=True)
-    currency_using = serializers.JSONField(required=True)
-
-    class Meta:
-        model = ProductSale
-        fields = ('default_uom', 'tax_code', 'currency_using')
-
-    @classmethod
-    def validate_default_uom(cls, value):
-        if value:
-            default_uom = UnitOfMeasure.objects.filter(id=value).first()
-            if default_uom:
-                return {'id': str(default_uom.id), 'title': default_uom.title, 'code': default_uom.code}
-        raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
-
-    @classmethod
-    def validate_tax_code(cls, value):
-        if value:
-            tax_code = Tax.objects.filter(id=value).first()
-            if tax_code:
-                return {'id': str(tax_code.id), 'title': tax_code.title, 'code': tax_code.code, 'rate': tax_code.rate}
-        raise serializers.ValidationError(ProductMsg.TAX_DOES_NOT_EXIST)
-
-    @classmethod
-    def validate_currency_using(cls, value):
-        if value:
-            currency_using = Currency.objects.filter(id=value).first()
-            if currency_using:
+    def validate_unit(cls, value):
+        try:  # noqa
+            if value is not None:
+                unit = BaseItemUnit.objects.get(
+                    id=value, title__in=['volume', 'weight']
+                )
                 return {
-                    'id': str(currency_using.id),
-                    'title': currency_using.title,
-                    'code': currency_using.code,
-                    'abbreviation': currency_using.abbreviation
+                    'id': str(unit.id),
+                    'title': unit.title,
+                    'measure': unit.measure
                 }
-        raise serializers.ValidationError(ProductMsg.CURRENCY_DOES_NOT_EXIST)
-
-
-class ProductInventoryInformationCreateSerializer(serializers.ModelSerializer):
-    uom = serializers.JSONField(required=True)
-
-    class Meta:
-        model = ProductInventory
-        fields = ('uom', 'inventory_level_min', 'inventory_level_max',)
-
-    @classmethod
-    def validate_uom(cls, value):
-        if value:
-            uom = UnitOfMeasure.objects.filter(id=value).first()
-            if uom:
-                return {'id': str(uom.id), 'title': uom.title, 'code': uom.code}
-        raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_NOT_EXIST)
-
-    @classmethod
-    def validate_inventory_level_min(cls, value):
-        if value:
-            if value <= 0:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            return value
+        except BaseItemUnit.DoesNotExist:
+            raise serializers.ValidationError({'Unit': ProductMsg.NOT_SAVE})
         return None
 
     @classmethod
-    def validate_inventory_level_max(cls, value):
-        if value:
-            if value <= 0:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            return value
-        return None
-
-    def validate(self, validated_data):
-        inventory_level_min = validated_data.get('inventory_level_min', None)
-        inventory_level_max = validated_data.get('inventory_level_max', None)
-        if inventory_level_min and inventory_level_max:
-            if validated_data['inventory_level_min'] > validated_data['inventory_level_max']:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-        return validated_data
-
-
-def common_create_update_product(validated_data, instance):
-    if 'general_information' in validated_data:
-        ProductGeneral.objects.create(
-            product=instance,
-            product_type_id=validated_data['general_information'].get('product_type', {}).get('id', None),
-            product_category_id=validated_data['general_information'].get('product_category', {}).get('id', None),
-            uom_group_id=validated_data['general_information'].get('uom_group', {}).get('id', None)
-        )
-    if 'sale_information' in validated_data:
-        ProductSale.objects.create(
-            product=instance,
-            default_uom_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
-            tax_code_id=validated_data['sale_information'].get('tax_code', {}).get('id', None),
-            currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None)
-        )
-    if 'inventory_information' in validated_data:
-        ProductInventory.objects.create(
-            product=instance,
-            uom_id=validated_data['inventory_information'].get('uom', {}).get('id', None),
-            inventory_level_min=validated_data['inventory_information'].get('inventory_level_min', None),
-            inventory_level_max=validated_data['inventory_information'].get('inventory_level_max', None)
-        )
-    return True
-
-
-def common_delete_product_information(validated_data, instance):
-    if 'general_information' in validated_data.keys():
-        general_information_item = ProductGeneral.objects.filter(product=instance).first()
-        if general_information_item:
-            general_information_item.delete()
-    if 'sale_information' in validated_data.keys():
-        sale_information_item = ProductSale.objects.filter(product=instance).first()
-        if sale_information_item:
-            sale_information_item.delete()
-    if 'inventory_information' in validated_data.keys():
-        inventory_information = ProductInventory.objects.filter(product=instance).first()
-        if inventory_information:
-            inventory_information.delete()
-    return True
+    def validate_value(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'volume or weight': ProductMsg.VALUE_GREATER_THAN_ZERO})
+        return value
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    price_list = serializers.SerializerMethodField()
-
     class Meta:
         model = Product
         fields = (
@@ -593,72 +468,138 @@ class ProductListSerializer(serializers.ModelSerializer):
             'title',
             'general_information',
             'sale_information',
-            'price_list'
         )
-
-    @classmethod
-    def get_price_list(cls, obj):
-        price_list = obj.productpricelist_set.all().values_list('price_list__title', 'price')
-        if price_list:
-            return [
-                {'title': price[0], 'value': price[1]}
-                for price in price_list
-            ]
-        return []
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
-    general_information = ProductGeneralInformationCreateSerializer(required=False)
-    inventory_information = ProductInventoryInformationCreateSerializer(required=False)
-    sale_information = ProductSaleInformationCreateSerializer(required=False)
+    product_choice = serializers.ListField(
+        child=serializers.ChoiceField(choices=PRODUCT_OPTION),
+    )
+
+    product_type = serializers.UUIDField(required=True)
+    product_category = serializers.UUIDField(required=True)
+    uom_group = serializers.UUIDField(required=True)
+
+    measure = ProductMeasurementsCreateSerializer(required=False, many=True)
+    default_uom = serializers.UUIDField(required=False)
+    tax_code = serializers.UUIDField(required=False)
+    currency_using = serializers.UUIDField(required=False)
+    inventory_uom = serializers.UUIDField(required=False)
+    price_list = serializers.ListField(required=False)
 
     class Meta:
         model = Product
         fields = (
             'code',
             'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
+            'product_choice',
+
+            'product_type',
+            'product_category',
+            'uom_group',
+
+            'default_uom',
+            'tax_code',
+            'currency_using',
+            'length',
+            'height',
+            'width',
+            'measure',
+            'price_list',
+
+            'inventory_uom',
+            'inventory_level_max',
+            'inventory_level_min',
         )
 
     @classmethod
     def validate_code(cls, value):
         if Product.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            code=value
+                fill__tenant=True,
+                fill__company=True,
+                code=value
         ).exists():
             raise serializers.ValidationError(ProductMsg.CODE_EXIST)
         return value
 
+    # For general
+    @classmethod
+    def validate_product_type(cls, value):
+        return CommonCreateUpdateProduct.validate_product_type(value)
+
+    @classmethod
+    def validate_product_category(cls, value):
+        return CommonCreateUpdateProduct.validate_product_category(value)
+
+    @classmethod
+    def validate_uom_group(cls, value):
+        return CommonCreateUpdateProduct.validate_uom_group(value)
+
+    # For Sale
+    @classmethod
+    def validate_default_uom(cls, value):
+        return CommonCreateUpdateProduct.validate_default_uom(value)
+
+    @classmethod
+    def validate_tax_code(cls, value):
+        return CommonCreateUpdateProduct.validate_tax_code(value)
+
+    @classmethod
+    def validate_currency_using(cls, value):
+        return CommonCreateUpdateProduct.validate_currency_using(value)
+
+    @classmethod
+    def validate_length(cls, value):
+        return CommonCreateUpdateProduct.validate_length(value)
+
+    @classmethod
+    def validate_width(cls, value):
+        return CommonCreateUpdateProduct.validate_width(value)
+
+    @classmethod
+    def validate_height(cls, value):
+        return CommonCreateUpdateProduct.validate_height(value)
+
+    # For inventory
+    @classmethod
+    def validate_inventory_uom(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_uom(value)
+
+    @classmethod
+    def validate_inventory_level_min(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_level_min(value)
+
+    @classmethod
+    def validate_inventory_level_max(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_level_max(value)
+
+    def validate(self, validated_data):
+        inventory_level_min = validated_data.get('inventory_level_min', None)  # noqa
+        inventory_level_max = validated_data.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            if validated_data['inventory_level_min'] > validated_data['inventory_level_max']:
+                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+
+        validated_data['general_information'] = CommonCreateUpdateProduct.validate_general_information(validated_data)
+        validated_data['sale_information'] = CommonCreateUpdateProduct.validate_sale_information(
+            validated_data
+        ) if 0 in validated_data['product_choice'] else {}
+
+        validated_data['inventory_information'] = CommonCreateUpdateProduct.validate_inventory_information(
+            validated_data
+        ) if 1 in validated_data['product_choice'] else {}
+        return validated_data
+
     def create(self, validated_data):
+        price_list_information = validated_data.pop('price_list') if 'price_list' in validated_data else None
+        measure_data = validated_data.pop('measure') if 'measure' in validated_data else None
         product = Product.objects.create(**validated_data)
-        common_create_update_product(validated_data=validated_data, instance=product)
-
-        price_list_information = self.initial_data.get('price_list', None)
-
-        if price_list_information:
-            objs = []
-            for item in price_list_information:
-                get_price_from_source = False
-                if item.get('is_auto_update', None) == '1':
-                    get_price_from_source = True
-                objs.append(
-                    ProductPriceList(
-                        price_list_id=item.get('price_list_id', None),
-                        product=product,
-                        price=float(item.get('price_value', None)),
-                        currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
-                        uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
-                        uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
-                        get_price_from_source=get_price_from_source
-                    )
-                )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
+        if 0 in validated_data['product_choice']:
+            CommonCreateUpdateProduct.create_price_list(product, price_list_information, validated_data)
+            if 1 in validated_data['product_choice']:
+                CommonCreateUpdateProduct.create_measure(product, measure_data)
         return product
 
 
@@ -675,78 +616,215 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'inventory_information',
             'sale_information',
             'purchase_information',
+            'product_choice',
         )
 
     @classmethod
     def get_sale_information(cls, obj):
-        product_price_list = ProductPriceList.objects.filter(product=obj).select_related('currency_using')
+        product_price_list = obj.product_price_product.all()
         price_list_detail = []
         for item in product_price_list:
-            price_list_detail.append(
-                {
-                    'id': item.price_list_id,
-                    'price': item.price,
-                    'currency_using': item.currency_using.abbreviation,
-                    'is_auto_update': item.get_price_from_source
-                }
-            )
+            if item.uom_using_id == obj.default_uom_id:
+                price_list_detail.append(
+                    {
+                        'id': item.price_list_id,
+                        'price': item.price,
+                        'currency_using': item.currency_using.abbreviation,
+                        'is_primary': item.currency_using.is_primary,
+                        'title': item.price_list.title,
+                        'is_auto_update': item.get_price_from_source
+                    }
+                )
         if len(price_list_detail) > 0:
             obj.sale_information['price_list'] = price_list_detail
         return obj.sale_information
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
-    general_information = ProductGeneralInformationCreateSerializer(required=False)
-    inventory_information = ProductInventoryInformationCreateSerializer(required=False)
-    sale_information = ProductSaleInformationCreateSerializer(required=False)
+    title = serializers.CharField(max_length=150, required=False)
+    product_choice = serializers.ListField(
+        child=serializers.ChoiceField(choices=PRODUCT_OPTION),
+        required=False
+    )
+
+    product_type = serializers.UUIDField(required=False)
+    product_category = serializers.UUIDField(required=False)
+    uom_group = serializers.UUIDField(required=False)
+
+    measure = ProductMeasurementsCreateSerializer(required=False, many=True)
+    default_uom = serializers.UUIDField(required=False)
+    tax_code = serializers.UUIDField(required=False)
+    currency_using = serializers.UUIDField(required=False)
+    inventory_uom = serializers.UUIDField(required=False)
+    price_list = serializers.ListField(required=False)
 
     class Meta:
         model = Product
         fields = (
             'title',
-            'general_information',
-            'inventory_information',
-            'sale_information',
+            'product_choice',
+
+            'product_type',
+            'product_category',
+            'uom_group',
+
+            'default_uom',
+            'tax_code',
+            'currency_using',
+            'length',
+            'height',
+            'width',
+            'measure',
+            'price_list',
+
+            'inventory_uom',
+            'inventory_level_max',
+            'inventory_level_min',
         )
 
+    @classmethod
+    def validate_code(cls, value):
+        if Product.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                code=value
+        ).exists():
+            raise serializers.ValidationError(ProductMsg.CODE_EXIST)
+        return value
+
+    # For general
+    @classmethod
+    def validate_product_type(cls, value):
+        return CommonCreateUpdateProduct.validate_product_type(value)
+
+    @classmethod
+    def validate_product_category(cls, value):
+        return CommonCreateUpdateProduct.validate_product_category(value)
+
+    @classmethod
+    def validate_uom_group(cls, value):
+        return CommonCreateUpdateProduct.validate_uom_group(value)
+
+    # For Sale
+    @classmethod
+    def validate_default_uom(cls, value):
+        return CommonCreateUpdateProduct.validate_default_uom(value)
+
+    @classmethod
+    def validate_tax_code(cls, value):
+        return CommonCreateUpdateProduct.validate_tax_code(value)
+
+    @classmethod
+    def validate_currency_using(cls, value):
+        return CommonCreateUpdateProduct.validate_currency_using(value)
+
+    @classmethod
+    def validate_length(cls, value):
+        return CommonCreateUpdateProduct.validate_length(value)
+
+    @classmethod
+    def validate_width(cls, value):
+        return CommonCreateUpdateProduct.validate_width(value)
+
+    @classmethod
+    def validate_height(cls, value):
+        return CommonCreateUpdateProduct.validate_height(value)
+
+    # For inventory
+    @classmethod
+    def validate_inventory_uom(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_uom(value)
+
+    @classmethod
+    def validate_inventory_level_min(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_level_min(value)
+
+    @classmethod
+    def validate_inventory_level_max(cls, value):
+        return CommonCreateUpdateProduct.validate_inventory_level_max(value)
+
+    def validate(self, validated_data):
+        inventory_level_min = validated_data.get('inventory_level_min', None)  # noqa
+        inventory_level_max = validated_data.get('inventory_level_max', None)
+        if inventory_level_min and inventory_level_max:
+            if validated_data['inventory_level_min'] > validated_data['inventory_level_max']:
+                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+
+        validated_data['general_information'] = CommonCreateUpdateProduct.validate_general_information(validated_data)
+        validated_data['sale_information'] = CommonCreateUpdateProduct.validate_sale_information(
+            validated_data
+        ) if 0 in validated_data['product_choice'] else {}
+
+        validated_data['inventory_information'] = CommonCreateUpdateProduct.validate_inventory_information(
+            validated_data
+        ) if 1 in validated_data['product_choice'] else {}
+        return validated_data
+
     def update(self, instance, validated_data):
+        price_list_information = validated_data.pop('price_list') if 'price_list' in validated_data else None
+        measure_data = validated_data.pop('measure') if 'measure' in validated_data else None
+
+        instance.product_measure.all().delete()
+        CommonCreateUpdateProduct.delete_price_list(instance)
+
+        if 0 in validated_data['product_choice']:
+            CommonCreateUpdateProduct.update_price_list(instance, price_list_information, validated_data)
+            if 1 in validated_data['product_choice']:
+                CommonCreateUpdateProduct.create_measure(instance, measure_data)
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        common_delete_product_information(validated_data=validated_data, instance=instance)
-        common_create_update_product(validated_data=validated_data, instance=instance)
-
-        price_list_information = self.initial_data.get('price_list', None)
-        if price_list_information:
-            objs = []
-            for item in price_list_information:
-                get_price_from_source = False
-                if item.get('is_auto_update', None) == '1':
-                    get_price_from_source = True
-
-                product_price_list_item = ProductPriceList.objects.filter(
-                    product=instance,
-                    price_list_id=item.get('price_list_id', None),
-                    currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
-                ).first()
-                if product_price_list_item:
-                    product_price_list_item.delete()
-                    currency_using_id = validated_data['sale_information'].get('currency_using', {}).get('id', None)
-                    default_uom_id = validated_data['sale_information'].get('default_uom', {}).get('id', None)
-                    uom_group_id = validated_data['general_information'].get('uom_group', {}).get('id', None)
-                    objs.append(
-                        ProductPriceList(
-                            price_list_id=item.get('price_list_id', None),
-                            product=instance,
-                            price=float(item.get('price_value', None)),
-                            currency_using_id=currency_using_id,
-                            uom_using_id=default_uom_id,
-                            uom_group_using_id=uom_group_id,
-                            get_price_from_source=get_price_from_source
-                        )
-                    )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
         return instance
+
+
+class ProductForSaleListSerializer(serializers.ModelSerializer):
+    price_list = serializers.SerializerMethodField()
+    product_choice = serializers.JSONField()
+
+    class Meta:
+        model = Product
+        fields = (
+            'id',
+            'code',
+            'title',
+            'general_information',
+            'sale_information',
+            'price_list',
+            'product_choice',
+        )
+
+    @classmethod
+    def check_status_price(cls, valid_time_start, valid_time_end):
+        current_time = timezone.now()
+        if (not valid_time_start >= current_time) and (valid_time_end >= current_time):
+            return 'Valid'
+        if valid_time_end < current_time:
+            return 'Expired'
+        if valid_time_start >= current_time:
+            return 'Invalid'
+        return 'Undefined'
+
+    @classmethod
+    def get_price_list(cls, obj):
+        price_list = obj.product_price_product.all().values_list(
+            'price_list__id',
+            'price_list__title',
+            'price',
+            'price_list__is_default',
+            'price_list__valid_time_start',
+            'price_list__valid_time_end',
+        )
+        if price_list:
+            return [
+                {
+                    'id': price[0],
+                    'title': price[1],
+                    'value': price[2],
+                    'is_default': price[3],
+                    'price_status': cls.check_status_price(price[4], price[5])
+                }
+                for price in price_list
+            ]
+        return []

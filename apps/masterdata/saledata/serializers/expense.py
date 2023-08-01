@@ -1,40 +1,56 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import (
-    Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpenseGeneral, ExpensePrice
+    Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice, ExpenseRole
 )
-from apps.masterdata.saledata.models.price import Tax, Currency
+from apps.masterdata.saledata.models.price import Currency
 from apps.masterdata.saledata.models.product import ExpenseType
 from apps.shared.translations.expense import ExpenseMsg
 
 
 class ExpenseListSerializer(serializers.ModelSerializer):
+    expense_type = serializers.SerializerMethodField()
+
     class Meta:
         model = Expense
         fields = (
             'id',
             'code',
             'title',
-            'general_information',
-        )
-
-
-class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
-    expense_type = serializers.UUIDField(required=True, allow_null=False)
-    uom_group = serializers.UUIDField(allow_null=False, required=True)
-    uom = serializers.UUIDField(allow_null=False, required=True)
-    tax_code = serializers.UUIDField(allow_null=True, required=False)
-    price_list = serializers.ListField()
-    currency_using = serializers.UUIDField()
-
-    class Meta:
-        model = ExpenseGeneral
-        fields = (
             'expense_type',
             'uom_group',
             'uom',
-            'tax_code',
-            'price_list',
+        )
+
+    @classmethod
+    def get_expense_type(cls, obj):
+        if obj.expense_type:
+            return {
+                'id': obj.expense_type_id,
+                'title': obj.expense_type.title,
+            }
+        return {}
+
+
+class ExpenseCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
+
+    expense_type = serializers.UUIDField(required=True, allow_null=False)
+    uom_group = serializers.UUIDField(allow_null=False, required=True)
+    uom = serializers.UUIDField(allow_null=False, required=True)
+    data_price_list = serializers.ListField()
+    currency_using = serializers.UUIDField()
+    role = serializers.ListField(child=serializers.UUIDField())
+
+    class Meta:
+        model = Expense
+        fields = (
+            'title',
+            'expense_type',
+            'uom_group',
+            'uom',
+            'data_price_list',
             'currency_using',
+            'role'
         )
 
     @classmethod
@@ -44,7 +60,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 expense_type = ExpenseType.objects.get(
                     id=value
                 )
-                return {'id': str(expense_type.id), 'title': expense_type.title}
+                return expense_type
         except ExpenseType.DoesNotExist:
             raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
         return None
@@ -56,7 +72,7 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 uom_group = UnitOfMeasureGroup.objects.get(
                     id=value
                 )
-                return {'id': str(uom_group.id), 'title': uom_group.title}
+                return uom_group
         except UnitOfMeasureGroup.DoesNotExist:
             raise serializers.ValidationError({'uom_group': ExpenseMsg.UOM_GROUP_NOT_EXIST})
         return None
@@ -68,21 +84,9 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 uom = UnitOfMeasure.objects.get(
                     id=value
                 )
-                return {'id': str(uom.id), 'title': uom.title, 'group': str(uom.group_id)}
+                return uom
         except UnitOfMeasure.DoesNotExist:
             raise serializers.ValidationError({'uom': ExpenseMsg.UOM_NOT_EXIST})
-        return None
-
-    @classmethod
-    def validate_tax_code(cls, value):
-        try:
-            if value is not None:
-                tax = Tax.objects.get(
-                    id=value
-                )
-                return {'id': str(tax.id), 'title': tax.title, 'code': tax.code}
-        except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax_code': ExpenseMsg.TAX_CODE_NOT_EXIST})
         return None
 
     @classmethod
@@ -92,157 +96,236 @@ class ExpenseGeneralCreateSerializer(serializers.ModelSerializer):
                 currency = Currency.objects.get(
                     id=value
                 )
-                return {'id': str(currency.id), 'title': currency.title, 'code': currency.code}
+                return currency.id
         except Currency.DoesNotExist:
             raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        uom = validate_data['uom']
-        uom_group = validate_data['uom_group']
-        if uom['group'] != uom_group['id']:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.UOM_NOT_MAP_UOM_GROUP})
-        return validate_data
-
-
-class ExpenseCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
-    code = serializers.CharField(max_length=150)
-    general_information = ExpenseGeneralCreateSerializer(required=False)
-
-    class Meta:
-        model = Expense
-        fields = (
-            'code',
-            'title',
-            'general_information',
-        )
-
-    @classmethod
-    def validate_code(cls, value):
-        if Expense.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value
-        ).exists():
-            raise serializers.ValidationError(ExpenseMsg.CODE_EXIST)
-        return value
-
     def create(self, validated_data):
-        currency_using = validated_data['general_information']['currency_using']
-        del validated_data['general_information']['currency_using']
-        expense = Expense.objects.create(**validated_data)
-        validated_data['general_information']['currency_using'] = currency_using
-        self.common_create_expense_general(validated_data=validated_data, instance=expense)
+        if Expense.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
+            new_code = 'EXPENSE.CODE.0001'
+        else:
+            latest_code = Expense.objects.filter_current(
+                fill__tenant=True, fill__company=True
+            ).latest('date_created').code
+            new_code = int(latest_code.split('.')[-1]) + 1
+            new_code = 'EXPENSE.CODE.000' + str(new_code)
+        data_price_list = validated_data.pop('data_price_list')
+        currency_using = validated_data.pop('currency_using')
+        data_role = validated_data.pop('role', [])
+        expense = Expense.objects.create(**validated_data, code=new_code)
+        self.common_create_expense_price(data_price_list, currency_using, validated_data['uom'], expense)
+        self.common_create_expense_role(data_role, expense)
         return expense
 
-    @classmethod
-    def common_create_expense_general(cls, validated_data, instance):
-        if 'general_information' in validated_data:  # noqa
-            tax_id = None
-            if validated_data['general_information']['tax_code']:
-                tax_id = validated_data['general_information']['tax_code']['id']
-            expense_general = ExpenseGeneral.objects.create(
-                expense=instance,
-                expense_type_id=validated_data['general_information']['expense_type']['id'],
-                uom_group_id=validated_data['general_information']['uom_group']['id'],
-                uom_id=validated_data['general_information']['uom']['id'],
-                tax_code_id=tax_id,
+    @staticmethod
+    def common_create_expense_role(data, instance):
+        data_bulk = []
+        for role_id in data:
+            expense_role = ExpenseRole(
+                role_id=role_id,
+                expense=instance
             )
-
-            cls.common_create_expense_price(validated_data, expense_general)
-        return True
+            data_bulk.append(expense_role)
+        ExpenseRole.objects.bulk_create(data_bulk)
 
     @staticmethod
-    def common_create_expense_price(validated_data, instance):
-        if 'general_information' in validated_data:  # noqa
-            price_list = validated_data['general_information']['price_list']
-            if price_list:
-                bulk_data = [
-                    ExpensePrice(
-                        expense_general=instance,
-                        price_id=item['id'],
-                        currency_id=validated_data['general_information']['currency_using']['id'],
-                        price_value=item['value'],
-                        is_auto_update=item['is_auto_update'],
-                        uom_id=validated_data['general_information']['uom']['id']
-                    ) for item in price_list
-                ]
-                if len(bulk_data) > 0:
-                    ExpensePrice.objects.bulk_create(bulk_data)
+    def common_create_expense_price(data_price_list, currency_using, uom, instance):
+        price_list = data_price_list
+        if price_list:
+            bulk_data = [
+                ExpensePrice(
+                    expense=instance,
+                    price_id=item['id'],
+                    currency_id=currency_using,
+                    price_value=item['value'],
+                    is_auto_update=item['is_auto_update'],
+                    uom=uom
+                ) for item in price_list
+            ]
+            if len(bulk_data) > 0:
+                ExpensePrice.objects.bulk_create(bulk_data)
         return True
 
 
 class ExpenseDetailSerializer(serializers.ModelSerializer):
-    general_information = serializers.SerializerMethodField()
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
         fields = '__all__'
 
     @classmethod
-    def get_general_information(cls, obj):
+    def get_price_list(cls, obj):
         price_list = [
             {
                 'id': item.price_id,
+                'title': item.price.title,
                 'price_value': item.price_value,
                 'is_auto_update': item.is_auto_update,
-                'currency': item.currency_id
-            } for item in ExpensePrice.objects.filter(expense_general=obj.expense)
+                'currency': item.currency_id,
+                'is_primary': item.currency.is_primary,
+                'abbreviation': item.currency.abbreviation
+            } for item in obj.expense.all()
         ]
-
-        obj.general_information['price_list'] = price_list
-        return obj.general_information
+        return price_list
 
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
-    general_information = ExpenseGeneralCreateSerializer(required=True)
+    title = serializers.CharField(required=False, allow_blank=False, allow_null=False)
+    expense_type = serializers.UUIDField(required=False)
+    uom = serializers.UUIDField(required=False)
+    uom_group = serializers.UUIDField(required=False)
+    data_price_list = serializers.ListField(required=False)
+    currency_using = serializers.UUIDField(required=False)
+    role = serializers.ListField(child=serializers.UUIDField(), required=False)
 
     class Meta:
         model = Expense
         fields = (
             'title',
-            'general_information',
+            'expense_type',
+            'uom_group',
+            'uom',
+            'data_price_list',
+            'currency_using',
+            'role'
         )
+
+    @classmethod
+    def validate_expense_type(cls, value):
+        try:
+            if value is not None:
+                expense_type = ExpenseType.objects.get(
+                    id=value
+                )
+                return expense_type
+        except ExpenseType.DoesNotExist:
+            raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_uom_group(cls, value):
+        try:
+            if value is not None:
+                uom_group = UnitOfMeasureGroup.objects.get(
+                    id=value
+                )
+                return uom_group
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'uom_group': ExpenseMsg.UOM_GROUP_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_uom(cls, value):
+        try:
+            if value is not None:
+                uom = UnitOfMeasure.objects.get(
+                    id=value
+                )
+                return uom
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'uom': ExpenseMsg.UOM_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_currency_using(cls, value):
+        try:
+            if value is not None:
+                currency = Currency.objects.get(
+                    id=value
+                )
+                return currency.id
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
+        return None
 
     def update(self, instance, validated_data):
         self.common_update_expense_general(validated_data=validated_data, instance=instance)
-        del validated_data['general_information']['currency_using']
+        del validated_data['currency_using']
+        del validated_data['data_price_list']
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         return instance
 
     @classmethod
+    def common_update_expense_role(cls, instance, data):
+        ExpenseRole.objects.filter(expense=instance).delete()
+        ExpenseCreateSerializer.common_create_expense_role(data, instance)
+        return True
+
+    @classmethod
     def common_delete_expense_price(cls, instance, validate_data):
         expense_price_delete = ExpensePrice.objects.filter(
-            expense_general=instance,
+            expense=instance,
         )
-        currency_using = validate_data['general_information']['currency_using']['id']
-        price_list = validate_data['general_information']['price_list']
+        currency_using = validate_data['currency_using']
+        price_list = validate_data['data_price_list']
         for item in expense_price_delete:
             if str(item.price_id) not in [obj["id"] for obj in price_list]:
                 item.delete()
             else:
-                if str(item.currency_id) == currency_using:
+                if item.currency_id == currency_using:
                     item.delete()
         return True
 
     @classmethod
     def common_update_expense_general(cls, validated_data, instance):
-        if 'general_information' in validated_data:  # noqa
-            tax_id = None
-            if validated_data['general_information']['tax_code']:
-                tax_id = validated_data['general_information']['tax_code']['id']
-
-            expense_general = instance.expense
-            expense_general.expense_type_id = validated_data['general_information']['expense_type']['id']
-            expense_general.uom_group_id = validated_data['general_information']['uom_group']['id']
-            expense_general.uom_id = validated_data['general_information']['uom']['id']
-            expense_general.tax_code_id = tax_id
-            expense_general.save()
-
-            cls.common_delete_expense_price(instance=expense_general, validate_data=validated_data)
-            ExpenseCreateSerializer.common_create_expense_price(validated_data, expense_general)
+        cls.common_delete_expense_price(instance=instance, validate_data=validated_data)
+        data_role = validated_data.pop('role', [])
+        cls.common_update_expense_role(instance=instance, data=data_role)
+        ExpenseCreateSerializer.common_create_expense_price(
+            validated_data['data_price_list'],
+            validated_data['currency_using'],
+            validated_data['uom'],
+            instance
+        )
         return True
+
+
+class ExpenseForSaleListSerializer(serializers.ModelSerializer):
+    expense_type = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Expense
+        fields = (
+            'id',
+            'code',
+            'title',
+            'expense_type',
+            'uom',
+            'uom_group'
+        )
+
+    @classmethod
+    def get_expense_type(cls, obj):
+        if obj.expense_type:
+            return {
+                'id': obj.expense_type_id,
+                'title': obj.expense_type.title,
+                'code': obj.expense_type.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+                'code': obj.uom_group.code,
+            }
+        return {}

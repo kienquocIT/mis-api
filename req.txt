@@ -28,7 +28,11 @@ jsonfield==3.1.0
 gunicorn==20.1.0
 MarkupSafe==2.1.1
 mysqlclient==2.1.1
+numpy==1.25.1
 opentracing==2.4.0
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
 packaging==21.3
 phonenumbers==8.13.1
 pip-cache==0.0.6
@@ -37,10 +41,12 @@ pyparsing==3.0.9
 pylint==2.16.3
 pylint-django==2.5.3
 pymemcache==4.0.0
+python-dotenv==1.0.0
 python-slugify==6.1.2
 pytz==2022.6
 rcssmin==1.1.0
-requests==2.28.1
+requests==2.31.0
+requests-toolbelt==1.0.0
 rjsmin==1.2.0
 ruamel.yaml==0.17.21
 sqlparse==0.4.3

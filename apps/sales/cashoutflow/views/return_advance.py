@@ -1,0 +1,67 @@
+from drf_yasg.utils import swagger_auto_schema
+from apps.sales.cashoutflow.models import ReturnAdvance
+from apps.sales.cashoutflow.serializers.return_advance import (
+    ReturnAdvanceCreateSerializer, ReturnAdvanceListSerializer,
+    ReturnAdvanceDetailSerializer, ReturnAdvanceUpdateSerializer
+)
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+
+# Create your views here.
+class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
+    queryset = ReturnAdvance.objects
+    serializer_list = ReturnAdvanceListSerializer
+    serializer_create = ReturnAdvanceCreateSerializer
+    serializer_detail = ReturnAdvanceDetailSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'advance_payment'
+        ).prefetch_related(
+            'return_advance'
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Return Advance list",
+        operation_description="Return Advance list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Return Advance",
+        operation_description="Create new Return Advance",
+        request_body=ReturnAdvanceCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = ReturnAdvance.objects # noqa
+    serializer_detail = ReturnAdvanceDetailSerializer
+    serializer_update = ReturnAdvanceUpdateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'advance_payment'
+        ).prefetch_related(
+            'advance_payment__return_advance_payment__advance_payment',
+            'advance_payment__return_advance_payment__return_advance'
+        )
+
+    @swagger_auto_schema(operation_summary='Detail Return Advance')
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Return Advance", request_body=ReturnAdvanceUpdateSerializer)
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

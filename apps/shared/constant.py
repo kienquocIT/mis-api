@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 from .translations import WorkflowMsg
+
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -28,6 +29,11 @@ PERMISSION_OPTION = (
 )
 
 # workflow
+WORKFLOW_CONFIG_MODE = (
+    (0, 'UnApply'),
+    (1, 'Apply'),
+    (2, 'Pending'),
+)
 WORKFLOW_ACTION = (
     (0, WorkflowMsg.ACTION_CREATE),
     (1, WorkflowMsg.ACTION_APPROVE),
@@ -36,6 +42,17 @@ WORKFLOW_ACTION = (
     (4, WorkflowMsg.ACTION_RECEIVE),
     (5, WorkflowMsg.ACTION_TODO),
 )
+
+
+# translate attribute value of above class
+class WorkflowMsgNotify:
+    new_task = 'New Task'
+    was_return_begin = 'Was return owner'
+
+    @classmethod
+    def translate_msg(cls, msg):
+        return _(msg)
+
 
 OPTION_COLLABORATOR = (
     (0, WorkflowMsg.COLLABORATOR_IN),
@@ -47,6 +64,13 @@ CONDITION_LOGIC = (
     (0, "And"),
     (1, "Or"),
 )
+
+MAP_FIELD_TITLE = {
+    'saledata.contact': 'fullname',
+    'saledata.account': 'name',
+    'quotation.quotation': 'title',
+    'saleorder.saleorder': 'title',
+}
 
 CURRENCY_MASK_MONEY = {
     'VND': {
@@ -79,7 +103,6 @@ ACCOUNT_COMPANY_SIZE = (
     (5, _('> 500 people')),
 )
 
-
 ACCOUNT_REVENUE = (
     (1, _('1-10 billions')),
     (2, _('10-20 billions')),
@@ -87,4 +110,64 @@ ACCOUNT_REVENUE = (
     (4, _('50-200 billions')),
     (5, _('200-1000 billions')),
     (6, _('> 1000 billions')),
+)
+
+# sales delivery
+DELIVERY_OPTION = (
+    (0, 'Full'),
+    (1, 'Partial'),
+)
+PICKING_STATE = (
+    (0, 'Ready'),
+    (1, 'Done'),
+)
+DELIVERY_STATE = (
+    (0, 'Wait'),
+    (1, 'Ready'),
+    (2, 'Done'),
+)
+DELIVERY_WITH_KIND_PICKUP = (
+    (0, 'Wait auto picking'),
+    (1, 'Manual select product'),
+)
+
+# base IndicatorParam
+INDICATOR_PARAM_TYPE = (
+    (0, 'Indicator'),
+    (1, 'Property'),
+    (2, 'Function'),
+    (3, 'Operator'),
+)
+
+# opportunity task
+TASK_PRIORITY = (
+    (0, 'Low'),
+    (1, 'Medium'),
+    (2, 'High')
+)
+
+TASK_KIND = (
+    (0, 'Normal'),
+    (1, 'To do'),
+    (2, 'Completed'),
+    (3, 'Pending')
+)
+
+TASK_IN_OPTION = (
+    (0, 'None'),
+    (1, 'only member in'),
+    (2, 'only staff in dept'),
+    (3, '1 & 2 both')
+)
+TASK_OUT_OPTION = (
+    (0, 'None'),
+    (1, 'only member in dept'),
+    (2, 'only staff in dept'),
+    (3, 'both 1 & 2'),
+)
+
+# permissions
+PERMISSION_OPTION_RANGE = (
+    (0, 'All option range'),
+    (1, 'Only company range'),
 )

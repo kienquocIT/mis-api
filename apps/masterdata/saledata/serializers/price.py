@@ -282,17 +282,23 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
         return None
 
     def validate(self, validate_data):
-        if 'price_list_mapped' in validate_data:
+        price_list_mapped_id = validate_data.get('price_list_mapped', None)
+        if price_list_mapped_id:
             price_list_mapped = Price.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=validate_data['price_list_mapped']
-            ).first()
-            if price_list_mapped:
-                if price_list_mapped.price_list_type != validate_data.get('price_list_type', None):
+                id=price_list_mapped_id
+            )
+            if len(price_list_mapped) > 0:
+                if price_list_mapped[0].price_list_type != validate_data.get('price_list_type', None):
                     raise serializers.ValidationError(PriceMsg.DIFFERENT_PRICE_LIST_TYPE)
+                if validate_data.get('auto_update') is False and validate_data.get('can_delete') is True:
+                    raise serializers.ValidationError(PriceMsg.AUTO_UPDATE_CONFLICT_CAN_DELETE)
             else:
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
+        else:
+            if validate_data.get('auto_update') is not False and validate_data.get('can_delete') is not False:
+                raise serializers.ValidationError(PriceMsg.AUTO_UPDATE_CAN_DELETE_ARE_FALSE)
         return validate_data
 
     def create(self, validated_data):
@@ -363,17 +369,20 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
         elif obj.price_list_type == 2:
             expenses = ExpensePrice.objects.filter(  # noqa
                 price_id=obj.id,
-            ).select_related('expense_general', 'currency', 'uom')
+            ).select_related('expense', 'currency', 'uom')
             for expense in expenses:
+                uom_data = {}
+                if expense.uom:
+                    uom_data = {'id': expense.uom.id, 'title': expense.uom.title}
                 expense_information = {
-                    'id': expense.expense_general.expense.id,
-                    'code': expense.expense_general.expense.code,
-                    'title': expense.expense_general.expense.title,
+                    'id': expense.expense.id,
+                    'code': expense.expense.code,
+                    'title': expense.expense.title,
                     'uom_group': {
-                        'id': expense.expense_general.uom_group.id,
-                        'title': expense.expense_general.uom_group.title
+                        'id': expense.expense.uom_group.id,
+                        'title': expense.expense.uom_group.title
                     },
-                    'uom': {'id': expense.uom.id, 'title': expense.uom.title},
+                    'uom': uom_data,
                     'price': expense.price_value,
                     'is_auto_update': expense.is_auto_update,
                     'currency_using': {
@@ -481,15 +490,13 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
         fields = ()
 
     def update(self, instance, validated_data):
-        if not Price.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                price_list_mapped=instance.id
-        ).exists():
-            ProductPriceList.objects.filter(price_list=instance).delete()  # delete all item in M2M table
-            instance.delete()  # delete price list
-            return True
-        raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
+        if ProductPriceList.objects.filter(price_list=instance).exists():
+            raise serializers.ValidationError(PriceMsg.NON_EMPTY_PRICE_LIST_CANT_BE_DELETE)
+        if Price.objects.filter_current(fill__tenant=True, fill__company=True, price_list_mapped=instance.id).exists():
+            raise serializers.ValidationError(PriceMsg.PARENT_PRICE_LIST_CANT_BE_DELETE)
+        instance.delete()  # delete price list
+        return True
+
 
 
 class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
@@ -583,7 +590,7 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
                 is_auto_update = True
 
                 expense_price_list_obj = ExpensePrice.objects.filter(
-                    expense_general__expense__id=item['product_id'],
+                    expense__id=item['product_id'],
                     price_id=price['id'],
                     currency_id=item['currency'],
                     uom_id=item['uom_id']
@@ -594,7 +601,7 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
                     list_price_list_delete.append(expense_price_list_obj)
                 else:
                     expense_price_list_old = ExpensePrice.objects.filter(
-                        expense_general__expense__id=item['product_id'],
+                        expense__id=item['product_id'],
                         price_id=price['id'],
                     ).first()
                     if expense_price_list_old:
@@ -608,11 +615,11 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
                     if is_auto_update is False:
                         result_price = value_price
                 if found:
-                    expense_general = Expense.objects.filter(id=item['product_id']).first().expense
+                    expense = Expense.objects.filter(id=item['product_id']).first()
                     objs.append(
                         ExpensePrice(
                             price_id=price['id'],
-                            expense_general=expense_general,
+                            expense=expense,
                             price_value=result_price,
                             currency_id=item['currency'],
                             uom_id=item['uom_id'],

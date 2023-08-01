@@ -1,10 +1,12 @@
 from rest_framework import serializers
-from apps.core.hr.models import Employee
-from apps.masterdata.saledata.models.accounts import Account
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.contacts import (
-    Salutation, Interest, Contact
+    Salutation, Interest, Contact,
 )
-from apps.shared import AccountsMsg
+from apps.shared import (
+    AccountsMsg,
+    AbstractListSerializerModel, AbstractDetailSerializerModel, AbstractCreateSerializerModel,
+)
 
 
 # Salutation
@@ -125,33 +127,30 @@ class InterestsUpdateSerializer(serializers.ModelSerializer):
 
 
 # Contact
-class ContactListSerializer(serializers.ModelSerializer):
+class ContactListSerializer(AbstractListSerializerModel):
     owner = serializers.SerializerMethodField()
     account_name = serializers.SerializerMethodField()
+    report_to = serializers.SerializerMethodField()
 
     class Meta:
         model = Contact
         fields = (
-            'id',
             'fullname',
             'job_title',
             'owner',
             'account_name',
             'mobile',
-            'email'
+            'email',
+            'report_to'
         )
 
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
 
     @classmethod
@@ -163,9 +162,17 @@ class ContactListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_report_to(cls, obj):
+        if obj.report_to:
+            return {
+                'id': obj.report_to_id,
+                'name': obj.report_to.fullname
+            }
+        return {}
 
-class ContactCreateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False, allow_null=True)
+
+class ContactCreateSerializer(AbstractCreateSerializerModel):
 
     class Meta:
         model = Contact
@@ -182,22 +189,13 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             "report_to",
             "address_information",
             "additional_information",
-            'account_name'
+            'account_name',
+            'system_status',
         )
 
     @classmethod
-    def validate_account_name(cls, attrs):
-        if attrs is not None:
-            account = Account.objects.filter(
-                id=attrs
-            ).first()
-            if account:
-                return account
-        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
-
-    @classmethod
     def validate_email(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -209,7 +207,7 @@ class ContactCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_mobile(cls, attrs):
-        if attrs is not None:
+        if attrs:
             if Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -219,19 +217,35 @@ class ContactCreateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def validate(self, validate_data):
+        home_address_dict = self.initial_data.get('home_address_dict', [])
+        work_address_dict = self.initial_data.get('work_address_dict', [])
+        if len(home_address_dict) > 0:
+            home_address_dict = home_address_dict[0]
+            for key, _ in home_address_dict.items():
+                if key not in ['home_detail_address']:
+                    validate_data[key] = home_address_dict.get(key, None)
+                else:
+                    validate_data[key] = home_address_dict.get(key, '')
+        if len(work_address_dict) > 0:
+            work_address_dict = work_address_dict[0]
+            for key, _ in work_address_dict.items():
+                if key not in ['work_detail_address']:
+                    validate_data[key] = work_address_dict.get(key, None)
+                else:
+                    validate_data[key] = work_address_dict.get(key, '')
+        return validate_data
+
+    @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
-        account_mapped = Account.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            id=validated_data.get('account_name', None)
-        ).first()
-        account_mapped.owner = contact
-        account_mapped.save()
+        if contact.account_name:
+            contact.account_name.owner = contact
+            contact.account_name.save(update_fields=['owner'])
         return contact
 
 
-class ContactDetailSerializer(serializers.ModelSerializer):
+class ContactDetailSerializer(AbstractDetailSerializerModel):
     salutation = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
@@ -242,7 +256,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Contact
         fields = (
-            "id",
             "owner",
             "job_title",
             "biography",
@@ -255,7 +268,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
             "report_to",
             "address_information",
             "additional_information",
-            "account_name"
+            "account_name",
         )
 
     @classmethod
@@ -270,27 +283,19 @@ class ContactDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
 
     @classmethod
     def get_report_to(cls, obj):
         if obj.report_to:
-            owner = Contact.objects.filter(
-                id=obj.report_to
-            ).first()
-            if owner:
-                return {
-                    'id': obj.report_to,
-                    'fullname': owner.fullname
-                }
+            return {
+                'id': obj.report_to_id,
+                'fullname': obj.report_to.fullname
+            }
         return {}
 
     @classmethod
@@ -336,7 +341,6 @@ class ContactDetailSerializer(serializers.ModelSerializer):
 
 
 class ContactUpdateSerializer(serializers.ModelSerializer):
-    account_name = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Contact
@@ -356,18 +360,8 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             'account_name'
         )
 
-    @classmethod
-    def validate_account_name(cls, value):
-        if value is not None:
-            account = Account.objects.filter(
-                id=value
-            ).first()
-            if account:
-                return account
-        raise serializers.ValidationError({"account_name": AccountsMsg.ACCOUNT_NOT_EXIST})
-
     def validate_email(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.email and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -378,7 +372,7 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
         return None
 
     def validate_mobile(self, attrs):
-        if attrs is not None:
+        if attrs:
             if attrs != self.instance.mobile and Contact.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
@@ -388,12 +382,32 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
             return attrs
         return None
 
+    def validate(self, validate_data):
+        home_address_dict = self.initial_data.get('home_address_dict', [])
+        work_address_dict = self.initial_data.get('work_address_dict', [])
+        if len(home_address_dict) > 0:
+            home_address_dict = home_address_dict[0]
+            for key, _ in home_address_dict.items():
+                if key not in ['home_detail_address']:
+                    validate_data[key] = home_address_dict.get(key, None)
+                else:
+                    validate_data[key] = home_address_dict.get(key, '')
+        if len(work_address_dict) > 0:
+            work_address_dict = work_address_dict[0]
+            for key, _ in work_address_dict.items():
+                if key not in ['work_detail_address']:
+                    validate_data[key] = work_address_dict.get(key, None)
+                else:
+                    validate_data[key] = work_address_dict.get(key, '')
+        return validate_data
+
     def update(self, instance, validated_data):
         if 'account_name' not in validated_data.keys():
             validated_data.update({'account_name': None})
             account_mapped = instance.account_name
-            account_mapped.owner = None
-            account_mapped.save()
+            if account_mapped:
+                account_mapped.owner = None
+                account_mapped.save()
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
@@ -420,12 +434,8 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            owner = Employee.objects.filter(
-                id=obj.owner
-            ).first()
-            if owner:
-                return {
-                    'id': obj.owner,
-                    'fullname': owner.get_full_name(2)
-                }
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.get_full_name(2)
+            }
         return {}
