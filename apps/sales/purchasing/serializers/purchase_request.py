@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder
+from apps.shared import SYSTEM_STATUS, REQUEST_FOR, PURCHASE_STATUS
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
@@ -29,12 +30,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_request_for(cls, obj):
-        if obj.request_for == 0:
-            return 'Sale Order'
-        elif obj.request_for == 1:
-            return 'Stock'
-        else:
-            return 'Other'
+        return dict(REQUEST_FOR).get(obj.request_for)
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -56,18 +52,11 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status == 0:
-            return 'Open'
-        return ''
+        return dict(SYSTEM_STATUS).get(obj.system_status)
 
     @classmethod
     def get_purchase_status(cls, obj):
-        if obj.purchase_status == 0:
-            return 'Wait'
-        elif obj.purchase_status == 1:
-            return 'Partially ordered'
-        else:
-            return 'Ordered'
+        return dict(PURCHASE_STATUS).get(obj.purchase_status)
 
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):

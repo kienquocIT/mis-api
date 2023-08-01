@@ -822,3 +822,4 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                 },
                 'uom_group': obj.product.general_information['uom_group']['title'],
             }
+        return {}

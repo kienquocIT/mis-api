@@ -257,4 +257,3 @@ class SaleOrderProductList(
     @mask_view(login_require=True, auth_require=True, code_perm='')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
-
