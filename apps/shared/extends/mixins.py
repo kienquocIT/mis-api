@@ -19,7 +19,15 @@ from .tasks import call_task_background
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
 
-class BaseMixin(GenericAPIView):    # pylint: disable=R0904
+class DataFilterHandler:
+    def __init__(self):
+        ...
+
+    def unzip_key_and_lookup(self):
+        return {}
+
+
+class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     ser_context: dict[str, any] = {}
     search_fields: list
     filterset_fields: dict
@@ -32,6 +40,7 @@ class BaseMixin(GenericAPIView):    # pylint: disable=R0904
     query_extend_base_model = True
 
     filter_dict: dict = None
+    perm_config_mapped: dict = None  # {"4": {}}
 
     def get_filter_auth(self) -> dict:
         """
@@ -50,6 +59,15 @@ class BaseMixin(GenericAPIView):    # pylint: disable=R0904
                 **self.filter_dict
             }
         return main_filter
+
+    def check_perm_by_obj(self, obj, user_obj=None):
+        if not user_obj:
+            user_obj = self.request.user
+
+        if self.perm_config_mapped:
+            if self.filter_dict:
+                ...
+        return False
 
     class Meta:
         abstract = True
