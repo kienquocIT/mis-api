@@ -39,7 +39,7 @@ class OpportunityList(
         operation_summary="Opportunity List",
         operation_description="Get Opportunity List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -48,7 +48,7 @@ class OpportunityList(
         operation_description="Create new Opportunity",
         request_body=OpportunityCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -78,7 +78,7 @@ class OpportunityDetail(
         operation_summary="Opportunity detail",
         operation_description="Get Opportunity detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -87,6 +87,6 @@ class OpportunityDetail(
         operation_description="Update Opportunity by ID",
         request_body=OpportunityUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

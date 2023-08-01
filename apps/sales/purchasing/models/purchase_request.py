@@ -99,6 +99,13 @@ class PurchaseRequestProduct(SimpleAbstractModel):
         related_name="purchase_request",
     )
 
+    sale_order_product = models.ForeignKey(
+        'saleorder.SaleOrderProduct',
+        on_delete=models.CASCADE,
+        related_name="purchase_request_so_product",
+        null=True,
+    )
+
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,

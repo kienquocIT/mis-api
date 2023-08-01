@@ -38,7 +38,7 @@ class SaleOrderList(
         operation_summary="Sale Order List",
         operation_description="Get Sale Order List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -47,7 +47,7 @@ class SaleOrderList(
         operation_description="Create new Sale Order",
         request_body=SaleOrderCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -77,7 +77,7 @@ class SaleOrderDetail(
         operation_summary="Sale Order detail",
         operation_description="Get Sale Order detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -86,7 +86,7 @@ class SaleOrderDetail(
         operation_description="Update Sale Order by ID",
         request_body=SaleOrderUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -106,7 +106,7 @@ class SaleOrderExpenseList(BaseListMixin):
         operation_summary="SaleOrderExpense List",
         operation_description="Get SaleOrderExpense List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         kwargs.update({
             'sale_order_id': request.query_params['filter_sale_order'],
@@ -123,7 +123,7 @@ class SaleOrderConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Sale Order Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -133,7 +133,7 @@ class SaleOrderConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Sale Order Config Update",
         request_body=SaleOrderConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -158,7 +158,7 @@ class SaleOrderIndicatorList(
         operation_summary="Sale Order Indicator List",
         operation_description="Get Sale Order Indicator List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -167,7 +167,7 @@ class SaleOrderIndicatorList(
         operation_description="Create new Sale Order Indicator",
         request_body=SaleOrderIndicatorCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -185,7 +185,7 @@ class SaleOrderIndicatorDetail(
         operation_summary="Sale Order Indicator detail",
         operation_description="Get Sale Order Indicator detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -194,7 +194,7 @@ class SaleOrderIndicatorDetail(
         operation_description="Update Sale Order Indicator by ID",
         request_body=SaleOrderIndicatorUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -212,7 +212,7 @@ class SaleOrderIndicatorCompanyRestore(
         operation_description="Restore Sale Order Indicator Of Company",
         request_body=SaleOrderIndicatorCompanyRestoreSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -231,7 +231,7 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
         operation_summary="Sale Order List For Cash Outflow",
         operation_description="Get Sale Order List For Cash Outflow",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 

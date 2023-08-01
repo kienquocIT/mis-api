@@ -30,7 +30,10 @@ class RuntimeListView(BaseListMixin):
         return super().get_queryset().select_related('stage_currents', 'doc_employee_created')
 
     @swagger_auto_schema()
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code='base', app_code='workflow', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         params = request.query_params
         if 'flow_id' in params and TypeCheck.check_uuid(params['flow_id']):
@@ -51,18 +54,20 @@ class RuntimeMeListView(BaseListMixin):
             'stage_currents__assignee_of_runtime_stage'
         )
 
+    def get_filter_auth(self) -> dict:
+        return {
+            'doc_employee_created_id': self.request.user.employee_current_id
+        }
+
     @swagger_auto_schema(operation_summary='Runtime of me')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True, use_custom_get_filter_auth=True)
     def get(self, request, *args, **kwargs):
-        if request.user.employee_current_id:
-            kwargs['doc_employee_created_id'] = request.user.employee_current_id
-            return self.list(request, *args, **kwargs)
-        return self.list_empty()
+        return self.list(request, *args, **kwargs)
 
 
 class RuntimeDiagramDetail(APIView):
     @swagger_auto_schema(operation_description='Runtime Detail Diagram')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, runtime_id, **kwargs):
         if TypeCheck.check_uuid(runtime_id):
             # import time
@@ -87,7 +92,7 @@ class RuntimeDiagramDetail(APIView):
 
 class RuntimeDetail(APIView):
     @swagger_auto_schema(operation_description='Runtime Detail')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         if TypeCheck.check_uuid(pk):
             try:
@@ -116,18 +121,20 @@ class RuntimeAssigneeList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related('stage', 'stage__runtime', 'employee')
 
+    def get_filter_auth(self) -> dict:
+        return {
+            'employee_id': self.request.user.employee_current_id
+        }
+
     @swagger_auto_schema(operation_summary='Runtime Task List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True, use_custom_get_filter_auth=True)
     def get(self, request, *args, **kwargs):
-        if request.user.employee_current_id:
-            kwargs['employee_id'] = request.user.employee_current_id
-            return self.list(request, *args, **kwargs)
-        return self.list_empty()
+        return self.list(request, *args, **kwargs)
 
 
 class RuntimeAssigneeDetail(APIView):
     @swagger_auto_schema(operation_summary='Runtime Detail')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, pk, **kwargs):
         if TypeCheck.check_uuid(pk):
             try:

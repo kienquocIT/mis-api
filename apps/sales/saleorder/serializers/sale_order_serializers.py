@@ -793,3 +793,32 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
         if obj.system_status:
             return "Open"
         return "Open"
+
+
+class SaleOrderProductListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'id',
+            'product',
+            'product_quantity',
+            'sale_order',
+            'remain_for_purchase_request',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product:
+            return {
+                'id': obj.product.id,
+                'title': obj.product.title,
+                'code': obj.product.code,
+                'product_choice': obj.product.product_choice,
+                'uom': {
+                    'id': obj.product.sale_information['default_uom']['id'],
+                    'title': obj.product.sale_information['default_uom']['title']
+                },
+                'uom_group': obj.product.general_information['uom_group']['title'],
+            }

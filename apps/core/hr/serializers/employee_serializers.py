@@ -115,6 +115,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'is_active',
             'group',
             'role',
+            'is_admin_company',
         )
 
     @classmethod
@@ -165,6 +166,7 @@ class EmployeeDetailSerializer(PermissionDetailSerializer):
             'dob',
             'date_joined',
             'role',
+            'is_admin_company',
         )
 
     @classmethod
@@ -357,6 +359,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
             'plan_app',
             'group',
             'role',
+            'is_admin_company',
         )
 
     @classmethod
@@ -463,6 +466,7 @@ class EmployeeUpdateSerializer(PermissionsUpdateSerializer):
             'plan_app',
             'group',
             'role',
+            'is_admin_company',
         )
 
     @classmethod

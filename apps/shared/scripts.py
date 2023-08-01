@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, 
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from apps.core.base.models import PlanApplication, ApplicationProperty, Application
+from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -12,8 +12,10 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
-from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping, \
-    ProductWareHouse
+from apps.masterdata.saledata.models import (
+    ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
+    ProductWareHouse,
+)
 from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
@@ -514,6 +516,15 @@ def update_data_product():
         product.save()
 
     print('Done !')
+
+
+def make_full_plan():
+    TenantPlan.objects.all().delete()
+    plan_objs = SubscriptionPlan.objects.all()
+    for tenant in Tenant.objects.all():
+        for plan in plan_objs:
+            TenantPlan.objects.create(tenant=tenant, plan=plan, is_limited=False)
+    print('Make full plan is successfully!')
 
 
 def update_data_sale_order_product():

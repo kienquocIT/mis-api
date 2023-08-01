@@ -170,12 +170,7 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_employee(cls, obj):
         if obj.employee:
-            return {
-                'id': obj.employee.id,
-                'fist_name': obj.employee.first_name,
-                'last_name': obj.employee.last_name,
-                'full_name': obj.employee.get_full_name(),
-            }
+            return obj.employee.get_detail_minimal()
         return {}
 
     @classmethod

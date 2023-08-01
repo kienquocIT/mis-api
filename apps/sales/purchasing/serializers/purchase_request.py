@@ -7,6 +7,12 @@ from apps.shared.translations.sales import PurchaseRequestMsg
 
 
 class PurchaseRequestListSerializer(serializers.ModelSerializer):
+    sale_order = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
+    request_for = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    purchase_status = serializers.SerializerMethodField()
+
     class Meta:
         model = PurchaseRequest
         fields = (
@@ -21,6 +27,48 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
             'purchase_status',
         )
 
+    @classmethod
+    def get_request_for(cls, obj):
+        if obj.request_for == 0:
+            return 'Sale Order'
+        elif obj.request_for == 1:
+            return 'Stock'
+        else:
+            return 'Other'
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        if obj.sale_order:
+            return {
+                'id': obj.sale_order.id,
+                'title': obj.sale_order.title,
+            }
+        return None
+
+    @classmethod
+    def get_supplier(cls, obj):
+        if obj.supplier:
+            return {
+                'id': obj.supplier.id,
+                'title': obj.supplier.name,
+            }
+        return None
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status == 0:
+            return 'Open'
+        return ''
+
+    @classmethod
+    def get_purchase_status(cls, obj):
+        if obj.purchase_status == 0:
+            return 'Wait'
+        elif obj.purchase_status == 1:
+            return 'Partially ordered'
+        else:
+            return 'Ordered'
+
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,12 +78,14 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
 
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField()
+    sale_order_product = serializers.UUIDField(allow_null=True)
     uom = serializers.UUIDField()
     tax = serializers.UUIDField()
 
     class Meta:
         model = PurchaseRequestProduct
         fields = (
+            'sale_order_product',
             'product',
             'description',
             'uom',
@@ -130,7 +180,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
 
 
 class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
-    sale_order = serializers.UUIDField(required=False)
+    sale_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
@@ -176,14 +226,16 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_sale_order(cls, value):
-        try:
-            return SaleOrder.objects.get_current(
-                fill__tenant=True,
-                fill__company=True,
-                id=value
-            )
-        except SaleOrder.DoesNotExist:
-            raise serializers.ValidationError({'sale_order': PurchaseRequestMsg.DOES_NOT_EXIST})
+        if value:
+            try:
+                return SaleOrder.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order': PurchaseRequestMsg.DOES_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_pretax_amount(cls, value):
