@@ -20,6 +20,12 @@ class PurchaseRequestList(
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+        )
+
     @swagger_auto_schema(
         operation_summary="Purchase Request List",
         operation_description="Get Purchase Request List",
@@ -46,6 +52,13 @@ class PurchaseRequestDetail(
     queryset = PurchaseRequest.objects
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestDetailSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+            'contact'
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase Request detail",
