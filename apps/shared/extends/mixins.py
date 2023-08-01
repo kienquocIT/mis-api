@@ -60,7 +60,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             }
         return main_filter
 
-    def check_perm_by_obj(self, obj, user_obj=None):
+    def check_perm_by_obj(self, obj, user_obj=None):  # pylint: disable = W0613
         if not user_obj:
             user_obj = self.request.user
 

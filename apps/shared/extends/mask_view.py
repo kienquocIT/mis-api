@@ -159,7 +159,7 @@ class AuthPermission:
 
     @property
     def return_error_auth_require(self):
-        if hasattr(self.view_this, 'error_auth_require'):
+        if self.request.method == 'GET' and hasattr(self.view_this, 'error_auth_require'):
             return getattr(self.view_this, 'error_auth_require')()
         return ResponseController.forbidden_403()
 
