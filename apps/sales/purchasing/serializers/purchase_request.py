@@ -45,7 +45,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     def get_supplier(cls, obj):
         if obj.supplier:
             return {
-                'id': obj.supplier.id,
+                'id': str(obj.supplier_id),
                 'title': obj.supplier.name,
             }
         return None
