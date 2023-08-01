@@ -236,24 +236,22 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class SaleOrderProductList(
-    BaseListMixin
-):
+class SaleOrderProductList(BaseListMixin):
     permission_classes = [IsAuthenticated]
     queryset = SaleOrderProduct.objects
     serializer_list = SaleOrderProductListSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'product'
+            "product"
         ).filter(
             product__isnull=False
         )
 
     @swagger_auto_schema(
-        operation_summary="Sale Order Product List",
-        operation_description="Get Sale Order Product List",
+        operation_summary="SaleOrderProduct List",
+        operation_description="Get SaleOrderProduct List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
