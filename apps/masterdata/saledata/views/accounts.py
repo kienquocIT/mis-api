@@ -186,6 +186,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
     filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
+    search_fields = ['name']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

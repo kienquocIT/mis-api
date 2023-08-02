@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AnonymousUser
+from django.core.exceptions import EmptyResultSet
 from django.db import models
 from crum import get_current_user
 
@@ -121,15 +122,20 @@ class EntryQuerySet(models.query.QuerySet):
         Notes:
             *** DON'T SHOULD use it for QUERYSET have SELECT_RELATED or PREFETCH_RELATED ***
         """
-        sql_split = str(self.query).rsplit('FROM', maxsplit=1)[-1]
-        key = Caching.key_cache_table(self.table_name, sql_split)
-        data = Caching().get(key)
-        if data:
-            return data
+        try:
+            sql_split = str(self.query).rsplit('FROM', maxsplit=1)[-1]
+            key = Caching.key_cache_table(self.table_name, sql_split)
+            data = Caching().get(key)
+            print('Cache key: ', key)
+            if data:
+                return data
 
-        data = self
-        Caching().set(key, data, timeout=timeout)
-        return data
+            data = self
+            Caching().set(key, data, timeout=timeout)
+            return data
+        except EmptyResultSet:
+            ...
+        return self
 
     def get_current(self, *args, fill__tenant, fill__company, fill__space, fill__map_key, **kwargs):
         """

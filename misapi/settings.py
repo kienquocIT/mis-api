@@ -487,6 +487,29 @@ if ENABLE_PROD is True:
     # media domain
     MEDIA_DOMAIN = os.environ.get('MEDIA_DOMAIN', MEDIA_DOMAIN)
     MEDIA_ENABLED = True if os.environ.get('MEDIA_ENABLED', '0') in [1, '1'] else False
+
+    # caching
+    CACHE_ENABLED = True if os.environ.get("CACHE_ENABLED", '0') in [1, '1'] else False
+    if CACHE_ENABLED is True:
+        CACHE_KEY_PREFIX = os.environ.get('CACHE_KEY_PREFIX', CACHE_KEY_PREFIX)
+        CACHE_VERSION = os.environ.get('CACHE_VERSION', '1')
+        CACHE_HOST = os.environ.get('CACHE_HOST', '127.0.0.1')
+        CACHE_PORT = os.environ.get('CACHE_PORT', '11211')
+        CACHE_OPTION = json.loads(os.environ.get('CACHE_OPTION', '{}'))
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+                'LOCATION': f'{CACHE_HOST}:{CACHE_PORT}',
+                'OPTIONS': {
+                    # 'TIMEOUT': 60 * 15,  # default 5 minutes, current 15 minutes
+                    # 'MAX_ENTRIES': 300,  # default 300, current 300
+                    # 'KEY_PREFIX': CACHE_KEY_PREFIX,
+                    # 'KEY_FUNCTION': 'apps.shared.extends.caching.make_key_global',
+                    # **CACHE_OPTION,  # relate to: https://docs.djangoproject.com/en/4.2/topics/cache/#cache-arguments
+                }
+            }
+        }
+
 # -- PROD configurations
 
 # Tracing

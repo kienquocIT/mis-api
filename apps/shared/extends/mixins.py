@@ -23,8 +23,75 @@ class DataFilterHandler:
     def __init__(self):
         ...
 
-    def unzip_key_and_lookup(self):
+    @classmethod
+    def push_data_to_key(cls, result, key1, key2, data):
+        if key1 in result:
+            if key2 in result:
+                result[key1][key2] = data
+            else:
+                result[key1].update({key2: data})
+        else:
+            result.update(
+                {
+                    key1: {
+                        key2: data,
+                    }
+                }
+            )
+        return result
+
+    @classmethod
+    def parse_value_to_simple(cls, data):
+        if isinstance(data, list):
+            return [str(x) for x in data]
+        if isinstance(data, dict):
+            return {
+                str(key): str(value)
+                for key, value in data.items()
+            }
+        return str(data)
+
+    @classmethod
+    def unzip_key_and_lookup(
+            cls,
+            perm_filter_dict: dict,  # {'tenant_id': '', 'employee_created_id__in': []}
+    ) -> dict:
+        if perm_filter_dict:
+            result_parsed = {}  # {'tenant_id': {'': 'data'}, 'employee_created_id': {'in': []}}
+            for key, value in perm_filter_dict.items():
+                arr_key = key.split("__")
+                if len(arr_key) == 1:
+                    cls.push_data_to_key(result_parsed, key, '', cls.parse_value_to_simple(value))
+                elif len(arr_key) == 2:
+                    cls.push_data_to_key(result_parsed, arr_key[0], arr_key[1], cls.parse_value_to_simple(value))
+                else:
+                    raise ValueError("Don't allow filter over force relate more than 1")
+            return result_parsed
         return {}
+
+    @classmethod
+    def parse_left_and_compare(cls, employee_obj, perm_filter_dict: dict, **kwargs):
+        employee_id = kwargs.get('employee_created_id', employee_obj.id)
+        if employee_id and employee_obj and perm_filter_dict:  # pylint: disable=R1702
+            unzip_filter_dict = cls.unzip_key_and_lookup(perm_filter_dict)
+            if unzip_filter_dict:
+                for key, value in unzip_filter_dict.items():
+                    if isinstance(value, dict):
+                        data_left = None
+                        if key == 'tenant_id':
+                            data_left = str(employee_obj.tenant_id) if employee_obj.tenant_id else None
+                        elif key == 'company_id':
+                            data_left = str(employee_obj.company_id) if employee_obj.company_id else None
+                        elif key == 'employee_created_id':
+                            data_left = str(employee_id)
+
+                        if data_left:
+                            for lookup_key, data in value.items():
+                                if lookup_key == '':
+                                    return data_left == data
+                                if lookup_key == 'in':
+                                    return data_left in data
+        return False
 
 
 class BaseMixin(GenericAPIView):  # pylint: disable=R0904
@@ -39,8 +106,11 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     # exception
     query_extend_base_model = True
 
-    filter_dict: dict = None
+    auth_required: dict = None
+    perm_filter_dict: dict = None  # {'tenant_id': ''}
     perm_config_mapped: dict = None  # {"4": {}}
+    custom_filter_dict: dict = None  # data of get_filter_auth()
+    state_skip_is_admin: bool = False
 
     def get_filter_auth(self) -> dict:
         """
@@ -52,22 +122,54 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def append_filter_authenticate(self, main_filter: dict) -> dict:
-        if self.filter_dict:
-            return {
-                **main_filter,
-                **self.filter_dict
-            }
-        return main_filter
+    def append_filter_authenticate_for_list(self, main_filter: dict) -> dict:
+        really_filter = {}
+        if self.custom_filter_dict:
+            really_filter = self.custom_filter_dict
+        elif self.perm_filter_dict:
+            really_filter = self.perm_filter_dict
 
-    def check_perm_by_obj(self, obj, user_obj=None):
-        if not user_obj:
-            user_obj = self.request.user
+        return {
+            **main_filter,
+            **really_filter,
+        }
 
-        if self.perm_config_mapped:
-            if self.filter_dict:
-                ...
-        return False
+    def check_perm_create(self, body_data: dict, employee_obj=None):
+        if self.state_skip_is_admin is True:
+            return True
+
+        if self.auth_required is True:
+            if not employee_obj:
+                if hasattr(self.request.user, 'employee_current'):
+                    employee_obj = self.request.user.employee_current
+                else:
+                    return False
+
+            if employee_obj and hasattr(employee_obj, 'id') and self.perm_config_mapped:
+                employee_created_id = body_data.get('employee_created', employee_obj.id)
+                return DataFilterHandler.parse_left_and_compare(
+                    employee_obj, self.perm_filter_dict,
+                    employee_created_id=employee_created_id,
+                )
+            return False
+        return True  # always allow when view has auth_required = False
+
+    def check_perm_by_obj(self, obj, employee_obj=None):
+        if self.state_skip_is_admin is True:
+            return True
+
+        if self.auth_required is True:
+            if not employee_obj:
+                if hasattr(self.request.user, 'employee_current'):
+                    employee_obj = self.request.user.employee_current
+                else:
+                    return False
+
+            return DataFilterHandler.parse_left_and_compare(
+                employee_obj, self.perm_filter_dict,
+                employee_created_id=obj.employee_created_id if hasattr(obj, 'employee_created_id') else None,
+            )
+        return True  # always allow when view has auth_required = False
 
     class Meta:
         abstract = True
@@ -180,7 +282,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         Returns:
 
         """
-        return self.append_filter_authenticate(self.setup_hidden(self.list_hidden_field, user))
+        return self.append_filter_authenticate_for_list(self.setup_hidden(self.list_hidden_field, user))
 
     def setup_retrieve_field_hidden(self, user) -> dict:
         """
@@ -471,13 +573,15 @@ class BaseListMixin(BaseMixin):
 
 class BaseCreateMixin(BaseMixin):
     def create(self, request, *args, **kwargs):
-        log_data = deepcopy(request.data)
-        serializer = self.get_serializer_create(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        field_hidden = self.setup_create_field_hidden(request.user)
-        obj = self.perform_create(serializer, extras=field_hidden)
-        self.write_log(doc_obj=obj, request_data=log_data)
-        return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
+        if self.check_perm_create(body_data=request.data):
+            log_data = deepcopy(request.data)
+            serializer = self.get_serializer_create(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            field_hidden = self.setup_create_field_hidden(request.user)
+            obj = self.perform_create(serializer, extras=field_hidden)
+            self.write_log(doc_obj=obj, request_data=log_data)
+            return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
+        return ResponseController.forbidden_403()
 
     @staticmethod
     def perform_create(serializer, extras: dict):
@@ -491,8 +595,10 @@ class BaseRetrieveMixin(BaseMixin):
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = self.get_serializer_detail(instance)
-        return ResponseController.success_200(data=serializer.data, key_data='result')
+        if self.check_perm_by_obj(obj=instance):
+            serializer = self.get_serializer_detail(instance)
+            return ResponseController.success_200(data=serializer.data, key_data='result')
+        return ResponseController.forbidden_403()
 
 
 class BaseUpdateMixin(BaseMixin):
@@ -528,20 +634,22 @@ class BaseUpdateMixin(BaseMixin):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            body_data, partial, task_id = self.parsed_body(
-                instance=instance, request_data=request.data, user=request.user
-            )
-            serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-            # request force write log
-            self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
-            if getattr(instance, '_prefetched_objects_cache', None):
-                # If 'prefetch_related' has been applied to a queryset, we need to
-                # forcibly invalidate the prefetch cache on the instance.
-                instance._prefetched_objects_cache = {}  # pylint: disable=W0212
+            if self.check_perm_by_obj(obj=instance):
+                body_data, partial, task_id = self.parsed_body(
+                    instance=instance, request_data=request.data, user=request.user
+                )
+                serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # request force write log
+                self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}  # pylint: disable=W0212
 
-            return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+                return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+            return ResponseController.forbidden_403()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     def partial_update(self, request, *args, **kwargs):
@@ -558,8 +666,10 @@ class BaseDestroyMixin(BaseMixin):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            self.perform_destroy(instance, is_purge)
-            return ResponseController.no_content_204()
+            if self.check_perm_by_obj(obj=instance):
+                self.perform_destroy(instance, is_purge)
+                return ResponseController.no_content_204()
+            return ResponseController.forbidden_403()
         return ResponseController.forbidden_403(msg=HttpMsg.OBJ_DONE_NO_EDIT)
 
     @staticmethod

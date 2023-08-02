@@ -5,7 +5,7 @@ from django.utils.cache import caches
 
 from .utils import StringHandler
 
-__all__ = ['Caching', 'CacheManagement']
+__all__ = ['Caching', 'CacheManagement', 'make_key_global']
 
 TABLE_REF = {  # clean cache reference when system clean cache of model. Bad performance but real data.
     'account_user': (
@@ -24,6 +24,10 @@ TABLE_REF = {  # clean cache reference when system clean cache of model. Bad per
         'hr_employee',
     )
 }
+
+
+def make_key_global(key, key_prefix, version):
+    return ":".join([key_prefix, str(version), key])
 
 
 class CacheManagement:
