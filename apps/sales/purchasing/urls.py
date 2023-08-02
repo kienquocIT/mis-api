@@ -4,6 +4,6 @@ from apps.sales.purchasing.views import PurchaseRequestList, PurchaseRequestDeta
 
 # purchase request
 urlpatterns = [
-    path('purchase-request', PurchaseRequestList.as_view(), name='PurchaseRequestList'),
+    path('purchase-request/list', PurchaseRequestList.as_view(), name='PurchaseRequestList'),
     path('purchase-request/<str:pk>', PurchaseRequestDetail.as_view(), name='PurchaseRequestDetail'),
 ]

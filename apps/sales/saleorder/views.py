@@ -1,9 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
+from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
+    SaleOrderProduct
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
-    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer
+    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
+    SaleOrderProductListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
@@ -228,6 +230,30 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Sale Order List For Cash Outflow",
         operation_description="Get Sale Order List For Cash Outflow",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class SaleOrderProductList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrderProduct.objects
+    filterset_fields = {
+        'sale_order_id': ['exact', 'in']
+    }
+    serializer_list = SaleOrderProductListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "product"
+        ).filter(
+            product__isnull=False
+        )
+
+    @swagger_auto_schema(
+        operation_summary="SaleOrderProduct List",
+        operation_description="Get SaleOrderProduct List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

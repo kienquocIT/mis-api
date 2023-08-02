@@ -553,10 +553,12 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if sale_order.opportunity:
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': sale_order.system_status,
-            })
+            sale_order.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': sale_order.system_status,
+                }
+            )
         return sale_order
 
 
@@ -688,10 +690,12 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': instance.system_status,
-            })
+            instance.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': instance.system_status,
+                }
+            )
         return instance
 
 
@@ -793,3 +797,33 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
         if obj.system_status:
             return "Open"
         return "Open"
+
+
+class SaleOrderProductListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'id',
+            'product',
+            'product_quantity',
+            'sale_order',
+            'remain_for_purchase_request',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product:
+            return {
+                'id': obj.product_id,
+                'title': obj.product.title,
+                'code': obj.product.code,
+                'product_choice': obj.product.product_choice,
+                'uom': {
+                    'id': obj.product.sale_information['default_uom']['id'],
+                    'title': obj.product.sale_information['default_uom']['title']
+                },
+                'uom_group': obj.product.general_information['uom_group']['title'],
+            }
+        return {}

@@ -342,6 +342,10 @@ class SaleOrderProduct(SimpleAbstractModel):
         null=True
     )
 
+    remain_for_purchase_request = models.FloatField(
+        default=0,
+    )
+
     class Meta:
         verbose_name = 'Sale Order Product'
         verbose_name_plural = 'Sale Order Products'

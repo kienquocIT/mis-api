@@ -1,19 +1,6 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
-
-REQUEST_FOR = [
-    (0, _('For Sale Order')),
-    (1, _('For Stock')),
-    (2, _('For Other')),
-]
-
-PURCHASE_STATUS = [
-    (0, _('Wait')),
-    (1, _('Partially ordered')),
-    (2, _('Ordered')),
-]
+from apps.shared import DataAbstractModel, SimpleAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
 class PurchaseRequest(DataAbstractModel):
@@ -97,6 +84,13 @@ class PurchaseRequestProduct(SimpleAbstractModel):
         PurchaseRequest,
         on_delete=models.CASCADE,
         related_name="purchase_request",
+    )
+
+    sale_order_product = models.ForeignKey(
+        'saleorder.SaleOrderProduct',
+        on_delete=models.CASCADE,
+        related_name="purchase_request_so_product",
+        null=True,
     )
 
     product = models.ForeignKey(
