@@ -816,7 +816,7 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
     def get_product(cls, obj):
         if obj.product:
             return {
-                'id': obj.product.id,
+                'id': obj.product_id,
                 'title': obj.product.title,
                 'code': obj.product.code,
                 'product_choice': obj.product.product_choice,

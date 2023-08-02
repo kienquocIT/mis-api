@@ -36,7 +36,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     def get_sale_order(cls, obj):
         if obj.sale_order:
             return {
-                'id': obj.sale_order.id,
+                'id': obj.sale_order_id,
                 'title': obj.sale_order.title,
             }
         return None
@@ -45,7 +45,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     def get_supplier(cls, obj):
         if obj.supplier:
             return {
-                'id': str(obj.supplier_id),
+                'id': obj.supplier_id,
                 'title': obj.supplier.name,
             }
         return None
@@ -97,7 +97,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     def get_sale_order(cls, obj):
         if obj.sale_order:
             return {
-                'id': obj.sale_order.id,
+                'id': obj.sale_order_id,
                 'code': obj.sale_order.code,
                 'title': obj.sale_order.title,
             }
@@ -107,7 +107,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     def get_supplier(cls, obj):
         if obj.supplier:
             return {
-                'id': obj.supplier.id,
+                'id': obj.supplier_id,
                 'name': obj.supplier.name,
             }
         return None
@@ -116,7 +116,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     def get_contact(cls, obj):
         if obj.supplier:
             return {
-                'id': obj.contact.id,
+                'id': obj.contact_id,
                 'name': obj.contact.fullname,
             }
         return None

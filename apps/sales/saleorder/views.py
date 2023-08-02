@@ -239,6 +239,7 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
 class SaleOrderProductList(BaseListMixin):
     permission_classes = [IsAuthenticated]
     queryset = SaleOrderProduct.objects
+    filterset_fields = [{'sale_order_id': ['exact', 'in']}]
     serializer_list = SaleOrderProductListSerializer
 
     def get_queryset(self):
