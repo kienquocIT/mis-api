@@ -272,7 +272,7 @@ class ProductTestCase(AdvanceTestCase):
         data = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            'product_choice': [0, 1],
+            'product_choice': [0, 1, 2],
             'product_type': product_type['id'],
             'product_category': product_category['id'],
             'uom_group': uom_group.data['result']['id'],
@@ -493,7 +493,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'general_information', 'sale_information',],
+            ['id', 'code', 'title', 'general_information', 'sale_information', 'product_choice'],
             check_sum_second=True,
         )
         return response

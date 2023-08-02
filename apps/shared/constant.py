@@ -171,3 +171,16 @@ PERMISSION_OPTION_RANGE = (
     (0, 'All option range'),
     (1, 'Only company range'),
 )
+
+# Purchase request
+REQUEST_FOR = [
+    (0, _('For Sale Order')),
+    (1, _('For Stock')),
+    (2, _('For Other')),
+]
+
+PURCHASE_STATUS = [
+    (0, _('Wait')),
+    (1, _('Partially ordered')),
+    (2, _('Ordered')),
+]
