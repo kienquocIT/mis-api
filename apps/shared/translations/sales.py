@@ -27,3 +27,4 @@ class PurchaseRequestMsg:
     GREATER_THAN_ZERO = _('Value must be greater than zero')
     NOT_PURCHASE = _('Has not been configured for purchase')
     NOT_IN_SALE_ORDER = _('Not in Sale Order')
+    PURCHASE_REQUEST_NOT_EXIST = _('Purchase request does not exist')

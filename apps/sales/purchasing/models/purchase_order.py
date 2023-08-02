@@ -1,0 +1,232 @@
+from django.db import models
+
+from apps.shared import DataAbstractModel, SimpleAbstractModel
+
+
+class PurchaseOrder(DataAbstractModel):
+    purchase_requests = models.ManyToManyField(
+        'purchasing.PurchaseRequest',
+        through="PurchaseOrderRequest",
+        symmetrical=False,
+        blank=True,
+        related_name='purchase_order_map_request'
+    )
+    purchase_requests_data = models.JSONField(
+        default=list,
+        help_text="read data purchase requests, use for get list or detail"
+    )
+    # purchase_quotations = models.ManyToManyField(
+    #     'purchasing.PurchaseQuotation',
+    #     through="PurchaseOrderQuotation",
+    #     symmetrical=False,
+    #     blank=True,
+    #     related_name='purchase_order_map_quotation'
+    # )
+    supplier = models.ForeignKey(
+        'saledata.Account',
+        on_delete=models.CASCADE,
+        verbose_name="supplier",
+        related_name="purchase_order_supplier",
+        null=True,
+        help_text="sale data Accounts have type supplier"
+    )
+    contact = models.ForeignKey(
+        'saledata.Contact',
+        on_delete=models.CASCADE,
+        verbose_name="contact",
+        related_name="purchase_order_contact",
+        null=True
+    )
+    date_delivered = models.DateTimeField(
+        null=True,
+        help_text='date that products will be delivered',
+    )
+    status_delivered = models.SmallIntegerField(default=0)
+    # tab products
+    purchase_order_products_data = models.JSONField(
+        default=list,
+        help_text="read data products, use for get list or detail"
+    )
+    # total amount of products
+    total_product_pretax_amount = models.FloatField(
+        default=0,
+        help_text="total pretax amount of tab product"
+    )
+    total_product_tax = models.FloatField(
+        default=0,
+        help_text="total tax of tab product"
+    )
+    total_product = models.FloatField(
+        default=0,
+        help_text="total amount of tab product"
+    )
+    total_product_revenue_before_tax = models.FloatField(
+        default=0,
+        help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
+    )
+
+    class Meta:
+        verbose_name = 'Purchase Order'
+        verbose_name_plural = 'Purchase Orders'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseOrderRequest(SimpleAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_request_order",
+    )
+    purchase_request = models.ForeignKey(
+        'purchasing.PurchaseRequest',
+        on_delete=models.CASCADE,
+        verbose_name="purchase request",
+        related_name="purchase_order_request_request",
+    )
+
+    class Meta:
+        verbose_name = 'Purchase Order Request'
+        verbose_name_plural = 'Purchase Order Requests'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+# class PurchaseOrderQuotation(SimpleAbstractModel):
+#     purchase_order = models.ForeignKey(
+#         PurchaseOrder,
+#         on_delete=models.CASCADE,
+#         verbose_name="purchase order",
+#         related_name="purchase_order_quotation_order",
+#     )
+#     purchase_quotation = models.ForeignKey(
+#         'purchasing.PurchaseQuotation',
+#         on_delete=models.CASCADE,
+#         verbose_name="purchase quotation",
+#         related_name="purchase_order_quotation_quotation",
+#     )
+#     is_use = models.BooleanField(
+#         default=False,
+#         help_text='purchase quotation that used to order',
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Purchase Order Quotation'
+#         verbose_name_plural = 'Purchase Order Quotations'
+#         ordering = ()
+#         default_permissions = ()
+#         permissions = ()
+
+
+class PurchaseOrderProductRequest(SimpleAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_product_order",
+    )
+    purchase_request_product = models.ForeignKey(
+        'purchasing.PurchaseRequestProduct',
+        on_delete=models.CASCADE,
+        verbose_name="purchase request product",
+        related_name="purchase_order_product_request",
+    )
+    sale_order_product = models.ForeignKey(
+        'saleorder.SaleOrderProduct',
+        on_delete=models.CASCADE,
+        related_name="purchase_order_so_product",
+        null=True,
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="purchase_order_product_product",
+        null=True
+    )
+    uom_request = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of product on purchase request",
+        related_name="purchase_order_product_uom_request",
+        null=True
+    )
+    uom_order = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of product on purchase quotation",
+        related_name="purchase_order_product_uom_quotation",
+        null=True
+    )
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="purchase_order_product_tax",
+        null=True
+    )
+    stock = models.FloatField(
+        default=0,
+        help_text='quantity of product in stock',
+    )
+    # product information
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_description = models.TextField(
+        blank=True,
+        null=True
+    )
+    product_uom_request_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_uom_order_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_quantity_request = models.FloatField(
+        default=0,
+        help_text='quantity of product, UI get default by purchase request',
+    )
+    product_quantity_order = models.FloatField(
+        default=0,
+        help_text='quantity of product, UI get default by purchase request',
+    )
+    product_unit_price = models.FloatField(
+        default=0,
+        help_text='price of product, UI get default by supplier price',
+    )
+    product_tax_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_subtotal_price = models.FloatField(
+        default=0
+    )
+    product_subtotal_price_after_tax = models.FloatField(
+        default=0
+    )
+    order = models.IntegerField(
+        default=1
+    )
+
+    class Meta:
+        verbose_name = 'Purchase Order Product'
+        verbose_name_plural = 'Purchase Order Products'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()

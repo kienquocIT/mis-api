@@ -12,7 +12,7 @@ urlpatterns = [
     path('indicator-restore/<str:pk>', SaleOrderIndicatorCompanyRestore.as_view(),
          name='SaleOrderIndicatorCompanyRestore'),
 
-    path('lists', SaleOrderList.as_view(), name='SaleOrderList'),
+    path('list', SaleOrderList.as_view(), name='SaleOrderList'),
     path('list-for-cashoutflow', SaleOrderListForCashOutFlow.as_view(), name='SaleOrderListForCashOutFlow'),
     path('<str:pk>', SaleOrderDetail.as_view(), name='SaleOrderDetail'),
     path('saleorder-expense-list/lists', SaleOrderExpenseList.as_view(), name='SaleOrderExpenseList'),
