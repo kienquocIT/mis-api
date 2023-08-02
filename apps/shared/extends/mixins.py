@@ -164,10 +164,10 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     employee_obj = self.request.user.employee_current
                 else:
                     return False
-
+            print('employee_created_id: ', getattr(obj, 'employee_created_id', '1'))
             return DataFilterHandler.parse_left_and_compare(
                 employee_obj, self.perm_filter_dict,
-                employee_created_id=obj.employee_created_id if hasattr(obj, 'employee_created_id') else None,
+                **({'employee_created_id': obj.employee_created_id} if hasattr(obj, 'employee_created_id') else {}),
             )
         return True  # always allow when view has auth_required = False
 
