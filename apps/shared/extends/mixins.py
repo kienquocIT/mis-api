@@ -72,7 +72,7 @@ class DataFilterHandler:
     @classmethod
     def parse_left_and_compare(cls, employee_obj, perm_filter_dict: dict, **kwargs):
         employee_id = kwargs.get('employee_created_id', employee_obj.id)
-        if employee_id and employee_obj and perm_filter_dict:  # pylint: disable=R1702
+        if employee_obj and perm_filter_dict:  # pylint: disable=R1702
             unzip_filter_dict = cls.unzip_key_and_lookup(perm_filter_dict)
             if unzip_filter_dict:
                 for key, value in unzip_filter_dict.items():
@@ -83,7 +83,10 @@ class DataFilterHandler:
                         elif key == 'company_id':
                             data_left = str(employee_obj.company_id) if employee_obj.company_id else None
                         elif key == 'employee_created_id':
-                            data_left = str(employee_id)
+                            if employee_id:
+                                data_left = str(employee_id)
+                            else:
+                                return False
 
                         if data_left:
                             for lookup_key, data in value.items():
