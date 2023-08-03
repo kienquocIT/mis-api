@@ -20,6 +20,11 @@ class PurchaseRequestList(
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'purchase_request',
+        )
+
     @swagger_auto_schema(
         operation_summary="Purchase Request List",
         operation_description="Get Purchase Request List",
