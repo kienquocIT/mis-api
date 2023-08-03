@@ -47,7 +47,8 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
             'pretax_price',
             'taxes_price',
             'total_price',
-            'products_mapped'
+            'products_mapped',
+            'purchase_quotation_request_type'
         )
 
     @classmethod
@@ -122,7 +123,8 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
             'note',
             'pretax_price',
             'taxes_price',
-            'total_price'
+            'total_price',
+            'purchase_quotation_request_type'
         )
 
     @classmethod
@@ -145,7 +147,7 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         purchase_request_list = self.initial_data.get('purchase_request_list', [])
-        if len(purchase_request_list) <= 0:
+        if len(purchase_request_list) <= 0 and not validate_data.get('purchase_quotation_request_type', None):
             raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PR_NOT_NULL})
         products_selected = self.initial_data.get('products_selected', [])
         if len(products_selected) <= 0:
