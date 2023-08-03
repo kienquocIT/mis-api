@@ -70,7 +70,7 @@ class DataFilterHandler:
         return {}
 
     @classmethod
-    def parse_left_and_compare(cls, employee_obj, perm_filter_dict: dict, **kwargs):
+    def parse_left_and_compare(cls, employee_obj, perm_filter_dict: dict, **kwargs):  # pylint: disable=R0912
         employee_id = kwargs.get('employee_created_id', employee_obj.id)
         if employee_obj and perm_filter_dict:  # pylint: disable=R1702
             unzip_filter_dict = cls.unzip_key_and_lookup(perm_filter_dict)
