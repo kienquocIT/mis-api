@@ -27,7 +27,7 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
         operation_summary="Purchase Quotation Request List",
         operation_description="Get Purchase Quotation Request List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -36,7 +36,7 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Purchase Quotation Request",
         request_body=PurchaseQuotationRequestCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
