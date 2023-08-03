@@ -31,7 +31,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_request_for(cls, obj):
-        return dict(REQUEST_FOR).get(obj.request_for)\
+        return dict(REQUEST_FOR).get(obj.request_for)
 
     @classmethod
     def get_product_list(cls, obj):
