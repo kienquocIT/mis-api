@@ -28,3 +28,4 @@ class PurchaseRequestMsg:
     PRODUCT_NOT_NULL = _('Products must not null.')
     GREATER_THAN_ZERO = _('Value must be greater than zero')
     NOT_PURCHASE = _('Has not been configured for purchase')
+    NOT_IN_SALE_ORDER = _('Not in Sale Order')

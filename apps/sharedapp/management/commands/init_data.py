@@ -115,6 +115,11 @@ class InitialsData:
 
     @classmethod
     def active_loads(cls, cls_model: Model, data: dict, is_destroy_diff: bool) -> any:
+        if isinstance(cls_model, PlanApplication):
+            tmp = PlanApplication.objects.all().delete()
+            if tmp:
+                tmp.delete()
+
         for idx, more_fields in data.items():
             obj, _created = cls_model.objects.get_or_create(pk=idx, defaults=more_fields)
             if _created is False:

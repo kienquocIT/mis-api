@@ -20,7 +20,9 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
         operation_summary="Shipping list",
         operation_description="Shipping list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -29,7 +31,10 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Shipping",
         request_body=ShippingCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -44,7 +49,9 @@ class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Shipping detail",
         operation_description="Get Expense detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -53,7 +60,10 @@ class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Update Shipping by ID",
         request_body=ShippingUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -69,6 +79,8 @@ class ShippingCheckList(BaseListMixin):
         operation_summary="Shipping check list",
         operation_description="Shipping check list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -68,6 +68,15 @@ class WarehouseQuantityHandle:
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
+    is_not_inventory = serializers.SerializerMethodField(default=False)
+
+    @classmethod
+    def get_is_not_inventory(cls, obj):
+        if obj.product.product_choice:
+            if 1 in obj.product.product_choice:
+                return bool(True)
+        return bool(False)
+
     class Meta:
         model = OrderDeliveryProduct
         fields = (
@@ -82,6 +91,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'ready_quantity',
             'delivery_data',
             'picked_quantity',
+            'is_not_inventory'
         )
 
 
@@ -321,24 +331,27 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         ):
             obj_key = str(obj.product_id) + "___" + str(obj.order)
             if obj_key in product_done:
-                # kiểm tra product id và order trùng với product update ko
-                delivery_data = product_done[obj_key]['delivery_data']  # list format
-                obj.picked_quantity = product_done[obj_key]['picked_num']
-                obj.delivery_data = delivery_data
+                if 1 in obj.product.product_choice:
+                    # kiểm tra product id và order trùng với product update ko
+                    delivery_data = product_done[obj_key]['delivery_data']  # list format
+                    obj.picked_quantity = product_done[obj_key]['picked_num']
+                    obj.delivery_data = delivery_data
 
-                if (config.is_picking and config.is_partial_ship and
-                        obj.picked_quantity > obj.remaining_quantity):
-                    raise serializers.ValidationError(
-                        {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
+                    if (config.is_picking and config.is_partial_ship and
+                            obj.picked_quantity > obj.remaining_quantity):
+                        raise serializers.ValidationError(
+                            {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
+                        )
+
+                    # config case 1, 2, 3
+                    cls.minus_product_warehouse_stock(
+                        {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
+                        obj,
+                        delivery_data,
+                        config
                     )
-
-                # config case 1, 2, 3
-                cls.minus_product_warehouse_stock(
-                    {'tenant_id': sub.tenant_id, 'company_id': sub.company_id},
-                    obj,
-                    delivery_data,
-                    config
-                )
+                else:
+                    obj.picked_quantity = product_done[obj_key]['picked_num']
                 obj.save(update_fields=['picked_quantity', 'delivery_data'])
 
     @classmethod
@@ -492,9 +505,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # declare default object
         validated_product = validated_data['products']
-        config = DeliveryConfig.objects.get(company_id=instance.company_id)
-        is_picking = config.is_picking
-        is_partial = config.is_partial_ship
+        config = instance.config_at_that_point
+        if not config:
+            config = DeliveryConfig.objects.get(company_id=instance.company_id)
+        is_picking = config['is_picking']
+        is_partial = config['is_partial_ship']
         product_done = {}
         total_done = 0
         for item in validated_product:

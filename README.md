@@ -208,7 +208,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_summary="Company list",
         operation_description="Company list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')  # hỗ trợ kiểm tra trung gian trước khi vào view
+    @mask_view(login_require=True, auth_require=False)  # hỗ trợ kiểm tra trung gian trước khi vào view
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -217,12 +217,12 @@ class CompanyList(BaseListMixin, BaseCreateMixin):  # Kế thừa (extend) từ 
         operation_description="Create new Company",
         request_body=CompanyCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
-# @mask_view(login_require=True, auth_require=True, code_perm='')
+# @mask_view(login_require=True, auth_require=False)
 # 1. login_require: Yêu cầu đã đăng nhập (token còn hạn sử dụng - định danh người dùng) --> Đảm bảo lúc chạy view request.user là đã xác thực
 # 2. auth_require: Yêu cầu kiểm tra quyền trước khi vào view (bắt buộc login_require = True khi dùng option này)
 # 3. code_perm: mã để kiểm tra quyền ==> Đang được phát triển
@@ -522,4 +522,62 @@ MediaForceAPI.get_file_check(media_file_id=media_file_id, media_user_id=employee
 
 1. Check exist: Files.check_media_file()
 2. Create new: Files.regis_media_file()
+---
+
+#### Phân Quyền
+** Mọi quyền hành sẽ được gộp lại (merge) để thành quyền cao nhất nếu trùng lặp về loại quyền và khác quy mô.
+
+I. Quyền mặc định
+1. [TENANT] Đối với is_admin_tenant || is_admin_company:
+   - Công Ty: List, Detail, Create, Edit, Destroy, Overview
+   - Công Ty & Người Dùng: Thêm, Xóa
+
+2. [COMPANY] Đối với is_admin:
+   - Công Ty: List, Detail, Create, Edit
+   - Người dùng: List, Detail, Create, Edit, Destroy
+   - Nhân viên: List, Detail, Create, Edit, Destroy
+
+II. Quick Setup (Cấu hình nhanh)
+1. Simple: Sử dụng cho nhân viên bình thường
+   -  Task: List, Detail, Create, Edit, Delete | Owner
+   - 
+2. Administror: Sử dụng cho người quản trị
+   - Workflow: List, Detail, Create, Edit, Destroy
+   - 
+3. HR Manager: Sử dụng cho người quản trị nhân sự
+   - Vai Trò: List, Detail, Create, Edit, Delete | company
+   - Phòng Ban: List, Detail, Create, Edit, Delete | company
+   - 
+4. Warehouse Manager: Sử dụng cho người quản trị kho bãi hàng hóa
+   - Warehouse: List, Detail, Create, Edit, Delete | company
+   - 
+5. 
+
+III. Kiểm tra quyền
+1. VIEW (LIST)
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện lọc
+> 3. Trả danh sách theo điều kiện lọc
+2. VIEW (DETAIL)
+> 1. Truy vấn OBJ
+> 2. Kiểm tra quyền
+> 3. Lấy điều kiện quyền
+> 4. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+3. CREATE
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện quyền
+> 3. Kiểm tra điều kiện quyền với request.data.employee_inherit || request.data.employee_created
+4. EDIT
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép EDIT
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+5. DELETE
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép DELETE | Cancel
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+
 ---

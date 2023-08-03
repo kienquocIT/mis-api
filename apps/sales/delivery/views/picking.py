@@ -26,7 +26,7 @@ class OrderPickingList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary='Order Picking List',
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -49,7 +49,7 @@ class OrderPickingSubDetail(
         operation_summary='Order Picking Sub Detail',
         operation_description="Get picking sub detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -58,6 +58,6 @@ class OrderPickingSubDetail(
         operation_description="Update picked quantity (Done) for Order picking product/sub of table",
         serializer_update=OrderPickingSubUpdateSerializer
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)

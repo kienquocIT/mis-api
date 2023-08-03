@@ -5,7 +5,7 @@ from rest_framework import status
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.tests import ProductTestCase
-from apps.shared import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
 

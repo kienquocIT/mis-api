@@ -21,7 +21,10 @@ class PurchaseRequestList(
     create_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related(
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+        ).prefetch_related(
             'purchase_request',
         )
 
@@ -29,7 +32,7 @@ class PurchaseRequestList(
         operation_summary="Purchase Request List",
         operation_description="Get Purchase Request List",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -38,7 +41,7 @@ class PurchaseRequestList(
         operation_description="Create new Purchase Request",
         request_body=PurchaseRequestCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -52,10 +55,17 @@ class PurchaseRequestDetail(
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestDetailSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+            'contact'
+        )
+
     @swagger_auto_schema(
         operation_summary="Purchase Request detail",
         operation_description="Get Purchase Request detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
