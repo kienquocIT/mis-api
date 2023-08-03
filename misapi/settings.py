@@ -368,6 +368,7 @@ FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 # -- page API documentations
 
 # Cache
+CACHE_ENABLED = False
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
@@ -492,7 +493,6 @@ if ENABLE_PROD is True:
     CACHE_ENABLED = True if os.environ.get("CACHE_ENABLED", '0') in [1, '1'] else False
     if CACHE_ENABLED is True:
         CACHE_KEY_PREFIX = os.environ.get('CACHE_KEY_PREFIX', CACHE_KEY_PREFIX)
-        CACHE_VERSION = os.environ.get('CACHE_VERSION', '1')
         CACHE_HOST = os.environ.get('CACHE_HOST', '127.0.0.1')
         CACHE_PORT = os.environ.get('CACHE_PORT', '11211')
         CACHE_OPTION = json.loads(os.environ.get('CACHE_OPTION', '{}'))
@@ -535,7 +535,8 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.GREEN, f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)} \033[0m')
     print(Fore.RED, f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)} \033[0m')
     print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
-    print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
+    print(Fore.LIGHTMAGENTA_EX, f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED} \033[0m')
+    print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
 
 CELERY_TASK_ALWAYS_EAGER = True
