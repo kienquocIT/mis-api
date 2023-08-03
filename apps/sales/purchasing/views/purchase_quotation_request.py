@@ -55,6 +55,6 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Purchase Quotation Request detail",
         operation_description="Get Purchase Quotation Request detail by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
