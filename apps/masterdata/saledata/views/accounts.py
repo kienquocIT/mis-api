@@ -130,7 +130,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary="Industry list",
