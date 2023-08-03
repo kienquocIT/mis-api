@@ -2,8 +2,9 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.purchasing.models import PurchaseRequest
-from apps.sales.purchasing.serializers import PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, \
-    PurchaseRequestDetailSerializer
+from apps.sales.purchasing.serializers import (
+    PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 

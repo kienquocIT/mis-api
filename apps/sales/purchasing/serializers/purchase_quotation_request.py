@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import (
     PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest
 )
-from apps.sales.saleorder.models import SaleOrder
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 

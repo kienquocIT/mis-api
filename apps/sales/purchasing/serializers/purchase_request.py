@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -13,7 +12,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
-	product_list = serializers.SerializerMethodField()
+    product_list = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -32,8 +31,9 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_request_for(cls, obj):
-        return dict(REQUEST_FOR).get(obj.request_for)
-	@classmethod
+        return dict(REQUEST_FOR).get(obj.request_for)\
+
+    @classmethod
     def get_product_list(cls, obj):
         product_list = []
         for item in obj.purchase_request.all():
@@ -49,6 +49,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
                 'description': item.description
             })
         return product_list
+
     @classmethod
     def get_sale_order(cls, obj):
         if obj.sale_order:
