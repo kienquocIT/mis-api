@@ -375,6 +375,7 @@ CACHES = {
     }
 }
 CACHE_KEY_PREFIX = 'MiS'
+CACHE_EXPIRES_DEFAULT = 15 * 60  # 15 minutes
 # -- Cache
 
 # option account user create
@@ -496,6 +497,7 @@ if ENABLE_PROD is True:
         CACHE_HOST = os.environ.get('CACHE_HOST', '127.0.0.1')
         CACHE_PORT = os.environ.get('CACHE_PORT', '11211')
         CACHE_OPTION = json.loads(os.environ.get('CACHE_OPTION', '{}'))
+        CACHE_EXPIRES_DEFAULT = int(os.environ.get('CACHE_EXPIRES_DEFAULT', CACHE_EXPIRES_DEFAULT))
         CACHES = {
             'default': {
                 'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',

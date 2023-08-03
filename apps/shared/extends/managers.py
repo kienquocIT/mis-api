@@ -1,3 +1,6 @@
+from typing import Union
+
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import EmptyResultSet
 from django.db import models
@@ -113,9 +116,13 @@ class EntryQuerySet(models.query.QuerySet):
         )
         return self.filter(*args, **kwargs_converted)
 
-    def cache(self, timeout=None):
+    def cache(self, timeout: Union[None, int] = None):
         """
         Call cache() from QuerySet for get cache value else get data then force save cache.
+        timout:
+            None: use default
+            0: forever
+            > 0: expires seconds
         Returns:
             QuerySet()
 
@@ -131,6 +138,12 @@ class EntryQuerySet(models.query.QuerySet):
                 return data
 
             data = self
+            if timeout is None:
+                timeout = settings.CACHE_EXPIRES_DEFAULT
+            elif timeout == 0:
+                timeout = None
+            else:
+                timeout = timeout * 60
             Caching().set(key, data, timeout=timeout)
             return data
         except EmptyResultSet:
