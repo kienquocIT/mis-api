@@ -83,6 +83,14 @@ class Application(CoreAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def get_range_allow(cls, opt):
+        if opt == 0:
+            return ["1", "2", "3", "4"]
+        if opt == 1:
+            return ["4"]
+        return []
+
     def parse_obj(self):
         return {
             'id': str(self.id),

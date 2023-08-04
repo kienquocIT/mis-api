@@ -224,5 +224,6 @@ class AdvanceTestCase(TestCase):
             PermissionsUpdateSerializer.force_permissions(
                 instance=employee_obj, validated_data={'permission_by_configured': FULL_PERMISSIONS_BY_CONFIGURED}
             )
+            employee_obj.is_admin_company = True
             employee_obj.save()
         return response.data['result']
