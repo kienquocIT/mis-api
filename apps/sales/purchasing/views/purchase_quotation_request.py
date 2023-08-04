@@ -16,11 +16,11 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
     serializer_create = PurchaseQuotationRequestCreateSerializer
     serializer_detail = PurchaseQuotationRequestDetailSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'purchase_quotation_request', 'purchase_quotation_request_mapped'
+            'purchase_quotation_request', 'purchase_request_mapped'
         )
 
     @swagger_auto_schema(
@@ -45,10 +45,11 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotationRequest.objects
     serializer_detail = PurchaseQuotationRequestDetailSerializer
+    update_hidden_field = ['employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'purchase_quotation_request', 'purchase_quotation_request_mapped',
+            'purchase_quotation_request', 'purchase_request_mapped'
         )
 
     @swagger_auto_schema(

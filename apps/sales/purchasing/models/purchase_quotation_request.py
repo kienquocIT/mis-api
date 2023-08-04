@@ -49,6 +49,14 @@ class PurchaseQuotationRequest(DataAbstractModel):
         help_text='sum after tax price of products'
     )
 
+    purchase_request_mapped = models.ManyToManyField(
+        'purchasing.PurchaseRequest',
+        through='PurchaseQuotationRequestPurchaseRequest',
+        symmetrical=False,
+        blank=True,
+        related_name='purchase_request_mapped'
+    )
+
     class Meta:
         verbose_name = 'Purchase Quotation Request'
         verbose_name_plural = 'Purchase Quotation Requests'
@@ -61,13 +69,11 @@ class PurchaseQuotationRequestPurchaseRequest(SimpleAbstractModel):
     purchase_quotation_request = models.ForeignKey(
         PurchaseQuotationRequest,
         on_delete=models.CASCADE,
-        related_name="purchase_quotation_request_mapped",
     )
 
     purchase_request = models.ForeignKey(
         'purchasing.PurchaseRequest',
-        on_delete=models.CASCADE,
-        related_name="purchase_request_mapped",
+        on_delete=models.CASCADE
     )
 
     class Meta:

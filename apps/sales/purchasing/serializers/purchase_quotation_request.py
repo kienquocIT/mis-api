@@ -22,11 +22,11 @@ class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_purchase_requests(cls, obj):
         purchase_request_list = []
-        for item in obj.purchase_quotation_request_mapped.all():
+        for item in obj.purchase_request_mapped.all():
             purchase_request_list.append({
-                'id': item.purchase_request_id,
-                'code': item.purchase_request.code,
-                'title': item.purchase_request.title
+                'id': item.id,
+                'code': item.code,
+                'title': item.title
             })
         return purchase_request_list
 
@@ -54,8 +54,8 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_purchase_requests(cls, obj):
         purchase_request_list = []
-        for item in obj.purchase_quotation_request_mapped.all():
-            purchase_request_list.append(item.purchase_request_id)
+        for item in obj.purchase_request_mapped.all():
+            purchase_request_list.append(item.id)
         return purchase_request_list
 
     @classmethod
@@ -69,8 +69,8 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'code': item.product.code,
                     'title': item.product.title,
-                    'uom': {'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title},
-                    'tax': {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
+                    'uom': {'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title} if item.uom else {},
+                    'tax': {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title} if item.tax else {}
                 },
                 'description': item.description,
                 'quantity': item.quantity,
