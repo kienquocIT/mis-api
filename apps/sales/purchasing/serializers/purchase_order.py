@@ -145,7 +145,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    purchase_requests = serializers.ListField(
+    purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
@@ -194,7 +194,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
-    purchase_requests = serializers.ListField(
+    purchase_requests_data = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
