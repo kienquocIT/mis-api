@@ -12,7 +12,6 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
     request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
-    product_list = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequest
@@ -26,29 +25,11 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
             'delivered_date',
             'system_status',
             'purchase_status',
-            'product_list'
         )
 
     @classmethod
     def get_request_for(cls, obj):
         return dict(REQUEST_FOR).get(obj.request_for)
-
-    @classmethod
-    def get_product_list(cls, obj):
-        product_list = []
-        for item in obj.purchase_request.all():
-            product_list.append({
-                'id': item.product_id,
-                'title': item.product.title,
-                'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
-                'quantity': item.quantity,
-                'purchase_request_id': item.purchase_request_id,
-                'purchase_request_code': item.purchase_request.code,
-                'product_unit_price': item.unit_price,
-                'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
-                'description': item.description
-            })
-        return product_list
 
     @classmethod
     def get_sale_order(cls, obj):
