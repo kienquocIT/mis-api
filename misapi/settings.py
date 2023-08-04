@@ -540,5 +540,3 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.LIGHTMAGENTA_EX, f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED} \033[0m')
     print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
-
-CELERY_TASK_ALWAYS_EAGER = True
