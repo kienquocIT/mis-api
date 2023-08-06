@@ -6,7 +6,8 @@ from django.utils import timezone
 
 from apps.masterdata.saledata.tests import IndustryTestCase, ConfigPaymentTermTestCase, ProductTestCase, \
     WareHouseTestCase
-from apps.sales.delivery.models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct
+from apps.sales.delivery.models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, \
+    OrderPicking, OrderPickingSub, OrderPickingProduct
 
 from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared.extends.tests import AdvanceTestCase
@@ -50,7 +51,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         response = IndustryTestCase.test_create_new(self)
         return response
 
-    def test_create_config_payment_term(self):
+    def test_01_create_config_payment_term(self):
         response = ConfigPaymentTermTestCase.test_create_config_payment_term(self)
         self.assertEqual(response.status_code, 201)
         return response
@@ -174,7 +175,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         return response
 
-    def test_create_sale_order(self):
+    def test_02_create_sale_order(self):
         data_salutation = {  # noqa
             "code": "S01ORDER",
             "title": "MrORDER",
@@ -241,7 +242,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         opportunity = None
         customer = response_account.data['result']['id']
         employee = self.get_employee().data['result'][0]['id']
-        payment_term = self.test_create_config_payment_term().data['result']['id']
+        payment_term = self.test_01_create_config_payment_term().data['result']['id']
         data = {
             "title": "Đơn hàng test",
             "opportunity": opportunity,
@@ -301,10 +302,12 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             ],
             check_sum_second=True,
         )
+        self.sale_order = response
         self.url = reverse("ProductList")
         prod = ProductTestCase.test_create_product(self)
         prod_detail = prod.data['result']
         warehouse = WareHouseTestCase.test_warehouse_create(self)
+        self.warehouse = warehouse
         good_receipt_url = reverse("GoodReceiptList")
         good_receipt_data = {
             'title': 'create good receipt',
@@ -343,8 +346,19 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertFalse(SaleOrderProduct.objects.filter(pk=prod_detail['id']).exists())
         return response
 
-    def test_create_delivery(self):
-        sale_order = self.test_create_sale_order().data['result']
+    def test_03_update_config_picking(self):
+        url_config = reverse('DeliveryConfigDetail')
+        data_config = {
+            "is_partial_ship": True,
+            "is_picking": True
+        }
+        response = self.client.put(url_config, data_config, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.config = response
+        return response
+
+    def test_04_create_delivery(self):
+        sale_order = self.test_02_create_sale_order().data['result']
         sale_order_id = sale_order['id']
 
         delivery = OrderDelivery.objects.get_or_create(
@@ -367,29 +381,32 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertTrue(OrderDelivery.objects.filter(id=obj_delivery.id).exists())
 
         sub = OrderDeliverySub.objects.get_or_create(
-            code=delivery.code,
+            code=obj_delivery.code,
             id=uuid4(),
-            order_delivery_id=delivery.id,
+            order_delivery_id=obj_delivery.id,
             date_done=None,
             previous_step=None,
             times=1,
-            delivery_quantity=delivery.delivery_quantity,
+            delivery_quantity=obj_delivery.delivery_quantity,
             delivered_quantity_before=0,
-            remaining_quantity=delivery.delivery_quantity,
-            ready_quantity=delivery.ready_quantity,
+            remaining_quantity=obj_delivery.delivery_quantity,
+            ready_quantity=obj_delivery.ready_quantity,
             delivery_data=[],
             is_updated=False,
-            state=delivery.state,
-            sale_order_data=delivery.sale_order_data,
-            customer_data=delivery.customer_data,
-            contact_data=delivery.contact_data,
-            date_created=delivery.date_created,
+            state=obj_delivery.state,
+            sale_order_data=obj_delivery.sale_order_data,
+            customer_data=obj_delivery.customer_data,
+            contact_data=obj_delivery.contact_data,
+            date_created=obj_delivery.date_created,
             config_at_that_point={
                 "is_picking": self.config.is_picking,
                 "is_partial_ship": self.config.is_partial_ship
             }
         )
-        self.assertTrue(OrderDeliverySub.objects.filter(id=sub['id']).exists())
+        obj_sub = sub[0]
+        self.assertTrue(OrderDeliverySub.objects.filter(id=obj_sub.id).exists())
+        obj_delivery.sub = obj_sub
+        obj_delivery.save(update_fields=["sub"])
 
         product_list = SaleOrderProduct.objects.select_related(
             'product', 'unit_of_measure'
@@ -400,20 +417,20 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         prod_create_list = []
         for item in product_list:
             temp = OrderDeliveryProduct(
-                delivery_sub_id=sub['id'],
-                product=item,
+                delivery_sub_id=obj_sub.id,
+                product=item.product,
                 product_data={
-                    'id': str(item.id),
-                    'title': str(item.title),
-                    'code': str(item.code),
+                    'id': str(item.product.id),
+                    'title': str(item.product.title),
+                    'code': str(item.product.code),
                     'remarks': ''
                 } if item else {},
-                uom=item.unit_of_measure,
+                uom=item.product.default_uom,
                 uom_data={
-                    'id': str(item.unit_of_measure.id),
-                    'title': str(item.unit_of_measure.title),
-                    'code': str(item.unit_of_measure.code),
-                } if item.unit_of_measure else {},
+                    'id': str(item.product.default_uom.id),
+                    'title': str(item.product.default_uom.title),
+                    'code': str(item.product.default_uom.code),
+                } if item.product.default_uom else {},
 
                 delivery_quantity=item.product_quantity,
                 delivered_quantity_before=0,
@@ -428,4 +445,156 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             )
             prod_create_list.append(temp)
         OrderDeliveryProduct.objects.bulk_create(prod_create_list)
-        self.assertFalse(OrderDeliveryProduct.objects.filter(delivery_sub_id=sub['id']).exists())
+        self.assertTrue(OrderDeliveryProduct.objects.filter(delivery_sub_id=obj_sub.id).exists())
+        return obj_delivery, obj_sub
+
+    def test_05_create_picking(self):
+        sale_order = self.test_02_create_sale_order().data['result']
+        sale_order_id = sale_order['id']
+        warehouse = self.warehouse.data['result']
+        picking = OrderPicking.objects.get_or_create(
+            sale_order_id=sale_order_id,
+            ware_house_id=warehouse['id'],
+            state=0,
+            remarks="lorem ipsum",
+            delivery_option=1,
+            sub=None,
+            pickup_quantity=1,
+            picked_quantity_before=0,
+            remaining_quantity=1,
+            picked_quantity=0,
+            date_created=timezone.now()
+        )
+        obj_picking = picking[0]
+        self.assertTrue(OrderPicking.objects.filter(id=obj_picking.id).exists())
+
+        sub = OrderPickingSub.objects.get_or_create(
+            code=obj_picking.code,
+            id=uuid4(),
+            order_picking_id=obj_picking.id,
+            date_done=None,
+            previous_step=None,
+            times=1,
+            pickup_quantity=obj_picking.pickup_quantity,
+            picked_quantity_before=0,
+            remaining_quantity=obj_picking.remaining_quantity,
+            picked_quantity=0,
+            ware_house_id=self.warehouse.data['result']['id'],
+            state=obj_picking.state,
+            sale_order_data=obj_picking.sale_order_data,
+            date_created=obj_picking.date_created,
+            config_at_that_point={
+                "is_picking": self.config.is_picking,
+                "is_partial_ship": self.config.is_partial_ship
+            }
+        )
+        obj_sub = sub[0]
+        self.assertTrue(OrderPickingSub.objects.filter(id=obj_sub.id).exists())
+        obj_picking.sub = obj_sub
+        obj_picking.save(update_fields=["sub"])
+
+        product_list = SaleOrderProduct.objects.select_related(
+            'product', 'unit_of_measure'
+        ).filter(
+            sale_order_id=sale_order_id,
+            product__isnull=False,
+        )
+        prod_create_list = []
+        for item in product_list:
+            temp = OrderPickingProduct(
+                picking_sub_id=obj_sub.id,
+                product=item.product,
+                product_data={
+                    'id': str(item.product.id),
+                    'title': str(item.product.title),
+                    'code': str(item.product.code),
+                    'remarks': ''
+                } if item else {},
+                uom=item.product.default_uom,
+                uom_data={
+                    'id': str(item.product.default_uom.id),
+                    'title': str(item.product.default_uom.title),
+                    'code': str(item.product.default_uom.code),
+                } if item.product.default_uom else {},
+
+                pickup_quantity=item.product_quantity,
+                picked_quantity_before=0,
+                remaining_quantity=item.product_quantity,
+                picked_quantity=0,
+                order=1,
+                is_promotion=False,
+                product_unit_price=item.product_unit_price,
+                product_tax_value=item.product_tax_value,
+                product_subtotal_price=item.product_subtotal_price,
+            )
+            prod_create_list.append(temp)
+        OrderPickingProduct.objects.bulk_create(prod_create_list)
+        self.assertTrue(OrderPickingProduct.objects.filter(picking_sub_id=obj_sub.id).exists())
+        return obj_picking, obj_sub
+
+    def test_06_complete_picking(self):
+        picking, picking_sub = self.test_05_create_picking()
+        picking_prod = OrderPickingProduct.objects.filter(picking_sub_id=picking_sub.id).first()
+        url_update = reverse('OrderPickingSubDetail', args=[picking_sub.id])
+        data_picking_update = {
+            "order_picking": picking.id,
+            "sale_order_id": self.sale_order.data['result']['id'],
+            "delivery_option": picking_sub.delivery_option,
+            "estimated_delivery_date": timezone.now(),
+            "delivery_quantity": 1,
+            "delivered_quantity_before": 0,
+            "remaining_quantity": 1,
+            "ready_quantity": 0,
+            "remarks": "lorem ipsum dolor sit amet",
+            "config_at_that_point": picking_sub.config_at_that_point,
+            "products": [
+                {
+                    'product_id': picking_prod.id,
+                    'done': 1,
+                    'delivery_data': [
+                        {
+                            'warehouse': self.warehouse.data['result']['id'],
+                            'uom': picking_prod.uom.id,
+                            'stock': 1
+                        }
+                    ],
+                    'order': 1,
+                }
+            ],
+            "to_location": "area 01",
+            "ware_house": self.warehouse.data['result']['id']
+        }
+        response = self.client.put(url_update, data_picking_update, format='json')
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    # def test_complete_delivery(self):
+    #     delivery, delivery_sub = self.test_create_delivery()
+    #     delivery_prod = OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub).first()
+    #     url_update = reverse('OrderDeliverySubDetail', args=[delivery_sub.id])
+    #     data_delivery_update = {
+    #         "order_delivery": delivery.id,
+    #         "estimated_delivery_date": "2023-07-31",
+    #         "actual_delivery_date": "2023-08-30",
+    #         "delivery_quantity": delivery_sub.delivery_quantity,
+    #         "delivered_quantity_before": delivery_sub.delivered_quantity_before,
+    #         "remaining_quantity": delivery_sub.remaining_quantity,
+    #         "ready_quantity": delivery_sub.ready_quantity,
+    #         "remarks": "lorem ipsum dolor sit amet",
+    #         "config_at_that_point": delivery_sub.config_at_that_point,
+    #         "products": [
+    #             {
+    #                 'product_id': delivery_prod.id,
+    #                 'done': 1,
+    #                 'delivery_data': {
+    #                     'warehouse': self.warehouse.data['result']['id'],
+    #                     'uom': delivery_prod.uom.id,
+    #                     'stock': 1
+    #                 },
+    #                 'order': 1,
+    #             }
+    #         ]
+    #     }
+    #     response = self.client.put(url_update, data_delivery_update, format='json')
+    #     self.assertEqual(response.status_code, 200)
+    #     return response
