@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
 
 
 class PurchaseOrder(DataAbstractModel):
@@ -37,11 +37,15 @@ class PurchaseOrder(DataAbstractModel):
         related_name="purchase_order_contact",
         null=True
     )
-    date_delivered = models.DateTimeField(
+    delivered_date = models.DateTimeField(
         null=True,
         help_text='date that products will be delivered',
     )
     status_delivered = models.SmallIntegerField(default=0)
+    receipt_status = models.SmallIntegerField(
+        choices=RECEIPT_STATUS,
+        default=0
+    )
     # tab products
     purchase_order_products_data = models.JSONField(
         default=list,

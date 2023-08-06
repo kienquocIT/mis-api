@@ -69,7 +69,8 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'supplier',
-            'date_delivered',
+            'delivered_date',
+            'receipt_status',
             'system_status',
         )
 
@@ -104,9 +105,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'contact',
             'purchase_requests',
-            'date_delivered',
+            'delivered_date',
             'status_delivered',
-            'system_status',
             # purchase order tabs
             'purchase_order_products_data',
             # total amount
@@ -114,6 +114,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -164,13 +166,15 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'supplier',
             'contact',
+            'delivered_date',
+            'status_delivered',
+            # purchase order tabs
+            'purchase_order_products_data',
             # total amount
             'total_product_pretax_amount',
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
-            # purchase order tabs
-            'purchase_order_products_data',
             # system
             'system_status',
         )
@@ -213,13 +217,15 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             'purchase_requests_data',
             'supplier',
             'contact',
+            'delivered_date',
+            'status_delivered',
+            # purchase order tabs
+            'purchase_order_products_data',
             # total amount
             'total_product_pretax_amount',
             'total_product_tax',
             'total_product',
             'total_product_revenue_before_tax',
-            # purchase order tabs
-            'purchase_order_products_data',
             # system
             'system_status',
         )

@@ -335,3 +335,49 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             )
             PurchaseRequestProduct.objects.bulk_create(bulk_data)
         return purchase_request
+
+
+class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
+    purchase_request = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequestProduct
+        fields = (
+            'id',
+            'purchase_request',
+            'product',
+            'uom',
+            'quantity',
+        )
+
+    @classmethod
+    def get_purchase_request(cls, obj):
+        if obj.purchase_request:
+            return {
+                'id': obj.purchase_request_id,
+                'title': obj.purchase_request.title,
+                'code': obj.purchase_request.code,
+            }
+        return {}
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product:
+            return {
+                'id': obj.product_id,
+                'title': obj.product.title,
+                'code': obj.product.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
+            }
+        return {}

@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.purchasing.models import PurchaseRequest
+from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, \
-    PurchaseRequestDetailSerializer
+    PurchaseRequestDetailSerializer, PurchaseRequestProductListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -67,3 +67,28 @@ class PurchaseRequestDetail(
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class PurchaseRequestProductList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseRequestProduct.objects
+    filterset_fields = {
+        'purchase_request_id': ['in', 'exact'],
+    }
+    serializer_list = PurchaseRequestProductListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'purchase_request',
+            'product',
+            'uom',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request Product List",
+        operation_description="Get Purchase Request Product List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

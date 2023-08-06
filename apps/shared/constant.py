@@ -184,3 +184,11 @@ PURCHASE_STATUS = [
     (1, _('Partially ordered')),
     (2, _('Ordered')),
 ]
+
+# Purchase order
+RECEIPT_STATUS = (
+    (0, 'Wait'),
+    (1, 'Received'),
+    (2, 'Partially received'),
+    (3, 'None'),
+)
