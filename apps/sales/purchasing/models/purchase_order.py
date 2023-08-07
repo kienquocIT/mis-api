@@ -15,13 +15,17 @@ class PurchaseOrder(DataAbstractModel):
         default=list,
         help_text="read data purchase requests, use for get list or detail"
     )
-    # purchase_quotations = models.ManyToManyField(
-    #     'purchasing.PurchaseQuotation',
-    #     through="PurchaseOrderQuotation",
-    #     symmetrical=False,
-    #     blank=True,
-    #     related_name='purchase_order_map_quotation'
-    # )
+    purchase_quotations = models.ManyToManyField(
+        'purchasing.PurchaseQuotation',
+        through="PurchaseOrderQuotation",
+        symmetrical=False,
+        blank=True,
+        related_name='purchase_order_map_quotation'
+    )
+    purchase_quotations_data = models.JSONField(
+        default=list,
+        help_text="read data purchase quotations, use for get list or detail"
+    )
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -115,51 +119,38 @@ class PurchaseOrderRequest(SimpleAbstractModel):
         permissions = ()
 
 
-# class PurchaseOrderQuotation(SimpleAbstractModel):
-#     purchase_order = models.ForeignKey(
-#         PurchaseOrder,
-#         on_delete=models.CASCADE,
-#         verbose_name="purchase order",
-#         related_name="purchase_order_quotation_order",
-#     )
-#     purchase_quotation = models.ForeignKey(
-#         'purchasing.PurchaseQuotation',
-#         on_delete=models.CASCADE,
-#         verbose_name="purchase quotation",
-#         related_name="purchase_order_quotation_quotation",
-#     )
-#     is_use = models.BooleanField(
-#         default=False,
-#         help_text='purchase quotation that used to order',
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Purchase Order Quotation'
-#         verbose_name_plural = 'Purchase Order Quotations'
-#         ordering = ()
-#         default_permissions = ()
-#         permissions = ()
+class PurchaseOrderQuotation(SimpleAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_quotation_order",
+    )
+    purchase_quotation = models.ForeignKey(
+        'purchasing.PurchaseQuotation',
+        on_delete=models.CASCADE,
+        verbose_name="purchase quotation",
+        related_name="purchase_order_quotation_quotation",
+    )
+    is_use = models.BooleanField(
+        default=False,
+        help_text='purchase quotation that used to order',
+    )
+
+    class Meta:
+        verbose_name = 'Purchase Order Quotation'
+        verbose_name_plural = 'Purchase Order Quotations'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
 
 
-class PurchaseOrderProductRequest(SimpleAbstractModel):
+class PurchaseOrderProduct(SimpleAbstractModel):
     purchase_order = models.ForeignKey(
         PurchaseOrder,
         on_delete=models.CASCADE,
         verbose_name="purchase order",
         related_name="purchase_order_product_order",
-    )
-    purchase_request_product = models.ForeignKey(
-        'purchasing.PurchaseRequestProduct',
-        on_delete=models.CASCADE,
-        verbose_name="purchase request product",
-        related_name="purchase_order_product_request",
-        null=True,
-    )
-    sale_order_product = models.ForeignKey(
-        'saleorder.SaleOrderProduct',
-        on_delete=models.CASCADE,
-        related_name="purchase_order_so_product",
-        null=True,
     )
     product = models.ForeignKey(
         'saledata.Product',
@@ -179,14 +170,13 @@ class PurchaseOrderProductRequest(SimpleAbstractModel):
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name="unit of product on purchase quotation",
-        related_name="purchase_order_product_uom_quotation",
+        related_name="purchase_order_product_uom_order",
         null=True
     )
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name="tax",
-        related_name="purchase_order_product_tax",
         null=True
     )
     stock = models.FloatField(
@@ -249,5 +239,42 @@ class PurchaseOrderProductRequest(SimpleAbstractModel):
         verbose_name = 'Purchase Order Product'
         verbose_name_plural = 'Purchase Order Products'
         ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PurchaseOrderRequestProduct(SimpleAbstractModel):
+    purchase_request_product = models.ForeignKey(
+        'purchasing.PurchaseRequestProduct',
+        on_delete=models.CASCADE,
+        verbose_name="purchase request product",
+        related_name="purchase_order_request_request_product",
+    )
+    purchase_order_product = models.ForeignKey(
+        PurchaseOrderProduct,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order product",
+        related_name="purchase_order_request_order_product",
+        null=True,
+    )
+    sale_order_product = models.ForeignKey(
+        'saleorder.SaleOrderProduct',
+        on_delete=models.CASCADE,
+        related_name="purchase_order_request_so_product",
+        null=True,
+    )
+    quantity_order = models.FloatField(
+        default=0,
+        help_text='quantity order',
+    )
+    quantity_remain = models.FloatField(
+        default=0,
+        help_text='quantity remain to order',
+    )
+
+    class Meta:
+        verbose_name = 'Purchase Order Request Product'
+        verbose_name_plural = 'Purchase Order Request Products'
+        ordering = ()
         default_permissions = ()
         permissions = ()

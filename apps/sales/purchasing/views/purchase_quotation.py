@@ -1,9 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
-from apps.sales.purchasing.models import PurchaseQuotation
+from apps.sales.purchasing.models import PurchaseQuotation, PurchaseQuotationProduct
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationListSerializer, PurchaseQuotationDetailSerializer,
-    PurchaseQuotationCreateSerializer
+    PurchaseQuotationCreateSerializer, PurchaseQuotationProductListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -11,7 +11,9 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotation.objects
-
+    filterset_fields = {
+        'purchase_quotation_request_mapped__purchase_request_mapped_id': ['in', 'exact'],
+    }
     serializer_list = PurchaseQuotationListSerializer
     serializer_create = PurchaseQuotationCreateSerializer
     serializer_detail = PurchaseQuotationDetailSerializer
@@ -61,3 +63,24 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class PurchaseQuotationProductList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseQuotationProduct.objects
+    filterset_fields = {
+        'purchase_quotation_id': ['in', 'exact'],
+    }
+    serializer_list = PurchaseQuotationProductListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('purchase_quotation')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Quotation Product List",
+        operation_description="Get Purchase Quotation Product List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

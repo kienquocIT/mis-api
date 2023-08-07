@@ -1,27 +1,67 @@
 from rest_framework import serializers
 
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProductRequest
+from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import SYSTEM_STATUS
 
 
-class PurchaseOrderProductRequestSerializer(serializers.ModelSerializer):
+class PurchaseQuotationSerializer(serializers.ModelSerializer):
+    purchase_quotation = serializers.UUIDField()
+
+    class Meta:
+        model = PurchaseOrderRequestProduct
+        fields = (
+            'purchase_quotation',
+            'is_use',
+        )
+
+    @classmethod
+    def validate_purchase_quotation(cls, value):
+        return PurchasingCommonValidate().validate_purchase_quotation(value=value)
+
+
+class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
     purchase_request_product = serializers.UUIDField()
+    sale_order_product = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = PurchaseOrderRequestProduct
+        fields = (
+            'purchase_request_product',
+            'sale_order_product',
+            'quantity_order',
+            'quantity_remain',
+        )
+
+    @classmethod
+    def validate_purchase_request_product(cls, value):
+        return PurchasingCommonValidate().validate_purchase_request_product(value=value)
+
+    @classmethod
+    def validate_sale_order_product(cls, value):
+        return PurchasingCommonValidate().validate_sale_order_product(value=value)
+
+
+class PurchaseOrderProductSerializer(serializers.ModelSerializer):
+    purchase_request_product_datas = PurchaseOrderRequestProductSerializer(
+        many=True,
+        required=False
+    )
     product = serializers.UUIDField()
     uom_request = serializers.UUIDField()
     uom_order = serializers.UUIDField()
     tax = serializers.UUIDField()
 
     class Meta:
-        model = PurchaseOrderProductRequest
+        model = PurchaseOrderProduct
         fields = (
-            'purchase_request_product',
             'product',
             'uom_request',
             'uom_order',
             'tax',
             'stock',
+            'purchase_request_product_datas',
             # product information
             'product_title',
             'product_code',
@@ -36,10 +76,6 @@ class PurchaseOrderProductRequestSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
         )
-
-    @classmethod
-    def validate_purchase_request_product(cls, value):
-        return PurchasingCommonValidate().validate_purchase_request_product(value=value)
 
     @classmethod
     def validate_product(cls, value):
@@ -152,10 +188,14 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    purchase_quotations_data = PurchaseQuotationSerializer(
+        many=True,
+        required=False
+    )
     supplier = serializers.UUIDField(required=False)
     contact = serializers.UUIDField(required=False)
     # purchase order tabs
-    purchase_order_products_data = PurchaseOrderProductRequestSerializer(
+    purchase_order_products_data = PurchaseOrderProductSerializer(
         many=True,
         required=False
     )
@@ -165,6 +205,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'purchase_requests_data',
+            'purchase_quotations_data',
             'supplier',
             'contact',
             'delivered_date',
@@ -207,10 +248,14 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
+    purchase_quotations_data = PurchaseQuotationSerializer(
+        many=True,
+        required=False
+    )
     supplier = serializers.UUIDField(required=False)
     contact = serializers.UUIDField(required=False)
     # purchase order tabs
-    purchase_order_products_data = PurchaseOrderProductRequestSerializer(
+    purchase_order_products_data = PurchaseOrderProductSerializer(
         many=True,
         required=False
     )
@@ -220,6 +265,7 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'purchase_requests_data',
+            'purchase_quotations_data',
             'supplier',
             'contact',
             'delivered_date',
@@ -234,6 +280,10 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             # system
             'system_status',
         )
+
+    @classmethod
+    def validate_purchase_requests_data(cls, value):
+        return PurchasingCommonValidate().validate_purchase_requests_data(value=value)
 
     @classmethod
     def validate_supplier(cls, value):

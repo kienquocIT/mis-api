@@ -197,3 +197,28 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
         purchase_quotation = PurchaseQuotation.objects.create(**validated_data, code=new_code)
         create_pq_map_products(purchase_quotation, self.initial_data.get('products_selected', []))
         return purchase_quotation
+
+
+class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
+    purchase_quotation = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseQuotationProduct
+        fields = (
+            'id',
+            'purchase_quotation',
+            'product_id',
+            'unit_price'
+        )
+
+    @classmethod
+    def get_purchase_request(cls, obj):
+        if obj.purchase_quotation:
+            return {
+                'id': obj.purchase_quotation_id,
+                'title': obj.purchase_quotation.title,
+                'code': obj.purchase_quotation.code,
+            }
+        return {}
