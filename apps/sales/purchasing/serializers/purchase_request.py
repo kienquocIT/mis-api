@@ -136,6 +136,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
     sale_order_product = serializers.UUIDField(allow_null=True)
     uom = serializers.UUIDField()
     tax = serializers.UUIDField()
+    description = serializers.CharField(allow_blank=True)
 
     class Meta:
         model = PurchaseRequestProduct
@@ -170,8 +171,6 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 fill__company=True,
                 id=value
             )
-            if 2 not in product.product_choice:
-                raise serializers.ValidationError({'product': PurchaseRequestMsg.NOT_PURCHASE})
             return {
                 'id': str(product.id),
                 'title': product.title,
@@ -254,6 +253,7 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
     supplier = serializers.UUIDField(required=True)
     contact = serializers.UUIDField(required=True)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True)
+    note = serializers.CharField(allow_blank=True)
 
     class Meta:
         model = PurchaseRequest
@@ -351,7 +351,7 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.purchase_request.all():
+        for item in obj.purchase_request.all().select_related('product', 'uom', 'tax'):
             product_list.append({
                 'id': item.product_id,
                 'title': item.product.title,
