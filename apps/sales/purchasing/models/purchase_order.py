@@ -76,6 +76,22 @@ class PurchaseOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        purchase_order = PurchaseOrder.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "PO"
+        if not self.code:
+            temper = "%04d" % (purchase_order + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 class PurchaseOrderRequest(SimpleAbstractModel):
     purchase_order = models.ForeignKey(
@@ -137,6 +153,7 @@ class PurchaseOrderProductRequest(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="purchase request product",
         related_name="purchase_order_product_request",
+        null=True,
     )
     sale_order_product = models.ForeignKey(
         'saleorder.SaleOrderProduct',

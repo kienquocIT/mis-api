@@ -7,6 +7,7 @@ from apps.shared import SYSTEM_STATUS
 
 
 class PurchaseOrderProductRequestSerializer(serializers.ModelSerializer):
+    purchase_request_product = serializers.UUIDField()
     product = serializers.UUIDField()
     uom_request = serializers.UUIDField()
     uom_order = serializers.UUIDField()
@@ -178,6 +179,10 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
             # system
             'system_status',
         )
+
+    @classmethod
+    def validate_purchase_requests_data(cls, value):
+        return PurchasingCommonValidate().validate_purchase_requests_data(value=value)
 
     @classmethod
     def validate_supplier(cls, value):

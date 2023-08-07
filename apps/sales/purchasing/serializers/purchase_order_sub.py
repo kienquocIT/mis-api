@@ -4,12 +4,43 @@ from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
-from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProductRequest, PurchaseOrderRequest
+from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProductRequest, PurchaseOrderRequest, \
+    PurchaseRequest
 from apps.shared import AccountsMsg, ProductMsg
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
 class PurchaseOrderCommonCreate:
+
+    @classmethod
+    def validate_product(cls, dict_data):
+        purchase_request_product = {}
+        product = {}
+        uom_request = {}
+        uom_order = {}
+        tax = {}
+        if 'purchase_request_product' in dict_data:
+            purchase_request_product = dict_data['purchase_request_product']
+            del dict_data['purchase_request_product']
+        if 'product' in dict_data:
+            product = dict_data['product']
+            del dict_data['product']
+        if 'uom_request' in dict_data:
+            uom_request = dict_data['uom_request']
+            del dict_data['uom_request']
+        if 'uom_order' in dict_data:
+            uom_order = dict_data['uom_order']
+            del dict_data['uom_order']
+        if 'tax' in dict_data:
+            tax = dict_data['tax']
+            del dict_data['tax']
+        return {
+            'purchase_request_product': purchase_request_product,
+            'product': product,
+            'uom_request': uom_request,
+            'uom_order': uom_order,
+            'tax': tax,
+        }
 
     @classmethod
     def create_m2m_order_purchase_request(cls, validated_data, instance):
@@ -22,12 +53,14 @@ class PurchaseOrderCommonCreate:
     @classmethod
     def create_product(cls, validated_data, instance):
         for purchase_order_product in validated_data['purchase_order_products_data']:
+            data = cls.validate_product(dict_data=purchase_order_product)
             PurchaseOrderProductRequest.objects.create(
                 purchase_order=instance,
-                product_id=purchase_order_product['product'].get('id', None),
-                uom_request_id=purchase_order_product['uom_request'].get('id', None),
-                uom_order_id=purchase_order_product['uom_order'].get('id', None),
-                tax_id=purchase_order_product['tax'].get('id', None),
+                purchase_request_product_id=data['purchase_request_product'].get('id', None),
+                product_id=data['product'].get('id', None),
+                uom_request_id=data['uom_request'].get('id', None),
+                uom_order_id=data['uom_order'].get('id', None),
+                tax_id=data['tax'].get('id', None),
                 **purchase_order_product
             )
         return True
@@ -68,23 +101,20 @@ class PurchaseOrderCommonCreate:
 class PurchasingCommonValidate:
 
     @classmethod
-    def validate_purchase_request_product(cls, value):
-        try:
-            purchase_request_product = PurchaseRequestProduct.objects.get_current(
+    def validate_purchase_requests_data(cls, value):
+        if isinstance(value, list):
+            purchase_request_list = PurchaseRequest.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
-                id=value
+                id__in=value
             )
-            return {
-                'id': str(purchase_request_product.id),
-                'title': purchase_request_product.title,
-                'code': purchase_request_product.code,
-                'sale_order_product_id': purchase_request_product.sale_order_product_id,
-            }
-        except PurchaseRequestProduct.DoesNotExist:
-            raise serializers.ValidationError({
-                'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
-            })
+            if purchase_request_list.count() == len(value):
+                return [
+                    {'id': str(item.id), 'title': item.title, 'code': item.code}
+                    for item in purchase_request_list
+                ]
+            raise serializers.ValidationError({'detail': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST})
+        raise serializers.ValidationError({'detail': PurchaseRequestMsg.PURCHASE_REQUEST_IS_ARRAY})
 
     @classmethod
     def validate_supplier(cls, value):
@@ -126,6 +156,21 @@ class PurchasingCommonValidate:
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_purchase_request_product(cls, value):
+        try:
+            purchase_request_product = PurchaseRequestProduct.objects.get(id=value)
+            return {
+                'id': str(purchase_request_product.id),
+                'purchase_request_id': str(purchase_request_product.purchase_request_id),
+                'sale_order_product_id': str(purchase_request_product.sale_order_product_id),
+                'remain_for_purchase_order': purchase_request_product.remain_for_purchase_order,
+            }
+        except PurchaseRequestProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
 
     @classmethod
     def validate_unit_of_measure(cls, value):
