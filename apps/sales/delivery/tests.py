@@ -51,7 +51,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         response = IndustryTestCase.test_create_new(self)
         return response
 
-    def test_01_create_config_payment_term(self):
+    def test_1_create_config_payment_term(self):
         response = ConfigPaymentTermTestCase.test_create_config_payment_term(self)
         self.assertEqual(response.status_code, 201)
         return response
@@ -175,7 +175,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         return response
 
-    def test_02_create_sale_order(self):
+    def create_sale_order(self):
         data_salutation = {  # noqa
             "code": "S01ORDER",
             "title": "MrORDER",
@@ -242,7 +242,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         opportunity = None
         customer = response_account.data['result']['id']
         employee = self.get_employee().data['result'][0]['id']
-        payment_term = self.test_01_create_config_payment_term().data['result']['id']
+        payment_term = self.test_1_create_config_payment_term().data['result']['id']
         data = {
             "title": "Đơn hàng test",
             "opportunity": opportunity,
@@ -346,7 +346,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertFalse(SaleOrderProduct.objects.filter(pk=prod_detail['id']).exists())
         return response
 
-    def test_03_update_config_picking(self):
+    def update_config_picking(self):
         url_config = reverse('DeliveryConfigDetail')
         data_config = {
             "is_partial_ship": True,
@@ -354,26 +354,25 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         }
         response = self.client.put(url_config, data_config, format='json')
         self.assertEqual(response.status_code, 200)
-        self.config = response
+        self.config = data_config
         return response
 
-    def test_04_create_delivery(self):
-        sale_order = self.test_02_create_sale_order().data['result']
+    def create_delivery(self):
+        sale_order = self.create_sale_order().data['result']
         sale_order_id = sale_order['id']
-
         delivery = OrderDelivery.objects.get_or_create(
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
             contact_id=sale_order['contact']['id'],
-            kind_pickup=0 if self.config.is_picking else 1,
+            kind_pickup=0 if self.config['is_picking'] else 1,
             sub=None,
-            delivery_option=0 if not self.config.is_partial_ship else 1,
+            delivery_option=0 if not self.config['is_partial_ship'] else 1,
             state=0,
             delivery_quantity=1,
             delivered_quantity_before=0,
             remaining_quantity=1,
-            ready_quantity=1,
+            ready_quantity=0,
             delivery_data=[],
             date_created=timezone.now()
         )
@@ -399,8 +398,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             contact_data=obj_delivery.contact_data,
             date_created=obj_delivery.date_created,
             config_at_that_point={
-                "is_picking": self.config.is_picking,
-                "is_partial_ship": self.config.is_partial_ship
+                "is_picking": self.config['is_picking'],
+                "is_partial_ship": self.config['is_partial_ship']
             }
         )
         obj_sub = sub[0]
@@ -448,8 +447,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertTrue(OrderDeliveryProduct.objects.filter(delivery_sub_id=obj_sub.id).exists())
         return obj_delivery, obj_sub
 
-    def test_05_create_picking(self):
-        sale_order = self.test_02_create_sale_order().data['result']
+    def create_picking(self):
+        if self.sale_order:
+            sale_order = self.sale_order.data['result']
+        else:
+            sale_order = self.create_sale_order().data['result']
         sale_order_id = sale_order['id']
         warehouse = self.warehouse.data['result']
         picking = OrderPicking.objects.get_or_create(
@@ -484,8 +486,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             sale_order_data=obj_picking.sale_order_data,
             date_created=obj_picking.date_created,
             config_at_that_point={
-                "is_picking": self.config.is_picking,
-                "is_partial_ship": self.config.is_partial_ship
+                "is_picking": self.config['is_picking'],
+                "is_partial_ship": self.config['is_partial_ship']
             }
         )
         obj_sub = sub[0]
@@ -517,9 +519,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'code': str(item.product.default_uom.code),
                 } if item.product.default_uom else {},
 
-                pickup_quantity=item.product_quantity,
+                pickup_quantity=1,
                 picked_quantity_before=0,
-                remaining_quantity=item.product_quantity,
+                remaining_quantity=1,
                 picked_quantity=0,
                 order=1,
                 is_promotion=False,
@@ -532,8 +534,11 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertTrue(OrderPickingProduct.objects.filter(picking_sub_id=obj_sub.id).exists())
         return obj_picking, obj_sub
 
-    def test_06_complete_picking(self):
-        picking, picking_sub = self.test_05_create_picking()
+    def test_2_complete_picking_delivery(self):
+        self.update_config_picking()
+        delivery, delivery_sub = self.create_delivery()
+        picking, picking_sub = self.create_picking()
+        # complete picking
         picking_prod = OrderPickingProduct.objects.filter(picking_sub_id=picking_sub.id).first()
         url_update = reverse('OrderPickingSubDetail', args=[picking_sub.id])
         data_picking_update = {
@@ -564,37 +569,34 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "to_location": "area 01",
             "ware_house": self.warehouse.data['result']['id']
         }
-        response = self.client.put(url_update, data_picking_update, format='json')
-        self.assertEqual(response.status_code, 200)
-        return response
-
-    # def test_complete_delivery(self):
-    #     delivery, delivery_sub = self.test_create_delivery()
-    #     delivery_prod = OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub).first()
-    #     url_update = reverse('OrderDeliverySubDetail', args=[delivery_sub.id])
-    #     data_delivery_update = {
-    #         "order_delivery": delivery.id,
-    #         "estimated_delivery_date": "2023-07-31",
-    #         "actual_delivery_date": "2023-08-30",
-    #         "delivery_quantity": delivery_sub.delivery_quantity,
-    #         "delivered_quantity_before": delivery_sub.delivered_quantity_before,
-    #         "remaining_quantity": delivery_sub.remaining_quantity,
-    #         "ready_quantity": delivery_sub.ready_quantity,
-    #         "remarks": "lorem ipsum dolor sit amet",
-    #         "config_at_that_point": delivery_sub.config_at_that_point,
-    #         "products": [
-    #             {
-    #                 'product_id': delivery_prod.id,
-    #                 'done': 1,
-    #                 'delivery_data': {
-    #                     'warehouse': self.warehouse.data['result']['id'],
-    #                     'uom': delivery_prod.uom.id,
-    #                     'stock': 1
-    #                 },
-    #                 'order': 1,
-    #             }
-    #         ]
-    #     }
-    #     response = self.client.put(url_update, data_delivery_update, format='json')
-    #     self.assertEqual(response.status_code, 200)
-    #     return response
+        response_picking = self.client.put(url_update, data_picking_update, format='json')
+        self.assertEqual(response_picking.status_code, 200)
+        # complete delivery
+        delivery_prod = OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub).first()
+        url_update = reverse('OrderDeliverySubDetail', args=[delivery_sub.id])
+        data_delivery_update = {
+            "order_delivery": delivery.id,
+            "estimated_delivery_date": "2023-07-31",
+            "actual_delivery_date": "2023-08-30",
+            "delivery_quantity": delivery_sub.delivery_quantity,
+            "delivered_quantity_before": delivery_sub.delivered_quantity_before,
+            "remaining_quantity": delivery_sub.remaining_quantity,
+            "ready_quantity": delivery_sub.ready_quantity,
+            "remarks": "lorem ipsum dolor sit amet",
+            "config_at_that_point": delivery_sub.config_at_that_point,
+            "products": [
+                {
+                    'product_id': delivery_prod.id,
+                    'done': 1,
+                    'delivery_data': {
+                        'warehouse': self.warehouse.data['result']['id'],
+                        'uom': delivery_prod.uom.id,
+                        'stock': 1
+                    },
+                    'order': 1,
+                }
+            ]
+        }
+        response_delivery = self.client.put(url_update, data_delivery_update, format='json')
+        self.assertEqual(response_delivery.status_code, 200)
+        return response_picking, response_delivery
