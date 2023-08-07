@@ -104,6 +104,7 @@ class PurchaseRequestProductList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'purchase_request',
+            'sale_order_product',
             'product',
             'uom',
         )

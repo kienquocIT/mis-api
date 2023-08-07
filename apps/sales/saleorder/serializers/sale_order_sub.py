@@ -82,6 +82,7 @@ class SaleOrderCommonCreate:
                     promotion_id=data['promotion'].get('id', None),
                     shipping_id=data['shipping'].get('id', None),
                     remain_for_purchase_request=sale_order_product.get('product_quantity', 0),
+                    remain_for_purchase_order=sale_order_product.get('product_quantity', 0),
                     **sale_order_product
                 )
         return True
