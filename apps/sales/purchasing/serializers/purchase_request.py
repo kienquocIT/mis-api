@@ -1,5 +1,4 @@
 from rest_framework import serializers
-
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -335,3 +334,91 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             )
             PurchaseRequestProduct.objects.bulk_create(bulk_data)
         return purchase_request
+
+
+class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
+    product_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequest
+        fields = (
+            'id',
+            'code',
+            'title',
+            'product_list'
+        )
+
+    @classmethod
+    def get_product_list(cls, obj):
+        product_list = []
+        for item in obj.purchase_request.all():
+            product_list.append({
+                'id': item.product_id,
+                'title': item.product.title,
+                'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
+                'quantity': item.quantity,
+                'purchase_request_id': item.purchase_request_id,
+                'purchase_request_code': item.purchase_request.code,
+                'product_unit_price': item.unit_price,
+                'product_subtotal_price': item.sub_total_price,
+                'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
+                'description': item.description
+            })
+        return product_list
+
+
+class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
+    purchase_request = serializers.SerializerMethodField()
+    sale_order_product = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequestProduct
+        fields = (
+            'id',
+            'purchase_request',
+            'sale_order_product',
+            'product',
+            'uom',
+            'quantity',
+        )
+
+    @classmethod
+    def get_purchase_request(cls, obj):
+        if obj.purchase_request:
+            return {
+                'id': obj.purchase_request_id,
+                'title': obj.purchase_request.title,
+                'code': obj.purchase_request.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_order_product(cls, obj):
+        if obj.sale_order_product:
+            return {
+                'id': obj.sale_order_product_id,
+                'remain_for_purchase_order': obj.sale_order_product.remain_for_purchase_order,
+            }
+        return {}
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product:
+            return {
+                'id': obj.product_id,
+                'title': obj.product.title,
+                'code': obj.product.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
+            }
+        return {}
