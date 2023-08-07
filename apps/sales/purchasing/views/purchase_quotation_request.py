@@ -70,7 +70,7 @@ class PurchaseQuotationRequestListForPQ(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'purchase_request_mapped',
+            'purchase_quotation_request',
         )
 
     @swagger_auto_schema(
