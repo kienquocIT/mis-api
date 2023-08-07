@@ -972,4 +972,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Quotation_data,
     **AppProp_SaleData_Opportunity_data,
     **AppProp_SaleData_SaleOrder_data,
+    # **AppProp_SaleData_Delivery_data,
 }

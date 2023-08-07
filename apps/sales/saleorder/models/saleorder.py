@@ -342,6 +342,14 @@ class SaleOrderProduct(SimpleAbstractModel):
         null=True
     )
 
+    remain_for_purchase_request = models.FloatField(
+        default=0,
+    )
+    remain_for_purchase_order = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
+    )
+
     class Meta:
         verbose_name = 'Sale Order Product'
         verbose_name_plural = 'Sale Order Products'

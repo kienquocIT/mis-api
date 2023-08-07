@@ -528,7 +528,7 @@ MediaForceAPI.get_file_check(media_file_id=media_file_id, media_user_id=employee
 ** Mọi quyền hành sẽ được gộp lại (merge) để thành quyền cao nhất nếu trùng lặp về loại quyền và khác quy mô.
 
 I. Quyền mặc định
-1. [TENANT] Đối với is_admin_tenant:
+1. [TENANT] Đối với is_admin_tenant || is_admin_company:
    - Công Ty: List, Detail, Create, Edit, Destroy, Overview
    - Công Ty & Người Dùng: Thêm, Xóa
 
@@ -552,5 +552,32 @@ II. Quick Setup (Cấu hình nhanh)
    - Warehouse: List, Detail, Create, Edit, Delete | company
    - 
 5. 
+
+III. Kiểm tra quyền
+1. VIEW (LIST)
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện lọc
+> 3. Trả danh sách theo điều kiện lọc
+2. VIEW (DETAIL)
+> 1. Truy vấn OBJ
+> 2. Kiểm tra quyền
+> 3. Lấy điều kiện quyền
+> 4. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+3. CREATE
+> 1. Kiểm tra quyền
+> 2. Lấy điều kiện quyền
+> 3. Kiểm tra điều kiện quyền với request.data.employee_inherit || request.data.employee_created
+4. EDIT
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép EDIT
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
+5. DELETE
+> 1. Truy vấn OBJ
+> 2. Kiểm tra system_status có cho phép DELETE | Cancel
+> 3. Kiểm tra quyền
+> 4. Lấy điều kiện quyền
+> 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
 
 ---

@@ -194,7 +194,8 @@ class EmployeeDetailSerializer(PermissionDetailSerializer):
                                     'title': application['title'],
                                     'code': application['code'],
                                     'app_label': application['app_label'],
-                                    'option_permission': application['option_permission']
+                                    'option_permission': application['option_permission'],
+                                    'range_allow': Application.get_range_allow(application['option_permission']),
                                 }
                             )
                 result.append(

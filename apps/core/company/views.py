@@ -161,6 +161,9 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related('user').filter(employee__isnull=True)
 
+    def get_filter_auth(self) -> dict:
+        return {}
+
     @swagger_auto_schema(
         operation_summary="Company User Not Map Employee list",
         operation_description="Company User Not Map Employee list",
@@ -168,6 +171,7 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
         plan_code='base', app_code='user', perm_code='view',
+        use_custom_get_filter_auth=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

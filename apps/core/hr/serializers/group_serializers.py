@@ -330,7 +330,7 @@ def validate_employee_for_group(value):
             id__in=value
         ).count()
         if employee_list == len(value):
-            return value
+            return [str(item) for item in value]
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
     raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
 

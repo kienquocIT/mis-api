@@ -124,7 +124,6 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
         plan_code='base', app_code='employee', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        print(request.data)
         return self.update(request, *args, **kwargs)
 
 
