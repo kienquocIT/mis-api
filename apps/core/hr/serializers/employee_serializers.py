@@ -167,6 +167,7 @@ class EmployeeDetailSerializer(PermissionDetailSerializer):
             'date_joined',
             'role',
             'is_admin_company',
+            'is_active',
         )
 
     @classmethod
@@ -427,7 +428,7 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
 
 class EmployeeUpdateSerializer(PermissionsUpdateSerializer):
-    user = serializers.UUIDField(required=False)
+    user = serializers.UUIDField(required=False, allow_null=True)
     plan_app = EmployeePlanAppUpdateSerializer(
         required=False,
         many=True
@@ -483,10 +484,12 @@ class EmployeeUpdateSerializer(PermissionsUpdateSerializer):
 
     @classmethod
     def validate_user(cls, value):
-        try:
-            return User.objects.get(id=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
+        if value is not None:
+            try:
+                return User.objects.get(id=value)
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
+        return None
 
     def validate(self, validate_data):
         return validate_employee_create_update(validate_data=validate_data)
