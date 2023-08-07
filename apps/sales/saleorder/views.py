@@ -108,9 +108,11 @@ class SaleOrderExpenseList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        kwargs.update({
-            'sale_order_id': request.query_params['filter_sale_order'],
-        })
+        kwargs.update(
+            {
+                'sale_order_id': request.query_params['filter_sale_order'],
+            }
+        )
         return self.list(request, *args, **kwargs)
 
 
@@ -236,25 +238,39 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class SaleOrderProductList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
-    queryset = SaleOrderProduct.objects
-    filterset_fields = {
-        'sale_order_id': ['exact', 'in']
-    }
-    serializer_list = SaleOrderProductListSerializer
+# class SaleOrderProductList(BaseListMixin):
+#     permission_classes = [IsAuthenticated]
+#     queryset = SaleOrderProduct.objects
+#     filterset_fields = {
+#         'sale_order_id': ['exact', 'in']
+#     }
+#     serializer_list = SaleOrderProductListSerializer
+#
+#     def get_queryset(self):
+#         return super().get_queryset().select_related(
+#             "product"
+#         ).filter(
+#             product__isnull=False
+#         )
+#
+#     @swagger_auto_schema(
+#         operation_summary="SaleOrderProduct List",
+#         operation_description="Get SaleOrderProduct List",
+#     )
+#     @mask_view(login_require=True, auth_require=False)
+#     def get(self, request, *args, **kwargs):
+#         return self.list(request, *args, **kwargs)
 
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            "product"
-        ).filter(
-            product__isnull=False
-        )
+
+class ProductListSaleOrder(BaseRetrieveMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = SaleOrder.objects
+    serializer_detail = SaleOrderProductListSerializer
 
     @swagger_auto_schema(
-        operation_summary="SaleOrderProduct List",
-        operation_description="Get SaleOrderProduct List",
+        operation_summary="SaleOrder Detail / Product List",
+        operation_description="Get SaleOrder Detail / Product List",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
+        return self.retrieve(request, *args, **kwargs)

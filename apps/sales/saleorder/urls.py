@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import (
     SaleOrderList, SaleOrderDetail, SaleOrderExpenseList, SaleOrderConfigDetail, SaleOrderListForCashOutFlow,
-    SaleOrderIndicatorList, SaleOrderIndicatorDetail, SaleOrderIndicatorCompanyRestore, SaleOrderProductList
+    SaleOrderIndicatorList, SaleOrderIndicatorDetail, SaleOrderIndicatorCompanyRestore, ProductListSaleOrder
 )
 
 urlpatterns = [
@@ -16,5 +16,5 @@ urlpatterns = [
     path('list-for-cashoutflow', SaleOrderListForCashOutFlow.as_view(), name='SaleOrderListForCashOutFlow'),
     path('<str:pk>', SaleOrderDetail.as_view(), name='SaleOrderDetail'),
     path('saleorder-expense-list/lists', SaleOrderExpenseList.as_view(), name='SaleOrderExpenseList'),
-    path('product/list', SaleOrderProductList.as_view(), name='SaleOrderProductList')
+    path('product/list/<str:pk>', ProductListSaleOrder.as_view(), name='ProductListSaleOrder')
 ]

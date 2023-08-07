@@ -800,30 +800,35 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
 
 
 class SaleOrderProductListSerializer(serializers.ModelSerializer):
-    product = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
 
     class Meta:
-        model = SaleOrderProduct
+        model = SaleOrder
         fields = (
             'id',
-            'product',
-            'product_quantity',
-            'sale_order',
-            'remain_for_purchase_request',
+            'product_data',
         )
 
     @classmethod
-    def get_product(cls, obj):
-        if obj.product:
-            return {
-                'id': obj.product_id,
-                'title': obj.product.title,
-                'code': obj.product.code,
-                'product_choice': obj.product.product_choice,
-                'uom': {
-                    'id': obj.product.sale_information['default_uom']['id'],
-                    'title': obj.product.sale_information['default_uom']['title']
-                },
-                'uom_group': obj.product.general_information['uom_group']['title'],
+    def get_product_data(cls, obj):
+        so_product = SaleOrderProduct.objects.select_related('product').filter(sale_order=obj, product__isnull=False)
+        return [
+            {
+                'id': item.id,
+                'product_quantity': item.product_quantity,
+                'remain_for_purchase_request': item.remain_for_purchase_request,
+                'product': {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'code': item.product.code,
+                    'product_choice': item.product.product_choice,
+                    'uom': {
+                        'id': item.product.sale_information['default_uom']['id'],
+                        'title': item.product.sale_information['default_uom']['title']
+                    },
+                    'uom_group': item.product.general_information['uom_group']['title'],
+                    'tax_code': item.product.sale_information['tax_code']['id'],
+                }
             }
-        return {}
+            for item in so_product
+        ]
