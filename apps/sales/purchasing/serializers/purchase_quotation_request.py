@@ -1,13 +1,12 @@
 from rest_framework import serializers
 from apps.sales.purchasing.models import (
-    PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest
+    PurchaseQuotationRequest, PurchaseQuotationRequestProduct, PurchaseQuotationRequestPurchaseRequest,
 )
 from apps.shared.translations.sales import PurchaseRequestMsg
 
 
 class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
     purchase_requests = serializers.SerializerMethodField()
-    product_list = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseQuotationRequest
@@ -18,7 +17,6 @@ class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
             'purchase_requests',
             'delivered_date',
             'response_status',
-            'product_list'
         )
 
     @classmethod
@@ -31,29 +29,6 @@ class PurchaseQuotationRequestListSerializer(serializers.ModelSerializer):
                 'title': item.title
             })
         return purchase_request_list
-
-    @classmethod
-    def get_product_list(cls, obj):
-        product_list = []
-        for item in obj.purchase_quotation_request.all():
-            product_list.append(
-                {
-                    'id': item.product_id,
-                    'title': item.product.title,
-                    'uom': {
-                        'id': item.uom_id,
-                        'title': item.uom.title,
-                        'ratio': item.uom.ratio,
-                        'group_id': item.uom.group_id
-                    },
-                    'quantity': item.quantity,
-                    'product_unit_price': item.unit_price,
-                    'product_subtotal_price': item.subtotal_price,
-                    'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
-                    'description': item.description
-                }
-            )
-        return product_list
 
 
 class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
@@ -194,3 +169,39 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
         create_pr_map_pqr(purchase_quotation_request, self.initial_data.get('purchase_request_list', []))
         create_pqr_map_products(purchase_quotation_request, self.initial_data.get('products_selected', []))
         return purchase_quotation_request
+
+
+class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):
+    product_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseQuotationRequest
+        fields = (
+            'id',
+            'code',
+            'title',
+            'product_list'
+        )
+
+    @classmethod
+    def get_product_list(cls, obj):
+        product_list = []
+        for item in obj.purchase_quotation_request.all():
+            product_list.append(
+                {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'uom': {
+                        'id': item.uom_id,
+                        'title': item.uom.title,
+                        'ratio': item.uom.ratio,
+                        'group_id': item.uom.group_id
+                    },
+                    'quantity': item.quantity,
+                    'product_unit_price': item.unit_price,
+                    'product_subtotal_price': item.subtotal_price,
+                    'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
+                    'description': item.description
+                }
+            )
+        return product_list

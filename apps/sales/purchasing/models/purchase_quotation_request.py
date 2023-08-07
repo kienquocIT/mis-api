@@ -27,16 +27,6 @@ class PurchaseQuotationRequest(DataAbstractModel):
         max_length=1000
     )
 
-    purchase_quotation_request_prs = models.JSONField(
-        default=list,
-        help_text="read data purchase request, use for get list or detail purchase quotation request",
-    )
-
-    purchase_quotation_request_products = models.JSONField(
-        default=list,
-        help_text="read data product, use for get list or detail purchase quotation request",
-    )
-
     pretax_price = models.FloatField(
         help_text='sum pretax price of products'
     )
