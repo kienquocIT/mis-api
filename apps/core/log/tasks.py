@@ -35,7 +35,7 @@ def force_log_activity(
         task_workflow_id: Union[UUID, str, None] = None,
 ):
     data_change = data_change if isinstance(data_change, dict) else {}
-    return ActivityLog.objects.create(
+    obj = ActivityLog.objects.create(
         tenant_id=tenant_id,
         company_id=company_id,
         request_method=request_method,
@@ -50,6 +50,7 @@ def force_log_activity(
         change_partial=change_partial,
         task_workflow_id=task_workflow_id,
     )
+    return str(obj)
 
 
 @shared_task
@@ -83,7 +84,7 @@ def force_new_notify(
     obj.before_save(force_insert=True)
     if is_submit:
         return obj.save()
-    return obj
+    return str(obj)
 
 
 @shared_task
@@ -97,4 +98,4 @@ def force_new_notify_many(data_list: list[dict[str, any]]):
             )
         )
     objs = Notifications.objects.bulk_create(arr_objs)
-    return objs
+    return str(objs)

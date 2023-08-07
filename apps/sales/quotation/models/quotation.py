@@ -1,6 +1,5 @@
 from django.db import models
 
-from apps.sales.opportunity.models import Opportunity
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -88,7 +87,7 @@ class ConfigLongSale(SimpleAbstractModel):
 # BEGIN QUOTATION
 class Quotation(DataAbstractModel):
     opportunity = models.ForeignKey(
-        Opportunity,
+        'opportunity.Opportunity',
         on_delete=models.CASCADE,
         verbose_name="opportunity",
         related_name="quotation_opportunity",

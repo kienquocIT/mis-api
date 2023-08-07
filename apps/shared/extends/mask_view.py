@@ -6,6 +6,7 @@ import numpy as np
 import rest_framework.exceptions
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.db.models import Q
 from django.http import HttpResponse
 
 from rest_framework import status, serializers
@@ -77,22 +78,22 @@ class PermissionChecking:  # pylint: disable=R0902
         if employee_obj and hasattr(employee_obj, 'id'):
             employee_ids = employee_obj.__class__.objects.filter(group_id=employee_obj.group_id).values_list(
                 'id', flat=True
-            ).cache(
-                timeout=60 * 15
-            )
+            ).cache()
             return [str(x) for x in employee_ids]
         return []
 
     def get_employee_my_staff(self):
         employee_obj = self.employee_obj_really
         if employee_obj and hasattr(employee_obj, 'id'):
-            manager_of_group_ids = DisperseModel(app_model='')
-            employee_ids = employee_obj.__class__.objects.filter(group_id__in=manager_of_group_ids).values_list(
-                'id', flat=True
-            ).cache(
-                timeout=60 * 15
-            )
-            return [str(x) for x in employee_ids]
+            manager_of_group_ids = DisperseModel(app_model='hr.group').get_model().objects.filter(
+                Q(first_manager_id=employee_obj.id) | Q(second_manager_id=employee_obj.id)
+            ).values_list('id', flat=True).cache()
+            if manager_of_group_ids and len(manager_of_group_ids) > 0:
+                employee_ids = employee_obj.__class__.objects.filter(group_id__in=manager_of_group_ids).values_list(
+                    'id', flat=True
+                ).cache()
+                if employee_ids and len(employee_ids) > 0:
+                    return [str(x) for x in employee_ids]
         return []
 
     def get_config_perm(self):

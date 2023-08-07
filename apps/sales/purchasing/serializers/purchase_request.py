@@ -365,3 +365,60 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
                 'description': item.description
             })
         return product_list
+
+
+class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
+    purchase_request = serializers.SerializerMethodField()
+    sale_order_product = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseRequestProduct
+        fields = (
+            'id',
+            'purchase_request',
+            'sale_order_product',
+            'product',
+            'uom',
+            'quantity',
+        )
+
+    @classmethod
+    def get_purchase_request(cls, obj):
+        if obj.purchase_request:
+            return {
+                'id': obj.purchase_request_id,
+                'title': obj.purchase_request.title,
+                'code': obj.purchase_request.code,
+            }
+        return {}
+
+    @classmethod
+    def get_sale_order_product(cls, obj):
+        if obj.sale_order_product:
+            return {
+                'id': obj.sale_order_product_id,
+                'remain_for_purchase_order': obj.sale_order_product.remain_for_purchase_order,
+            }
+        return {}
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product:
+            return {
+                'id': obj.product_id,
+                'title': obj.product.title,
+                'code': obj.product.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+                'code': obj.uom.code,
+            }
+        return {}

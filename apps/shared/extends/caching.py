@@ -3,6 +3,7 @@ import hashlib
 from django.conf import settings
 from django.utils.cache import caches
 
+from misapi.celery import app
 from .utils import StringHandler
 
 __all__ = ['Caching', 'CacheManagement', 'make_key_global']
@@ -18,16 +19,21 @@ TABLE_REF = {  # clean cache reference when system clean cache of model. Bad per
         'company_company', 'account_user', 'account_user', 'hr_employee', 'company_companyuseremployee'
     ),
     'hr_employee': (
-        'hr_group',
+        'account_user', 'hr_group', 'hr_role', 'hr_roleholder',
     ),
     'hr_group': (
-        'hr_employee',
+        'hr_employee', 'hr_grouplevel',
     )
 }
 
 
 def make_key_global(key, key_prefix, version):
     return ":".join([key_prefix, str(version), key])
+
+
+@app.task(priority=10)  # Priority: Highest
+def background_destroy_cache_many_key(tbl_name):
+    return Caching().clean_by_prefix(table_name=tbl_name)
 
 
 class CacheManagement:
@@ -234,20 +240,58 @@ class Caching:
                         key_mapped.append(key)
         return key_mapped
 
+    @classmethod
+    def __key_cache_relate_many(cls, all_keys, table_name_parsed_list):
+        """
+        Append all keys need destroy include key of main table and key of reference table.
+        """
+        key_mapped = []
+        for key in all_keys:
+            for k in table_name_parsed_list:
+                if key.startswith(k):
+                    key_mapped.append(key)
+        return key_mapped
+
     def clean_by_prefix(self, table_name):
         """
         Clean many keys from table name... Make sure cache don't have fake data.
+        """
+        try:
+            all_keys = CacheManagement(self.server).all_keys
+            key_mapped = self.__key_cache_relate(
+                all_keys=all_keys if all_keys and isinstance(all_keys, list) else [],
+                table_name_parsed=self.parse_key(table_name),
+                table_ref_parsed_list=[self.parse_key(x) for x in TABLE_REF.get(table_name, [])],
+            )
+            self.delete_many(key_mapped)
+            return True
+        except Exception as _err:
+            print(_err)
+        return False
+
+    def clean_by_prefix_many(self, table_name_list: list[str]):
+        """
+        Clean many keys from table name... Make sure cache don't have fake data.
         Args:
-            table_name:
+            table_name_list:
 
         Returns:
 
         """
-        all_keys = CacheManagement(self.server).all_keys
-        key_mapped = self.__key_cache_relate(
-            all_keys=all_keys if all_keys and isinstance(all_keys, list) else [],
-            table_name_parsed=self.parse_key(table_name),
-            table_ref_parsed_list=[self.parse_key(x) for x in TABLE_REF.get(table_name, [])],
-        )
-        self.delete_many(key_mapped)
-        return True
+        try:
+            all_keys = CacheManagement(self.server).all_keys
+            table_mapped = []
+            for table_name in table_name_list:
+                for rel_tbn in TABLE_REF.get(table_name, []):
+                    table_mapped.append(rel_tbn)
+
+            table_mapped = list(set(table_mapped))
+            key_mapped = self.__key_cache_relate_many(
+                all_keys=all_keys if all_keys and isinstance(all_keys, list) else [],
+                table_name_parsed_list=[self.parse_key(x) for x in table_mapped],
+            )
+            self.delete_many(key_mapped)
+            return True
+        except Exception as _err:
+            print(_err)
+        return False
