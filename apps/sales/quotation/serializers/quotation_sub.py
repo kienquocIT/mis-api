@@ -324,7 +324,8 @@ class QuotationCommonValidate:
             return {
                 'id': str(product.id),
                 'title': product.title,
-                'code': product.code
+                'code': product.code,
+                'product_choice': product.product_choice,
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})

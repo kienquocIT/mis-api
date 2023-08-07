@@ -81,6 +81,8 @@ class SaleOrderCommonCreate:
                     tax_id=data['tax'].get('id', None),
                     promotion_id=data['promotion'].get('id', None),
                     shipping_id=data['shipping'].get('id', None),
+                    remain_for_purchase_request=sale_order_product.get('product_quantity', 0),
+                    remain_for_purchase_order=sale_order_product.get('product_quantity', 0),
                     **sale_order_product
                 )
         return True
@@ -294,7 +296,8 @@ class SaleOrderCommonValidate:
             return {
                 'id': str(product.id),
                 'title': product.title,
-                'code': product.code
+                'code': product.code,
+                'product_choice': product.product_choice,
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})

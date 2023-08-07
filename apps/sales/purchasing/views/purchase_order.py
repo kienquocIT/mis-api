@@ -1,0 +1,80 @@
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.permissions import IsAuthenticated
+
+from apps.sales.purchasing.models import PurchaseOrder
+from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer,\
+    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+
+
+class PurchaseOrderList(
+    BaseListMixin,
+    BaseCreateMixin
+):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseOrder.objects
+    filterset_fields = {
+        'supplier_id': ['exact'],
+        'contact_id': ['exact'],
+    }
+    serializer_list = PurchaseOrderListSerializer
+    serializer_create = PurchaseOrderCreateSerializer
+    serializer_detail = PurchaseOrderListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "supplier",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Purchase order List",
+        operation_description="Get Purchase order List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Create Purchase order",
+        operation_description="Create new Purchase order",
+        request_body=PurchaseOrderCreateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
+class PurchaseOrderDetail(
+    BaseRetrieveMixin,
+    BaseUpdateMixin,
+):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseOrder.objects
+    serializer_detail = PurchaseOrderDetailSerializer
+    serializer_update = PurchaseOrderUpdateSerializer
+    update_hidden_field = ['employee_modified_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "supplier",
+            "contact",
+        ).prefetch_related('purchase_requests')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase order detail",
+        operation_description="Get Purchase order detail by ID",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Purchase order",
+        operation_description="Update Purchase order by ID",
+        request_body=PurchaseOrderUpdateSerializer,
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
