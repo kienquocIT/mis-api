@@ -68,11 +68,6 @@ class PurchaseQuotationRequestListForPQ(BaseListMixin):
     serializer_list = PurchaseQuotationRequestListForPQSerializer
     list_hidden_field = ['tenant_id', 'company_id']
 
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            'purchase_quotation_request',
-        )
-
     @swagger_auto_schema(
         operation_summary="Purchase Quotation Request List For Purchase Quotation",
         operation_description="Get Purchase Quotation Request List For Purchase Quotation",

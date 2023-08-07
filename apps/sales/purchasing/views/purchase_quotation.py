@@ -19,7 +19,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('purchase_quotation_request_mapped')
+        return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped')
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation List",

@@ -351,7 +351,7 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.purchase_request.all():
+        for item in obj.purchase_request.all().select_related('product', 'uom', 'tax'):
             product_list.append({
                 'id': item.product_id,
                 'title': item.product.title,
