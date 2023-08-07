@@ -3,7 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from apps.sales.purchasing.models import PurchaseQuotationRequest
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationRequestListSerializer, PurchaseQuotationRequestDetailSerializer,
-    PurchaseQuotationRequestCreateSerializer
+    PurchaseQuotationRequestCreateSerializer, PurchaseQuotationRequestListForPQSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -59,3 +59,19 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class PurchaseQuotationRequestListForPQ(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseQuotationRequest.objects
+
+    serializer_list = PurchaseQuotationRequestListForPQSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Quotation Request List For Purchase Quotation",
+        operation_description="Get Purchase Quotation Request List For Purchase Quotation",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
