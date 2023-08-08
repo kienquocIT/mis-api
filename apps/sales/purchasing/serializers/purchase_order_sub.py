@@ -15,8 +15,8 @@ class PurchaseOrderCommonCreate:
     @classmethod
     def validate_product(cls, dict_data):
         product = {}
-        uom_request = {}
-        uom_order = {}
+        uom_order_request = {}
+        uom_order_actual = {}
         tax = {}
         purchase_request_product_datas = []
         if 'purchase_request_product_datas' in dict_data:
@@ -25,20 +25,20 @@ class PurchaseOrderCommonCreate:
         if 'product' in dict_data:
             product = dict_data['product']
             del dict_data['product']
-        if 'uom_request' in dict_data:
-            uom_request = dict_data['uom_request']
-            del dict_data['uom_request']
-        if 'uom_order' in dict_data:
-            uom_order = dict_data['uom_order']
-            del dict_data['uom_order']
+        if 'uom_order_request' in dict_data:
+            uom_order_request = dict_data['uom_order_request']
+            del dict_data['uom_order_request']
+        if 'uom_order_actual' in dict_data:
+            uom_order_actual = dict_data['uom_order_actual']
+            del dict_data['uom_order_actual']
         if 'tax' in dict_data:
             tax = dict_data['tax']
             del dict_data['tax']
         return {
             'purchase_request_product_datas': purchase_request_product_datas,
             'product': product,
-            'uom_request': uom_request,
-            'uom_order': uom_order,
+            'uom_order_request': uom_order_request,
+            'uom_order_actual': uom_order_actual,
             'tax': tax,
         }
 
@@ -54,8 +54,8 @@ class PurchaseOrderCommonCreate:
     def create_m2m_order_purchase_quotation(cls, validated_data, instance):
         PurchaseOrderQuotation.objects.bulk_create([PurchaseOrderQuotation(
             purchase_order=instance,
-            purchase_quotation_id=purchase_quotation.purchase_quotation.get('id', None),
-            is_use=purchase_quotation.is_use,
+            purchase_quotation_id=purchase_quotation['purchase_quotation'].get('id', None),
+            is_use=purchase_quotation['is_use'],
         ) for purchase_quotation in validated_data['purchase_quotations_data']])
         return True
 
@@ -66,8 +66,8 @@ class PurchaseOrderCommonCreate:
             order_product = PurchaseOrderProduct.objects.create(
                 purchase_order=instance,
                 product_id=data['product'].get('id', None),
-                uom_request_id=data['uom_request'].get('id', None),
-                uom_order_id=data['uom_order'].get('id', None),
+                uom_order_request_id=data['uom_order_request'].get('id', None),
+                uom_order_actual_id=data['uom_order_actual'].get('id', None),
                 tax_id=data['tax'].get('id', None),
                 **purchase_order_product
             )
@@ -75,8 +75,11 @@ class PurchaseOrderCommonCreate:
                 if data['purchase_request_product_datas']:
                     PurchaseOrderRequestProduct.objects.bulk_create([
                         PurchaseOrderRequestProduct(
-                            **purchase_request_product,
+                            purchase_request_product_id=purchase_request_product['purchase_request_product'],
                             purchase_order_product=order_product,
+                            sale_order_product_id=purchase_request_product['sale_order_product'],
+                            quantity_order=purchase_request_product['quantity_order'],
+                            quantity_remain=purchase_request_product['quantity_remain'],
                         ) for purchase_request_product in data['purchase_request_product_datas']
                     ])
         return True
