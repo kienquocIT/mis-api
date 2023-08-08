@@ -175,9 +175,9 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
 
-        employee_id = self.context.get('employee_id', None)
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
+        # employee_id = self.context.get('employee_id', None)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
         # send_mail_state = send_email(email_obj, employee_id, tenant_id, company_id)
         # if not send_mail_state:
         #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
