@@ -190,7 +190,8 @@ class PurchasingCommonValidate:
     @classmethod
     def validate_purchase_request_product(cls, value):
         try:
-            return PurchaseRequestProduct.objects.get(id=value)
+            if PurchaseRequestProduct.objects.get(id=value):
+                return str(value)
         except PurchaseRequestProduct.DoesNotExist:
             raise serializers.ValidationError({
                 'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
@@ -217,7 +218,10 @@ class PurchasingCommonValidate:
     @classmethod
     def validate_sale_order_product(cls, value):
         try:
-            return SaleOrderProduct.objects.get(id=value)
+            if value is None:
+                return value
+            if SaleOrderProduct.objects.get(id=value):
+                return str(value)
         except SaleOrderProduct.DoesNotExist:
             raise serializers.ValidationError({
                 'sale_order_product': SaleMsg.SALE_ORDER_PRODUCT_NOT_EXIST

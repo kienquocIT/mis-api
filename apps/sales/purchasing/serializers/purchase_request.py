@@ -377,6 +377,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'purchase_request',
+            'sale_order_product_id',
             'product',
             'uom',
             'quantity',
