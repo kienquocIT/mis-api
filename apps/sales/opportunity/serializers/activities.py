@@ -453,7 +453,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             self.create_sub_document(user, instance, data_documents)
             OpportunityActivityLogs.objects.create(
                 document=instance,
-                opportunity_id=validated_data['opportunity'],
+                opportunity=validated_data['opportunity'],
                 date_created=validated_data['request_completed_date']
             )
         return instance

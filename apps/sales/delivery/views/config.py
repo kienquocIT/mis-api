@@ -31,7 +31,7 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id

@@ -147,7 +147,7 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -170,7 +170,7 @@ class UserOfTenantList(AccountListMixin):
     @swagger_auto_schema()
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
