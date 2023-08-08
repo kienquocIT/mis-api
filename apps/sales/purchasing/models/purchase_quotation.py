@@ -33,6 +33,8 @@ class PurchaseQuotation(DataAbstractModel):
         choices=LEAD_TIME_TYPE
     )
     note = models.CharField(
+        null=True,
+        blank=True,
         max_length=1000
     )
     pretax_price = models.FloatField(
@@ -69,6 +71,8 @@ class PurchaseQuotationProduct(SimpleAbstractModel):
     )
 
     description = models.CharField(
+        null=True,
+        blank=True,
         max_length=500,
     )
 

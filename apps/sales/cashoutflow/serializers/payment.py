@@ -296,7 +296,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_mapped(cls, obj):
         all_product_mapped = []
-        for item in obj.payment.all():
+        for item in obj.payment.all().select_related('product', 'product_unit_of_measure', 'tax'):
             tax_obj = None
             if item.tax:
                 tax_obj = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title}
