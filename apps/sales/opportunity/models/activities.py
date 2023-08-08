@@ -131,7 +131,7 @@ class OpportunityDocument(SimpleAbstractModel):
     class Meta:
         verbose_name = 'OpportunityDocument'
         verbose_name_plural = 'OpportunityDocuments'
-        ordering = ()
+        ordering = ('-subject',)
         default_permissions = ()
         permissions = ()
 
