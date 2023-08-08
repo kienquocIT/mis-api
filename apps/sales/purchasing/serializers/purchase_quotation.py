@@ -201,8 +201,6 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
 
 class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
     purchase_quotation = serializers.SerializerMethodField()
-    product = serializers.SerializerMethodField()
-    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseQuotationProduct
@@ -214,7 +212,7 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_purchase_request(cls, obj):
+    def get_purchase_quotation(cls, obj):
         if obj.purchase_quotation:
             return {
                 'id': obj.purchase_quotation_id,

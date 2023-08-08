@@ -159,17 +159,17 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         related_name="purchase_order_product_product",
         null=True
     )
-    uom_request = models.ForeignKey(
+    uom_order_request = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit of product on purchase request",
+        verbose_name="unit of product order on request",
         related_name="purchase_order_product_uom_request",
         null=True
     )
-    uom_order = models.ForeignKey(
+    uom_order_actual = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
-        verbose_name="unit of product on purchase quotation",
+        verbose_name="unit of product order actual",
         related_name="purchase_order_product_uom_order",
         null=True
     )
@@ -198,21 +198,11 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         blank=True,
         null=True
     )
-    product_uom_request_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_uom_order_title = models.CharField(
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    product_quantity_request = models.FloatField(
+    product_quantity_order_request = models.FloatField(
         default=0,
         help_text='quantity of product, UI get default by purchase request',
     )
-    product_quantity_order = models.FloatField(
+    product_quantity_order_actual = models.FloatField(
         default=0,
         help_text='quantity of product, UI get default by purchase request',
     )

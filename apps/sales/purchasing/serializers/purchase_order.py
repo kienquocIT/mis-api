@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct
+from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
+    PurchaseOrderQuotation
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.shared import SYSTEM_STATUS
@@ -10,7 +11,7 @@ class PurchaseQuotationSerializer(serializers.ModelSerializer):
     purchase_quotation = serializers.UUIDField()
 
     class Meta:
-        model = PurchaseOrderRequestProduct
+        model = PurchaseOrderQuotation
         fields = (
             'purchase_quotation',
             'is_use',
@@ -49,16 +50,16 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         required=False
     )
     product = serializers.UUIDField()
-    uom_request = serializers.UUIDField()
-    uom_order = serializers.UUIDField()
+    uom_order_request = serializers.UUIDField()
+    uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField()
 
     class Meta:
         model = PurchaseOrderProduct
         fields = (
             'product',
-            'uom_request',
-            'uom_order',
+            'uom_order_request',
+            'uom_order_actual',
             'tax',
             'stock',
             'purchase_request_product_datas',
@@ -66,8 +67,6 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'product_title',
             'product_code',
             'product_description',
-            'product_uom_request_title',
-            'product_uom_order_title',
             'product_quantity_request',
             'product_quantity_order',
             'product_unit_price',
@@ -82,11 +81,11 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_product(value=value)
 
     @classmethod
-    def validate_uom_request(cls, value):
+    def validate_uom_order_request(cls, value):
         return PurchasingCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod
-    def validate_uom_order(cls, value):
+    def validate_uom_order_actual(cls, value):
         return PurchasingCommonValidate().validate_unit_of_measure(value=value)
 
     @classmethod

@@ -12,7 +12,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotation.objects
     filterset_fields = {
-        'purchase_quotation_request_mapped__purchase_request_mapped_id': ['in', 'exact'],
+        'purchase_quotation_request_mapped__purchase_request_mapped__id': ['in', 'exact'],
     }
     serializer_list = PurchaseQuotationListSerializer
     serializer_create = PurchaseQuotationCreateSerializer
