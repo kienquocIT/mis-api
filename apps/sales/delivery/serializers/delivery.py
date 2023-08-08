@@ -265,7 +265,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
 
     def handle_attach_file(self, instance, validate_data):
-        if validate_data['attachments']:
+        if 'attachments' in validate_data:
             user = self.context.get('user', None)
             relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
             relate_app_code = 'orderdeliverysub'

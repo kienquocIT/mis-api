@@ -37,7 +37,7 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='grouplevel', perm_code='view',
+        plan_code='base', app_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -49,7 +49,7 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='grouplevel', perm_code='create',
+        plan_code='base', app_code='group', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -67,7 +67,7 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='grouplevel', perm_code='view',
+        plan_code='base', app_code='group', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -79,7 +79,7 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='grouplevel', perm_code='edit',
+        plan_code='base', app_code='group', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

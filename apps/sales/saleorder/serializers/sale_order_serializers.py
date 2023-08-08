@@ -553,10 +553,12 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if sale_order.opportunity:
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': sale_order.system_status,
-            })
+            sale_order.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': sale_order.system_status,
+                }
+            )
         return sale_order
 
 
@@ -688,10 +690,12 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': instance.system_status,
-            })
+            instance.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': instance.system_status,
+                }
+            )
         return instance
 
 
@@ -793,3 +797,38 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
         if obj.system_status:
             return "Open"
         return "Open"
+
+
+class SaleOrderProductListSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'product_data',
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        so_product = SaleOrderProduct.objects.select_related('product').filter(sale_order=obj, product__isnull=False)
+        return [
+            {
+                'id': item.id,
+                'product_quantity': item.product_quantity,
+                'remain_for_purchase_request': item.remain_for_purchase_request,
+                'product': {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'code': item.product.code,
+                    'product_choice': item.product.product_choice,
+                    'uom': {
+                        'id': item.product.sale_information['default_uom']['id'],
+                        'title': item.product.sale_information['default_uom']['title']
+                    },
+                    'uom_group': item.product.general_information['uom_group']['title'],
+                    'tax_code': item.product.sale_information['tax_code']['id'],
+                }
+            }
+            for item in so_product
+        ]
