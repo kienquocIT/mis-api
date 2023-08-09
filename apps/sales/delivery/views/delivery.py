@@ -12,7 +12,7 @@ class OrderDeliveryList(BaseListMixin):
     queryset = OrderDelivery.objects
     serializer_list = OrderDeliveryListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary='Order Delivery List',
@@ -30,7 +30,7 @@ class OrderDeliverySubDetail(
     serializer_detail = OrderDeliverySubDetailSerializer
     serializer_update = OrderDeliverySubUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('orderdeliveryproduct_set')
