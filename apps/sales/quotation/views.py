@@ -19,7 +19,7 @@ class QuotationList(
     permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
     filterset_fields = {
-        'opportunity': ['exact'],
+        'opportunity': ['exact', 'isnull'],
         'sale_person': ['exact'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
