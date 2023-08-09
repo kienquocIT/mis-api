@@ -22,6 +22,7 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
+from ..sales.purchasing.models import PurchaseRequestProduct
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
 
@@ -533,3 +534,10 @@ def update_data_sale_order_product():
         obj.remain_for_purchase_request = obj.product_quantity
         obj.save()
     print('Done!')
+
+
+def update_data_product_of_purchase_request():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save()
+    print('Update Done!')
