@@ -24,6 +24,8 @@ class PurchaseQuotationRequest(DataAbstractModel):
     )
 
     note = models.CharField(
+        null=True,
+        blank=True,
         max_length=1000
     )
 
@@ -88,6 +90,8 @@ class PurchaseQuotationRequestProduct(SimpleAbstractModel):
     )
 
     description = models.CharField(
+        null=True,
+        blank=True,
         max_length=500,
     )
 

@@ -80,7 +80,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityEmailDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "email_to_contact")
+        return super().get_queryset().select_related("opportunity")
 
     @swagger_auto_schema(
         operation_summary="OpportunityEmail List",
@@ -111,7 +111,7 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
     serializer_detail = OpportunityEmailDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "email_to_contact")
+        return super().get_queryset().select_related("opportunity")
 
     @swagger_auto_schema(
         operation_summary="OpportunityEmail detail",
