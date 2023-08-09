@@ -22,6 +22,7 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
+from ..sales.purchasing.models import PurchaseRequestProduct
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
 
@@ -553,3 +554,10 @@ def check_employee_code_unique():
                     obj.save(update_fields=['code'])
                     counter += 1
     print('Make sure code employee is successfully.')
+
+
+def update_data_product_of_purchase_request():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save()
+    print('Update Done!')

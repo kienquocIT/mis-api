@@ -109,7 +109,7 @@ class PurchaseRequestProduct(SimpleAbstractModel):
         related_name="purchase_request_uom",
     )
 
-    quantity = models.IntegerField()
+    quantity = models.FloatField()
 
     unit_price = models.FloatField()
 
