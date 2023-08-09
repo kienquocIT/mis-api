@@ -1,3 +1,4 @@
+from django.utils import timezone
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import (
     Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice, ExpenseRole
@@ -288,6 +289,7 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
     expense_type = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     uom_group = serializers.SerializerMethodField()
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -297,7 +299,8 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
             'title',
             'expense_type',
             'uom',
-            'uom_group'
+            'uom_group',
+            'price_list',
         )
 
     @classmethod
@@ -329,3 +332,39 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
                 'code': obj.uom_group.code,
             }
         return {}
+
+    @classmethod
+    def check_status_price(cls, valid_time_start, valid_time_end):
+        current_time = timezone.now()
+        if (not valid_time_start >= current_time) and (valid_time_end >= current_time):
+            return 'Valid'
+        if valid_time_end < current_time:
+            return 'Expired'
+        if valid_time_start >= current_time:
+            return 'Invalid'
+        return 'Undefined'
+
+    @classmethod
+    def get_price_list(cls, obj):
+        price_list = obj.expense.all().values_list(
+            'price__id',
+            'price__title',
+            'price_value',
+            'price__is_default',
+            'price__valid_time_start',
+            'price__valid_time_end',
+            'price__price_list_type',
+        )
+        if price_list:
+            return [
+                {
+                    'id': price[0],
+                    'title': price[1],
+                    'value': price[2],
+                    'is_default': price[3],
+                    'price_status': cls.check_status_price(price[4], price[5]),
+                    'price_type': price[6],
+                }
+                for price in price_list
+            ]
+        return []
