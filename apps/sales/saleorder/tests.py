@@ -271,6 +271,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # sale order tabs
                 'sale_order_products_data',
                 'sale_order_logistic_data',
+                'customer_shipping_id',
+                'customer_billing_id',
                 'sale_order_costs_data',
                 'sale_order_expenses_data',
                 # total amount of products
@@ -516,6 +518,8 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 # sale order tabs
                 'sale_order_products_data',
                 'sale_order_logistic_data',
+                'customer_shipping_id',
+                'customer_billing_id',
                 'sale_order_costs_data',
                 'sale_order_expenses_data',
                 # total amount of products
