@@ -138,6 +138,20 @@ class SaleOrder(DataAbstractModel):
         default=dict,
         help_text="read data logistics, use for get list or detail sale order"
     )
+    customer_shipping = models.ForeignKey(
+        'saledata.AccountShippingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="sale order shipping",
+        related_name="sale_order_customer_shipping",
+        null=True
+    )
+    customer_billing = models.ForeignKey(
+        'saledata.AccountBillingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="sale order billing",
+        related_name="sale_order_customer_billing",
+        null=True
+    )
     sale_order_costs_data = models.JSONField(
         default=list,
         help_text="read data cost, use for get list or detail sale order"

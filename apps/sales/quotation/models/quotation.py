@@ -135,6 +135,20 @@ class Quotation(DataAbstractModel):
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
     )
+    customer_shipping = models.ForeignKey(
+        'saledata.AccountShippingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer shipping",
+        related_name="quotation_customer_shipping",
+        null=True
+    )
+    customer_billing = models.ForeignKey(
+        'saledata.AccountBillingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer billing",
+        related_name="quotation_customer_billing",
+        null=True
+    )
     quotation_costs_data = models.JSONField(
         default=list,
         help_text="read data cost, use for get list or detail quotation"
