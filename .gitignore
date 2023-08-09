@@ -12,3 +12,4 @@ logs/*
 .env
 .env*
 */.env
+z_testing_*.py

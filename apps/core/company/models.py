@@ -13,6 +13,7 @@ from apps.core.models import CoreAbstractModel
 
 class Company(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
+    code = models.CharField(max_length=25, blank=True)
 
     # license used
     # {

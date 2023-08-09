@@ -73,6 +73,8 @@ class PermissionAbstractModel(models.Model):
 
 
 class Employee(TenantAbstractModel, PermissionAbstractModel):
+    code = models.CharField(max_length=25, blank=True)
+
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
     email = models.CharField(max_length=150)
@@ -146,6 +148,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
         ordering = ('-date_created',)
+        unique_together = ('company', 'code', 'is_delete')
         default_permissions = ()
         permissions = ()
 
