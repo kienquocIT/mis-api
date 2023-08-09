@@ -10,6 +10,7 @@ class SaleMsg:
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
+    SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')
 
 
 class SaleTask:
@@ -30,3 +31,8 @@ class PurchaseRequestMsg:
     NOT_PURCHASE = _('Has not been configured for purchase')
     NOT_IN_SALE_ORDER = _('Not in Sale Order')
     PURCHASE_REQUEST_NOT_EXIST = _('Purchase request does not exist')
+    PURCHASE_REQUEST_IS_ARRAY = _('Purchase request must be array')
+
+
+class PurchasingMsg:
+    PURCHASE_QUOTATION_NOT_EXIST = _('Purchase quotation does not exist')

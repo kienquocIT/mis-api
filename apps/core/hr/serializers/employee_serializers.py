@@ -338,7 +338,7 @@ def validate_role_for_employee(value):
 class EmployeeCreateSerializer(serializers.ModelSerializer):
     user = serializers.UUIDField(required=False)
     plan_app = EmployeePlanAppCreateSerializer(many=True)
-    group = serializers.UUIDField(required=False)
+    group = serializers.UUIDField(required=False, allow_null=True)
     role = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False

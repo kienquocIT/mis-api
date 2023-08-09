@@ -369,7 +369,6 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
 
 class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
     purchase_request = serializers.SerializerMethodField()
-    sale_order_product = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
 
@@ -378,10 +377,11 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'purchase_request',
-            'sale_order_product',
+            'sale_order_product_id',
             'product',
             'uom',
             'quantity',
+            'remain_for_purchase_order',
         )
 
     @classmethod
@@ -391,15 +391,6 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                 'id': obj.purchase_request_id,
                 'title': obj.purchase_request.title,
                 'code': obj.purchase_request.code,
-            }
-        return {}
-
-    @classmethod
-    def get_sale_order_product(cls, obj):
-        if obj.sale_order_product:
-            return {
-                'id': obj.sale_order_product_id,
-                'remain_for_purchase_order': obj.sale_order_product.remain_for_purchase_order,
             }
         return {}
 

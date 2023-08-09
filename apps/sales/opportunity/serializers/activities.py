@@ -107,19 +107,17 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
 
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
-    email_to_contact = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityEmail
         fields = (
             'id',
             'subject',
-            'email_to',
+            'email_to_list',
             'email_cc_list',
             'content',
             'date_created',
             'opportunity',
-            'email_to_contact'
         )
 
     @classmethod
@@ -129,16 +127,6 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
                 'id': obj.opportunity_id,
                 'code': obj.opportunity.code,
                 'title': obj.opportunity.title
-            }
-        return {}
-
-    @classmethod
-    def get_email_to_contact(cls, obj):
-        if obj.email_to_contact:
-            return {
-                'id': obj.email_to_contact_id,
-                'fullname': obj.email_to_contact.fullname,
-                'email': obj.email_to_contact.email
             }
         return {}
 
@@ -170,15 +158,14 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         model = OpportunityEmail
         fields = (
             'subject',
-            'email_to',
+            'email_to_list',
             'email_cc_list',
             'content',
             'opportunity',
-            'email_to_contact'
         )
 
     @classmethod
-    def validate_email_to(cls, value):
+    def validate_email_to_list(cls, value):
         return value
 
     @classmethod
@@ -188,12 +175,12 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
 
-        employee_id = self.context.get('employee_id', None)
-        tenant_id = self.context.get('tenant_id', None)
-        company_id = self.context.get('company_id', None)
-        send_mail_state = send_email(email_obj, employee_id, tenant_id, company_id)
-        if not send_mail_state:
-            raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        # employee_id = self.context.get('employee_id', None)
+        # tenant_id = self.context.get('tenant_id', None)
+        # company_id = self.context.get('company_id', None)
+        # send_mail_state = send_email(email_obj, employee_id, tenant_id, company_id)
+        # if not send_mail_state:
+        #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
         OpportunityActivityLogs.objects.create(
             email=email_obj,
             opportunity=validated_data['opportunity'],
@@ -207,12 +194,11 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'subject',
-            'email_to',
+            'email_to_list',
             'email_cc_list',
             'content',
             'date_created',
             'opportunity',
-            'email_to_contact'
         )
 
 
@@ -453,7 +439,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             self.create_sub_document(user, instance, data_documents)
             OpportunityActivityLogs.objects.create(
                 document=instance,
-                opportunity_id=validated_data['opportunity'],
+                opportunity=validated_data['opportunity'],
                 date_created=validated_data['request_completed_date']
             )
         return instance
