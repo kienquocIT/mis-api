@@ -333,6 +333,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
             'quotation_costs_data',
             'quotation_expenses_data',
             # total amount of products
@@ -453,6 +455,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     )
     quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     quotation_costs_data = QuotationCostSerializer(
         many=True,
         required=False
@@ -495,6 +499,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
@@ -523,6 +529,14 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return QuotationCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return QuotationCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
@@ -579,6 +593,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     )
     quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     quotation_costs_data = QuotationCostSerializer(
         many=True,
         required=False
@@ -621,6 +637,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
@@ -647,6 +665,14 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return QuotationCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return QuotationCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
