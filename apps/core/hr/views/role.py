@@ -1,8 +1,9 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
 from apps.core.hr.mixins import RoleDestroyMixin
-from apps.core.hr.models import Role
+from apps.core.hr.models import Role, Employee
 from apps.core.hr.serializers.role_serializers import (
     RoleUpdateSerializer, RoleDetailSerializer,
     RoleCreateSerializer,
@@ -52,6 +53,11 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch('employee', queryset=Employee.objects.select_related('group')),
+        )
 
     @swagger_auto_schema(
         operation_summary="Role Detail",

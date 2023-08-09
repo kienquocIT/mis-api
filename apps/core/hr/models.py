@@ -323,6 +323,32 @@ class Role(TenantAbstractModel, PermissionAbstractModel):
         blank=True,
         related_name='role_map_employee'
     )
+    plan = models.ManyToManyField(
+        'base.SubscriptionPlan',
+        through="PlanRole",
+        symmetrical=False,
+        blank=True,
+        related_name='role_map_plan',
+    )
+
+    def sync_plan_app(self, plan_app_data_dict):
+        ids_valid = []
+        for obj in PlanRole.objects.filter(plan_id__in=plan_app_data_dict.keys(), role=self):
+            data = plan_app_data_dict.get(str(obj.plan_id), None)
+            if data:
+                ids_valid.append(str(obj.plan_id))
+                obj.application = data['application']
+                obj.application_m2m.clear()
+                for app_id in data['application']:
+                    PlanRoleApp.objects.create(plan_role=obj, application_id=app_id)
+
+        if len(ids_valid) < len(plan_app_data_dict.keys()):
+            for plan_id, data in plan_app_data_dict.items():
+                if plan_id not in ids_valid:
+                    obj = PlanRole.objects.create(plan_id=plan_id, role=self, application=data['application'])
+                    for app_id in data['application']:
+                        PlanRoleApp.objects.create(plan_role=obj, application_id=app_id)
+        return super().save()
 
     class Meta:
         verbose_name = 'Role'
@@ -344,6 +370,53 @@ class RoleHolder(SimpleAbstractModel):
         on_delete=models.CASCADE,
         null=True,
     )
+
+
+class PlanRole(SimpleAbstractModel):
+    plan = models.ForeignKey(
+        'base.SubscriptionPlan',
+        on_delete=models.CASCADE,
+        related_name='role_plans',
+    )
+    role = models.ForeignKey(
+        'hr.Role',
+        on_delete=models.CASCADE,
+        related_name='role_plan_app',
+    )
+    application = models.JSONField(default=list)
+    application_m2m = models.ManyToManyField(
+        'base.Application',
+        through='PlanRoleApp',
+        related_name='role_apps',
+        symmetrical=False,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = 'Plan of Role'
+        verbose_name_plural = 'Plan of Role'
+        default_permissions = ()
+        permissions = ()
+
+
+class PlanRoleApp(SimpleAbstractModel):
+    plan_role = models.ForeignKey(
+        'hr.PlanRole',
+        on_delete=models.CASCADE,
+        related_name='app_of_plan_role',
+    )
+    application = models.ForeignKey(
+        'base.Application',
+        on_delete=models.CASCADE,
+        related_name='app_use_by_plan_role',
+    )
+
+    class Meta:
+        verbose_name = 'App of Plan Role'
+        verbose_name_plural = 'App of Plan Role'
+        unique_together = ('plan_role', 'application')
+        default_permissions = ()
+        permissions = ()
 
 
 # Group Level

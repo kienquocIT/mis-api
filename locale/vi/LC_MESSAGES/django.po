@@ -369,3 +369,11 @@ msgstr "Thiết lập quyền không đúng"
 #
 msgid "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or reconfigure old flow."
 msgstr "Không cho phép chỉnh sửa khi quy trình này đang có {} đang thực thi. Đi tới trang hướng dẫn để dđược hướng dẫn cách áp dụng quy trình mới hoặc cấu hình lại quy trình cũ."
+
+#
+msgid "The plan doesn't exist or is out of date"
+msgstr "Gói không tồn tại hoặc hết hạn"
+
+#
+msgid "The application doesn't exist or is out of date"
+msgstr "Ứng dụng không tồn tại hoặc hết hạn"
