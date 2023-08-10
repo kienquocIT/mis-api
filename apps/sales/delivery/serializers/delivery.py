@@ -7,6 +7,7 @@ from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
+from apps.shared import TypeCheck
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -33,7 +34,7 @@ class WarehouseQuantityHandle:
         # số lượng prod đã quy đổi
         mediate_number = source['quantity'] * source_ratio
 
-        if hasattr(config, 'is_fifo_lifo') and config.is_fifo_lifo:
+        if 'is_fifo_lifo' in config and config['is_fifo_lifo']:
             target = target.reverse()
         is_done = False
         list_update = []
@@ -52,7 +53,7 @@ class WarehouseQuantityHandle:
                     is_done = True
                     item_sold = mediate_number / target_ratio
                     item.sold_amount += item_sold
-                    if config.is_picking:
+                    if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
                 elif calc < 0:
@@ -61,7 +62,7 @@ class WarehouseQuantityHandle:
                     # trừ kho tất cả của record này
                     mediate_number = abs(calc)
                     item.sold_amount += in_stock_unit
-                    if config.is_picking:
+                    if config['is_picking']:
                         item.picked_ready = item.picked_ready - in_stock_unit
                     list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready'])
@@ -223,7 +224,8 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'customer_data',
             'contact_data',
             'config_at_that_point',
-            'attachments'
+            'attachments',
+            'delivery_logistic'
         )
 
 
@@ -251,7 +253,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             'actual_delivery_date',
             'remarks',
             'products',
-            'attachments'
+            'attachments',
+            'delivery_logistic'
         )
 
     @classmethod
@@ -265,7 +268,14 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
 
     def handle_attach_file(self, instance, validate_data):
-        if 'attachments' in validate_data:
+        if 'attachments' in validate_data and validate_data['attachments']:
+            type_check = True
+            if isinstance(validate_data['attachments'], list):
+                type_check = TypeCheck.check_uuid_list(validate_data['attachments'])
+            elif isinstance(validate_data['attachments'], str):
+                type_check = TypeCheck.check_uuid(validate_data['attachments'])
+            if not type_check:
+                return True
             user = self.context.get('user', None)
             relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
             relate_app_code = 'orderdeliverysub'
@@ -305,6 +315,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.estimated_delivery_date = validated_data['estimated_delivery_date']
         instance.actual_delivery_date = validated_data['actual_delivery_date']
         instance.remarks = validated_data['remarks']
+        if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
+            instance.delivery_logistic = validated_data['delivery_logistic']
 
     @classmethod
     def minus_product_warehouse_stock(cls, tenant_com_info, product, stock_info, config):
@@ -337,7 +349,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                     obj.picked_quantity = product_done[obj_key]['picked_num']
                     obj.delivery_data = delivery_data
 
-                    if (config.is_picking and config.is_partial_ship and
+                    if (config['is_picking'] and config['is_partial_ship'] and
                             obj.picked_quantity > obj.remaining_quantity):
                         raise serializers.ValidationError(
                             {'detail': _('Products must have picked quantity equal to or less than remaining quantity')}
@@ -431,7 +443,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.is_updated = True
             instance.save(
                 update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks', 'attachments']
+                               'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
             )
         else:
             raise serializers.ValidationError(
@@ -449,7 +461,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.is_updated = True
         instance.save(
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments']
+                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
         )
         if instance.remaining_quantity > total_done:
             new_sub = cls.create_new_sub(instance, total_done, 2)
@@ -468,7 +480,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.is_updated = True
             instance.save(
                 update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                               'actual_delivery_date', 'remarks', 'attachments']
+                               'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
             )
             order_delivery.state = 2
             order_delivery.save(update_fields=['state'])
@@ -498,7 +510,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             order_delivery.state = 2
         instance.save(
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
-                           'actual_delivery_date', 'remarks', 'attachments']
+                           'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
         )
         order_delivery.save(update_fields=['sub', 'state'])
 
@@ -507,7 +519,11 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         validated_product = validated_data['products']
         config = instance.config_at_that_point
         if not config:
-            config = DeliveryConfig.objects.get(company_id=instance.company_id)
+            get_config = DeliveryConfig.objects.get(company_id=instance.company_id)
+            config = {
+                "is_picking": get_config.is_picking,
+                "is_partial_ship": get_config.is_partial_ship
+            }
         is_picking = config['is_picking']
         is_partial = config['is_partial_ship']
         product_done = {}

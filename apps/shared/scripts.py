@@ -22,6 +22,7 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
+from ..sales.purchasing.models import PurchaseRequestProduct
 from ..sales.quotation.models import QuotationIndicatorConfig
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
 
@@ -533,3 +534,30 @@ def update_data_sale_order_product():
         obj.remain_for_purchase_request = obj.product_quantity
         obj.save()
     print('Done!')
+
+
+def check_employee_code_unique():
+    for com_obj in Company.objects.filter():
+        dict_data = {}
+        for obj in Employee.objects.filter(company=com_obj):
+            if obj.code in dict_data:
+                dict_data[obj.code].append(obj)
+            else:
+                dict_data[obj.code] = [obj]
+
+        for code, objs in dict_data.items():
+            if len(objs) > 1:
+                counter = 0
+                for obj in objs:
+                    obj.code = f'{code}-{counter}'
+                    print(f'change from: {code} to {obj.code}')
+                    obj.save(update_fields=['code'])
+                    counter += 1
+    print('Make sure code employee is successfully.')
+
+
+def update_data_product_of_purchase_request():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save()
+    print('Update Done!')

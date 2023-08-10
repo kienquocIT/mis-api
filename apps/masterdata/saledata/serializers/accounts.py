@@ -531,6 +531,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 class AccountDetailSerializer(AbstractDetailSerializerModel):
     contact_mapped = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    shipping_address = serializers.SerializerMethodField()
+    billing_address = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -611,6 +613,28 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                     )
             return list_contact_mapped
         return []
+
+    @classmethod
+    def get_shipping_address(cls, obj):
+        shipping_address_list = []
+        for item in obj.account_mapped_shipping_address.all():
+            shipping_address_list.append({
+                'id': item.id,
+                'full_address': item.full_address,
+                'is_default': item.is_default
+            })
+        return shipping_address_list
+
+    @classmethod
+    def get_billing_address(cls, obj):
+        billing_address_list = []
+        for item in obj.account_mapped_billing_address.all():
+            billing_address_list.append({
+                'id': item.id,
+                'full_address': item.full_address,
+                'is_default': item.is_default
+            })
+        return billing_address_list
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):

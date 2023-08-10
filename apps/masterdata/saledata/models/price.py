@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
@@ -11,6 +12,12 @@ __all__ = [
     'ProductPriceList',
     'Discount',
     'UnitOfMeasureGroup'
+]
+
+PRICE_LIST_TYPE = [
+    (0, _('For Sale')),
+    (1, _('For Purchase')),
+    (2, _('For Expense')),
 ]
 
 # Create your models here.
@@ -86,7 +93,7 @@ class Price(DataAbstractModel):
         default='9999-01-01 00:00:00.00',
         null=True
     )
-    price_list_type = models.IntegerField()
+    price_list_type = models.SmallIntegerField(choices=PRICE_LIST_TYPE)
     price_list_mapped = models.UUIDField(null=True)
     product = models.ManyToManyField(
         Product,
