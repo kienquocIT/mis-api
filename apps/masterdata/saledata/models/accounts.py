@@ -332,7 +332,7 @@ class AccountAccountTypes(SimpleAbstractModel):
 
 # AccountShippingAddress
 class AccountShippingAddress(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_shipping_address")
     country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
     detail_address = models.CharField(
         verbose_name='Detail address',
@@ -359,7 +359,7 @@ class AccountShippingAddress(SimpleAbstractModel):
 
 # AccountShippingAddress
 class AccountBillingAddress(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_billing_address")
     account_name = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='billing_account_name')
     email = models.CharField(
         verbose_name='account email',
