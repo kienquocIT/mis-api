@@ -21,7 +21,7 @@ class OrderPickingList(BaseListMixin):
     queryset = OrderPicking.objects
     serializer_list = OrderPickingListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     @swagger_auto_schema(
         operation_summary='Order Picking List',
@@ -40,7 +40,7 @@ class OrderPickingSubDetail(
     serializer_detail = OrderPickingSubDetailSerializer
     serializer_update = OrderPickingSubUpdateSerializer
     list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('orderpickingproduct_set')

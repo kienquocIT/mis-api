@@ -327,10 +327,6 @@ msgid "Products must have picked quantity equal to or less than remaining quanti
 msgstr "Số lượng lấy hàng phải nhỏ hơn hoặc bằng số lượng còn lại trên mỗi sản phẩm"
 
 #
-msgid "Products must have delivery quantity equal to or less than remaining quantity"
-msgstr "Số lượng giao hàng phải nhỏ hơn hoặc bằng số lượng còn lại trên mỗi sản phẩm"
-
-#
 msgid "Can not update when status is Done!"
 msgstr "Không thể lưu khi phiếu đã hoàn tất"
 
