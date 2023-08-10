@@ -332,6 +332,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # total amount of products
@@ -460,6 +462,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
@@ -502,6 +506,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # indicator tab
@@ -533,6 +539,14 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
@@ -594,6 +608,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
     sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
@@ -636,6 +652,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # indicator tab
@@ -665,6 +683,14 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:

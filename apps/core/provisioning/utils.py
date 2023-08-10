@@ -243,6 +243,7 @@ class TenantController:
     @classmethod
     def create_employee(cls, **kwargs):
         try:
+            kwargs['code'] = 'EMP0001'
             ser = EmployeeCreateSerializer(data=kwargs)
             ser.is_valid(raise_exception=True)
             obj = ser.save(

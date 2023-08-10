@@ -238,6 +238,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 uom_id=data['uom']['id'],
                 tax_id=data['tax']['id'],
                 quantity=data['quantity'],
+                remain_for_purchase_order=data['quantity'],
                 unit_price=data['unit_price'],
                 sub_total_price=data['sub_total_price']
             )

@@ -52,7 +52,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField()
     uom_order_request = serializers.UUIDField()
     uom_order_actual = serializers.UUIDField()
-    tax = serializers.UUIDField()
+    tax = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = PurchaseOrderProduct
