@@ -7,6 +7,7 @@ from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
+from apps.shared import TypeCheck
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
@@ -265,7 +266,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
 
     def handle_attach_file(self, instance, validate_data):
-        if 'attachments' in validate_data:
+        if 'attachments' in validate_data and TypeCheck.check_uuid_list(validate_data['attachments']):
             user = self.context.get('user', None)
             relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
             relate_app_code = 'orderdeliverysub'
