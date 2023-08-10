@@ -315,7 +315,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         instance.estimated_delivery_date = validated_data['estimated_delivery_date']
         instance.actual_delivery_date = validated_data['actual_delivery_date']
         instance.remarks = validated_data['remarks']
-        instance.delivery_logistic = validated_data['delivery_logistic']
+        if 'delivery_logistic' in validated_data and validated_data['delivery_logistic']:
+            instance.delivery_logistic = validated_data['delivery_logistic']
 
     @classmethod
     def minus_product_warehouse_stock(cls, tenant_com_info, product, stock_info, config):
