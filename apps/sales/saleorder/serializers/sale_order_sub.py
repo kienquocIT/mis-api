@@ -270,7 +270,7 @@ class SaleOrderCommonValidate:
                 id=value
             )
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': HRMsg.EMPLOYEES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_quotation(cls, value):
@@ -446,3 +446,14 @@ class SaleOrderCommonValidate:
             return AccountBillingAddress.objects.get(id=value)
         except Account.DoesNotExist:
             raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
