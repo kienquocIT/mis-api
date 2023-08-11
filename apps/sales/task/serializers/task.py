@@ -45,7 +45,7 @@ class ValidAssignTask:
         assigner = attrs['employee_created']
         assignee = attrs['assign_to']
         employee_group = assigner.group.employee_group.all()
-        if employee_group.count():
+        if employee_group and employee_group.count():
             for emp in employee_group:
                 if emp.id == assignee.id:
                     return True
@@ -270,7 +270,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_parent_n(cls, value):
-        if value.parent_n.count():
+        if value.parent_n and value.parent_n.count():
             raise serializers.ValidationError(
                 {'title': django.utils.translation.gettext_lazy("Can not create another sub-task form sub-task")}
             )
