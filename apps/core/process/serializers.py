@@ -2,15 +2,15 @@ from collections import defaultdict
 
 from rest_framework import serializers
 
-from apps.core.process.models import Function, Process, ProcessStep
-from apps.shared.translations.process import ProcessMsg
+from apps.core.process.models import SaleFunction, Process, SaleProcessStep
+from apps.shared.translations.process import SaleProcessMsg
 
 
 class FunctionProcessListSerializer(serializers.ModelSerializer):
     function = serializers.SerializerMethodField()
 
     class Meta:
-        model = Function
+        model = SaleFunction
         fields = (
             'id',
             'function',
@@ -40,7 +40,7 @@ class ProcessDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_process_step_datas(cls, obj):
-        steps = ProcessStep.objects.filter(process=obj)
+        steps = SaleProcessStep.objects.filter(process=obj)
 
         grouped_steps = defaultdict(list)
         for step in steps:
@@ -66,7 +66,7 @@ class ProcessStepFunctionSerializer(serializers.ModelSerializer):
     is_completed = serializers.BooleanField()
 
     class Meta:
-        model = ProcessStep
+        model = SaleProcessStep
         fields = (
             'function_id',
             'function_title',
@@ -79,13 +79,13 @@ class ProcessStepFunctionSerializer(serializers.ModelSerializer):
     def validate_function_id(cls, value):
         if value:
             try:
-                Function.objects.get_current(
+                SaleFunction.objects.get_current(
                     fill__company=True,
                     id=value
                 )
                 return str(value)
-            except Function.DoesNotExist:
-                raise serializers.ValidationError({'function': ProcessMsg.NOT_EXIST})
+            except SaleFunction.DoesNotExist:
+                raise serializers.ValidationError({'function': SaleProcessMsg.NOT_EXIST})
         return None
 
 
@@ -104,14 +104,14 @@ class ProcessUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def update_step_process(cls, instance, data):
-        ProcessStep.objects.filter(process=instance).delete()
+        SaleProcessStep.objects.filter(process=instance).delete()
         bulk_data = []
         process_step_datas = []
         cnt = 1
         for step in data:
             temp_list = {}
             for function in step['step']:
-                process_step = ProcessStep(
+                process_step = SaleProcessStep(
                     process=instance,
                     function_id=function['function_id'],
                     function_title=function['function_title'],
@@ -127,7 +127,7 @@ class ProcessUpdateSerializer(serializers.ModelSerializer):
                 )
             process_step_datas.append(temp_list)
             cnt += 1
-        ProcessStep.objects.bulk_create(bulk_data)
+        SaleProcessStep.objects.bulk_create(bulk_data)
         return process_step_datas
 
     def update(self, instance, validated_data):
@@ -141,21 +141,21 @@ class ProcessUpdateSerializer(serializers.ModelSerializer):
 
 class ProcessStepDetailSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProcessStep
+        model = SaleProcessStep
         fields = '__all__'
 
 
 class SkipProcessStepSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProcessStep
+        model = SaleProcessStep
         fields = ()
 
     def update(self, instance, validated_data):
         if not instance.is_current:
-            raise serializers.ValidationError({'detail': ProcessMsg.STEP_NOT_CURRENT})
+            raise serializers.ValidationError({'detail': SaleProcessMsg.STEP_NOT_CURRENT})
 
         if instance.is_completed:
-            raise serializers.ValidationError({'detail': ProcessMsg.STEP_COMPLETED})
+            raise serializers.ValidationError({'detail': SaleProcessMsg.STEP_COMPLETED})
 
         instance.skip_step()
         return instance
@@ -168,8 +168,8 @@ class SetProcessStepCurrentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if instance.is_completed:
-            raise serializers.ValidationError({'detail': ProcessMsg.NOT_SET_CURRENT_STEP_COMPLETED})
+            raise serializers.ValidationError({'detail': SaleProcessMsg.NOT_SET_CURRENT_STEP_COMPLETED})
         if instance.is_current:
-            raise serializers.ValidationError({'detail': ProcessMsg.STEP_CURRENT})
+            raise serializers.ValidationError({'detail': SaleProcessMsg.STEP_CURRENT})
         instance.set_current()
         return instance

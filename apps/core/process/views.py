@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.core.process.models import Function, Process, ProcessStep
+from apps.core.process.models import SaleFunction, Process, SaleProcessStep
 from apps.core.process.serializers import FunctionProcessListSerializer, ProcessUpdateSerializer, \
     ProcessDetailSerializer, ProcessStepDetailSerializer, SkipProcessStepSerializer, SetProcessStepCurrentSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -12,7 +12,7 @@ class FunctionProcessList(
     BaseCreateMixin
 ):
     permission_classes = [IsAuthenticated]
-    queryset = Function.objects
+    queryset = SaleFunction.objects
 
     serializer_list = FunctionProcessListSerializer
     list_hidden_field = ['company_id']
@@ -52,7 +52,7 @@ class ProcessDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class SkipProcessStep(BaseUpdateMixin):
-    queryset = ProcessStep.objects  # noqa
+    queryset = SaleProcessStep.objects  # noqa
     serializer_detail = ProcessStepDetailSerializer
     serializer_update = SkipProcessStepSerializer
 
@@ -66,7 +66,7 @@ class SkipProcessStep(BaseUpdateMixin):
 
 
 class SetCurrentProcessStep(BaseUpdateMixin):
-    queryset = ProcessStep.objects  # noqa
+    queryset = SaleProcessStep.objects  # noqa
     serializer_detail = ProcessStepDetailSerializer
     serializer_update = SetProcessStepCurrentSerializer
 

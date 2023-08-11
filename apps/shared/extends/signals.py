@@ -6,7 +6,7 @@ from django.dispatch import receiver
 
 from apps.core.attachments.models import Files
 from apps.core.log.models import Notifications
-from apps.core.process.models import Function, Process
+from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
 from apps.sales.quotation.models import (
@@ -641,13 +641,13 @@ class ConfigDefaultData:
     def process_function_config(self):
         bulk_info = []
         for data in self.function_process_data:
-            bulk_info.append(Function(
+            bulk_info.append(SaleFunction(
                 company=self.company_obj,
                 tenant=self.company_obj.tenant,
                 code='',
                 **data,
             ))
-        Function.objects.bulk_create(bulk_info)
+        SaleFunction.objects.bulk_create(bulk_info)
 
     def process_config(self):
         Process.objects.create(

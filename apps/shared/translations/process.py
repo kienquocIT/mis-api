@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy as _
 
 
-class ProcessMsg:
+class SaleProcessMsg:
     NOT_EXIST = _('Does not exist.')
     STEP_NOT_CURRENT = _('This step is not current so can not skip')
     STEP_COMPLETED = _('This step is completed')

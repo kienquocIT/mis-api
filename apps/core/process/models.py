@@ -19,7 +19,7 @@ class Process(MasterDataAbstractModel):
         permissions = ()
 
 
-class Function(MasterDataAbstractModel):
+class SaleFunction(MasterDataAbstractModel):
     function = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
@@ -45,14 +45,14 @@ class Function(MasterDataAbstractModel):
         permissions = ()
 
 
-class ProcessStep(SimpleAbstractModel):
+class SaleProcessStep(SimpleAbstractModel):
     process = models.ForeignKey(
         Process,
         on_delete=models.CASCADE,
         related_name='process',
     )
     function = models.ForeignKey(
-        Function,
+        SaleFunction,
         on_delete=models.CASCADE,
         related_name='function_process_step',
     )
@@ -77,7 +77,7 @@ class ProcessStep(SimpleAbstractModel):
     def skip_step(self):
         self.is_completed = True
         self.save()
-        steps = ProcessStep.objects.filter(
+        steps = SaleProcessStep.objects.filter(
             order__in=[
                 self.order,
                 self.order + 1
@@ -100,7 +100,7 @@ class ProcessStep(SimpleAbstractModel):
                 )
 
     def set_current(self):
-        pre_step = ProcessStep.objects.filter(
+        pre_step = SaleProcessStep.objects.filter(
             order__lt=self.order
         )
         pre_step.update(
