@@ -29,7 +29,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_request_for(cls, obj):
-        return dict(REQUEST_FOR).get(obj.request_for)
+        return str(dict(REQUEST_FOR).get(obj.request_for))
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -57,7 +57,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_status(cls, obj):
-        return dict(PURCHASE_STATUS).get(obj.purchase_status)
+        return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
 
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
@@ -90,7 +90,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_request_for(cls, obj):
-        return dict(REQUEST_FOR).get(obj.request_for)
+        return str(dict(REQUEST_FOR).get(obj.request_for))
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -128,7 +128,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_status(cls, obj):
-        return dict(PURCHASE_STATUS).get(obj.purchase_status)
+        return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
 
 
 class PurchaseRequestProductSerializer(serializers.ModelSerializer):

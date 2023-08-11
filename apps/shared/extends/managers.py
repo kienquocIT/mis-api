@@ -14,6 +14,7 @@ DEFAULT__FILL__MAP_KEY = {
     'fill__tenant': 'tenant_id',
     'fill__company': 'company_id',
     'fill__space': 'space_id',
+    'fill__allow_use': 'system_status__in',
 }
 
 
@@ -42,6 +43,7 @@ class EntryQuerySet(models.query.QuerySet):
     @classmethod
     def append_filter_currently(
             cls, sql_query, fill__tenant, fill__company, fill__space, filter_kwargs,
+            fill__allow_use,
             default__fill__map_key: dict,
     ):
         """
@@ -53,6 +55,7 @@ class EntryQuerySet(models.query.QuerySet):
             fill__tenant:
             sql_query:
             filter_kwargs:
+            fill__allow_use:
 
         Returns:
             Dictionary from filter_kwargs
@@ -86,12 +89,20 @@ class EntryQuerySet(models.query.QuerySet):
                     f'{default__fill__map_key["fill__space"]}` = {user_obj.space_current_id.hex}' not in sql_query
             ):
                 filter_kwargs[default__fill__map_key["fill__space"]] = user_obj.space_current_id
+
+            # append system_status__in if not exist in query
+            if (
+                    fill__allow_use and
+                    f'{default__fill__map_key["fill__allow_use"]}` = ' not in sql_query
+            ):
+                filter_kwargs[default__fill__map_key["fill__allow_use"]] = [2, 3]
         return filter_kwargs
 
     def filter_current(
             self, *args,
-            fill__tenant=False, fill__company=False, fill__space=False,
+            fill__tenant: bool = False, fill__company: bool = False, fill__space: bool = False,
             fill__map_key: dict[str, str] = None,
+            fill__allow_use: bool = False,
             **kwargs
     ):
         """
@@ -101,6 +112,7 @@ class EntryQuerySet(models.query.QuerySet):
             fill__company:
             fill__tenant:
             fill__map_key:
+            fill__allow_use:
             *args:
             **kwargs:
 
@@ -112,6 +124,7 @@ class EntryQuerySet(models.query.QuerySet):
             self.query,
             fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
             filter_kwargs=kwargs,
+            fill__allow_use=fill__allow_use,
             default__fill__map_key=self.parsed_fill__map_key(fill__map_key),
         )
         return self.filter(*args, **kwargs_converted)
@@ -150,7 +163,13 @@ class EntryQuerySet(models.query.QuerySet):
             ...
         return self
 
-    def get_current(self, *args, fill__tenant, fill__company, fill__space, fill__map_key, **kwargs):
+    def get_current(
+            self, *args,
+            fill__tenant: bool = False, fill__company: bool = False, fill__space: bool = False,
+            fill__map_key: dict[str, str] = None,
+            fill__allow_use: bool = False,
+            **kwargs
+    ):
         """
         Support call append currently user data from QuerySet then call self.get()
         Args:
@@ -158,6 +177,7 @@ class EntryQuerySet(models.query.QuerySet):
             fill__company:
             fill__tenant:
             fill__map_key:
+            fill__allow_use:
             *args:
             **kwargs:
 
@@ -169,6 +189,7 @@ class EntryQuerySet(models.query.QuerySet):
             self.query,
             fill__tenant=fill__tenant, fill__company=fill__company, fill__space=fill__space,
             filter_kwargs=kwargs,
+            fill__allow_use=fill__allow_use,
             default__fill__map_key=self.parsed_fill__map_key(fill__map_key)
         )
         return super().get(*args, **kwargs_converted)

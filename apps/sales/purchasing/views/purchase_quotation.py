@@ -21,6 +21,13 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
 
     def get_queryset(self):
+        # Check filter parameters in the request
+        data_filter = self.request.query_params.dict()
+        if 'purchase_quotation_request_mapped__purchase_request_mapped__id__in' in data_filter:
+            return super().get_queryset().select_related(
+                'purchase_quotation_request_mapped',
+                'supplier_mapped'
+            ).distinct()
         return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped')
 
     @swagger_auto_schema(
@@ -75,7 +82,9 @@ class PurchaseQuotationProductList(BaseListMixin):
     list_hidden_field = []
 
     def get_queryset(self):
-        return super().get_queryset().select_related('purchase_quotation')
+        return super().get_queryset().select_related(
+            'purchase_quotation'
+        ).order_by('-purchase_quotation__date_created')
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation Product List",

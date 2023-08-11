@@ -874,12 +874,12 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
     def get_shipping_address(cls, obj):
         return [
             {'id': shipping.id, 'full_address': shipping.full_address}
-            for shipping in obj.accountshippingaddress_set.all()
+            for shipping in obj.account_mapped_shipping_address.all()
         ]
 
     @classmethod
     def get_billing_address(cls, obj):
         return [
             {'id': billing.id, 'full_address': billing.full_address}
-            for billing in obj.accountbillingaddress_set.all()
+            for billing in obj.account_mapped_billing_address.all()
         ]

@@ -101,7 +101,7 @@ class PurchaseRequestProductList(BaseListMixin):
             'purchase_request',
             'product',
             'uom',
-        )
+        ).order_by('-purchase_request__date_created')
 
     @swagger_auto_schema(
         operation_summary="Purchase Request Product List",

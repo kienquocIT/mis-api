@@ -271,6 +271,15 @@ class OrderDeliverySub(MasterDataAbstractModel):
         verbose_name='order delivery attachment',
         help_text=json.dumps(['uuid4', 'uuid4']),
     )
+    delivery_logistic = models.JSONField(
+        default=list,
+        null=True,
+        verbose_name='delivery shipping and billing address',
+        help_text=json.dumps({
+            "shipping_address": "lorem ipsum dolor sit amet",
+            "billing_address": "consectetur adipiscing elit."
+        }),
+    )
 
     def set_and_check_quantity(self):
         if self.times != 1 and not self.previous_step:

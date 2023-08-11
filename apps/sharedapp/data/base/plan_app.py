@@ -205,7 +205,40 @@ _Application_crm_data = {
     "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124": {
         "title": "Document For Customer",
         "code": "documentforcustomer",
-        "app_label": "document_for_customer",
+        "app_label": "saleactivities",
+        "is_workflow": False,
+        "option_permission": 1,
+    },
+
+    "14dbc606-1453-4023-a2cf-35b1cd9e3efd": {
+        "title": "Call",
+        "code": "opportunitycall",
+        "app_label": "saleactivities",
+        "is_workflow": False,
+        "option_permission": 1,
+    },
+
+    "dec012bf-b931-48ba-a746-38b7fd7ca73b": {
+        "title": "Email",
+        "code": "opportunityemail",
+        "app_label": "saleactivities",
+        "is_workflow": False,
+        "option_permission": 1,
+    },
+
+    "2fe959e3-9628-4f47-96a1-a2ef03e867e3": {
+        "title": "Metting With Customer",
+        "code": "meetingwithcustomer",
+        "app_label": "saleactivities",
+        "is_workflow": False,
+        "option_permission": 1,
+    },
+
+    "31c9c5b0-717d-4134-b3d0-cc4ca174b168": {
+        "title": "Contract",
+        "code": "contract",
+        "app_label": "contract",
+        "is_workflow": False,
         "option_permission": 1,
     }
 }

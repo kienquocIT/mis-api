@@ -189,7 +189,6 @@ class SaleOrderActiveDeliverySerializer:
             delivery_quantity,
 
     ):
-        logistic = SaleOrderLogistic.objects.filter(sale_order=self.order_obj).first()
         state = 0
         if not self.config_obj.is_partial_ship and not self.config_obj.is_picking \
                 or self.config_obj.is_partial_ship and not self.config_obj.is_picking or \
@@ -204,8 +203,14 @@ class SaleOrderActiveDeliverySerializer:
                 "id": str(self.order_obj.id),
                 "title": str(self.order_obj.title),
                 "code": str(self.order_obj.code),
-                "shipping_address": logistic.shipping_address,
-                "billing_address": logistic.billing_address,
+                "shipping_address": {
+                    "id": str(self.order_obj.customer_shipping_id),
+                    "address": self.order_obj.customer_shipping.full_address
+                } if self.order_obj.customer_shipping else {},
+                "billing_address": {
+                    "id": str(self.order_obj.customer_billing_id),
+                    "bill": self.order_obj.customer_billing.full_address
+                } if self.order_obj.customer_billing else {},
             },
             from_picking_area='',
             customer=self.order_obj.customer,

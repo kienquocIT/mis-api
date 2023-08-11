@@ -118,12 +118,12 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         data_cost = validated_data.pop('cost')
-        shipping = ReturnAdvance.objects.create(**validated_data)
+        return_advance = ReturnAdvance.objects.create(**validated_data)
         self.common_create_return_advance_cost(
             validate_data=data_cost,
-            return_advance=shipping
+            return_advance=return_advance
         )
-        return shipping
+        return return_advance
 
 
 class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):

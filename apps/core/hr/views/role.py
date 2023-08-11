@@ -20,6 +20,7 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     serializer_detail = RoleDetailSerializer
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id', 'tenant_id']
+    search_fields = ['title', 'code']
 
     def get_queryset(self):
         return super().get_queryset().select_related('company')
