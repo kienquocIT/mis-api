@@ -159,7 +159,7 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     list_hidden_field = ['company']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('user').filter(employee__isnull=True)
+        return super().get_queryset().select_related('user').filter(user__isnull=False, employee__isnull=True)
 
     def get_filter_auth(self) -> dict:
         return {}
