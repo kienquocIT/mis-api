@@ -573,4 +573,16 @@ def update_employee_inherit_quotation_sale_order():
             sale_order.employee_inherit = sale_order.sale_person
             sale_order.save(update_fields=['employee_inherit'])
     print('Update done.')
+
+
+def make_sure_function_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_function_config()
+    print('Make sure function process config is done!')
+
+
+def make_sure_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_config()
+    print('Make sure process config is done!')
     return True
