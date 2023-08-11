@@ -3,6 +3,7 @@ from collections import defaultdict
 from rest_framework import serializers
 
 from apps.core.process.models import Function, Process, ProcessStep
+from apps.shared.translations.process import ProcessMsg
 
 
 class FunctionProcessListSerializer(serializers.ModelSerializer):
@@ -84,7 +85,7 @@ class ProcessStepFunctionSerializer(serializers.ModelSerializer):
                 )
                 return str(value)
             except Function.DoesNotExist:
-                raise serializers.ValidationError({'function': 'Does not exist'})
+                raise serializers.ValidationError({'function': ProcessMsg.NOT_EXIST})
         return None
 
 
@@ -151,10 +152,10 @@ class SkipProcessStepSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if not instance.is_current:
-            raise serializers.ValidationError({'detail': 'Ban chi co the skip step current'})
+            raise serializers.ValidationError({'detail': ProcessMsg.STEP_NOT_CURRENT})
 
         if instance.is_completed:
-            raise serializers.ValidationError({'detail': 'Step nay da completed roi'})
+            raise serializers.ValidationError({'detail': ProcessMsg.STEP_COMPLETED})
 
         instance.skip_step()
         return instance
@@ -167,8 +168,8 @@ class SetProcessStepCurrentSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if instance.is_completed:
-            raise serializers.ValidationError({'detail': 'Step này đã completed không thể set current'})
+            raise serializers.ValidationError({'detail': ProcessMsg.NOT_SET_CURRENT_STEP_COMPLETED})
         if instance.is_current:
-            raise serializers.ValidationError({'detail': 'Bạn đang ở step này'})
+            raise serializers.ValidationError({'detail': ProcessMsg.STEP_CURRENT})
         instance.set_current()
         return instance
