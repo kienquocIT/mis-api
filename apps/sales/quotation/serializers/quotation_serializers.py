@@ -284,11 +284,11 @@ class QuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(2),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(2),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
@@ -333,6 +333,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
             'quotation_costs_data',
             'quotation_expenses_data',
             # total amount of products
@@ -401,11 +403,11 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(2),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(2),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
@@ -440,8 +442,9 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    sale_person = serializers.CharField(
-        max_length=550
+    employee_inherit = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     payment_term = serializers.CharField(
         max_length=550
@@ -453,6 +456,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     )
     quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     quotation_costs_data = QuotationCostSerializer(
         many=True,
         required=False
@@ -474,7 +479,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'sale_person',
+            'employee_inherit',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -495,6 +500,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
@@ -517,12 +524,20 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_sale_person(cls, value):
-        return QuotationCommonValidate().validate_sale_person(value=value)
+    def validate_employee_inherit(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return QuotationCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return QuotationCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
@@ -564,9 +579,9 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    sale_person = serializers.CharField(
-        max_length=550,
-        required=False
+    employee_inherit = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     payment_term = serializers.CharField(
         max_length=550,
@@ -579,6 +594,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     )
     quotation_term_data = QuotationTermSerializer(required=False)
     quotation_logistic_data = QuotationLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     quotation_costs_data = QuotationCostSerializer(
         many=True,
         required=False
@@ -600,7 +617,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'sale_person',
+            'employee_inherit',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -621,6 +638,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'quotation_products_data',
             'quotation_term_data',
             'quotation_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'quotation_costs_data',
             'quotation_expenses_data',
             'is_customer_confirm',
@@ -641,12 +660,20 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_sale_person(cls, value):
-        return QuotationCommonValidate().validate_sale_person(value=value)
+    def validate_employee_inherit(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
         return QuotationCommonValidate().validate_payment_term(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return QuotationCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return QuotationCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:

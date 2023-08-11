@@ -22,8 +22,9 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.quotation.models import QuotationIndicatorConfig
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
+from ..sales.purchasing.models import PurchaseRequestProduct
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 
 
 def update_sale_default_data_old_company():
@@ -553,3 +554,23 @@ def check_employee_code_unique():
                     obj.save(update_fields=['code'])
                     counter += 1
     print('Make sure code employee is successfully.')
+
+
+def update_data_product_of_purchase_request():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_quotation_sale_order():
+    for quotation in Quotation.objects.all():
+        if quotation.sale_person:
+            quotation.employee_inherit = quotation.sale_person
+            quotation.save(update_fields=['employee_inherit'])
+    for sale_order in SaleOrder.objects.all():
+        if sale_order.sale_person:
+            sale_order.employee_inherit = sale_order.sale_person
+            sale_order.save(update_fields=['employee_inherit'])
+    print('Update done.')
+    return True

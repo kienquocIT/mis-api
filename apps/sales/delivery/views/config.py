@@ -27,6 +27,8 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = DeliveryConfig.objects
     serializer_detail = DeliveryConfigDetailSerializer
     serializer_update = DeliveryConfigUpdateSerializer
+    list_hidden_field = ['company_id']
+    create_hidden_field = ['company_id']
 
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
@@ -62,7 +64,7 @@ class SaleOrderActiveDelivery(APIView):
                 obj = cls_model.objects.get_current(pk=pk, fill__company=True)
                 is_not_picking = False
                 if cls_m2m_product_model.objects.filter(sale_order=obj).count() > 0:
-                    prod_so = cls_m2m_product_model.objects.filter(sale_order=obj)
+                    prod_so = cls_m2m_product_model.objects.filter(sale_order=obj, product__isnull=False)
                     count_prod = prod_so.count()
                     is_services = 0
                     for item in prod_so:

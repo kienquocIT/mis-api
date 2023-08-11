@@ -4,7 +4,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import Account
+from apps.masterdata.saledata.models.accounts import Account, AccountShippingAddress, AccountBillingAddress
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
@@ -309,7 +309,7 @@ class QuotationCommonValidate:
                 id=value
             )
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': HRMsg.EMPLOYEES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_product(cls, value):
@@ -460,3 +460,28 @@ class QuotationCommonValidate:
             }
         except QuotationIndicatorConfig.DoesNotExist:
             raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        try:
+            return AccountShippingAddress.objects.get(id=value)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer_shipping': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        try:
+            return AccountBillingAddress.objects.get(id=value)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
