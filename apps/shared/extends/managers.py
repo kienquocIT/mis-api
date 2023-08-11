@@ -96,7 +96,6 @@ class EntryQuerySet(models.query.QuerySet):
                     f'{default__fill__map_key["fill__allow_use"]}` = ' not in sql_query
             ):
                 filter_kwargs[default__fill__map_key["fill__allow_use"]] = [2, 3]
-        print('filter_kwargs: ', filter_kwargs)
         return filter_kwargs
 
     def filter_current(
