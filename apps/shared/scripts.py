@@ -23,8 +23,8 @@ from ..core.hr.models import Employee
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.purchasing.models import PurchaseRequestProduct
-from ..sales.quotation.models import QuotationIndicatorConfig
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 
 
 def update_sale_default_data_old_company():
@@ -563,6 +563,18 @@ def update_data_product_of_purchase_request():
     print('Update Done!')
 
 
+def update_employee_inherit_quotation_sale_order():
+    for quotation in Quotation.objects.all():
+        if quotation.sale_person:
+            quotation.employee_inherit = quotation.sale_person
+            quotation.save(update_fields=['employee_inherit'])
+    for sale_order in SaleOrder.objects.all():
+        if sale_order.sale_person:
+            sale_order.employee_inherit = sale_order.sale_person
+            sale_order.save(update_fields=['employee_inherit'])
+    print('Update done.')
+
+
 def make_sure_function_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_function_config()
@@ -573,3 +585,4 @@ def make_sure_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_config()
     print('Make sure process config is done!')
+    return True

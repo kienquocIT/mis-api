@@ -170,6 +170,7 @@ class CityList(BaseListMixin):
     search_fields = ('title',)
     filterset_fields = {
         "country_id": ["exact", "in"],
+        "id": ["exact", "in"],
     }
     use_cache_queryset = True
     serializer_list = CityListSerializer
@@ -182,9 +183,10 @@ class CityList(BaseListMixin):
 
 class DistrictList(BaseListMixin):
     queryset = District.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'code')
     filterset_fields = {
         "city_id": ["exact", "in"],
+        "id": ["exact", "in"],
     }
     use_cache_queryset = True
     serializer_list = DistrictListSerializer
