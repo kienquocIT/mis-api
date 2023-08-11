@@ -28,4 +28,5 @@ urlpatterns = [
     path('workflow/', include('apps.core.workflow.urls')),
     path('task-bg/<str:pk>', TaskBackgroundState.as_view(), name='TaskBackgroundState'),
     path('log/', include('apps.core.log.urls')),
+    path('process/', include('apps.core.process.urls'))
 ]

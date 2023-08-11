@@ -6,6 +6,7 @@ from django.dispatch import receiver
 
 from apps.core.attachments.models import Files
 from apps.core.log.models import Notifications
+from apps.core.process.models import Function, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
 from apps.sales.quotation.models import (
@@ -396,6 +397,81 @@ class ConfigDefaultData:
         }
     ]
 
+    function_process_data = [
+        {
+            'function_id': 'e66cfb5a-b3ce-4694-a4da-47618f53de4c',
+            'is_free': True,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': '14dbc606-1453-4023-a2cf-35b1cd9e3efd',
+            'is_free': True,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': 'dec012bf-b931-48ba-a746-38b7fd7ca73b',
+            'is_free': True,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': '2fe959e3-9628-4f47-96a1-a2ef03e867e3',
+            'is_free': True,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': '319356b4-f16c-4ba4-bdcb-e1b0c2a2c124',
+            'is_free': False,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+            'is_free': False,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+            'is_free': False,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': '31c9c5b0-717d-4134-b3d0-cc4ca174b168',
+            'is_free': False,
+            'is_in_process': True,
+            'is_default': True,
+        },
+        {
+            'function_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+            'is_free': True,
+            'is_in_process': False,
+            'is_default': True,
+        },
+        {
+            'function_id': '57725469-8b04-428a-a4b0-578091d0e4f5',
+            'is_free': True,
+            'is_in_process': False,
+            'is_default': True,
+        },
+        {
+            'function_id': '1010563f-7c94-42f9-ba99-63d5d26a1aca',
+            'is_free': True,
+            'is_in_process': False,
+            'is_default': True,
+        },
+        {
+            'function_id': '65d36757-557e-4534-87ea-5579709457d7',
+            'is_free': True,
+            'is_in_process': False,
+            'is_default': True,
+        }
+    ]
+
     def __init__(self, company_obj):
         self.company_obj = company_obj
 
@@ -562,6 +638,24 @@ class ConfigDefaultData:
                 )
             OpportunityTaskStatus.objects.bulk_create(temp_stt)
 
+    def process_function_config(self):
+        bulk_info = []
+        for data in self.function_process_data:
+            bulk_info.append(Function(
+                company=self.company_obj,
+                tenant=self.company_obj.tenant,
+                code='',
+                **data,
+            ))
+        Function.objects.bulk_create(bulk_info)
+
+    def process_config(self):
+        Process.objects.create(
+            company=self.company_obj,
+            tenant=self.company_obj.tenant,
+            code='',
+        )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
@@ -573,6 +667,8 @@ class ConfigDefaultData:
         self.sale_order_indicator_config()
         self.delivery_config()
         self.task_config()
+        self.process_function_config()
+        self.process_config()
         return True
 
 

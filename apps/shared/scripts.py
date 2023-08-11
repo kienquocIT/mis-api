@@ -561,3 +561,15 @@ def update_data_product_of_purchase_request():
         pr_product.remain_for_purchase_order = pr_product.quantity
         pr_product.save()
     print('Update Done!')
+
+
+def make_sure_function_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_function_config()
+    print('Make sure function process config is done!')
+
+
+def make_sure_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_config()
+    print('Make sure process config is done!')
