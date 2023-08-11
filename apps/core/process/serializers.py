@@ -45,7 +45,7 @@ class ProcessDetailSerializer(serializers.ModelSerializer):
         for step in steps:
             grouped_steps[step.order].append(step)
         list_step = []
-        for order, step_list in grouped_steps.items():
+        for _, step_list in grouped_steps.items():
             step_dict = {str(step.id): {
                 'function_id': step.function_id,
                 'function_title': step.function_title,
