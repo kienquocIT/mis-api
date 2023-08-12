@@ -1,7 +1,9 @@
 from django.urls import reverse
+from rest_framework import status
 
 from apps.core.company.models import Company
 from apps.sales.opportunity.tests import TestCaseOpportunity
+from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
@@ -12,6 +14,7 @@ class TaskTestCase(AdvanceTestCase):
         self.client = APIClient()
         self.authenticated()
 
+    def create_company(self):
         company_data = {
             'title': 'Cty TNHH one member',
             'code': 'MMT',
@@ -23,36 +26,37 @@ class TaskTestCase(AdvanceTestCase):
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         self.assertEqual(company_req.status_code, 201)
         company_obj = Company.objects.get(id=company_req.data['result']['id'])
-        self.company_obj = company_obj
+        return company_obj
 
-    def test_create_opps(self):
-        response = TestCaseOpportunity.test_create_opportunity(self)
+    def get_employee(self):
+        response = self.client.get(reverse("EmployeeList"), format='json')
         return response
 
-    # def test_create_task_config(self):
-    #     ConfigDefaultData(self.company_obj).task_config()
-    #     task_status_res = self.client.get(reverse("OpportunityTaskStatusList"), format='json')
-    #     self.assertEqual(task_status_res.status_code, status.HTTP_200_OK)
-    #     return task_status_res
+    def test_create_task_config(self):
+        ConfigDefaultData(TaskTestCase.create_company).task_config()
+        task_status_res = self.client.get(reverse("OpportunityTaskStatusList"), format='json')
+        self.assertEqual(task_status_res.status_code, status.HTTP_200_OK)
+        return task_status_res
 
-    # def test_create_task(self):
-    #     opps = PickingDeliveryTestCase.create_opps()
-    #     data = {
-    #         "title": "test create task",
-    #         "task_status": PickingDeliveryTestCase.test_create_task_config().data['result'][0]['id'],
-    #         "start_date": "2024-09-08",
-    #         "end_date": "2024-09-20",
-    #         "estimate": "1d",
-    #         "opportunity": opps,
-    #         "priority": 0,
-    #         "label": ["lorem", "ipsum", "dolor"],
-    #         "assign_to": self.get_employee().data['result']['id'],
-    #         "checklist": [
-    #             {"name": "checklist 01", "done": False}
-    #         ],
-    #         "parent_n": "",
-    #         "remark": "lorem ipsum dolor sit amet",
-    #         "employee_created": self.get_employee().data['result']['id'],
-    #     }
-    #     task_response = self.client.post(reverse("OpportunityTaskList"), data, format='json')
-    #     self.assertEqual(task_response.status_code, 201)
+    def test_create_task(self):
+        opps = TestCaseOpportunity.test_create_opportunity(self)
+        data = {
+            "title": "test create task",
+            "task_status": TaskTestCase.test_create_task_config(self).data['result'][0]['id'],
+            "start_date": "2024-09-08",
+            "end_date": "2024-09-20",
+            "estimate": "1d",
+            "opportunity": opps,
+            "priority": 0,
+            "label": ["lorem", "ipsum", "dolor"],
+            "assign_to": TaskTestCase.get_employee(self).data['result']['id'],
+            "checklist": [
+                {"name": "checklist 01", "done": False}
+            ],
+            "parent_n": "",
+            "remark": "lorem ipsum dolor sit amet",
+            "employee_created": TaskTestCase.get_employee(self).data['result']['id'],
+        }
+        task_response = self.client.post(reverse("OpportunityTaskList"), data, format='json')
+        self.assertEqual(task_response.status_code, 201)
+        return task_response
