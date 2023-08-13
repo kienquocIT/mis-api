@@ -33,13 +33,15 @@ class TaskTestCase(AdvanceTestCase):
         return response
 
     def test_create_task_config(self):
-        ConfigDefaultData(TaskTestCase.create_company).task_config()
+        company = TaskTestCase.create_company(self)
+        ConfigDefaultData(company).task_config()
         task_status_res = self.client.get(reverse("OpportunityTaskStatusList"), format='json')
         self.assertEqual(task_status_res.status_code, status.HTTP_200_OK)
         return task_status_res
 
     def test_create_task(self):
         opps = TestCaseOpportunity.test_create_opportunity(self)
+        employee = TaskTestCase.get_employee(self).data['result']
         data = {
             "title": "test create task",
             "task_status": TaskTestCase.test_create_task_config(self).data['result'][0]['id'],
@@ -49,7 +51,7 @@ class TaskTestCase(AdvanceTestCase):
             "opportunity": opps,
             "priority": 0,
             "label": ["lorem", "ipsum", "dolor"],
-            "assign_to": TaskTestCase.get_employee(self).data['result']['id'],
+            "assign_to": [employee[0]['id']],
             "checklist": [
                 {"name": "checklist 01", "done": False}
             ],
