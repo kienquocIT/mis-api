@@ -48,17 +48,56 @@ class TaskTestCase(AdvanceTestCase):
             "start_date": "2024-09-08",
             "end_date": "2024-09-20",
             "estimate": "1d",
-            "opportunity": opps,
+            "opportunity": opps.data['result']['id'],
             "priority": 0,
             "label": ["lorem", "ipsum", "dolor"],
-            "assign_to": [employee[0]['id']],
+            "assign_to": employee[0]['id'],
             "checklist": [
                 {"name": "checklist 01", "done": False}
             ],
-            "parent_n": "",
             "remark": "lorem ipsum dolor sit amet",
-            "employee_created": TaskTestCase.get_employee(self).data['result']['id'],
+            "employee_created": employee[0]['id'],
         }
         task_response = self.client.post(reverse("OpportunityTaskList"), data, format='json')
         self.assertEqual(task_response.status_code, 201)
         return task_response
+
+    def test_get_list_task(self):
+        TaskTestCase.test_create_task(self)
+        url = reverse('OpportunityTaskList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList( # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+
+    def test_get_detail_task(self):
+        res = TaskTestCase.test_create_task(self)
+        url = reverse('OpportunityTaskDetail', args=[res.data['result'].get('id', '')])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, res.data['result'].get('id', ''), None, response.status_code)
+        self.assertContains(response, res.data['result'].get('title', ''), None, response.status_code)
+
+    def test_update_task(self):
+        task = TaskTestCase.test_create_task(self).data['result']
+        task['task_status'] = TaskTestCase.test_create_task_config(self).data['result'][1]['id']
+        del [task['parent_n'], task['attach']]
+        url = reverse('OpportunityTaskDetail', args=[task.get('id', '')])
+        self.client.put(url, task, format='json')
+        response = self.client.get(url, task, format='json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_update_stt_task(self):
+        task = TaskTestCase.test_create_task(self).data['result']
+        data = {
+            "task_status": TaskTestCase.test_create_task_config(self).data['result'][2]['id']
+        }
+        url = reverse('OpportunityTaskSwitchSTT', args=[task.get('id', '')])
+        self.client.put(url, data, format='json')
+        response = self.client.get(reverse('OpportunityTaskDetail', args=[task.get('id', '')]), format='json')
+        self.assertEqual(response.status_code, 200)
