@@ -371,6 +371,7 @@ def mask_view(**parent_kwargs):
                 use_custom_get_filter_auth=use_custom_get_filter_auth,
                 plan_code=plan_code, app_code=app_code, perm_code=perm_code,
             )
+            self.cls_auth_check = cls_auth_check
 
             # always check once call | pk, user, employee,...
             true_or_resp = cls_auth_check.always_check(

@@ -98,6 +98,7 @@ class DataFilterHandler:
 
 
 class BaseMixin(GenericAPIView):  # pylint: disable=R0904
+    cls_auth_check = None  # cls authenticate of mask_view
     ser_context: dict[str, any] = {}
     search_fields: list
     filterset_fields: dict

@@ -101,6 +101,19 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     def get_queryset(self):
         return super().get_queryset().select_related("user")
 
+    def error_auth_require(self):
+        if (
+                self.request.method == 'GET' and self.cls_auth_check and self.request.user.employee_current_id and
+                self.kwargs.get('pk', None) == str(self.request.user.employee_current_id)
+        ):
+            self.state_skip_is_admin = True
+            result_filter = {
+                'id': self.request.user.employee_current_id
+            }
+            self.cls_auth_check.set_perm_filter_dict(result_filter)
+            return result_filter
+        return ResponseController.forbidden_403()
+
     @swagger_auto_schema(
         operation_summary="Employee detail",
         operation_description="Get employee detail by ID",
