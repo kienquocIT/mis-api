@@ -208,7 +208,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         num_max = None
         for item in cls.objects.filter(company_id=company_id).values_list('code', flat=True):
             try:
-                tmp = int(str(item).split('-')[0].split("EMP")[1])
+                tmp = int(str(item).split('-', maxsplit=1)[0].split("EMP")[1])
                 if not num_max or (isinstance(num_max, int) and tmp > num_max):
                     num_max = tmp
             except Exception as err:
