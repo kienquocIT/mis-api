@@ -3,6 +3,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
+from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
     OpportunityConfigStage, OpportunityStage
@@ -754,3 +755,61 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 } for item in stage
             ]
         return []
+
+
+class OpportunityForSaleListSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    is_close = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'open_date',
+            'quotation_id',
+            'sale_order_id',
+            'opportunity_sale_team_datas',
+            'close_date',
+            'stage',
+            'is_close'
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return AccountForSaleListSerializer(obj.customer).data
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'name': obj.sale_person.get_full_name(),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.opportunity_stage_opportunity:
+            stages = obj.opportunity_stage_opportunity.all()
+            return [
+                {
+                    'id': stage.stage.id,
+                    'is_current': stage.is_current,
+                    'indicator': stage.stage.indicator
+                } for stage in stages]
+        return []
+
+    @classmethod
+    def get_is_close(cls, obj):
+        if obj.is_deal_close or obj.is_close_lost:
+            return True
+        return False

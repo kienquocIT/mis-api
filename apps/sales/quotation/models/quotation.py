@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 # CONFIG
@@ -602,7 +602,7 @@ class QuotationCost(SimpleAbstractModel):
 
 
 # SUPPORT EXPENSE
-class QuotationExpense(SimpleAbstractModel):
+class QuotationExpense(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
