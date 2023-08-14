@@ -27,7 +27,7 @@ sys.setrecursionlimit(10000)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # load environment from .env file
-load_env()
+load_env(BASE_DIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/

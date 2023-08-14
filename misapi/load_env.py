@@ -1,15 +1,13 @@
 import os
-
-from django.conf import settings
 from dotenv import load_dotenv
 
 __all__ = ['load_env']
 
 
-def load_env():
+def load_env(base_dir=''):
     # load env file
     env_path = os.path.join(
-        settings.BASE_DIR, '.env'
+        base_dir, '.env'
     )
     load_dotenv(env_path)
 
