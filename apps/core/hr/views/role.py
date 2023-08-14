@@ -18,8 +18,8 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id', 'tenant_id']
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
     search_fields = ['title', 'code']
 
     def get_queryset(self):
@@ -54,6 +54,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
