@@ -597,6 +597,7 @@ class ConfigDefaultData:
     def task_config(self):
         # create config default for company
         config, created = OpportunityTaskConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'list_status': [
@@ -627,6 +628,8 @@ class ConfigDefaultData:
             for item in config.list_status:
                 temp_stt.append(
                     OpportunityTaskStatus(
+                        tenant=config.tenant,
+                        company=config.company,
                         title=item['name'],
                         translate_name=item['translate_name'],
                         task_config=config,

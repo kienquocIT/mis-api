@@ -27,9 +27,7 @@ class EmployeeUploadAvatar(APIView):
     parser_classes = [MultiPartParser]
 
     @swagger_auto_schema(request_body=EmployeeUploadAvatarSerializer)
-    @mask_view(
-        login_require=True, employee_require=True,
-    )
+    @mask_view(login_require=True, employee_require=True)
     def post(self, request, *args, **kwargs):
         employee_obj = request.user.employee_current
         if employee_obj:
@@ -47,7 +45,7 @@ class EmployeeUploadAvatar(APIView):
         return ResponseController.forbidden_403()
 
 
-class EmployeeList(BaseListMixin, BaseCreateMixin, generics.GenericAPIView):
+class EmployeeList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     search_fields = ["search_content"]
@@ -97,9 +95,23 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     queryset = Employee.objects
     serializer_detail = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related("user")
+
+    def error_auth_require(self):
+        if (
+                self.request.method == 'GET' and self.cls_auth_check and self.request.user.employee_current_id and
+                self.kwargs.get('pk', None) == str(self.request.user.employee_current_id)
+        ):
+            self.state_skip_is_admin = True
+            result_filter = {
+                'id': self.request.user.employee_current_id
+            }
+            self.cls_auth_check.set_perm_filter_dict(result_filter)
+            return result_filter
+        return ResponseController.forbidden_403()
 
     @swagger_auto_schema(
         operation_summary="Employee detail",
@@ -124,7 +136,6 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
         plan_code='base', app_code='employee', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        print(request.data)
         return self.update(request, *args, **kwargs)
 
 

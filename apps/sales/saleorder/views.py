@@ -12,18 +12,14 @@ from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndic
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class SaleOrderList(
-    BaseListMixin,
-    BaseCreateMixin
-):
-    permission_classes = [IsAuthenticated]
+class SaleOrderList(BaseListMixin, BaseCreateMixin):
     queryset = SaleOrder.objects
     filterset_fields = []
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -51,14 +47,12 @@ class SaleOrderList(
         return self.create(request, *args, **kwargs)
 
 
-class SaleOrderDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
-    permission_classes = [IsAuthenticated]
+class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = SaleOrder.objects
     serializer_detail = SaleOrderDetailSerializer
     serializer_update = SaleOrderUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -77,8 +71,8 @@ class SaleOrderDetail(
         operation_description="Get Sale Order detail by ID",
     )
     @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Update Sale Order",
@@ -86,12 +80,11 @@ class SaleOrderDetail(
         request_body=SaleOrderUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class SaleOrderExpenseList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrderExpense.objects
     serializer_list = SaleOrderExpenseListSerializer
 

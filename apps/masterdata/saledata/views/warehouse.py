@@ -22,8 +22,8 @@ class WareHouseList(BaseListMixin, BaseCreateMixin):
     serializer_list = WareHouseListSerializer
     serializer_create = WareHouseCreateSerializer
     serializer_detail = WareHouseDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     search_fields = ("title", "code",)
     filterset_fields = {
         "is_active": ['exact'],
@@ -49,6 +49,8 @@ class WareHouseDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = WareHouse.objects
     serializer_detail = WareHouseDetailSerializer
     serializer_update = WareHouseUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail a warehouse')
     @mask_view(
@@ -77,7 +79,7 @@ class WareHouseDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 class WareHouseCheckAvailableProductList(BaseListMixin):
     queryset = WareHouse.objects
     serializer_list = ProductWareHouseStockListSerializer
-    list_hidden_field = ['tenant_id', 'product_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema()
     @mask_view(
@@ -96,7 +98,7 @@ class WareHouseCheckAvailableProductList(BaseListMixin):
 class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('product', 'warehouse')

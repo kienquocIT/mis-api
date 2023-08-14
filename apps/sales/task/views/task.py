@@ -1,13 +1,17 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus
-from apps.sales.task.serializers import OpportunityTaskListSerializer, OpportunityTaskCreateSerializer, \
-    OpportunityTaskDetailSerializer, OpportunityTaskUpdateSTTSerializer, OpportunityTaskLogWorkSerializer, \
-    OpportunityTaskStatusListSerializer, OpportunityTaskUpdateSerializer
+from apps.sales.task.serializers import (
+    OpportunityTaskListSerializer, OpportunityTaskCreateSerializer,
+    OpportunityTaskDetailSerializer, OpportunityTaskUpdateSTTSerializer, OpportunityTaskLogWorkSerializer,
+    OpportunityTaskStatusListSerializer, OpportunityTaskUpdateSerializer,
+)
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
-__all__ = ['OpportunityTaskList', 'OpportunityTaskDetail', 'OpportunityTaskSwitchSTT', 'OpportunityTaskLogWork',
-           'OpportunityTaskStatusList']
+__all__ = [
+    'OpportunityTaskList', 'OpportunityTaskDetail', 'OpportunityTaskSwitchSTT', 'OpportunityTaskLogWork',
+    'OpportunityTaskStatusList'
+]
 
 
 class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
@@ -15,8 +19,8 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     serializer_list = OpportunityTaskListSerializer
     serializer_create = OpportunityTaskCreateSerializer
     serializer_detail = OpportunityTaskDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'parent_n': ['exact'],
     }
@@ -49,8 +53,8 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     queryset = OpportunityTask.objects
     serializer_detail = OpportunityTaskDetailSerializer
     serializer_update = OpportunityTaskUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return self.queryset.select_related('parent_n', 'assign_to', 'employee_created')
@@ -86,20 +90,23 @@ class OpportunityTaskSwitchSTT(BaseUpdateMixin):
     queryset = OpportunityTask.objects
     serializer_detail = OpportunityTaskUpdateSTTSerializer
     serializer_update = OpportunityTaskUpdateSTTSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Update status",
         operation_description="Opportunity task update status",
     )
     @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
-class OpportunityTaskLogWork(BaseCreateMixin, BaseRetrieveMixin):
+class OpportunityTaskLogWork(BaseCreateMixin):
     queryset = OpportunityLogWork.objects
     serializer_create = OpportunityTaskLogWorkSerializer
     serializer_detail = OpportunityTaskLogWorkSerializer
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Log Work",
@@ -120,6 +127,7 @@ class OpportunityTaskStatusList(BaseListMixin):
     filterset_fields = {
         'task_config': ['exact'],
     }
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         task_config = self.request.user.company_current.opportunity_task_config_company
