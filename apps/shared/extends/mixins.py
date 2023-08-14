@@ -230,6 +230,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     data = user.employee_current_id
                 case 'user_id':
                     data = user.id
+                case 'employee_inherit_id':
+                    data = user.employee_current_id
             if data is not None:
                 ctx[key] = data
         return ctx
@@ -514,6 +516,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
 
 class BaseListMixin(BaseMixin):
+    LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
+    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+
     @classmethod
     def list_empty(cls) -> Response:
         return ResponseController.success_200(data=[], key_data='result')
@@ -576,6 +581,13 @@ class BaseListMixin(BaseMixin):
 
 
 class BaseCreateMixin(BaseMixin):
+    CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+        'employee_inherit_id',
+    ]  # DataAbstract
+    CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
+
     def create(self, request, *args, **kwargs):
         if self.check_perm_create(body_data=request.data):
             log_data = deepcopy(request.data)
@@ -593,6 +605,9 @@ class BaseCreateMixin(BaseMixin):
 
 
 class BaseRetrieveMixin(BaseMixin):
+    RETRIEVE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
+    RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+
     @classmethod
     def retrieve_empty(cls) -> Response:
         return ResponseController.success_200(data={}, key_data='result')
@@ -606,6 +621,9 @@ class BaseRetrieveMixin(BaseMixin):
 
 
 class BaseUpdateMixin(BaseMixin):
+    UPDATE_HIDDEN_FIELD_DEFAULT = ['employee_modified_id']  # DataAbstract
+    UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['employee_modified_id']  # MasterData
+
     @classmethod
     def parsed_body(cls, instance, request_data, user) -> (dict, bool, Union[UUID, str, None]):
         """
@@ -644,7 +662,8 @@ class BaseUpdateMixin(BaseMixin):
                 )
                 serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
                 serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
+                field_hidden = self.setup_create_field_hidden(request.user)
+                self.perform_update(serializer, extras=field_hidden)
                 # request force write log
                 self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
                 if getattr(instance, '_prefetched_objects_cache', None):
@@ -661,8 +680,10 @@ class BaseUpdateMixin(BaseMixin):
         return self.update(request, *args, **kwargs)
 
     @staticmethod
-    def perform_update(serializer):
-        serializer.save()
+    def perform_update(serializer, extras: dict = None):
+        if not extras:
+            extras = {}
+        serializer.save(**extras)
 
 
 class BaseDestroyMixin(BaseMixin):

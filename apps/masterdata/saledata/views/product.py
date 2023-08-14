@@ -29,8 +29,8 @@ class ProductTypeList(BaseListMixin, BaseCreateMixin):
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="ProductType list",
@@ -61,23 +61,23 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
     serializer_update = ProductTypeUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail ProductType')
     @mask_view(
         login_require=True, auth_require=False,
     )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ProductType", request_body=ProductTypeUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class ProductCategoryList(BaseListMixin, BaseCreateMixin):
@@ -85,8 +85,8 @@ class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="ProductCategory list",
@@ -117,23 +117,23 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
     serializer_update = ProductCategoryUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail ProductCategory')
     @mask_view(
         login_require=True, auth_require=False,
     )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ProductCategory", request_body=ProductCategoryUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class ExpenseTypeList(BaseListMixin, BaseCreateMixin):
@@ -141,8 +141,8 @@ class ExpenseTypeList(BaseListMixin, BaseCreateMixin):
     serializer_list = ExpenseTypeListSerializer
     serializer_create = ExpenseTypeCreateSerializer
     serializer_detail = ExpenseTypeDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="ExpenseType list",
@@ -171,21 +171,21 @@ class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = ExpenseTypeCreateSerializer
     serializer_detail = ExpenseTypeDetailSerializer
     serializer_update = ExpenseTypeUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail ExpenseType')
     @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ExpenseType", request_body=ExpenseTypeUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
@@ -193,8 +193,8 @@ class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related('unitofmeasure_group')
@@ -226,21 +226,21 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
     serializer_update = UnitOfMeasureGroupUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail UnitOfMeasureGroup')
     @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update UnitOfMeasureGroup", request_body=UnitOfMeasureGroupUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
@@ -248,8 +248,8 @@ class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'group': ['exact', 'in'],
     }
@@ -284,24 +284,24 @@ class UnitOfMeasureDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
     serializer_update = UnitOfMeasureUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('group')
 
     @swagger_auto_schema(operation_summary='Detail UnitOfMeasure')
     @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update UnitOfMeasure", request_body=UnitOfMeasureUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class ProductList(BaseListMixin, BaseCreateMixin):
@@ -309,8 +309,8 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     serializer_list = ProductListSerializer
     serializer_create = ProductCreateSerializer
     serializer_detail = ProductDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Product list",
@@ -339,8 +339,8 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = ProductCreateSerializer
     serializer_detail = ProductDetailSerializer
     serializer_update = ProductUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -350,23 +350,23 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Product')
     @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 # Products use for sale applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     serializer_list = ProductForSaleListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Product for sale list",
