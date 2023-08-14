@@ -18,7 +18,7 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
+from .load_env import load_env
 
 # override recursion limit
 sys.setrecursionlimit(10000)
@@ -27,7 +27,7 @@ sys.setrecursionlimit(10000)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # load environment from .env file
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_env()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
