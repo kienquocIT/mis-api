@@ -1,198 +1,170 @@
 from rest_framework import serializers
-from apps.masterdata.saledata.models import ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, \
-    ProductMeasurements
-from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency
+from apps.masterdata.saledata.models import (
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, ProductMeasurements
+)
+from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency, Price
+from apps.core.base.models import BaseItemUnit
 from apps.shared import ProductMsg
 
 
 class CommonCreateUpdateProduct:
     @classmethod
-    def validate_product_type(cls, value):
-        try:
-            return ProductType.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except ProductType.DoesNotExist:
-            raise serializers.ValidationError({'product_type': ProductMsg.DOES_NOT_EXIST})
+    def validate_general_data(cls, value):
+        general_product_type = ProductType.objects.filter(id=value.get('general_product_type', None))
+        general_product_category = ProductCategory.objects.filter(id=value.get('general_product_category', None))
+        general_uom_group = UnitOfMeasureGroup.objects.filter(id=value.get('general_product_uom_group', None))
 
-    @classmethod
-    def validate_product_category(cls, value):
-        try:
-            return ProductCategory.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except ProductCategory.DoesNotExist:
-            raise serializers.ValidationError({'product_category': ProductMsg.DOES_NOT_EXIST})
+        if general_product_type.count() != 1:
+            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
+        if general_product_category.count() != 1:
+            raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
+        if general_uom_group.count() != 1:
+            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
-    @classmethod
-    def validate_uom_group(cls, value):
-        try:
-            return UnitOfMeasureGroup.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except UnitOfMeasureGroup.DoesNotExist:
-            raise serializers.ValidationError({'uom_group': ProductMsg.DOES_NOT_EXIST})
+        general_product_size_dict = value.get('general_product_size', {})
+        volume_obj = None
+        weight_obj = None
+        if len(general_product_size_dict) > 0:
+            volume_obj = BaseItemUnit.objects.filter(id=general_product_size_dict['volume_id'])
+            weight_obj = BaseItemUnit.objects.filter(id=general_product_size_dict['weight_id'])
+            for key, value in general_product_size_dict.items():
+                if key not in ['volume_id', 'weight_id']:
+                    if not value.isnumeric() and float(value) <= 0:
+                        raise serializers.ValidationError({'general_product_size': ProductMsg.PRODUCT_SIZE_IS_WRONG})
 
-    # For Sale
-    @classmethod
-    def validate_default_uom(cls, value):
-        try:
-            return UnitOfMeasure.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'default_uom': ProductMsg.DOES_NOT_EXIST})
-
-    @classmethod
-    def validate_tax_code(cls, value):
-        try:
-            return Tax.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except Tax.DoesNotExist:
-            raise serializers.ValidationError({'tax_code': ProductMsg.DOES_NOT_EXIST})
-
-    @classmethod
-    def validate_currency_using(cls, value):
-        try:
-            return Currency.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except Currency.DoesNotExist:
-            raise serializers.ValidationError({'currency': ProductMsg.DOES_NOT_EXIST})
-
-    @classmethod
-    def validate_length(cls, value):
-        if value is not None:
-            if value <= 0:
-                raise serializers.ValidationError({'length': ProductMsg.VALUE_GREATER_THAN_ZERO})
-            return value
-        return None
-
-    @classmethod
-    def validate_width(cls, value):
-        if value is not None:
-            if value <= 0:
-                raise serializers.ValidationError({'width': ProductMsg.VALUE_GREATER_THAN_ZERO})
-            return value
-        return None
-
-    @classmethod
-    def validate_height(cls, value):
-        if value is not None:
-            if value <= 0:
-                raise serializers.ValidationError({'height': ProductMsg.VALUE_GREATER_THAN_ZERO})
-            return value
-        return None
-
-    # For inventory
-    @classmethod
-    def validate_inventory_uom(cls, value):
-        try:
-            return UnitOfMeasure.objects.get_current(
-                fill__company=True,
-                fill__tenant=True,
-                id=value
-            )
-        except UnitOfMeasure.DoesNotExist:
-            raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
-
-    @classmethod
-    def validate_inventory_level_min(cls, value):
-        if value:
-            if value <= 0:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            return value
-        return None
-
-    @classmethod
-    def validate_inventory_level_max(cls, value):
-        if value:
-            if value <= 0:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-            return value
-        return None
-
-    @classmethod
-    def validate_general_information(cls, validated_data):
-        product_type = validated_data.get('product_type', None)
-        product_category = validated_data.get('product_category', None)
-        uom_group = validated_data.get('uom_group', None)
         return {
             'product_type': {
-                'id': str(product_type.id),
-                'title': product_type.title,
-                'code': product_type.code
+                'id': str(general_product_type[0].id),
+                'title': general_product_type[0].title,
+                'code': general_product_type[0].code
             },
             'product_category': {
-                'id': str(product_category.id),
-                'title': product_category.title,
-                'code': product_category.code
+                'id': str(general_product_category[0].id),
+                'title': general_product_category[0].title,
+                'code': general_product_category[0].code
             },
             'uom_group': {
-                'id': str(uom_group.id),
-                'title': uom_group.title,
-                'code': uom_group.code
-            }
+                'id': str(general_uom_group[0].id),
+                'title': general_uom_group[0].title,
+                'code': general_uom_group[0].code
+            },
+            'product_size': {
+                "width": general_product_size_dict['width'],
+                "height": general_product_size_dict['height'],
+                "length": general_product_size_dict['length'],
+                "volume": {
+                    "id": str(volume_obj[0].id),
+                    "title": str(volume_obj[0].title),
+                    "measure": str(volume_obj[0].measure),
+                    "value": general_product_size_dict['volume']
+                } if volume_obj[0] else {},
+                "weight": {
+                    "id": str(weight_obj[0].id),
+                    "title": str(weight_obj[0].title),
+                    "measure": str(weight_obj[0].measure),
+                    "value": general_product_size_dict['weight']
+                } if weight_obj[0] else {}
+            } if len(general_product_size_dict) > 0 else {}
         }
 
     @classmethod
-    def validate_sale_information(cls, validated_data):
-        default_uom = validated_data.get('default_uom', None)
-        tax_code = validated_data.get('tax_code', None)
-        currency_using = validated_data.get('currency_using', None)
-        length = validated_data.get('length', None)
-        width = validated_data.get('width', None)
-        height = validated_data.get('height', None)
-        measure = validated_data.get('measure', None)
+    def validate_sale_data(cls, value):
+        sale_product_cost = value.get('sale_product_cost', None)
+        sale_currency_using = Currency.objects.filter(id=value.get('currency_using', None))
+        sale_default_uom = UnitOfMeasure.objects.filter(id=value.get('sale_product_default_uom', None))
+        sale_tax = Tax.objects.filter(id=value.get('sale_product_tax', None))
+
+        if sale_product_cost:
+            if float(sale_product_cost) < 0:
+                raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
+        if sale_currency_using.count() != 1:
+            raise serializers.ValidationError({'sale_currency_using': ProductMsg.CURRENCY_DOES_NOT_EXIST})
+        if sale_default_uom.count() != 1:
+            raise serializers.ValidationError({'sale_product_default_uom': ProductMsg.DOES_NOT_EXIST})
+        if sale_tax.count() != 1:
+            raise serializers.ValidationError({'sale_product_tax': ProductMsg.DOES_NOT_EXIST})
+
+        sale_product_price_list = value.get('sale_product_price_list', [])
+        if len(sale_product_price_list) > 0:
+            for item in sale_product_price_list:
+                price_list_id = item.get('price_list_id', None)
+                price_list_value = item.get('price_list_value', None)
+                if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
+                    raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
+
         return {
+            'sale_product_cost': sale_product_cost,
             'default_uom': {
-                'id': str(default_uom.id),
-                'title': default_uom.title,
-                'code': default_uom.code
-            } if default_uom else None,
-            'tax_code': {
-                'id': str(tax_code.id),
-                'title': tax_code.title,
-                'code': tax_code.code
-            } if tax_code else None,
+                'id': str(sale_default_uom[0].id),
+                'title': sale_default_uom[0].title,
+                'code': sale_default_uom[0].code
+            },
+            'tax': {
+                'id': str(sale_tax[0].id),
+                'title': sale_tax[0].title,
+                'code': sale_tax[0].code
+            },
             'currency_using': {
-                'id': str(currency_using.id),
-                'title': currency_using.title,
-                'code': currency_using.code,
-                'abbreviation': currency_using.abbreviation
-            } if currency_using else None,
-            'measure': measure if measure else [],
-            'length': length,
-            'width': width,
-            'height': height
+                'id': str(sale_currency_using[0].id),
+                'title': sale_currency_using[0].title,
+                'code': sale_currency_using[0].code,
+                'abbreviation': sale_currency_using[0].abbreviation
+            },
+            'sale_product_price_list': sale_product_price_list
         }
 
     @classmethod
-    def validate_inventory_information(cls, validated_data):
-        inventory_uom = validated_data.get('inventory_uom', None)
-        inventory_level_min = validated_data.get('inventory_level_min', None)
-        inventory_level_max = validated_data.get('inventory_level_max', None)
+    def validate_inventory_data(cls, value):
+        inventory_uom = UnitOfMeasure.objects.filter(id=value.get('inventory_product_uom', None))
+        min_value = 0
+        max_value = 0
+        inventory_level_min = value.get('inventory_level_min', None)
+        inventory_level_max = value.get('inventory_level_max', None)
+
+        if inventory_uom.count() != 1:
+            raise serializers.ValidationError({'inventory_product_uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        if inventory_level_min:
+            if float(inventory_level_min) < 0:
+                raise serializers.ValidationError({'inventory_level_min': ProductMsg.VALUE_INVALID})
+            min_value = inventory_level_min
+        if inventory_level_max:
+            if float(inventory_level_max) < 0:
+                raise serializers.ValidationError({'inventory_level_max': ProductMsg.VALUE_INVALID})
+            max_value = inventory_level_max
+        if min_value > max_value:
+            raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+
         return {
             'uom': {
-                'id': str(inventory_uom.id),
-                'title': inventory_uom.title,
-                'code': inventory_uom.code
-            } if inventory_uom else None,
-            'inventory_level_min': inventory_level_min if inventory_level_min else None,
-            'inventory_level_max': inventory_level_max if inventory_level_max else None,
+                'id': str(inventory_uom[0].id),
+                'title': inventory_uom[0].title,
+                'code': inventory_uom[0].code
+            },
+            'inventory_level_min': inventory_level_min,
+            'inventory_level_max': inventory_level_max,
+        }
+
+    @classmethod
+    def validate_purchase_data(cls, value):
+        purchase_default_uom = UnitOfMeasure.objects.filter(id=value.get('purchase_product_default_uom', None))
+        purchase_product_tax = Tax.objects.filter(id=value.get('purchase_product_tax', None))
+
+        if purchase_default_uom.count() != 1:
+            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+        if purchase_product_tax.count() != 1:
+            raise serializers.ValidationError({'purchase_product_tax': ProductMsg.TAX_DOES_NOT_EXIST})
+
+        return {
+            'default_uom': {
+                'id': str(purchase_default_uom[0].id),
+                'title': purchase_default_uom[0].title,
+                'code': purchase_default_uom[0].code
+            },
+            'tax': {
+                'id': str(purchase_product_tax[0].id),
+                'title': purchase_product_tax[0].title,
+                'code': purchase_product_tax[0].code
+            },
         }
 
     @classmethod
@@ -201,13 +173,13 @@ class CommonCreateUpdateProduct:
             objs = []
             for item in data_price:
                 get_price_from_source = False
-                if item.get('is_auto_update', None) == '1':
+                if item.get('is_auto_update', None) == 'true':
                     get_price_from_source = True
                 objs.append(
                     ProductPriceList(
                         price_list_id=item.get('price_list_id', None),
+                        price=float(item.get('price_list_value', None)),
                         product=product,
-                        price=float(item.get('price_value', None)),
                         currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
                         uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
                         uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
@@ -218,35 +190,35 @@ class CommonCreateUpdateProduct:
                 ProductPriceList.objects.bulk_create(objs)
 
     @classmethod
-    def create_measure(cls, product, data):
-        data_bulk = [ProductMeasurements(
-            product=product,
-            measure_id=item['unit']['id'],
-            value=item['value']
-        ) for item in data]
-
+    def create_measure(cls, product, data_measure):
+        volume_id = None
+        weight_id = None
+        if len(data_measure['volume']) > 0:
+            volume_id = data_measure['volume']['id']
+        if len(data_measure['weight']) > 0:
+            weight_id = data_measure['weight']['id']
+        data_bulk = [
+            ProductMeasurements(product=product, measure_id=volume_id, value=data_measure['volume']['value']),
+            ProductMeasurements(product=product, measure_id=weight_id, value=data_measure['weight']['value'])
+        ]
         ProductMeasurements.objects.bulk_create(data_bulk)
 
     @classmethod
-    def update_price_list(cls, product, data_price_list, validated_data):
-        if data_price_list:
+    def update_price_list(cls, product, data_price, validated_data):
+        if data_price:
             objs = []
-            for item in data_price_list:
+            for item in data_price:
                 get_price_from_source = False
-                if item.get('is_auto_update', None) == '1':
+                if item.get('is_auto_update', None) == 'true':
                     get_price_from_source = True
-
-                currency_using_id = validated_data['sale_information'].get('currency_using', {}).get('id', None)
-                default_uom_id = validated_data['sale_information'].get('default_uom', {}).get('id', None)
-                uom_group_id = validated_data['general_information'].get('uom_group', {}).get('id', None)
                 objs.append(
                     ProductPriceList(
                         price_list_id=item.get('price_list_id', None),
+                        price=float(item.get('price_list_value', None)),
                         product=product,
-                        price=float(item.get('price_value', None)),
-                        currency_using_id=currency_using_id,
-                        uom_using_id=default_uom_id,
-                        uom_group_using_id=uom_group_id,
+                        currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
+                        uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
+                        uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
                         get_price_from_source=get_price_from_source
                     )
                 )
@@ -254,11 +226,10 @@ class CommonCreateUpdateProduct:
                 ProductPriceList.objects.bulk_create(objs)
 
     @classmethod
-    def delete_price_list(cls, product):
+    def delete_price_list(cls, product, price_list_id):
         product_price_list_item = ProductPriceList.objects.filter(
             product=product,
-            currency_using=product.currency_using,
-            uom_using=product.default_uom
+            price_list_id__in=price_list_id,
         )
         if product_price_list_item:
             product_price_list_item.delete()

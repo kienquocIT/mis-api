@@ -76,104 +76,98 @@ class UnitOfMeasure(MasterDataAbstractModel):
 
 
 class Product(DataAbstractModel):
-    avatar = models.TextField(
-        null=True,
-        verbose_name='avatar path'
+    product_choice = models.JSONField(
+        default=list,
+        help_text='product for sale: 0, inventory: 1, purchase:2'
     )
-
-    # {
-    #     'product_type': {'id':..., 'title':..., 'code':...},
-    #     'product_category': {'id':..., 'title':..., 'code':...},
-    #     'uom_group': {'id':..., 'title':..., 'code':...},
-    # }
-    general_information = models.JSONField(
-        default=dict,
-    )
-
-    # {
-    #     'default_uom': {'id':..., 'title':..., 'code':...},
-    #     'tax_code': {'id':..., 'title':..., 'code':...}
-    # }
-    sale_information = models.JSONField(
-        default=dict,
-    )
-
-    # {
-    #     'uom': {'id':..., 'title':..., 'code':...},
-    #     'inventory_level_min': 100,
-    #     'inventory_level_max': 500,
-    # }
-    inventory_information = models.JSONField(
-        default=dict,
-    )
-
-    # have not developed yet
-    purchase_information = models.JSONField(
-        default=dict,
-    )
+    avatar = models.TextField(null=True, verbose_name='avatar path')
+    description = models.CharField(blank=True, max_length=200)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',
         through='saledata.ProductWareHouse',
         symmetrical=False,
         blank=True,
-        related_name='warehouses_of_product',
+        related_name='warehouses_of_product'
     )
 
     # General
-    product_type = models.ForeignKey(
+    general_product_type = models.ForeignKey(
         ProductType,
         null=True,
         on_delete=models.CASCADE,
-        related_name='product_type',
+        related_name='product_type'
     )
-    product_category = models.ForeignKey(
+    general_product_category = models.ForeignKey(
         ProductCategory,
         null=True,
         on_delete=models.CASCADE,
         related_name='product_category'
     )
-    uom_group = models.ForeignKey(
+    general_uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         null=True,
         on_delete=models.CASCADE,
         related_name='uom_group'
     )
+    # {
+    #     "width": ...,
+    #     "height": ...,
+    #     "length": ...,
+    #     "volume": {...},
+    #     "weight": {...}
+    # }
+    general_product_size = models.JSONField(
+        default=dict
+    )
+    # {
+    #     'product_type': {'id':..., 'title':..., 'code':...},
+    #     'product_category': {'id':..., 'title':..., 'code':...},
+    #     'uom_group': {'id':..., 'title':..., 'code':...},
+    # }
+    general_information = models.JSONField(
+
+    )
 
     # Sale
-    default_uom = models.ForeignKey(
+    sale_default_uom = models.ForeignKey(
         UnitOfMeasure,
         null=True,
         on_delete=models.CASCADE,
-        related_name='sale_uom',
-        default=None,
+        related_name='sale_default_uom',
+        default=None
     )
-    tax_code = models.ForeignKey(
+    sale_tax = models.ForeignKey(
         'saledata.Tax',
         null=True,
         on_delete=models.CASCADE,
-        related_name='tax',
-        default=None,
+        related_name='sale_tax',
+        default=None
     )
-    currency_using = models.ForeignKey(
+    sale_currency_using = models.ForeignKey(
         'saledata.Currency',
         null=True,
         on_delete=models.CASCADE,
-        related_name='product_currency',
-        default=None,
+        related_name='sale_currency_using_for_cost',
+        default=None
+    )
+    sale_cost = models.FloatField(null=True)
+
+    # {
+    #     'price_list': {'id':..., 'title':..., 'code':...},
+    #     'currency_using': {'id':..., 'title':..., 'abbreviation':...},
+    #     'value': 10000000,
+    # }
+    sale_product_price_list = models.JSONField(
+        default=dict
     )
 
-    length = models.FloatField(
-        default=None,
-        null=True,
-    )
-    width = models.FloatField(
-        default=None,
-        null=True,
-    )
-    height = models.FloatField(
-        default=None,
-        null=True,
+    # {
+    #     'default_uom': {'id':..., 'title':..., 'code':...},
+    #     'tax': {'id':..., 'title':..., 'code':...}
+    # }
+    sale_information = models.JSONField(
+        default=dict
     )
 
     # Inventory
@@ -182,14 +176,35 @@ class Product(DataAbstractModel):
         null=True,
         on_delete=models.CASCADE,
         related_name='inventory_uom',
-        default=None,
+        default=None
     )
-    inventory_level_min = models.IntegerField(null=True, default=None,)
-    inventory_level_max = models.IntegerField(null=True, default=None,)
+    inventory_level_min = models.IntegerField(null=True, default=None)
+    inventory_level_max = models.IntegerField(null=True, default=None)
+    inventory_information = models.JSONField(
+        default=dict
+    )
 
-    product_choice = models.JSONField(
-        default=list,
-        help_text='product for sale: 0, inventory: 1, purchase:2'
+    # Purchase
+    purchase_default_uom = models.ForeignKey(
+        UnitOfMeasure,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='purchase_default_uom',
+        default=None
+    )
+    purchase_tax = models.ForeignKey(
+        'saledata.Tax',
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='purchase_tax',
+        default=None
+    )
+    # {
+    #     'default_uom': {'id':..., 'title':..., 'code':...},
+    #     'tax': {'id':..., 'title':..., 'code':...}
+    # }
+    purchase_information = models.JSONField(
+        default=dict
     )
 
     class Meta:
@@ -198,108 +213,6 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
-
-
-# SUB-MODEL FOR PRODUCT GENERAL
-# class ProductGeneral(SimpleAbstractModel):
-#     product = models.ForeignKey(
-#         Product,
-#         on_delete=models.CASCADE,
-#         related_name='product_general',
-#     )
-#     product_type = models.ForeignKey(
-#         ProductType,
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_general_product_type_1',
-#     )
-#     product_category = models.ForeignKey(
-#         ProductCategory,
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_general_product_category'
-#     )
-#     uom_group = models.ForeignKey(
-#         UnitOfMeasureGroup,
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_general_uom_group'
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Product General'
-#         verbose_name_plural = 'Products General'
-#         default_permissions = ()
-#         permissions = ()
-#
-#
-# # SUB-MODEL FOR PRODUCT SALE
-# class ProductSale(SimpleAbstractModel):
-#     product = models.ForeignKey(
-#         Product,
-#         on_delete=models.CASCADE,
-#         related_name='product_sale'
-#     )
-#     default_uom = models.ForeignKey(
-#         UnitOfMeasure,
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_sale_uom',
-#     )
-#     tax_code = models.ForeignKey(
-#         'saledata.Tax',
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_sale_tax'
-#     )
-#     currency_using = models.ForeignKey(
-#         'saledata.Currency',
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_sale_currency',
-#     )
-#
-#     length = models.FloatField(
-#         default=None,
-#         null=True,
-#     )
-#     width = models.FloatField(
-#         default=None,
-#         null=True,
-#     )
-#     height = models.FloatField(
-#         default=None,
-#         null=True,
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Product Sale'
-#         verbose_name_plural = 'Products Sale'
-#         default_permissions = ()
-#         permissions = ()
-#
-#
-# # SUB-MODEL FOR PRODUCT INVENTORY
-# class ProductInventory(SimpleAbstractModel):
-#     product = models.ForeignKey(
-#         Product,
-#         on_delete=models.CASCADE,
-#         related_name='product_inventory'
-#     )
-#     uom = models.ForeignKey(
-#         UnitOfMeasure,
-#         null=True,
-#         on_delete=models.CASCADE,
-#         related_name='product_inventory_uom'
-#     )
-#     inventory_level_min = models.IntegerField(null=True)
-#     inventory_level_max = models.IntegerField(null=True)
-#
-#     class Meta:
-#         verbose_name = 'Product Inventory'
-#         verbose_name_plural = 'Products Inventory'
-#         default_permissions = ()
-#         permissions = ()
 
 
 class Expense(MasterDataAbstractModel):

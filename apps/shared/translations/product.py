@@ -33,3 +33,6 @@ class ProductMsg:
     NOT_SAVE = _('Not save value in database')
     EXPENSE_DOES_NOT_EXIST = _('Expense does not exist.')
     INDICATOR_NOT_EXIST = _('Indicator does not exist.')
+    PRODUCT_SIZE_IS_WRONG = _('Product size is wrong.')
+    PRICE_LIST_NOT_EXIST = _('Product price list is not exist.')
+    VALUE_INVALID = _("Invalid Value")
