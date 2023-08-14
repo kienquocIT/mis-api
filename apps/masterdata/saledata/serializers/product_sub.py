@@ -27,9 +27,9 @@ class CommonCreateUpdateProduct:
         if len(general_product_size_dict) > 0:
             volume_obj = BaseItemUnit.objects.filter(id=general_product_size_dict['volume_id'])
             weight_obj = BaseItemUnit.objects.filter(id=general_product_size_dict['weight_id'])
-            for key, value in general_product_size_dict.items():
+            for key, val in general_product_size_dict.items():
                 if key not in ['volume_id', 'weight_id']:
-                    if not value.isnumeric() and float(value) <= 0:
+                    if not val.isnumeric() and float(val) <= 0:
                         raise serializers.ValidationError({'general_product_size': ProductMsg.PRODUCT_SIZE_IS_WRONG})
 
         return {
