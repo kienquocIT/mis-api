@@ -3,7 +3,7 @@ from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.models import Shipping
-from apps.masterdata.saledata.models.accounts import Account, Contact
+from apps.masterdata.saledata.models.accounts import Account, Contact, AccountShippingAddress, AccountBillingAddress
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.models.price import Tax, Price
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expense
@@ -81,6 +81,8 @@ class SaleOrderCommonCreate:
                     tax_id=data['tax'].get('id', None),
                     promotion_id=data['promotion'].get('id', None),
                     shipping_id=data['shipping'].get('id', None),
+                    remain_for_purchase_request=sale_order_product.get('product_quantity', 0),
+                    remain_for_purchase_order=sale_order_product.get('product_quantity', 0),
                     **sale_order_product
                 )
         return True
@@ -268,7 +270,7 @@ class SaleOrderCommonValidate:
                 id=value
             )
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': HRMsg.EMPLOYEES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_quotation(cls, value):
@@ -294,7 +296,8 @@ class SaleOrderCommonValidate:
             return {
                 'id': str(product.id),
                 'title': product.title,
-                'code': product.code
+                'code': product.code,
+                'product_choice': product.product_choice,
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
@@ -429,3 +432,28 @@ class SaleOrderCommonValidate:
             }
         except SaleOrderIndicatorConfig.DoesNotExist:
             raise serializers.ValidationError({'indicator': ProductMsg.INDICATOR_NOT_EXIST})
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        try:
+            return AccountShippingAddress.objects.get(id=value)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer_shipping': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        try:
+            return AccountBillingAddress.objects.get(id=value)
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
+
+    @classmethod
+    def validate_employee_inherit(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})

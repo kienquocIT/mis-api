@@ -1,6 +1,5 @@
 from django.db import models
 
-from apps.sales.opportunity.models import Opportunity
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
@@ -88,7 +87,7 @@ class ConfigLongSale(SimpleAbstractModel):
 # BEGIN QUOTATION
 class Quotation(DataAbstractModel):
     opportunity = models.ForeignKey(
-        Opportunity,
+        'opportunity.Opportunity',
         on_delete=models.CASCADE,
         verbose_name="opportunity",
         related_name="quotation_opportunity",
@@ -135,6 +134,20 @@ class Quotation(DataAbstractModel):
     quotation_logistic_data = models.JSONField(
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
+    )
+    customer_shipping = models.ForeignKey(
+        'saledata.AccountShippingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer shipping",
+        related_name="quotation_customer_shipping",
+        null=True
+    )
+    customer_billing = models.ForeignKey(
+        'saledata.AccountBillingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer billing",
+        related_name="quotation_customer_billing",
+        null=True
     )
     quotation_costs_data = models.JSONField(
         default=list,

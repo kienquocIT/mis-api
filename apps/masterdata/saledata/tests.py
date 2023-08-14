@@ -53,7 +53,7 @@ class AccountTestCase(AdvanceTestCase):
             'phone': '0903608494',
             'email': 'cuong@gmail.com',
             'industry': self.industry['id'],
-            'manager': [self.get_employee().data['result'][0]['id']],
+            'manager': [AccountTestCase.get_employee(self).data['result'][0]['id']],
             'account_type': [str(self.account_type['id'])],
             'account_type_selection': 0
         }
@@ -272,7 +272,7 @@ class ProductTestCase(AdvanceTestCase):
         data = {
             "code": "P01",
             "title": "Laptop HP HLVVL6R",
-            'product_choice': [0, 1],
+            'product_choice': [0, 1, 2],
             'product_type': product_type['id'],
             'product_category': product_category['id'],
             'uom_group': uom_group.data['result']['id'],
@@ -493,7 +493,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'general_information', 'sale_information',],
+            ['id', 'code', 'title', 'general_information', 'sale_information', 'product_choice'],
             check_sum_second=True,
         )
         return response
@@ -1583,7 +1583,8 @@ class AccountTypeTestCase(AdvanceTestCase):
             "title": "Customer_01",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
-        response = self.client.post(self.url, data, format='json')
+        url = reverse("AccountTypeList")
+        response = self.client.post(url, data, format='json')
         self.assertResponseList(
             response,
             status_code=status.HTTP_201_CREATED,
@@ -1605,7 +1606,8 @@ class AccountTypeTestCase(AdvanceTestCase):
             "title": "Customer_02",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
-        response = self.client.post(self.url, data1, format='json')
+        url = reverse("AccountTypeList")
+        response = self.client.post(url, data1, format='json')
         self.assertCountEqual(
             response.data['result'],
             ['id', 'code', 'title', 'is_default', 'description'],
@@ -1617,7 +1619,7 @@ class AccountTypeTestCase(AdvanceTestCase):
             "title": "Supplier_01",
             "description": ""
         }
-        response2 = self.client.post(self.url, data2, format='json')
+        response2 = self.client.post(url, data2, format='json')
         self.assertResponseList(
             response2,
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -1638,7 +1640,8 @@ class AccountTypeTestCase(AdvanceTestCase):
             "code": "AT09",
             "description": "Customer_01"
         }
-        response = self.client.post(self.url, data, format='json')
+        url = reverse("AccountTypeList")
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 400)
         self.assertResponseList(
             response,
@@ -1658,8 +1661,7 @@ class AccountTypeTestCase(AdvanceTestCase):
             "title": "Supplier_01",
             "description": "Supplier"
         }
-
-        response1 = self.client.post(self.url, data1, format='json')  # noqa
+        response1 = self.client.post(url, data1, format='json')  # noqa
         self.assertResponseList(
             response1,
             status_code=status.HTTP_201_CREATED,
@@ -1679,7 +1681,7 @@ class AccountTypeTestCase(AdvanceTestCase):
             "title": "Customer_01",
         }
 
-        response2 = self.client.post(self.url, data2, format='json')  # noqa
+        response2 = self.client.post(url, data2, format='json')  # noqa
         self.assertResponseList(
             response2,
             status_code=status.HTTP_201_CREATED,
@@ -1696,8 +1698,9 @@ class AccountTypeTestCase(AdvanceTestCase):
         return None
 
     def test_get_account_type(self):
-        account_type = self.test_create_new()  # noqa
-        response = self.client.get(self.url)
+        account_type = AccountTypeTestCase.test_create_new(self)  # noqa
+        url = reverse("AccountTypeList")
+        response = self.client.get(url)
         self.assertResponseList(  # noqa
             response,
             status_code=status.HTTP_200_OK,

@@ -330,21 +330,20 @@ def validate_employee_for_group(value):
             id__in=value
         ).count()
         if employee_list == len(value):
-            return value
+            return [str(item) for item in value]
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
     raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
 
 
 class GroupCreateSerializer(serializers.ModelSerializer):
     group_level = serializers.UUIDField()
-    parent_n = serializers.UUIDField(required=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
     group_employee = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
-    first_manager = serializers.UUIDField()
-    second_manager = serializers.UUIDField(required=False)
-    first_manager_title = serializers.CharField(max_length=100)
+    first_manager = serializers.UUIDField(required=False, allow_null=True)
+    second_manager = serializers.UUIDField(required=False, allow_null=True)
     title = serializers.CharField(max_length=100)
     code = serializers.CharField(max_length=100)
 
@@ -428,8 +427,8 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
-    first_manager = serializers.UUIDField(required=False)
-    second_manager = serializers.UUIDField(required=False)
+    first_manager = serializers.UUIDField(required=False, allow_null=True)
+    second_manager = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Group

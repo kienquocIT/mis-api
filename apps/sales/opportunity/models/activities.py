@@ -44,13 +44,7 @@ class OpportunityEmail(SimpleAbstractModel):
         related_name="opportunity_send_email",
     )
     subject = models.CharField(max_length=250)
-    email_to = models.CharField(max_length=250)
-    email_to_contact = models.ForeignKey(
-        'saledata.Contact',
-        on_delete=models.CASCADE,
-        related_name="opportunity_email_contact",
-        null=True
-    )
+    email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
     content = models.CharField(max_length=500, null=True)
     date_created = models.DateTimeField(
@@ -131,7 +125,7 @@ class OpportunityDocument(SimpleAbstractModel):
     class Meta:
         verbose_name = 'OpportunityDocument'
         verbose_name_plural = 'OpportunityDocuments'
-        ordering = ()
+        ordering = ('-subject',)
         default_permissions = ()
         permissions = ()
 

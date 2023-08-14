@@ -22,3 +22,5 @@ class AccountsMsg:
     CREDIT_CARD_MISSING_VALUE = _('Credit card is missing value.')
     PAYMENT_TERM_NOT_EXIST = _('Payment term not exist.')
     TOTAL_EMPLOYEES_NOT_NONE = _('Total employees must not NULL.')
+    ACCOUNT_SHIPPING_NOT_EXIST = _('Account shipping address does not exist.')
+    ACCOUNT_BILLING_NOT_EXIST = _('Account billing address does not exist.')

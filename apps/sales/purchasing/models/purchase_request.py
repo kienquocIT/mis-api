@@ -1,19 +1,6 @@
 from django.db import models
-from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
-
-REQUEST_FOR = [
-    (0, _('For Sale Order')),
-    (1, _('For Stock')),
-    (2, _('For Other')),
-]
-
-PURCHASE_STATUS = [
-    (0, _('Wait')),
-    (1, _('Partially ordered')),
-    (2, _('Ordered')),
-]
+from apps.shared import DataAbstractModel, SimpleAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
 class PurchaseRequest(DataAbstractModel):
@@ -99,6 +86,13 @@ class PurchaseRequestProduct(SimpleAbstractModel):
         related_name="purchase_request",
     )
 
+    sale_order_product = models.ForeignKey(
+        'saleorder.SaleOrderProduct',
+        on_delete=models.CASCADE,
+        related_name="purchase_request_so_product",
+        null=True,
+    )
+
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
@@ -115,7 +109,7 @@ class PurchaseRequestProduct(SimpleAbstractModel):
         related_name="purchase_request_uom",
     )
 
-    quantity = models.IntegerField()
+    quantity = models.FloatField()
 
     unit_price = models.FloatField()
 
@@ -126,6 +120,11 @@ class PurchaseRequestProduct(SimpleAbstractModel):
     )
 
     sub_total_price = models.FloatField()
+
+    remain_for_purchase_order = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
+    )
 
     class Meta:
         verbose_name = 'Purchase Request Product'

@@ -1,9 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.purchasing.models import PurchaseRequest
-from apps.sales.purchasing.serializers import PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, \
-    PurchaseRequestDetailSerializer
+from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
+from apps.sales.purchasing.serializers import (
+    PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
+    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -19,6 +21,12 @@ class PurchaseRequestList(
     serializer_detail = PurchaseRequestListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase Request List",
@@ -47,6 +55,13 @@ class PurchaseRequestDetail(
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestDetailSerializer
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'supplier',
+            'sale_order',
+            'contact'
+        )
+
     @swagger_auto_schema(
         operation_summary="Purchase Request detail",
         operation_description="Get Purchase Request detail by ID",
@@ -54,3 +69,44 @@ class PurchaseRequestDetail(
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class PurchaseRequestListForPQR(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseRequest.objects
+
+    serializer_list = PurchaseRequestListForPQRSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request List For Purchase Quotation Request",
+        operation_description="Get Purchase Request List For Purchase Quotation Request",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class PurchaseRequestProductList(BaseListMixin):
+    permission_classes = [IsAuthenticated]
+    queryset = PurchaseRequestProduct.objects
+    filterset_fields = {
+        'purchase_request_id': ['in', 'exact'],
+    }
+    serializer_list = PurchaseRequestProductListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'purchase_request',
+            'product',
+            'uom',
+        ).order_by('-purchase_request__date_created')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request Product List",
+        operation_description="Get Purchase Request Product List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

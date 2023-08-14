@@ -13,6 +13,7 @@ from apps.core.models import CoreAbstractModel
 
 class Company(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
+    code = models.CharField(max_length=25, blank=True)
 
     # license used
     # {
@@ -301,4 +302,6 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
     @classmethod
     def all_user_of_company(cls, company_id: Union[UUID, str]):
-        return list(set(cls.objects.filter(company_id=company_id).cache().values_list('user_id', flat=True)))
+        return list(set(
+            cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
+        ))

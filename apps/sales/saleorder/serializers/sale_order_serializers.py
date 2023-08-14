@@ -272,11 +272,11 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(2),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(2),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
@@ -332,6 +332,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping_id',
+            'customer_billing_id',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # total amount of products
@@ -396,11 +398,11 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(2),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(2),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
@@ -444,8 +446,9 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    sale_person = serializers.CharField(
-        max_length=550
+    employee_inherit = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     payment_term = serializers.CharField(
         max_length=550
@@ -460,6 +463,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         required=False
     )
     sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
@@ -481,7 +486,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'sale_person',
+            'employee_inherit',
             'payment_term',
             'quotation',
             # total amount of products
@@ -502,6 +507,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # indicator tab
@@ -523,8 +530,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_sale_person(cls, value):
-        return SaleOrderCommonValidate().validate_sale_person(value=value)
+    def validate_employee_inherit(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -533,6 +540,14 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
@@ -553,10 +568,12 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if sale_order.opportunity:
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': sale_order.system_status,
-            })
+            sale_order.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': sale_order.system_status,
+                }
+            )
         return sale_order
 
 
@@ -574,9 +591,9 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    sale_person = serializers.CharField(
-        max_length=550,
-        required=False
+    employee_inherit = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     payment_term = serializers.CharField(
         max_length=550,
@@ -592,6 +609,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         required=False
     )
     sale_order_logistic_data = SaleOrderLogisticSerializer(required=False)
+    customer_shipping = serializers.UUIDField(required=False, allow_null=True)
+    customer_billing = serializers.UUIDField(required=False, allow_null=True)
     sale_order_costs_data = SaleOrderCostSerializer(
         many=True,
         required=False
@@ -613,7 +632,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'sale_person',
+            'employee_inherit',
             'payment_term',
             'quotation',
             # total amount of products
@@ -634,6 +653,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             # sale order tabs
             'sale_order_products_data',
             'sale_order_logistic_data',
+            'customer_shipping',
+            'customer_billing',
             'sale_order_costs_data',
             'sale_order_expenses_data',
             # indicator tab
@@ -653,8 +674,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_sale_person(cls, value):
-        return SaleOrderCommonValidate().validate_sale_person(value=value)
+    def validate_employee_inherit(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -663,6 +684,14 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation(cls, value):
         return SaleOrderCommonValidate().validate_quotation(value=value)
+
+    @classmethod
+    def validate_customer_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_customer_shipping(value=value)
+
+    @classmethod
+    def validate_customer_billing(cls, value):
+        return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
         if 'opportunity' in validate_data:
@@ -688,10 +717,12 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(**{
-                'update_fields': ['sale_order'],
-                'sale_order_status': instance.system_status,
-            })
+            instance.opportunity.save(
+                **{
+                    'update_fields': ['sale_order'],
+                    'sale_order_status': instance.system_status,
+                }
+            )
         return instance
 
 
@@ -793,3 +824,38 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
         if obj.system_status:
             return "Open"
         return "Open"
+
+
+class SaleOrderProductListSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'product_data',
+        )
+
+    @classmethod
+    def get_product_data(cls, obj):
+        so_product = SaleOrderProduct.objects.select_related('product').filter(sale_order=obj, product__isnull=False)
+        return [
+            {
+                'id': item.id,
+                'product_quantity': item.product_quantity,
+                'remain_for_purchase_request': item.remain_for_purchase_request,
+                'product': {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'code': item.product.code,
+                    'product_choice': item.product.product_choice,
+                    'uom': {
+                        'id': item.product.sale_information['default_uom']['id'],
+                        'title': item.product.sale_information['default_uom']['title']
+                    },
+                    'uom_group': item.product.general_information['uom_group']['title'],
+                    'tax_code': item.product.sale_information['tax_code']['id'],
+                }
+            }
+            for item in so_product
+        ]

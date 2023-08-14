@@ -2,7 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from apps.masterdata.saledata.tests import ProductTestCase, TaxAndTaxCategoryTestCase, SalutationTestCase, \
-    AccountGroupTestCase, IndustryTestCase
+    AccountGroupTestCase, IndustryTestCase, AccountTypeTestCase
 from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
@@ -146,27 +146,10 @@ class TestCaseOpportunity(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
-    def create_salutation(self):
-        salutation = SalutationTestCase.test_create_new(self)
-        return salutation
-
-    def create_account_group(self):
-        response = AccountGroupTestCase.test_create_new(self)
-        return response
-
-    def create_industry(self):
-        response = IndustryTestCase.test_create_new(self)
-        return response
-
-    def get_account_type(self):
-        url = reverse("AccountTypeList")
-        response = self.client.get(url, format='json')
-        return response
-
     def test_create_contact(self):
         url = reverse("ContactList")
-        salutation = self.create_salutation()
-        employee = self.get_employee()
+        salutation = SalutationTestCase.test_create_new(self)
+        employee = TestCaseOpportunity.get_employee(self)
         data = {
             "owner": employee.data['result'][0]['id'],
             "job_title": "Giám đốc nè",
@@ -187,11 +170,11 @@ class TestCaseOpportunity(AdvanceTestCase):
         return response
 
     def test_create_account(self):
-        account_type = self.get_account_type().data['result'][0]['id']
-        account_group = self.create_account_group().data['result']['id']
-        employee = self.get_employee().data['result'][0]['id']
-        contact = self.test_create_contact().data['result']['id']
-        industry = self.create_industry().data['result']['id']
+        account_type = AccountTypeTestCase.test_get_account_type(self).data['result'][0]['id']
+        account_group = AccountGroupTestCase.test_create_new(self).data['result']['id']
+        employee = TestCaseOpportunity.get_employee(self).data['result'][0]['id']
+        contact = TestCaseOpportunity.test_create_contact(self).data['result']['id']
+        industry = IndustryTestCase.test_create_new(self).data['result']['id']
 
         data = {
             "name": "Công ty hạt giống, phân bón Trúc Phượng",
@@ -222,8 +205,8 @@ class TestCaseOpportunity(AdvanceTestCase):
         return response
 
     def test_create_opportunity(self):
-        emp = self.get_employee().data['result'][0]['id']
-        customer = self.test_create_account().data['result']['id']
+        emp = TestCaseOpportunity.get_employee(self).data['result'][0]['id']
+        customer = TestCaseOpportunity.test_create_account(self).data['result']['id']
         data = {
             "title": "Dự Án Của Nam nè",
             "customer": customer,

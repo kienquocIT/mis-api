@@ -10,12 +10,12 @@ from apps.shared import ProvisioningMsg
 
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.core.base.models import SubscriptionPlan
+from apps.shared import FORMATTING
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
     UserCreateSerializer, EmployeeSpaceCreateSerializer,
 )
-from apps.shared import FORMATTING
 
 
 class TenantController:
@@ -243,6 +243,7 @@ class TenantController:
     @classmethod
     def create_employee(cls, **kwargs):
         try:
+            kwargs['code'] = 'EMP0001'
             ser = EmployeeCreateSerializer(data=kwargs)
             ser.is_valid(raise_exception=True)
             obj = ser.save(

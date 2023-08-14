@@ -468,6 +468,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'title',
             'general_information',
             'sale_information',
+            'product_choice'
         )
 
 
@@ -815,6 +816,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'price_list__is_default',
             'price_list__valid_time_start',
             'price_list__valid_time_end',
+            'price_list__price_list_type',
         )
         if price_list:
             return [
@@ -823,7 +825,8 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                     'title': price[1],
                     'value': price[2],
                     'is_default': price[3],
-                    'price_status': cls.check_status_price(price[4], price[5])
+                    'price_status': cls.check_status_price(price[4], price[5]),
+                    'price_type': price[6],
                 }
                 for price in price_list
             ]

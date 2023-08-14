@@ -680,13 +680,8 @@ class MediaForceAPI:
 
     @classmethod
     def parsed_employee_code_to_media_username(cls, employee_obj):
-        email_arr = employee_obj.email.split("@")
-        if len(email_arr) >= 2:
-            person_name = email_arr[0]
-        else:
-            person_name = StringHandler.random_str(6)
         return slugify(
-            f'{settings.MEDIA_PREFIX_SITE}_{employee_obj.company.code}_{person_name}_'
+            f'{settings.MEDIA_PREFIX_SITE}_{employee_obj.company.code}_{employee_obj.code}_'
             f'{StringHandler.random_str(6)}'
         )
 
@@ -791,6 +786,7 @@ class MediaForceAPI:
                     'owner_id': media_user_id,
                 }
             )
+            print(resp, resp.status, resp.result)
             if resp.state:
                 return True, resp.result
             return False, resp.errors
