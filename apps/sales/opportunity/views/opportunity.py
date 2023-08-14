@@ -61,6 +61,8 @@ class OpportunityDetail(
     queryset = Opportunity.objects
     serializer_detail = OpportunityDetailSerializer
     serializer_update = OpportunityUpdateSerializer
+    update_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

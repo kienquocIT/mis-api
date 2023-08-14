@@ -585,4 +585,3 @@ def make_sure_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_config()
     print('Make sure process config is done!')
-    return True
