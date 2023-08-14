@@ -596,8 +596,6 @@ class ConfigDefaultData:
 
     def task_config(self):
         # create config default for company
-        print('self.company_obj.tenant: ', self.company_obj.tenant)
-        print('self.company_obj: ', self.company_obj)
         config, created = OpportunityTaskConfig.objects.get_or_create(
             tenant=self.company_obj.tenant,
             company=self.company_obj,
@@ -625,7 +623,6 @@ class ConfigDefaultData:
                 'out_assign_opt': 0
             },
         )
-        print('config, created: ', config, created)
         if created:
             temp_stt = []
             for item in config.list_status:
