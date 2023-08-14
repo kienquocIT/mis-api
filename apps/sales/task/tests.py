@@ -37,7 +37,6 @@ class TaskTestCase(AdvanceTestCase):
         ConfigDefaultData(company).task_config()
         task_status_res = self.client.get(reverse("OpportunityTaskStatusList"), format='json')
         self.assertEqual(task_status_res.status_code, status.HTTP_200_OK)
-        print('task_status_res: ', task_status_res, task_status_res.data)
         return task_status_res
 
     def test_create_task(self):
@@ -60,7 +59,6 @@ class TaskTestCase(AdvanceTestCase):
             "employee_created": employee[0]['id'],
         }
         task_response = self.client.post(reverse("OpportunityTaskList"), data, format='json')
-        print('task_response: ', task_response)
         self.assertEqual(task_response.status_code, 201)
         return task_response
 
