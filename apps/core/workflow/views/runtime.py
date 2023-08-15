@@ -126,6 +126,9 @@ class RuntimeAssigneeList(BaseListMixin):
             'employee_id': self.request.user.employee_current_id
         }
 
+    def error_employee_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(operation_summary='Runtime Task List')
     @mask_view(login_require=True, auth_require=False, employee_require=True, use_custom_get_filter_auth=True)
     def get(self, request, *args, **kwargs):

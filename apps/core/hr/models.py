@@ -8,7 +8,7 @@ from apps.core.models import TenantAbstractModel
 from apps.shared import (
     SimpleAbstractModel,
     DisperseModel,
-    GENDER_CHOICE, TypeCheck, MediaForceAPI,
+    GENDER_CHOICE, TypeCheck, MediaForceAPI, StringHandler,
 )
 
 
@@ -203,21 +203,43 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             return True
         return False
 
+    @classmethod
+    def generate_code(cls, company_id):
+        num_max = None
+        for item in cls.objects.filter(company_id=company_id).values_list('code', flat=True):
+            try:
+                tmp = int(str(item).split('-', maxsplit=1)[0].split("EMP")[1])
+                if not num_max or (isinstance(num_max, int) and tmp > num_max):
+                    num_max = tmp
+            except Exception as err:
+                print(err)
+
+        if num_max:
+            if num_max < 10000:
+                if num_max > 1000:
+                    code = 'EMP' + str(num_max + 1)
+                elif num_max > 100:
+                    code = 'EMP0' + str(num_max + 1)
+                elif num_max > 10:
+                    code = 'EMP00' + str(num_max + 1)
+                else:
+                    code = 'EMP000' + str(num_max + 1)
+            else:
+                raise ValueError('Out range 10000 employee number')
+        else:
+            code = 'EMP0001-' + StringHandler.random_str(17)
+
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
     def save(self, *args, **kwargs):
         # setup full name for search engine
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        employee = Employee.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "EMP"
         if not self.code:
-            temper = "%04d" % (employee + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+            self.code = self.generate_code(self.company_id)
 
         # get old user and new user
         user_id_old, user_id_new = None, self.user_id

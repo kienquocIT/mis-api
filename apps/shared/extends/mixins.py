@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Union
 from uuid import UUID
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
@@ -13,8 +14,10 @@ from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 
 from .controllers import ResponseController
 from .utils import TypeCheck
+from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
+
 
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
@@ -168,7 +171,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     employee_obj = self.request.user.employee_current
                 else:
                     return False
-            print('employee_created_id: ', getattr(obj, 'employee_created_id', '1'))
             return DataFilterHandler.parse_left_and_compare(
                 employee_obj, self.perm_filter_dict,
                 **({'employee_created_id': obj.employee_created_id} if hasattr(obj, 'employee_created_id') else {}),
@@ -230,6 +232,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     data = user.employee_current_id
                 case 'user_id':
                     data = user.id
+                case 'employee_inherit_id':
+                    data = user.employee_current_id
             if data is not None:
                 ctx[key] = data
         return ctx
@@ -514,6 +518,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
 
 class BaseListMixin(BaseMixin):
+    LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
+    LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+
     @classmethod
     def list_empty(cls) -> Response:
         return ResponseController.success_200(data=[], key_data='result')
@@ -576,6 +583,13 @@ class BaseListMixin(BaseMixin):
 
 
 class BaseCreateMixin(BaseMixin):
+    CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+        'employee_inherit_id',
+    ]  # DataAbstract
+    CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
+
     def create(self, request, *args, **kwargs):
         if self.check_perm_create(body_data=request.data):
             log_data = deepcopy(request.data)
@@ -589,10 +603,20 @@ class BaseCreateMixin(BaseMixin):
 
     @staticmethod
     def perform_create(serializer, extras: dict):
-        return serializer.save(**extras)
+        try:
+            with transaction.atomic():
+                return serializer.save(**extras)
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class BaseRetrieveMixin(BaseMixin):
+    RETRIEVE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
+    RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id']  # MasterData
+
     @classmethod
     def retrieve_empty(cls) -> Response:
         return ResponseController.success_200(data={}, key_data='result')
@@ -606,6 +630,9 @@ class BaseRetrieveMixin(BaseMixin):
 
 
 class BaseUpdateMixin(BaseMixin):
+    UPDATE_HIDDEN_FIELD_DEFAULT = ['employee_modified_id']  # DataAbstract
+    UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['employee_modified_id']  # MasterData
+
     @classmethod
     def parsed_body(cls, instance, request_data, user) -> (dict, bool, Union[UUID, str, None]):
         """
@@ -644,7 +671,8 @@ class BaseUpdateMixin(BaseMixin):
                 )
                 serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
                 serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
+                field_hidden = self.setup_create_field_hidden(request.user)
+                self.perform_update(serializer, extras=field_hidden)
                 # request force write log
                 self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
                 if getattr(instance, '_prefetched_objects_cache', None):
@@ -661,8 +689,17 @@ class BaseUpdateMixin(BaseMixin):
         return self.update(request, *args, **kwargs)
 
     @staticmethod
-    def perform_update(serializer):
-        serializer.save()
+    def perform_update(serializer, extras: dict = None):
+        try:
+            with transaction.atomic():
+                if not extras:
+                    extras = {}
+                return serializer.save(**extras)
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class BaseDestroyMixin(BaseMixin):
@@ -678,6 +715,13 @@ class BaseDestroyMixin(BaseMixin):
 
     @staticmethod
     def perform_destroy(instance, is_purge=False):
-        if is_purge is True:
-            ...
-        instance.delete()
+        try:
+            with transaction.atomic():
+                if is_purge is True:
+                    ...
+                return instance.delete()
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})

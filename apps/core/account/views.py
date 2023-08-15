@@ -163,6 +163,7 @@ class UserOfTenantList(AccountListMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+    search_fields = ('username', 'first_name', 'last_name')
 
     def get_queryset(self):
         return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')

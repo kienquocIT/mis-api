@@ -60,6 +60,7 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = GroupLevel.objects
     serializer_detail = GroupLevelDetailSerializer
     serializer_update = GroupLevelUpdateSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Group Level detail",
@@ -140,6 +141,7 @@ class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
     queryset = Group.objects
     serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     @swagger_auto_schema(
         operation_summary="Group detail",

@@ -20,6 +20,8 @@ __all__ = ['mask_view']
 
 
 class PermissionChecking:  # pylint: disable=R0902
+    key_filter = 'employee_created_id'
+
     def __init__(self, user_obj, employee_obj, plan_code, app_code, perm_code, space_code=''):
         self.plan_code = plan_code.lower()
         self.app_code = app_code.lower()
@@ -111,16 +113,16 @@ class PermissionChecking:  # pylint: disable=R0902
             else:
                 np_all_key = np.array(list(config_data.keys()))
                 if np.array_equal(np_all_key, np.array(['1'])):
-                    filter_dict['employee_created_id'] = str(self.employee_id)
+                    filter_dict[self.key_filter] = str(self.employee_id)
                 elif np.array_equal(np_all_key, np.array(['2'])) or np.array_equal(np_all_key, np.array(['1', '2'])):
-                    filter_dict['employee_created_id__in'] = self.get_employee_my_staff()  # append staff
+                    filter_dict[self.key_filter + '__in'] = self.get_employee_my_staff()  # append staff
                 elif np.array_equal(np_all_key, np.array(['3'])) or np.array_equal(np_all_key, np.array(['1', '3'])):
-                    filter_dict['employee_created_id__in'] = self.get_employee_same_group()  # append same group
+                    filter_dict[self.key_filter + '__in'] = self.get_employee_same_group()  # append same group
                 elif (
                         np.array_equal(np_all_key, np.array(['2', '3'])) or
                         np.array_equal(np_all_key, np.array(['1', '2', '3']))
                 ):
-                    filter_dict['employee_created_id__in'] = list(
+                    filter_dict[self.key_filter + '__in'] = list(
                         set(self.get_employee_my_staff() + self.get_employee_same_group())
                     )  # same group + staff
 
@@ -188,8 +190,8 @@ class AuthPermission:
 
     @property
     def return_error_employee_require(self):
-        if hasattr(self.view_this, 'error_login_require'):
-            return getattr(self.view_this, 'error_login_require')()
+        if hasattr(self.view_this, 'error_employee_require'):
+            return getattr(self.view_this, 'error_employee_require')()
         return ResponseController.forbidden_403()
 
     @property

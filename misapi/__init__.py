@@ -1,5 +1,5 @@
 from .celery import app as celery_app
-from dotenv import load_dotenv
+from .load_env import load_env
 
 __all__ = ('celery_app',)
-load_dotenv('.env')
+load_env()

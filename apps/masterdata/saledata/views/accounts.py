@@ -23,8 +23,8 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
     serializer_list = AccountTypeListSerializer
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="AccountType list",
@@ -55,8 +55,8 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = AccountTypeCreateSerializer
     serializer_detail = AccountTypeDetailsSerializer
     serializer_update = AccountTypeUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail AccountType')
     @mask_view(login_require=True, auth_require=False)
@@ -77,8 +77,8 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
     serializer_list = AccountGroupListSerializer
     serializer_create = AccountGroupCreateSerializer
     serializer_detail = AccountGroupDetailsSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="AccountGroup list",
@@ -107,8 +107,8 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = AccountGroupCreateSerializer
     serializer_detail = AccountGroupDetailsSerializer
     serializer_update = AccountGroupUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail AccountGroup')
     @mask_view(login_require=True, auth_require=False)
@@ -129,8 +129,8 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     serializer_list = IndustryListSerializer
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Industry list",
@@ -159,8 +159,8 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_create = IndustryCreateSerializer
     serializer_detail = IndustryDetailsSerializer
     serializer_update = IndustryUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(operation_summary='Detail Industry')
     @mask_view(login_require=True, auth_require=False)
@@ -183,8 +183,8 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
     serializer_detail = AccountDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
     search_fields = ['name']
 
@@ -221,13 +221,11 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
 
 class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
     serializer_update = AccountUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('industry', 'owner')
@@ -237,16 +235,16 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
         login_require=True, auth_require=True,
         plan_code='sale', app_code='account', perm_code='view',
     )
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Account", request_body=AccountUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
         plan_code='sale', app_code='account', perm_code='edit',
     )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class AccountsMapEmployeesList(BaseListMixin):
@@ -255,7 +253,17 @@ class AccountsMapEmployeesList(BaseListMixin):
     serializer_list = AccountsMapEmployeesListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related('account', 'employee')
+        if self.request.user:
+            tenant_id = getattr(self.request.user, 'tenant_current_id', None)
+            company_id = getattr(self.request.user, 'company_current_id', None)
+            if tenant_id and company_id:
+                return super().get_queryset().select_related('account', 'employee').filter(
+                    account__tenant_id=self.request.user.tenant_id,
+                    account__company_id=self.request.user.company_current_id,
+                    employee__tenant_id=self.request.user.tenant_id,
+                    employee__company_id=self.request.user.company_current_id,
+                )
+        return super().get_queryset().none()
 
     @swagger_auto_schema(
         operation_summary="Accounts map Employees list",
@@ -272,7 +280,7 @@ class AccountForSaleList(BaseListMixin):
     queryset = Account.objects
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'account_types_mapped__account_type_order': ['exact'],
         'employee__id': ['exact']
