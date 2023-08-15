@@ -190,8 +190,8 @@ class AuthPermission:
 
     @property
     def return_error_employee_require(self):
-        if hasattr(self.view_this, 'error_login_require'):
-            return getattr(self.view_this, 'error_login_require')()
+        if hasattr(self.view_this, 'error_employee_require'):
+            return getattr(self.view_this, 'error_employee_require')()
         return ResponseController.forbidden_403()
 
     @property
@@ -338,6 +338,7 @@ def mask_view(**parent_kwargs):
 
     def decorated(func_view):
         def wrapper(self, request, *args, **kwargs):  # pylint: disable=R0911,R0912,R0914
+            print(request, request.user, request.user.company_current, request.user.employee_current)
             # request.user.employee_current: required
             employee_require: bool = parent_kwargs.get('employee_require', False)
 
