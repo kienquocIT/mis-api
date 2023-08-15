@@ -16,11 +16,13 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
 )
 from apps.sales.delivery.models import DeliveryConfig
-from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
-    SaleOrderIndicatorConfig
+from apps.sales.saleorder.models import (
+    SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
+    SaleOrderIndicatorConfig,
+)
 from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 
@@ -588,10 +590,12 @@ class ConfigDefaultData:
     def sale_order_indicator_config(self):
         bulk_info = []
         for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
-            bulk_info.append(SaleOrderIndicatorConfig(
-                company=self.company_obj,
-                **data,
-            ))
+            bulk_info.append(
+                SaleOrderIndicatorConfig(
+                    company=self.company_obj,
+                    **data,
+                )
+            )
         SaleOrderIndicatorConfig.objects.bulk_create(bulk_info)
 
     def task_config(self):
@@ -644,12 +648,14 @@ class ConfigDefaultData:
     def process_function_config(self):
         bulk_info = []
         for data in self.function_process_data:
-            bulk_info.append(SaleFunction(
-                company=self.company_obj,
-                tenant=self.company_obj.tenant,
-                code='',
-                **data,
-            ))
+            bulk_info.append(
+                SaleFunction(
+                    company=self.company_obj,
+                    tenant=self.company_obj.tenant,
+                    code='',
+                    **data,
+                )
+            )
         SaleFunction.objects.bulk_create(bulk_info)
 
     def process_config(self):
