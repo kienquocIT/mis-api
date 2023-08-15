@@ -84,7 +84,7 @@ def force_new_notify(
     obj.before_save(force_insert=True)
     if is_submit:
         return obj.save()
-    return str(obj)
+    return obj
 
 
 @shared_task
