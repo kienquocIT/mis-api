@@ -783,6 +783,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
+    sale_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -831,3 +832,27 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 for price in price_list
             ]
         return []
+
+    @classmethod
+    def get_sale_information(cls, obj):
+        return {
+            'default_uom': {
+                'id': obj.default_uom_id,
+                'title': obj.default_uom.title,
+                'code': obj.default_uom.code
+            } if obj.default_uom else {},
+            'tax_code': {
+                'id': obj.tax_code_id,
+                'title': obj.tax_code.title,
+                'code': obj.tax_code.code,
+                'rate': obj.tax_code.rate
+            } if obj.tax_code else {},
+            'currency_using': {
+                'id': obj.currency_using_id,
+                'title': obj.currency_using.title,
+                'code': obj.currency_using.code,
+            } if obj.currency_using else {},
+            'length': obj.length,
+            'width': obj.width,
+            'height': obj.height,
+        }

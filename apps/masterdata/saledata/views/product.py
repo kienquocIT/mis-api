@@ -368,6 +368,13 @@ class ProductForSaleList(BaseListMixin):
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "default_uom",
+            "tax_code",
+            "currency_using",
+        )
+
     @swagger_auto_schema(
         operation_summary="Product for sale list",
         operation_description="Product for sale list",
