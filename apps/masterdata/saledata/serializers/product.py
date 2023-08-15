@@ -502,63 +502,32 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validated_data):
-        validated_data['general_information'] = CommonCreateUpdateProduct.validate_general_data(
-            self.initial_data.get('general_information', {})
+        validated_data = CommonCreateUpdateProduct.validate_information(
+            self.initial_data.get('general_information', {}),
+            self.initial_data.get('sale_information', {}),
+            self.initial_data.get('inventory_information', {}),
+            self.initial_data.get('purchase_information', {}),
+            validated_data
         )
-
-        validated_data['sale_information'] = CommonCreateUpdateProduct.validate_sale_data(
-            self.initial_data.get('sale_information', {})
-        ) if 0 in validated_data['product_choice'] else {}
-
-        validated_data['inventory_information'] = CommonCreateUpdateProduct.validate_inventory_data(
-            self.initial_data.get('inventory_information', {})
-        ) if 1 in validated_data['product_choice'] else {}
-
-        validated_data['purchase_information'] = CommonCreateUpdateProduct.validate_purchase_data(
-            self.initial_data.get('purchase_information', {})
-        ) if 2 in validated_data['product_choice'] else {}
-
-        general_infor = validated_data['general_information']
-        sale_infor = validated_data['sale_information']
-        inventory_infor = validated_data['inventory_information']
-        purchase_infor = validated_data['purchase_information']
-        # General
-        validated_data['general_product_type_id'] = general_infor.get('product_type', None).get('id', None)
-        validated_data['general_product_category_id'] = general_infor.get('product_category', None).get('id', None)
-        validated_data['general_uom_group_id'] = general_infor.get('uom_group', None).get('id', None)
-        validated_data['general_product_size'] = general_infor.get('product_size', [])
-        # Sale
-        validated_data['sale_default_uom_id'] = sale_infor.get('default_uom', None).get('id', None)
-        validated_data['sale_tax_id'] = sale_infor.get('tax', None).get('id', None)
-        validated_data['sale_currency_using_id'] = sale_infor.get('currency_using', None).get('id', None)
-        validated_data['sale_cost'] = sale_infor.get('sale_product_cost', None)
-        validated_data['sale_product_price_list'] = sale_infor.get('sale_product_price_list', [])
-        # Inventory
-        validated_data['inventory_uom_id'] = inventory_infor.get('uom', None).get('id', None)
-        validated_data['inventory_level_min'] = inventory_infor.get('inventory_level_min', None)
-        validated_data['inventory_level_max'] = inventory_infor.get('inventory_level_max', None)
-        # Purchase
-        validated_data['purchase_tax_id'] = purchase_infor.get('tax', None).get('id', None)
-        validated_data['purchase_default_uom_id'] = purchase_infor.get('default_uom', None).get('id', None)
-
         return validated_data
 
     def create(self, validated_data):
         if Product.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'PRODUCT.CODE.0001'
+            new_code = 'PRD.CODE.0001'
         else:
             latest_code = Product.objects.filter_current(
                 fill__tenant=True, fill__company=True
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'PRODUCT.CODE.000' + str(new_code)
+            new_code = 'PRD.CODE.000' + str(new_code)
 
         product = Product.objects.create(**validated_data, code=new_code)
 
         measure_data = validated_data['general_information'].pop(
             'product_size'
         ) if 'product_size' in validated_data['general_information'] else {}
-        CommonCreateUpdateProduct.create_measure(product, measure_data)
+        if measure_data:
+            CommonCreateUpdateProduct.create_measure(product, measure_data)
         if 0 in validated_data['product_choice']:
             sale_product_price_list = validated_data['sale_information'].pop(
                 'sale_product_price_list'
@@ -620,44 +589,13 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validated_data):
-        validated_data['general_information'] = CommonCreateUpdateProduct.validate_general_data(
-            self.initial_data.get('general_information', {})
+        validated_data = CommonCreateUpdateProduct.validate_information(
+            self.initial_data.get('general_information', {}),
+            self.initial_data.get('sale_information', {}),
+            self.initial_data.get('inventory_information', {}),
+            self.initial_data.get('purchase_information', {}),
+            validated_data
         )
-
-        validated_data['sale_information'] = CommonCreateUpdateProduct.validate_sale_data(
-            self.initial_data.get('sale_information', {})
-        ) if 0 in validated_data['product_choice'] else {}
-
-        validated_data['inventory_information'] = CommonCreateUpdateProduct.validate_inventory_data(
-            self.initial_data.get('inventory_information', {})
-        ) if 1 in validated_data['product_choice'] else {}
-
-        validated_data['purchase_information'] = CommonCreateUpdateProduct.validate_purchase_data(
-            self.initial_data.get('purchase_information', {})
-        ) if 2 in validated_data['product_choice'] else {}
-
-        general_infor = validated_data['general_information']
-        sale_infor = validated_data['sale_information']
-        inventory_infor = validated_data['inventory_information']
-        purchase_infor = validated_data['purchase_information']
-        # General
-        validated_data['general_product_type_id'] = general_infor.get('product_type', None).get('id', None)
-        validated_data['general_product_category_id'] = general_infor.get('product_category', None).get('id', None)
-        validated_data['general_uom_group_id'] = general_infor.get('uom_group', None).get('id', None)
-        validated_data['general_product_size'] = general_infor.get('product_size', [])
-        # Sale
-        validated_data['sale_default_uom_id'] = sale_infor.get('default_uom', None).get('id', None)
-        validated_data['sale_tax_id'] = sale_infor.get('tax', None).get('id', None)
-        validated_data['sale_currency_using_id'] = sale_infor.get('currency_using', None).get('id', None)
-        validated_data['sale_cost'] = sale_infor.get('sale_product_cost', None)
-        validated_data['sale_product_price_list'] = sale_infor.get('sale_product_price_list', [])
-        # Inventory
-        validated_data['inventory_uom_id'] = inventory_infor.get('uom', None).get('id', None)
-        validated_data['inventory_level_min'] = inventory_infor.get('inventory_level_min', None)
-        validated_data['inventory_level_max'] = inventory_infor.get('inventory_level_max', None)
-        # Purchase
-        validated_data['purchase_tax_id'] = purchase_infor.get('tax', None).get('id', None)
-        validated_data['purchase_default_uom_id'] = purchase_infor.get('default_uom', None).get('id', None)
 
         return validated_data
 
@@ -675,7 +613,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         measure_data = validated_data['general_information'].pop(
             'product_size'
         ) if 'product_size' in validated_data['general_information'] else {}
-        CommonCreateUpdateProduct.create_measure(instance, measure_data)
+        if measure_data:
+            CommonCreateUpdateProduct.create_measure(instance, measure_data)
         if 0 in validated_data['product_choice']:
             sale_product_price_list = validated_data['sale_information'].pop(
                 'sale_product_price_list'

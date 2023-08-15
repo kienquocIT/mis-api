@@ -126,13 +126,14 @@ class CommonCreateUpdateProduct:
         if inventory_level_min:
             if float(inventory_level_min) < 0:
                 raise serializers.ValidationError({'inventory_level_min': ProductMsg.VALUE_INVALID})
-            min_value = inventory_level_min
+            min_value = float(inventory_level_min)
         if inventory_level_max:
             if float(inventory_level_max) < 0:
                 raise serializers.ValidationError({'inventory_level_max': ProductMsg.VALUE_INVALID})
-            max_value = inventory_level_max
-        if min_value > max_value:
-            raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
+            max_value = float(inventory_level_max)
+        if inventory_level_min and inventory_level_max:
+            if min_value > max_value:
+                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
 
         return {
             'uom': {
@@ -140,8 +141,8 @@ class CommonCreateUpdateProduct:
                 'title': inventory_uom[0].title,
                 'code': inventory_uom[0].code
             },
-            'inventory_level_min': inventory_level_min,
-            'inventory_level_max': inventory_level_max,
+            'inventory_level_min': inventory_level_min if inventory_level_min else None,
+            'inventory_level_max': inventory_level_max if inventory_level_max else None,
         }
 
     @classmethod
@@ -166,6 +167,54 @@ class CommonCreateUpdateProduct:
                 'code': purchase_product_tax[0].code
             },
         }
+
+    @classmethod
+    def validate_information(cls, general_infor, sale_infor, inventory_infor, purchase_infor, validated_data):
+        if 1 in validated_data['product_choice']:
+            if len(general_infor.get('general_product_size', {})) <= 0:
+                raise serializers.ValidationError({'general_product_size': ProductMsg.PRODUCT_SIZE_NOT_NULL})
+
+        validated_data['general_information'] = CommonCreateUpdateProduct.validate_general_data(general_infor)
+
+        validated_data['sale_information'] = CommonCreateUpdateProduct.validate_sale_data(
+            sale_infor
+        ) if 0 in validated_data['product_choice'] else {}
+
+        validated_data['inventory_information'] = CommonCreateUpdateProduct.validate_inventory_data(
+            inventory_infor
+        ) if 1 in validated_data['product_choice'] else {}
+
+        validated_data['purchase_information'] = CommonCreateUpdateProduct.validate_purchase_data(
+            purchase_infor
+        ) if 2 in validated_data['product_choice'] else {}
+
+        general_infor = validated_data['general_information']
+        sale_infor = validated_data['sale_information']
+        inventory_infor = validated_data['inventory_information']
+        purchase_infor = validated_data['purchase_information']
+        # General
+        validated_data['general_product_type_id'] = general_infor.get('product_type', None).get('id', None)
+        validated_data['general_product_category_id'] = general_infor.get('product_category', None).get('id', None)
+        validated_data['general_uom_group_id'] = general_infor.get('uom_group', None).get('id', None)
+        validated_data['general_product_size'] = general_infor.get('product_size', [])
+        # Sale
+        if sale_infor:
+            validated_data['sale_default_uom_id'] = sale_infor.get('default_uom', None).get('id', None)
+            validated_data['sale_tax_id'] = sale_infor.get('tax', None).get('id', None)
+            validated_data['sale_currency_using_id'] = sale_infor.get('currency_using', None).get('id', None)
+            validated_data['sale_cost'] = sale_infor.get('sale_product_cost', None)
+            validated_data['sale_product_price_list'] = sale_infor.get('sale_product_price_list', [])
+        # Inventory
+        if inventory_infor:
+            validated_data['inventory_uom_id'] = inventory_infor.get('uom', None).get('id', None)
+            validated_data['inventory_level_min'] = inventory_infor.get('inventory_level_min', None)
+            validated_data['inventory_level_max'] = inventory_infor.get('inventory_level_max', None)
+        # Purchase
+        if purchase_infor:
+            validated_data['purchase_tax_id'] = purchase_infor.get('tax', None).get('id', None)
+            validated_data['purchase_default_uom_id'] = purchase_infor.get('default_uom', None).get('id', None)
+
+        return validated_data
 
     @classmethod
     def create_price_list(cls, product, data_price, validated_data):
