@@ -1,5 +1,8 @@
+from django.db.models import Prefetch
 from rest_framework import serializers
 
+from apps.masterdata.saledata.models import ProductPriceList
+from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.sales.quotation.serializers import QuotationCommonValidate
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate
@@ -79,6 +82,79 @@ class SaleOrderProductSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_shipping(value=value)
 
 
+class SaleOrderProductsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    unit_of_measure = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
+    promotion = serializers.SerializerMethodField()
+    shipping = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_description',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_unit_price',
+            'product_discount_value',
+            'product_discount_amount',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return ProductForSaleListSerializer(obj.product).data
+
+    @classmethod
+    def get_unit_of_measure(cls, obj):
+        return {
+            'id': obj.unit_of_measure_id,
+            'title': obj.unit_of_measure.title,
+            'code': obj.unit_of_measure.code
+        } if obj.unit_of_measure else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}
+
+    @classmethod
+    def get_promotion(cls, obj):
+        return {
+            'id': obj.promotion_id,
+            'title': obj.promotion.title,
+            'code': obj.promotion.code
+        } if obj.promotion else {}
+
+    @classmethod
+    def get_shipping(cls, obj):
+        return {
+            'id': obj.shipping_id,
+            'title': obj.shipping.title,
+            'code': obj.shipping.code
+        } if obj.shipping else {}
+
+
 class SaleOrderLogisticSerializer(serializers.ModelSerializer):
     class Meta:
         model = SaleOrderLogistic
@@ -144,6 +220,65 @@ class SaleOrderCostSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_shipping(cls, value):
         return SaleOrderCommonValidate().validate_shipping(value=value)
+
+
+class SaleOrderCostsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    unit_of_measure = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
+    shipping = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderCost
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_cost_price',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_shipping',
+            'shipping',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return ProductForSaleListSerializer(obj.product).data
+
+    @classmethod
+    def get_unit_of_measure(cls, obj):
+        return {
+            'id': obj.unit_of_measure_id,
+            'title': obj.unit_of_measure.title,
+            'code': obj.unit_of_measure.code
+        } if obj.unit_of_measure else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}
+
+    @classmethod
+    def get_shipping(cls, obj):
+        return {
+            'id': obj.shipping_id,
+            'title': obj.shipping.title,
+            'code': obj.shipping.code
+        } if obj.shipping else {}
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
@@ -315,6 +450,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     payment_term = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    sale_order_products_data = serializers.SerializerMethodField()
+    sale_order_costs_data = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -431,6 +568,38 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         if obj.system_status or obj.system_status == 0:
             return dict(SYSTEM_STATUS).get(obj.system_status)
         return None
+
+    @classmethod
+    def get_sale_order_products_data(cls, obj):
+        return SaleOrderProductsListSerializer(
+            obj.sale_order_product_sale_order.select_related(
+                "product__default_uom",
+                "product__tax_code",
+                "product__currency_using",
+            ).prefetch_related(
+                Prefetch(
+                    'product__product_price_product',
+                    queryset=ProductPriceList.objects.select_related('price_list'),
+                ),
+            ),
+            many=True
+        ).data
+
+    @classmethod
+    def get_sale_order_costs_data(cls, obj):
+        return SaleOrderCostsListSerializer(
+            obj.sale_order_cost_sale_order.select_related(
+                "product__default_uom",
+                "product__tax_code",
+                "product__currency_using",
+            ).prefetch_related(
+                Prefetch(
+                    'product__product_price_product',
+                    queryset=ProductPriceList.objects.select_related('price_list'),
+                ),
+            ),
+            many=True
+        ).data
 
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):

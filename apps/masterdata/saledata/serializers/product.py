@@ -810,28 +810,20 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        price_list = obj.product_price_product.all().values_list(
-            'price_list__id',
-            'price_list__title',
-            'price',
-            'price_list__is_default',
-            'price_list__valid_time_start',
-            'price_list__valid_time_end',
-            'price_list__price_list_type',
-        )
-        if price_list:
-            return [
-                {
-                    'id': price[0],
-                    'title': price[1],
-                    'value': price[2],
-                    'is_default': price[3],
-                    'price_status': cls.check_status_price(price[4], price[5]),
-                    'price_type': price[6],
-                }
-                for price in price_list
-            ]
-        return []
+        return [
+            {
+                'id': price.price_list_id,
+                'title': price.price_list.title,
+                'value': price.price,
+                'is_default': price.price_list.is_default,
+                'price_status': cls.check_status_price(
+                    price.price_list.valid_time_start,
+                    price.price_list.valid_time_end
+                ),
+                'price_type': price.price_list.price_list_type,
+            }
+            for price in obj.product_price_product.all()
+        ]
 
     @classmethod
     def get_sale_information(cls, obj):

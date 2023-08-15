@@ -1,7 +1,9 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
+from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
+    SaleOrderProduct, SaleOrderCost
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
     SaleOrderProductListSerializer
@@ -28,9 +30,9 @@ class SaleOrderList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person",
             "opportunity",
-            "quotation"
+            "quotation",
+            "employee_inherit",
         )
 
     @swagger_auto_schema(
@@ -66,10 +68,30 @@ class SaleOrderDetail(
             "opportunity__customer",
             "customer",
             "contact",
-            "sale_person",
             "payment_term",
             "quotation",
             "customer__payment_term_mapped",
+            "employee_inherit",
+        ).prefetch_related(
+            Prefetch(
+                "sale_order_product_sale_order",
+                queryset=SaleOrderProduct.objects.select_related(
+                    "product",
+                    "unit_of_measure",
+                    "tax",
+                    "promotion",
+                    "shipping",
+                ),
+            ),
+            Prefetch(
+                "sale_order_cost_sale_order",
+                queryset=SaleOrderCost.objects.select_related(
+                    "product",
+                    "unit_of_measure",
+                    "tax",
+                    "shipping",
+                ),
+            ),
         )
 
     @swagger_auto_schema(

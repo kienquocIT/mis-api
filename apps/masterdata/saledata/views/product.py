@@ -1,5 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
@@ -373,6 +375,11 @@ class ProductForSaleList(BaseListMixin):
             "default_uom",
             "tax_code",
             "currency_using",
+        ).prefetch_related(
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
         )
 
     @swagger_auto_schema(

@@ -360,7 +360,7 @@ class QuotationCommonValidate:
                 'id': str(tax.id),
                 'title': tax.title,
                 'code': tax.code,
-                'value': tax.rate
+                'rate': tax.rate
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
