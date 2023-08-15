@@ -221,7 +221,6 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
 
 class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_detail = AccountDetailSerializer
     serializer_update = AccountUpdateSerializer
