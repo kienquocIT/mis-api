@@ -607,16 +607,17 @@ class ConfigDefaultData:
                 'list_status': [
                     {
                         'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1,
-                        'task_color': '#007bff'
+                        'task_color': '#abe3e5'
                     },
-                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0},
+                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0,
+                        'task_color': '#f9aab7'},
                     {
                         'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
-                        'task_kind': 2, 'task_color': '#28a745'
+                        'task_kind': 2, 'task_color': '#f7e368'
                     },
                     {
                         'name': 'Pending', 'translate_name': 'Tạm ngưng', 'order': 4, 'is_edit': False, 'task_kind': 3,
-                        'task_color': '#ffc107',
+                        'task_color': '#ff686d',
                     },
                 ],
                 'is_edit_date': False,
