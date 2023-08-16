@@ -90,6 +90,8 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
                             is_edit=True,
                             task_config=instance,
                             task_color=item['task_color'],
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id
                         )
                     )
 
