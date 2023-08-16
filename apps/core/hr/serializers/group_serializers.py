@@ -204,24 +204,20 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group_level(cls, obj):
-        if obj.group_level:
-            return {
-                'id': obj.group_level_id,
-                'code': obj.group_level.code,
-                'level': obj.group_level.level,
-                'description': obj.group_level.description,
-            }
-        return {}
+        return {
+            'id': obj.group_level_id,
+            'code': obj.group_level.code,
+            'level': obj.group_level.level,
+            'description': obj.group_level.description,
+        } if obj.group_level else {}
 
     @classmethod
     def get_first_manager(cls, obj):
-        if obj.first_manager:
-            return {
-                'id': obj.first_manager_id,
-                'full_name': obj.first_manager.get_full_name(2),
-                'code': obj.first_manager.code
-            }
-        return {}
+        return {
+            'id': obj.first_manager_id,
+            'full_name': obj.first_manager.get_full_name(2),
+            'code': obj.first_manager.code
+        } if obj.first_manager else {}
 
     @classmethod
     def get_parent_n(cls, obj):
@@ -262,47 +258,39 @@ class GroupDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group_level(cls, obj):
-        if obj.group_level:
-            return {
-                'id': obj.group_level_id,
-                'code': obj.group_level.code,
-                'level': obj.group_level.level,
-                'description': obj.group_level.description,
-                'first_manager_description': obj.group_level.first_manager_description,
-                'second_manager_description': obj.group_level.second_manager_description,
-            }
-        return {}
+        return {
+            'id': obj.group_level_id,
+            'code': obj.group_level.code,
+            'level': obj.group_level.level,
+            'description': obj.group_level.description,
+            'first_manager_description': obj.group_level.first_manager_description,
+            'second_manager_description': obj.group_level.second_manager_description,
+        } if obj.group_level else {}
 
     @classmethod
     def get_first_manager(cls, obj):
-        if obj.first_manager:
-            return {
-                'id': obj.first_manager_id,
-                'full_name': obj.first_manager.get_full_name(2),
-                'code': obj.first_manager.code
-            }
-        return {}
+        return {
+            'id': obj.first_manager_id,
+            'full_name': obj.first_manager.get_full_name(2),
+            'code': obj.first_manager.code
+        } if obj.first_manager else {}
 
     @classmethod
     def get_second_manager(cls, obj):
-        if obj.second_manager:
-            return {
-                'id': obj.second_manager_id,
-                'full_name': obj.second_manager.get_full_name(2),
-                'code': obj.second_manager.code
-            }
-        return {}
+        return {
+            'id': obj.second_manager_id,
+            'full_name': obj.second_manager.get_full_name(2),
+            'code': obj.second_manager.code
+        } if obj.second_manager else {}
 
     @classmethod
     def get_parent_n(cls, obj):
-        if obj.parent_n:
-            return {
-                'id': obj.parent_n_id,
-                'title': obj.parent_n.title,
-                'code': obj.parent_n.code,
-                'level': obj.parent_n.group_level.level if obj.parent_n.group_level else None,
-            }
-        return {}
+        return {
+            'id': obj.parent_n_id,
+            'title': obj.parent_n.title,
+            'code': obj.parent_n.code,
+            'level': obj.parent_n.group_level.level if obj.parent_n.group_level else None,
+        } if obj.parent_n else {}
 
     @classmethod
     def get_group_employee(cls, obj):
