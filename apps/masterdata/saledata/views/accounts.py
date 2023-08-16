@@ -258,9 +258,9 @@ class AccountsMapEmployeesList(BaseListMixin):
             company_id = getattr(self.request.user, 'company_current_id', None)
             if tenant_id and company_id:
                 return super().get_queryset().select_related('account', 'employee').filter(
-                    account__tenant_id=self.request.user.tenant_id,
+                    account__tenant_id=self.request.user.tenant_current_id,
                     account__company_id=self.request.user.company_current_id,
-                    employee__tenant_id=self.request.user.tenant_id,
+                    employee__tenant_id=self.request.user.tenant_current_id,
                     employee__company_id=self.request.user.company_current_id,
                 )
         return super().get_queryset().none()
