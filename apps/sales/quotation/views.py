@@ -23,7 +23,7 @@ class QuotationList(
     queryset = Quotation.objects
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
-        'sale_person': ['exact'],
+        'employee_inherit': ['exact'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],

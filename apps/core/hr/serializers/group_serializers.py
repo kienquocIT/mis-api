@@ -183,6 +183,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -198,6 +199,7 @@ class GroupListSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
+            'level',
         )
 
     @classmethod
@@ -223,13 +225,15 @@ class GroupListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_parent_n(cls, obj):
-        if obj.parent_n:
-            return {
-                'id': obj.parent_n_id,
-                'title': obj.parent_n.title,
-                'code': obj.parent_n.code
-            }
-        return {}
+        return {
+            'id': obj.parent_n_id,
+            'title': obj.parent_n.title,
+            'code': obj.parent_n.code
+        } if obj.parent_n else {}
+
+    @classmethod
+    def get_level(cls, obj):
+        return obj.group_level.level if obj.group_level else None
 
 
 class GroupDetailSerializer(serializers.ModelSerializer):
@@ -294,7 +298,8 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.parent_n_id,
                 'title': obj.parent_n.title,
-                'code': obj.parent_n.code
+                'code': obj.parent_n.code,
+                'level': obj.parent_n.group_level.level if obj.parent_n.group_level else None,
             }
         return {}
 
