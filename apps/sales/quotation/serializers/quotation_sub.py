@@ -151,6 +151,8 @@ class QuotationCommonCreate:
                     product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     **quotation_expense
                 )
         return True
