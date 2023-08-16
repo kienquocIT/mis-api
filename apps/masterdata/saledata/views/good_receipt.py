@@ -23,8 +23,8 @@ class GoodReceiptList(
     serializer_list = GoodReceiptListSerializer
     serializer_create = GoodReceiptCreateSerializer
     serializer_detail = GoodReceiptDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -65,6 +65,8 @@ class GoodReceiptDetail(
     queryset = GoodReceipt.objects
     serializer_detail = GoodReceiptDetailSerializer
     serializer_update = GoodReceiptUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(

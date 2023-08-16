@@ -12,8 +12,8 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
     serializer_list = PaymentTermListSerializer
     serializer_create = PaymentTermCreateSerializer
     serializer_detail = PaymentTermDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Payment terms list",
@@ -43,8 +43,8 @@ class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMix
     queryset = PaymentTerm.objects
     serializer_detail = PaymentTermDetailSerializer
     serializer_update = PaymentTermDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Payment terms detail",

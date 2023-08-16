@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
 from apps.core.company.models import CompanyUserEmployee
@@ -28,6 +27,8 @@ class UserList(AccountListMixin, AccountCreateMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+    search_fields = ('full_name_search', 'email', 'username')
+    filterset_fields = ('email', 'username', 'first_name', 'last_name')
 
     def get_filter_auth(self) -> dict:
         return {
@@ -64,8 +65,6 @@ class UserList(AccountListMixin, AccountCreateMixin):
 
 
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
-
-    permission_classes = [IsAuthenticated]
     queryset = User.objects
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
@@ -163,6 +162,7 @@ class UserOfTenantList(AccountListMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+    search_fields = ('username', 'first_name', 'last_name')
 
     def get_queryset(self):
         return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')

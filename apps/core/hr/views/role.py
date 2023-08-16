@@ -18,8 +18,8 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
     serializer_detail = RoleDetailSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id', 'tenant_id']
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id']
     search_fields = ['title', 'code']
 
     def get_queryset(self):
@@ -31,6 +31,7 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_company=True,
         plan_code='base', app_code='role', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -43,6 +44,7 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_company=True,
         plan_code='base', app_code='role', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
@@ -54,6 +56,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -66,6 +69,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_company=True,
         plan_code='base', app_code='role', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -78,6 +82,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_company=True,
         plan_code='base', app_code='role', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
@@ -89,6 +94,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
+        allow_admin_company=True,
         plan_code='base', app_code='role', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):

@@ -930,26 +930,30 @@ class HookEventHandler:
         self.is_return = is_return
 
     def push_base_notify(self, runtime_assignee_obj: list[RuntimeAssignee]):
-        args_arr = []
-        for obj in runtime_assignee_obj:
-            if obj.is_done is False:
-                args_arr.append(
-                    {
-                        'tenant_id': self.runtime_obj.tenant_id,
-                        'company_id': self.runtime_obj.company_id,
-                        'title': self.runtime_obj.doc_title,
-                        'msg': WorkflowMsgNotify.was_return_begin if self.is_return else WorkflowMsgNotify.new_task,
-                        'date_created': timezone.now(),
-                        'doc_id': self.runtime_obj.doc_id,
-                        'doc_app': self.runtime_obj.app_code,
-                        'user_id': None,
-                        'employee_id': obj.employee_id,
-                        'employee_sender_id': None,
-                    }
+        try:
+            args_arr = []
+            for obj in runtime_assignee_obj:
+                if obj.is_done is False:
+                    args_arr.append(
+                        {
+                            'tenant_id': self.runtime_obj.tenant_id,
+                            'company_id': self.runtime_obj.company_id,
+                            'title': self.runtime_obj.doc_title,
+                            'msg': WorkflowMsgNotify.was_return_begin if self.is_return else WorkflowMsgNotify.new_task,
+                            'date_created': timezone.now(),
+                            'doc_id': self.runtime_obj.doc_id,
+                            'doc_app': self.runtime_obj.app_code,
+                            'user_id': None,
+                            'employee_id': obj.employee_id,
+                            'employee_sender_id': None,
+                        }
+                    )
+            if len(args_arr) > 0:
+                call_task_background(
+                    force_new_notify_many,
+                    *[args_arr],
                 )
-        if len(args_arr) > 0:
-            call_task_background(
-                force_new_notify_many,
-                *[args_arr],
-            )
-        return True
+            return True
+        except Exception as err:
+            print('push_base_notify: ', str(err))
+        return False

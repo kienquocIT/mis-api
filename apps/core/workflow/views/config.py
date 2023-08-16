@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
-from rest_framework.permissions import IsAuthenticated
 
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow,
@@ -22,15 +21,12 @@ __all__ = [
 ]
 
 
-class WorkflowOfAppList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class WorkflowOfAppList(BaseListMixin, BaseCreateMixin):
     queryset = WorkflowConfigOfApp.objects
     serializer_class = WorkflowOfAppListSerializer
     serializer_list = WorkflowOfAppListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Workflow of Feature List",
@@ -44,7 +40,7 @@ class WorkflowOfAppList(
 class WorkflowOfAppDetail(BaseUpdateMixin):
     queryset = WorkflowConfigOfApp.objects
     serializer_update = WorkflowOfAppUpdateSerializer
-    retrieve_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(request_body=WorkflowOfAppUpdateSerializer)
     @mask_view(login_require=True, auth_require=False)
@@ -53,14 +49,13 @@ class WorkflowOfAppDetail(BaseUpdateMixin):
 
 
 class WorkflowList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Workflow.objects
     filterset_fields = ['application', 'is_active']
     serializer_list = WorkflowListSerializer
     serializer_create = WorkflowCreateSerializer
     serializer_detail = WorkflowListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -91,15 +86,11 @@ class WorkflowList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class WorkflowDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
-    permission_classes = [IsAuthenticated]
+class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Workflow.objects
     serializer_detail = WorkflowDetailSerializer
     serializer_update = WorkflowUpdateSerializer
-    retrieve_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(

@@ -226,6 +226,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'company_current_id',
             'phone',
             'tenant_current',
+            'is_active',
         )
 
     @classmethod

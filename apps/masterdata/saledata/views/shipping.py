@@ -7,14 +7,13 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 
 class ShippingList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Shipping.objects
     serializer_list = ShippingListSerializer
     serializer_create = ShippingCreateSerializer
     serializer_detail = ShippingDetailSerializer
 
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Shipping list",
@@ -40,10 +39,12 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
 
 
 class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated] # noqa
     queryset = Shipping.objects
     serializer_detail = ShippingDetailSerializer
     serializer_update = ShippingUpdateSerializer
+
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Shipping detail",
@@ -73,7 +74,7 @@ class ShippingCheckList(BaseListMixin):
     queryset = Shipping.objects
     serializer_list = ShippingCheckListSerializer
     serializer_detail = ShippingDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Shipping check list",

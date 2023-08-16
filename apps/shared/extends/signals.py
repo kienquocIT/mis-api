@@ -16,11 +16,13 @@ from apps.sales.quotation.models import (
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.company.models import Company, CompanyConfig
 from apps.masterdata.saledata.models import (
-    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup
+    AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
 )
 from apps.sales.delivery.models import DeliveryConfig
-from apps.sales.saleorder.models import SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale, \
-    SaleOrderIndicatorConfig
+from apps.sales.saleorder.models import (
+    SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
+    SaleOrderIndicatorConfig,
+)
 from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 
@@ -588,30 +590,34 @@ class ConfigDefaultData:
     def sale_order_indicator_config(self):
         bulk_info = []
         for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
-            bulk_info.append(SaleOrderIndicatorConfig(
-                company=self.company_obj,
-                **data,
-            ))
+            bulk_info.append(
+                SaleOrderIndicatorConfig(
+                    company=self.company_obj,
+                    **data,
+                )
+            )
         SaleOrderIndicatorConfig.objects.bulk_create(bulk_info)
 
     def task_config(self):
         # create config default for company
         config, created = OpportunityTaskConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'list_status': [
                     {
                         'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1,
-                        'task_color': '#007bff'
+                        'task_color': '#abe3e5'
                     },
-                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0},
+                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0,
+                        'task_color': '#f9aab7'},
                     {
                         'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
-                        'task_kind': 2, 'task_color': '#28a745'
+                        'task_kind': 2, 'task_color': '#f7e368'
                     },
                     {
                         'name': 'Pending', 'translate_name': 'Tạm ngưng', 'order': 4, 'is_edit': False, 'task_kind': 3,
-                        'task_color': '#ffc107',
+                        'task_color': '#ff686d',
                     },
                 ],
                 'is_edit_date': False,
@@ -627,6 +633,8 @@ class ConfigDefaultData:
             for item in config.list_status:
                 temp_stt.append(
                     OpportunityTaskStatus(
+                        tenant=config.tenant,
+                        company=config.company,
                         title=item['name'],
                         translate_name=item['translate_name'],
                         task_config=config,
@@ -641,12 +649,14 @@ class ConfigDefaultData:
     def process_function_config(self):
         bulk_info = []
         for data in self.function_process_data:
-            bulk_info.append(SaleFunction(
-                company=self.company_obj,
-                tenant=self.company_obj.tenant,
-                code='',
-                **data,
-            ))
+            bulk_info.append(
+                SaleFunction(
+                    company=self.company_obj,
+                    tenant=self.company_obj.tenant,
+                    code='',
+                    **data,
+                )
+            )
         SaleFunction.objects.bulk_create(bulk_info)
 
     def process_config(self):

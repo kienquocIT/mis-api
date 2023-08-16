@@ -2,8 +2,10 @@ from drf_yasg.utils import swagger_auto_schema # noqa
 from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models.product import Expense
-from apps.masterdata.saledata.serializers.expense import ExpenseListSerializer, ExpenseCreateSerializer, \
-    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer
+from apps.masterdata.saledata.serializers.expense import (
+    ExpenseListSerializer, ExpenseCreateSerializer,
+    ExpenseDetailSerializer, ExpenseUpdateSerializer, ExpenseForSaleListSerializer,
+)
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -12,8 +14,8 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     serializer_list = ExpenseListSerializer
     serializer_create = ExpenseCreateSerializer
     serializer_detail = ExpenseDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -48,6 +50,8 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Expense.objects
     serializer_detail = ExpenseDetailSerializer
     serializer_update = ExpenseUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -83,7 +87,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class ExpenseForSaleList(BaseListMixin):
     queryset = Expense.objects
     serializer_list = ExpenseForSaleListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
