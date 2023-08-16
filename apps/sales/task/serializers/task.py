@@ -270,7 +270,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_parent_n(cls, value):
-        if value.parent_n and value.parent_n.count():
+        if value.parent_n:
             raise serializers.ValidationError(
                 {'title': django.utils.translation.gettext_lazy("Can not create another sub-task form sub-task")}
             )
@@ -553,11 +553,20 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
             {'task': django.utils.translation.gettext_lazy("Data request is missing please reload and try again.")}
         )
 
+    @classmethod
+    def check_task_complete(cls, instance):
+        if OpportunityLogWork.objects.filter(task=instance).count():
+            return True
+        raise serializers.ValidationError({
+            'log time': django.utils.translation.gettext_lazy("Please Log time before complete task")
+        })
+
     def update(self, instance, validated_data):
         # if task status is COMPLETED
         task_status = validated_data['task_status']
         if task_status.task_kind == 2:
             self.check_sub_task(instance, task_status)
+            self.check_task_complete(instance)
 
         instance.task_status = task_status
         instance.save(update_fields=['task_status'])
