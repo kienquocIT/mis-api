@@ -34,4 +34,6 @@ class TaskConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
         return self.update(request, *args, **kwargs)
