@@ -190,7 +190,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry', 'owner', 'payment_term_mapped'
+            'industry', 'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
         ).prefetch_related(
             'contact_account_name'
         )
@@ -290,7 +290,8 @@ class AccountForSaleList(BaseListMixin):
         return super().get_queryset().select_related(
             'industry',
             'owner',
-            'payment_term_mapped',
+            'payment_term_customer_mapped',
+            'payment_term_supplier_mapped',
             'price_list_mapped'
         )
 
