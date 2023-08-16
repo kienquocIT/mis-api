@@ -23,7 +23,13 @@ TABLE_REF = {  # clean cache reference when system clean cache of model. Bad per
     ),
     'hr_group': (
         'hr_employee', 'hr_grouplevel',
-    )
+    ),
+    'hr_planrole': (
+        'hr_role', 'hr_roleholder', 'hr_group',
+    ),
+    'hr_planemployee': (
+        'hr_employee', 'hr_roleholder', 'hr_group',
+    ),
 }
 
 
@@ -279,6 +285,7 @@ class Caching:
 
         """
         try:
+            table_name_list = [x.lower() for x in table_name_list]
             all_keys = CacheManagement(self.server).all_keys
             table_mapped = []
             for table_name in table_name_list:

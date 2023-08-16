@@ -31,14 +31,24 @@ class PermissionChecking:  # pylint: disable=R0902
         self.employee_obj = employee_obj
 
         self.permissions_parsed = getattr(self.employee_obj, 'permissions_parsed', {})
+        if not isinstance(self.permissions_parsed, dict):
+            self.permissions_parsed = {}
+        self.permissions_parsed = self.permissions_parsed.get(space_code, {})
 
         self.permission_by_id = getattr(self.employee_obj, 'permission_by_id', {})
         if not isinstance(self.permission_by_id, dict):
             self.permission_by_id = {}
 
-        if not isinstance(self.permissions_parsed, dict):
-            self.permissions_parsed = {}
-        self.permissions_parsed = self.permissions_parsed.get(space_code, {})
+        self.role_objs = self.employee_obj.role.all().cache()
+        self.role_datas = [
+            {
+                'id': obj.id,
+                'title': obj.title,
+                'permissions_parsed': obj.permissions_parsed.get(space_code, {}) if obj.permissions_parsed else {},
+                'permission_by_id': obj.permission_by_id.get(space_code, {}) if obj.permission_by_id else {},
+            }
+            for obj in self.role_objs
+        ]
 
     @property
     def tenant_id(self):
@@ -98,12 +108,50 @@ class PermissionChecking:  # pylint: disable=R0902
                     return [str(x) for x in employee_ids]
         return []
 
-    def get_config_perm(self):
-        if self.plan_code in self.permissions_parsed:
-            if self.app_code in self.permissions_parsed[self.plan_code]:
-                if self.perm_code in self.permissions_parsed[self.plan_code][self.app_code]:
-                    return self.permissions_parsed[self.plan_code][self.app_code][self.perm_code]
+    def get_perm_configured(self, permissions_parsed) -> dict:
+        if self.plan_code in permissions_parsed:
+            if self.app_code in permissions_parsed[self.plan_code]:
+                if self.perm_code in permissions_parsed[self.plan_code][self.app_code]:
+                    perm = permissions_parsed[self.plan_code][self.app_code][self.perm_code]
+                    if perm and isinstance(perm, dict):
+                        return perm
         return {}
+
+    def get_perm_id(self, permission_by_id) -> list[str]:
+        if self.plan_code in permission_by_id:
+            if self.app_code in permission_by_id[self.plan_code]:
+                if self.perm_code in permission_by_id[self.plan_code][self.app_code]:
+                    perm = permission_by_id[self.plan_code][self.app_code][self.perm_code]
+                    if perm and isinstance(perm, list):
+                        return perm
+        return []
+
+    def get_config_perm_of_role(self, role_data):
+        permissions_parsed = role_data['permissions_parsed']
+        if self.plan_code in permissions_parsed:
+            if self.app_code in permissions_parsed[self.plan_code]:
+                if self.perm_code in permissions_parsed[self.plan_code][self.app_code]:
+                    return permissions_parsed[self.plan_code][self.app_code][self.perm_code]
+        return {}
+
+    def get_config_perm(self):
+        result = {
+            'employee': {
+                'configured': self.get_perm_configured(permissions_parsed=self.permissions_parsed),
+                'id': self.get_perm_id(permission_by_id=self.permission_by_id),
+            },
+            'roles': []
+        }
+        for role_data in self.role_datas:
+            configured = self.get_perm_configured(permissions_parsed=role_data['permissions_parsed'])
+            by_id = self.get_perm_id(permission_by_id=role_data['permission_by_id'])
+            if configured or by_id:
+                result['roles'].append({
+                    'configured': configured,
+                    'id': by_id,
+                })
+
+        return result
 
     def get_filter_perm(self, config_data):
         if config_data:
@@ -179,13 +227,23 @@ class AuthPermission:
                 return PermissionChecking.get_config_perm_of_admin()
         employee_obj = getattr(self.user, 'employee_current', None)
         if employee_obj:
-            return PermissionChecking(
+            perm_data = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=employee_obj,
                 plan_code=self.perm_data.get('plan_code', None),
                 app_code=self.perm_data.get('app_code', None),
                 perm_code=self.perm_data.get('perm_code', None),
             ).get_config_perm()
+
+            result_configured = {
+                **perm_data['employee']['configured'],
+            }
+            for item in perm_data['roles']:
+                result_configured.update({
+                        **item['configured']
+                })
+            # print('result_configured: ', result_configured)
+            return result_configured
         return {}
 
     @property
