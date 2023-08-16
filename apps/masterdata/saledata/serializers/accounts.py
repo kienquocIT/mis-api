@@ -3,7 +3,7 @@ from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
-    AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -713,14 +713,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 ]
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
-
-    # @classmethod
-    # def validate_payment_term_customer_mapped(cls, value):
-    #     payment_term = PaymentTerm.objects.filter(id=value)
-    #     print(payment_term)
-    #     if payment_term.count() == 1:
-    #         return payment_term
-    #     return None
 
     def validate(self, validate_data):
         account_types = []
