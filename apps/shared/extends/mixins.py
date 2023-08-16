@@ -2,6 +2,7 @@ from copy import deepcopy
 from typing import Union
 from uuid import UUID
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from rest_framework import serializers, exceptions
@@ -13,8 +14,10 @@ from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 
 from .controllers import ResponseController
 from .utils import TypeCheck
+from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
+
 
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
@@ -168,7 +171,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     employee_obj = self.request.user.employee_current
                 else:
                     return False
-            print('employee_created_id: ', getattr(obj, 'employee_created_id', '1'))
             return DataFilterHandler.parse_left_and_compare(
                 employee_obj, self.perm_filter_dict,
                 **({'employee_created_id': obj.employee_created_id} if hasattr(obj, 'employee_created_id') else {}),
@@ -601,7 +603,14 @@ class BaseCreateMixin(BaseMixin):
 
     @staticmethod
     def perform_create(serializer, extras: dict):
-        return serializer.save(**extras)
+        try:
+            with transaction.atomic():
+                return serializer.save(**extras)
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class BaseRetrieveMixin(BaseMixin):
@@ -681,9 +690,16 @@ class BaseUpdateMixin(BaseMixin):
 
     @staticmethod
     def perform_update(serializer, extras: dict = None):
-        if not extras:
-            extras = {}
-        serializer.save(**extras)
+        try:
+            with transaction.atomic():
+                if not extras:
+                    extras = {}
+                return serializer.save(**extras)
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})
 
 
 class BaseDestroyMixin(BaseMixin):
@@ -699,6 +715,13 @@ class BaseDestroyMixin(BaseMixin):
 
     @staticmethod
     def perform_destroy(instance, is_purge=False):
-        if is_purge is True:
-            ...
-        instance.delete()
+        try:
+            with transaction.atomic():
+                if is_purge is True:
+                    ...
+                return instance.delete()
+        except serializers.ValidationError as err:
+            raise err
+        except Exception as err:
+            print(err)
+        raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})

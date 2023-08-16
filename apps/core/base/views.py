@@ -18,7 +18,6 @@ from apps.core.base.serializers import (
 
 
 class PlanList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = SubscriptionPlan.objects
     search_fields = ['title', 'code']
     filterset_fields = {
@@ -42,15 +41,12 @@ class PlanList(generics.GenericAPIView):
         return ResponseController.success_200(ser.data, key_data='result')
 
 
-class TenantApplicationList(
-    ApplicationListMixin,
-    generics.GenericAPIView
-):
-    permission_classes = [IsAuthenticated]
+class TenantApplicationList(ApplicationListMixin):
     queryset = Application.objects
-
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
+    search_fields = ('title', 'code')
+    filterset_fields = ('code', 'title')
 
     @swagger_auto_schema(
         operation_summary="Tenant Application list",
@@ -62,12 +58,9 @@ class TenantApplicationList(
         return self.tenant_application_list(request, *args, **kwargs)
 
 
-class ApplicationPropertyList(
-    BaseListMixin,
-):
-    permission_classes = [IsAuthenticated]
+class ApplicationPropertyList(BaseListMixin):
     queryset = ApplicationProperty.objects
-    search_fields = []
+    search_fields = ['title', 'code']
     filterset_fields = {
         'application': ['exact'],
         'type': ['exact'],
@@ -89,13 +82,12 @@ class ApplicationPropertyList(
         return self.list(request, *args, **kwargs)
 
 
-class ApplicationPropertyEmployeeList(
-    BaseListMixin,
-):
-    permission_classes = [IsAuthenticated]
+class ApplicationPropertyEmployeeList(BaseListMixin):
     queryset = ApplicationProperty.objects
     serializer_list = ApplicationPropertyListSerializer
     list_hidden_field = []
+    search_fields = ('title', 'code')
+    filterset_fields = ('code', 'title')
 
     def get_queryset(self):
         return super().get_queryset().filter(
@@ -129,7 +121,6 @@ class ApplicationList(generics.GenericAPIView):
 
 
 class PermissionApplicationList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = PermissionApplication.objects
     search_fields = ('permission', 'app__title', 'app__code',)
     filterset_fields = {
@@ -214,7 +205,7 @@ class WardList(BaseListMixin):
 
 class BaseCurrencyList(BaseListMixin):
     queryset = BaseCurrency.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'code')
     use_cache_queryset = True
     serializer_list = BaseCurrencyListSerializer
 
@@ -226,7 +217,8 @@ class BaseCurrencyList(BaseListMixin):
 
 class BaseItemUnitList(BaseListMixin):
     queryset = BaseItemUnit.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'measure')
+    filterset_fields = ('title', 'measure')
     use_cache_queryset = True
     serializer_list = BaseItemUnitListSerializer
 
@@ -252,7 +244,6 @@ class IndicatorParamList(BaseListMixin):
 
 
 class ApplicationPropertyOpportunityList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = ApplicationProperty.objects
     serializer_list = ApplicationPropertyListSerializer
     list_hidden_field = []

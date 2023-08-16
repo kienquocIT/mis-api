@@ -69,6 +69,8 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
+    search_fields = ('title', 'code')
+    filterset_fields = ('title', 'code')
 
     def get_queryset(self):
         return super().get_queryset().select_related('tenant')
@@ -155,8 +157,9 @@ class CompanyListOverview(BaseListMixin):
 class CompanyUserNotMapEmployeeList(BaseListMixin):
     queryset = CompanyUserEmployee.objects
     serializer_list = CompanyUserNotMapEmployeeSerializer
-    ordering = ['-employee']
     list_hidden_field = ['company']
+    search_fields = ('user__first_name', 'employee__first_name', 'user__last_name', 'employee__last_name', )
+    ordering = ['-employee']
 
     def get_queryset(self):
         return super().get_queryset().select_related('user').filter(user__isnull=False, employee__isnull=True)

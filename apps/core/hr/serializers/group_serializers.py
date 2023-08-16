@@ -253,6 +253,7 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
+            'is_active',
         )
 
     @classmethod

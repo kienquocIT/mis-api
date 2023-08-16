@@ -25,6 +25,7 @@ from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, Oppo
 from ..sales.purchasing.models import PurchaseRequestProduct
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
+from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
 
 
 def update_sale_default_data_old_company():
@@ -585,3 +586,15 @@ def make_sure_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_config()
     print('Make sure process config is done!')
+    return True
+
+
+def update_tenant_company_task_status():
+    for item in OpportunityTaskConfig.objects.all():
+        item.tenant_id = item.company.tenant_id
+        item.save()
+        for status in item.opportunitytaskstatus_set.all():
+            status.tenant_id = item.tenant_id
+            status.company_id = item.company_id
+            status.save()
+    print('update done.')

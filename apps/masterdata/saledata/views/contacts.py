@@ -174,7 +174,11 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('salutation', 'account_name', 'owner', 'report_to')
+        return super().get_queryset().select_related(
+            'salutation', 'account_name', 'owner', 'report_to',
+            'work_country', 'work_city', 'work_district', 'work_ward',
+            'home_country', 'home_city', 'home_district', 'home_ward',
+        )
 
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(
