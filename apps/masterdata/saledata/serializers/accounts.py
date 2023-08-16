@@ -753,12 +753,9 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return True
 
     def update(self, instance, validated_data):
-        print(instance.payment_term_customer_mapped.title)
-        print(validated_data)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        print(instance.payment_term_customer_mapped.title)
 
         # recreate in AccountEmployee (Account Manager)
         create_employee_map_account(instance)
