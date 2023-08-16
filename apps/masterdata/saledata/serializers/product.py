@@ -244,7 +244,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group', 'ratio')
+        fields = ('id', 'code', 'title', 'group', 'group_id', 'ratio')
 
     @classmethod
     def get_group(cls, obj):
@@ -831,3 +831,25 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 for price in price_list
             ]
         return []
+
+
+class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
+    group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UnitOfMeasure
+        fields = (
+            'id',
+            'title',
+            'group',
+        )
+
+    @classmethod
+    def get_group(cls, obj):
+        if obj.group:
+            return {
+                'id': obj.group_id,
+                'title': obj.group.title,
+                'is_referenced_unit': obj.is_referenced_unit
+            }
+        return {}
