@@ -2,7 +2,6 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.masterdata.saledata.models import Product
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
     QuotationProduct, QuotationCost
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
