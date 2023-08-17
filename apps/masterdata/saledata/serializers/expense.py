@@ -151,10 +151,23 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
 
 class ExpenseDetailSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+    expense_type = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'price_list',
+            'expense_type',
+            'uom',
+            'uom_group',
+            'role',
+        )
 
     @classmethod
     def get_price_list(cls, obj):
@@ -171,6 +184,49 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
         ]
         return price_list
 
+    @classmethod
+    def get_expense_type(cls, obj):
+        if obj.expense_type:
+            return {
+                'id': obj.expense_type_id,
+                'title': obj.expense_type.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_role(cls, obj):
+        result = []
+        role_list = obj.role.all().values(
+            'id',
+            'title'
+        )
+        if role_list:
+            for role in role_list:
+                result.append(
+                    {
+                        'id': role['id'],
+                        'title': role['title'],
+                    }
+                )
+        return result
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False, allow_blank=False, allow_null=False)

@@ -11,6 +11,8 @@ from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
     SaleOrderIndicatorConfig, SaleOrderIndicator
+from apps.sales.quotation.serializers import QuotationCommonValidate
+from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
 
 
@@ -127,6 +129,8 @@ class SaleOrderCommonCreate:
                     product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     **sale_order_expense
                 )
         return True
@@ -332,7 +336,7 @@ class SaleOrderCommonValidate:
                 'id': str(tax.id),
                 'title': tax.title,
                 'code': tax.code,
-                'value': tax.rate
+                'rate': tax.rate
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
@@ -457,3 +461,364 @@ class SaleOrderCommonValidate:
             )
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
+
+
+# SUB SERIALIZERS
+class SaleOrderProductSerializer(serializers.ModelSerializer):
+    product = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    unit_of_measure = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    tax = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    promotion = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_description',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_unit_price',
+            'product_discount_value',
+            'product_discount_amount',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
+        )
+
+    @classmethod
+    def validate_product(cls, value):
+        return SaleOrderCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return SaleOrderCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_promotion(cls, value):
+        return SaleOrderCommonValidate().validate_promotion(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_shipping(value=value)
+
+
+class SaleOrderProductsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    unit_of_measure = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
+    promotion = serializers.SerializerMethodField()
+    shipping = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderProduct
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_description',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_unit_price',
+            'product_discount_value',
+            'product_discount_amount',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_promotion',
+            'promotion',
+            'is_shipping',
+            'shipping'
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return ProductForSaleListSerializer(obj.product).data
+
+    @classmethod
+    def get_unit_of_measure(cls, obj):
+        return {
+            'id': obj.unit_of_measure_id,
+            'title': obj.unit_of_measure.title,
+            'code': obj.unit_of_measure.code
+        } if obj.unit_of_measure else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}
+
+    @classmethod
+    def get_promotion(cls, obj):
+        return {
+            'id': obj.promotion_id,
+            'title': obj.promotion.title,
+            'code': obj.promotion.code
+        } if obj.promotion else {}
+
+    @classmethod
+    def get_shipping(cls, obj):
+        return {
+            'id': obj.shipping_id,
+            'title': obj.shipping.title,
+            'code': obj.shipping.code
+        } if obj.shipping else {}
+
+
+class SaleOrderLogisticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SaleOrderLogistic
+        fields = (
+            'shipping_address',
+            'billing_address',
+        )
+
+
+class SaleOrderCostSerializer(serializers.ModelSerializer):
+    product = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    unit_of_measure = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+    tax = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+    shipping = serializers.CharField(
+        max_length=550,
+        allow_null=True
+    )
+
+    class Meta:
+        model = SaleOrderCost
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_cost_price',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_shipping',
+            'shipping',
+        )
+
+    @classmethod
+    def validate_product(cls, value):
+        return SaleOrderCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return SaleOrderCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_shipping(cls, value):
+        return SaleOrderCommonValidate().validate_shipping(value=value)
+
+
+class SaleOrderCostsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    unit_of_measure = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
+    shipping = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrderCost
+        fields = (
+            'product',
+            'unit_of_measure',
+            'tax',
+            # product information
+            'product_title',
+            'product_code',
+            'product_uom_title',
+            'product_uom_code',
+            'product_quantity',
+            'product_cost_price',
+            'product_tax_title',
+            'product_tax_value',
+            'product_tax_amount',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+            'is_shipping',
+            'shipping',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return ProductForSaleListSerializer(obj.product).data
+
+    @classmethod
+    def get_unit_of_measure(cls, obj):
+        return {
+            'id': obj.unit_of_measure_id,
+            'title': obj.unit_of_measure.title,
+            'code': obj.unit_of_measure.code
+        } if obj.unit_of_measure else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}
+
+    @classmethod
+    def get_shipping(cls, obj):
+        return {
+            'id': obj.shipping_id,
+            'title': obj.shipping.title,
+            'code': obj.shipping.code
+        } if obj.shipping else {}
+
+
+class SaleOrderExpenseSerializer(serializers.ModelSerializer):
+    expense = serializers.CharField(
+        max_length=550,
+        allow_null=True,
+    )
+    product = serializers.CharField(
+        max_length=550,
+        allow_null=True,
+    )
+    unit_of_measure = serializers.CharField(
+        max_length=550
+    )
+    tax = serializers.CharField(
+        max_length=550,
+        required=False
+    )
+
+    class Meta:
+        model = SaleOrderExpense
+        fields = (
+            'expense',
+            'product',
+            'unit_of_measure',
+            'tax',
+            # expense information
+            'expense_title',
+            'expense_code',
+            'product_title',
+            'product_code',
+            'expense_type_title',
+            'expense_uom_title',
+            'expense_uom_code',
+            'expense_quantity',
+            'expense_price',
+            'expense_tax_title',
+            'expense_tax_value',
+            'expense_tax_amount',
+            'expense_subtotal_price',
+            'expense_subtotal_price_after_tax',
+            'order',
+            'is_product',
+        )
+
+    @classmethod
+    def validate_expense(cls, value):
+        return SaleOrderCommonValidate().validate_expense(value=value)
+
+    @classmethod
+    def validate_product(cls, value):
+        return QuotationCommonValidate().validate_product(value=value)
+
+    @classmethod
+    def validate_unit_of_measure(cls, value):
+        return SaleOrderCommonValidate().validate_unit_of_measure(value=value)
+
+    @classmethod
+    def validate_tax(cls, value):
+        return SaleOrderCommonValidate().validate_tax(value=value)
+
+
+class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
+    # indicator = serializers.CharField(
+    #     max_length=550
+    # )
+    quotation_indicator = serializers.CharField(
+        max_length=550
+    )
+
+    class Meta:
+        model = SaleOrderIndicator
+        fields = (
+            # 'indicator',
+            'quotation_indicator',
+            'indicator_value',
+            'indicator_rate',
+            'quotation_indicator_value',
+            'quotation_indicator_rate',
+            'difference_indicator_value',
+            'order',
+        )
+
+    # @classmethod
+    # def validate_indicator(cls, value):
+    #     return SaleOrderCommonValidate().validate_indicator(value=value)
+
+    @classmethod
+    def validate_quotation_indicator(cls, value):
+        return QuotationCommonValidate().validate_indicator(value=value)
