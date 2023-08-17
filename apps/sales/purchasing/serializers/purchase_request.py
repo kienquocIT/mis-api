@@ -412,5 +412,9 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                 'id': obj.uom_id,
                 'title': obj.uom.title,
                 'code': obj.uom.code,
+                'uom_group_id': obj.uom.group_id,
+                'ratio': obj.uom.ratio,
+                'rounding': obj.uom.rounding,
+                'is_referenced_unit': obj.uom.is_referenced_unit,
             }
         return {}
