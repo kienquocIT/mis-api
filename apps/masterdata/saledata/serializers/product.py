@@ -244,7 +244,7 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('id', 'code', 'title', 'group', 'group_id', 'ratio')
+        fields = ('id', 'code', 'title', 'group', 'ratio')
 
     @classmethod
     def get_group(cls, obj):
