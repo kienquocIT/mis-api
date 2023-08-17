@@ -49,6 +49,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     search_fields = ["search_content"]
+    # filterset_fields = {
+    #     "role": ["exact", "in"]
+    # }
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
