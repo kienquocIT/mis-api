@@ -1,13 +1,11 @@
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
-
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
-    ProductMeasurements
+    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductMeasurements
 )
-from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency, Price
+from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -506,6 +504,72 @@ class ProductListSerializer(serializers.ModelSerializer):
         }
 
 
+def sub_validate_volume_obj(initial_data, validate_data):
+    volume_obj = None
+    if initial_data.get('volume_id', None) and initial_data.get('weight_id', None):
+        volume_obj = BaseItemUnit.objects.filter(id=initial_data['volume_id'])
+    if volume_obj.count() == 1 and validate_data.get('volume', None):
+        volume_obj = volume_obj.first()
+        return {
+            'id': str(volume_obj.id),
+            'title': volume_obj.title,
+            'measure': volume_obj.measure,
+            'value': validate_data['volume']
+        }
+    return {}
+
+
+def sub_validate_weight_obj(initial_data, validate_data):
+    weight_obj = None
+    if initial_data.get('volume_id', None) and initial_data.get('weight_id', None):
+        weight_obj = BaseItemUnit.objects.filter(id=initial_data['weight_id'])
+    if weight_obj.count() == 1 and validate_data.get('weight', None):
+        weight_obj = weight_obj.first()
+        return {
+            'id': str(weight_obj.id),
+            'title': weight_obj.title,
+            'measure': weight_obj.measure,
+            'value': validate_data['weight']
+        }
+    return {}
+
+
+def set_null_fields(validate_data):
+    if 0 in validate_data['product_choice']:
+        for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using', 'sale_product_price_list']:
+            if key not in validate_data:
+                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
+    else:
+        for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using']:
+            validate_data.update({key: None})
+        validate_data.update({'sale_product_price_list': []})
+    if 1 in validate_data['product_choice']:
+        for key in ['width', 'height', 'length', 'volume', 'weight', 'inventory_uom']:
+            if key not in validate_data:
+                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
+    else:
+        for key in ['inventory_uom', 'inventory_level_min', 'inventory_level_max']:
+            validate_data.update({key: None})
+    if 2 in validate_data['product_choice']:
+        for key in ['purchase_default_uom', 'purchase_tax']:
+            if key not in validate_data:
+                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
+    else:
+        for key in ['purchase_default_uom', 'purchase_tax']:
+            validate_data.update({key: None})
+    return validate_data
+
+
+def setup_price_list_data_in_sale(initial_data):
+    sale_price_list = initial_data.get('sale_price_list', [])
+    for item in sale_price_list:
+        price_list_id = item.get('price_list_id', None)
+        price_list_value = item.get('price_list_value', None)
+        if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
+            raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
+    return sale_price_list
+
+
 class ProductCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(
@@ -555,24 +619,21 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         obj = ProductType.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
         obj = ProductCategory.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_uom_group(cls, value):
         obj = UnitOfMeasureGroup.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
@@ -620,8 +681,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_default_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -630,8 +690,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = Tax.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -640,8 +699,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = Currency.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -658,8 +716,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -684,8 +741,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -694,71 +750,17 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             obj = Tax.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     def validate(self, validate_data):
-        volume_obj = None
-        weight_obj = None
-        if self.initial_data.get('volume_id', None) and self.initial_data.get('weight_id', None):
-            volume_obj = BaseItemUnit.objects.filter(id=self.initial_data['volume_id'])
-            weight_obj = BaseItemUnit.objects.filter(id=self.initial_data['weight_id'])
-        if volume_obj.count() == 1 and validate_data.get('volume', None):
-            volume_obj = volume_obj.first()
-            validate_data['volume'] = {
-                'id': str(volume_obj.id),
-                'title': volume_obj.title,
-                'measure': volume_obj.measure,
-                'value': validate_data['volume']
-            }
-        if weight_obj.count() == 1 and validate_data.get('weight', None):
-            weight_obj = weight_obj.first()
-            validate_data['weight'] = {
-                'id': str(weight_obj.id),
-                'title': weight_obj.title,
-                'measure': weight_obj.measure,
-                'value': validate_data['weight']
-            }
-
-        for item in self.initial_data.get('sale_price_list', []):
-            price_list_id = item.get('price_list_id', None)
-            price_list_value = item.get('price_list_value', None)
-            if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
-                raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
-        validate_data['sale_product_price_list'] = self.initial_data.get('sale_price_list', [])
-
+        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
+        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
+        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
         if validate_data.get('inventory_level_min', None) and validate_data.get('inventory_level_max', None):
-            min_value = validate_data['inventory_level_min']
-            max_value = validate_data['inventory_level_max']
-            if min_value > max_value:
+            if validate_data['inventory_level_min'] > validate_data['inventory_level_max']:
                 raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-
-        if 0 in validate_data['product_choice']:
-            for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using', 'sale_product_price_list']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using']:
-                validate_data.update({key: None})
-            validate_data.update({'sale_product_price_list': []})
-
-        if 1 in validate_data['product_choice']:
-            for key in ['width', 'height', 'length', 'volume', 'weight', 'inventory_uom']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['inventory_uom', 'inventory_level_min', 'inventory_level_max']:
-                validate_data.update({key: None})
-
-        if 2 in validate_data['product_choice']:
-            for key in ['purchase_default_uom', 'purchase_tax']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['purchase_default_uom', 'purchase_tax']:
-                validate_data.update({key: None})
-
+        validate_data = set_null_fields(validate_data)
         return validate_data
 
     def create(self, validated_data):
@@ -966,24 +968,21 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         obj = ProductType.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
         obj = ProductCategory.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_uom_group(cls, value):
         obj = UnitOfMeasureGroup.objects.filter(id=value)
         if obj.count() == 1:
             return obj.first()
-        else:
-            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+        raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
@@ -1031,8 +1030,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_default_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -1041,8 +1039,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = Tax.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -1051,8 +1048,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = Currency.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -1069,8 +1065,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -1095,8 +1090,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = UnitOfMeasure.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -1105,71 +1099,17 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             obj = Tax.objects.filter(id=value)
             if obj.count() == 1:
                 return obj.first()
-            else:
-                raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     def validate(self, validate_data):
-        volume_obj = None
-        weight_obj = None
-        if self.initial_data.get('volume_id', None) and self.initial_data.get('weight_id', None):
-            volume_obj = BaseItemUnit.objects.filter(id=self.initial_data['volume_id'])
-            weight_obj = BaseItemUnit.objects.filter(id=self.initial_data['weight_id'])
-        if volume_obj.count() == 1 and validate_data.get('volume', None):
-            volume_obj = volume_obj.first()
-            validate_data['volume'] = {
-                'id': str(volume_obj.id),
-                'title': volume_obj.title,
-                'measure': volume_obj.measure,
-                'value': validate_data['volume']
-            }
-        if weight_obj.count() == 1 and validate_data.get('weight', None):
-            weight_obj = weight_obj.first()
-            validate_data['weight'] = {
-                'id': str(weight_obj.id),
-                'title': weight_obj.title,
-                'measure': weight_obj.measure,
-                'value': validate_data['weight']
-            }
-
-        for item in self.initial_data.get('sale_price_list', []):
-            price_list_id = item.get('price_list_id', None)
-            price_list_value = item.get('price_list_value', None)
-            if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
-                raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
-        validate_data['sale_product_price_list'] = self.initial_data.get('sale_price_list', [])
-
+        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
+        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
+        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
         if validate_data.get('inventory_level_min', None) and validate_data.get('inventory_level_max', None):
-            min_value = validate_data['inventory_level_min']
-            max_value = validate_data['inventory_level_max']
-            if min_value > max_value:
+            if validate_data['inventory_level_min'] > validate_data['inventory_level_max']:
                 raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-
-        if 0 in validate_data['product_choice']:
-            for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using', 'sale_product_price_list']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using']:
-                validate_data.update({key: None})
-            validate_data.update({'sale_product_price_list': []})
-
-        if 1 in validate_data['product_choice']:
-            for key in ['width', 'height', 'length', 'volume', 'weight', 'inventory_uom']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['inventory_uom', 'inventory_level_min', 'inventory_level_max']:
-                validate_data.update({key: None})
-
-        if 2 in validate_data['product_choice']:
-            for key in ['purchase_default_uom', 'purchase_tax']:
-                if key not in validate_data:
-                    raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-        else:
-            for key in ['purchase_default_uom', 'purchase_tax']:
-                validate_data.update({key: None})
-
+        validate_data = set_null_fields(validate_data)
         return validate_data
 
     def update(self, instance, validated_data):
