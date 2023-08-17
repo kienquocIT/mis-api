@@ -309,11 +309,15 @@ _PlanApplication_sale_data = {
     },
     "63f83f34-b0e7-4461-8c19-609824ef8d1e": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Task
+        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Good-Receipt
     },
     "448343d8-c5a3-4aac-bdc6-d56013ac8fe3": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124",  # Document For Customer
+    },
+    "5ae426ab-1b3f-4a05-8117-77d136c13c8f": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
     },
 }
 
