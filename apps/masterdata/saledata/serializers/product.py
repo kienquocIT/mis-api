@@ -783,6 +783,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
+    sale_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -809,25 +810,64 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        price_list = obj.product_price_product.all().values_list(
-            'price_list__id',
-            'price_list__title',
-            'price',
-            'price_list__is_default',
-            'price_list__valid_time_start',
-            'price_list__valid_time_end',
-            'price_list__price_list_type',
+        return [
+            {
+                'id': price.price_list_id,
+                'title': price.price_list.title,
+                'value': price.price,
+                'is_default': price.price_list.is_default,
+                'price_status': cls.check_status_price(
+                    price.price_list.valid_time_start,
+                    price.price_list.valid_time_end
+                ),
+                'price_type': price.price_list.price_list_type,
+            }
+            for price in obj.product_price_product.all()
+        ]
+
+    @classmethod
+    def get_sale_information(cls, obj):
+        return {
+            'default_uom': {
+                'id': obj.default_uom_id,
+                'title': obj.default_uom.title,
+                'code': obj.default_uom.code
+            } if obj.default_uom else {},
+            'tax_code': {
+                'id': obj.tax_code_id,
+                'title': obj.tax_code.title,
+                'code': obj.tax_code.code,
+                'rate': obj.tax_code.rate
+            } if obj.tax_code else {},
+            'currency_using': {
+                'id': obj.currency_using_id,
+                'title': obj.currency_using.title,
+                'code': obj.currency_using.code,
+            } if obj.currency_using else {},
+            'length': obj.length,
+            'width': obj.width,
+            'height': obj.height,
+        }
+
+
+class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
+    group = serializers.SerializerMethodField()
+    class Meta:
+        model = UnitOfMeasure
+        fields = (
+            'id',
+            'title',
+            'code',
+            'group',
+            'ratio',
         )
-        if price_list:
-            return [
-                {
-                    'id': price[0],
-                    'title': price[1],
-                    'value': price[2],
-                    'is_default': price[3],
-                    'price_status': cls.check_status_price(price[4], price[5]),
-                    'price_type': price[6],
-                }
-                for price in price_list
-            ]
-        return []
+
+    @classmethod
+    def get_group(cls, obj):
+        if obj.group:
+            return {
+                'id': obj.group_id,
+                'title': obj.group.title,
+                'is_referenced_unit': obj.is_referenced_unit
+            }
+        return {}

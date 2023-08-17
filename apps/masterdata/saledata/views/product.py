@@ -1,5 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
     ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
@@ -19,7 +21,7 @@ from apps.masterdata.saledata.serializers.product import (
     UnitOfMeasureDetailSerializer, UnitOfMeasureGroupUpdateSerializer,
 
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
-    ProductForSaleListSerializer,
+    ProductForSaleListSerializer, UnitOfMeasureOfGroupLaborListSerializer,
 )
 
 
@@ -367,6 +369,37 @@ class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "default_uom",
+            "tax_code",
+            "currency_using",
+        ).prefetch_related(
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Product for sale list",
+        operation_description="Product for sale list",
+    )
+    @mask_view(login_require=True, auth_require=False, )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class UnitOfMeasureOfGroupLaborList(BaseListMixin):
+    queryset = UnitOfMeasure.objects
+    serializer_list = UnitOfMeasureOfGroupLaborListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'group',
+        ).filter(group__is_default=1)
 
     @swagger_auto_schema(
         operation_summary="Product for sale list",

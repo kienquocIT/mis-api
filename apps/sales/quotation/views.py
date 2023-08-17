@@ -1,7 +1,9 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.permissions import IsAuthenticated
 
-from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig
+from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
+    QuotationProduct, QuotationCost
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
     QuotationConfigUpdateSerializer
 from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
@@ -20,7 +22,7 @@ class QuotationList(
     queryset = Quotation.objects
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
-        'sale_person': ['exact'],
+        'employee_inherit': ['exact'],
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
@@ -34,8 +36,8 @@ class QuotationList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person",
-            "opportunity"
+            "opportunity",
+            "employee_inherit",
         )
 
     @swagger_auto_schema(
@@ -72,9 +74,29 @@ class QuotationDetail(
             "opportunity__customer",
             "customer",
             "contact",
-            "sale_person",
             "payment_term",
             "customer__payment_term_mapped",
+            "employee_inherit",
+        ).prefetch_related(
+            Prefetch(
+                "quotation_product_quotation",
+                queryset=QuotationProduct.objects.select_related(
+                    "product",
+                    "unit_of_measure",
+                    "tax",
+                    "promotion",
+                    "shipping",
+                ),
+            ),
+            Prefetch(
+                "quotation_cost_quotation",
+                queryset=QuotationCost.objects.select_related(
+                    "product",
+                    "unit_of_measure",
+                    "tax",
+                    "shipping",
+                ),
+            ),
         )
 
     @swagger_auto_schema(

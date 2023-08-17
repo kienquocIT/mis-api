@@ -97,6 +97,9 @@ class GroupList(BaseListMixin, BaseCreateMixin):
         "first_manager_title",
         "second_manager_title"
     ]
+    filterset_fields = {
+        'group_level__level': ['exact', 'lt'],
+    }
     ordering = ['group_level__level']
 
     serializer_list = GroupListSerializer

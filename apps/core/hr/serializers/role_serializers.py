@@ -1,10 +1,15 @@
 from rest_framework import serializers
 
-from apps.core.hr.models import Role, RoleHolder, PlanRole
-from apps.core.hr.serializers.plan_app_serializers import PlanAppSerializer
-from apps.shared import HRMsg, HttpMsg
+from apps.core.base.models import Application
+from apps.core.hr.models import Role, RoleHolder, PlanRole, Employee
+from apps.shared import HRMsg
+from apps.shared.permissions import PermissionsUpdateSerializer, PermissionDetailSerializer
 
-from apps.core.tenant.utils import PlanController
+from .common import (
+    HasPermPlanAppCreateSerializer, HasPermPlanAppUpdateSerializer,
+    set_up_data_plan_app, validate_license_used,
+    create_plan_role_update_tenant_plan,
+)
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -31,6 +36,7 @@ class RoleListSerializer(serializers.ModelSerializer):
 
 
 class RoleCreateSerializer(serializers.ModelSerializer):
+    plan_app = HasPermPlanAppCreateSerializer(many=True)
     employees = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False,
@@ -42,33 +48,58 @@ class RoleCreateSerializer(serializers.ModelSerializer):
             'title',
             'abbreviation',
             'employees',
+            'plan_app',
         )
 
+    @classmethod
+    def validate_employees(cls, attrs):
+        if attrs and isinstance(attrs, list):
+            emp_objs = Employee.objects.filter_current(id__in=attrs, fill__tenant=True, fill__company=True)
+            if emp_objs.count() == len(attrs):
+                return emp_objs
+            raise serializers.ValidationError({'employees': HRMsg.EMPLOYEES_NOT_EXIST})
+        return []
+
+    def validate(self, validate_data):
+        return validate_license_used(validate_data=validate_data)
+
     def create(self, validated_data):
+        _plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(
+            validated_data,
+            employee_or_role='role',
+        )
+
         if 'employees' in validated_data:
-            data_bulk = validated_data.pop('employees')
-            role = Role.objects.create(**validated_data)
-            if data_bulk:
-                bulk_info = []
-                for employee in data_bulk:
-                    bulk_info.append(
-                        RoleHolder(
-                            role=role,
-                            employee_id=employee
-                        )
-                    )
-                if bulk_info:
-                    RoleHolder.objects.bulk_create(bulk_info)
-            return role
+            employee_objs = validated_data.pop('employees', [])
+            role_objs = Role.objects.create(**validated_data)
+            if employee_objs:
+                holder_bulk_info = [
+                    RoleHolder(
+                        role=role_objs,
+                        employee=employee_obj
+                    ) for employee_obj in employee_objs
+                ]
+                if holder_bulk_info:
+                    RoleHolder.objects.bulk_create(holder_bulk_info)
+
+            create_plan_role_update_tenant_plan(
+                role=role_objs,
+                plan_app_data=plan_app_data,
+                bulk_info=bulk_info
+            )
+            return role_objs
         raise serializers.ValidationError({"detail": HRMsg.ROLE_DATA_VALID})
 
 
-class RoleUpdateSerializer(serializers.ModelSerializer):
+class RoleUpdateSerializer(PermissionsUpdateSerializer):
     employees = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False,
     )
-    plan_app = PlanAppSerializer(many=True, required=False)
+    plan_app = HasPermPlanAppUpdateSerializer(
+        required=False,
+        many=True
+    )
 
     class Meta:
         model = Role
@@ -80,32 +111,31 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
             'plan_app',
         )
 
-    def validate_plan_app(self, attrs):
-        ser = PlanAppSerializer(data=attrs, many=True)
-        ser.is_valid(raise_exception=True)
-
-        app_ids = []
-        plan_ids = [str(x) for x in PlanController.get_plan_of_tenant(tenant_id=self.instance.tenant_id)]
-        if plan_ids:
-            for item in ser.validated_data:
-                plan = item['plan']
-                app_ids += item['application']
-                if str(plan) not in plan_ids:
-                    raise serializers.ValidationError({'plan_app': HttpMsg.PLAN_DENY_PERMIT})
-            if len(app_ids) == len(PlanController.get_app(app_ids)):
-                return attrs
-            raise serializers.ValidationError({'plan_app': HttpMsg.APP_DENY_PERMIT})
-        return []
+    def validate(self, validate_data):
+        return validate_license_used(validate_data=validate_data)
 
     def update(self, instance, validated_data):
-        plan_app = validated_data.pop('plan_app', None)
+        instance, validated_data, _permission_data = self.force_permissions(
+            instance=instance, validated_data=validated_data
+        )
+        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(
+            validated_data,
+            instance=instance,
+            employee_or_role='role',
+        )
+        if plan_application_dict:
+            validated_data.update({'plan_application': plan_application_dict})
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        if plan_app:
-            new_data = PlanAppSerializer.convert_to_simple(plan_app)
-            instance.sync_plan_app(new_data)
+        # create M2M PlanEmployee + update TenantPlan
+        create_plan_role_update_tenant_plan(
+            role=instance,
+            plan_app_data=plan_app_data,
+            bulk_info=bulk_info
+        )
 
         if 'employees' in validated_data:
             employees_old = RoleHolder.objects.filter(role=instance)
@@ -123,11 +153,10 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
                     )
                 if bulk_info:
                     RoleHolder.objects.bulk_create(bulk_info)
-            return instance
-        raise serializers.ValidationError({"detail": HRMsg.ROLE_DATA_VALID})
+        return instance
 
 
-class RoleDetailSerializer(serializers.ModelSerializer):
+class RoleDetailSerializer(PermissionDetailSerializer):
     holder = serializers.SerializerMethodField()
     plan_app = serializers.SerializerMethodField()
 
@@ -144,27 +173,34 @@ class RoleDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_app(cls, obj):
         result = []
-        role_plan_arr = PlanRole.objects.select_related('plan').prefetch_related('application_m2m').filter(role=obj)
-        if role_plan_arr:
-            for role_plan in role_plan_arr:
-                tmp = {
-                    'id': role_plan.plan_id,
-                    'title': role_plan.plan.title,
-                    'code': role_plan.plan.code,
-                    'application': []
-                }
-                for app_obj in role_plan.application_m2m.all():
-                    tmp['application'].append(
-                        {
-                            'id': app_obj.id,
-                            'title': app_obj.title,
-                            'code': app_obj.code,
-                            'app_label': app_obj.app_label,
-                            'option_permission': app_obj.option_permission,
-                            'range_allow': app_obj.get_range_allow(app_obj.option_permission),
-                        }
-                    )
-                result.append(tmp)
+        role_plan = PlanRole.objects.select_related('plan').filter(role=obj)
+        if role_plan:
+            for emp_plan in role_plan:
+                app_list = []
+                if emp_plan.application and isinstance(emp_plan.application, list):
+                    application_list = Application.objects.filter(
+                        id__in=emp_plan.application
+                    ).values('id', 'title', 'code', 'app_label', 'option_permission')
+                    if application_list:
+                        for application in application_list:
+                            app_list.append(
+                                {
+                                    'id': application['id'],
+                                    'title': application['title'],
+                                    'code': application['code'],
+                                    'app_label': application['app_label'],
+                                    'option_permission': application['option_permission'],
+                                    'range_allow': Application.get_range_allow(application['option_permission']),
+                                }
+                            )
+                result.append(
+                    {
+                        'id': emp_plan.plan_id,
+                        'title': emp_plan.plan.title,
+                        'code': emp_plan.plan.code,
+                        'application': app_list
+                    }
+                )
         return result
 
     @classmethod

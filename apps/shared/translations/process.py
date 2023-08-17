@@ -6,5 +6,7 @@ class SaleProcessMsg:
     STEP_NOT_CURRENT = _('This step is not current so can not skip')
     STEP_COMPLETED = _('This step is completed')
 
+    FUNCTION_NOT_IN_PROCESS = _('Not in process')
+
     STEP_CURRENT = _('This step is current')
     NOT_SET_CURRENT_STEP_COMPLETED = _('This step is completed, can not set current')

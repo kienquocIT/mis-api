@@ -1,254 +1,14 @@
+from django.db.models import Prefetch
 from rest_framework import serializers
 
+from apps.masterdata.saledata.models import ProductPriceList
 # from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.quotation.models import Quotation, QuotationProduct, QuotationTerm, QuotationLogistic, \
-    QuotationCost, QuotationExpense, QuotationIndicator
-from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate
+from apps.sales.quotation.models import Quotation, QuotationExpense
+from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
+    QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
+    QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, QuotationExpenseSerializer, \
+    QuotationIndicatorSerializer
 from apps.shared import SaleMsg, SYSTEM_STATUS
-
-
-class QuotationProductSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
-        required=False
-    )
-    promotion = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    shipping = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-
-    class Meta:
-        model = QuotationProduct
-        fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
-            # product information
-            'product_title',
-            'product_code',
-            'product_description',
-            'product_uom_title',
-            'product_uom_code',
-            'product_quantity',
-            'product_unit_price',
-            'product_discount_value',
-            'product_discount_amount',
-            'product_tax_title',
-            'product_tax_value',
-            'product_tax_amount',
-            'product_subtotal_price',
-            'product_subtotal_price_after_tax',
-            'order',
-            'is_promotion',
-            'promotion',
-            'is_shipping',
-            'shipping'
-        )
-
-    @classmethod
-    def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
-
-    @classmethod
-    def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
-
-    @classmethod
-    def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
-
-    @classmethod
-    def validate_promotion(cls, value):
-        return QuotationCommonValidate().validate_promotion(value=value)
-
-    @classmethod
-    def validate_shipping(cls, value):
-        return QuotationCommonValidate().validate_shipping(value=value)
-
-
-class QuotationTermSerializer(serializers.ModelSerializer):
-    price_list = serializers.ListField(
-        child=serializers.CharField(
-            max_length=550
-        ),
-        required=False
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
-
-    class Meta:
-        model = QuotationTerm
-        fields = (
-            'price_list',
-            'payment_term'
-        )
-
-    @classmethod
-    def validate_price_list(cls, value):
-        return QuotationCommonValidate().validate_price_list(value=value)
-
-    @classmethod
-    def validate_payment_term(cls, value):
-        return QuotationCommonValidate().validate_payment_term(value=value)
-
-
-class QuotationLogisticSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = QuotationLogistic
-        fields = (
-            'shipping_address',
-            'billing_address',
-        )
-
-
-class QuotationCostSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
-        required=False
-    )
-    shipping = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-
-    class Meta:
-        model = QuotationCost
-        fields = (
-            'product',
-            'unit_of_measure',
-            'tax',
-            # product information
-            'product_title',
-            'product_code',
-            'product_uom_title',
-            'product_uom_code',
-            'product_quantity',
-            'product_cost_price',
-            'product_tax_title',
-            'product_tax_value',
-            'product_tax_amount',
-            'product_subtotal_price',
-            'product_subtotal_price_after_tax',
-            'order',
-            'is_shipping',
-            'shipping',
-        )
-
-    @classmethod
-    def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
-
-    @classmethod
-    def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
-
-    @classmethod
-    def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
-
-    @classmethod
-    def validate_shipping(cls, value):
-        return QuotationCommonValidate().validate_shipping(value=value)
-
-
-class QuotationExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.CharField(
-        max_length=550,
-        allow_null=True,
-    )
-    product = serializers.CharField(
-        max_length=550,
-        allow_null=True,
-    )
-    unit_of_measure = serializers.CharField(
-        max_length=550
-    )
-    tax = serializers.CharField(
-        max_length=550,
-        required=False,
-    )
-
-    class Meta:
-        model = QuotationExpense
-        fields = (
-            'expense',
-            'product',
-            'unit_of_measure',
-            'tax',
-            # expense information
-            'expense_title',
-            'expense_code',
-            'product_title',
-            'product_code',
-            'expense_type_title',
-            'expense_uom_title',
-            'expense_uom_code',
-            'expense_quantity',
-            'expense_price',
-            'expense_tax_title',
-            'expense_tax_value',
-            'expense_tax_amount',
-            'expense_subtotal_price',
-            'expense_subtotal_price_after_tax',
-            'order',
-            'is_product',
-        )
-
-    @classmethod
-    def validate_expense(cls, value):
-        return QuotationCommonValidate().validate_expense(value=value)
-
-    @classmethod
-    def validate_product(cls, value):
-        return QuotationCommonValidate().validate_product(value=value)
-
-    @classmethod
-    def validate_unit_of_measure(cls, value):
-        return QuotationCommonValidate().validate_unit_of_measure(value=value)
-
-    @classmethod
-    def validate_tax(cls, value):
-        return QuotationCommonValidate().validate_tax(value=value)
-
-
-class QuotationIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
-        max_length=550
-    )
-
-    class Meta:
-        model = QuotationIndicator
-        fields = (
-            'indicator',
-            'indicator_value',
-            'indicator_rate',
-            'order',
-        )
-
-    @classmethod
-    def validate_indicator(cls, value):
-        return QuotationCommonValidate().validate_indicator(value=value)
 
 
 # QUOTATION BEGIN
@@ -274,23 +34,19 @@ class QuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_customer(cls, obj):
-        if obj.customer:
-            return {
-                'id': obj.customer_id,
-                'title': obj.customer.name,
-                'code': obj.customer.code,
-            }
-        return {}
+        return {
+            'id': obj.customer_id,
+            'title': obj.customer.name,
+            'code': obj.customer.code,
+        } if obj.customer else {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit_id,
-                'full_name': obj.employee_inherit.get_full_name(2),
-                'code': obj.employee_inherit.code,
-            }
-        return {}
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_system_status(cls, obj):
@@ -300,13 +56,11 @@ class QuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'title': obj.opportunity.title,
-                'code': obj.opportunity.code,
-            }
-        return {}
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+        } if obj.opportunity else {}
 
 
 class QuotationDetailSerializer(serializers.ModelSerializer):
@@ -316,6 +70,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     payment_term = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    quotation_products_data = serializers.SerializerMethodField()
+    quotation_costs_data = serializers.SerializerMethodField()
 
     class Meta:
         model = Quotation
@@ -360,66 +116,56 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'title': obj.opportunity.title,
-                'code': obj.opportunity.code,
-                'is_close_lost': obj.opportunity.is_close_lost,
-                'is_deal_close': obj.opportunity.is_deal_close,
-                'sale_order_id': obj.opportunity.sale_order_id,
-                'customer': {
-                    'id': obj.opportunity.customer_id,
-                    'title': obj.opportunity.customer.title
-                } if obj.opportunity.customer else {}
-            }
-        return {}
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'is_close_lost': obj.opportunity.is_close_lost,
+            'is_deal_close': obj.opportunity.is_deal_close,
+            'sale_order_id': obj.opportunity.sale_order_id,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'title': obj.opportunity.customer.title
+            } if obj.opportunity.customer else {}
+        } if obj.opportunity else {}
 
     @classmethod
     def get_customer(cls, obj):
-        if obj.customer:
-            return {
-                'id': obj.customer_id,
-                'title': obj.customer.name,
-                'code': obj.customer.code,
-                'payment_term_mapped': {
-                    'id': obj.customer.payment_term_mapped_id,
-                    'title': obj.customer.payment_term_mapped.title,
-                    'code': obj.customer.payment_term_mapped.code,
-                } if obj.customer.payment_term_mapped else {},
-                'customer_price_list': obj.customer.price_list_mapped_id,
-            }
-        return {}
+        return {
+            'id': obj.customer_id,
+            'title': obj.customer.name,
+            'code': obj.customer.code,
+            'payment_term_mapped': {
+                'id': obj.customer.payment_term_mapped_id,
+                'title': obj.customer.payment_term_mapped.title,
+                'code': obj.customer.payment_term_mapped.code,
+            } if obj.customer.payment_term_mapped else {},
+            'customer_price_list': obj.customer.price_list_mapped_id,
+        } if obj.customer else {}
 
     @classmethod
     def get_contact(cls, obj):
-        if obj.contact:
-            return {
-                'id': obj.contact_id,
-                'title': obj.contact.fullname,
-                'code': obj.contact.code,
-            }
-        return {}
+        return {
+            'id': obj.contact_id,
+            'title': obj.contact.fullname,
+            'code': obj.contact.code,
+        } if obj.contact else {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.employee_inherit:
-            return {
-                'id': obj.employee_inherit_id,
-                'full_name': obj.employee_inherit.get_full_name(2),
-                'code': obj.employee_inherit.code,
-            }
-        return {}
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_payment_term(cls, obj):
-        if obj.payment_term:
-            return {
-                'id': obj.payment_term_id,
-                'title': obj.payment_term.title,
-                'code': obj.payment_term.code,
-            }
-        return {}
+        return {
+            'id': obj.payment_term_id,
+            'title': obj.payment_term.title,
+            'code': obj.payment_term.code,
+        } if obj.payment_term else {}
 
     @classmethod
     def get_system_status(cls, obj):
@@ -427,8 +173,39 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             return dict(SYSTEM_STATUS).get(obj.system_status)
         return None
 
+    @classmethod
+    def get_quotation_products_data(cls, obj):
+        return QuotationProductsListSerializer(
+            obj.quotation_product_quotation.select_related(
+                "product__default_uom",
+                "product__tax_code",
+                "product__currency_using",
+            ).prefetch_related(
+                Prefetch(
+                    'product__product_price_product',
+                    queryset=ProductPriceList.objects.select_related('price_list'),
+                ),
+            ),
+            many=True
+        ).data
 
-# Quotation
+    @classmethod
+    def get_quotation_costs_data(cls, obj):
+        return QuotationCostsListSerializer(
+            obj.quotation_cost_quotation.select_related(
+                "product__default_uom",
+                "product__tax_code",
+                "product__currency_using",
+            ).prefetch_related(
+                Prefetch(
+                    'product__product_price_product',
+                    queryset=ProductPriceList.objects.select_related('price_list'),
+                ),
+            ),
+            many=True
+        ).data
+
+
 class QuotationCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     opportunity = serializers.CharField(
