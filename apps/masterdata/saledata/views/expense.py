@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema # noqa
-from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models.product import Expense
 from apps.masterdata.saledata.serializers.expense import (
@@ -46,7 +45,6 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
 
 
 class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Expense.objects
     serializer_detail = ExpenseDetailSerializer
     serializer_update = ExpenseUpdateSerializer
@@ -55,7 +53,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'expense_type',
+            'expense_type', 'uom', 'uom_group'
         ).prefetch_related(
             'expense',
         )

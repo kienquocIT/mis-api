@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup,
@@ -178,7 +177,6 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 # Account
 class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
-    permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_list = AccountListSerializer
     serializer_create = AccountCreateSerializer
@@ -248,7 +246,6 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class AccountsMapEmployeesList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = AccountEmployee.objects
     serializer_list = AccountsMapEmployeesListSerializer
 
@@ -276,7 +273,6 @@ class AccountsMapEmployeesList(BaseListMixin):
 
 # Account List use for Sale Apps
 class AccountForSaleList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Account.objects
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer

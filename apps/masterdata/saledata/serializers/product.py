@@ -767,3 +767,26 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'width': obj.width,
             'height': obj.height,
         }
+
+
+class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
+    group = serializers.SerializerMethodField()
+    class Meta:
+        model = UnitOfMeasure
+        fields = (
+            'id',
+            'title',
+            'code',
+            'group',
+            'ratio',
+        )
+
+    @classmethod
+    def get_group(cls, obj):
+        if obj.group:
+            return {
+                'id': obj.group_id,
+                'title': obj.group.title,
+                'is_referenced_unit': obj.is_referenced_unit
+            }
+        return {}

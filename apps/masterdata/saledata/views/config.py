@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models.config import PaymentTerm
 from apps.masterdata.saledata.serializers.config import PaymentTermCreateSerializer, PaymentTermListSerializer, \
@@ -39,7 +38,6 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
 
 
 class ConfigPaymentTermDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PaymentTerm.objects
     serializer_detail = PaymentTermDetailSerializer
     serializer_update = PaymentTermDetailSerializer

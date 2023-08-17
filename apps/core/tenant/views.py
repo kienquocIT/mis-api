@@ -1,5 +1,4 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
 
@@ -16,7 +15,6 @@ __all__ = [
 
 
 class TenantPlanList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = TenantPlan.objects
     search_fields = []
 

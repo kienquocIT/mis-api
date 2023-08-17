@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.saledata.models import GoodReceipt
 from apps.masterdata.saledata.serializers import GoodReceiptListSerializer
@@ -16,7 +15,6 @@ class GoodReceiptList(
     BaseCreateMixin,
     generics.GenericAPIView
 ):
-    permission_classes = [IsAuthenticated]
     queryset = GoodReceipt.objects
     search_fields = ["search_content"]
 

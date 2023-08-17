@@ -35,6 +35,7 @@ class ProcessDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Process
         fields = (
+            'id',
             'process_step_datas',
         )
 
@@ -79,10 +80,12 @@ class ProcessStepFunctionSerializer(serializers.ModelSerializer):
     def validate_function_id(cls, value):
         if value:
             try:
-                SaleFunction.objects.get_current(
+                function = SaleFunction.objects.get_current(
                     fill__company=True,
                     id=value
                 )
+                if not function.is_in_process:
+                    raise serializers.ValidationError({'function': SaleProcessMsg.FUNCTION_NOT_IN_PROCESS})
                 return str(value)
             except SaleFunction.DoesNotExist:
                 raise serializers.ValidationError({'function': SaleProcessMsg.NOT_EXIST})

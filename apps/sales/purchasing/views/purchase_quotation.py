@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.sales.purchasing.models import PurchaseQuotation, PurchaseQuotationProduct
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationListSerializer, PurchaseQuotationDetailSerializer,
@@ -9,7 +8,6 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 
 class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotation.objects
     filterset_fields = {
         'purchase_quotation_request_mapped__purchase_request_mapped__id': ['in', 'exact'],
@@ -49,7 +47,6 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
 
 
 class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotation.objects
     serializer_detail = PurchaseQuotationDetailSerializer
     update_hidden_field = ['employee_modified_id']
@@ -73,7 +70,6 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class PurchaseQuotationProductList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotationProduct.objects
     filterset_fields = {
         'purchase_quotation_id': ['in', 'exact'],

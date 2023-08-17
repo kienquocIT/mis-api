@@ -84,6 +84,7 @@ class RuntimeDiagramDetail(APIView):
             ).filter(runtime=runtime_obj)
             result = {
                 'id': runtime_obj.id,
+                'doc_title': runtime_obj.doc_title,
                 'stages': RuntimeStageListSerializer(instance=stage_objs, many=True).data,
             }
             return ResponseController.success_200(data=result, key_data='result')

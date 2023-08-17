@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
@@ -13,7 +12,6 @@ class PurchaseRequestList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseRequest.objects
 
     serializer_list = PurchaseRequestListSerializer
@@ -50,7 +48,6 @@ class PurchaseRequestDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseRequest.objects
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestDetailSerializer
@@ -72,7 +69,6 @@ class PurchaseRequestDetail(
 
 
 class PurchaseRequestListForPQR(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseRequest.objects
 
     serializer_list = PurchaseRequestListForPQRSerializer
@@ -88,7 +84,6 @@ class PurchaseRequestListForPQR(BaseListMixin):
 
 
 class PurchaseRequestProductList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseRequestProduct.objects
     filterset_fields = {
         'purchase_request_id': ['in', 'exact'],

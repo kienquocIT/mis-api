@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import translation
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 
@@ -121,8 +121,6 @@ class AuthLogin(generics.GenericAPIView):
 
 
 class AuthValidAccessCode(APIView):
-    permission_classes = [IsAuthenticated]
-
     @swagger_auto_schema(operation_summary='Valid access code', request_body=AuthValidAccessCodeSerializer)
     @mask_view(login_require=True)
     def post(self, request, *args, **kwargs):
@@ -165,8 +163,6 @@ class AuthRefreshLogin(generics.GenericAPIView):
 
 
 class MyProfile(APIView):
-    permission_classes = [IsAuthenticated]
-
     @swagger_auto_schema(operation_summary='Get My Profile')
     @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
@@ -188,8 +184,6 @@ class AliveCheckView(APIView):
 
 
 class SwitchCompanyView(APIView):
-    permission_classes = [IsAuthenticated]
-
     @swagger_auto_schema(operation_summary='Switch Currently Company', request_body=SwitchCompanySerializer)
     @mask_view(login_require=True)
     def put(self, request, *args, **kwargs):

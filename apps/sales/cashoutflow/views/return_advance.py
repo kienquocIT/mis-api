@@ -45,8 +45,8 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = ReturnAdvance.objects # noqa
     serializer_detail = ReturnAdvanceDetailSerializer
     serializer_update = ReturnAdvanceUpdateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = ['tenant_id', 'company_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

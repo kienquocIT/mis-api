@@ -20,7 +20,7 @@ __all__ = ['mask_view']
 
 
 class PermissionChecking:  # pylint: disable=R0902
-    key_filter = 'employee_created_id'
+    key_filter = 'employee_inherit_id'
 
     def __init__(self, user_obj, employee_obj, plan_code, app_code, perm_code, space_code=''):
         self.plan_code = plan_code.lower()
@@ -146,11 +146,12 @@ class PermissionChecking:  # pylint: disable=R0902
             configured = self.get_perm_configured(permissions_parsed=role_data['permissions_parsed'])
             by_id = self.get_perm_id(permission_by_id=role_data['permission_by_id'])
             if configured or by_id:
-                result['roles'].append({
-                    'configured': configured,
-                    'id': by_id,
-                })
-
+                result['roles'].append(
+                    {
+                        'configured': configured,
+                        'id': by_id,
+                    }
+                )
         return result
 
     def get_filter_perm(self, config_data):
@@ -211,20 +212,20 @@ class AuthPermission:
             return self.user.employee_current.is_admin_company
         return False
 
-    def _auth_required_failed(self, has_check_perm):
+    def _auth_required_failed(self, has_check_perm) -> ResponseController:
         if self.request.method == 'GET' and self._has_dropdown_list is True:
             return ResponseController.success_200(data=[])
         if has_check_perm is True:
             return ResponseController.forbidden_403()
         return self.return_error_auth_require
 
-    def _get_config_perm(self):
+    def _get_config_perm(self) -> (dict, list):
         if self.check_allow['_is_allow_admin']:
             if (
                     (self.check_allow['allow_admin_tenant'] and self.is_admin_tenant) or
                     (self.check_allow['allow_admin_company'] and self.is_admin_company)
             ):
-                return PermissionChecking.get_config_perm_of_admin()
+                return PermissionChecking.get_config_perm_of_admin(), []
         employee_obj = getattr(self.user, 'employee_current', None)
         if employee_obj:
             perm_data = PermissionChecking(
@@ -238,13 +239,16 @@ class AuthPermission:
             result_configured = {
                 **perm_data['employee']['configured'],
             }
+            result_by_id = perm_data['employee']['id']
             for item in perm_data['roles']:
-                result_configured.update({
+                result_configured.update(
+                    {
                         **item['configured']
-                })
-            # print('result_configured: ', result_configured)
-            return result_configured
-        return {}
+                    }
+                )
+                result_by_id += item['id']
+            return result_configured, result_by_id
+        return {}, []
 
     @property
     def return_error_employee_require(self):
@@ -272,9 +276,17 @@ class AuthPermission:
         setattr(self.view_this, 'perm_filter_dict', result_filter)
         return result_filter
 
+    def set_perm_filter_ids(self, result_filter_ids):
+        setattr(self.view_this, 'perm_filter_ids', result_filter_ids)
+        return result_filter_ids
+
     def set_perm_config_mapped(self, config_data):
         setattr(self.view_this, 'perm_config_mapped', config_data)
         return config_data
+
+    def set_perm_by_ids_mapped(self, config_by_ids):
+        setattr(self.view_this, 'perm_by_ids_mapped', config_by_ids)
+        return config_by_ids
 
     def set_custom_filter_dict(self, result_filter):
         setattr(self.view_this, 'custom_filter_dict', result_filter)
@@ -350,7 +362,7 @@ class AuthPermission:
 
         has_check_perm = self.has_check_perm
         admin_skip_filter = False
-        config_data = None
+        config_data, by_ids = None, None
         if self.state_skip_is_admin is True:
             admin_skip_filter = True
 
@@ -358,10 +370,9 @@ class AuthPermission:
             if not self.perm_data:
                 return self._auth_required_failed(has_check_perm=has_check_perm)
 
-            config_data = self._get_config_perm()
+            config_data, by_ids = self._get_config_perm()
             if not config_data:
                 return self._auth_required_failed(has_check_perm=has_check_perm)
-            self.set_perm_config_mapped(config_data)
 
         # fake call API check perm | return status = 200
         if has_check_perm is True:
@@ -369,8 +380,8 @@ class AuthPermission:
 
         if self.use_custom['get_filter_auth'] and hasattr(self.view_this, 'get_filter_auth'):
             result_filter = self.view_this.get_filter_auth()
-            self.set_custom_filter_dict(result_filter)
-        elif config_data:
+            self.set_custom_filter_dict(result_filter=result_filter)
+        if config_data:
             result_filter = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=getattr(self.user, 'employee_current', None),
@@ -380,11 +391,12 @@ class AuthPermission:
             ).get_filter_perm(config_data)
             if not result_filter:
                 return self._auth_required_failed(has_check_perm=has_check_perm)
-            self.set_perm_filter_dict(result_filter)
-        else:
-            # admin skip filter and dont had get_filter_auth()
-            result_filter = {}
-        return result_filter
+            self.set_perm_config_mapped(config_data=config_data)
+            self.set_perm_filter_dict(result_filter=result_filter)
+        if by_ids and TypeCheck.check_uuid_list(data=by_ids):
+            self.set_perm_by_ids_mapped(config_by_ids=by_ids)
+            self.set_perm_filter_ids(result_filter_ids={'id__in': list({str(x) for x in by_ids})})
+        return True
 
 
 def mask_view(**parent_kwargs):
@@ -450,7 +462,7 @@ def mask_view(**parent_kwargs):
             filter_or_resp = cls_auth_check.auth_check(auth_require=auth_require)
             if isinstance(filter_or_resp, Response):
                 return filter_or_resp
-            if not isinstance(filter_or_resp, dict):
+            if filter_or_resp is not True:
                 raise ValueError("auth_check() don't return type: dict or response: " + str(type(filter_or_resp)))
 
             # call view when access login and auth permission | Data returned is three case:

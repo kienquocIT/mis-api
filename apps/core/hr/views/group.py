@@ -1,4 +1,3 @@
-from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.hr.mixins import HRDestroyMixin
@@ -13,7 +12,6 @@ from apps.shared import BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseU
 
 # Group Level
 class GroupLevelList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
     search_fields = [
         "description",
@@ -56,7 +54,6 @@ class GroupLevelList(BaseListMixin, BaseCreateMixin):
 
 
 class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = GroupLevel.objects
     serializer_detail = GroupLevelDetailSerializer
     serializer_update = GroupLevelUpdateSerializer
@@ -88,7 +85,6 @@ class GroupLevelDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 # Group
 class GroupList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Group.objects
     search_fields = [
         "title",
@@ -140,7 +136,6 @@ class GroupList(BaseListMixin, BaseCreateMixin):
 
 
 class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Group.objects
     serializer_detail = GroupDetailSerializer
     serializer_update = GroupUpdateSerializer
@@ -182,7 +177,6 @@ class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
 
 
 class GroupParentList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Group.objects
     search_fields = []
     ordering = ['group_level__level']
