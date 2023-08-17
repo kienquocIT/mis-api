@@ -110,24 +110,11 @@ class Product(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='uom_group'
     )
-    # {
-    #     "width": ...,
-    #     "height": ...,
-    #     "length": ...,
-    #     "volume": {...},
-    #     "weight": {...}
-    # }
-    general_product_size = models.JSONField(
-        default=dict
-    )
-    # {
-    #     'product_type': {'id':..., 'title':..., 'code':...},
-    #     'product_category': {'id':..., 'title':..., 'code':...},
-    #     'uom_group': {'id':..., 'title':..., 'code':...},
-    # }
-    general_information = models.JSONField(
-
-    )
+    width = models.FloatField(null=True)
+    height = models.FloatField(null=True)
+    length = models.FloatField(null=True)
+    volume = models.JSONField(default=dict)
+    weight = models.JSONField(default=dict)
 
     # Sale
     sale_default_uom = models.ForeignKey(
@@ -152,23 +139,7 @@ class Product(DataAbstractModel):
         default=None
     )
     sale_cost = models.FloatField(null=True)
-
-    # {
-    #     'price_list': {'id':..., 'title':..., 'code':...},
-    #     'currency_using': {'id':..., 'title':..., 'abbreviation':...},
-    #     'value': 10000000,
-    # }
-    sale_product_price_list = models.JSONField(
-        default=dict
-    )
-
-    # {
-    #     'default_uom': {'id':..., 'title':..., 'code':...},
-    #     'tax': {'id':..., 'title':..., 'code':...}
-    # }
-    sale_information = models.JSONField(
-        default=dict
-    )
+    sale_product_price_list = models.JSONField(default=list)
 
     # Inventory
     inventory_uom = models.ForeignKey(
@@ -180,9 +151,6 @@ class Product(DataAbstractModel):
     )
     inventory_level_min = models.IntegerField(null=True, default=None)
     inventory_level_max = models.IntegerField(null=True, default=None)
-    inventory_information = models.JSONField(
-        default=dict
-    )
 
     # Purchase
     purchase_default_uom = models.ForeignKey(
@@ -198,13 +166,6 @@ class Product(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='purchase_tax',
         default=None
-    )
-    # {
-    #     'default_uom': {'id':..., 'title':..., 'code':...},
-    #     'tax': {'id':..., 'title':..., 'code':...}
-    # }
-    purchase_information = models.JSONField(
-        default=dict
     )
 
     class Meta:
