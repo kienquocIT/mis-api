@@ -37,7 +37,10 @@ class OpportunityList(
         operation_summary="Opportunity List",
         operation_description="Get Opportunity List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        plan_code="sale", app_code="opportunity", perm_code="view",
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
