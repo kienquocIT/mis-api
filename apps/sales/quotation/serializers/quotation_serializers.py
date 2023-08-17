@@ -540,13 +540,11 @@ class QuotationListSerializerForCashOutFlow(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
-            return {
-                'id': obj.sale_person_id,
-                'full_name': obj.sale_person.get_full_name(2),
-                'code': obj.sale_person.code,
-            }
-        return {}
+        return {
+            'id': obj.employee_inherit_id,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+        } if obj.employee_inherit else {}
 
     @classmethod
     def get_system_status(cls, obj):
