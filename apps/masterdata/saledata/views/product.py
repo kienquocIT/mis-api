@@ -314,6 +314,12 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'general_product_type',
+            'general_product_category',
+        )
+
     @swagger_auto_schema(
         operation_summary="Product list",
         operation_description="Product list",
@@ -348,6 +354,16 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().prefetch_related(
             'product_price_product__currency_using',
             'product_price_product__price_list',
+        ).select_related(
+            'general_product_type',
+            'general_product_category',
+            'general_uom_group',
+            'sale_default_uom',
+            'sale_tax',
+            'sale_currency_using',
+            'inventory_uom',
+            'purchase_default_uom',
+            'purchase_tax'
         )
 
     @swagger_auto_schema(operation_summary='Detail Product')

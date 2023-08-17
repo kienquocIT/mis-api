@@ -476,8 +476,8 @@ class ProductMeasurementsCreateSerializer(serializers.ModelSerializer):
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    product_type = serializers.SerializerMethodField()
-    product_category = serializers.SerializerMethodField()
+    general_product_type = serializers.SerializerMethodField()
+    general_product_category = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -485,12 +485,12 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'product_type',
-            'product_category'
+            'general_product_type',
+            'general_product_category'
         )
 
     @classmethod
-    def get_product_type(cls, obj):
+    def get_general_product_type(cls, obj):
         return {
            'id': str(obj.general_product_type.id),
            'title': obj.general_product_type.title,
@@ -498,7 +498,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         }
 
     @classmethod
-    def get_product_category(cls, obj):
+    def get_general_product_category(cls, obj):
         return {
             'id': str(obj.general_product_category.id),
             'title': obj.general_product_category.title,
