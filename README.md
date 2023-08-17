@@ -175,7 +175,6 @@ urlpatterns = [
 ```python
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.core.hr.mixins import HRListMixin, HRCreateMixin, HRUpdateMixin, HRRetrieveMixin
 from apps.core.hr.models import Employee
@@ -233,7 +232,6 @@ class EmployeeDetail(
     HRUpdateMixin,
     generics.GenericAPIView
 ):
-    permission_classes = [IsAuthenticated]
     queryset = Employee.objects.select_related(
         "user",
     )

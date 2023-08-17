@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.purchasing.models import PurchaseOrder
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer,\
@@ -11,7 +10,6 @@ class PurchaseOrderList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseOrder.objects
     filterset_fields = {
         'supplier_id': ['exact'],
@@ -50,7 +48,6 @@ class PurchaseOrderDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseOrder.objects
     serializer_detail = PurchaseOrderDetailSerializer
     serializer_update = PurchaseOrderUpdateSerializer

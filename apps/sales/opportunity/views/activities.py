@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
     OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
@@ -15,7 +14,6 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 
 class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityCallLog.objects
 
     serializer_list = OpportunityCallLogListSerializer
@@ -44,7 +42,6 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
 
 
 class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityCallLog.objects
     serializer_detail = OpportunityCallLogDetailSerializer
 
@@ -72,7 +69,6 @@ class OpportunityCallLogDelete(BaseDestroyMixin):
 
 
 class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityEmail.objects
 
     serializer_list = OpportunityEmailListSerializer
@@ -106,7 +102,6 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
 
 
 class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityEmail.objects
     serializer_detail = OpportunityEmailDetailSerializer
 
@@ -134,7 +129,6 @@ class OpportunityEmailDelete(BaseDestroyMixin):
 
 
 class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityMeeting.objects
 
     serializer_list = OpportunityMeetingListSerializer
@@ -166,7 +160,6 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
 
 
 class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityMeeting.objects
     serializer_detail = OpportunityMeetingDetailSerializer
 
@@ -194,7 +187,6 @@ class OpportunityMeetingDelete(BaseDestroyMixin):
 
 
 class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated] # noqa
     queryset = OpportunityDocument.objects
 
     serializer_list = OpportunityDocumentListSerializer
@@ -228,7 +220,6 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
 
 
 class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityDocument.objects
     serializer_detail = OpportunityDocumentDetailSerializer
 
@@ -242,7 +233,6 @@ class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
 
 
 class OpportunityActivityLogList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityActivityLogs.objects
     serializer_list = OpportunityActivityLogsListSerializer
     filterset_fields = {

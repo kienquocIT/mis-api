@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.contacts import (
     Salutation, Interest, Contact
@@ -129,7 +128,6 @@ class InterestsDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 # Contact
 class ContactList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     filterset_fields = ['account_name_id']
     serializer_list = ContactListSerializer
@@ -166,7 +164,6 @@ class ContactList(BaseListMixin, BaseCreateMixin):
 
 
 class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     serializer_detail = ContactDetailSerializer
     serializer_update = ContactUpdateSerializer
@@ -199,7 +196,6 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class ContactListNotMapAccount(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Contact.objects
     serializer_list = ContactListNotMapAccountSerializer
     serializer_detail = ContactDetailSerializer

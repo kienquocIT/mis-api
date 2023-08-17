@@ -1,6 +1,5 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
     QuotationProduct, QuotationCost
@@ -18,7 +17,6 @@ class QuotationList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
@@ -62,7 +60,6 @@ class QuotationDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
     serializer_update = QuotationUpdateSerializer
@@ -118,7 +115,6 @@ class QuotationDetail(
 
 
 class QuotationExpenseList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = QuotationExpense.objects
     serializer_list = QuotationExpenseListSerializer
 
@@ -168,7 +164,6 @@ class QuotationIndicatorList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = QuotationIndicatorConfig.objects
     filterset_fields = ['application_code']
     serializer_list = IndicatorListSerializer
@@ -199,7 +194,6 @@ class QuotationIndicatorDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorUpdateSerializer
@@ -225,7 +219,6 @@ class QuotationIndicatorDetail(
 class QuotationIndicatorCompanyRestore(
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorCompanyRestoreSerializer
@@ -241,7 +234,6 @@ class QuotationIndicatorCompanyRestore(
 
 
 class QuotationListForCashOutFlow(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Quotation.objects
     filterset_fields = ['opportunity', 'sale_person']
     serializer_list = QuotationListSerializerForCashOutFlow

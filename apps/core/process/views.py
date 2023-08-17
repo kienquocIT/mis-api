@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.core.process.models import SaleFunction, Process, SaleProcessStep
 from apps.core.process.serializers import FunctionProcessListSerializer, ProcessUpdateSerializer, \
@@ -11,7 +10,6 @@ class FunctionProcessList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = SaleFunction.objects
 
     serializer_list = FunctionProcessListSerializer

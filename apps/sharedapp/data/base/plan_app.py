@@ -80,35 +80,35 @@ _Application_crm_data = {
         "code": "contact",
         "app_label": "saledata",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "4e48c863-861b-475a-aa5e-97a4ed26f294": {
         "title": "Account",
         "code": "account",
         "app_label": "saledata",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "296a1410-8d72-46a8-a0a1-1821f196e66c": {
         "title": "Opportunity",
         "code": "opportunity",
         "app_label": "opportunity",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "b9650500-aba7-44e3-b6e0-2542622702a3": {
         "title": "Quotation",
         "code": "quotation",
         "app_label": "quotation",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
         "title": "Sale Order",
         "code": "saleorder",
         "app_label": "saleorder",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {
         "title": "Product",
@@ -178,28 +178,28 @@ _Application_crm_data = {
         "code": "advancepayment",
         "app_label": "cashoutflow",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "1010563f-7c94-42f9-ba99-63d5d26a1aca": {
         "title": "Payments",
         "code": "payment",
         "app_label": "cashoutflow",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "65d36757-557e-4534-87ea-5579709457d7": {
         "title": "Return Advance",
         "code": "returnadvance",
         "app_label": "cashoutflow",
         "is_workflow": True,
-        "option_permission": 1,
+        "option_permission": 0,
     },
     "e66cfb5a-b3ce-4694-a4da-47618f53de4c": {
         "title": "Task",
         "code": "opportunitytask",
         "app_label": "task",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
 
     "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124": {
@@ -207,7 +207,7 @@ _Application_crm_data = {
         "code": "documentforcustomer",
         "app_label": "saleactivities",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
 
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": {
@@ -215,7 +215,7 @@ _Application_crm_data = {
         "code": "opportunitycall",
         "app_label": "saleactivities",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
 
     "dec012bf-b931-48ba-a746-38b7fd7ca73b": {
@@ -223,7 +223,7 @@ _Application_crm_data = {
         "code": "opportunityemail",
         "app_label": "saleactivities",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
 
     "2fe959e3-9628-4f47-96a1-a2ef03e867e3": {
@@ -231,7 +231,7 @@ _Application_crm_data = {
         "code": "meetingwithcustomer",
         "app_label": "saleactivities",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     },
 
     "31c9c5b0-717d-4134-b3d0-cc4ca174b168": {
@@ -239,7 +239,7 @@ _Application_crm_data = {
         "code": "contract",
         "app_label": "contract",
         "is_workflow": False,
-        "option_permission": 1,
+        "option_permission": 0,
     }
 }
 
@@ -309,11 +309,15 @@ _PlanApplication_sale_data = {
     },
     "63f83f34-b0e7-4461-8c19-609824ef8d1e": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Task
+        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Good-Receipt
     },
     "448343d8-c5a3-4aac-bdc6-d56013ac8fe3": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124",  # Document For Customer
+    },
+    "5ae426ab-1b3f-4a05-8117-77d136c13c8f": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
     },
 }
 

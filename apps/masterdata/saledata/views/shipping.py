@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema # noqa
-from rest_framework.permissions import IsAuthenticated
 from apps.masterdata.saledata.models import Shipping
 from apps.masterdata.saledata.serializers import ShippingListSerializer, ShippingCreateSerializer, \
     ShippingDetailSerializer, ShippingUpdateSerializer, ShippingCheckListSerializer
@@ -70,7 +69,6 @@ class ShippingDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class ShippingCheckList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Shipping.objects
     serializer_list = ShippingCheckListSerializer
     serializer_detail = ShippingDetailSerializer

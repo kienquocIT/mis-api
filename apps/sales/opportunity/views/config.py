@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.opportunity.models import CustomerDecisionFactor, OpportunityConfig, OpportunityConfigStage
 from apps.sales.opportunity.serializers import CustomerDecisionFactorListSerializer, \
@@ -38,7 +37,6 @@ class CustomerDecisionFactorList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = CustomerDecisionFactor.objects
     serializer_list = CustomerDecisionFactorListSerializer
     serializer_create = CustomerDecisionFactorCreateSerializer
@@ -86,7 +84,6 @@ class OpportunityConfigStageList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = OpportunityConfigStage.objects
     serializer_list = OpportunityConfigStageListSerializer
     serializer_create = OpportunityConfigStageCreateSerializer

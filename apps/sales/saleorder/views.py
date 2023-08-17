@@ -1,6 +1,5 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
     SaleOrderProduct, SaleOrderCost
@@ -161,7 +160,6 @@ class SaleOrderIndicatorList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrderIndicatorConfig.objects
     filterset_fields = ['application_code']
     serializer_list = SaleOrderIndicatorListSerializer
@@ -192,7 +190,6 @@ class SaleOrderIndicatorDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrderIndicatorConfig.objects
     serializer_detail = SaleOrderIndicatorListSerializer
     serializer_update = SaleOrderIndicatorUpdateSerializer
@@ -218,7 +215,6 @@ class SaleOrderIndicatorDetail(
 class SaleOrderIndicatorCompanyRestore(
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrderIndicatorConfig.objects
     serializer_detail = SaleOrderIndicatorListSerializer
     serializer_update = SaleOrderIndicatorCompanyRestoreSerializer
@@ -234,7 +230,6 @@ class SaleOrderIndicatorCompanyRestore(
 
 
 class SaleOrderListForCashOutFlow(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrder.objects
     filterset_fields = []
     serializer_list = SaleOrderListSerializerForCashOutFlow
@@ -253,7 +248,6 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
 
 
 # class SaleOrderProductList(BaseListMixin):
-#     permission_classes = [IsAuthenticated]
 #     queryset = SaleOrderProduct.objects
 #     filterset_fields = {
 #         'sale_order_id': ['exact', 'in']
@@ -277,7 +271,6 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
 
 
 class ProductListSaleOrder(BaseRetrieveMixin):
-    permission_classes = [IsAuthenticated]
     queryset = SaleOrder.objects
     serializer_detail = SaleOrderProductListSerializer
 

@@ -1,6 +1,5 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.core.hr.mixins import RoleDestroyMixin
 from apps.core.hr.models import Role, Employee
@@ -13,7 +12,6 @@ from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveM
 
 
 class RoleList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Role.objects
     serializer_list = RoleListSerializer
     serializer_create = RoleCreateSerializer
@@ -52,7 +50,6 @@ class RoleList(BaseListMixin, BaseCreateMixin):
 
 
 class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Role.objects
     serializer_detail = RoleDetailSerializer
     serializer_update = RoleUpdateSerializer
