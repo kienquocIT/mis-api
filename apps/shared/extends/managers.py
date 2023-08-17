@@ -146,9 +146,9 @@ class EntryQuerySet(models.query.QuerySet):
             sql_split = str(self.query).rsplit('FROM', maxsplit=1)[-1]
             key = Caching.key_cache_table(self.table_name, sql_split)
             data = Caching().get(key)
-            if settings.DEBUG and settings.CACHE_ENABLED:
-                print('Cache key: ', key)
             if data:
+                if settings.DEBUG and settings.CACHE_ENABLED:
+                    print('Data from CACHE: key=', key, ', length=', len(data))
                 return data
 
             data = self
