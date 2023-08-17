@@ -93,7 +93,6 @@ class OpportunityDetail(
 
 # Opportunity List use for Sale Apps
 class OpportunityForSaleList(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
     filterset_fields = {
         'sale_person_id': ['exact'],
