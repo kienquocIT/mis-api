@@ -1,10 +1,5 @@
-from rest_framework import serializers
-from apps.masterdata.saledata.models import (
-    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, ProductMeasurements
-)
-from apps.masterdata.saledata.models.price import ProductPriceList, Tax, Currency, Price
-from apps.core.base.models import BaseItemUnit
-from apps.shared import ProductMsg
+from apps.masterdata.saledata.models import ProductMeasurements
+from apps.masterdata.saledata.models.price import ProductPriceList
 
 
 class CommonCreateUpdateProduct:
