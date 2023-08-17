@@ -6,12 +6,13 @@ from .views import (
     OpportunityCallLogList, OpportunityCallLogDetail, OpportunityCallLogDelete,
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
-    OpportunityDocumentDetail, OpportunityActivityLogList
+    OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList
 )
 
 urlpatterns = [
     path('config', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
     path('lists', OpportunityList.as_view(), name='OpportunityList'),
+    path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
 
     path('config/decision-factors', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),

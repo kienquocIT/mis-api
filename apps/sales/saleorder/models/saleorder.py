@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 # CONFIG
@@ -492,7 +492,7 @@ class SaleOrderCost(SimpleAbstractModel):
 
 
 # SUPPORT EXPENSE
-class SaleOrderExpense(SimpleAbstractModel):
+class SaleOrderExpense(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
