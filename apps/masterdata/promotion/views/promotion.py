@@ -1,7 +1,6 @@
 from django.db.models import Q
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer, \
@@ -44,7 +43,6 @@ class PromotionList(BaseListMixin, BaseCreateMixin):
 
 
 class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Promotion.objects
     serializer_detail = PromotionDetailSerializer
     serializer_update = PromotionUpdateSerializer

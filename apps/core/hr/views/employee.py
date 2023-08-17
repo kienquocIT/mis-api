@@ -6,7 +6,6 @@ from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import generics, serializers
 from rest_framework.parsers import MultiPartParser
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.core.hr.models import Employee
@@ -46,7 +45,6 @@ class EmployeeUploadAvatar(APIView):
 
 
 class EmployeeList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     search_fields = ["search_content"]
 
@@ -91,7 +89,6 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
 
 
 class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Employee.objects
     serializer_detail = EmployeeDetailSerializer
     serializer_update = EmployeeUpdateSerializer
@@ -140,7 +137,6 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Employee.objects
 
     serializer_list = EmployeeListSerializer
@@ -167,7 +163,6 @@ class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
 
 
 class EmployeeTenantList(BaseListMixin, generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Employee.objects
 
     serializer_list = EmployeeListByOverviewTenantSerializer

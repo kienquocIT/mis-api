@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from apps.sales.purchasing.models import PurchaseQuotationRequest
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationRequestListSerializer, PurchaseQuotationRequestDetailSerializer,
@@ -9,7 +8,6 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 
 class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotationRequest.objects
 
     serializer_list = PurchaseQuotationRequestListSerializer
@@ -42,7 +40,6 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
 
 
 class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotationRequest.objects
     serializer_detail = PurchaseQuotationRequestDetailSerializer
     update_hidden_field = ['employee_modified_id']
@@ -62,7 +59,6 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class PurchaseQuotationRequestListForPQ(BaseListMixin):
-    permission_classes = [IsAuthenticated]
     queryset = PurchaseQuotationRequest.objects
 
     serializer_list = PurchaseQuotationRequestListForPQSerializer

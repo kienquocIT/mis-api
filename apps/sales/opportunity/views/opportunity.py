@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.opportunity.serializers import OpportunityListSerializer, OpportunityUpdateSerializer, \
@@ -11,7 +10,6 @@ class OpportunityList(
     BaseListMixin,
     BaseCreateMixin
 ):
-    permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
     filterset_fields = {
         'sale_person_id': ['exact'],
@@ -57,7 +55,6 @@ class OpportunityDetail(
     BaseRetrieveMixin,
     BaseUpdateMixin,
 ):
-    permission_classes = [IsAuthenticated]
     queryset = Opportunity.objects
     serializer_detail = OpportunityDetailSerializer
     serializer_update = OpportunityUpdateSerializer

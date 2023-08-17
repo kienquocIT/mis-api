@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.core.company.models import CompanyUserEmployee, CompanyConfig
@@ -100,7 +99,6 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
 
 
 class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects
     serializer_detail = CompanyDetailSerializer
     serializer_update = CompanyUpdateSerializer
@@ -181,7 +179,6 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
 
 
 class CompanyOverviewDetail(BaseRetrieveMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects.all()
     serializer_detail = CompanyOverviewDetailSerializer
 
@@ -200,7 +197,6 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
 
 
 class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects
     serializer_update = RestoreDefaultOpportunityConfigStageSerializer
 

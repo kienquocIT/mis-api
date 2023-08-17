@@ -18,13 +18,25 @@ from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
 
-
 __all__ = ['BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin']
 
 
 class DataFilterHandler:
     def __init__(self):
         ...
+
+    @classmethod
+    def get_employee_inherit_from_body_data(cls, body_data: dict[str, any]):
+        if body_data and isinstance(body_data, dict):
+            if hasattr(body_data, 'employee_inherit_id'):
+                data = body_data['employee_inherit_id']
+                if data and TypeCheck.check_uuid(data):
+                    return data
+            if hasattr(body_data, 'employee_inherit'):
+                data = body_data['employee_inherit']
+                if data and hasattr(data, 'id'):
+                    return getattr(data, 'id', None)
+        return None
 
     @classmethod
     def push_data_to_key(cls, result, key1, key2, data):
@@ -73,6 +85,66 @@ class DataFilterHandler:
         return {}
 
     @classmethod
+    def valid_perm_by_ids(cls, perm_filter_by_ids: dict, instance_obj):
+        state_allow = None
+        # BY_IDS: check id of document has exists in special allow
+        # *** operator: OR *** : One time True = allow, False = skip/next
+        if perm_filter_by_ids and isinstance(perm_filter_by_ids, dict):  # pylint: disable=R1702
+            doc_id = getattr(instance_obj, 'id', None)
+            if doc_id:
+                if perm_filter_by_ids and isinstance(perm_filter_by_ids, dict):
+                    for key, value in perm_filter_by_ids.items():
+                        if key == 'id':
+                            if str(doc_id) == value:
+                                state_allow = True
+                                break
+                            state_allow = False
+                        elif key == 'id__in':
+                            if str(doc_id) in value:
+                                state_allow = True
+                                break
+                            state_allow = False
+                    if state_allow is True:
+                        # return True when id exists in special allow | else check by configured
+                        return True
+        return state_allow if isinstance(state_allow, bool) else False
+
+    @classmethod
+    def valid_perm_filter_dict(cls, perm_filter_dict: dict, employee_obj, employee_inherit_id):  # pylint: disable=R0912
+        state_allow = None
+        # BY_CONFIGURED: check some field data in document correct with perm configured
+        # *** operator: AND *** : One time False = deny, True = skip/next
+        if perm_filter_dict and isinstance(perm_filter_dict, dict):  # pylint: disable=R1702
+            unzip_filter_dict = cls.unzip_key_and_lookup(perm_filter_dict)
+            if unzip_filter_dict:
+                for key, value in unzip_filter_dict.items():
+                    if isinstance(value, dict):
+                        data_left = None
+                        if key == 'tenant_id':
+                            data_left = str(employee_obj.tenant_id) if employee_obj.tenant_id else None
+                        elif key == 'company_id':
+                            data_left = str(employee_obj.company_id) if employee_obj.company_id else None
+                        elif key == 'employee_inherit_id':
+                            if not employee_inherit_id:
+                                state_allow = False
+                                break
+                            data_left = str(employee_inherit_id)
+
+                        if data_left:
+                            for lookup_key, data in value.items():
+                                if lookup_key == '':
+                                    if data_left != data:
+                                        state_allow = False
+                                        break
+                                    state_allow = True
+                                if lookup_key == 'in':
+                                    if data_left not in data:
+                                        state_allow = False
+                                        break
+                                    state_allow = True
+        return state_allow if isinstance(state_allow, bool) else False
+
+    @classmethod
     def parse_left_and_compare(cls, employee_obj, perm_filter_dict: dict, **kwargs):  # pylint: disable=R0912
         employee_id = kwargs.get('employee_created_id', employee_obj.id)
         if employee_obj and perm_filter_dict:  # pylint: disable=R1702
@@ -99,6 +171,47 @@ class DataFilterHandler:
                                     return data_left in data
         return False
 
+    @classmethod
+    def parse_left_and_compare_check_create(
+            cls,
+            employee_obj,
+            perm_filter_dict: dict,
+            employee_inherit_id: Union[None, UUID, str],
+    ):
+        return cls.valid_perm_filter_dict(
+            perm_filter_dict=perm_filter_dict,
+            employee_obj=employee_obj,
+            employee_inherit_id=employee_inherit_id,
+        )
+
+    @classmethod
+    def parse_left_and_compare_has_obj(
+            cls,
+            instance_obj, employee_obj,
+            perm_filter_dict: dict, perm_filter_by_ids: dict,
+            employee_inherit_id=Union[UUID, None],
+            **kwargs
+    ):
+        if employee_obj:
+            # BY_IDS: check id of document has exists in special allow
+            # *** operator: OR *** : One time True = allow, False = skip/next
+            state_allow = cls.valid_perm_by_ids(
+                perm_filter_by_ids=perm_filter_by_ids,
+                instance_obj=instance_obj,
+            )
+            if state_allow is True:
+                return True
+
+            # BY_CONFIGURED: check some field data in document correct with perm configured
+            # *** operator: AND *** : One time False = deny, True = skip/next
+            state_allow = cls.valid_perm_filter_dict(
+                perm_filter_dict=perm_filter_dict,
+                employee_obj=employee_obj,
+                employee_inherit_id=employee_inherit_id,
+            )
+            return state_allow if isinstance(state_allow, bool) else False
+        return False
+
 
 class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     cls_auth_check = None  # cls authenticate of mask_view
@@ -114,10 +227,12 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     query_extend_base_model = True
 
     auth_required: dict = None
-    perm_filter_dict: dict = None  # {'tenant_id': ''}
-    perm_config_mapped: dict = None  # {"4": {}}
-    custom_filter_dict: dict = None  # data of get_filter_auth()
-    state_skip_is_admin: bool = False
+    perm_filter_dict: dict = None  # {'tenant_id': ''}  ### for CONFIGURED
+    perm_filter_ids: dict = None  # {'id__in': []}  ### for BY_IDS
+    perm_config_mapped: dict = None  # {"4": {}}  ### for CONFIGURED
+    perm_by_ids_mapped: list[str] = None  # ['id1', 'id2']   ### for BY_IDS
+    custom_filter_dict: dict = None  # data of get_filter_auth()  ### for function "get_filter_auth" at view class
+    state_skip_is_admin: bool = False  # true/false skip auth parse ### for is_admin skip
 
     def get_filter_auth(self) -> dict:
         """
@@ -129,7 +244,15 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def append_filter_authenticate_for_list(self, main_filter: dict) -> dict:
+    def check_perm_for_list(self, main_filter: dict) -> dict:
+        """
+        Check permission for get list data
+        Args:
+            main_filter: Filter was appended from config view list_hidden_field
+
+        Returns:
+            Dict: Filter was converted
+        """
         really_filter = {}
         if self.custom_filter_dict:
             really_filter = self.custom_filter_dict
@@ -141,7 +264,25 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             **really_filter,
         }
 
-    def check_perm_create(self, body_data: dict, employee_obj=None):
+    def check_perm_for_create(self, body_data: dict, employee_obj=None) -> bool:
+        """
+        Check permission when call create new records
+        Args:
+            body_data: Data was sent from client
+            employee_obj: Employee object | None was auto full from self.request.user.employee_current
+
+        Returns:
+            True: Allow
+            False: Deny
+        """
+        # auto_fill_inherit is turn on when 'employee_inherit_id' in self.create_hidden_field
+        auto_fill_inherit = False
+        if self.create_hidden_field:
+            auto_fill_inherit = (
+                    'employee_inherit_id' in self.create_hidden_field or
+                    'employee_inherit' in self.create_hidden_field
+            )
+
         if self.state_skip_is_admin is True:
             return True
 
@@ -153,34 +294,58 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     return False
 
             if employee_obj and hasattr(employee_obj, 'id') and self.perm_config_mapped:
-                employee_created_id = body_data.get('employee_created', employee_obj.id)
-                return DataFilterHandler.parse_left_and_compare(
+                employee_inherit_id = DataFilterHandler.get_employee_inherit_from_body_data(body_data=body_data)
+                if not employee_inherit_id and auto_fill_inherit is True:
+                    employee_inherit_id = employee_obj.id
+                return DataFilterHandler.parse_left_and_compare_check_create(
                     employee_obj, self.perm_filter_dict,
-                    employee_created_id=employee_created_id,
+                    employee_inherit_id=employee_inherit_id,
                 )
             return False
         return True  # always allow when view has auth_required = False
 
-    def check_perm_by_obj(self, obj, employee_obj=None):
+    def check_perm_by_obj(self, obj, employee_obj=None) -> bool:
+        """
+        Check permission with Instance Object was got from views
+        Args:
+            obj: Instance object
+            employee_obj: Employee object | None was auto full from self.request.user.employee_current
+
+        Returns:
+            True: Allow
+            False: Deny
+        """
         if self.state_skip_is_admin is True:
+            # allow when flag is_admin skip turn on
             return True
 
         if self.auth_required is True:
+            # get required employee_obj when check obj --> for get tenant_id, company_id,... in employee_obj
             if not employee_obj:
                 if hasattr(self.request.user, 'employee_current'):
                     employee_obj = self.request.user.employee_current
                 else:
                     return False
-            return DataFilterHandler.parse_left_and_compare(
-                employee_obj, self.perm_filter_dict,
-                **({'employee_created_id': obj.employee_created_id} if hasattr(obj, 'employee_created_id') else {}),
-            )
+
+            # check permission when has perm configured or perm by ids | else auto False
+            if employee_obj and hasattr(employee_obj, 'id') and (self.perm_config_mapped or self.perm_by_ids_mapped):
+                return DataFilterHandler.parse_left_and_compare_has_obj(
+                    instance_obj=obj,
+                    employee_obj=employee_obj,
+                    perm_filter_dict=self.perm_filter_dict,
+                    perm_filter_by_ids=self.perm_filter_ids,
+                    employee_inherit_id=getattr(obj, 'employee_inherit_id', None),
+                )
+            return False
         return True  # always allow when view has auth_required = False
 
     class Meta:
         abstract = True
 
     def get_serializer_class(self):
+        """
+        Get serializer_class for generate API documentations
+        """
         if getattr(self, 'serializer_list', None):
             return getattr(self, 'serializer_list', None)
         if getattr(self, 'serializer_detail', None):
@@ -290,7 +455,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         Returns:
 
         """
-        return self.append_filter_authenticate_for_list(self.setup_hidden(self.list_hidden_field, user))
+        return self.check_perm_for_list(self.setup_hidden(self.list_hidden_field, user))
 
     def setup_retrieve_field_hidden(self, user) -> dict:
         """
@@ -591,7 +756,7 @@ class BaseCreateMixin(BaseMixin):
     CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
 
     def create(self, request, *args, **kwargs):
-        if self.check_perm_create(body_data=request.data):
+        if self.check_perm_for_create(body_data=request.data):
             log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)

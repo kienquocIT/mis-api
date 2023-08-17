@@ -1,5 +1,4 @@
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.core.base.mixins import ApplicationListMixin
@@ -107,7 +106,6 @@ class ApplicationPropertyEmployeeList(BaseListMixin):
 
 
 class ApplicationList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Application.objects
     search_fields = ('title', 'code',)
     serializer_class = ApplicationListSerializer
