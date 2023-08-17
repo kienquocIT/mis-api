@@ -26,9 +26,8 @@ class ValidAssignTask:
     @classmethod
     def check_opp_and_return(cls, opp_id):
         is_opp = False
-        data = Opportunity.objects.filter(id=opp_id)
-        if data.exists():
-            data = data.first()
+        data = Opportunity.objects.get(id=opp_id)
+        if data:
             is_opp = True
         return data, is_opp
 
@@ -56,8 +55,8 @@ class ValidAssignTask:
         obj_assignee = attrs['assign_to']
         datas = opp_data.opportunity_sale_team_datas
         for data in datas:
-            member = data.get('member')
-            if member.id == obj_assignee.id:
+            member = data.get('member')  # member: dict => {}
+            if member['id'] == str(obj_assignee.id):
                 return True
         return False
 
@@ -103,12 +102,12 @@ class ValidAssignTask:
 
     @classmethod
     def check_config(cls, config, validate):
-        if config.in_assign_opt > 0 and validate.get('assign_to', None):
-            opp = validate.get('opportunity', None)
-            if not opp:
-                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_NOT_EXIST})
+        opp = validate.get('opportunity', None)
+        # nếu có opps check tiếp in_assign_opt
+        # nếu ko có opps check out_assign_opt
+        if opp and config.in_assign_opt > 0:
             cls.is_in_opp_check(config.in_assign_opt, validate)
-        elif config.out_assign_opt > 0 and validate.get('assign_to', None):
+        elif not opp and config.out_assign_opt > 0:
             cls.is_out_opp_check(config.out_assign_opt, validate)
 
 
@@ -477,8 +476,8 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         assignee = current_data.assign_to
         if config.exists():
             config = config.first()
-            # check if request user is assignee user and not is create task/sub-task
-            if assignee == employee_request and not current_data.employee_created == employee_request:
+            # check if request user is assignee and not is create task/sub-task
+            if employee_request == assignee and not employee_request == current_data.employee_created:
                 # assignee can not update time
                 if not config.is_edit_date and (
                         current_data.start_date != update_data['start_date']
@@ -498,7 +497,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                     )
 
             # validate follow by config
-            if current_data.employee_created == employee_request:
+            if current_data.employee_created == employee_request and update_data.get('assign_to', None):
                 ValidAssignTask.check_config(config, update_data)
             return True
 
