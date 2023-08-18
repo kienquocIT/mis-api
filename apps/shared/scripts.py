@@ -623,6 +623,6 @@ def update_data_shipping():
 def update_employee_inherit_opportunity():
     opps = Opportunity.objects.all()
     for opp in opps:
-        opp.employee_inherit = opp.sale_order
+        opp.employee_inherit = opp.sale_person
         opp.save()
     print('Done')
