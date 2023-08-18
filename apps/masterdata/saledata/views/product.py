@@ -22,6 +22,7 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
     UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
 
     UnitOfMeasureListSerializer, UnitOfMeasureCreateSerializer,
+    UnitOfMeasureGroupUpdateSerializer, UnitOfMeasureDetailSerializer
 )
 
 
