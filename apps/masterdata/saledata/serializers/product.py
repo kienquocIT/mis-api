@@ -771,6 +771,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
 class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
     group = serializers.SerializerMethodField()
+
     class Meta:
         model = UnitOfMeasure
         fields = (
