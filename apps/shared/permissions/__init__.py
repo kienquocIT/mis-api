@@ -209,7 +209,7 @@ class PermissionDetailSerializer(serializers.ModelSerializer):
                 if item.application and isinstance(item.application, list):
                     application_list = Application.objects.filter(
                         id__in=item.application
-                    ).values('id', 'title', 'code', 'model_code', 'app_label', 'option_permission')
+                    ).values('id', 'title', 'code', 'model_code', 'app_label', 'option_permission', 'option_allowed')
                     if application_list:
                         for application in application_list:
                             app_list.append(
@@ -220,7 +220,8 @@ class PermissionDetailSerializer(serializers.ModelSerializer):
                                     'model_code': application['model_code'],
                                     'app_label': application['app_label'],
                                     'option_permission': application['option_permission'],
-                                    'range_allow': Application.get_range_allow(application['option_permission']),
+                                    # 'range_allow': Application.get_range_allow(application['option_permission']),
+                                    'option_allowed': application['option_allowed'],
                                 }
                             )
                 result.append(
