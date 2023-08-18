@@ -135,24 +135,24 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_general_product_type(cls, value):
-        obj = ProductType.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return ProductType.objects.get(id=value)
+        except ProductType.DoesNotExist:
+            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
-        obj = ProductCategory.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return ProductCategory.objects.filter(id=value)
+        except ProductCategory.DoesNotExist:
+            raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_uom_group(cls, value):
-        obj = UnitOfMeasureGroup.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return UnitOfMeasureGroup.objects.filter(id=value)
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
@@ -206,19 +206,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_sale_tax(cls, value):
         if value:
-            obj = Tax.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Tax.objects.filter(id=value)
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
     def validate_sale_currency_using(cls, value):
         if value:
-            obj = Currency.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Currency.objects.filter(id=value)
+            except Currency.DoesNotExist:
+                raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -232,10 +232,10 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_inventory_uom(cls, value):
         if value:
-            obj = UnitOfMeasure.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return UnitOfMeasure.objects.filter(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -257,19 +257,19 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_purchase_default_uom(cls, value):
         if value:
-            obj = UnitOfMeasure.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return UnitOfMeasure.objects.filter(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
     def validate_purchase_tax(cls, value):
         if value:
-            obj = Tax.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Tax.objects.filter(id=value)
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     def validate(self, validate_data):
@@ -478,24 +478,24 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_general_product_type(cls, value):
-        obj = ProductType.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return ProductType.objects.get(id=value)
+        except ProductType.DoesNotExist:
+            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
-        obj = ProductCategory.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return ProductCategory.objects.filter(id=value)
+        except ProductCategory.DoesNotExist:
+            raise serializers.ValidationError({'general_product_category': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_uom_group(cls, value):
-        obj = UnitOfMeasureGroup.objects.filter(id=value)
-        if obj.count() == 1:
-            return obj.first()
-        raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
+        try:
+            return UnitOfMeasureGroup.objects.filter(id=value)
+        except UnitOfMeasureGroup.DoesNotExist:
+            raise serializers.ValidationError({'general_product_uom_group': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_width(cls, value):
@@ -549,19 +549,19 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_sale_tax(cls, value):
         if value:
-            obj = Tax.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Tax.objects.filter(id=value)
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
     def validate_sale_currency_using(cls, value):
         if value:
-            obj = Currency.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Currency.objects.filter(id=value)
+            except Currency.DoesNotExist:
+                raise serializers.ValidationError({'sale_currency_using': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -575,10 +575,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_inventory_uom(cls, value):
         if value:
-            obj = UnitOfMeasure.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return UnitOfMeasure.objects.filter(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'inventory_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -600,19 +600,19 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_purchase_default_uom(cls, value):
         if value:
-            obj = UnitOfMeasure.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return UnitOfMeasure.objects.filter(id=value)
+            except UnitOfMeasure.DoesNotExist:
+                raise serializers.ValidationError({'purchase_default_uom': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
     def validate_purchase_tax(cls, value):
         if value:
-            obj = Tax.objects.filter(id=value)
-            if obj.count() == 1:
-                return obj.first()
-            raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
+            try:
+                return Tax.objects.filter(id=value)
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     def validate(self, validate_data):
@@ -731,10 +731,8 @@ class UnitOfMeasureOfGroupLaborListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_group(cls, obj):
-        if obj.group:
-            return {
-                'id': obj.group_id,
-                'title': obj.group.title,
-                'is_referenced_unit': obj.is_referenced_unit
-            }
-        return {}
+        return {
+            'id': obj.group_id,
+            'title': obj.group.title,
+            'is_referenced_unit': obj.is_referenced_unit
+        } if obj.group else {}
