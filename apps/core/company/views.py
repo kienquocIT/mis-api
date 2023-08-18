@@ -42,7 +42,7 @@ class CompanyConfigDetail(APIView):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        plan_code='base', app_code='company', perm_code='edit'
+        label_code='company', model_code='company', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         try:
@@ -80,7 +80,6 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # allow_admin_tenant=True, plan_code='base', app_code='company', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -92,7 +91,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        plan_code='base', app_code='company', perm_code='create',
+        label_code='company', model_code='company', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -109,7 +108,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        plan_code='base', app_code='company', perm_code='view'
+        label_code='company', model_code='company', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -117,7 +116,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        plan_code='base', app_code='company', perm_code='edit'
+        label_code='company', model_code='company', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -125,7 +124,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Delete Company")
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        plan_code='base', app_code='company', perm_code='delete',
+        label_code='company', model_code='company', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -171,7 +170,7 @@ class CompanyUserNotMapEmployeeList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='user', perm_code='view',
+        label_code='account', model_code='user', perm_code='view',
         use_custom_get_filter_auth=True,
     )
     def get(self, request, *args, **kwargs):
@@ -187,7 +186,7 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='company', perm_code='view',
+        label_code='company', model_code='company', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         if 'option' in kwargs:

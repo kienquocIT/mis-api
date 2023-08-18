@@ -65,6 +65,12 @@ class Application(CoreAbstractModel):
         null=True,
         help_text="application label ex. hr_employee"
     )
+    model_code = models.CharField(
+        max_length=150,
+        blank=True,
+        null=True,
+        help_text='Model code',
+    )
 
     is_workflow = models.BooleanField(
         default=True,
@@ -76,6 +82,17 @@ class Application(CoreAbstractModel):
         verbose_name='Allow Type Permission',
         help_text='0: Allow full control range, 1: Allow only company'
     )
+    option_allowed = models.JSONField(
+        default=list,
+        verbose_name='Option code was allowed',
+        # help_text='[1,2,3,4]'
+    )
+
+    def __repr__(self):
+        return f'{self.app_label} - {self.model_code}'
+
+    def __str__(self):
+        return f'{self.app_label} - {self.model_code}'
 
     class Meta:
         verbose_name = 'Application'

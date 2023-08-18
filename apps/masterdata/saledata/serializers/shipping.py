@@ -85,7 +85,8 @@ class FormulaConditionCreateSerializer(serializers.ModelSerializer):
 
 class ShippingConditionCreateSerializer(serializers.ModelSerializer):
     location = serializers.ListField(
-        required=True
+        child=serializers.UUIDField(),
+        required=True,
     )
     formula = FormulaConditionCreateSerializer(
         required=True,
@@ -106,7 +107,12 @@ class ShippingConditionCreateSerializer(serializers.ModelSerializer):
         )
         if len(found_objects) != len(value):
             raise serializers.ValidationError({'location in condition': ShippingMsg.LOCATION_NOT_EXIST})
-        return value
+        return [
+            {
+                'id': str(item.id),
+                'title': item.title
+            } for item in found_objects
+        ]
 
 
 class ShippingCreateSerializer(serializers.ModelSerializer):
@@ -180,7 +186,7 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
             for location in condition['location']:
                 ConditionLocation.objects.create(
                     condition=shipping_condition,
-                    location_id=location
+                    location_id=location['id']
                 )
             data_formula = condition['formula']
             for formula in data_formula:
@@ -198,6 +204,8 @@ class ShippingCreateSerializer(serializers.ModelSerializer):
 
 
 class ShippingDetailSerializer(serializers.ModelSerializer):
+    currency = serializers.SerializerMethodField()
+
     class Meta:
         model = Shipping
         fields = (
@@ -211,6 +219,15 @@ class ShippingDetailSerializer(serializers.ModelSerializer):
             'fixed_price',
             'formula_condition',
         )
+
+    @classmethod
+    def get_currency(cls, obj):
+        if obj.currency:
+            return {
+                'id': obj.currency_id,
+                'title': obj.currency.title
+            }
+        return {}
 
 
 class ShippingUpdateSerializer(serializers.ModelSerializer):
@@ -254,16 +271,11 @@ class ShippingUpdateSerializer(serializers.ModelSerializer):
         if validate_data['cost_method'] == 0:  # noqa
             if 'fixed_price' not in validate_data:
                 raise serializers.ValidationError({'Amount': ShippingMsg.REQUIRED_AMOUNT})
-        if validate_data['cost_method'] == 1:
-            if 'formula_condition' not in validate_data:
-                raise serializers.ValidationError({'condition': ShippingMsg.NOT_YET_CONDITION})
-            if len(validate_data['formula_condition']) == 0:
-                raise serializers.ValidationError({'condition': ShippingMsg.CONDITION_NOT_NULL})
         return validate_data
 
     def update(self, instance, validated_data):
-        is_change_condition = self.initial_data['is_change_condition']
-        if is_change_condition:
+
+        if 'formula_condition' in validated_data:
             self.common_delete_condition(
                 instance=instance
             )

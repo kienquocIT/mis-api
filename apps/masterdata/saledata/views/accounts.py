@@ -42,7 +42,7 @@ class AccountTypeList(BaseListMixin, BaseCreateMixin):  # noqa
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='create',
+        label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -65,7 +65,7 @@ class AccountTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update AccountType", request_body=AccountTypeUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='edit'
+        label_code='saledata', model_code='account', perm_code='edit'
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -94,7 +94,7 @@ class AccountGroupList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='create'
+        label_code='saledata', model_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -117,7 +117,7 @@ class AccountGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update AccountGroup", request_body=AccountGroupUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='edit'
+        label_code='saledata', model_code='account', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -146,7 +146,7 @@ class IndustryList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='create',
+        label_code='saledata', model_code='account', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -169,7 +169,7 @@ class IndustryDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Industry", request_body=IndustryUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='edit',
+        label_code='saledata', model_code='account', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -199,7 +199,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='view',
+        label_code='saledata', model_code='account', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -212,7 +212,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     @mask_view(
         login_require=True, auth_require=True,
         employee_require=True,
-        plan_code='sale', app_code='account', perm_code='create'
+        label_code='saledata', model_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -231,7 +231,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='view',
+        label_code='saledata', model_code='account', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -239,7 +239,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Account", request_body=AccountUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='account', perm_code='edit',
+        label_code='saledata', model_code='account', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)

@@ -96,9 +96,20 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
 
 class TaxDetailSerializer(serializers.ModelSerializer):  # noqa
 
+    category = serializers.SerializerMethodField()
+
     class Meta:
         model = Tax
         fields = ('id', 'code', 'title', 'rate', 'category', 'type')
+
+    @classmethod
+    def get_category(cls, obj):
+        if obj.category:
+            return {
+                'id': obj.category_id,
+                'title': obj.category.title,
+            }
+        return {}
 
 
 class TaxUpdateSerializer(serializers.ModelSerializer):  # noqa
@@ -498,7 +509,6 @@ class PriceDeleteSerializer(serializers.ModelSerializer):  # noqa
         return True
 
 
-
 class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
     list_price = serializers.ListField(required=True)
     list_item = serializers.ListField(required=True)
@@ -532,7 +542,7 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
         list_price_list_delete = []
         for price in validated_data['list_price']:
             for item in validated_data['list_item']:
-                found = True # noqa
+                found = True  # noqa
                 value_price = 0
                 is_auto_update = True
 
@@ -581,11 +591,11 @@ class PriceListUpdateItemsSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def update_price_value_expense(cls, instance, validated_data):
-        objs = [] # noqa
+        objs = []  # noqa
         list_price_list_delete = []
         for price in validated_data['list_price']:
             for item in validated_data['list_item']:
-                found = True # noqa
+                found = True  # noqa
                 value_price = 0
                 is_auto_update = True
 
@@ -681,21 +691,21 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
                         get_price_from_source = True
                     if instance.price_list_type == 0:
                         obj = self.add_product_for_price_list(
-                                item=item,
-                                product=product,
-                                instance=instance,
-                                is_auto_update=get_price_from_source
-                            )
+                            item=item,
+                            product=product,
+                            instance=instance,
+                            is_auto_update=get_price_from_source
+                        )
                         if not obj:
                             raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
                         objs.append(obj)
                     else:
                         obj = self.add_expense_for_price_list(
-                                item=item,
-                                expense=product,
-                                instance=instance,
-                                is_auto_update=get_price_from_source
-                            )
+                            item=item,
+                            expense=product,
+                            instance=instance,
+                            is_auto_update=get_price_from_source
+                        )
                         if not obj:
                             raise serializers.ValidationError({"item": PriceMsg.ITEM_EXIST})
                         objs.append(obj)
