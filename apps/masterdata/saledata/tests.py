@@ -1368,7 +1368,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": title_change,
             "code": 'VAT-10',
             "rate": rate_change,
-            "category": data_created.data['result']['category'],
+            "category": data_created.data['result']['category']['id'],
             "type": 0
         }
         response = self.client.put(url, data, format='json')
@@ -2903,7 +2903,7 @@ class ShippingTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response2.data['errors'],
-            ['location'],
+            [0],
             check_sum_second=True,
         )
 

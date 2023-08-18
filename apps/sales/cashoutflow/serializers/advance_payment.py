@@ -19,6 +19,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
+    opportunity_id = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -39,7 +40,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
-            'product_items'
+            'product_items',
+            'opportunity_id',
         )
 
     @classmethod
@@ -177,6 +179,16 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     def get_status(cls, obj):
         obj.status = "Approved"
         return obj.status
+
+    @classmethod
+    def get_opportunity_id(cls, obj):
+        if obj.opportunity_mapped:
+            return obj.opportunity_mapped_id
+        if obj.quotation_mapped:
+            return obj.quotation_mapped.opportunity_id
+        if obj.sale_order_mapped:
+            return obj.sale_order_mapped.opportunity_id
+        return None
 
 
 def create_product_items(instance, product_valid_list):

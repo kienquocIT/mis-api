@@ -1,4 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from apps.masterdata.saledata.filters import AccountListFilter
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup,
@@ -183,7 +185,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     serializer_detail = AccountDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-    filterset_fields = {'account_types_mapped__account_type_order': ['exact']}
+    filterset_class = AccountListFilter
     search_fields = ['name']
 
     def get_queryset(self):
