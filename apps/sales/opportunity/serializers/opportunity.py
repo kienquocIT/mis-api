@@ -47,11 +47,11 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
