@@ -77,40 +77,6 @@ def sub_validate_weight_obj(initial_data, validate_data):
     return {}
 
 
-def set_null_fields_for_sale(validate_data):
-    if 0 in validate_data['product_choice']:
-        for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using', 'sale_product_price_list']:
-            if key not in validate_data:
-                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-    else:
-        for key in ['sale_default_uom', 'sale_tax', 'sale_currency_using']:
-            validate_data.update({key: None})
-        validate_data.update({'sale_product_price_list': []})
-    return validate_data
-
-
-def set_null_fields_for_inventory(validate_data):
-    if 1 in validate_data['product_choice']:
-        for key in ['width', 'height', 'length', 'volume', 'weight', 'inventory_uom']:
-            if key not in validate_data:
-                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-    else:
-        for key in ['inventory_uom', 'inventory_level_min', 'inventory_level_max']:
-            validate_data.update({key: None})
-    return validate_data
-
-
-def set_null_fields_for_purchase(validate_data):
-    if 2 in validate_data['product_choice']:
-        for key in ['purchase_default_uom', 'purchase_tax']:
-            if key not in validate_data:
-                raise serializers.ValidationError({key: ProductMsg.DOES_NOT_EXIST})
-    else:
-        for key in ['purchase_default_uom', 'purchase_tax']:
-            validate_data.update({key: None})
-    return validate_data
-
-
 def setup_price_list_data_in_sale(initial_data):
     sale_price_list = initial_data.get('sale_price_list', [])
     for item in sale_price_list:
@@ -119,13 +85,6 @@ def setup_price_list_data_in_sale(initial_data):
         if not Price.objects.filter(id=price_list_id).exists() or not price_list_value:
             raise serializers.ValidationError({'sale_product_price_list': ProductMsg.PRICE_LIST_NOT_EXIST})
     return sale_price_list
-
-
-def set_null_fields(validate_data):
-    validate_data = set_null_fields_for_sale(validate_data)
-    validate_data = set_null_fields_for_inventory(validate_data)
-    validate_data = set_null_fields_for_purchase(validate_data)
-    return validate_data
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -317,10 +276,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
         validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
         validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        if validate_data.get('inventory_level_min', None) and validate_data.get('inventory_level_max', None):
-            if validate_data['inventory_level_min'] > validate_data['inventory_level_max']:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-        validate_data = set_null_fields(validate_data)
         return validate_data
 
     def create(self, validated_data):
@@ -345,10 +300,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-        if 1 in validated_data['product_choice']:
-            if not (validated_data['width'] and validated_data['height'] and validated_data['length']
-                    and validated_data['volume'] and validated_data['weight']):
-                raise serializers.ValidationError({'general_product_size': ProductMsg.PRODUCT_SIZE_NOT_NULL})
 
         return product
 
@@ -668,10 +619,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
         validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
         validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        if validate_data.get('inventory_level_min', None) and validate_data.get('inventory_level_max', None):
-            if validate_data['inventory_level_min'] > validate_data['inventory_level_max']:
-                raise serializers.ValidationError(ProductMsg.WRONG_COMPARE)
-        validate_data = set_null_fields(validate_data)
         return validate_data
 
     def update(self, instance, validated_data):
@@ -695,10 +642,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-        if 1 in validated_data['product_choice']:
-            if not (validated_data['width'] and validated_data['height'] and validated_data['length']
-                    and validated_data['volume'] and validated_data['weight']):
-                raise serializers.ValidationError({'general_product_size': ProductMsg.PRODUCT_SIZE_NOT_NULL})
 
         return instance
 

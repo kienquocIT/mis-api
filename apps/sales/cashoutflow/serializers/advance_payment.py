@@ -112,7 +112,11 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'code': item.product.code,
                     'title': item.product.title,
-                    'type': item.product.general_information['product_type'],
+                    'type': {
+                        'id': item.product.general_product_type.id,
+                        'code': item.product.general_product_type.code,
+                        'title': item.product.general_product_type.title,
+                    }
                 }
 
             product_items.append(
