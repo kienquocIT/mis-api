@@ -42,7 +42,7 @@ class CompanyConfigDetail(APIView):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        label_code='hr', model_code='company', perm_code='edit',
+        label_code='company', model_code='company', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         try:
@@ -91,7 +91,7 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        label_code='hr', model_code='company', perm_code='create',
+        label_code='company', model_code='company', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -108,7 +108,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary='Detail Company')
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        label_code='hr', model_code='company', perm_code='view',
+        label_code='company', model_code='company', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -116,7 +116,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        label_code='hr', model_code='company', perm_code='edit',
+        label_code='company', model_code='company', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -124,7 +124,7 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     @swagger_auto_schema(operation_summary="Delete Company")
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True,
-        label_code='hr', model_code='company', perm_code='delete',
+        label_code='company', model_code='company', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -186,7 +186,7 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
     )
     @mask_view(
         login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
-        label_code='hr', model_code='company', perm_code='view',
+        label_code='company', model_code='company', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         if 'option' in kwargs:
