@@ -30,7 +30,7 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_company=True,
-        plan_code='base', app_code='role', perm_code='view',
+        label_code='hr', model_code='role', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -43,7 +43,7 @@ class RoleList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_company=True,
-        plan_code='base', app_code='role', perm_code='create',
+        label_code='hr', model_code='role', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -67,7 +67,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_company=True,
-        plan_code='base', app_code='role', perm_code='view',
+        label_code='hr', model_code='role', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -80,7 +80,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_company=True,
-        plan_code='base', app_code='role', perm_code='edit',
+        label_code='hr', model_code='role', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -92,7 +92,7 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_company=True,
-        plan_code='base', app_code='role', perm_code='delete',
+        label_code='hr', model_code='role', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

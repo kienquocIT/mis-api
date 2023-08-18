@@ -19,7 +19,7 @@ from apps.masterdata.saledata.models import (
 from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.hr.models import Employee
+from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.purchasing.models import PurchaseRequestProduct
@@ -598,3 +598,19 @@ def update_tenant_company_task_status():
             status.company_id = item.company_id
             status.save()
     print('update done.')
+
+
+def reset_permissions_after_remove_space_plan():
+    for obj in Employee.objects.all():
+        obj.permission_by_id = {}
+        obj.permissions_parsed = {}
+        obj.permission_by_configured = []
+        obj.save()
+
+    for obj in Role.objects.all():
+        obj.permission_by_id = {}
+        obj.permissions_parsed = {}
+        obj.permission_by_configured = []
+        obj.save()
+
+    print('Reset permissions after remove space and plan: done!')

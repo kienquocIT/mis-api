@@ -19,6 +19,9 @@ class CoreAbstractModel(SimpleAbstractModel):
     date_created = models.DateTimeField(default=timezone.now, editable=False)
     date_modified = models.DateTimeField(auto_now_add=True)
 
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
     def __str__(self):
         return f'{self.title} - {self.code}'
 
@@ -43,6 +46,12 @@ class CoreAbstractModel(SimpleAbstractModel):
 
 # employee, role, group  --> move to core models.py
 class TenantAbstractModel(SimpleAbstractModel):
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
+    def __str__(self):
+        return f'{self.title} - {self.code}'
+
     class Meta:
         abstract = True
         default_permissions = ()

@@ -8,6 +8,7 @@ from apps.core.attachments.models import Files
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
+from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
@@ -609,8 +610,11 @@ class ConfigDefaultData:
                         'name': 'To do', 'translate_name': 'Việc cần làm', 'order': 1, 'is_edit': False, 'task_kind': 1,
                         'task_color': '#abe3e5'
                     },
-                    {'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True, 'task_kind': 0,
-                        'task_color': '#f9aab7'},
+                    {
+                        'name': 'In Progress', 'translate_name': 'Đang làm', 'order': 2, 'is_edit': True,
+                        'task_kind': 0,
+                        'task_color': '#f9aab7'
+                    },
                     {
                         'name': 'Completed', 'translate_name': 'Đã hoàn thành', 'order': 3, 'is_edit': False,
                         'task_kind': 2, 'task_color': '#f7e368'
@@ -730,3 +734,33 @@ def destroy_files(sender, instance, **kwargs):  # pylint: disable=W0613
         api_app_code=instance.relate_app_code,
         media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
     )
+
+
+@receiver(post_save, sender=RuntimeViewer)
+def append_permission_viewer_runtime(sender, instance, created, **kwargs):
+    if created:
+        runtime = instance.runtime
+        emp = instance.employee
+        if runtime and emp:
+            doc_id = runtime.doc_id
+            app_obj = runtime.app
+            if app_obj and doc_id:
+                emp.append_permit_by_ids(
+                    label=app_obj.app_label,
+                    app=app_obj.code,
+                    perm='view',
+                    doc_id=str(doc_id),
+                )
+
+
+@receiver(post_save, sender=RuntimeAssignee)
+def event_new_assignee_runtime(sender, instance, created, **kwargs):
+    if created:
+        instance.runtime.append_viewer(instance.employee)
+
+
+@receiver(post_save, sender=Runtime)
+def event_new_runtime(sender, instance, created, **kwargs):
+    if created:
+        instance.append_viewer(instance.doc_employee_inherit)
+        instance.append_viewer(instance.doc_employee_created)

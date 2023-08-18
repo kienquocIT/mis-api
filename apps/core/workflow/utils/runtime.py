@@ -151,10 +151,12 @@ class RuntimeHandler:
         return None
 
     @classmethod
-    def create_runtime_obj(cls, tenant_id, company_id, doc_id, app_code) -> Runtime:
+    def create_runtime_obj(cls, tenant_id, company_id, doc_id, app_code, employee_created, employee_inherit) -> Runtime:
         """
         Call create runtime for Doc ID + App Code
         Args:
+            employee_inherit:
+            employee_created:
             tenant_id:
             company_id:
             doc_id:
@@ -171,7 +173,7 @@ class RuntimeHandler:
                 app_obj = application_model.objects.get(app_label=arr[0], code=arr[1])
                 if Runtime.objects.filter(
                         tenant_id=tenant_id, company_id=company_id,
-                        doc_id=doc_id, app=app_obj
+                        doc_id=doc_id, app=app_obj,
                 ).exists():
                     raise ValueError('Runtime Obj is exist')
 
@@ -191,7 +193,8 @@ class RuntimeHandler:
                     doc_params={},
                     flow=None,  # default don't use WF then check apply WF
                     stage_currents=None,
-                    doc_employee_created=cls.employee_created_obj(doc_obj=doc_obj),
+                    doc_employee_created=employee_created,
+                    doc_employee_inherit=employee_inherit,
                 )
                 # update runtime to doc
                 doc_obj.workflow_runtime = runtime_obj

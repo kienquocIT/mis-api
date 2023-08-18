@@ -19,11 +19,9 @@ class PermOption(TypedDict, total=False):
 class PermissionAbstractModel(models.Model):
     # by ID
     permission_by_id_sample = {
-        'hrm': {
-            'employee': {
-                'create': ['{id}'], 'view': ['{id}'], 'edit': ['{id}'], 'delete': ['{id}']
-            }
-        },
+        'hr.employee.view': [],
+        'hr.employee.edit': [],
+        '{app_label}.{model_code}.{perm_code}': ['{doc_id}'],
     }
     permission_by_id = models.JSONField(default=dict, verbose_name='Special Permissions with ID Doc')
 
@@ -33,10 +31,16 @@ class PermissionAbstractModel(models.Model):
             "id": "e388f95e-457b-4cf6-8689-0171e71fa58f",
             "app_id": "50348927-2c4f-4023-b638-445469c66953",
             "app_data": {
-                "id": "50348927-2c4f-4023-b638-445469c66953", "title": "Employee", "code": "employee"
+                "id": "50348927-2c4f-4023-b638-445469c66953",
+                "title": "Employee",
+                "code": "employee",
             },
             "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
-            "plan_data": {"id": "395eb68e-266f-45b9-b667-bd2086325522", "title": "HRM", "code": "hrm"},
+            "plan_data": {
+                "id": "395eb68e-266f-45b9-b667-bd2086325522",
+                "title": "HRM",
+                "code": "hrm",
+            },
             "create": True, "view": True, "edit": False, "delete": False, "range": "4",
         }
     ]
@@ -46,17 +50,11 @@ class PermissionAbstractModel(models.Model):
 
     # as sum data permissions
     permissions_parsed_sample = {
-        '': {
-            'hrm': {
-                'employee': {
-                    'create': {
-                        '4': {},
-                    }, 'view': {'4': {}}, 'edit': {'4': {}}, 'delete': {'4': {}}
-                }
-            },
-            'sale': {'account': {'view': {'4': {}}}}
+        'hr.employee.view': {
+                '4': {},
         },
-        '{space_code}': {},
+        'hr.employee.edit': {'4': {}},
+        '{app_label}.{model_code}.{perm_code}': {'{range_code}': {}},
     }
     permissions_parsed = models.JSONField(default=dict, verbose_name='Data was parsed')
 
@@ -67,6 +65,20 @@ class PermissionAbstractModel(models.Model):
         abstract = True
         default_permissions = ()
         permissions = ()
+
+    def append_permit_by_ids(self, app_label, model_code, perm_code, doc_id):
+        if app_label and model_code and perm_code:
+            key = f'{app_label}.{model_code}.{perm_code}'.lower()
+
+            permission_by_id = self.permission_by_id
+            if key not in permission_by_id:
+                permission_by_id[key] = []
+
+            permission_by_id[key] = list(set(permission_by_id[key] + [str(doc_id)]))
+
+            self.permission_by_id = permission_by_id
+            super().save(update_fields=['permission_by_id'])
+        return self
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -151,6 +163,9 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         unique_together = ('company', 'code', 'is_delete')
         default_permissions = ()
         permissions = ()
+
+    def __repr__(self):
+        return self.first_name + '. ' + self.last_name
 
     def __str__(self):
         return self.first_name + '. ' + self.last_name
