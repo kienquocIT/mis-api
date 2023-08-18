@@ -39,7 +39,7 @@ class OpportunityList(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code="sale", app_code="opportunity", perm_code="view",
+        label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
