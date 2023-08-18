@@ -351,13 +351,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     "title": obj.volume['title'],
                     "measure": obj.volume['measure'],
                     "value": obj.volume['value']
-                } if obj.volume else {},
+                } if 'id' in obj.volume else {},
                 "weight": {
                     "id": str(obj.weight['id']),
                     "title": obj.weight['title'],
                     "measure": obj.weight['measure'],
                     "value": obj.weight['value']
-                } if obj.weight else {}
+                } if 'id' in obj.weight else {}
             }
         }
         return result

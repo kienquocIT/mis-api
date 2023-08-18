@@ -614,3 +614,33 @@ def reset_permissions_after_remove_space_plan():
         obj.save()
 
     print('Reset permissions after remove space and plan: done!')
+
+
+def update_product_size_for_inventory():
+    for obj in Product.objects.all():
+        if 1 in obj.product_choice:
+            obj.height = 10
+            obj.length = 10
+            obj.width = 10
+            obj.volume = {
+                "id": "68305048-03e2-4936-8f4b-f876fcc6b14e",
+                "title": "volume",
+                "value": 1000.0,
+                "measure": "cm³"
+            }
+            obj.weight = {
+                "id": "4db94461-ba4b-4d5e-b9b1-1481ea38591d",
+                "title": "weight",
+                "value": 10.0,
+                "measure": "gram"
+
+            }
+            obj.save()
+        else:
+            obj.height = None
+            obj.length = None
+            obj.width = None
+            obj.volume = {}
+            obj.weight = {}
+            obj.save()
+        return True
