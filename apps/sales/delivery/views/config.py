@@ -55,7 +55,10 @@ class SaleOrderActiveDelivery(APIView):
         operation_summary='Call delivery at SaleOrder Detail',
         operation_description='"id" is Sale Order ID - Start delivery process of this'
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderpickingsub', perm_code='create',
+    )
     def post(self, request, *args, pk, **kwargs):
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()
         cls_m2m_product_model = DisperseModel(app_model='saleorder.SaleOrderProduct').get_model()
