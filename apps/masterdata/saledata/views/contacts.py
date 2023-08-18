@@ -145,7 +145,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='contact', perm_code='view',
+        label_code='saledata', model_code='contact', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -157,7 +157,7 @@ class ContactList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='contact', perm_code='create',
+        label_code='saledata', model_code='contact', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -180,7 +180,7 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail Contact')
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='contact', perm_code='view',
+        label_code='saledata', model_code='contact', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -188,10 +188,9 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update Contact", request_body=ContactUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='contact', perm_code='edit',
+        label_code='saledata', model_code='contact', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
-        print('UPDATE BODY: ', request.data)
         return self.update(request, *args, **kwargs)
 
 
@@ -207,7 +206,7 @@ class ContactListNotMapAccount(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='sale', app_code='contact', perm_code='view',
+        label_code='saledata', model_code='contact', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         kwargs.update({'account_name': None})

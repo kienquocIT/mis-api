@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from apps.core.base.models import Application
 from apps.core.hr.models import Role, RoleHolder, PlanRole, Employee
 from apps.shared import HRMsg
 from apps.shared.permissions import PermissionsUpdateSerializer, PermissionDetailSerializer
@@ -157,8 +156,10 @@ class RoleUpdateSerializer(PermissionsUpdateSerializer):
 
 
 class RoleDetailSerializer(PermissionDetailSerializer):
+    cls_of_plan = PlanRole
+    cls_key_filter = 'role'
+
     holder = serializers.SerializerMethodField()
-    plan_app = serializers.SerializerMethodField()
 
     class Meta:
         model = Role
@@ -167,41 +168,7 @@ class RoleDetailSerializer(PermissionDetailSerializer):
             'title',
             'abbreviation',
             'holder',
-            'plan_app',
         )
-
-    @classmethod
-    def get_plan_app(cls, obj):
-        result = []
-        role_plan = PlanRole.objects.select_related('plan').filter(role=obj)
-        if role_plan:
-            for emp_plan in role_plan:
-                app_list = []
-                if emp_plan.application and isinstance(emp_plan.application, list):
-                    application_list = Application.objects.filter(
-                        id__in=emp_plan.application
-                    ).values('id', 'title', 'code', 'app_label', 'option_permission')
-                    if application_list:
-                        for application in application_list:
-                            app_list.append(
-                                {
-                                    'id': application['id'],
-                                    'title': application['title'],
-                                    'code': application['code'],
-                                    'app_label': application['app_label'],
-                                    'option_permission': application['option_permission'],
-                                    'range_allow': Application.get_range_allow(application['option_permission']),
-                                }
-                            )
-                result.append(
-                    {
-                        'id': emp_plan.plan_id,
-                        'title': emp_plan.plan.title,
-                        'code': emp_plan.plan.code,
-                        'application': app_list
-                    }
-                )
-        return result
 
     @classmethod
     def get_holder(cls, obj):

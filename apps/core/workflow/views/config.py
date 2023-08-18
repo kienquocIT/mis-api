@@ -68,7 +68,7 @@ class WorkflowList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='workflow', perm_code='view',
+        label_code='workflow', model_code='workflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -80,7 +80,7 @@ class WorkflowList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='workflow', perm_code='create',
+        label_code='workflow', model_code='workflow', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -103,7 +103,7 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='workflow', perm_code='view',
+        label_code='workflow', model_code='workflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -115,7 +115,7 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='workflow', perm_code='edit',
+        label_code='workflow', model_code='workflow', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

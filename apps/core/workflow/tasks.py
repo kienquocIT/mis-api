@@ -38,6 +38,8 @@ def decorator_run_workflow(func):
                             runtime_obj = RuntimeHandler.create_runtime_obj(
                                 tenant_id=str(instance.tenant_id), company_id=str(instance.company_id),
                                 doc_id=str(instance.id), app_code=str(instance.__class__.get_model_code()),
+                                employee_created=instance.employee_created,
+                                employee_inherit=instance.employee_inherit,
                             )
                             call_task_background(
                                 call_new_runtime,

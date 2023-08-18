@@ -72,7 +72,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='employee', perm_code='view',
+        label_code='hr', model_code='employee', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -84,8 +84,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        # allow_admin_tenant=True, allow_admin_company=False,
-        plan_code='base', app_code='employee', perm_code='create',
+        label_code='hr', model_code='employee', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -120,7 +119,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='employee', perm_code='view',
+        label_code='hr', model_code='employee', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -133,7 +132,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='employee', perm_code='edit',
+        label_code='hr', model_code='employee', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -159,7 +158,7 @@ class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='employee', perm_code='view',
+        label_code='hr', model_code='employee', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -189,7 +188,7 @@ class EmployeeTenantList(BaseListMixin, generics.GenericAPIView):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='employee', perm_code='view',
+        label_code='hr', model_code='employee', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):

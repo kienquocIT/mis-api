@@ -99,12 +99,21 @@ class Runtime(SimpleAbstractModel):
         default=dict,
         verbose_name='Params parsed of doc runtime'
     )
+    doc_employee_inherit = models.ForeignKey(
+        'hr.Employee',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name="Employee inherit of Document",
+        help_text='Data from Runtime first time',
+        related_name='employee_inherit_of_runtime',
+    )
     doc_employee_created = models.ForeignKey(
         'hr.Employee',
         null=True,
         on_delete=models.SET_NULL,
         verbose_name="Employee created of Document",
         help_text='Data from Runtime first time',
+        related_name='employee_created_of_runtime',
     )
     flow = models.ForeignKey(
         Workflow,
@@ -155,11 +164,25 @@ class Runtime(SimpleAbstractModel):
         verbose_name='Doc Pined relate',
         related_name='runtime_of_doc_pined',
     )
+    # employee ID list was appended view permit
+    viewer_append = models.ManyToManyField(
+        'hr.Employee',
+        through='RuntimeViewer',
+        symmetrical=False,
+        related_name='employee_viewer_append',
+        verbose_name='All employee ID Viewer',
+        help_text='All employee ID was append view permit',
+    )
 
     def save(self, *args, **kwargs):
         if kwargs.get('force_insert', False) and self.app:
             self.app_code = f'{self.app.app_label}.{self.app.code}'
         super().save(*args, **kwargs)
+
+    def append_viewer(self, employee_obj):
+        if employee_obj:
+            RuntimeViewer.objects.get_or_create(runtime=self, employee=employee_obj, is_active=True)
+        return self
 
     @classmethod
     def check_document_in_progress(
@@ -576,3 +599,29 @@ class RuntimeLog(SimpleAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save(force_insert=kwargs.get('force_insert', False))
         super().save(*args, **kwargs)
+
+
+class RuntimeViewer(SimpleAbstractModel):
+    runtime = models.ForeignKey(
+        Runtime,
+        on_delete=models.CASCADE,
+        verbose_name='Runtime of Viewer',
+    )
+    employee = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        verbose_name='Employee of Viewer',
+    )
+    is_active = models.BooleanField(default=True)
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
+
+    class Meta:
+        verbose_name = 'Viewer Append of Runtime'
+        verbose_name_plural = 'Viewer Append of Runtime'
+        ordering = ('-date_created',)
+        unique_together = ('runtime', 'employee')
+        default_permissions = ()
+        permissions = ()

@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+from django.db import models
 from rest_framework import serializers
 
 from apps.core.base.models import SubscriptionPlan, Application
@@ -119,6 +120,8 @@ class PermissionController:
                         'id': str(obj.id),
                         'title': str(obj.title),
                         'code': str(obj.code).lower(),
+                        'model_code': str(obj.model_code).lower(),
+                        'app_label': str(obj.app_label).lower(),
                         'option_permission': obj.option_permission,
                     }
             else:
@@ -147,75 +150,88 @@ class PermissionController:
     def convert_permission_all_to_simple(cls, permissions_all: list[dict[str, any]]):  # pylint: disable=R0912
         result = {}
         for item in permissions_all:
-            plan_code = item['plan_data']['code']
-            if plan_code not in result:
-                result[plan_code] = {}
-
-            app_code = item['app_data']['code']
-            if app_code not in result[plan_code]:
-                result[plan_code][app_code] = {}
-
+            app_label = item['app_data']['app_label']
+            model_code = item['app_data']['model_code']
             allow_range = item['range']
+
+            prefix_key = f'{app_label}.{model_code}'
 
             is_create = item['create']
             if is_create is True:
-                if 'create' not in result[plan_code][app_code]:
-                    result[plan_code][app_code]['create'] = {
-                        allow_range: {},
-                    }
-                else:
-                    result[plan_code][app_code]['create'][allow_range] = {}
+                result[f'{prefix_key}.create'] = {allow_range: {}}
 
             is_view = item['view']
             if is_view is True:
-                if 'view' not in result[plan_code][app_code]:
-                    result[plan_code][app_code]['view'] = {
-                        allow_range: {},
-                    }
-                else:
-                    result[plan_code][app_code]['view'][allow_range] = {}
+                result[f'{prefix_key}.view'] = {allow_range: {}}
 
             is_edit = item['edit']
             if is_edit is True:
-                if 'edit' not in result[plan_code][app_code]:
-                    result[plan_code][app_code]['edit'] = {
-                        allow_range: {},
-                    }
-                else:
-                    result[plan_code][app_code]['edit'][allow_range] = {}
+                result[f'{prefix_key}.edit'] = {allow_range: {}}
 
             is_delete = item['delete']
             if is_delete is True:
-                if 'delete' not in result[plan_code][app_code]:
-                    result[plan_code][app_code]['delete'] = {
-                        allow_range: {},
-                    }
-                else:
-                    result[plan_code][app_code]['delete'][allow_range] = {}
+                result[f'{prefix_key}.delete'] = {allow_range: {}}
 
-        return {'': result}
+        return result
 
 
 class PermissionDetailSerializer(serializers.ModelSerializer):
+    cls_of_plan: models.Model = None
+    cls_key_filter: str = None
+
     class Meta:
         fields = ()
         abstract = True
 
     def __init__(self, *args, **kwargs):
         old_fields = self.Meta.fields
-        for key in ('permission_by_configured',):
+        for key in ('permission_by_configured', 'plan_app'):
             if key not in old_fields:
                 old_fields += (key,)
         setattr(self.Meta, 'fields', old_fields)
         super().__init__(*args, **kwargs)
 
     permissions_parsed = serializers.SerializerMethodField()
+    plan_app = serializers.SerializerMethodField()
 
     @classmethod
     def get_permissions_parsed(cls, obj):
         if obj.permissions_parsed:
             return obj.permissions_parsed[""]
         return {}
+
+    def get_plan_app(self, obj):
+        result = []
+        data_of_plan = self.cls_of_plan.objects.select_related('plan').filter(**{self.cls_key_filter: obj})
+        if data_of_plan:
+            for item in data_of_plan:
+                app_list = []
+                if item.application and isinstance(item.application, list):
+                    application_list = Application.objects.filter(
+                        id__in=item.application
+                    ).values('id', 'title', 'code', 'model_code', 'app_label', 'option_permission')
+                    if application_list:
+                        for application in application_list:
+                            app_list.append(
+                                {
+                                    'id': application['id'],
+                                    'title': application['title'],
+                                    'code': application['code'],
+                                    'model_code': application['model_code'],
+                                    'app_label': application['app_label'],
+                                    'option_permission': application['option_permission'],
+                                    'range_allow': Application.get_range_allow(application['option_permission']),
+                                }
+                            )
+                result.append(
+                    {
+                        'id': item.plan_id,
+                        'title': item.plan.title,
+                        'code': item.plan.code,
+                        'application': app_list
+                    }
+                )
+        return result
 
 
 class PermissionsUpdateSerializer(serializers.ModelSerializer):

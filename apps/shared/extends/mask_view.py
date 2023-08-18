@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from .controllers import ResponseController
 from .utils import TypeCheck
 from .models import DisperseModel
+from .exceptions import Empty200
 
 __all__ = ['mask_view']
 
@@ -22,9 +23,9 @@ __all__ = ['mask_view']
 class PermissionChecking:  # pylint: disable=R0902
     key_filter = 'employee_inherit_id'
 
-    def __init__(self, user_obj, employee_obj, plan_code, app_code, perm_code, space_code=''):
-        self.plan_code = plan_code.lower()
-        self.app_code = app_code.lower()
+    def __init__(self, user_obj, employee_obj, label_code, model_code, perm_code):
+        self.label_code = label_code.lower()
+        self.model_code = model_code.lower()
         self.perm_code = perm_code.lower()
 
         self.user_obj = user_obj
@@ -33,7 +34,7 @@ class PermissionChecking:  # pylint: disable=R0902
         self.permissions_parsed = getattr(self.employee_obj, 'permissions_parsed', {})
         if not isinstance(self.permissions_parsed, dict):
             self.permissions_parsed = {}
-        self.permissions_parsed = self.permissions_parsed.get(space_code, {})
+        self.permissions_parsed = self.permissions_parsed
 
         self.permission_by_id = getattr(self.employee_obj, 'permission_by_id', {})
         if not isinstance(self.permission_by_id, dict):
@@ -44,8 +45,8 @@ class PermissionChecking:  # pylint: disable=R0902
             {
                 'id': obj.id,
                 'title': obj.title,
-                'permissions_parsed': obj.permissions_parsed.get(space_code, {}) if obj.permissions_parsed else {},
-                'permission_by_id': obj.permission_by_id.get(space_code, {}) if obj.permission_by_id else {},
+                'permissions_parsed': obj.permissions_parsed if obj.permissions_parsed else {},
+                'permission_by_id': obj.permission_by_id if obj.permission_by_id else {},
             }
             for obj in self.role_objs
         ]
@@ -109,32 +110,22 @@ class PermissionChecking:  # pylint: disable=R0902
         return []
 
     def get_perm_configured(self, permissions_parsed) -> dict:
-        if self.plan_code in permissions_parsed:
-            if self.app_code in permissions_parsed[self.plan_code]:
-                if self.perm_code in permissions_parsed[self.plan_code][self.app_code]:
-                    perm = permissions_parsed[self.plan_code][self.app_code][self.perm_code]
-                    if perm and isinstance(perm, dict):
-                        return perm
+        key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
+        if key in permissions_parsed:
+            perm = permissions_parsed[key]
+            if perm and isinstance(perm, dict):
+                return perm
         return {}
 
     def get_perm_id(self, permission_by_id) -> list[str]:
-        if self.plan_code in permission_by_id:
-            if self.app_code in permission_by_id[self.plan_code]:
-                if self.perm_code in permission_by_id[self.plan_code][self.app_code]:
-                    perm = permission_by_id[self.plan_code][self.app_code][self.perm_code]
-                    if perm and isinstance(perm, list):
-                        return perm
+        key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
+        if key in permission_by_id:
+            perm = permission_by_id[key]
+            if perm and isinstance(perm, list):
+                return perm
         return []
 
-    def get_config_perm_of_role(self, role_data):
-        permissions_parsed = role_data['permissions_parsed']
-        if self.plan_code in permissions_parsed:
-            if self.app_code in permissions_parsed[self.plan_code]:
-                if self.perm_code in permissions_parsed[self.plan_code][self.app_code]:
-                    return permissions_parsed[self.plan_code][self.app_code][self.perm_code]
-        return {}
-
-    def get_config_perm(self):
+    def get_all_config_perm(self):
         result = {
             'employee': {
                 'configured': self.get_perm_configured(permissions_parsed=self.permissions_parsed),
@@ -152,6 +143,7 @@ class PermissionChecking:  # pylint: disable=R0902
                         'id': by_id,
                     }
                 )
+        # print('permissions: ', result, self.employee_obj_really.id, self.label_code, self.model_code, self.perm_code)
         return result
 
     def get_filter_perm(self, config_data):
@@ -231,10 +223,10 @@ class AuthPermission:
             perm_data = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=employee_obj,
-                plan_code=self.perm_data.get('plan_code', None),
-                app_code=self.perm_data.get('app_code', None),
+                label_code=self.perm_data.get('label_code', None),
+                model_code=self.perm_data.get('model_code', None),
                 perm_code=self.perm_data.get('perm_code', None),
-            ).get_config_perm()
+            ).get_all_config_perm()
 
             result_configured = {
                 **perm_data['employee']['configured'],
@@ -329,14 +321,14 @@ class AuthPermission:
             'get_filter_auth': kwargs.get('use_custom_get_filter_auth', False),
         }
 
-        plan_code = kwargs.get('plan_code', None)
-        app_code = kwargs.get('app_code', None)
+        model_code = kwargs.get('model_code', None)
         perm_code = kwargs.get('perm_code', None)
+        label_code = kwargs.get('label_code', None)
         self.perm_data = {
-            'plan_code': plan_code.lower() if plan_code else None,
-            'app_code': app_code.lower() if app_code else None,
+            'label_code': label_code.lower() if label_code else None,
+            'model_code': model_code.lower() if model_code else None,
             'perm_code': perm_code.lower() if perm_code else None,
-        } if plan_code and app_code and perm_code else {}
+        } if label_code and model_code and perm_code else {}
 
     def always_check(self, self_kwargs, login_require, employee_require, auth_require):
         # check pk in url is UUID
@@ -385,8 +377,8 @@ class AuthPermission:
             result_filter = PermissionChecking(
                 user_obj=self.user,
                 employee_obj=getattr(self.user, 'employee_current', None),
-                plan_code=self.perm_data.get('plan_code', None),
-                app_code=self.perm_data.get('app_code', None),
+                label_code=self.perm_data.get('label_code', None),
+                model_code=self.perm_data.get('model_code', None),
                 perm_code=self.perm_data.get('perm_code', None),
             ).get_filter_perm(config_data)
             if not result_filter:
@@ -426,11 +418,11 @@ def mask_view(**parent_kwargs):
             # skip with user is skip_admin
             allow_admin_company: bool = parent_kwargs.get('allow_admin_company', False)
 
-            # plan code for checking
-            plan_code: str = parent_kwargs.get('plan_code', None)
+            # label code for checking
+            label_code: str = parent_kwargs.get('label_code', None)
 
             # app code for checking
-            app_code: str = parent_kwargs.get('app_code', None)
+            model_code: str = parent_kwargs.get('model_code', None)
 
             # perm code for checking
             perm_code: str = parent_kwargs.get('perm_code', None)
@@ -441,7 +433,9 @@ def mask_view(**parent_kwargs):
                 request=request,
                 allow_admin_tenant=allow_admin_tenant, allow_admin_company=allow_admin_company,
                 use_custom_get_filter_auth=use_custom_get_filter_auth,
-                plan_code=plan_code, app_code=app_code, perm_code=perm_code,
+                label_code=label_code,
+                model_code=model_code,
+                perm_code=perm_code,
             )
             self.cls_auth_check = cls_auth_check
 
@@ -494,6 +488,8 @@ def mask_view(**parent_kwargs):
                 return ResponseController.unauthorized_401(msg=str(err.detail))
             except rest_framework.exceptions.NotFound:
                 return ResponseController.notfound_404()
+            except Empty200:
+                return ResponseController.success_200(data=[])
             except Exception as err:
                 if settings.DEBUG is True:
                     print(f'Error on line {sys.exc_info()[-1].tb_lineno} with {str(err)}')
