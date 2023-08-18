@@ -48,7 +48,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     queryset = Employee.objects
     search_fields = ["search_content"]
     filterset_fields = {
-        "role__id": ["exact", "in"]
+        "role__id": ["exact", "in"],
+        "id": ["exact", "in"],
+        "group__first_manager__id": ["exact"],
     }
 
     serializer_list = EmployeeListSerializer
