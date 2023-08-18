@@ -71,7 +71,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             [
                 'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'status',
                 'advance_value', 'to_payment', 'return_value', 'remain_value', 'money_gave', 'beneficiary',
-                'sale_order_mapped', 'quotation_mapped', 'opportunity_mapped', 'product_items'
+                'sale_order_mapped', 'quotation_mapped', 'opportunity_mapped', 'product_items', 'opportunity_id',
             ],
             check_sum_second=True,
         )

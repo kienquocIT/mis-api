@@ -50,7 +50,7 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'advance_payment'
+            'advance_payment', 'beneficiary'
         ).prefetch_related(
             'advance_payment__return_advance_payment__advance_payment',
             'advance_payment__return_advance_payment__return_advance'
