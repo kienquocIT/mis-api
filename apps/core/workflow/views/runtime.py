@@ -32,7 +32,7 @@ class RuntimeListView(BaseListMixin):
     @swagger_auto_schema()
     @mask_view(
         login_require=True, auth_require=True,
-        plan_code='base', app_code='workflow', perm_code='view',
+        label_code='workflow', model_code='workflow', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         params = request.query_params

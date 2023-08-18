@@ -1,6 +1,8 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin
+from rest_framework import exceptions
+
+from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more
 from apps.core.company.models import CompanyUserEmployee
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
@@ -30,19 +32,20 @@ class UserList(AccountListMixin, AccountCreateMixin):
     search_fields = ('full_name_search', 'email', 'username')
     filterset_fields = ('email', 'username', 'first_name', 'last_name')
 
-    def get_filter_auth(self) -> dict:
-        return {
-            'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
-        }
+    def filter_append_manual(self):
+        if self.request.user.company_current_id:
+            return {
+                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
+            }
+        raise exceptions_more.Empty200
 
     @swagger_auto_schema(
         operation_summary="User list",
     )
     @mask_view(
         login_require=True, auth_require=True,
-        use_custom_get_filter_auth=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='view',
+        label_code='account', model_code='user', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -51,7 +54,7 @@ class UserList(AccountListMixin, AccountCreateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='create',
+        label_code='account', model_code='user', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -70,14 +73,18 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     serializer_detail = UserDetailSerializer
     serializer_update = UserUpdateSerializer
 
-    def get_queryset(self):
-        return super().get_queryset().select_related('tenant_current', 'company_current').prefetch_related('companies')
+    def filter_append_manual(self):
+        if self.request.user.company_current_id:
+            return {
+                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
+            }
+        raise exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Detail User')
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='view',
+        label_code='account', model_code='user', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -86,7 +93,7 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='edit',
+        label_code='account', model_code='user', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -95,7 +102,7 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='delete',
+        label_code='account', model_code='user', perm_code='delete',
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -117,7 +124,7 @@ class UserDetailResetPassword(BaseUpdateMixin):
     @mask_view(
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
-        plan_code='base', app_code='account', perm_code='edit',
+        label_code='account', model_code='user', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

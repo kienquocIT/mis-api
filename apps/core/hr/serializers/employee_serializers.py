@@ -4,7 +4,6 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder
-from apps.core.base.models import Application
 from apps.shared import HRMsg, AccountMsg, AttMsg
 from apps.shared.permissions import PermissionDetailSerializer, PermissionsUpdateSerializer
 
@@ -92,6 +91,9 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
 
 class EmployeeDetailSerializer(PermissionDetailSerializer):
+    cls_of_plan = PlanEmployee
+    cls_key_filter = 'employee'
+
     full_name = serializers.SerializerMethodField()
     plan_app = serializers.SerializerMethodField()
     user = serializers.SerializerMethodField()
@@ -121,41 +123,6 @@ class EmployeeDetailSerializer(PermissionDetailSerializer):
     @classmethod
     def get_full_name(cls, obj):
         return obj.get_full_name(2)
-
-    @classmethod
-    def get_plan_app(cls, obj):
-        result = []
-        employee_plan = PlanEmployee.objects.select_related('plan').filter(
-            employee=obj
-        )
-        if employee_plan:
-            for emp_plan in employee_plan:
-                app_list = []
-                if emp_plan.application and isinstance(emp_plan.application, list):
-                    application_list = Application.objects.filter(
-                        id__in=emp_plan.application
-                    ).values('id', 'title', 'code', 'app_label', 'option_permission')
-                    if application_list:
-                        for application in application_list:
-                            app_list.append(
-                                {
-                                    'id': application['id'],
-                                    'title': application['title'],
-                                    'code': application['code'],
-                                    'app_label': application['app_label'],
-                                    'option_permission': application['option_permission'],
-                                    'range_allow': Application.get_range_allow(application['option_permission']),
-                                }
-                            )
-                result.append(
-                    {
-                        'id': emp_plan.plan_id,
-                        'title': emp_plan.plan.title,
-                        'code': emp_plan.plan.code,
-                        'application': app_list
-                    }
-                )
-        return result
 
     @classmethod
     def get_user(cls, obj):
