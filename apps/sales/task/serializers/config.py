@@ -71,20 +71,15 @@ class TaskConfigUpdateSerializer(serializers.ModelSerializer):
             dict_status = {}
             for item in lst_status:
                 if item['id']:
-                    if 'name' in item:
-                        temp = OpportunityTaskStatus(
+                    has_status.append(
+                        OpportunityTaskStatus(
                             id=str(item['id']),
                             title=item['name'],
                             translate_name=item['translate_name'],
                             order=item['order'],
                             task_color=item['task_color'],
                         )
-                    else:
-                        temp = OpportunityTaskStatus(
-                            id=str(item['id']),
-                            task_color=item['task_color'],
-                        )
-                    has_status.append(temp)
+                    )
                     dict_status[item['id']] = item
                 else:
                     new_status.append(

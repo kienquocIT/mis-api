@@ -47,6 +47,9 @@ class EmployeeUploadAvatar(APIView):
 class EmployeeList(BaseListMixin, BaseCreateMixin):
     queryset = Employee.objects
     search_fields = ["search_content"]
+    filterset_fields = {
+        "role__id": ["exact", "in"]
+    }
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
