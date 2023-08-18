@@ -118,6 +118,12 @@ class MasterDataAbstractModel(SimpleAbstractModel):
     Abstract model for table data that had used by all user of company
     """
 
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
+    def __str__(self):
+        return f'{self.title} - {self.code}'
+
     # object_data = MasterDataManager()
 
     class Meta:
@@ -168,6 +174,12 @@ class DataAbstractModel(SimpleAbstractModel):
     """
     Abstract model for table data that have a lot flag for all case.
     """
+
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
+    def __str__(self):
+        return f'{self.title} - {self.code}'
 
     @classmethod
     def get_model_code(cls):
@@ -231,8 +243,9 @@ class DataAbstractModel(SimpleAbstractModel):
         related_name='%(app_label)s_%(class)s_process',
     )
     system_status = models.SmallIntegerField(
-        choices=SYSTEM_STATUS,
-        default=0
+        # choices=SYSTEM_STATUS,
+        default=0,
+        help_text='choices= ' + str(SYSTEM_STATUS),
     )
     workflow_runtime = models.ForeignKey(
         'workflow.Runtime',

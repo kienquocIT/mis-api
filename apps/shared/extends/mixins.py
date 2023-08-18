@@ -455,7 +455,10 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         Returns:
 
         """
-        return self.check_perm_for_list(self.setup_hidden(self.list_hidden_field, user))
+        return {
+            **self.check_perm_for_list(self.setup_hidden(self.list_hidden_field, user)),
+            **self.filter_append_manual(),  # manual filter override function filter_append_manual() : dict
+        }
 
     def setup_retrieve_field_hidden(self, user) -> dict:
         """
@@ -466,7 +469,10 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         Returns:
 
         """
-        return self.setup_hidden(self.retrieve_hidden_field, user)
+        return {
+            **self.setup_hidden(self.retrieve_hidden_field, user),
+            **self.filter_append_manual(),  # manual filter override function filter_append_manual() : dict
+        }
 
     # Serializer Class for GET LIST
     serializer_list: serializers.Serializer = None
@@ -562,6 +568,9 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         if tmp and callable(tmp):
             return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
         raise ValueError('Serializer update attribute in view must be implement.')
+
+    def filter_append_manual(self) -> dict:
+        return {}
 
     def get_object(self):
         """

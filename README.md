@@ -578,4 +578,18 @@ III. Kiểm tra quyền
 > 4. Lấy điều kiện quyền
 > 5. Kiểm tra điều kiện quyền với OBJ.employee_created || OBJ.employee_inherit
 
+IV. Thiết lập view
+> Thêm cấu hình vào mask_view()
+> 1. login_require: Bật bắt buộc có Authenticated
+> 2. auth_require: Bật kiểm tra quyền
+>    1. label_code: mã của app (tên app) 
+>    2. model_code: mã của modal (tên model)
+>    3. perm_code: mã của quyền (view, create, edit, delete)
+> 4. employee_require: Bật kiểm tra Employee liên kết với người dùng
+> 5. allow_admin_tenant: Bật bỏ qua kiểm tra quyền với ADMIN TENANT
+> 5. allow_admin_company: Bật bỏ qua kiểm tra quyền với ADMIN COMPANY
+> 6. use_custom_get_filter_auth: Bật sử dụng hàm get_filter_auth() thay thế cho phân rã quyền mặc định
+>    1. Override lại hàm get_filter_auth() trong class view --> trả về dict / raise lỗi 
+> 7. 
+
 ---
