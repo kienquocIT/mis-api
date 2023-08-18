@@ -33,11 +33,18 @@ class CommonCreateUpdateProduct:
             volume_id = data_measure['volume']['id']
         if len(data_measure['weight']) > 0:
             weight_id = data_measure['weight']['id']
-        data_bulk = [
-            ProductMeasurements(product=product, measure_id=volume_id, value=data_measure['volume']['value']),
-            ProductMeasurements(product=product, measure_id=weight_id, value=data_measure['weight']['value'])
-        ]
-        ProductMeasurements.objects.bulk_create(data_bulk)
+        if volume_id and 'value' in data_measure['volume']:
+            ProductMeasurements.objects.create(
+                product=product,
+                measure_id=volume_id,
+                value=data_measure['volume']['value']
+            )
+        if weight_id and 'value' in data_measure['weight']:
+            ProductMeasurements.objects.create(
+                product=product,
+                measure_id=weight_id,
+                value=data_measure['weight']['value']
+            )
 
     @classmethod
     def update_price_list(cls, product, data_price, validated_data):

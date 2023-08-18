@@ -49,9 +49,9 @@ class ProductListSerializer(serializers.ModelSerializer):
 
 def sub_validate_volume_obj(initial_data, validate_data):
     volume_obj = None
-    if initial_data.get('volume_id', None) and initial_data.get('weight_id', None):
+    if initial_data.get('volume_id', None):
         volume_obj = BaseItemUnit.objects.filter(id=initial_data['volume_id'])
-    if volume_obj.count() == 1 and validate_data.get('volume', None):
+    if volume_obj and validate_data.get('volume', None):
         volume_obj = volume_obj.first()
         return {
             'id': str(volume_obj.id),
@@ -64,9 +64,9 @@ def sub_validate_volume_obj(initial_data, validate_data):
 
 def sub_validate_weight_obj(initial_data, validate_data):
     weight_obj = None
-    if initial_data.get('volume_id', None) and initial_data.get('weight_id', None):
+    if initial_data.get('weight_id', None):
         weight_obj = BaseItemUnit.objects.filter(id=initial_data['weight_id'])
-    if weight_obj.count() == 1 and validate_data.get('weight', None):
+    if weight_obj and validate_data.get('weight', None):
         weight_obj = weight_obj.first()
         return {
             'id': str(weight_obj.id),
@@ -142,6 +142,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
+    volume = serializers.FloatField(required=False, allow_null=True)
+    weight = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -491,6 +493,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
+    volume = serializers.FloatField(required=False, allow_null=True)
+    weight = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
