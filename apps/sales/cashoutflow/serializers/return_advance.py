@@ -175,7 +175,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
                         'code': item.advance_payment_cost.product.code,
                         'title': item.advance_payment_cost.product.title
                     },
-                    'product_type': item.advance_payment_cost.product.general_information['product_type']['title'],
+                    'product_type': item.advance_payment_cost.product.general_product_type.title,
                     'remain_total': remain_total,
                     'return_price': item.return_value,
                 }

@@ -638,11 +638,11 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'code': item.product.code,
                     'product_choice': item.product.product_choice,
                     'uom': {
-                        'id': item.product.sale_information['default_uom']['id'],
-                        'title': item.product.sale_information['default_uom']['title']
+                        'id': item.product.sale_default_uom.id,
+                        'title': item.product.sale_default_uom.title
                     },
-                    'uom_group': item.product.general_information['uom_group']['title'],
-                    'tax_code': item.product.sale_information['tax_code']['id'],
+                    'uom_group': item.product.general_uom_group.title,
+                    'tax_code': item.product.sale_tax.id,
                 }
             }
             for item in so_product
