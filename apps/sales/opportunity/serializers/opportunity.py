@@ -78,7 +78,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
-    sale_person = serializers.UUIDField()
+    employee_inherit = serializers.UUIDField()
 
     class Meta:
         model = Opportunity
@@ -86,7 +86,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
-            'sale_person',
+            'employee_inherit',
             'open_date',
         )
 
@@ -102,7 +102,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_employee_inherit(cls, value):
         try:
             return Employee.objects.get_current(
                 fill__tenant=True,
@@ -481,7 +481,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
     title = serializers.CharField(required=False)
     is_input_rate = serializers.BooleanField(required=False)
-    sale_person = serializers.UUIDField(required=False)
+    employee_inherit = serializers.UUIDField(required=False)
     opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
@@ -493,7 +493,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
-            'sale_person',
+            'employee_inherit',
             'budget_value',
             'open_date',
             'is_input_rate',
@@ -589,7 +589,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         return value
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_employee_inherit(cls, value):
         try:
             return Employee.objects.get_current(
                 fill__tenant=True,
@@ -701,11 +701,11 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
             }
         return {}
 

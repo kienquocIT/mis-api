@@ -164,6 +164,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
                 'id': obj.beneficiary_id,
                 'name': obj.beneficiary.get_full_name(),
             }
+        return {}
 
     @classmethod
     def get_cost(cls, obj):

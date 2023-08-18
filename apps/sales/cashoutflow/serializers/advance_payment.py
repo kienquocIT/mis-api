@@ -180,9 +180,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     def get_opportunity_id(cls, obj):
         if obj.opportunity_mapped:
             return obj.opportunity_mapped_id
-        elif obj.quotation_mapped:
+        if obj.quotation_mapped:
             return obj.quotation_mapped.opportunity_id
-        elif obj.sale_order_mapped:
+        if obj.sale_order_mapped:
             return obj.sale_order_mapped.opportunity_id
         return None
 
