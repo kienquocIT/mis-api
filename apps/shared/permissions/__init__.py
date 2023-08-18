@@ -147,6 +147,16 @@ class PermissionController:
         return []
 
     @classmethod
+    def push_range_to_key(cls, result, key, allow_range):
+        if key in result:
+            if allow_range not in result[key]:
+                result[key][allow_range] = {}
+        else:
+            result[key] = {allow_range: {}}
+
+        return result
+
+    @classmethod
     def convert_permission_all_to_simple(cls, permissions_all: list[dict[str, any]]):  # pylint: disable=R0912
         result = {}
         for item in permissions_all:
@@ -158,19 +168,23 @@ class PermissionController:
 
             is_create = item['create']
             if is_create is True:
-                result[f'{prefix_key}.create'] = {allow_range: {}}
+                key = f'{prefix_key}.create'
+                cls.push_range_to_key(result, key, allow_range)
 
             is_view = item['view']
             if is_view is True:
-                result[f'{prefix_key}.view'] = {allow_range: {}}
+                key = f'{prefix_key}.view'
+                cls.push_range_to_key(result, key, allow_range)
 
             is_edit = item['edit']
             if is_edit is True:
-                result[f'{prefix_key}.edit'] = {allow_range: {}}
+                key = f'{prefix_key}.edit'
+                cls.push_range_to_key(result, key, allow_range)
 
             is_delete = item['delete']
             if is_delete is True:
-                result[f'{prefix_key}.delete'] = {allow_range: {}}
+                key = f'{prefix_key}.delete'
+                cls.push_range_to_key(result, key, allow_range)
 
         return result
 
