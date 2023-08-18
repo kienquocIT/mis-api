@@ -36,7 +36,11 @@ class PurchaseQuotationListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.supplier_mapped_id,
                 'code': obj.supplier_mapped.code,
-                'name': obj.supplier_mapped.name
+                'name': obj.supplier_mapped.name,
+                'owner': {
+                    'id': obj.supplier_mapped.owner_id,
+                    'fullname': obj.supplier_mapped.owner.fullname
+                } if obj.supplier_mapped.owner else {}
             }
         return {}
 
@@ -213,10 +217,8 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_quotation(cls, obj):
-        if obj.purchase_quotation:
-            return {
-                'id': obj.purchase_quotation_id,
-                'title': obj.purchase_quotation.title,
-                'code': obj.purchase_quotation.code,
-            }
-        return {}
+        return {
+            'id': obj.purchase_quotation_id,
+            'title': obj.purchase_quotation.title,
+            'code': obj.purchase_quotation.code,
+        } if obj.purchase_quotation else {}
