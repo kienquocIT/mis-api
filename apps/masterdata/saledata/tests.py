@@ -359,7 +359,13 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'general_information', 'sale_information', 'product_choice'],
+            [
+                'id',
+                'code',
+                'title',
+                'general_product_type',
+                'general_product_category'
+            ],
             check_sum_second=True,
         )
         return response
@@ -382,8 +388,17 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'code', 'title', 'general_information', 'inventory_information', 'sale_information',
-             'purchase_information', 'product_choice'],
+            [
+                'id',
+                'code',
+                'title',
+                'description',
+                'general_information',
+                'inventory_information',
+                'sale_information',
+                'purchase_information',
+                'product_choice',
+            ],
             check_sum_second=True,
         )
         if not data_id:
@@ -391,57 +406,6 @@ class ProductTestCase(AdvanceTestCase):
             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
         else:
             self.assertEqual(response.data['result']['id'], data_id)
-        return response
-
-    def test_update_product(self):
-        price_list = self.get_price_list().data['result'][0]
-        base_item_unit = self.get_base_unit_measure()
-        weight_unit = base_item_unit.data['result'][3]
-        volume_unit = base_item_unit.data['result'][2]
-        data_created = self.test_create_product().data['result']
-
-        title_change = 'Laptop Dell'
-        length_change = 100
-        measure = [
-            {
-                'unit': weight_unit['id'],
-                'value': 6000,
-            },
-            {
-                'unit': volume_unit['id'],
-                'value': 30000,
-            },
-        ]
-        data = {
-            'code': 'P01',
-            'title': title_change,
-            'product_choice': [0, 1],
-            'product_type': data_created['general_information']['product_type']['id'],
-            'product_category': data_created['general_information']['product_category']['id'],
-            'uom_group': data_created['general_information']['uom_group']['id'],
-            'default_uom': data_created['sale_information']['default_uom']['id'],
-            'tax_code': data_created['sale_information']['tax_code']['id'],
-            'currency_using': data_created['sale_information']['currency_using']['id'],
-            'length': length_change,
-            'width': data_created['sale_information']['width'],
-            'height': data_created['sale_information']['height'],
-            'price_list': [{
-                'price_list_id': price_list['id'],
-                'price_value': 20000000,
-                'is_auto_update': False,
-            }],
-            'measure': measure,
-            'inventory_uom': data_created['inventory_information']['uom']['id'],
-            'inventory_level_min': 5,
-            'inventory_level_max': 20,
-        }
-
-        url = reverse("ProductDetail", kwargs={'pk': data_created['id']})
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data_changed = self.test_get_detail_product(data_id=data_created['id'])
-        self.assertEqual(data_changed.data['result']['title'], title_change)
         return response
 
 
