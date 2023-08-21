@@ -242,7 +242,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                     "sale_order_product": None,
                     "product": product.data['result']['id'],
                     "description": "",
-                    "uom": product.data['result']['sale_default_uom']['id'],
+                    "uom": product.data['result'].sale_default_uom['id'],
                     "quantity": 1,
                     "unit_price": 20000000,
                     "tax": product.data['result'].sale_tax['id'],
