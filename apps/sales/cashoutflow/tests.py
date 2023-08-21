@@ -207,7 +207,7 @@ class PaymentTestCase(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
-    def create_sale_order(self):
+    def test_create_sale_order(self):
         data_salutation = {  # noqa
             "code": "S01ORDER",
             "title": "MrORDER",
