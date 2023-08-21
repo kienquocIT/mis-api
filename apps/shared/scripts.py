@@ -642,3 +642,10 @@ def update_employee_inherit_opportunity():
         opp.employee_inherit = opp.sale_person
         opp.save()
     print('!Done')
+
+
+def update_uom_group_uom_reference():
+    for uom in UnitOfMeasure.objects.filter(is_referenced_unit=True):
+        uom.group.uom_reference = uom
+        uom.group.save(update_fields=['uom_reference'])
+    print('update done.')

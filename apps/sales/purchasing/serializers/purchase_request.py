@@ -387,30 +387,39 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_request(cls, obj):
-        if obj.purchase_request:
-            return {
-                'id': obj.purchase_request_id,
-                'title': obj.purchase_request.title,
-                'code': obj.purchase_request.code,
-            }
-        return {}
+        return {
+            'id': obj.purchase_request_id,
+            'title': obj.purchase_request.title,
+            'code': obj.purchase_request.code,
+        } if obj.purchase_request else {}
 
     @classmethod
     def get_product(cls, obj):
-        if obj.product:
-            return {
-                'id': obj.product_id,
-                'title': obj.product.title,
-                'code': obj.product.code,
-            }
-        return {}
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+        } if obj.product else {}
 
     @classmethod
     def get_uom(cls, obj):
-        if obj.uom:
-            return {
-                'id': obj.uom_id,
-                'title': obj.uom.title,
-                'code': obj.uom.code,
-            }
-        return {}
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'uom_group': {
+                'id': obj.uom.group_id,
+                'title': obj.uom.group.title,
+                'code': obj.uom.group.code,
+                'uom_reference': {
+                    'id': obj.uom.group.uom_reference_id,
+                    'title': obj.uom.group.uom_reference.title,
+                    'code': obj.uom.group.uom_reference.code,
+                    'ratio': obj.uom.ratio,
+                    'rounding': obj.uom.rounding,
+                },
+            },
+            'ratio': obj.uom.ratio,
+            'rounding': obj.uom.rounding,
+            'is_referenced_unit': obj.uom.is_referenced_unit,
+        } if obj.uom else {}

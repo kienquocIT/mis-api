@@ -46,6 +46,14 @@ class ExpenseType(MasterDataAbstractModel):
 
 class UnitOfMeasureGroup(MasterDataAbstractModel):
     is_default = models.BooleanField(default=False)
+    uom_reference = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="uom reference",
+        help_text="unit of measure in this group which is reference",
+        related_name="uom_group_uom_reference",
+        null=True
+    )
 
     class Meta:
         verbose_name = 'UnitOfMeasureGroup'

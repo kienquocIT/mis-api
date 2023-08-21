@@ -318,6 +318,11 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         uom = UnitOfMeasure.objects.create(**validated_data)
+        # update uom_reference of group if this uom.is_referenced_unit is True
+        if uom:
+            if uom.is_referenced_unit is True and uom.group:
+                uom.group.uom_reference = uom
+                uom.group.save(update_fields=['uom_reference'])
         return uom
 
 
@@ -423,6 +428,10 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        # update uom_reference of group if this uom.is_referenced_unit is True
+        if instance.is_referenced_unit is True and instance.group:
+            instance.group.uom_reference = instance
+            instance.group.save(update_fields=['uom_reference'])
         return instance
 
 
