@@ -264,9 +264,6 @@ class ProductTestCase(AdvanceTestCase):
     def test_create_product(self):
         price_list = self.get_price_list().data['result'][0]
         tax_code = self.create_new_tax()
-        base_item_unit = self.get_base_unit_measure()
-        weight_unit = base_item_unit.data['result'][3]
-        volume_unit = base_item_unit.data['result'][2]
         currency = self.get_currency().data['result'][3]
         product_type = self.create_product_type().data['result']  # noqa
         product_category = self.create_product_category().data['result']
@@ -281,18 +278,8 @@ class ProductTestCase(AdvanceTestCase):
             'length': 50,
             'width': 30,
             'height': 10,
-            'volume': {
-                'id': volume_unit['id'],
-                'title': volume_unit['title'],
-                'measure': volume_unit['measure'],
-                'value': 15000
-            },
-            'weight': {
-                'id': weight_unit['id'],
-                'title': weight_unit['title'],
-                'measure': weight_unit['measure'],
-                'value': 200
-            },
+            'volume': 15000,
+            'weight':  200,
             # sale
             'sale_default_uom': unit_of_measure.data['result']['id'],
             'sale_tax': tax_code.data['result']['id'],
