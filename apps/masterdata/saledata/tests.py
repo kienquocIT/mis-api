@@ -72,8 +72,10 @@ class AccountTestCase(AdvanceTestCase):
             [
                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
                 'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+                'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
+                'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
+                'account_type_selection', 'bank_accounts_information', 'credit_cards_information',
+                'annual_revenue', 'price_list_mapped',
                 'workflow_runtime_id', 'system_status'
             ],
             check_sum_second=True,
@@ -111,472 +113,296 @@ class AccountTestCase(AdvanceTestCase):
         return response
 
 
-# class ProductTestCase(AdvanceTestCase):
-#     url = reverse("ProductList")
-#
-#     def setUp(self):
-#         self.maxDiff = None
-#         self.client = APIClient()
-#
-#         self.authenticated()
-#
-#     def create_product_type(self):
-#         url = reverse('ProductTypeList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'San pham 1',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def test_get_product_type(self, product_type_id=None):
-#         if not product_type_id:
-#             # change to .data['result']['id'] after change data returned create_product_type
-#             product_type_id = self.create_product_type().data['result']['id']
-#         url = reverse('ProductTypeDetail', kwargs={'pk': product_type_id})
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'description', 'is_default']
-#         )
-#         return response
-#
-#     def create_product_category(self):
-#         url = reverse('ProductCategoryList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Hardware',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def create_uom_group(self):
-#         url = reverse('UnitOfMeasureGroupList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Time',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def create_uom(self):
-#         data_uom_gr = self.create_uom_group()
-#         url = reverse('UnitOfMeasureList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 "code": "MIN",
-#                 "title": "minute",
-#                 "group": data_uom_gr.data['result']['id'],
-#                 "ratio": 1,
-#                 "rounding": 5,
-#                 "is_referenced_unit": True
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response, data_uom_gr
-#
-#     def get_base_unit_measure(self):
-#         url = reverse('BaseItemUnitList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_new_tax_category(self):
-#         url_tax_category = reverse("TaxCategoryList")
-#         data = {
-#             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
-#             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
-#         }
-#         response = self.client.post(url_tax_category, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'description', 'is_default'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def create_new_tax(self):
-#         url_tax = reverse("TaxList")
-#         tax_category = self.create_new_tax_category()
-#         data = {
-#             "title": "Thuế bán hành VAT-10%",
-#             "code": "VAT-10",
-#             "rate": 10,
-#             "category": tax_category.data['result']['id'],
-#             "type": 0
-#         }
-#         response = self.client.post(url_tax, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'code', 'rate', 'category', 'type'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def get_price_list(self):
-#         url = reverse('PriceList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def get_currency(self):
-#         url = reverse('CurrencyList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def test_create_product(self):
-#         price_list = self.get_price_list().data['result'][0]
-#         tax_code = self.create_new_tax()
-#         base_item_unit = self.get_base_unit_measure()
-#         weight_unit = base_item_unit.data['result'][3]
-#         volume_unit = base_item_unit.data['result'][2]
-#         currency = self.get_currency().data['result'][3]
-#         product_type = self.create_product_type().data['result']  # noqa
-#         product_category = self.create_product_category().data['result']
-#         unit_of_measure, uom_group = self.create_uom()
-#         data = {
-#             "code": "P01",
-#             "title": "Laptop HP HLVVL6R",
-#             'product_choice': [0, 1, 2],
-#             'product_type': product_type['id'],
-#             'product_category': product_category['id'],
-#             'uom_group': uom_group.data['result']['id'],
-#             'default_uom': unit_of_measure.data['result']['id'],
-#             'tax_code': tax_code.data['result']['id'],
-#             'currency_using': currency['id'],
-#             'length': 50,
-#             'width': 30,
-#             'height': 10,
-#             'price_list': [{
-#                 'price_list_id': price_list['id'],
-#                 'price_value': 20000000,
-#                 'is_auto_update': False,
-#             }],
-#             'measure': [
-#                 {
-#                     'unit': weight_unit['id'],
-#                     'value': 5000,
-#                 },
-#                 {
-#                     'unit': volume_unit['id'],
-#                     'value': 15000,
-#                 },
-#             ],
-#             'inventory_uom': unit_of_measure.data['result']['id'],
-#             'inventory_level_min': 5,
-#             'inventory_level_max': 20,
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'code', 'title', 'general_information', 'sale_information', 'inventory_information',
-#              'purchase_information', 'product_choice'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_create_product_missing_code(self):
-#         product_type = self.create_product_type().data['result']  # noqa
-#         product_category = self.create_product_category().data['result']
-#         unit_of_measure, uom_group = self.create_uom()
-#         data1 = {
-#             "title": "Laptop HP HLVVL6R",
-#             'product_choice': [],
-#             'product_type': product_type['id'],
-#             'product_category': product_category['id'],
-#             'uom_group': uom_group.data['result']['id']
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertResponseList(
-#             response1,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response1.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response1.data['errors'],
-#             ['code'],
-#             check_sum_second=True,
-#         )
-#
-#         return None
-#
-#     def test_create_product_missing_title(self):
-#         data = {
-#             "code": "P01",
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-#
-#     def test_create_product_duplicate_code(self):
-#         product_type = self.create_product_type().data['result']  # noqa
-#         product_category = self.create_product_category().data['result']
-#         unit_of_measure, uom_group = self.create_uom()
-#         data = {
-#             "code": "P01",
-#             "title": "Laptop HP Asus",
-#             'product_choice': [],
-#             'product_type': product_type['id'],
-#             'product_category': product_category['id'],
-#             'uom_group': uom_group.data['result']['id']
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#
-#         data1 = {
-#             "code": "P01",
-#             "title": "Laptop HP HLVVL6R",
-#             'product_choice': [],
-#             'product_type': product_type['id'],
-#             'product_category': product_category['id'],
-#             'uom_group': uom_group.data['result']['id']
-#
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertResponseList(
-#             response1,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response1.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response1.data['errors'],
-#             ['code'],
-#             check_sum_second=True,
-#         )
-#         return None
-#
-#     def test_create_product_not_UUID(self):
-#         product_type = self.create_product_type().data['result']
-#         product_category = self.create_product_category().data['result']
-#         unit_of_measure, uom_group = self.create_uom()
-#         data = {
-#             "code": "P01",
-#             "title": "Laptop Dell HLVVL6R",
-#             'product_choice': [],
-#             'product_type': product_type['id'],
-#             'product_category': product_category['id'],
-#             'uom_group': uom_group.data['result']['id'],
-#             'default_uom': unit_of_measure.data['result']['id'],
-#             'inventory_uom': '1',
-#             'inventory_level_min': 5,
-#             'inventory_level_max': 20
-#
-#         }
-#         response = self.client.post(
-#             self.url,
-#             data,
-#             format='json'
-#         )
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['errors'],
-#             ['inventory_uom'],
-#             check_sum_second=True,
-#         )
-#
-#         data1 = {
-#             "code": "P02",
-#             "title": "Laptop HP HLVVL6R",
-#             "product_choice": [],
-#             'product_type': '1',
-#             'product_category': '1',
-#             'uom_group': '1'
-#         }
-#         response1 = self.client.post(
-#             self.url,
-#             data1,
-#             format='json'
-#         )
-#         self.assertResponseList(
-#             response1,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response1.data['errors'],
-#             ['product_type', 'product_category', 'uom_group'],
-#             check_sum_second=True,
-#         )
-#         return None
-#
-#     def test_get_list_product(self):
-#         self.test_create_product()
-#         url = reverse('ProductList')
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key_from=response.data,
-#             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
-#         )
-#         self.assertEqual(
-#             len(response.data['result']), 1
-#         )
-#         self.assertCountEqual(
-#             response.data['result'][0],
-#             ['id', 'code', 'title', 'general_information', 'sale_information', 'product_choice'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_get_detail_product(self, data_id=None):
-#         data_created = None
-#         if not data_id:
-#             data_created = self.test_create_product()
-#             data_id = data_created.data['result']['id']
-#         url = reverse("ProductDetail", kwargs={'pk': data_id})
-#         response = self.client.get(url, format='json')
-#         self.assertEqual(response.status_code, 200)
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'code', 'title', 'general_information', 'inventory_information', 'sale_information',
-#              'purchase_information', 'product_choice'],
-#             check_sum_second=True,
-#         )
-#         if not data_id:
-#             self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
-#             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
-#         else:
-#             self.assertEqual(response.data['result']['id'], data_id)
-#         return response
-#
-#     def test_update_product(self):
-#         price_list = self.get_price_list().data['result'][0]
-#         base_item_unit = self.get_base_unit_measure()
-#         weight_unit = base_item_unit.data['result'][3]
-#         volume_unit = base_item_unit.data['result'][2]
-#         data_created = self.test_create_product().data['result']
-#
-#         title_change = 'Laptop Dell'
-#         length_change = 100
-#         measure = [
-#             {
-#                 'unit': weight_unit['id'],
-#                 'value': 6000,
-#             },
-#             {
-#                 'unit': volume_unit['id'],
-#                 'value': 30000,
-#             },
-#         ]
-#         data = {
-#             'code': 'P01',
-#             'title': title_change,
-#             'product_choice': [0, 1],
-#             'product_type': data_created['general_information']['product_type']['id'],
-#             'product_category': data_created['general_information']['product_category']['id'],
-#             'uom_group': data_created['general_information']['uom_group']['id'],
-#             'default_uom': data_created['sale_information']['default_uom']['id'],
-#             'tax_code': data_created['sale_information']['tax_code']['id'],
-#             'currency_using': data_created['sale_information']['currency_using']['id'],
-#             'length': length_change,
-#             'width': data_created['sale_information']['width'],
-#             'height': data_created['sale_information']['height'],
-#             'price_list': [{
-#                 'price_list_id': price_list['id'],
-#                 'price_value': 20000000,
-#                 'is_auto_update': False,
-#             }],
-#             'measure': measure,
-#             'inventory_uom': data_created['inventory_information']['uom']['id'],
-#             'inventory_level_min': 5,
-#             'inventory_level_max': 20,
-#         }
-#
-#         url = reverse("ProductDetail", kwargs={'pk': data_created['id']})
-#         response = self.client.put(url, data, format='json')
-#         self.assertEqual(response.status_code, status.HTTP_200_OK)
-#
-#         data_changed = self.test_get_detail_product(data_id=data_created['id'])
-#         self.assertEqual(data_changed.data['result']['title'], title_change)
-#         return response
+class ProductTestCase(AdvanceTestCase):
+    url = reverse("ProductList")
+
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def create_product_type(self):
+        url = reverse('ProductTypeList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'San pham 1',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def test_get_product_type(self, product_type_id=None):
+        if not product_type_id:
+            # change to .data['result']['id'] after change data returned create_product_type
+            product_type_id = self.create_product_type().data['result']['id']
+        url = reverse('ProductTypeDetail', kwargs={'pk': product_type_id})
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default']
+        )
+        return response
+
+    def create_product_category(self):
+        url = reverse('ProductCategoryList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Hardware',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom_group(self):
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Time',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom(self):
+        data_uom_gr = self.create_uom_group()
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(
+            url,
+            {
+                "code": "MIN",
+                "title": "minute",
+                "group": data_uom_gr.data['result']['id'],
+                "ratio": 1,
+                "rounding": 5,
+                "is_referenced_unit": True
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response, data_uom_gr
+
+    def get_base_unit_measure(self):
+        url = reverse('BaseItemUnitList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(url_tax_category, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default'],
+            check_sum_second=True,
+        )
+        return response
+
+    def create_new_tax(self):
+        url_tax = reverse("TaxList")
+        tax_category = self.create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "type": 0
+        }
+        response = self.client.post(url_tax, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            check_sum_second=True,
+        )
+        return response
+
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_currency(self):
+        url = reverse('CurrencyList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_product(self):
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "title": "Laptop HP HLVVL6R",
+            'product_choice': [],
+            'general_product_type': product_type['id'],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id'],
+        }
+        response = self.client.post(
+            self.url,
+            data,
+            format='json'
+        )
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'code',
+                'title',
+                'description',
+                'general_information',
+                'inventory_information',
+                'sale_information',
+                'purchase_information',
+                'product_choice'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_list_product(self):
+        self.test_create_product()
+        url = reverse('ProductList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'code', 'title', 'general_information', 'sale_information', 'product_choice'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_detail_product(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_create_product()
+            data_id = data_created.data['result']['id']
+        url = reverse("ProductDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'general_information', 'inventory_information', 'sale_information',
+             'purchase_information', 'product_choice'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_update_product(self):
+        price_list = self.get_price_list().data['result'][0]
+        base_item_unit = self.get_base_unit_measure()
+        weight_unit = base_item_unit.data['result'][3]
+        volume_unit = base_item_unit.data['result'][2]
+        data_created = self.test_create_product().data['result']
+
+        title_change = 'Laptop Dell'
+        length_change = 100
+        measure = [
+            {
+                'unit': weight_unit['id'],
+                'value': 6000,
+            },
+            {
+                'unit': volume_unit['id'],
+                'value': 30000,
+            },
+        ]
+        data = {
+            'code': 'P01',
+            'title': title_change,
+            'product_choice': [0, 1],
+            'product_type': data_created['general_information']['product_type']['id'],
+            'product_category': data_created['general_information']['product_category']['id'],
+            'uom_group': data_created['general_information']['uom_group']['id'],
+            'default_uom': data_created['sale_information']['default_uom']['id'],
+            'tax_code': data_created['sale_information']['tax_code']['id'],
+            'currency_using': data_created['sale_information']['currency_using']['id'],
+            'length': length_change,
+            'width': data_created['sale_information']['width'],
+            'height': data_created['sale_information']['height'],
+            'price_list': [{
+                'price_list_id': price_list['id'],
+                'price_value': 20000000,
+                'is_auto_update': False,
+            }],
+            'measure': measure,
+            'inventory_uom': data_created['inventory_information']['uom']['id'],
+            'inventory_level_min': 5,
+            'inventory_level_max': 20,
+        }
+
+        url = reverse("ProductDetail", kwargs={'pk': data_created['id']})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_get_detail_product(data_id=data_created['id'])
+        self.assertEqual(data_changed.data['result']['title'], title_change)
+        return response
 
 
 class SalutationTestCase(AdvanceTestCase):
