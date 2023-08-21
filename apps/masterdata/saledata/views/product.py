@@ -389,9 +389,9 @@ class ProductForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            "default_uom",
-            "tax_code",
-            "currency_using",
+            "sale_default_uom",
+            "sale_tax",
+            "sale_currency_using",
         ).prefetch_related(
             Prefetch(
                 'product_price_product',

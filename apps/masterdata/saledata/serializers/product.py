@@ -657,7 +657,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'general_information',
+            # 'general_information',
             'sale_information',
             'price_list',
             'product_choice',
@@ -695,21 +695,21 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_sale_information(cls, obj):
         return {
             'default_uom': {
-                'id': obj.default_uom_id,
-                'title': obj.default_uom.title,
-                'code': obj.default_uom.code
-            } if obj.default_uom else {},
+                'id': obj.sale_default_uom_id,
+                'title': obj.sale_default_uom.title,
+                'code': obj.sale_default_uom.code
+            } if obj.sale_default_uom else {},
             'tax_code': {
-                'id': obj.tax_code_id,
-                'title': obj.tax_code.title,
-                'code': obj.tax_code.code,
-                'rate': obj.tax_code.rate
-            } if obj.tax_code else {},
+                'id': obj.sale_tax_id,
+                'title': obj.sale_tax.title,
+                'code': obj.sale_tax.code,
+                'rate': obj.sale_tax.rate
+            } if obj.sale_tax else {},
             'currency_using': {
-                'id': obj.currency_using_id,
-                'title': obj.currency_using.title,
-                'code': obj.currency_using.code,
-            } if obj.currency_using else {},
+                'id': obj.sale_currency_using_id,
+                'title': obj.sale_currency_using.title,
+                'code': obj.sale_currency_using.code,
+            } if obj.sale_currency_using else {},
             'length': obj.length,
             'width': obj.width,
             'height': obj.height,
