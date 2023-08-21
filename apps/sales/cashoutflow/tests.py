@@ -176,8 +176,10 @@ class PaymentTestCase(AdvanceTestCase):
             [
                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
                 'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
-                'email', 'payment_term_mapped', 'credit_limit', 'currency', 'contact_mapped', 'account_type_selection',
-                'bank_accounts_information', 'credit_cards_information', 'annual_revenue', 'price_list_mapped',
+                'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
+                'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
+                'account_type_selection', 'bank_accounts_information', 'credit_cards_information',
+                'annual_revenue', 'price_list_mapped',
                 'workflow_runtime_id', 'system_status'
             ],
             check_sum_second=True,
@@ -205,7 +207,7 @@ class PaymentTestCase(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
-    def create_sale_order(self):
+    def test_create_sale_order(self):
         data_salutation = {  # noqa
             "code": "S01ORDER",
             "title": "MrORDER",
