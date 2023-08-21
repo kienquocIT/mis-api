@@ -1,6 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.purchasing.models import PurchaseOrder
+from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer,\
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -57,7 +58,22 @@ class PurchaseOrderDetail(
         return super().get_queryset().select_related(
             "supplier",
             "contact",
-        ).prefetch_related('purchase_requests')
+        ).prefetch_related(
+            'purchase_requests',
+            Prefetch(
+                'purchase_order_quotation_order',
+                queryset=PurchaseOrderQuotation.objects.select_related('purchase_quotation'),
+            ),
+            Prefetch(
+                'purchase_order_product_order',
+                queryset=PurchaseOrderProduct.objects.select_related(
+                    'product',
+                    'uom_order_request',
+                    'uom_order_actual',
+                    'tax',
+                ).prefetch_related('purchase_order_request_order_product'),
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase order detail",
