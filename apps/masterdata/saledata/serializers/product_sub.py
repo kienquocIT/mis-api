@@ -47,28 +47,6 @@ class CommonCreateUpdateProduct:
             )
 
     @classmethod
-    def update_price_list(cls, product, data_price, validated_data):
-        if data_price:
-            objs = []
-            for item in data_price:
-                get_price_from_source = False
-                if item.get('is_auto_update', None) == 'true':
-                    get_price_from_source = True
-                objs.append(
-                    ProductPriceList(
-                        price_list_id=item.get('price_list_id', None),
-                        price=float(item.get('price_list_value', None)),
-                        product=product,
-                        currency_using_id=validated_data['sale_information'].get('currency_using', {}).get('id', None),
-                        uom_using_id=validated_data['sale_information'].get('default_uom', {}).get('id', None),
-                        uom_group_using_id=validated_data['general_information'].get('uom_group', {}).get('id', None),
-                        get_price_from_source=get_price_from_source
-                    )
-                )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
-
-    @classmethod
     def delete_price_list(cls, product, price_list_id):
         product_price_list_item = ProductPriceList.objects.filter(
             product=product,

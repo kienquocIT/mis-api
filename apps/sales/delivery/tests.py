@@ -321,7 +321,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'uom': prod_detail['inventory_uom']['id'],
                     'quantity': 100,
                     'unit_price': 10000,
-                    'tax': prod_detail['sale_tax_code']['id'],
+                    'tax': prod_detail['sale_tax']['id'],
                     'subtotal_price': 10000,
                     'order': 1
                 }
