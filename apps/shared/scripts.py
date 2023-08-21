@@ -4,7 +4,7 @@ from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, 
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
-from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan
+from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -586,7 +586,6 @@ def make_sure_process_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).process_config()
     print('Make sure process config is done!')
-    return True
 
 
 def reset_permissions_after_remove_space_plan():
@@ -603,3 +602,32 @@ def reset_permissions_after_remove_space_plan():
         obj.save()
 
     print('Reset permissions after remove space and plan: done!')
+
+
+def update_data_shipping():
+    for obj in Shipping.objects.all():
+        conditions = obj.formula_condition
+        list_condition = []
+        for condition in conditions:
+            list_location = []
+            for location in condition['location']:
+                loc = City.objects.get(id=location)
+                list_location.append({
+                    'id': location,
+                    'title': loc.title
+                })
+            list_condition.append({
+                'location': list_location,
+                'formula': condition['formula']
+            })
+        obj.formula_condition = list_condition
+        obj.save()
+    print('Done')
+
+
+def update_employee_inherit_opportunity():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        opp.employee_inherit = opp.sale_person
+        opp.save()
+    print('!Done')

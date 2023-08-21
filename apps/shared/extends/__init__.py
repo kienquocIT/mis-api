@@ -2,7 +2,7 @@ from .caching import Caching, CacheManagement
 from .controllers import ResponseController
 from .tasks import call_task_background, check_active_celery_worker
 from .mixins import BaseMixin, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
-from .mask_view import mask_view
+from .mask_view import mask_view, PermissionChecking
 from .models import (
     SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel, DisperseModel,
     SignalRegisterMetaClass, CoreSignalRegisterMetaClass,
@@ -13,7 +13,7 @@ from .serializers import AbstractListSerializerModel, AbstractDetailSerializerMo
 
 __all__ = [
     'Caching', 'CacheManagement',
-    'mask_view',
+    'mask_view', 'PermissionChecking',
     'call_task_background', 'check_active_celery_worker', 'ResponseController',
     'BaseMixin', 'BaseListMixin', 'BaseCreateMixin', 'BaseRetrieveMixin', 'BaseUpdateMixin', 'BaseDestroyMixin',
     'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'DisperseModel',

@@ -128,6 +128,8 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 
 class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
     cost = serializers.SerializerMethodField()
+    advance_payment = serializers.SerializerMethodField()
+    beneficiary = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -145,6 +147,24 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             'cost',
             'return_total'
         )
+
+    @classmethod
+    def get_advance_payment(cls, obj):
+        if obj.advance_payment:
+            return {
+                'id': obj.advance_payment_id,
+                'title': obj.advance_payment.title
+            }
+        return {}
+
+    @classmethod
+    def get_beneficiary(cls, obj):
+        if obj.beneficiary:
+            return {
+                'id': obj.beneficiary_id,
+                'name': obj.beneficiary.get_full_name(),
+            }
+        return {}
 
     @classmethod
     def get_cost(cls, obj):
