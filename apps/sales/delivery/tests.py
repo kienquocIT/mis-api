@@ -318,10 +318,10 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 {
                     'product': prod_detail['id'],
                     'warehouse': warehouse.data['result']['id'],
-                    'uom': prod_detail['inventory_uom']['id'],
+                    'uom': prod_detail['inventory_information']['uom']['id'],
                     'quantity': 100,
                     'unit_price': 10000,
-                    'tax': prod_detail.sale_tax.id,
+                    'tax': prod_detail['sale_information']['tax']['id'],
                     'subtotal_price': 10000,
                     'order': 1
                 }
