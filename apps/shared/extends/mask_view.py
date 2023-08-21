@@ -17,7 +17,10 @@ from .utils import TypeCheck
 from .models import DisperseModel
 from .exceptions import Empty200
 
-__all__ = ['mask_view']
+__all__ = [
+    'mask_view',
+    'PermissionChecking',
+]
 
 
 class PermissionChecking:  # pylint: disable=R0902
@@ -86,9 +89,8 @@ class PermissionChecking:  # pylint: disable=R0902
             employee_obj = self.user_obj.employee_current
         return employee_obj
 
-    def get_employee_same_group(self, is_append_me: bool = False):
-        employee_obj = self.employee_obj_really
-
+    @classmethod
+    def get_employee_same_group(cls, employee_obj, is_append_me: bool = False):
         start_employee_id = []
         if is_append_me is True and employee_obj and hasattr(employee_obj, 'id'):
             start_employee_id.append(str(employee_obj.id))
@@ -97,12 +99,11 @@ class PermissionChecking:  # pylint: disable=R0902
             employee_ids = employee_obj.__class__.objects.filter(group_id=employee_obj.group_id).values_list(
                 'id', flat=True
             ).cache()
-            return [str(x) for x in employee_ids] + start_employee_id
+            return list(set([str(x) for x in employee_ids] + start_employee_id))
         return start_employee_id
 
-    def get_employee_my_staff(self, is_append_me: bool = False):
-        employee_obj = self.employee_obj_really
-
+    @classmethod
+    def get_employee_my_staff(cls, employee_obj, is_append_me: bool = False):
         start_employee_id = []
         if is_append_me is True and employee_obj and hasattr(employee_obj, 'id'):
             start_employee_id.append(str(employee_obj.id))
@@ -116,7 +117,7 @@ class PermissionChecking:  # pylint: disable=R0902
                     'id', flat=True
                 ).cache()
                 if employee_ids and len(employee_ids) > 0:
-                    return [str(x) for x in employee_ids] + start_employee_id
+                    return list(set([str(x) for x in employee_ids] + start_employee_id))
         return start_employee_id
 
     def get_perm_configured(self, permissions_parsed) -> dict:
@@ -167,19 +168,27 @@ class PermissionChecking:  # pylint: disable=R0902
                     filter_dict[self.key_filter] = str(self.employee_id)
                 elif np.array_equal(np_all_key, np.array(['2'])) or np.array_equal(np_all_key, np.array(['1', '2'])):
                     # append staff + me
-                    filter_dict[self.key_filter + '__in'] = self.get_employee_my_staff(is_append_me=True)
+                    filter_dict[self.key_filter + '__in'] = self.get_employee_my_staff(
+                        employee_obj=self.employee_obj_really, is_append_me=True
+                    )
                 elif np.array_equal(np_all_key, np.array(['3'])) or np.array_equal(np_all_key, np.array(['1', '3'])):
                     # append same group + me
-                    filter_dict[self.key_filter + '__in'] = self.get_employee_same_group(is_append_me=True)
+                    filter_dict[self.key_filter + '__in'] = self.get_employee_same_group(
+                        employee_obj=self.employee_obj_really, is_append_me=True
+                    )
                 elif np.array_equal(np_all_key, np.array(['2', '3'])):
                     filter_dict[self.key_filter + '__in'] = list(
-                        set(self.get_employee_my_staff() + self.get_employee_same_group())
+                        set(
+                            self.get_employee_my_staff(employee_obj=self.employee_obj_really) +
+                            self.get_employee_same_group(employee_obj=self.employee_obj_really)
+                        )
+
                     )  # same group + staff
                 elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
                     filter_dict[self.key_filter + '__in'] = list(
                         set(
-                            self.get_employee_my_staff(is_append_me=True) +
-                            self.get_employee_same_group(is_append_me=True)
+                            self.get_employee_my_staff(employee_obj=self.employee_obj_really, is_append_me=True) +
+                            self.get_employee_same_group(employee_obj=self.employee_obj_really, is_append_me=True)
                         )
                     )  # same group + staff + me
 
