@@ -3007,8 +3007,8 @@ class PriceListTestCase(AdvanceTestCase):
 
         data5 = {
             'title': 'Bang gia thang quy 5',
-            'auto_update': True,
-            'can_delete': False,  # T-T/F, F-F
+            'auto_update': False,
+            'can_delete': True,  # T-T/F, F-F
             'factor': 1.0,
             'currency': [currency1, currency2],
             'price_list_mapped': general_price_list,
