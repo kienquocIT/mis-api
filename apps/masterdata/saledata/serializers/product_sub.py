@@ -72,6 +72,8 @@ class CommonCreateUpdateProduct:
     def delete_price_list(cls, product, price_list_id):
         product_price_list_item = ProductPriceList.objects.filter(
             product=product,
+            uom_using_id=product.sale_default_uom_id,
+            currency_using_id=product.sale_currency_using_id,
             price_list_id__in=price_list_id,
         )
         if product_price_list_item:

@@ -625,7 +625,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         instance.product_measure.all().delete()
         CommonCreateUpdateProduct.delete_price_list(
             instance,
-            [i.get('id', None) for i in instance.sale_product_price_list]
+            [i.get('price_list_id', None) for i in instance.sale_product_price_list]
         )
 
         for key, value in validated_data.items():
