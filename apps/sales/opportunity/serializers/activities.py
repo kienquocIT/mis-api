@@ -447,6 +447,8 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
 class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
     files = serializers.SerializerMethodField()
+    opportunity = serializers.SerializerMethodField()
+    person_in_charge = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityDocument
@@ -459,6 +461,28 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
             'person_in_charge',
             'files',
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'title': obj.opportunity.title
+            }
+        return {}
+
+    @classmethod
+    def get_person_in_charge(cls, obj):
+        if obj.person_in_charge:
+            persons = obj.person_in_charge.all()
+            list_result = []
+            for person in persons:
+                list_result.append({
+                    'id': person.id,
+                    'full_name': person.get_full_name()
+                })
+            return list_result
+        return []
 
     @classmethod
     def get_files(cls, obj):

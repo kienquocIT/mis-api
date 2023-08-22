@@ -1,6 +1,7 @@
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax
+from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, \
+    PriceListCurrency
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -623,14 +624,18 @@ def update_data_shipping():
             list_location = []
             for location in condition['location']:
                 loc = City.objects.get(id=location)
-                list_location.append({
-                    'id': location,
-                    'title': loc.title
-                })
-            list_condition.append({
-                'location': list_location,
-                'formula': condition['formula']
-            })
+                list_location.append(
+                    {
+                        'id': location,
+                        'title': loc.title
+                    }
+                )
+            list_condition.append(
+                {
+                    'location': list_location,
+                    'formula': condition['formula']
+                }
+            )
         obj.formula_condition = list_condition
         obj.save()
     print('Done')
@@ -642,3 +647,18 @@ def update_employee_inherit_opportunity():
         opp.employee_inherit = opp.sale_person
         opp.save()
     print('!Done')
+
+
+def update_currency_price_list():
+    prices = Price.objects.all()
+    bulk_data = []
+    for price in prices:
+        for currency in price.currency:
+            obj = PriceListCurrency(
+                currency_id=currency,
+                price=price
+            )
+            bulk_data.append(obj)
+
+    PriceListCurrency.objects.bulk_create(bulk_data)
+    print('Update Done')

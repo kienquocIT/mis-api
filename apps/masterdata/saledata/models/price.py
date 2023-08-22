@@ -20,6 +20,7 @@ PRICE_LIST_TYPE = [
     (2, _('For Expense')),
 ]
 
+
 # Create your models here.
 class TaxCategory(MasterDataAbstractModel):  # noqa
     description = models.CharField(blank=True, max_length=200)
@@ -80,9 +81,15 @@ class Price(DataAbstractModel):
     #     ...
     # ]
     currency = models.JSONField(default=list)
-    # price_list_type = 0 is 'For Sale'
-    # price_list_type = 1 is 'For Purchase'
-    # price_list_type = 2 is 'For Expense'
+
+    currency_current = models.ManyToManyField(
+        'saledata.Currency',
+        through='PriceListCurrency',
+        symmetrical=False,
+        blank=True,
+        related_name='opportunity_mapped'
+    )
+
     valid_time_start = models.DateTimeField(
         verbose_name='price list will be apply since valid_time_start',
         default=timezone.now,
@@ -108,6 +115,28 @@ class Price(DataAbstractModel):
         verbose_name = 'Price'
         verbose_name_plural = 'Prices'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PriceListCurrency(SimpleAbstractModel):
+    price = models.ForeignKey(
+        Price,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='price_list'
+    )
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='price_currency'
+    )
+
+    class Meta:
+        verbose_name = 'PriceCurrency'
+        verbose_name_plural = 'PriceCurrencies'
+        ordering = ()
         default_permissions = ()
         permissions = ()
 

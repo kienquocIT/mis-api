@@ -334,6 +334,7 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
 class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
     products_mapped = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
 
     class Meta:
@@ -426,6 +427,16 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
         if obj.valid_time_start >= timezone.now():
             return 'Invalid'
         return 'Undefined'
+
+    @classmethod
+    def get_currency(cls, obj):
+        if obj.currency_current:
+            currencies = obj.currency_current.all()
+            return [{
+                'id': currency.id,
+                'title': currency.title,
+            } for currency in currencies]
+        return []
 
 
 def check_expired_price_list(price_list):
