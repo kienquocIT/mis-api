@@ -114,7 +114,7 @@ class OpportunityForSaleList(BaseListMixin):
             "sale_person",
             'customer__industry',
             'customer__owner',
-            'customer__payment_term_mapped',
+            'customer__payment_term_customer_mapped',
             'customer__price_list_mapped'
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",

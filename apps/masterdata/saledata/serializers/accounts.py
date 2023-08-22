@@ -3,7 +3,7 @@ from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
-    AccountCreditCards, AccountShippingAddress, AccountBillingAddress,
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -554,9 +554,11 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'email',
             'shipping_address',
             'billing_address',
-            'payment_term_mapped',
+            'payment_term_customer_mapped',
+            'payment_term_supplier_mapped',
             'price_list_mapped',
-            'credit_limit',
+            'credit_limit_customer',
+            'credit_limit_supplier',
             'currency',
             'owner',
             'contact_mapped',
@@ -666,9 +668,11 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'currency',
             'shipping_address',
             'billing_address',
-            'payment_term_mapped',
+            'payment_term_customer_mapped',
+            'payment_term_supplier_mapped',
             'price_list_mapped',
-            'credit_limit',
+            'credit_limit_customer',
+            'credit_limit_supplier',
             'bank_accounts_information',
             'credit_cards_information',
             'account_type_selection',
@@ -799,7 +803,8 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
     owner = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
-    payment_term_mapped = serializers.SerializerMethodField()
+    payment_term_customer_mapped = serializers.SerializerMethodField()
+    payment_term_supplier_mapped = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
 
     class Meta:
@@ -818,7 +823,8 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             "shipping_address",
             "billing_address",
             "bank_accounts_information",
-            "payment_term_mapped",
+            "payment_term_customer_mapped",
+            'payment_term_supplier_mapped',
             "price_list_mapped"
         )
 
@@ -851,12 +857,22 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_payment_term_mapped(cls, obj):
-        if obj.payment_term_mapped:
+    def get_payment_term_customer_mapped(cls, obj):
+        if obj.payment_term_customer_mapped:
             return {
-                'id': obj.payment_term_mapped_id,
-                'title': obj.payment_term_mapped.title,
-                'code': obj.payment_term_mapped.code
+                'id': obj.payment_term_customer_mapped_id,
+                'title': obj.payment_term_customer_mapped.title,
+                'code': obj.payment_term_customer_mapped.code
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term_supplier_mapped(cls, obj):
+        if obj.payment_term_supplier_mapped:
+            return {
+                'id': obj.payment_term_supplier_mapped_id,
+                'title': obj.payment_term_supplier_mapped.title,
+                'code': obj.payment_term_supplier_mapped.code
             }
         return {}
 
