@@ -141,6 +141,16 @@ class GroupDetail(BaseRetrieveMixin, BaseUpdateMixin, HRDestroyMixin):
     serializer_update = GroupUpdateSerializer
     retrieve_hidden_field = ['tenant_id', 'company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "group_level",
+            "first_manager",
+            "first_manager__group",
+            "second_manager",
+            "second_manager__group",
+            "parent_n",
+        ).filter(is_delete=False)
+
     @swagger_auto_schema(
         operation_summary="Group detail",
         operation_description="Get Group detail by ID",
