@@ -272,7 +272,13 @@ class GroupDetailSerializer(serializers.ModelSerializer):
         return {
             'id': obj.first_manager_id,
             'full_name': obj.first_manager.get_full_name(2),
-            'code': obj.first_manager.code
+            'code': obj.first_manager.code,
+            'group': {
+                'id': obj.first_manager.group_id,
+                'title': obj.first_manager.group.title,
+                'code': obj.first_manager.group.code,
+            } if obj.first_manager.group else {},
+            'is_active': obj.first_manager.is_active,
         } if obj.first_manager else {}
 
     @classmethod
@@ -280,7 +286,13 @@ class GroupDetailSerializer(serializers.ModelSerializer):
         return {
             'id': obj.second_manager_id,
             'full_name': obj.second_manager.get_full_name(2),
-            'code': obj.second_manager.code
+            'code': obj.second_manager.code,
+            'group': {
+                'id': obj.second_manager.group_id,
+                'title': obj.second_manager.group.title,
+                'code': obj.second_manager.group.code,
+            } if obj.second_manager.group else {},
+            'is_active': obj.second_manager.is_active,
         } if obj.second_manager else {}
 
     @classmethod
