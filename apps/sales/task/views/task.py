@@ -32,7 +32,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         operation_summary="Opportunity Task List",
         operation_description="List of opportunity task",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='task', model_code='opportunitytask', perm_code='view', )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -41,7 +43,9 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         operation_description="Lead create task for member of team via opportunity page or via Task page",
         request_body=OpportunityTaskCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='task', model_code='opportunitytask', perm_code='create', )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -71,7 +75,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         operation_summary="Opportunity Task Update",
         operation_description="Opportunity task update",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='task', model_code='opportunitytask', perm_code='edit', )
     def put(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -81,7 +87,9 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     @swagger_auto_schema(
         operation_summary="Delete Opportunity Task",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='task', model_code='opportunitytask', perm_code='delete', )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
