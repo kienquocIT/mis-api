@@ -1,7 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Tax, Currency, Price, ProductPriceList
+    TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.product import ExpensePrice, Expense
 from apps.shared import PriceMsg
@@ -311,6 +311,19 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_NOT_EXIST)
         return validate_data
 
+    @classmethod
+    def common_create_currency(cls, data, instance):
+        bulk_data = []
+        for currency in data:
+            bulk_data.append(
+                PriceListCurrency(
+                    currency_id=currency,
+                    price=instance,
+                )
+            )
+        PriceListCurrency.objects.bulk_create(bulk_data)
+        return True
+
     def create(self, validated_data):
         price_list = Price.objects.create(**validated_data)
         if 'auto_update' in validated_data.keys() and 'price_list_mapped' in validated_data.keys():
@@ -327,6 +340,8 @@ class PriceCreateSerializer(serializers.ModelSerializer):  # noqa
                 ) for p in products_source
             ]
             ProductPriceList.objects.bulk_create(objs)
+        if 'currency' in validated_data:
+            self.common_create_currency(validated_data['currency'], price_list)
         return price_list
 
 
@@ -500,6 +515,10 @@ class PriceUpdateSerializer(serializers.ModelSerializer):  # noqa
                 get_product_when_turn_on_auto_update(instance)
             else:
                 ProductPriceList.objects.filter(price_list=instance).update(get_price_from_source=False)
+
+            if 'currency' in validated_data:
+                PriceListCurrency.objects.filter(price=instance).delete()
+                PriceCreateSerializer.common_create_currency(validated_data['currency'], instance)
             return instance
         raise serializers.ValidationError(PriceMsg.PRICE_LIST_EXPIRED)
 
