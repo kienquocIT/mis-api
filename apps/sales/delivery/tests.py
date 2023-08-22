@@ -321,7 +321,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'uom': prod_detail['inventory_information']['uom']['id'],
                     'quantity': 100,
                     'unit_price': 10000,
-                    'tax': prod_detail['sale_information']['tax_code']['id'],
+                    'tax': prod_detail['sale_information']['tax']['id'],
                     'subtotal_price': 10000,
                     'order': 1
                 }
@@ -426,12 +426,12 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'code': str(item.product.code),
                     'remarks': ''
                 } if item else {},
-                uom=item.product.default_uom,
+                uom=item.product.sale_default_uom,
                 uom_data={
-                    'id': str(item.product.default_uom.id),
-                    'title': str(item.product.default_uom.title),
-                    'code': str(item.product.default_uom.code),
-                } if item.product.default_uom else {},
+                    'id': str(item.product.sale_default_uom.id),
+                    'title': str(item.product.sale_default_uom.title),
+                    'code': str(item.product.sale_default_uom.code),
+                } if item.product.sale_default_uom else {},
 
                 delivery_quantity=item.product_quantity,
                 delivered_quantity_before=0,
@@ -514,12 +514,12 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     'code': str(item.product.code),
                     'remarks': ''
                 } if item else {},
-                uom=item.product.default_uom,
+                uom=item.product.sale_default_uom,
                 uom_data={
-                    'id': str(item.product.default_uom.id),
-                    'title': str(item.product.default_uom.title),
-                    'code': str(item.product.default_uom.code),
-                } if item.product.default_uom else {},
+                    'id': str(item.product.sale_default_uom.id),
+                    'title': str(item.product.sale_default_uom.title),
+                    'code': str(item.product.sale_default_uom.code),
+                } if item.product.sale_default_uom else {},
 
                 pickup_quantity=1,
                 picked_quantity_before=0,

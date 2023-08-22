@@ -63,7 +63,7 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "contact",
             "payment_term",
             "quotation",
-            "customer__payment_term_mapped",
+            "customer__payment_term_customer_mapped",
             "employee_inherit",
         ).prefetch_related(
             Prefetch(
