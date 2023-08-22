@@ -649,6 +649,43 @@ def update_employee_inherit_opportunity():
     print('!Done')
 
 
+def update_uom_group_uom_reference():
+    for uom in UnitOfMeasure.objects.filter(is_referenced_unit=True):
+        uom.group.uom_reference = uom
+        uom.group.save(update_fields=['uom_reference'])
+    print('update done.')
+
+
+def update_product_size_for_inventory():
+    for obj in Product.objects.all():
+        if 1 in obj.product_choice:
+            obj.height = 10
+            obj.length = 10
+            obj.width = 10
+            obj.volume = {
+                "id": "68305048-03e2-4936-8f4b-f876fcc6b14e",
+                "title": "volume",
+                "value": 1000.0,
+                "measure": "cm³"
+            }
+            obj.weight = {
+                "id": "4db94461-ba4b-4d5e-b9b1-1481ea38591d",
+                "title": "weight",
+                "value": 10.0,
+                "measure": "gram"
+
+            }
+            obj.save()
+        else:
+            obj.height = None
+            obj.length = None
+            obj.width = None
+            obj.volume = {}
+            obj.weight = {}
+            obj.save()
+        return True
+
+
 def update_currency_price_list():
     prices = Price.objects.all()
     bulk_data = []

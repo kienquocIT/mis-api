@@ -196,10 +196,23 @@ class Account(DataAbstractModel):
         null=True,
         max_length=150
     )
-    payment_term_mapped = models.ForeignKey(PaymentTerm, on_delete=models.CASCADE, null=True)
+    payment_term_customer_mapped = models.ForeignKey(
+        PaymentTerm,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='payment_term_customer_mapped'
+    )
     price_list_mapped = models.ForeignKey(Price, on_delete=models.CASCADE, null=True)
-    credit_limit = models.FloatField(null=True)
+    credit_limit_customer = models.FloatField(null=True)
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
+
+    payment_term_supplier_mapped = models.ForeignKey(
+        PaymentTerm,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='payment_term_supplier_mapped'
+    )
+    credit_limit_supplier = models.FloatField(null=True)
 
     # [
     #   "Số 2/8, Xã Định An, Huyện Dầu Tiếng, Bình Dương",

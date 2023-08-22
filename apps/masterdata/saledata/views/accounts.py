@@ -190,7 +190,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'industry', 'owner', 'payment_term_mapped'
+            'industry', 'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
         ).prefetch_related(
             'contact_account_name'
         )
@@ -257,9 +257,9 @@ class AccountsMapEmployeesList(BaseListMixin):
             company_id = getattr(self.request.user, 'company_current_id', None)
             if tenant_id and company_id:
                 return super().get_queryset().select_related('account', 'employee').filter(
-                    account__tenant_id=self.request.user.tenant_id,
+                    account__tenant_id=self.request.user.tenant_current_id,
                     account__company_id=self.request.user.company_current_id,
-                    employee__tenant_id=self.request.user.tenant_id,
+                    employee__tenant_id=self.request.user.tenant_current_id,
                     employee__company_id=self.request.user.company_current_id,
                 )
         return super().get_queryset().none()
@@ -288,7 +288,8 @@ class AccountForSaleList(BaseListMixin):
         return super().get_queryset().select_related(
             'industry',
             'owner',
-            'payment_term_mapped',
+            'payment_term_customer_mapped',
+            'payment_term_supplier_mapped',
             'price_list_mapped'
         ).prefetch_related(
             'account_mapped_shipping_address',

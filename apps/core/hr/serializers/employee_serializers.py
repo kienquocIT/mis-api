@@ -216,10 +216,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_group(cls, value):
-        try:
-            return Group.objects.get(id=value)
-        except Group.DoesNotExist:
-            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
+        if value is not None:
+            try:
+                return Group.objects.get(id=value)
+            except Group.DoesNotExist:
+                raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_role(cls, value):
@@ -276,7 +278,7 @@ class EmployeeUpdateSerializer(PermissionsUpdateSerializer):
         required=False,
         many=True
     )
-    group = serializers.UUIDField(required=False)
+    group = serializers.UUIDField(required=False, allow_null=True)
     role = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
@@ -316,10 +318,12 @@ class EmployeeUpdateSerializer(PermissionsUpdateSerializer):
 
     @classmethod
     def validate_group(cls, value):
-        try:
-            return Group.objects.get(id=value)
-        except Group.DoesNotExist:
-            raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
+        if value is not None:
+            try:
+                return Group.objects.get(id=value)
+            except Group.DoesNotExist:
+                raise serializers.ValidationError({'detail': HRMsg.GROUP_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_role(cls, value):

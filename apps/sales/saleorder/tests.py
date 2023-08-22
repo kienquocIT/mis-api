@@ -308,36 +308,35 @@ class TestCaseSaleOrder(AdvanceTestCase):
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
-            "code": "QP01",
-            "title": "Laptop HP HLVVL6RR6",
-            'product_choice': [0, 1],
-            'product_type': product_type['id'],
-            'product_category': product_category['id'],
-            'uom_group': uom_group.data['result']['id'],
-            'default_uom': unit_of_measure.data['result']['id'],
-            'tax_code': tax_code.data['result']['id'],
-            'currency_using': currency['id'],
+            "title": "Laptop HP HLVVL6R",
+            'product_choice': [0, 1, 2],
+            # general
+            'general_product_type': product_type['id'],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id'],
             'length': 50,
             'width': 30,
             'height': 10,
-            'price_list': [{
-                'price_list_id': price_list['id'],
-                'price_value': 20000000,
-                'is_auto_update': False,
-            }],
-            'measure': [
+            'volume': 15000,
+            'weight': 200,
+            # sale
+            'sale_default_uom': unit_of_measure.data['result']['id'],
+            'sale_tax': tax_code.data['result']['id'],
+            'sale_currency_using': currency['id'],
+            'sale_product_price_list': [
                 {
-                    'unit': weight_unit['id'],
-                    'value': 5000,
-                },
-                {
-                    'unit': volume_unit['id'],
-                    'value': 15000,
-                },
+                    'price_list_id': price_list['id'],
+                    'price_value': 20000000,
+                    'is_auto_update': False,
+                }
             ],
+            # inventory
             'inventory_uom': unit_of_measure.data['result']['id'],
             'inventory_level_min': 5,
             'inventory_level_max': 20,
+            # purchase
+            'purchase_default_uom': unit_of_measure.data['result']['id'],
+            'purchase_tax': tax_code.data['result']['id'],
         }
         response_product = self.client.post(
             reverse("ProductList"),

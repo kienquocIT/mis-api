@@ -4,7 +4,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, Pu
     PurchaseOrderQuotation
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
 # from apps.core.workflow.tasks import decorator_run_workflow
-from apps.shared import SYSTEM_STATUS
+from apps.shared import SYSTEM_STATUS, RECEIPT_STATUS
 
 
 class PurchaseQuotationSerializer(serializers.ModelSerializer):
@@ -42,6 +42,18 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_sale_order_product(cls, value):
         return PurchasingCommonValidate().validate_sale_order_product(value=value)
+
+
+class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PurchaseOrderRequestProduct
+        fields = (
+            'purchase_request_product_id',
+            'sale_order_product_id',
+            'quantity_order',
+            'quantity_remain',
+        )
 
 
 class PurchaseOrderProductSerializer(serializers.ModelSerializer):
@@ -93,9 +105,77 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         return PurchasingCommonValidate().validate_tax(value=value)
 
 
+class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
+    purchase_request_product_datas = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom_order_request = serializers.SerializerMethodField()
+    uom_order_actual = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseOrderProduct
+        fields = (
+            'product',
+            'uom_order_request',
+            'uom_order_actual',
+            'tax',
+            'stock',
+            'purchase_request_product_datas',
+            # product information
+            'product_title',
+            'product_code',
+            'product_description',
+            'product_quantity_order_request',
+            'product_quantity_order_actual',
+            'product_unit_price',
+            'product_tax_title',
+            'product_subtotal_price',
+            'product_subtotal_price_after_tax',
+            'order',
+        )
+
+    @classmethod
+    def get_purchase_request_product_datas(cls, obj):
+        return PurchaseOrderRequestProductListSerializer(obj.purchase_order_request_order_product.all(), many=True).data
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom_order_request(cls, obj):
+        return {
+            'id': obj.uom_order_request_id,
+            'title': obj.uom_order_request.title,
+            'code': obj.uom_order_request.code,
+        } if obj.uom_order_request else {}
+
+    @classmethod
+    def get_uom_order_actual(cls, obj):
+        return {
+            'id': obj.uom_order_actual_id,
+            'title': obj.uom_order_actual.title,
+            'code': obj.uom_order_actual.code,
+        } if obj.uom_order_actual else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}
+
+
 # PURCHASE ORDER BEGIN
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
+    receipt_status = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -112,13 +192,17 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            return {
-                'id': obj.supplier_id,
-                'title': obj.supplier.name,
-                'code': obj.supplier.code,
-            }
-        return {}
+        return {
+            'id': obj.supplier_id,
+            'title': obj.supplier.name,
+            'code': obj.supplier.code,
+        } if obj.supplier else {}
+
+    @classmethod
+    def get_receipt_status(cls, obj):
+        if obj.receipt_status or obj.receipt_status == 0:
+            return dict(RECEIPT_STATUS).get(obj.receipt_status)
+        return None
 
     @classmethod
     def get_system_status(cls, obj):
@@ -128,8 +212,12 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
+    purchase_requests_data = serializers.SerializerMethodField()
+    purchase_quotations_data = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
+    purchase_order_products_data = serializers.SerializerMethodField()
+    receipt_status = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
     class Meta:
@@ -137,12 +225,13 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
-            'code',
+            'purchase_requests_data',
+            'purchase_quotations_data',
             'supplier',
             'contact',
-            'purchase_requests',
             'delivered_date',
             'status_delivered',
+            'receipt_status',
             # purchase order tabs
             'purchase_order_products_data',
             # total amount
@@ -155,24 +244,50 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
+    def get_purchase_requests_data(cls, obj):
+        return [{
+            'id': purchase_request.id,
+            'title': purchase_request.title,
+            'code': purchase_request.code,
+        } for purchase_request in obj.purchase_requests.all()]
+
+    @classmethod
+    def get_purchase_quotations_data(cls, obj):
+        return [{
+            'id': purchase_order_quotation.id,
+            'purchase_quotation': {
+                'id': purchase_order_quotation.purchase_quotation_id,
+                'title': purchase_order_quotation.purchase_quotation.title,
+                'code': purchase_order_quotation.purchase_quotation.code,
+            } if purchase_order_quotation.purchase_quotation else {},
+            'is_use': purchase_order_quotation.is_use,
+        } for purchase_order_quotation in obj.purchase_order_quotation_order.all()]
+
+    @classmethod
     def get_supplier(cls, obj):
-        if obj.supplier:
-            return {
-                'id': obj.supplier_id,
-                'title': obj.supplier.name,
-                'code': obj.supplier.code,
-            }
-        return {}
+        return {
+            'id': obj.supplier_id,
+            'name': obj.supplier.name,
+            'code': obj.supplier.code,
+        } if obj.supplier else {}
 
     @classmethod
     def get_contact(cls, obj):
-        if obj.contact:
-            return {
-                'id': obj.contact_id,
-                'title': obj.contact.fullname,
-                'code': obj.contact.code,
-            }
-        return {}
+        return {
+            'id': obj.contact_id,
+            'fullname': obj.contact.fullname,
+            'code': obj.contact.code,
+        } if obj.contact else {}
+
+    @classmethod
+    def get_purchase_order_products_data(cls, obj):
+        return PurchaseOrderProductListSerializer(obj.purchase_order_product_order.all(), many=True).data
+
+    @classmethod
+    def get_receipt_status(cls, obj):
+        if obj.receipt_status or obj.receipt_status == 0:
+            return dict(RECEIPT_STATUS).get(obj.receipt_status)
+        return None
 
     @classmethod
     def get_system_status(cls, obj):
