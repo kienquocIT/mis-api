@@ -389,6 +389,9 @@ class ProductForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            'general_product_type',
+            'general_product_category',
+            'general_uom_group',
             "sale_default_uom",
             "sale_tax",
             "sale_currency_using",

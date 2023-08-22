@@ -649,6 +649,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
 class ProductForSaleListSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
     product_choice = serializers.JSONField()
+    general_information = serializers.SerializerMethodField()
     sale_information = serializers.SerializerMethodField()
 
     class Meta:
@@ -657,7 +658,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            # 'general_information',
+            'general_information',
             'sale_information',
             'price_list',
             'product_choice',
@@ -690,6 +691,26 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             }
             for price in obj.product_price_product.all()
         ]
+
+    @classmethod
+    def get_general_information(cls, obj):
+        return {
+            'product_type': {
+                'id': obj.general_product_type_id,
+                'title': obj.general_product_type.title,
+                'code': obj.general_product_type.code
+            } if obj.general_product_type else {},
+            'product_category': {
+                'id': obj.general_product_category_id,
+                'title': obj.general_product_category.title,
+                'code': obj.general_product_category.code
+            } if obj.general_product_category else {},
+            'uom_group': {
+                'id': obj.general_uom_group_id,
+                'title': obj.general_uom_group.title,
+                'code': obj.general_uom_group.code
+            } if obj.general_uom_group else {},
+        }
 
     @classmethod
     def get_sale_information(cls, obj):
