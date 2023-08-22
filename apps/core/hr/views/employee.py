@@ -8,6 +8,7 @@ from rest_framework import generics, serializers
 from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 
+from apps.core.hr.filters import EmployeeListFilter
 from apps.core.hr.models import Employee
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
@@ -47,11 +48,7 @@ class EmployeeUploadAvatar(APIView):
 class EmployeeList(BaseListMixin, BaseCreateMixin):
     queryset = Employee.objects
     search_fields = ["search_content"]
-    filterset_fields = {
-        "group__id": ["exact", "in"],
-        "id": ["exact", "in"],
-        "group__first_manager__id": ["exact"],
-    }
+    filterset_class = EmployeeListFilter
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer

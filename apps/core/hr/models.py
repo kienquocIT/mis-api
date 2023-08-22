@@ -289,6 +289,7 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             'is_delete': self.is_delete,
             'avatar': self.avatar,
             'media_avatar_hash': self.media_avatar_hash,
+            'group': self.group_id,
         }
 
     def get_full_name(self, order_arrange=2):
