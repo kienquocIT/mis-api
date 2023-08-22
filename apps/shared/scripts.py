@@ -589,17 +589,6 @@ def make_sure_process_config():
     print('Make sure process config is done!')
 
 
-def update_tenant_company_task_status():
-    for item in OpportunityTaskConfig.objects.all():
-        item.tenant_id = item.company.tenant_id
-        item.save()
-        for status in item.opportunitytaskstatus_set.all():
-            status.tenant_id = item.tenant_id
-            status.company_id = item.company_id
-            status.save()
-    print('update done.')
-
-
 def reset_permissions_after_remove_space_plan():
     for obj in Employee.objects.all():
         obj.permission_by_id = {}

@@ -32,7 +32,10 @@ class TaskConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Task Config Update",
         request_body=TaskConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='task', model_code='opportunitytask', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
