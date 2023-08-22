@@ -177,9 +177,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     def get_quotation_products_data(cls, obj):
         return QuotationProductsListSerializer(
             obj.quotation_product_quotation.select_related(
-                "product__default_uom",
-                "product__tax_code",
-                "product__currency_using",
+                "product__sale_default_uom",
+                "product__sale_tax",
+                "product__sale_currency_using",
             ).prefetch_related(
                 Prefetch(
                     'product__product_price_product',
@@ -193,9 +193,9 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     def get_quotation_costs_data(cls, obj):
         return QuotationCostsListSerializer(
             obj.quotation_cost_quotation.select_related(
-                "product__default_uom",
-                "product__tax_code",
-                "product__currency_using",
+                "product__sale_default_uom",
+                "product__sale_tax",
+                "product__sale_currency_using",
             ).prefetch_related(
                 Prefetch(
                     'product__product_price_product',

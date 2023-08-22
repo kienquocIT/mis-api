@@ -72,7 +72,7 @@ class QuotationDetail(
             "customer",
             "contact",
             "payment_term",
-            "customer__payment_term_mapped",
+            "customer__payment_term_customer_mapped",
             "employee_inherit",
         ).prefetch_related(
             Prefetch(
