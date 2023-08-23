@@ -2084,7 +2084,7 @@ class ExpenseTestCase(AdvanceTestCase):
             "auto_update": False,
             "can_delete": False,
             "factor": 1,
-            "currency": [currency[0], currency[1]],
+            "currency": [currency[0]['id'], currency[1]['id']],
             "price_list_type": 2,
             "valid_time_start": "2023-05-01 17:13:00",
             "valid_time_end": "2023-05-06 17:13:00"

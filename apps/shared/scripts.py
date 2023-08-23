@@ -615,14 +615,18 @@ def update_data_shipping():
             list_location = []
             for location in condition['location']:
                 loc = City.objects.get(id=location)
-                list_location.append({
-                    'id': location,
-                    'title': loc.title
-                })
-            list_condition.append({
-                'location': list_location,
-                'formula': condition['formula']
-            })
+                list_location.append(
+                    {
+                        'id': location,
+                        'title': loc.title
+                    }
+                )
+            list_condition.append(
+                {
+                    'location': list_location,
+                    'formula': condition['formula']
+                }
+            )
         obj.formula_condition = list_condition
         obj.save()
     print('Done')
@@ -673,7 +677,23 @@ def update_product_size_for_inventory():
         return True
 
 
+def update_currency_price_list():
+    prices = Price.objects.all()
+    bulk_data = []
+    for price in prices:
+        for currency in price.currency:
+            obj = PriceListCurrency(
+                currency_id=currency,
+                price=price
+            )
+            bulk_data.append(obj)
+
+    PriceListCurrency.objects.bulk_create(bulk_data)
+    print('Update Done')
+
+
 def delete_old_m2m_data_price_list_product():
     today = date.today()
     ProductPriceList.objects.filter(date_created__lt=today).delete()
     return True
+
