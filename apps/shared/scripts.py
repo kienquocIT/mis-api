@@ -1,6 +1,9 @@
+from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax
+from apps.masterdata.saledata.models.price import (
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList
+)
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -668,3 +671,9 @@ def update_product_size_for_inventory():
             obj.weight = {}
             obj.save()
         return True
+
+
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True

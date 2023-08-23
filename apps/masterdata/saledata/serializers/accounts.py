@@ -378,6 +378,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         help_text='0: draft, 1: created',
         default=0,
     )
+    owner = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -409,6 +410,15 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
             raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
+
+    @classmethod
+    def validate_owner(cls, value):
+        if value:
+            try:
+                return Contact.objects.get(id=value)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_account_group(cls, value):
@@ -647,7 +657,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     bank_accounts_information = serializers.JSONField()
     credit_cards_information = serializers.JSONField()
     contact_list = serializers.ListField(required=False)
-    owner_id = serializers.CharField(required=False)
+    owner = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -656,7 +666,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'website',
             'account_type',
             'manager',
-            'owner_id',
+            'owner',
             'parent_account',
             'account_group',
             'tax_code',
@@ -684,6 +694,15 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         if value:
             return value
         raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
+
+    @classmethod
+    def validate_owner(cls, value):
+        if value:
+            try:
+                return Contact.objects.get(id=value)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_bank_accounts_information(cls, value):
