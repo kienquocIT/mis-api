@@ -12,7 +12,7 @@ class OpportunityList(
 ):
     queryset = Opportunity.objects
     filterset_fields = {
-        'sale_person_id': ['exact'],
+        'employee_inherit': ['exact'],
         'quotation': ['exact', 'isnull'],
         'sale_order': ['exact', 'isnull'],
         'is_close_lost': ['exact'],
