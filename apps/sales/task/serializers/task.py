@@ -58,6 +58,8 @@ class ValidAssignTask:
             member = data.get('member')  # member: dict => {}
             if member['id'] == str(obj_assignee.id):
                 return True
+        if str(opp_data.sale_person_id) == str(obj_assignee.id):
+            return True
         return False
 
     @classmethod
@@ -494,7 +496,6 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
             if current_data.employee_created == employee_request and update_data.get('assign_to', None):
                 ValidAssignTask.check_config(config, update_data)
             return True
-
         raise serializers.ValidationError(
             {'system': django.utils.translation.gettext_lazy("Missing default info please contact with admin.")}
         )
