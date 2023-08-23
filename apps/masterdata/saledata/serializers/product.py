@@ -662,6 +662,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'sale_information',
             'price_list',
             'product_choice',
+            'sale_cost',
         )
 
     @classmethod
