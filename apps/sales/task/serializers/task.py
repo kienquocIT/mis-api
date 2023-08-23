@@ -85,20 +85,14 @@ class ValidAssignTask:
 
     @classmethod
     def is_out_opp_check(cls, opt, attrs):
-        if opt == 1:
+        if opt == 1 and hasattr(attrs, 'assign_to'):
             is_check = cls.check_in_dept_member(attrs)
             if not is_check:
                 raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_MEMBER})
-        if opt == 2:
+        if opt == 2 and hasattr(attrs, 'assign_to'):
             is_check = cls.check_staffs_in_dept(attrs)
             if not is_check:
                 raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_STAFF})
-        if opt == 3:
-            check_01 = cls.check_in_dept_member(attrs)
-            check_02 = cls.check_staffs_in_dept(attrs)
-
-            if not check_02 and not check_01:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_1_OR_2_OPT})
 
     @classmethod
     def check_config(cls, config, validate):
