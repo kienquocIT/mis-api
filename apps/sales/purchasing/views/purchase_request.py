@@ -30,7 +30,10 @@ class PurchaseRequestList(
         operation_summary="Purchase Request List",
         operation_description="Get Purchase Request List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchaserequest', model_code='purchaserequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -39,7 +42,10 @@ class PurchaseRequestList(
         operation_description="Create new Purchase Request",
         request_body=PurchaseRequestCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True, employee_require=True,
+        label_code='purchaserequest', model_code='purchaserequest', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -63,7 +69,10 @@ class PurchaseRequestDetail(
         operation_summary="Purchase Request detail",
         operation_description="Get Purchase Request detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchaserequest', model_code='purchaserequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 

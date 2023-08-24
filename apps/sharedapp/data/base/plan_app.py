@@ -110,7 +110,7 @@ _Application_crm_data = {
         "code": "opportunity",
         "model_code": "opportunity",
         "app_label": "opportunity",
-        "is_workflow": False,
+        "is_workflow": True,
         "option_permission": 0,
         "option_allowed": [1, 2, 3, 4],
     },
@@ -298,7 +298,44 @@ _Application_crm_data = {
         "is_workflow": False,
         "option_permission": 0,
         "option_allowed": [1, 2, 3, 4],
-    }
+    },
+
+    "a0d0a456-47b8-47ff-8f99-d9f3353a68ae": {
+        "title": "Purchase Request",
+        "code": "purchaserequest",
+        "model_code": "purchaserequest",
+        "app_label": "purchaserequest",
+        "is_workflow": True,
+        "option_permission": 0,
+        "option_allowed": [1, 2, 3, 4],
+    },
+    "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": {
+        "title": "Purchase Quotation Request",
+        "code": "purchasequotationrequest",
+        "model_code": "purchasequotationrequest",
+        "app_label": "purchasequotationrequest",
+        "is_workflow": True,
+        "option_permission": 0,
+        "option_allowed": [1, 2, 3, 4],
+    },
+    "f52a966a-2eb2-4851-852d-eff61efeb896": {
+        "title": "Purchase Quotation",
+        "code": "purchasequotation",
+        "model_code": "purchasequotation",
+        "app_label": "purchasequotation",
+        "is_workflow": True,
+        "option_permission": 0,
+        "option_allowed": [1, 2, 3, 4],
+    },
+    "81a111ef-9c32-4cbd-8601-a3cce884badb": {
+        "title": "Purchase Order",
+        "code": "purchaseorder",
+        "model_code": "purchaseorder",
+        "app_label": "purchaseorder",
+        "is_workflow": True,
+        "option_permission": 0,
+        "option_allowed": [1, 2, 3, 4],
+    },
 }
 
 Application_data = {
@@ -373,9 +410,25 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124",  # Document For Customer
     },
-    "5ae426ab-1b3f-4a05-8117-77d136c13c8f": {
+    "0c6c8a31-1b03-4d88-ba36-ea690a7d3c0e": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
+    },
+    "aa6d7abb-c177-4531-873f-9233c7f98fa1": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "a0d0a456-47b8-47ff-8f99-d9f3353a68ae",  # Purchase Request
+    },
+    "b24a1795-5f8c-4b08-a998-cfed8618b714": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "d78bd5f3-8a8d-48a3-ad62-b50d576ce173",  # Purchase Quotation Request
+    },
+    "5ae426ab-1b3f-4a05-8117-77d136c13c8f": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "f52a966a-2eb2-4851-852d-eff61efeb896",  # Purchase Quotation
+    },
+    "375cb89c-7dd5-40ec-a6aa-93f9a87ba656": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "81a111ef-9c32-4cbd-8601-a3cce884badb",  # Purchase Order
     },
 }
 

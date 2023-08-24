@@ -202,7 +202,9 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         operation_summary="OpportunityDocument List",
         operation_description="Get OpportunityDocument List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 

@@ -24,8 +24,9 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.purchasing.models import PurchaseRequestProduct
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
+    OpportunityDocument
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
@@ -695,4 +696,9 @@ def update_currency_price_list():
             bulk_data.append(obj)
 
     PriceListCurrency.objects.bulk_create(bulk_data)
+    print('Update Done')
+
+
+def update_employee_created_purchase_request():
+    PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
     print('Update Done')
