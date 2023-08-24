@@ -34,7 +34,10 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         operation_summary="Sale Order List",
         operation_description="Get Sale Order List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saleorder', model_code='saleorder', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -43,7 +46,11 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Sale Order",
         request_body=SaleOrderCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        employee_require=True,
+        label_code='saleorder', model_code='saleorder', perm_code='create'
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -91,7 +98,10 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Sale Order detail",
         operation_description="Get Sale Order detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saleorder', model_code='saleorder', perm_code='view',
+    )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -100,7 +110,10 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Update Sale Order by ID",
         request_body=SaleOrderUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='saleorder', model_code='saleorder', perm_code='edit',
+    )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
