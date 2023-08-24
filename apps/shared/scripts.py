@@ -688,3 +688,24 @@ def update_currency_price_list():
 
     PriceListCurrency.objects.bulk_create(bulk_data)
     print('Update Done')
+
+
+def update_contact_role_opportunity():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        arr = []
+        for contact in opp.opportunity_contact_role_datas:
+            contact_obj = Contact.objects.get(id=contact['contact']['id'])
+            arr.append({
+                'role': contact['role'],
+                'type_customer': contact['type_customer'],
+                'job_title': contact['job_title'],
+                'contact': {
+                    'id': str(contact_obj.id),
+                    'fullname': contact_obj.fullname
+                },
+            })
+        opp.opportunity_contact_role_datas = arr
+        opp.save()
+
+    print('Update Done')

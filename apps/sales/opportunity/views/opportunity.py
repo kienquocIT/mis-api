@@ -68,10 +68,10 @@ class OpportunityDetail(
         return super().get_queryset().select_related(
             "customer",
             "decision_maker",
-            "sale_person",
+            "end_customer",
+            "employee_inherit",
             "sale_order__delivery_of_sale_order",
             "quotation",
-
         ).prefetch_related(
             "stage",
         )

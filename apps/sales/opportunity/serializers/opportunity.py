@@ -406,7 +406,7 @@ class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
                 )
                 return {
                     'id': str(obj.id),
-                    'title': obj.title,
+                    'fullname': obj.fullname,
                 }
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': OpportunityMsg.NOT_EXIST})
@@ -657,6 +657,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    end_customer = serializers.SerializerMethodField()
+    product_category = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -704,7 +707,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         if obj.employee_inherit:
             return {
                 'id': obj.employee_inherit_id,
-                'name': obj.employee_inherit.get_full_name(),
+                'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
             }
         return {}
@@ -754,6 +757,34 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                     'indicator': item.indicator,
                 } for item in stage
             ]
+        return []
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'name': obj.customer.name,
+            }
+        return {}
+
+    @classmethod
+    def get_end_customer(cls, obj):
+        if obj.end_customer:
+            return {
+                'id': obj.end_customer_id,
+                'name': obj.end_customer.name,
+            }
+        return {}
+
+    @classmethod
+    def get_product_category(cls, obj):
+        if obj.product_category:
+            categories = obj.product_category.all()
+            return [{
+                'id': category.id,
+                'title': category.title,
+            } for category in categories]
         return []
 
 
