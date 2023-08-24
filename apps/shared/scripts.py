@@ -697,3 +697,12 @@ def delete_old_m2m_data_price_list_product():
     ProductPriceList.objects.filter(date_created__lt=today).delete()
     return True
 
+
+def update_parent_account():
+    for obj in Account.objects.all():
+        old_value = obj.parent_account
+        if old_value:
+            obj.parent_account = str(old_value).replace('-', '')
+            obj.save()
+    return True
+

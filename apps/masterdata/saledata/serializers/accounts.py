@@ -253,17 +253,12 @@ class AccountListSerializer(serializers.ModelSerializer):
         return []
 
 
-def create_employee_map_account(instance):
+def create_employee_map_account(account):
     bulk_info = []
-    for manager in instance.manager:
-        bulk_info.append(
-            AccountEmployee(
-                account=instance,
-                employee_id=manager.get('id', None)
-            )
-        )
+    for manager_obj in account.manager:
+        bulk_info.append(AccountEmployee(account=account, employee_id=manager_obj.get('id', None)))
     if len(bulk_info) > 0:
-        AccountEmployee.objects.filter(account=instance).delete()
+        AccountEmployee.objects.filter(account=account).delete()
         AccountEmployee.objects.bulk_create(bulk_info)
     return True
 
@@ -316,69 +311,52 @@ def add_credit_cards_information(instance, credit_cards_list):
     return True
 
 
-def add_account_types_information(account_types_list, account):
+def add_account_types_information(account):
     bulk_info = []
-    for item in account_types_list:
-        bulk_info.append(AccountAccountTypes(account=account, account_type_id=item['id']))
+    for account_type_obj in account.account_type:
+        bulk_info.append(AccountAccountTypes(account=account, account_type_id=account_type_obj.get('id', None)))
     if len(bulk_info) > 0:
         AccountAccountTypes.objects.filter(account=account).delete()
         AccountAccountTypes.objects.bulk_create(bulk_info)
     return True
 
 
-def add_shipping_address_information(instance, shipping_address_sub_create_list):
-    AccountShippingAddress.objects.filter(account=instance).exclude(full_address__in=instance.shipping_address).delete()
+def add_shipping_address_information(account, shipping_address_list):
     bulk_info = []
-    for item in shipping_address_sub_create_list:
-        if not AccountShippingAddress.objects.filter(**item).exists():
-            bulk_info.append(AccountShippingAddress(**item, account=instance))
+    for item in shipping_address_list:
+        AccountShippingAddress.objects.filter(account=account).delete()
+        bulk_info.append(AccountShippingAddress(**item, account=account))
     AccountShippingAddress.objects.bulk_create(bulk_info)
-    # update default
-    if len(instance.shipping_address) > 0:
-        AccountShippingAddress.objects.filter(account=instance).update(is_default=False)
-        AccountShippingAddress.objects.filter(
-            account=instance,
-            full_address=instance.shipping_address[0]
-        ).update(is_default=True)
     return True
 
 
-def add_billing_address_information(instance, billing_address_sub_create_list):
-    AccountBillingAddress.objects.filter(account=instance).exclude(full_address__in=instance.billing_address).delete()
+def add_billing_address_information(account, billing_address_list):
     bulk_info = []
-    for item in billing_address_sub_create_list:
-        if not item['account_name_id']:
-            item['account_name_id'] = instance.id
-        if not AccountBillingAddress.objects.filter(**item).exists():
-            bulk_info.append(AccountBillingAddress(**item, account=instance))
+    for item in billing_address_list:
+        AccountBillingAddress.objects.filter(account=account).delete()
+        bulk_info.append(AccountBillingAddress(**item, account=account))
     AccountBillingAddress.objects.bulk_create(bulk_info)
-    # update default
-    if len(instance.billing_address) > 0:
-        AccountBillingAddress.objects.filter(account=instance).update(is_default=False)
-        AccountBillingAddress.objects.filter(
-            account=instance,
-            full_address=instance.billing_address[0]
-        ).update(is_default=True)
     return True
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
-    tax_code = serializers.CharField(max_length=150)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
     owner = serializers.UUIDField(required=False, allow_null=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
+    industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(
-        child=serializers.UUIDField(required=False),
+        child=serializers.UUIDField(required=True),
     )
     manager = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
     parent_account = serializers.UUIDField(required=False, allow_null=True)
-    # contact_select_list = serializers.ListField(
-    #     child=serializers.UUIDField(required=False),
-    #     required=False
-    # )
+    contact_select_list = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
     system_status = serializers.ChoiceField(
         choices=[0, 1],
         help_text='0: draft, 1: created',
@@ -403,9 +381,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'total_employees',
             'phone',
             'email',
-            'shipping_address',
-            'billing_address',
-            # 'contact_select_list',
+            'contact_select_list',
             'system_status'
         )
 
@@ -419,7 +395,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_tax_code(cls, value):
-        if Account.objects.filter_current(fill__tenant=True, fill__company=True, taxx_code=value).exists():
+        if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).exists():
             raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
 
@@ -450,7 +426,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             try:
                 return AccountGroup.objects.get(id=value)
             except AccountGroup.DoesNotExist:
-                raise serializers.ValidationError({"AccountGroup": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
+                raise serializers.ValidationError({"Account Group": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
         raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
 
     @classmethod
@@ -471,106 +447,72 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             try:
                 return Account.objects.get(id=value)
             except AccountGroup.DoesNotExist:
-                raise serializers.ValidationError({"AccountGroup": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
-        raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
+                raise serializers.ValidationError({"Parent Account": AccountsMsg.PARENT_ACCOUNT_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_industry(cls, value):
+        if value:
+            try:
+                return Industry.objects.get(id=value)
+            except Industry.DoesNotExist:
+                raise serializers.ValidationError({"Industry": AccountsMsg.INDUSTRY_NOT_EXIST})
+        raise serializers.ValidationError({"Industry": AccountsMsg.INDUSTRY_NOT_NULL})
 
     def validate(self, validate_data):
-        account_types = []
-        for item in validate_data.get('account_type', None):
-            account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
-            if account_type:
-                account_types.append(
-                    {'id': str(item), 'code': account_type.code, 'title': account_type.title}
-                )
-                tax_code = validate_data.get('tax_code', None)
-                if validate_data['account_type_selection'] == 1:  # tax_code is required
-                    if not tax_code:
-                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
-                    if not validate_data.get('total_employees', None):
-                        raise serializers.ValidationError(AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE)
-                elif validate_data['account_type_selection'] == 0:
-                    validate_data.update({'parent_account': None})
-                if tax_code:
-                    account_mapped_tax_code = Account.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        tax_code=tax_code
-                    ).exists()
-                    if account_mapped_tax_code:
-                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
-            else:
-                raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
-        validate_data['account_type'] = account_types
+        if validate_data.get('account_type_selection', None):
+            if 'tax_code' not in validate_data:
+                raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
+            if 'total_employees' not in validate_data:
+                raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
+
+        try:
+            validate_data['price_list_mapped'] = Price.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_default=True
+            )
+        except Price.DoesNotExist:
+            raise serializers.ValidationError({"Price List": AccountsMsg.PRICE_LIST_DEFAULT_NOT_EXIST})
+
+        try:
+            validate_data['currency'] = Currency.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_primary=True
+            )
+        except Currency.DoesNotExist:
+            raise serializers.ValidationError({"Currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
+
         return validate_data
 
     @decorator_run_workflow
     def create(self, validated_data):
-        """
-        step 1: contact_select_list: get list contact selected
-        step 2: get primary contact
-        step 3: contact_select_list = contact_select_list append primary contact
-        step 4: update is_primary in which id == primary
-        """
-        contact_select_list = []
-        contact_primary = []
-        if 'contact_select_list' in validated_data:
-            contact_select_list = validated_data.get('contact_select_list', [])
-            del validated_data['contact_select_list']
-        if 'contact_primary' in validated_data:
-            contact_primary = validated_data.get('contact_primary', [])
-            del validated_data['contact_primary']
+        contact_mapped = None
+        if 'contact_mapped' in self.initial_data:
+            contact_mapped = self.initial_data.get('contact_mapped', [])
 
         # create account
-        default_price_list = Price.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_default=True
-        ).first()
-        if 'currency' not in validated_data:
-            default_currency = Currency.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_default=True
-            ).first()
-        else:
-            default_currency = validated_data['currency']
+        account = Account.objects.create(**validated_data)
 
-        account = Account.objects.create(
-            **validated_data,
-            price_list_mapped=default_price_list,
-            currency=default_currency,
-        )
         # add employee information
         create_employee_map_account(account)
         # add account type detail information
-        add_account_types_information(validated_data.get('account_type', []), account)
+        add_account_types_information(account)
         # add shipping address
         add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
         # add billing address
         add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
 
-        # update contact select
-        if contact_primary:
-            contact_select_list.append(contact_primary)
-        if contact_select_list:
-            contact_list = Contact.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                id__in=contact_select_list
-            )
-            if contact_list:
-                if len(contact_list) == 1:
-                    contact_list[0].is_primary = True
-                    contact_list[0].account_name = account
-                    contact_list[0].save()
-                    account.owner = contact_list[0]
-                    account.save()
-                else:
-                    for contact in contact_list:
-                        if contact.id == contact_primary:
-                            contact.is_primary = True
-                        contact.account_name = account
-                        contact.save()
+        if contact_mapped:
+            for obj in contact_mapped:
+                try:
+                    contact = Contact.objects.get(id=obj['id'])
+                    contact.is_primary = obj['owner']
+                    contact.account_name = account
+                    contact.save()
+                except Contact.DoesNotExist:
+                    raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
         return account
 
 

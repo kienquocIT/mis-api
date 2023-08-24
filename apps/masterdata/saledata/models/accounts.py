@@ -373,7 +373,12 @@ class AccountShippingAddress(SimpleAbstractModel):
 # AccountShippingAddress
 class AccountBillingAddress(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_billing_address")
-    account_name = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='billing_account_name')
+    account_name = models.CharField(
+        verbose_name='billing account name',
+        blank=True,
+        null=True,
+        max_length=150
+    )
     email = models.CharField(
         verbose_name='account email',
         blank=True,
