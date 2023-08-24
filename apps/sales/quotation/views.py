@@ -28,8 +28,8 @@ class QuotationList(
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer
     serializer_detail = QuotationListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -42,7 +42,10 @@ class QuotationList(
         operation_summary="Quotation List",
         operation_description="Get Quotation List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='quotation', model_code='quotation', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -51,7 +54,11 @@ class QuotationList(
         operation_description="Create new Quotation",
         request_body=QuotationCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        employee_require=True,
+        label_code='quotation', model_code='quotation', perm_code='create'
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -63,7 +70,8 @@ class QuotationDetail(
     queryset = Quotation.objects
     serializer_detail = QuotationDetailSerializer
     serializer_update = QuotationUpdateSerializer
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -100,18 +108,24 @@ class QuotationDetail(
         operation_summary="Quotation detail",
         operation_description="Get Quotation detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='quotation', model_code='quotation', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(
         operation_summary="Update Quotation",
         operation_description="Update Quotation by ID",
         request_body=QuotationUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='quotation', model_code='quotation', perm_code='edit',
+    )
+    def put(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class QuotationExpenseList(BaseListMixin):
