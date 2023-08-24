@@ -18,10 +18,10 @@ class PurchaseOrderCommonCreate:
         uom_order_request = {}
         uom_order_actual = {}
         tax = {}
-        purchase_request_product_datas = []
-        if 'purchase_request_product_datas' in dict_data:
-            purchase_request_product_datas = dict_data['purchase_request_product_datas']
-            del dict_data['purchase_request_product_datas']
+        purchase_request_products_data = []
+        if 'purchase_request_products_data' in dict_data:
+            purchase_request_products_data = dict_data['purchase_request_products_data']
+            del dict_data['purchase_request_products_data']
         if 'product' in dict_data:
             product = dict_data['product']
             del dict_data['product']
@@ -35,7 +35,7 @@ class PurchaseOrderCommonCreate:
             tax = dict_data['tax']
             del dict_data['tax']
         return {
-            'purchase_request_product_datas': purchase_request_product_datas,
+            'purchase_request_products_data': purchase_request_products_data,
             'product': product,
             'uom_order_request': uom_order_request,
             'uom_order_actual': uom_order_actual,
@@ -60,6 +60,18 @@ class PurchaseOrderCommonCreate:
         return True
 
     @classmethod
+    def create_purchase_request_products_data(cls, validated_data, instance):
+        PurchaseOrderRequestProduct.objects.bulk_create([
+            PurchaseOrderRequestProduct(
+                purchase_order=instance,
+                purchase_request_product_id=purchase_request_product['purchase_request_product'],
+                sale_order_product_id=purchase_request_product['sale_order_product'],
+                quantity_order=purchase_request_product['quantity_order'],
+                quantity_remain=purchase_request_product['quantity_remain'],
+            ) for purchase_request_product in validated_data['purchase_request_products_data']
+        ])
+
+    @classmethod
     def create_product(cls, validated_data, instance):
         for purchase_order_product in validated_data['purchase_order_products_data']:
             data = cls.validate_product(dict_data=purchase_order_product)
@@ -72,15 +84,16 @@ class PurchaseOrderCommonCreate:
                 **purchase_order_product
             )
             if order_product:
-                if data['purchase_request_product_datas']:
+                if data['purchase_request_products_data']:
                     PurchaseOrderRequestProduct.objects.bulk_create([
                         PurchaseOrderRequestProduct(
+                            purchase_order=instance,
                             purchase_request_product_id=purchase_request_product['purchase_request_product'],
                             purchase_order_product=order_product,
                             sale_order_product_id=purchase_request_product['sale_order_product'],
                             quantity_order=purchase_request_product['quantity_order'],
                             quantity_remain=purchase_request_product['quantity_remain'],
-                        ) for purchase_request_product in data['purchase_request_product_datas']
+                        ) for purchase_request_product in data['purchase_request_products_data']
                     ])
         return True
 
@@ -99,9 +112,22 @@ class PurchaseOrderCommonCreate:
         return True
 
     @classmethod
+    def delete_old_pr_product(cls, instance):
+        old_pr_product = PurchaseOrderRequestProduct.objects.filter(
+            purchase_order=instance,
+            purchase_order_product__isnull=True
+        )
+        if old_pr_product:
+            old_pr_product.delete()
+        return True
+
+    @classmethod
     def delete_old_product(cls, instance):
         old_product = PurchaseOrderProduct.objects.filter(purchase_order=instance)
         if old_product:
+            pr_products = PurchaseOrderRequestProduct.objects.filter(purchase_order_product__in=old_product)
+            if pr_products:
+                pr_products.delete()
             old_product.delete()
         return True
 
@@ -118,6 +144,13 @@ class PurchaseOrderCommonCreate:
             if is_update is True:
                 cls.delete_old_m2m_purchase_order_quotation(instance=instance)
             cls.create_m2m_order_purchase_quotation(
+                validated_data=validated_data,
+                instance=instance
+            )
+        if 'purchase_request_products_data' in validated_data:
+            if is_update is True:
+                cls.delete_old_pr_product(instance=instance)
+            cls.create_purchase_request_products_data(
                 validated_data=validated_data,
                 instance=instance
             )
