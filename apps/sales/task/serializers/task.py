@@ -58,7 +58,7 @@ class ValidAssignTask:
             member = data.get('member')  # member: dict => {}
             if member['id'] == str(obj_assignee.id):
                 return True
-        if str(opp_data.sale_person_id) == str(obj_assignee.id):
+        if str(opp_data.employee_inherit_id) == str(obj_assignee.id):
             return True
         return False
 
@@ -469,7 +469,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         config = OpportunityTaskConfig.objects.filter_current(
             fill__company=True,
         )
-        assignee = current_data.assign_to
+        assignee = update_data['assign_to']
         if config.exists():
             config = config.first()
             # check if request user is assignee and not is create task/sub-task
@@ -493,7 +493,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                     )
 
             # validate follow by config
-            if current_data.employee_created == employee_request and update_data.get('assign_to', None):
+            if current_data.employee_created == employee_request and update_data['assign_to']:
                 ValidAssignTask.check_config(config, update_data)
             return True
         raise serializers.ValidationError(
