@@ -378,6 +378,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         help_text='0: draft, 1: created',
         default=0,
     )
+    owner = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -409,6 +410,15 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
             raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
         return value
+
+    @classmethod
+    def validate_owner(cls, value):
+        if value:
+            try:
+                return Contact.objects.get(id=value)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_account_group(cls, value):
@@ -647,7 +657,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     bank_accounts_information = serializers.JSONField()
     credit_cards_information = serializers.JSONField()
     contact_list = serializers.ListField(required=False)
-    owner_id = serializers.CharField(required=False)
+    owner = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -656,7 +666,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'website',
             'account_type',
             'manager',
-            'owner_id',
+            'owner',
             'parent_account',
             'account_group',
             'tax_code',
@@ -684,6 +694,15 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         if value:
             return value
         raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
+
+    @classmethod
+    def validate_owner(cls, value):
+        if value:
+            try:
+                return Contact.objects.get(id=value)
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_bank_accounts_information(cls, value):
@@ -830,61 +849,46 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_account_type(cls, obj):
-        if obj.account_type:
-            all_account_types = [account_type.get('title', None) for account_type in obj.account_type]
-            return all_account_types
-        return []
+        return [account_type.get('title', None) for account_type in obj.account_type] if obj.account_type else []
 
     @classmethod
     def get_manager(cls, obj):
-        if obj.manager:
-            return obj.manager
-        return []
+        return obj.manager if obj.manager else []
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {'id': obj.owner_id, 'fullname': obj.owner.fullname}
-        return {}
+        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
 
     @classmethod
     def get_industry(cls, obj):
-        if obj.industry:
-            return {
-                'id': obj.industry_id,
-                'title': obj.industry.title
-            }
-        return {}
+        return {
+            'id': obj.industry_id,
+            'title': obj.industry.title
+        } if obj.industry else {}
 
     @classmethod
     def get_payment_term_customer_mapped(cls, obj):
-        if obj.payment_term_customer_mapped:
-            return {
-                'id': obj.payment_term_customer_mapped_id,
-                'title': obj.payment_term_customer_mapped.title,
-                'code': obj.payment_term_customer_mapped.code
-            }
-        return {}
+        return {
+            'id': obj.payment_term_customer_mapped_id,
+            'title': obj.payment_term_customer_mapped.title,
+            'code': obj.payment_term_customer_mapped.code
+        } if obj.payment_term_customer_mapped else {}
 
     @classmethod
     def get_payment_term_supplier_mapped(cls, obj):
-        if obj.payment_term_supplier_mapped:
-            return {
-                'id': obj.payment_term_supplier_mapped_id,
-                'title': obj.payment_term_supplier_mapped.title,
-                'code': obj.payment_term_supplier_mapped.code
-            }
-        return {}
+        return {
+            'id': obj.payment_term_supplier_mapped_id,
+            'title': obj.payment_term_supplier_mapped.title,
+            'code': obj.payment_term_supplier_mapped.code
+        } if obj.payment_term_supplier_mapped else {}
 
     @classmethod
     def get_price_list_mapped(cls, obj):
-        if obj.price_list_mapped:
-            return {
-                'id': obj.price_list_mapped_id,
-                'title': obj.price_list_mapped.title,
-                'code': obj.price_list_mapped.code
-            }
-        return {}
+        return {
+            'id': obj.price_list_mapped_id,
+            'title': obj.price_list_mapped.title,
+            'code': obj.price_list_mapped.code
+        } if obj.price_list_mapped else {}
 
     @classmethod
     def get_shipping_address(cls, obj):

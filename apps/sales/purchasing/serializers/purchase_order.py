@@ -259,6 +259,11 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
                 'id': purchase_order_quotation.purchase_quotation_id,
                 'title': purchase_order_quotation.purchase_quotation.title,
                 'code': purchase_order_quotation.purchase_quotation.code,
+                'supplier': {
+                    'id': purchase_order_quotation.purchase_quotation.supplier_mapped_id,
+                    'name': purchase_order_quotation.purchase_quotation.supplier_mapped.name,
+                    'code': purchase_order_quotation.purchase_quotation.supplier_mapped.code,
+                } if purchase_order_quotation.purchase_quotation.supplier_mapped else {}
             } if purchase_order_quotation.purchase_quotation else {},
             'is_use': purchase_order_quotation.is_use,
         } for purchase_order_quotation in obj.purchase_order_quotation_order.all()]

@@ -1,7 +1,9 @@
+from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, \
-    PriceListCurrency
+from apps.masterdata.saledata.models.price import (
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
+)
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
 
@@ -675,6 +677,12 @@ def update_product_size_for_inventory():
         return True
 
 
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
 def update_currency_price_list():
     prices = Price.objects.all()
     bulk_data = []
@@ -687,25 +695,4 @@ def update_currency_price_list():
             bulk_data.append(obj)
 
     PriceListCurrency.objects.bulk_create(bulk_data)
-    print('Update Done')
-
-
-def update_contact_role_opportunity():
-    opps = Opportunity.objects.all()
-    for opp in opps:
-        arr = []
-        for contact in opp.opportunity_contact_role_datas:
-            contact_obj = Contact.objects.get(id=contact['contact']['id'])
-            arr.append({
-                'role': contact['role'],
-                'type_customer': contact['type_customer'],
-                'job_title': contact['job_title'],
-                'contact': {
-                    'id': str(contact_obj.id),
-                    'fullname': contact_obj.fullname
-                },
-            })
-        opp.opportunity_contact_role_datas = arr
-        opp.save()
-
     print('Update Done')
