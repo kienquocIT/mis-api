@@ -363,22 +363,27 @@ def add_billing_address_information(instance, billing_address_sub_create_list):
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
-    contact_select_list = serializers.ListField(
+    code = serializers.CharField(max_length=150)
+    tax_code = serializers.CharField(max_length=150)
+    owner = serializers.UUIDField(required=False, allow_null=True)
+    account_group = serializers.UUIDField(required=False, allow_null=True)
+    account_type = serializers.ListField(
+        child=serializers.UUIDField(required=False),
+    )
+    manager = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
-    manager = serializers.JSONField()
-    contact_primary = serializers.UUIDField(required=False)
     parent_account = serializers.UUIDField(required=False, allow_null=True)
-    name = serializers.CharField(max_length=150)
-    code = serializers.CharField(max_length=150)
-    account_type = serializers.JSONField()
+    # contact_select_list = serializers.ListField(
+    #     child=serializers.UUIDField(required=False),
+    #     required=False
+    # )
     system_status = serializers.ChoiceField(
         choices=[0, 1],
         help_text='0: draft, 1: created',
         default=0,
     )
-    owner = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -387,10 +392,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'code',
             'website',
             'account_type',
-            "owner",
+            'account_type_selection',
+            'account_group',
+            'owner',
             'manager',
             'parent_account',
-            "account_group",
             'tax_code',
             'industry',
             'annual_revenue',
@@ -399,16 +405,22 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'email',
             'shipping_address',
             'billing_address',
-            'contact_select_list',
-            'contact_primary',
-            'account_type_selection',
-            'system_status',
+            # 'contact_select_list',
+            'system_status'
         )
 
     @classmethod
     def validate_code(cls, value):
-        if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
-            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+        if value:
+            if Account.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
+
+    @classmethod
+    def validate_tax_code(cls, value):
+        if Account.objects.filter_current(fill__tenant=True, fill__company=True, taxx_code=value).exists():
+            raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
 
     @classmethod
@@ -421,9 +433,24 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
+    def validate_account_type(cls, value):
+        if isinstance(value, list):
+            account_type = AccountType.objects.filter(id__in=value)
+            if account_type.count() == len(value):
+                return [
+                    {'id': str(item.id), 'code': item.code, 'title': item.title}
+                    for item in account_type
+                ]
+            raise serializers.ValidationError({'Account Type': HRMsg.ACCOUNT_TYPE_NOT_EXIST})
+        raise serializers.ValidationError({'Account Type': HRMsg.ACCOUNT_TYPE_IS_ARRAY})
+
+    @classmethod
     def validate_account_group(cls, value):
         if value:
-            return value
+            try:
+                return AccountGroup.objects.get(id=value)
+            except AccountGroup.DoesNotExist:
+                raise serializers.ValidationError({"AccountGroup": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
         raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
 
     @classmethod
@@ -432,11 +459,20 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
-                    {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
-                    for employee in employee_list
+                    {'id': str(item.id), 'code': item.code, 'fullname': item.get_full_name(2)}
+                    for item in employee_list
                 ]
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
-        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
+            raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEES_NOT_EXIST})
+        raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEE_IS_ARRAY})
+
+    @classmethod
+    def validate_parent_account(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except AccountGroup.DoesNotExist:
+                raise serializers.ValidationError({"AccountGroup": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
+        raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
 
     def validate(self, validate_data):
         account_types = []

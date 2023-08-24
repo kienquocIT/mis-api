@@ -11,7 +11,8 @@ __all__ = [
     'Price',
     'ProductPriceList',
     'Discount',
-    'UnitOfMeasureGroup'
+    'UnitOfMeasureGroup',
+    'PriceListCurrency'
 ]
 
 PRICE_LIST_TYPE = [

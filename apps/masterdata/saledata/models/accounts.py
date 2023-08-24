@@ -153,10 +153,10 @@ class Account(DataAbstractModel):
     credit_cards_information = models.JSONField(
         default=list
     )
-    parent_account = models.CharField(
-        verbose_name='parent account',
-        null=True,
-        max_length=150
+    parent_account = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True
     )
     tax_code = models.CharField(
         verbose_name='tax code',

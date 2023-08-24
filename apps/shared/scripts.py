@@ -2,7 +2,7 @@ from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
