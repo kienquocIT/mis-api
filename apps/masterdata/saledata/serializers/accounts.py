@@ -435,7 +435,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
-                    {'id': str(item.id), 'code': item.code, 'fullname': item.get_full_name(2)}
+                    {'id': str(item.id), 'code': item.code, 'full_name': item.get_full_name(2)}
                     for item in employee_list
                 ]
             raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEES_NOT_EXIST})
@@ -519,6 +519,9 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 class AccountDetailSerializer(AbstractDetailSerializerModel):
     contact_mapped = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    account_group = serializers.SerializerMethodField()
+    parent_account = serializers.SerializerMethodField()
+    industry = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
 
@@ -557,6 +560,36 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         )
 
     @classmethod
+    def get_account_group(cls, obj):
+        if obj.account_group:
+            return {
+                'id': obj.account_group_id,
+                'code': obj.account_group.code,
+                'title': obj.account_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_industry(cls, obj):
+        if obj.industry:
+            return {
+                'id': obj.industry_id,
+                'code': obj.industry.code,
+                'title': obj.industry.title,
+            }
+        return {}
+
+    @classmethod
+    def get_parent_account(cls, obj):
+        if obj.parent_account:
+            return {
+                'id': obj.parent_account_id,
+                'code': obj.parent_account.code,
+                'name': obj.parent_account.name,
+            }
+        return {}
+
+    @classmethod
     def get_owner(cls, obj):
         if obj.owner:
             contact_owner_information = {'id': str(obj.owner.owner_id), 'fullname': obj.owner.owner.get_full_name(2)}
@@ -588,7 +621,8 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                                 'fullname': i.fullname,
                                 'job_title': i.job_title,
                                 'email': i.email,
-                                'mobile': i.mobile
+                                'mobile': i.mobile,
+                                'owner': i.is_primary
                             })
                     )
                 else:
@@ -598,7 +632,8 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                             'fullname': i.fullname,
                             'job_title': i.job_title,
                             'email': i.email,
-                            'mobile': i.mobile
+                            'mobile': i.mobile,
+                            'owner': i.is_primary
                         }
                     )
             return list_contact_mapped
