@@ -765,6 +765,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.customer_id,
                 'name': obj.customer.name,
+                'annual_revenue': obj.customer.annual_revenue,
             }
         return {}
 
