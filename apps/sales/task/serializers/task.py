@@ -162,6 +162,18 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     parent_n = serializers.SerializerMethodField()
     task_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        if obj.employee_created:
+            return {
+                'avatar': obj.employee_created.avatar,
+                'first_name': obj.employee_created.first_name,
+                'last_name': obj.employee_created.last_name,
+                'full_name':  f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
+            }
+        return {}
 
     @classmethod
     def get_assign_to(cls, obj):
@@ -169,7 +181,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             return {
                 'avatar': obj.assign_to.avatar,
                 'first_name': obj.assign_to.first_name,
-                'last_name': obj.assign_to.last_name
+                'last_name': obj.assign_to.last_name,
+                'full_name': f'{obj.assign_to.last_name} {obj.assign_to.first_name}'
             }
         return {}
 
@@ -221,7 +234,9 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'priority',
             'assign_to',
             'checklist',
-            'parent_n'
+            'parent_n',
+            'employee_created',
+            'date_created'
         )
 
 

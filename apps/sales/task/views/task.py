@@ -26,7 +26,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity')
+        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity', 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task List",
