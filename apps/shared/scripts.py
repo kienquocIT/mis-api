@@ -24,12 +24,11 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
-    OpportunityDocument
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
-from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
+
 
 
 def update_sale_default_data_old_company():
