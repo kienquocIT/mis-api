@@ -258,17 +258,17 @@ def create_employee_map_account(account):
     return True
 
 
-def add_banking_accounts_information(instance, banking_accounts_list):
+def add_banking_accounts_information(account, banking_accounts_list):
     bulk_info = []
     for item in banking_accounts_list:
-        bulk_info.append(AccountBanks(**item, account=instance))
+        bulk_info.append(AccountBanks(**item, account=account))
     if len(bulk_info) > 0:
-        AccountBanks.objects.filter(account=instance).delete()
+        AccountBanks.objects.filter(account=account).delete()
         AccountBanks.objects.bulk_create(bulk_info)
     return True
 
 
-def add_credit_cards_information(instance, credit_cards_list):
+def add_credit_cards_information(account, credit_cards_list):
     bulk_info = []
     for item in credit_cards_list:
         if item.get('credit_card_type', None) == 'Mastercard':
@@ -277,9 +277,9 @@ def add_credit_cards_information(instance, credit_cards_list):
             item['credit_card_type'] = 2
         if item.get('credit_card_type', None) == 'American express':
             item['credit_card_type'] = 3
-        bulk_info.append(AccountCreditCards(**item, account=instance))
+        bulk_info.append(AccountCreditCards(**item, account=account))
     if len(bulk_info) > 0:
-        AccountCreditCards.objects.filter(account=instance).delete()
+        AccountCreditCards.objects.filter(account=account).delete()
         AccountCreditCards.objects.bulk_create(bulk_info)
     return True
 
@@ -707,10 +707,11 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_credit_cards_mapped(cls, obj):
         credit_cards_mapped_list = []
+        credit_cards_type_title_list = ['Mastercard', 'Visa', 'American express']
         for item in obj.credit_cards_mapped.all():
             credit_cards_mapped_list.append(
                 {
-                    'credit_card_type': item.credit_card_type,
+                    'credit_card_type': credit_cards_type_title_list[item.credit_card_type-1],
                     'credit_card_number': item.credit_card_number,
                     'credit_card_name': item.credit_card_name,
                     'card_expired_date': item.expired_date,
