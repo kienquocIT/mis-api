@@ -175,7 +175,7 @@ class PaymentTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
-                'billing_address', 'parent_account', 'account_group', 'tax_code', 'industry', 'total_employees',
+                'billing_address', 'parent_account_mapped', 'account_group', 'tax_code', 'industry', 'total_employees',
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_information', 'credit_cards_information',
@@ -252,7 +252,7 @@ class PaymentTestCase(AdvanceTestCase):
             "account_type": [account_type],
             "owner": contact,
             "manager": {employee},
-            "parent_account": None,
+            "parent_account_mapped": None,
             "account_group": account_group,
             "tax_code": "string",
             "industry": industry,

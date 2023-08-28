@@ -213,7 +213,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
             "account_type": [account_type],
             "owner": contact,
             "manager": {employee},
-            "parent_account": None,
+            "parent_account_mapped": None,
             "account_group": account_group,
             "tax_code": "string",
             "industry": industry,
