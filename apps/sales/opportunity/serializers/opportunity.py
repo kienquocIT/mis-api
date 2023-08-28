@@ -660,6 +660,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     end_customer = serializers.SerializerMethodField()
     product_category = serializers.SerializerMethodField()
+    customer_decision_factor = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -786,6 +787,18 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'id': category.id,
                 'title': category.title,
             } for category in categories]
+        return []
+
+    @classmethod
+    def get_customer_decision_factor(cls, obj):
+        factor = obj.customer_decision_factor.all()
+        if factor:
+            return [
+                {
+                    'id': item.id,
+                    'title': item.title,
+                } for item in factor
+            ]
         return []
 
 
