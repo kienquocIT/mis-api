@@ -710,13 +710,13 @@ def update_opportunity_contact_role_datas():
     for opp in opps:
         list_data = []
         for data in opp.opportunity_contact_role_datas:
-            obj_contact = Contact.objects.get(id=data.contact.id)
+            obj_contact = Contact.objects.get(id=data['contact']['id'])
             list_data.append({
-                'type_customer': data.type_customer,
-                'role': data.role,
-                'job_title': data.job_title,
+                'type_customer': data['type_customer'],
+                'role': data['role'],
+                'job_title': data['job_title'],
                 'contact': {
-                    'id': obj_contact.id,
+                    'id': str(obj_contact.id),
                     'fullname': obj_contact.fullname,
                 }
             })
