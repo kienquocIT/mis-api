@@ -149,7 +149,12 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_account_types'
     )
-    parent_account = models.ForeignKey(
+    parent_account = models.CharField(
+        verbose_name='parent account',
+        null=True,
+        max_length=150
+    )
+    parent_account_mapped = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
         null=True
@@ -278,7 +283,8 @@ class AccountCreditCards(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='credit_cards_mapped')
     credit_card_type = models.SmallIntegerField(
         verbose_name='Credit card type',
-        choices=CREDIT_CARD_TYPES
+        choices=CREDIT_CARD_TYPES,
+        default=0
     )
     credit_card_number = models.CharField(
         verbose_name='Credit card number',

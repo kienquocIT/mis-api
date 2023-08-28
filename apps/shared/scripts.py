@@ -702,6 +702,8 @@ def update_currency_price_list():
 def update_employee_created_purchase_request():
     PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
     print('Update Done')
+
+
 def delete_old_m2m_data_price_list_product():
     today = date.today()
     ProductPriceList.objects.filter(date_created__lt=today).delete()
@@ -712,7 +714,7 @@ def update_parent_account():
     for obj in Account.objects.all():
         old_value = obj.parent_account
         if old_value:
-            obj.parent_account = str(old_value).replace('-', '')
+            obj.parent_account_mapped_id = str(old_value).replace('-', '')
             obj.save()
     return True
 

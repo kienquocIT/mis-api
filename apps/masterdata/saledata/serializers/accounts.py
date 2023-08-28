@@ -32,7 +32,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "owner",
             "phone",
             'annual_revenue',
-            'contact_mapped'
+            'contact_mapped',
         )
 
     @classmethod
@@ -137,33 +137,37 @@ def add_billing_address_information(account, billing_address_list):
 
 
 def update_shipping_address_information(account, old_shipping_address_id_dict):
-    for item in AccountShippingAddress.objects.filter(account=account):
-        if item.full_address not in [i.get('full_address', None) for i in old_shipping_address_id_dict]:
-            item.delete()
-        else:
-            item.is_default = False
-            item.save()
-    try:
-        new_default = [k for k in old_shipping_address_id_dict if k['is_default']][0].get('full_address', None)
-        AccountShippingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
-    except AccountShippingAddress.DoesNotExist:
-        raise serializers.ValidationError({'Account Shipping Address': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
-    return True
+    if len(old_shipping_address_id_dict) > 0:
+        for item in AccountShippingAddress.objects.filter(account=account):
+            if item.full_address not in [i.get('full_address', None) for i in old_shipping_address_id_dict]:
+                item.delete()
+            else:
+                item.is_default = False
+                item.save()
+        try:
+            new_default = [k for k in old_shipping_address_id_dict if k['is_default']][0].get('full_address', None)
+            AccountShippingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
+        except AccountShippingAddress.DoesNotExist:
+            raise serializers.ValidationError({'Account Shipping Address': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
+        return True
+    return False
 
 
 def update_billing_address_information(account, old_billing_address_id_dict):
-    for item in AccountBillingAddress.objects.filter(account=account):
-        if item.full_address not in [i.get('full_address', None) for i in old_billing_address_id_dict]:
-            item.delete()
-        else:
-            item.is_default = False
-            item.save()
-    try:
-        new_default = [k for k in old_billing_address_id_dict if k['is_default']][0].get('full_address', None)
-        AccountBillingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
-    except AccountBillingAddress.DoesNotExist:
-        raise serializers.ValidationError({'Account Billing Address': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
-    return True
+    if len(old_billing_address_id_dict) > 0:
+        for item in AccountBillingAddress.objects.filter(account=account):
+            if item.full_address not in [i.get('full_address', None) for i in old_billing_address_id_dict]:
+                item.delete()
+            else:
+                item.is_default = False
+                item.save()
+        try:
+            new_default = [k for k in old_billing_address_id_dict if k['is_default']][0].get('full_address', None)
+            AccountBillingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
+        except AccountBillingAddress.DoesNotExist:
+            raise serializers.ValidationError({'Account Billing Address': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
+        return True
+    return False
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
@@ -174,7 +178,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
-    parent_account = serializers.UUIDField(required=False, allow_null=True)
+    parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
     contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     system_status = serializers.ChoiceField(choices=[0, 1], help_text='0: draft, 1: created', default=0,)
 
@@ -189,7 +193,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'account_group',
             'owner',
             'manager',
-            'parent_account',
+            'parent_account_mapped',
             'tax_code',
             'industry',
             'annual_revenue',
@@ -257,7 +261,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEE_IS_ARRAY})
 
     @classmethod
-    def validate_parent_account(cls, value):
+    def validate_parent_account_mapped(cls, value):
         if value:
             try:
                 return Account.objects.get(id=value)
@@ -331,7 +335,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
     account_group = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
-    parent_account = serializers.SerializerMethodField()
+    parent_account_mapped = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
@@ -350,7 +354,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'account_type',
             "owner",
             'manager',
-            'parent_account',
+            'parent_account_mapped',
             "account_group",
             'tax_code',
             'industry',
@@ -414,12 +418,12 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_parent_account(cls, obj):
-        if obj.parent_account:
+    def get_parent_account_mapped(cls, obj):
+        if obj.parent_account_mapped:
             return {
-                'id': obj.parent_account_id,
-                'code': obj.parent_account.code,
-                'name': obj.parent_account.name,
+                'id': obj.parent_account_mapped_id,
+                'code': obj.parent_account_mapped.code,
+                'name': obj.parent_account_mapped.name,
             }
         return {}
 
@@ -554,7 +558,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
     manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
-    parent_account = serializers.UUIDField(required=False, allow_null=True)
+    parent_account_mapped = serializers.UUIDField(required=False, allow_null=True)
     contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     system_status = serializers.ChoiceField(choices=[0, 1], help_text='0: draft, 1: created', default=0)
     price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
@@ -572,7 +576,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'account_group',
             'owner',
             'manager',
-            'parent_account',
+            'parent_account_mapped',
             'tax_code',
             'industry',
             'annual_revenue',
@@ -639,7 +643,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEE_IS_ARRAY})
 
     @classmethod
-    def validate_parent_account(cls, value):
+    def validate_parent_account_mapped(cls, value):
         if value:
             try:
                 return Account.objects.get(id=value)
