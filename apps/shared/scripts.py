@@ -24,8 +24,9 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.purchasing.models import PurchaseRequestProduct
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
+    OpportunityDocument
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
@@ -677,6 +678,12 @@ def update_product_size_for_inventory():
         return True
 
 
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
 def update_currency_price_list():
     prices = Price.objects.all()
     bulk_data = []
@@ -692,6 +699,9 @@ def update_currency_price_list():
     print('Update Done')
 
 
+def update_employee_created_purchase_request():
+    PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
+    print('Update Done')
 def delete_old_m2m_data_price_list_product():
     today = date.today()
     ProductPriceList.objects.filter(date_created__lt=today).delete()
