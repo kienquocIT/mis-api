@@ -26,15 +26,15 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     }
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity')
+        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity', 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task List",
         operation_description="List of opportunity task",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='task', model_code='opportunitytask', perm_code='view', )
+        login_require=True, auth_require=True,
+        label_code='task', model_code='OpportunityTask', perm_code='view')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -44,8 +44,8 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
         request_body=OpportunityTaskCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='task', model_code='opportunitytask', perm_code='create', )
+        login_require=True, auth_require=True,
+        label_code='task', model_code='OpportunityTask', perm_code='create', )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -76,8 +76,8 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         operation_description="Opportunity task update",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='task', model_code='opportunitytask', perm_code='edit', )
+        login_require=True, auth_require=True,
+        label_code='task', model_code='OpportunityTask', perm_code='edit', )
     def put(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -88,8 +88,8 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
         operation_summary="Delete Opportunity Task",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='task', model_code='opportunitytask', perm_code='delete', )
+        login_require=True, auth_require=True,
+        label_code='task', model_code='OpportunityTask', perm_code='delete', )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
