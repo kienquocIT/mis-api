@@ -702,3 +702,25 @@ def update_currency_price_list():
 def update_employee_created_purchase_request():
     PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
     print('Update Done')
+
+
+def update_opportunity_contact_role_datas():
+    opps = Opportunity.objects.all()
+
+    for opp in opps:
+        list_data = []
+        for data in opp.opportunity_contact_role_datas:
+            obj_contact = Contact.objects.get(id=data.contact.id)
+            list_data.append({
+                'type_customer': data.type_customer,
+                'role': data.role,
+                'job_title': data.job_title,
+                'contact': {
+                    'id': obj_contact.id,
+                    'fullname': obj_contact.fullname,
+                }
+            })
+        opp.opportunity_contact_role_datas = list_data
+        opp.save()
+
+    print('Update Done')
