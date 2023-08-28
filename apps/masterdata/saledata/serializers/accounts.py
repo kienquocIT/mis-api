@@ -3,7 +3,7 @@ from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
-    AccountCreditCards, AccountShippingAddress, AccountBillingAddress
+    AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
@@ -18,7 +18,7 @@ class AccountTypeListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=150) # noqa
 
     class Meta:
         model = AccountType
@@ -191,8 +191,6 @@ class AccountListSerializer(serializers.ModelSerializer):
     manager = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
-    shipping_address = serializers.JSONField()
-    billing_address = serializers.JSONField()
 
     class Meta:
         model = Account
@@ -207,9 +205,6 @@ class AccountListSerializer(serializers.ModelSerializer):
             "manager",
             "owner",
             "phone",
-            "shipping_address",
-            "billing_address",
-            "bank_accounts_information",
             'annual_revenue',
             'contact_mapped'
         )
@@ -263,32 +258,10 @@ def create_employee_map_account(account):
     return True
 
 
-def update_account_owner(instance, account_owner):
-    Contact.objects.filter_current(fill__tenant=True, fill__company=True, account_name=instance).update(
-        account_name=None,
-        is_primary=False
-    )
-    instance.owner = None
-    instance.save()
-    if account_owner:
-        Contact.objects.filter_current(fill__tenant=True, fill__company=True, id=account_owner).update(
-            account_name=instance,
-            is_primary=True
-        )
-        instance.owner_id = account_owner
-        instance.save()
-    return True
-
-
 def add_banking_accounts_information(instance, banking_accounts_list):
     bulk_info = []
     for item in banking_accounts_list:
-        if item['bank_name'] and item['bank_code'] and item['bank_account_name'] and item['bank_account_number']:
-            bulk_info.append(
-                AccountBanks(**item, account=instance)
-            )
-        else:
-            raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
+        bulk_info.append(AccountBanks(**item, account=instance))
     if len(bulk_info) > 0:
         AccountBanks.objects.filter(account=instance).delete()
         AccountBanks.objects.bulk_create(bulk_info)
@@ -298,13 +271,13 @@ def add_banking_accounts_information(instance, banking_accounts_list):
 def add_credit_cards_information(instance, credit_cards_list):
     bulk_info = []
     for item in credit_cards_list:
-        if item['credit_card_type'] and item['credit_card_number'] and item['credit_card_name'] \
-                and item['expired_date']:
-            bulk_info.append(
-                AccountCreditCards(**item, account=instance)
-            )
-        else:
-            raise serializers.ValidationError(AccountsMsg.CREDIT_CARD_MISSING_VALUE)
+        if item.get('credit_card_type', None) == 'Mastercard':
+            item['credit_card_type'] = 1
+        if item.get('credit_card_type', None) == 'Visa':
+            item['credit_card_type'] = 2
+        if item.get('credit_card_type', None) == 'American express':
+            item['credit_card_type'] = 3
+        bulk_info.append(AccountCreditCards(**item, account=instance))
     if len(bulk_info) > 0:
         AccountCreditCards.objects.filter(account=instance).delete()
         AccountCreditCards.objects.bulk_create(bulk_info)
@@ -324,7 +297,6 @@ def add_account_types_information(account):
 def add_shipping_address_information(account, shipping_address_list):
     bulk_info = []
     for item in shipping_address_list:
-        AccountShippingAddress.objects.filter(account=account).delete()
         bulk_info.append(AccountShippingAddress(**item, account=account))
     AccountShippingAddress.objects.bulk_create(bulk_info)
     return True
@@ -333,9 +305,38 @@ def add_shipping_address_information(account, shipping_address_list):
 def add_billing_address_information(account, billing_address_list):
     bulk_info = []
     for item in billing_address_list:
-        AccountBillingAddress.objects.filter(account=account).delete()
         bulk_info.append(AccountBillingAddress(**item, account=account))
     AccountBillingAddress.objects.bulk_create(bulk_info)
+    return True
+
+
+def update_shipping_address_information(account, old_shipping_address_id_dict):
+    for item in AccountShippingAddress.objects.filter(account=account):
+        if item.full_address not in [i.get('full_address', None) for i in old_shipping_address_id_dict]:
+            item.delete()
+        else:
+            item.is_default = False
+            item.save()
+    try:
+        new_default = [k for k in old_shipping_address_id_dict if k['is_default']][0].get('full_address', None)
+        AccountShippingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
+    except AccountShippingAddress.DoesNotExist:
+        raise serializers.ValidationError({'Account Shipping Address': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
+    return True
+
+
+def update_billing_address_information(account, old_billing_address_id_dict):
+    for item in AccountBillingAddress.objects.filter(account=account):
+        if item.full_address not in [i.get('full_address', None) for i in old_billing_address_id_dict]:
+            item.delete()
+        else:
+            item.is_default = False
+            item.save()
+    try:
+        new_default = [k for k in old_billing_address_id_dict if k['is_default']][0].get('full_address', None)
+        AccountBillingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
+    except AccountBillingAddress.DoesNotExist:
+        raise serializers.ValidationError({'Account Billing Address': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
     return True
 
 
@@ -345,23 +346,11 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     owner = serializers.UUIDField(required=False, allow_null=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
-    account_type = serializers.ListField(
-        child=serializers.UUIDField(required=True),
-    )
-    manager = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False
-    )
+    account_type = serializers.ListField(child=serializers.UUIDField(required=True))
+    manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     parent_account = serializers.UUIDField(required=False, allow_null=True)
-    contact_select_list = serializers.ListField(
-        child=serializers.UUIDField(required=False),
-        required=False
-    )
-    system_status = serializers.ChoiceField(
-        choices=[0, 1],
-        help_text='0: draft, 1: created',
-        default=0,
-    )
+    contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    system_status = serializers.ChoiceField(choices=[0, 1], help_text='0: draft, 1: created', default=0,)
 
     class Meta:
         model = Account
@@ -488,26 +477,20 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def create(self, validated_data):
-        contact_mapped = None
-        if 'contact_mapped' in self.initial_data:
-            contact_mapped = self.initial_data.get('contact_mapped', [])
+        contact_mapped = self.initial_data.get('contact_mapped', None)
 
-        # create account
         account = Account.objects.create(**validated_data)
 
-        # add employee information
         create_employee_map_account(account)
-        # add account type detail information
         add_account_types_information(account)
-        # add shipping address
+
         add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
-        # add billing address
         add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
 
         if contact_mapped:
             for obj in contact_mapped:
                 try:
-                    contact = Contact.objects.get(id=obj['id'])
+                    contact = Contact.objects.get(id=obj.get('id', None))
                     contact.is_primary = obj['owner']
                     contact.account_name = account
                     contact.save()
@@ -520,10 +503,16 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
     contact_mapped = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     account_group = serializers.SerializerMethodField()
+    currency = serializers.SerializerMethodField()
+    price_list_mapped = serializers.SerializerMethodField()
     parent_account = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     shipping_address = serializers.SerializerMethodField()
     billing_address = serializers.SerializerMethodField()
+    payment_term_customer_mapped = serializers.SerializerMethodField()
+    payment_term_supplier_mapped = serializers.SerializerMethodField()
+    bank_accounts_mapped = serializers.SerializerMethodField()
+    credit_cards_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -547,14 +536,14 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'billing_address',
             'payment_term_customer_mapped',
             'payment_term_supplier_mapped',
+            'bank_accounts_mapped',
+            'credit_cards_mapped',
             'price_list_mapped',
             'credit_limit_customer',
             'credit_limit_supplier',
             'currency',
             'owner',
             'contact_mapped',
-            'bank_accounts_information',
-            'credit_cards_information',
             'account_type_selection',
             'workflow_runtime_id',
         )
@@ -566,6 +555,25 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                 'id': obj.account_group_id,
                 'code': obj.account_group.code,
                 'title': obj.account_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_currency(cls, obj):
+        if obj.currency:
+            return {
+                'id': obj.currency_id,
+                'abbreviation': obj.currency.abbreviation,
+                'title': obj.currency.title,
+            }
+        return {}
+
+    @classmethod
+    def get_price_list_mapped(cls, obj):
+        if obj.price_list_mapped:
+            return {
+                'id': obj.price_list_mapped_id,
+                'title': obj.price_list_mapped.title,
             }
         return {}
 
@@ -600,6 +608,24 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                 'email': obj.owner.email,
                 'mobile': obj.owner.mobile,
                 'contact_owner': contact_owner_information
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term_customer_mapped(cls, obj):
+        if obj.payment_term_customer_mapped:
+            return {
+                'id': str(obj.payment_term_customer_mapped_id),
+                'title': obj.payment_term_customer_mapped.title
+            }
+        return {}
+
+    @classmethod
+    def get_payment_term_supplier_mapped(cls, obj):
+        if obj.payment_term_supplier_mapped:
+            return {
+                'id': str(obj.payment_term_supplier_mapped_id),
+                'title': obj.payment_term_supplier_mapped.title
             }
         return {}
 
@@ -661,16 +687,53 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             })
         return billing_address_list
 
+    @classmethod
+    def get_bank_accounts_mapped(cls, obj):
+        bank_accounts_mapped_list = []
+        for item in obj.account_banks_mapped.all():
+            bank_accounts_mapped_list.append(
+                {
+                    'bank_country_id': item.country_id,
+                    'bank_name': item.bank_name,
+                    'bank_code': item.bank_code,
+                    'bank_account_name': item.bank_account_name,
+                    'bank_account_number': item.bank_account_number,
+                    'bic_swift_code': item.bic_swift_code,
+                    'is_default': item.is_default
+                }
+            )
+        return bank_accounts_mapped_list
+
+    @classmethod
+    def get_credit_cards_mapped(cls, obj):
+        credit_cards_mapped_list = []
+        for item in obj.credit_cards_mapped.all():
+            credit_cards_mapped_list.append(
+                {
+                    'credit_card_type': item.credit_card_type,
+                    'credit_card_number': item.credit_card_number,
+                    'credit_card_name': item.credit_card_name,
+                    'card_expired_date': item.expired_date,
+                    'is_default': item.is_default
+                }
+            )
+        return credit_cards_mapped_list
+
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(max_length=150)
-    manager = serializers.JSONField()
-    account_type = serializers.JSONField()
-    parent_account = serializers.UUIDField(required=False, allow_null=True)
-    bank_accounts_information = serializers.JSONField()
-    credit_cards_information = serializers.JSONField()
-    contact_list = serializers.ListField(required=False)
+    tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
     owner = serializers.UUIDField(required=False, allow_null=True)
+    account_group = serializers.UUIDField(required=False, allow_null=True)
+    industry = serializers.UUIDField(required=False, allow_null=True)
+    account_type = serializers.ListField(child=serializers.UUIDField(required=True))
+    manager = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    parent_account = serializers.UUIDField(required=False, allow_null=True)
+    contact_select_list = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    system_status = serializers.ChoiceField(choices=[0, 1], help_text='0: draft, 1: created', default=0)
+    price_list_mapped = serializers.UUIDField(required=False, allow_null=True)
+    currency = serializers.UUIDField()
+    payment_term_customer_mapped = serializers.UUIDField(required=False, allow_null=True)
+    payment_term_supplier_mapped = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Account
@@ -678,35 +741,33 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'name',
             'website',
             'account_type',
-            'manager',
-            'owner',
-            'parent_account',
+            'account_type_selection',
             'account_group',
+            'owner',
+            'manager',
+            'parent_account',
             'tax_code',
             'industry',
             'annual_revenue',
             'total_employees',
             'phone',
             'email',
+            'contact_select_list',
+            'system_status',
+            # from-detail
+            'price_list_mapped',
             'currency',
-            'shipping_address',
-            'billing_address',
             'payment_term_customer_mapped',
             'payment_term_supplier_mapped',
-            'price_list_mapped',
             'credit_limit_customer',
-            'credit_limit_supplier',
-            'bank_accounts_information',
-            'credit_cards_information',
-            'account_type_selection',
-            'contact_list'
+            'credit_limit_supplier'
         )
 
     @classmethod
-    def validate_account_group(cls, value):
-        if value:
-            return value
-        raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
+    def validate_tax_code(cls, value):
+        if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).count() > 1:
+            raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
+        return value
 
     @classmethod
     def validate_owner(cls, value):
@@ -718,21 +779,25 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_bank_accounts_information(cls, value):
-        for item in value:
-            for key in item:
-                if key != 'bic_swift_code':
-                    if item[key] is None:
-                        raise serializers.ValidationError(AccountsMsg.BANK_ACCOUNT_MISSING_VALUE)
-        return value
+    def validate_account_type(cls, value):
+        if isinstance(value, list):
+            account_type = AccountType.objects.filter(id__in=value)
+            if account_type.count() == len(value):
+                return [
+                    {'id': str(item.id), 'code': item.code, 'title': item.title}
+                    for item in account_type
+                ]
+            raise serializers.ValidationError({'Account Type': HRMsg.ACCOUNT_TYPE_NOT_EXIST})
+        raise serializers.ValidationError({'Account Type': HRMsg.ACCOUNT_TYPE_IS_ARRAY})
 
     @classmethod
-    def validate_credit_cards_information(cls, value):
-        for item in value:
-            for key in item:
-                if item[key] is None:
-                    raise serializers.ValidationError(AccountsMsg.CREDIT_CARD_MISSING_VALUE)
-        return value
+    def validate_account_group(cls, value):
+        if value:
+            try:
+                return AccountGroup.objects.get(id=value)
+            except AccountGroup.DoesNotExist:
+                raise serializers.ValidationError({"Account Group": AccountsMsg.ACCOUNT_GROUP_NOT_EXIST})
+        raise serializers.ValidationError(AccountsMsg.ACCOUNT_GROUP_NOT_NONE)
 
     @classmethod
     def validate_manager(cls, value):
@@ -740,72 +805,102 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             employee_list = Employee.objects.filter(id__in=value)
             if employee_list.count() == len(value):
                 return [
-                    {'id': str(employee.id), 'code': employee.code, 'fullname': employee.get_full_name(2)}
-                    for employee in employee_list
+                    {'id': str(item.id), 'code': item.code, 'full_name': item.get_full_name(2)}
+                    for item in employee_list
                 ]
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
-        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
-
-    def validate(self, validate_data):
-        account_types = []
-        for item in validate_data.get('account_type', []):
-            account_type = AccountType.objects.filter_current(fill__tenant=True, fill__company=True, id=item).first()
-            if account_type:
-                account_types.append(
-                    {'id': str(item), 'code': account_type.code, 'title': account_type.title}
-                )
-                tax_code = validate_data.get('tax_code', None)
-                if validate_data['account_type_selection'] == 1:  # tax_code is required
-                    if not tax_code:
-                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_NOT_NONE)
-                elif validate_data['account_type_selection'] == 0:
-                    validate_data.update({'parent_account': None})
-
-                if tax_code:
-                    account_mapped_tax_code = Account.objects.filter_current(
-                        fill__tenant=True,
-                        fill__company=True,
-                        tax_code=tax_code
-                    ).first()
-                    if account_mapped_tax_code and account_mapped_tax_code != self.instance:
-                        raise serializers.ValidationError(AccountsMsg.TAX_CODE_IS_EXIST)
-            else:
-                raise serializers.ValidationError(AccountsMsg.ACCOUNTTYPE_NOT_EXIST)
-        validate_data['account_type'] = account_types
-        return validate_data
+            raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEES_NOT_EXIST})
+        raise serializers.ValidationError({'Manager': HRMsg.EMPLOYEE_IS_ARRAY})
 
     @classmethod
-    def update_contact(cls, instance, data):
-        Contact.objects.filter(account_name=instance).update(account_name=None)
-        for item in data:
-            contact = Contact.objects.get(id=item['id'])
-            contact.account_name = instance
-            contact.is_primary = item['is_primary']
-            contact.save()
-        return True
+    def validate_parent_account(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except AccountGroup.DoesNotExist:
+                raise serializers.ValidationError({"Parent Account": AccountsMsg.PARENT_ACCOUNT_NOT_EXIST})
+        return None
 
+    @classmethod
+    def validate_industry(cls, value):
+        if value:
+            try:
+                return Industry.objects.get(id=value)
+            except Industry.DoesNotExist:
+                raise serializers.ValidationError({"Industry": AccountsMsg.INDUSTRY_NOT_EXIST})
+        raise serializers.ValidationError({"Industry": AccountsMsg.INDUSTRY_NOT_NULL})
+
+    @classmethod
+    def validate_currency(cls, value):
+        if value:
+            try:
+                return Currency.objects.get(id=value)
+            except Currency.DoesNotExist:
+                raise serializers.ValidationError({"Currency": AccountsMsg.CURRENCY_DEFAULT_NOT_EXIST})
+        raise serializers.ValidationError({"Currency": AccountsMsg.CURRENCY_NOT_NULL})
+
+    @classmethod
+    def validate_payment_term_customer_mapped(cls, value):
+        if value:
+            try:
+                return PaymentTerm.objects.get(id=value)
+            except PaymentTerm.DoesNotExist:
+                raise serializers.ValidationError({"Payment Term": AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_payment_term_supplier_mapped(cls, value):
+        if value:
+            try:
+                return PaymentTerm.objects.get(id=value)
+            except PaymentTerm.DoesNotExist:
+                raise serializers.ValidationError({"Payment Term": AccountsMsg.PAYMENT_TERM_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_price_list_mapped(cls, value):
+        if value:
+            try:
+                return Price.objects.get(id=value)
+            except Price.DoesNotExist:
+                raise serializers.ValidationError({"Price": AccountsMsg.PRICE_LIST_DEFAULT_NOT_EXIST})
+        return None
+
+    def validate(self, validate_data):
+        if validate_data.get('account_type_selection', None):
+            if 'tax_code' not in validate_data:
+                raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_NOT_NONE})
+            if 'total_employees' not in validate_data:
+                raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
+        return validate_data
+
+    @decorator_run_workflow
     def update(self, instance, validated_data):
+        Contact.objects.filter(account_name=instance).update(account_name=None)
+        update_shipping_address_information(instance, self.initial_data.get('update_shipping_address', []))
+        update_billing_address_information(instance, self.initial_data.get('update_billing_address', []))
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
 
-        # recreate in AccountEmployee (Account Manager)
-        create_employee_map_account(instance)
-        # add account type detail information
-        add_account_types_information(validated_data.get('account_type', []), instance)
-        # add shipping address
-        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', []))
-        # add billing address
-        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', []))
-        # add banking accounts
-        add_banking_accounts_information(instance, validated_data.get('bank_accounts_information', []))
-        # add credit cards
-        add_credit_cards_information(instance, validated_data.get('credit_cards_information', []))
+        contact_mapped = self.initial_data.get('contact_mapped', []) # noqa
+        create_employee_map_account(instance) # noqa
+        add_account_types_information(instance)
 
-        # update contact
-        if 'contact_list' in validated_data:
-            data_contact = validated_data.pop('contact_list')
-            self.update_contact(instance, data_contact)
+        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', []))
+        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', []))
+
+        add_banking_accounts_information(instance, self.initial_data.get('bank_accounts_information', []))
+        add_credit_cards_information(instance, self.initial_data.get('credit_cards_information', []))
+
+        for obj in contact_mapped:
+            try:
+                contact = Contact.objects.get(id=obj.get('id', None))
+                contact.is_primary = obj['owner']
+                contact.account_name = instance
+                contact.save()
+            except Contact.DoesNotExist:
+                raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
         return instance
 
 
@@ -854,7 +949,6 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             "phone",
             "shipping_address",
             "billing_address",
-            "bank_accounts_information",
             "payment_term_customer_mapped",
             'payment_term_supplier_mapped',
             "price_list_mapped"

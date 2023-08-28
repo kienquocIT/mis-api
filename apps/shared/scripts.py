@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType, Account
+from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
 
 from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
 from apps.core.tenant.models import Tenant, TenantPlan
@@ -704,5 +704,10 @@ def update_parent_account():
         if old_value:
             obj.parent_account = str(old_value).replace('-', '')
             obj.save()
+    return True
+
+
+def update_credit_card_type():
+    AccountCreditCards.objects.all().update(credit_card_type=1)
     return True
 
