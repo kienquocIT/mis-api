@@ -408,7 +408,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attach(cls, obj):
-        if obj.attach:
+        if obj.attach:  # noqa
             one_attach = obj.attach[0]
             file = TaskAttachmentFile.objects.filter(
                 task=obj,

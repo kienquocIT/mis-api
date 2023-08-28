@@ -26,7 +26,8 @@ class EmployeeListFilter(django_filters.FilterSet):
             filter_kwargs = Q()
             if TypeCheck.check_uuid(value):
                 filter_kwargs |= Q(**{name: value})
-            elif user_obj.employee_current and user_obj.employee_current.group:
+            elif user_obj.employee_current and user_obj.employee_current.group and str(
+                    user_obj.id) == str(user_obj.employee_current.group.first_manager_id):
                 manager = str(user_obj.employee_current.group.first_manager_id)
                 filter_kwargs |= Q(**{name: manager})
             return queryset.filter(filter_kwargs)
