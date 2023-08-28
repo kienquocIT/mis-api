@@ -34,7 +34,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchasequotation', model_code='purchasequotation', perm_code='view',
+        label_code='purchasing', model_code='purchasequotation', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -46,7 +46,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchasequotation', model_code='purchasequotation', perm_code='create',
+        label_code='purchasing', model_code='purchasequotation', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -72,7 +72,7 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchasequotation', model_code='purchasequotation', perm_code='view',
+        label_code='purchasing', model_code='purchasequotation', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)

@@ -33,7 +33,7 @@ class PurchaseOrderList(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaseorder', model_code='purchaseorder', perm_code='view',
+        label_code='purchasing', model_code='purchaseorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -45,7 +45,7 @@ class PurchaseOrderList(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaseorder', model_code='purchaseorder', perm_code='create',
+        label_code='purchasing', model_code='purchaseorder', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -87,7 +87,7 @@ class PurchaseOrderDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaseorder', model_code='purchaseorder', perm_code='view',
+        label_code='purchasing', model_code='purchaseorder', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -99,7 +99,7 @@ class PurchaseOrderDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaseorder', model_code='purchaseorder', perm_code='edit',
+        label_code='purchasing', model_code='purchaseorder', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

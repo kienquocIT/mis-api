@@ -32,7 +32,7 @@ class PurchaseRequestList(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaserequest', model_code='purchaserequest', perm_code='view',
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -44,7 +44,7 @@ class PurchaseRequestList(
     )
     @mask_view(
         login_require=True, auth_require=True, employee_require=True,
-        label_code='purchaserequest', model_code='purchaserequest', perm_code='create',
+        label_code='purchasing', model_code='purchaserequest', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -71,7 +71,7 @@ class PurchaseRequestDetail(
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='purchaserequest', model_code='purchaserequest', perm_code='view',
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
