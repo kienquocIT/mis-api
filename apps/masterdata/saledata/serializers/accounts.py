@@ -139,6 +139,7 @@ def add_billing_address_information(account, billing_address_list):
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
     owner = serializers.UUIDField(required=False, allow_null=True)
@@ -171,6 +172,12 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'contact_select_list',
             'system_status'
         )
+
+    @classmethod
+    def validate_name(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     @classmethod
     def validate_code(cls, value):
@@ -529,6 +536,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
 
 
 class AccountUpdateSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
     owner = serializers.UUIDField(required=False, allow_null=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
@@ -570,6 +578,12 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'credit_limit_customer',
             'credit_limit_supplier'
         )
+
+    @classmethod
+    def validate_name(cls, value):
+        if value:
+            return value
+        raise serializers.ValidationError({"name": AccountsMsg.NAME_NOT_NULL})
 
     @classmethod
     def validate_tax_code(cls, value):
