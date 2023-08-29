@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType, Account
+from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
 
 from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
 from apps.core.tenant.models import Tenant, TenantPlan
@@ -722,3 +722,23 @@ def update_opportunity_contact_role_datas():
         opp.save()
 
     print('Update Done')
+
+
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
+def update_parent_account():
+    for obj in Account.objects.all():
+        old_value = obj.parent_account
+        if old_value:
+            obj.parent_account_mapped_id = str(old_value).replace('-', '')
+            obj.save()
+    return True
+
+
+def update_credit_card_type():
+    AccountCreditCards.objects.all().update(credit_card_type=1)
+    return True
