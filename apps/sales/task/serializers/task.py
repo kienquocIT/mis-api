@@ -35,7 +35,7 @@ class ValidAssignTask:
     def check_staffs_in_dept(cls, attrs):
         self_employee = attrs['employee_created']
         assignee = attrs['assign_to']
-        if self_employee.group.id == assignee.group.id:
+        if self_employee.group.id == assignee.group.id or str(self_employee.id) == str(assignee.id):
             return True
         return False
 
@@ -48,6 +48,8 @@ class ValidAssignTask:
             for emp in employee_group:
                 if emp.id == assignee.id:
                     return True
+        if str(assigner.id) == str(assignee.id):
+            return True
         return False
 
     @classmethod
