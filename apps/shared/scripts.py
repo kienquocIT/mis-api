@@ -30,7 +30,6 @@ from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 
 
-
 def update_sale_default_data_old_company():
     for company_obj in Company.objects.all():
         SaleDefaultData(company_obj=company_obj)()
