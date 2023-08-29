@@ -5,7 +5,7 @@ from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
 )
 
 from apps.core.base.serializers import (
@@ -40,12 +40,19 @@ class PlanList(generics.GenericAPIView):
         return ResponseController.success_200(ser.data, key_data='result')
 
 
-class TenantApplicationList(ApplicationListMixin):
+class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
     search_fields = ('title', 'code')
     filterset_fields = ('code', 'title')
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            id__in=PlanApplication.objects.filter(
+                plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+            ).values_list('application__id', flat=True)
+        )
 
     @swagger_auto_schema(
         operation_summary="Tenant Application list",
@@ -54,7 +61,7 @@ class TenantApplicationList(ApplicationListMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         kwargs['is_workflow'] = True
-        return self.tenant_application_list(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
 
 class ApplicationPropertyList(BaseListMixin):

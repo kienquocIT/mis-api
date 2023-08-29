@@ -182,9 +182,9 @@ _Application_crm_data = {
         "code": "orderdeliverysub",
         "model_code": "orderdeliverysub",
         "app_label": "delivery",
-        "is_workflow": False,
-        "option_permission": 1,
-        "option_allowed": [4],
+        "is_workflow": True,
+        "option_permission": 0,
+        "option_allowed": [1, 2, 3, 4],
     },
     "10a5e913-fa51-4127-a632-a8347a55c4bb": {
         "title": "Prices",

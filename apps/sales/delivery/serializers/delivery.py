@@ -225,7 +225,8 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'contact_data',
             'config_at_that_point',
             'attachments',
-            'delivery_logistic'
+            'delivery_logistic',
+            'workflow_runtime_id',
         )
 
 

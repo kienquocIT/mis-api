@@ -4,6 +4,8 @@ from django.db import transaction
 from django.utils import timezone
 
 from celery import shared_task
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.delivery.models import (
     DeliveryConfig,
     OrderPicking, OrderPickingSub, OrderPickingProduct,
@@ -234,8 +236,39 @@ class SaleOrderActiveDeliverySerializer:
             remaining_quantity=delivery_quantity,
             ready_quantity=delivery_quantity if self.check_has_prod_services > 0 else 0,
             delivery_data=[],
-            date_created=timezone.now()
+            date_created=timezone.now(),
+            system_status=1,
         )
+
+    @decorator_run_workflow
+    def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
+        sub_obj = OrderDeliverySub.objects.create(
+            code=obj_delivery.code,
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
+            id=sub_id,
+            order_delivery=obj_delivery,
+            date_done=None,
+            previous_step=None,
+            times=1,
+            delivery_quantity=delivery_quantity,
+            delivered_quantity_before=0,
+            remaining_quantity=delivery_quantity,
+            ready_quantity=obj_delivery.ready_quantity,
+            delivery_data=[],
+            is_updated=False,
+            state=obj_delivery.state,
+            sale_order_data=obj_delivery.sale_order_data,
+            customer_data=obj_delivery.customer_data,
+            contact_data=obj_delivery.contact_data,
+            date_created=obj_delivery.date_created,
+            config_at_that_point={
+                "is_picking": self.config_obj.is_picking,
+                "is_partial_ship": self.config_obj.is_partial_ship
+            },
+            system_status=1,
+        )
+        return sub_obj
 
     def active(self) -> (bool, str):
         try:
@@ -253,30 +286,10 @@ class SaleOrderActiveDeliverySerializer:
                     else:
                         obj_delivery = self._create_order_delivery(delivery_quantity=delivery_quantity)
                         # setup SUB
-                    sub_obj = OrderDeliverySub.objects.create(
-                        code=obj_delivery.code,
-                        tenant_id=self.tenant_id,
-                        company_id=self.company_id,
-                        id=sub_id,
-                        order_delivery=obj_delivery,
-                        date_done=None,
-                        previous_step=None,
-                        times=1,
-                        delivery_quantity=delivery_quantity,
-                        delivered_quantity_before=0,
-                        remaining_quantity=delivery_quantity,
-                        ready_quantity=obj_delivery.ready_quantity,
-                        delivery_data=[],
-                        is_updated=False,
-                        state=obj_delivery.state,
-                        sale_order_data=obj_delivery.sale_order_data,
-                        customer_data=obj_delivery.customer_data,
-                        contact_data=obj_delivery.contact_data,
-                        date_created=obj_delivery.date_created,
-                        config_at_that_point={
-                            "is_picking": self.config_obj.is_picking,
-                            "is_partial_ship": self.config_obj.is_partial_ship
-                        }
+                    sub_obj = self._create_order_delivery_sub(
+                        obj_delivery=obj_delivery,
+                        sub_id=sub_id,
+                        delivery_quantity=delivery_quantity
                     )
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
