@@ -124,6 +124,7 @@ def add_shipping_address_information(account, shipping_address_list):
     bulk_info = []
     for item in shipping_address_list:
         bulk_info.append(AccountShippingAddress(**item, account=account))
+    AccountShippingAddress.objects.filter(account=account).delete()
     AccountShippingAddress.objects.bulk_create(bulk_info)
     return True
 
@@ -132,42 +133,9 @@ def add_billing_address_information(account, billing_address_list):
     bulk_info = []
     for item in billing_address_list:
         bulk_info.append(AccountBillingAddress(**item, account=account))
+    AccountBillingAddress.objects.filter(account=account).delete()
     AccountBillingAddress.objects.bulk_create(bulk_info)
     return True
-
-
-def update_shipping_address_information(account, old_shipping_address_id_dict):
-    if len(old_shipping_address_id_dict) > 0:
-        for item in AccountShippingAddress.objects.filter(account=account):
-            if item.full_address not in [i.get('full_address', None) for i in old_shipping_address_id_dict]:
-                item.delete()
-            else:
-                item.is_default = False
-                item.save()
-        try:
-            new_default = [k for k in old_shipping_address_id_dict if k['is_default']][0].get('full_address', None)
-            AccountShippingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
-        except AccountShippingAddress.DoesNotExist:
-            raise serializers.ValidationError({'Account Shipping Address': AccountsMsg.ACCOUNT_SHIPPING_NOT_EXIST})
-        return True
-    return False
-
-
-def update_billing_address_information(account, old_billing_address_id_dict):
-    if len(old_billing_address_id_dict) > 0:
-        for item in AccountBillingAddress.objects.filter(account=account):
-            if item.full_address not in [i.get('full_address', None) for i in old_billing_address_id_dict]:
-                item.delete()
-            else:
-                item.is_default = False
-                item.save()
-        try:
-            new_default = [k for k in old_billing_address_id_dict if k['is_default']][0].get('full_address', None)
-            AccountBillingAddress.objects.filter(account=account, full_address=new_default).update(is_default=True)
-        except AccountBillingAddress.DoesNotExist:
-            raise serializers.ValidationError({'Account Billing Address': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
-        return True
-    return False
 
 
 class AccountCreateSerializer(serializers.ModelSerializer):
@@ -265,7 +233,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if value:
             try:
                 return Account.objects.get(id=value)
-            except AccountGroup.DoesNotExist:
+            except Account.DoesNotExist:
                 raise serializers.ValidationError({"Parent Account": AccountsMsg.PARENT_ACCOUNT_NOT_EXIST})
         return None
 
@@ -314,8 +282,8 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         create_employee_map_account(account)
         add_account_types_information(account)
 
-        add_shipping_address_information(account, self.initial_data.get('shipping_address_id_dict', []))
-        add_billing_address_information(account, self.initial_data.get('billing_address_id_dict', []))
+        add_shipping_address_information(account, self.initial_data.get('shipping_address_dict', []))
+        add_billing_address_information(account, self.initial_data.get('billing_address_dict', []))
 
         if contact_mapped:
             for obj in contact_mapped:
@@ -501,6 +469,11 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         for item in obj.account_mapped_shipping_address.all():
             shipping_address_list.append({
                 'id': item.id,
+                'country_id': item.country_id,
+                'city_id': item.city_id,
+                'district_id': item.district_id,
+                'ward_id': item.ward_id,
+                'detail_address': item.detail_address,
                 'full_address': item.full_address,
                 'is_default': item.is_default
             })
@@ -512,6 +485,10 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         for item in obj.account_mapped_billing_address.all():
             billing_address_list.append({
                 'id': item.id,
+                'account_name': item.account_name,
+                'email': item.email,
+                'tax_code': item.tax_code,
+                'account_address': item.account_address,
                 'full_address': item.full_address,
                 'is_default': item.is_default
             })
@@ -706,10 +683,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
 
     @decorator_run_workflow
     def update(self, instance, validated_data):
-        Contact.objects.filter(account_name=instance).update(account_name=None)
-        update_shipping_address_information(instance, self.initial_data.get('update_shipping_address', []))
-        update_billing_address_information(instance, self.initial_data.get('update_billing_address', []))
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -718,12 +691,13 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         create_employee_map_account(instance) # noqa
         add_account_types_information(instance)
 
-        add_shipping_address_information(instance, self.initial_data.get('shipping_address_id_dict', []))
-        add_billing_address_information(instance, self.initial_data.get('billing_address_id_dict', []))
+        add_shipping_address_information(instance, self.initial_data.get('shipping_address_dict', []))
+        add_billing_address_information(instance, self.initial_data.get('billing_address_dict', []))
 
         add_banking_accounts_information(instance, self.initial_data.get('bank_accounts_information', []))
         add_credit_cards_information(instance, self.initial_data.get('credit_cards_information', []))
 
+        Contact.objects.filter(account_name=instance).update(account_name=None)
         for obj in contact_mapped:
             try:
                 contact = Contact.objects.get(id=obj.get('id', None))
