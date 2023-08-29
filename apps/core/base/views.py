@@ -1,7 +1,6 @@
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.base.mixins import ApplicationListMixin
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,

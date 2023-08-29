@@ -1,5 +1,4 @@
 from apps.core.base.models import PlanApplication
-from apps.core.tenant.models import TenantPlan
 from apps.shared import ResponseController, BaseListMixin
 
 
