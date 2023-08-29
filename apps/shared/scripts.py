@@ -24,12 +24,10 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
-    OpportunityDocument
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
-from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
 
 
 def update_sale_default_data_old_company():
@@ -704,6 +702,28 @@ def update_employee_created_purchase_request():
     print('Update Done')
 
 
+def update_opportunity_contact_role_datas():
+    opps = Opportunity.objects.all()
+
+    for opp in opps:
+        list_data = []
+        for data in opp.opportunity_contact_role_datas:
+            obj_contact = Contact.objects.get(id=data['contact']['id'])
+            list_data.append({
+                'type_customer': data['type_customer'],
+                'role': data['role'],
+                'job_title': data['job_title'],
+                'contact': {
+                    'id': str(obj_contact.id),
+                    'fullname': obj_contact.fullname,
+                }
+            })
+        opp.opportunity_contact_role_datas = list_data
+        opp.save()
+
+    print('Update Done')
+
+
 def delete_old_m2m_data_price_list_product():
     today = date.today()
     ProductPriceList.objects.filter(date_created__lt=today).delete()
@@ -722,4 +742,3 @@ def update_parent_account():
 def update_credit_card_type():
     AccountCreditCards.objects.all().update(credit_card_type=1)
     return True
-

@@ -489,7 +489,7 @@ class Opportunity(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "OPP.CODE."
+        char = "OPP"
         if not self.code:
             temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
