@@ -103,14 +103,12 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         return None
 
     def create(self, validated_data):
-        if Expense.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'EXPENSE.CODE.0001'
-        else:
-            latest_code = Expense.objects.filter_current(
-                fill__tenant=True, fill__company=True
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'EXPENSE.CODE.000' + str(new_code)
+
+        char = 'S'
+        no_expense = Expense.objects.filter_current(fill__tenant=True, fill__company=True).count()
+        temper = "%04d" % (no_expense + 1)  # pylint: disable=C0209
+        new_code = f"{char}{temper}"
+
         data_price_list = validated_data.pop('data_price_list')
         currency_using = validated_data.pop('currency_using')
         data_role = validated_data.pop('role', [])
@@ -227,6 +225,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                     }
                 )
         return result
+
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False, allow_blank=False, allow_null=False)

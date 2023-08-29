@@ -62,7 +62,7 @@ class ReturnAdvance(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "RA.CODE."
+        char = "RP"
         if not self.code:
             temper = "%04d" % (return_advance + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"

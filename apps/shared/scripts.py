@@ -2,7 +2,7 @@ from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account
@@ -25,10 +25,9 @@ from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.purchasing.models import PurchaseRequestProduct
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
-from ..sales.task.models import OpportunityTaskStatus, OpportunityTaskConfig
 
 
 def update_sale_default_data_old_company():
@@ -677,6 +676,12 @@ def update_product_size_for_inventory():
         return True
 
 
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
 def update_currency_price_list():
     prices = Price.objects.all()
     bulk_data = []
@@ -692,8 +697,28 @@ def update_currency_price_list():
     print('Update Done')
 
 
-def delete_old_m2m_data_price_list_product():
-    today = date.today()
-    ProductPriceList.objects.filter(date_created__lt=today).delete()
-    return True
+def update_employee_created_purchase_request():
+    PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
+    print('Update Done')
 
+
+def update_opportunity_contact_role_datas():
+    opps = Opportunity.objects.all()
+
+    for opp in opps:
+        list_data = []
+        for data in opp.opportunity_contact_role_datas:
+            obj_contact = Contact.objects.get(id=data['contact']['id'])
+            list_data.append({
+                'type_customer': data['type_customer'],
+                'role': data['role'],
+                'job_title': data['job_title'],
+                'contact': {
+                    'id': str(obj_contact.id),
+                    'fullname': obj_contact.fullname,
+                }
+            })
+        opp.opportunity_contact_role_datas = list_data
+        opp.save()
+
+    print('Update Done')
