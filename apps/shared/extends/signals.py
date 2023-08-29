@@ -746,9 +746,9 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
             app_obj = runtime.app
             if app_obj and doc_id:
                 emp.append_permit_by_ids(
-                    label=app_obj.app_label,
-                    app=app_obj.code,
-                    perm='view',
+                    app_label=app_obj.app_label,
+                    model_code=app_obj.code,
+                    perm_code='view',
                     doc_id=str(doc_id),
                 )
 

@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductPriceList
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.quotation.models import Quotation, QuotationExpense
@@ -112,6 +113,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            'workflow_runtime_id',
         )
 
     @classmethod
@@ -325,7 +327,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(
