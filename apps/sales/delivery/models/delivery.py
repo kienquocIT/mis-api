@@ -3,7 +3,7 @@ import json
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
-    SimpleAbstractModel, MasterDataAbstractModel,
+    SimpleAbstractModel,
     DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
 )
 
