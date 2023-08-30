@@ -24,6 +24,7 @@ class QuotationList(
         'opportunity__sale_order': ['exact', 'isnull'],
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
+        'system_status': ['in'],
     }
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer
