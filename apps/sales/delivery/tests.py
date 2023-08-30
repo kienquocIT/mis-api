@@ -220,7 +220,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "account_type": [account_type],
             "owner": contact,
             "manager": {employee},
-            "parent_account": None,
+            "parent_account_mapped": None,
             "account_group": account_group,
             "tax_code": "string",
             "industry": industry,
@@ -228,12 +228,6 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "shipping_address": {},
-            "billing_address": {},
-            "contact_select_list": [
-                contact
-            ],
-            "contact_primary": contact,
             "account_type_selection": 0,
             "system_status": 0
         }

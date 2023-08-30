@@ -6,15 +6,14 @@ from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup,
 )
 from apps.masterdata.saledata.serializers.accounts import (
+    AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
+    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer,
+)
+from apps.masterdata.saledata.serializers.accounts_masterdata import (
     AccountTypeListSerializer, AccountTypeCreateSerializer, AccountTypeDetailsSerializer, AccountTypeUpdateSerializer,
     IndustryListSerializer, IndustryCreateSerializer, IndustryDetailsSerializer, IndustryUpdateSerializer,
-
-    AccountListSerializer, AccountCreateSerializer, AccountDetailSerializer, AccountUpdateSerializer,
-
     AccountGroupListSerializer, AccountGroupCreateSerializer,
     AccountGroupDetailsSerializer, AccountGroupUpdateSerializer,
-
-    AccountsMapEmployeesListSerializer, AccountForSaleListSerializer,
 )
 
 
