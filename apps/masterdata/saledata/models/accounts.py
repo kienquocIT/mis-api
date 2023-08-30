@@ -17,6 +17,7 @@ __all__ = [
     'AccountShippingAddress',
     'AccountBillingAddress',
     'Contact',
+    'PaymentTerm',
     'ANNUAL_REVENUE_SELECTION',
 ]
 
@@ -48,6 +49,12 @@ TOTAL_EMPLOYEES_SELECTION = [
     (3, _('50-200 people')),
     (4, _('200-500 people')),
     (5, _('> 500 people')),
+]
+
+CREDIT_CARD_TYPES = [
+    (1, _('Mastercard')),
+    (2, _('Visa')),
+    (3, _('American express')),
 ]
 
 
@@ -111,10 +118,6 @@ class Account(DataAbstractModel):
         null=True,
         max_length=150
     )
-    # [
-    #   {"title": "Customer", "detail": "individual/organization"},
-    #   {"title": "Personal", "detail": ""},
-    # ]
     account_type = models.JSONField(
         default=list
     )
@@ -129,7 +132,6 @@ class Account(DataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
-    # ["e3e416d7-ae74-4bb8-a55f-169c5fde53a0", "d2f9397d-3a6c-46d6-9a67-442bc43554a8"]
     manager = models.JSONField(
         default=list
     )
@@ -147,16 +149,15 @@ class Account(DataAbstractModel):
         blank=True,
         related_name='account_map_account_types'
     )
-    bank_accounts_information = models.JSONField(
-        default=list
-    )
-    credit_cards_information = models.JSONField(
-        default=list
-    )
     parent_account = models.CharField(
         verbose_name='parent account',
         null=True,
         max_length=150
+    )
+    parent_account_mapped = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True
     )
     tax_code = models.CharField(
         verbose_name='tax code',
@@ -214,24 +215,6 @@ class Account(DataAbstractModel):
     )
     credit_limit_supplier = models.FloatField(null=True)
 
-    # [
-    #   "Số 2/8, Xã Định An, Huyện Dầu Tiếng, Bình Dương",
-    #   "Số 22/20, Phường Lê Hồng Phong, Thành Phố Phủ Lý, Hà Nam"
-    # ]
-    # địa chỉ đầu tiên là default
-    shipping_address = models.JSONField(
-        default=list,
-    )
-
-    # [
-    #   "Tầng 2, TGDD, Số 22/20, xã Bình Hưng, huyện Bình Chánh, TP HCM (email: tgdd@gmail.com, tax code: 123123)"
-    #   "Tầng 10, TGDD, Số 7/10, xã Bình Hưng, huyện Bình Chánh, TP HCM (email: tgdd@gmail.com, tax code: 123123)"
-    # ]
-    # địa chỉ đầu tiên là default
-    billing_address = models.JSONField(
-        default=list,
-    )
-
     class Meta:
         verbose_name = 'Account'
         verbose_name_plural = 'Accounts'
@@ -242,7 +225,7 @@ class Account(DataAbstractModel):
 
 # AccountEmployee
 class AccountEmployee(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_employees_mapped')
     employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
 
     class Meta:
@@ -254,7 +237,7 @@ class AccountEmployee(SimpleAbstractModel):
 
 # AccountBanks
 class AccountBanks(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_banks_mapped')
     country = models.ForeignKey('base.Country', on_delete=models.CASCADE)
     bank_name = models.CharField(
         verbose_name='Name of bank',
@@ -297,12 +280,11 @@ class AccountBanks(SimpleAbstractModel):
 
 # AccountCreditCards
 class AccountCreditCards(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
-    credit_card_type = models.CharField(
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='credit_cards_mapped')
+    credit_card_type = models.SmallIntegerField(
         verbose_name='Credit card type',
-        blank=True,
-        null=True,
-        max_length=150
+        choices=CREDIT_CARD_TYPES,
+        default=0
     )
     credit_card_number = models.CharField(
         verbose_name='Credit card number',
@@ -333,7 +315,7 @@ class AccountCreditCards(SimpleAbstractModel):
 
 # AccountAccountTypes
 class AccountAccountTypes(SimpleAbstractModel):
-    account = models.ForeignKey(Account, on_delete=models.CASCADE)
+    account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='account_account_types_mapped')
     account_type = models.ForeignKey(AccountType, on_delete=models.CASCADE)
 
     class Meta:
@@ -373,7 +355,12 @@ class AccountShippingAddress(SimpleAbstractModel):
 # AccountShippingAddress
 class AccountBillingAddress(SimpleAbstractModel):
     account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name="account_mapped_billing_address")
-    account_name = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='billing_account_name')
+    account_name = models.CharField(
+        verbose_name='billing account name',
+        blank=True,
+        null=True,
+        max_length=150
+    )
     email = models.CharField(
         verbose_name='account email',
         blank=True,

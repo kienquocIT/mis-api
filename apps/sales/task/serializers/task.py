@@ -35,7 +35,7 @@ class ValidAssignTask:
     def check_staffs_in_dept(cls, attrs):
         self_employee = attrs['employee_created']
         assignee = attrs['assign_to']
-        if self_employee.group.id == assignee.group.id:
+        if self_employee.group.id == assignee.group.id or str(self_employee.id) == str(assignee.id):
             return True
         return False
 
@@ -48,6 +48,8 @@ class ValidAssignTask:
             for emp in employee_group:
                 if emp.id == assignee.id:
                     return True
+        if str(assigner.id) == str(assignee.id):
+            return True
         return False
 
     @classmethod
@@ -58,6 +60,8 @@ class ValidAssignTask:
             member = data.get('member')  # member: dict => {}
             if member['id'] == str(obj_assignee.id):
                 return True
+        if str(opp_data.employee_inherit_id) == str(obj_assignee.id):
+            return True
         return False
 
     @classmethod
@@ -160,6 +164,18 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
     parent_n = serializers.SerializerMethodField()
     task_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        if obj.employee_created:
+            return {
+                'avatar': obj.employee_created.avatar,
+                'first_name': obj.employee_created.first_name,
+                'last_name': obj.employee_created.last_name,
+                'full_name':  f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
+            }
+        return {}
 
     @classmethod
     def get_assign_to(cls, obj):
@@ -167,7 +183,8 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             return {
                 'avatar': obj.assign_to.avatar,
                 'first_name': obj.assign_to.first_name,
-                'last_name': obj.assign_to.last_name
+                'last_name': obj.assign_to.last_name,
+                'full_name': f'{obj.assign_to.last_name} {obj.assign_to.first_name}'
             }
         return {}
 
@@ -219,7 +236,9 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'priority',
             'assign_to',
             'checklist',
-            'parent_n'
+            'parent_n',
+            'employee_created',
+            'date_created'
         )
 
 
@@ -391,7 +410,7 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_attach(cls, obj):
-        if obj.attach:
+        if obj.attach:  # noqa
             one_attach = obj.attach[0]
             file = TaskAttachmentFile.objects.filter(
                 task=obj,
@@ -467,7 +486,7 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         config = OpportunityTaskConfig.objects.filter_current(
             fill__company=True,
         )
-        assignee = current_data.assign_to
+        assignee = update_data['assign_to']
         if config.exists():
             config = config.first()
             # check if request user is assignee and not is create task/sub-task
@@ -491,10 +510,9 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
                     )
 
             # validate follow by config
-            if current_data.employee_created == employee_request and update_data.get('assign_to', None):
+            if current_data.employee_created == employee_request and update_data['assign_to']:
                 ValidAssignTask.check_config(config, update_data)
             return True
-
         raise serializers.ValidationError(
             {'system': django.utils.translation.gettext_lazy("Missing default info please contact with admin.")}
         )

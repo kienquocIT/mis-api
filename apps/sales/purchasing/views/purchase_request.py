@@ -17,8 +17,8 @@ class PurchaseRequestList(
     serializer_list = PurchaseRequestListSerializer
     serializer_create = PurchaseRequestCreateSerializer
     serializer_detail = PurchaseRequestListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -30,7 +30,10 @@ class PurchaseRequestList(
         operation_summary="Purchase Request List",
         operation_description="Get Purchase Request List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -39,7 +42,10 @@ class PurchaseRequestList(
         operation_description="Create new Purchase Request",
         request_body=PurchaseRequestCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True, employee_require=True,
+        label_code='purchasing', model_code='purchaserequest', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -52,6 +58,9 @@ class PurchaseRequestDetail(
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_update = PurchaseRequestDetailSerializer
 
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
     def get_queryset(self):
         return super().get_queryset().select_related(
             'supplier',
@@ -63,7 +72,10 @@ class PurchaseRequestDetail(
         operation_summary="Purchase Request detail",
         operation_description="Get Purchase Request detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 

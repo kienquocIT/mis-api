@@ -211,12 +211,6 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "shipping_address": {},
-            "billing_address": {},
-            "contact_select_list": [
-                contact
-            ],
-            "contact_primary": contact,
             "account_type_selection": 0,
             "system_status": 0
         }
@@ -227,6 +221,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
     def test_create_purchase_request(self):
         supplier = self.test_create_account()
         product = self.test_create_product()
+        emp_current = self.get_employee()
 
         data = {
             "title": "Purchase Request 1",
@@ -252,6 +247,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             "pretax_amount": 20000000,
             "taxes": 2000000,
             "total_price": 22000000,
+            "employee_created": emp_current.data['result'][0]['id']
         }
 
         url = reverse("PurchaseRequestList")

@@ -64,7 +64,7 @@ class Shipping(MasterDataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "SHIP.CODE."
+        char = "S"
         if not self.code:
             temper = "%04d" % (shipping + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
