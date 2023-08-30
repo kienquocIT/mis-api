@@ -269,7 +269,6 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             'pretax_amount',
             'taxes',
             'total_price',
-            'employee_created'
         )
 
     @classmethod
