@@ -280,13 +280,13 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if Product.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'PRD.CODE.0001'
+            new_code = 'PRD.0001'
         else:
             latest_code = Product.objects.filter_current(
                 fill__tenant=True, fill__company=True
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'PRD.CODE.000' + str(new_code)
+            new_code = 'PRD.000' + str(new_code)
 
         product = Product.objects.create(**validated_data, code=new_code)
 
@@ -381,9 +381,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         result = {
             'sale_product_cost': obj.sale_cost,
             'default_uom': {
-                'id': str(obj.sale_default_uom.id),
-                'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code
+                'uom_id': str(obj.sale_default_uom.id),
+                'uom_title': obj.sale_default_uom.title,
+                'uom_code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
                 'id': str(obj.sale_tax.id),
@@ -404,9 +404,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_inventory_information(cls, obj):
         result = {
             'uom': {
-                'id': str(obj.inventory_uom.id),
-                'title': obj.inventory_uom.title,
-                'code': obj.inventory_uom.code
+                'uom_id': str(obj.inventory_uom.id),
+                'uom_title': obj.inventory_uom.title,
+                'uom_code': obj.inventory_uom.code
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
@@ -417,9 +417,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         result = {
             'default_uom': {
-                'id': str(obj.purchase_default_uom.id),
-                'title': obj.purchase_default_uom.title,
-                'code': obj.purchase_default_uom.code
+                'uom_id': str(obj.purchase_default_uom.id),
+                'uom_title': obj.purchase_default_uom.title,
+                'uom_code': obj.purchase_default_uom.code
             } if obj.purchase_default_uom else {},
             'tax': {
                 'id': str(obj.purchase_tax.id),
