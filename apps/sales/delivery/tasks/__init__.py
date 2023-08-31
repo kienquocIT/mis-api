@@ -237,7 +237,6 @@ class SaleOrderActiveDeliverySerializer:
             ready_quantity=delivery_quantity if self.check_has_prod_services > 0 else 0,
             delivery_data=[],
             date_created=timezone.now(),
-            system_status=1,
         )
 
     @decorator_run_workflow

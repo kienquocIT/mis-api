@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
     SimpleAbstractModel,
-    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
+    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel, MasterDataAbstractModel,
 )
 
 __all__ = [
@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-class OrderDelivery(DataAbstractModel):
+class OrderDelivery(MasterDataAbstractModel):
     # sale order
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
