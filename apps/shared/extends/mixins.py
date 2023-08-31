@@ -28,14 +28,9 @@ class DataFilterHandler:
     @classmethod
     def get_employee_inherit_from_body_data(cls, body_data: dict[str, any]):
         if body_data and isinstance(body_data, dict):
-            if hasattr(body_data, 'employee_inherit_id'):
-                data = body_data['employee_inherit_id']
-                if data and TypeCheck.check_uuid(data):
-                    return data
-            if hasattr(body_data, 'employee_inherit'):
-                data = body_data['employee_inherit']
-                if data and hasattr(data, 'id'):
-                    return getattr(data, 'id', None)
+            employee_id = body_data.get('employee_inherit_id', None)
+            if employee_id and TypeCheck.check_uuid(employee_id):
+                return employee_id
         return None
 
     @classmethod

@@ -56,10 +56,12 @@ class ValidAssignTask:
     def check_in_opp_member(cls, opp_data, attrs):
         obj_assignee = attrs['assign_to']
         datas = opp_data.opportunity_sale_team_datas
+        # check user có trong team
         for data in datas:
             member = data.get('member')  # member: dict => {}
-            if member['id'] == str(obj_assignee.id):
+            if member['id'] == str(obj_assignee.id) or str(obj_assignee.id) == str(opp_data.sale_person.id):
                 return True
+        # check user là người tạo
         if str(opp_data.employee_inherit_id) == str(obj_assignee.id):
             return True
         return False
@@ -113,7 +115,7 @@ def handle_attachment(user, instance, attachments, create_method):
     # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
     relate_app = Application.objects.get(id="e66cfb5a-b3ce-4694-a4da-47618f53de4c")
     relate_app_code = 'task'
-    instance_id = str(instance.id)
+    instance_id = str(instance.id)  # noqa
     attachment = attachments[0] if attachments else None
     # check file trong API
     current_attach = TaskAttachmentFile.objects.filter(task=instance)
@@ -630,6 +632,8 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
         if employee:
             validated_data['employee_created'] = employee
             log_work = OpportunityLogWork.objects.create(**validated_data)
+        else:
+            return employee
         return log_work
 
 
