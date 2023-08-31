@@ -113,6 +113,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            # system
             'workflow_runtime_id',
         )
 

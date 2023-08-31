@@ -124,6 +124,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            # system
             'workflow_runtime_id',
         )
 

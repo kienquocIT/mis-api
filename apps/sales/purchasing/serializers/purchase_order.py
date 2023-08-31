@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderProduct, PurchaseOrderRequestProduct, \
     PurchaseOrderQuotation
 from apps.sales.purchasing.serializers.purchase_order_sub import PurchasingCommonValidate, PurchaseOrderCommonCreate
@@ -226,6 +227,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'purchase_requests_data',
             'purchase_quotations_data',
             'purchase_request_products_data',
@@ -243,6 +245,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             'total_product_revenue_before_tax',
             # system
             'system_status',
+            'workflow_runtime_id',
         )
 
     @classmethod
@@ -366,7 +369,7 @@ class PurchaseOrderCreateSerializer(serializers.ModelSerializer):
     def validate_contact(cls, value):
         return PurchasingCommonValidate().validate_contact(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         purchase_order = PurchaseOrder.objects.create(**validated_data)
         PurchaseOrderCommonCreate().create_purchase_order_sub_models(

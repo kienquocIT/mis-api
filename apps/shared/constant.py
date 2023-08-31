@@ -71,6 +71,7 @@ MAP_FIELD_TITLE = {
     'quotation.quotation': 'title',
     'saleorder.saleorder': 'title',
     'delivery.orderdeliverysub': 'title',
+    'purchasing.purchaseorder': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
