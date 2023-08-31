@@ -592,7 +592,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                     'product_id': product.data['result']['id'],
                     'quantity': 1,
                     'tax_id': product.data['result']['sale_information']['tax']['id'],
-                    'unit_of_measure_id': product.data['result']['sale_information']['default_uom']['id'],
+                    'unit_of_measure_id': product.data['result']['sale_information']['default_uom']['uom_id'],
                     'unit_price': 20000000,
                     'tax_price': 2000000,
                     'subtotal_price': 20000000,
