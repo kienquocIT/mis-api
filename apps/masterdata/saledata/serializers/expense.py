@@ -189,6 +189,8 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
+        price_obj = ExpensePrice.objects.filter(expense=obj).select_related('price', 'currency')
+
         price_list = [
             {
                 'id': item.price_id,
@@ -198,7 +200,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 'currency': item.currency_id,
                 'is_primary': item.currency.is_primary,
                 'abbreviation': item.currency.abbreviation
-            } for item in obj.expense.all()
+            } for item in price_obj
         ]
         return price_list
 

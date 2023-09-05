@@ -16,7 +16,6 @@ class PurchaseRequestList(
 
     serializer_list = PurchaseRequestListSerializer
     serializer_create = PurchaseRequestCreateSerializer
-    serializer_detail = PurchaseRequestListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
