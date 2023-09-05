@@ -51,11 +51,11 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(REQUEST_FOR).get(obj.request_for))
+        return str(dict(SYSTEM_STATUS).get(obj.request_for))
 
     @classmethod
     def get_purchase_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.purchase_status))
+        return str(dict(PURCHASE_STATUS).get(obj.purchase_status))
 
 
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
@@ -120,9 +120,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        if obj.system_status:
-            return 'Open'
-        return 'Open'
+        return str(dict(SYSTEM_STATUS).get(obj.request_for))
 
     @classmethod
     def get_purchase_status(cls, obj):

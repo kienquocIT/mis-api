@@ -10,6 +10,8 @@ from apps.shared.translations.expense import ExpenseMsg
 
 class ExpenseListSerializer(serializers.ModelSerializer):
     expense_type = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -28,6 +30,24 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.expense_type_id,
                 'title': obj.expense_type.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
             }
         return {}
 

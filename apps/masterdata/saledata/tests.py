@@ -2953,10 +2953,9 @@ class PriceListTestCase(AdvanceTestCase):
             'can_delete': False,  # T-T/F, F-F
             'factor': 1.0,
             'currency': [currency1, currency2],
-            'price_list_mapped': None,
             'price_list_type': 0,
             'valid_time_start': '2023-06-06 11:21:00.000000',
-            'valid_time_end': '2023-07-07 11:21:00.000000'
+            'valid_time_end': '2030-07-07 11:21:00.000000'
         }
         response3 = self.client.post(url, data3, format='json')
         self.assertResponseList(
