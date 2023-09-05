@@ -120,7 +120,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.request_for))
+        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_purchase_status(cls, obj):

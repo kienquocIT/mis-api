@@ -192,3 +192,7 @@ RECEIPT_STATUS = (
     (2, 'Partially received'),
     (3, 'None'),
 )
+
+RETURN_ADVANCE_STATUS = [
+    (0, _('Approved')),
+]
