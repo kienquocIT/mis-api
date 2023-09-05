@@ -3,7 +3,8 @@ from django.urls import path
 from apps.sales.purchasing.views import (
     PurchaseRequestList, PurchaseRequestDetail, PurchaseQuotationRequestList, PurchaseQuotationRequestDetail,
     PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
-    PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList
+    PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
+    PurchaseOrderProductList
 )
 
 urlpatterns = [
@@ -32,6 +33,7 @@ urlpatterns = [
     # purchase order
     path('purchase-order/list', PurchaseOrderList.as_view(), name='PurchaseOrderList'),
     path('purchase-order/<str:pk>', PurchaseOrderDetail.as_view(), name='PurchaseOrderDetail'),
+    path('purchase-order-product/list', PurchaseOrderProductList.as_view(), name='PurchaseOrderProductList'),
 ] + [
     path(
         'purchase-quotation/list',

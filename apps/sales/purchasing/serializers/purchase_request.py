@@ -370,6 +370,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
     purchase_request = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequestProduct
@@ -379,6 +380,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'sale_order_product_id',
             'product',
             'uom',
+            'tax',
             'quantity',
             'remain_for_purchase_order',
         )
@@ -421,3 +423,12 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
         } if obj.uom else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}

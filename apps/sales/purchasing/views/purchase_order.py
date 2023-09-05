@@ -2,8 +2,9 @@ from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer,\
-    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer
+from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
+    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
+    PurchaseOrderProductListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -103,3 +104,28 @@ class PurchaseOrderDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class PurchaseOrderProductList(BaseListMixin):
+    queryset = PurchaseOrderProduct.objects
+    filterset_fields = {
+        'purchase_order_id': ['in', 'exact'],
+    }
+    serializer_list = PurchaseOrderProductListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product',
+            'uom_order_request',
+            'uom_order_actual',
+            'tax',
+        ).prefetch_related('purchase_order_request_order_product')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Order Product List",
+        operation_description="Get Purchase Order Product List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

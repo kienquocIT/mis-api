@@ -33,7 +33,6 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
             'purchase_request_product',
             'sale_order_product',
             'quantity_order',
-            'quantity_remain',
         )
 
     @classmethod
@@ -46,15 +45,31 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
+    purchase_request_product = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderRequestProduct
         fields = (
-            'purchase_request_product_id',
+            'purchase_request_product',
             'sale_order_product_id',
             'quantity_order',
-            'quantity_remain',
         )
+
+    @classmethod
+    def get_purchase_request_product(cls, obj):
+        return {
+            'id': obj.purchase_request_product_id,
+            'purchase_request': {
+                'id': obj.purchase_request_product.purchase_request_id,
+                'title': obj.purchase_request_product.purchase_request.title,
+                'code': obj.purchase_request_product.purchase_request.code,
+            } if obj.purchase_request_product.purchase_request else {},
+            'uom': {
+                'id': obj.purchase_request_product.uom_id,
+                'title': obj.purchase_request_product.uom.title,
+                'code': obj.purchase_request_product.uom.code,
+            } if obj.purchase_request_product.uom else {},
+        } if obj.purchase_request_product else {}
 
 
 class PurchaseOrderProductSerializer(serializers.ModelSerializer):
