@@ -22,7 +22,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'title': 'Tam ung thang 5',
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
-            'supplier': None,
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
