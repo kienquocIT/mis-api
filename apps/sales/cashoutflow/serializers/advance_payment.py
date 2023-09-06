@@ -4,8 +4,8 @@ from apps.sales.cashoutflow.models import (
     AdvancePaymentCost,
     PaymentCostItemsDetail,
 )
-from apps.masterdata.saledata.models import Currency, AccountBanks
-from apps.shared import AdvancePaymentMsg, AccountsMsg, ProductMsg
+from apps.masterdata.saledata.models import Currency
+from apps.shared import AdvancePaymentMsg, ProductMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
