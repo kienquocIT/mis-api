@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
+from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.shared import REQUEST_FOR, PURCHASE_STATUS, SYSTEM_STATUS
@@ -393,11 +394,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        return {
-            'id': obj.product_id,
-            'title': obj.product.title,
-            'code': obj.product.code,
-        } if obj.product else {}
+        return ProductForSaleListSerializer(obj.product).data
 
     @classmethod
     def get_uom(cls, obj):
