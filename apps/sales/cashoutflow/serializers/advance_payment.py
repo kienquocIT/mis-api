@@ -118,7 +118,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     'code': item.product.code,
                     'title': item.product.title,
                     'type': {
-                        'id': item.product.general_product_type.id,
+                        'id': item.product.general_product_type_id,
                         'code': item.product.general_product_type.code,
                         'title': item.product.general_product_type.title,
                     } if item.product.general_product_type else {}
@@ -357,7 +357,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'code': item.product.code,
                         'title': item.product.title,
                         'type': {
-                            'id': item.product.general_product_type.id,
+                            'id': item.product.general_product_type_id,
                             'code': item.product.general_product_type.code,
                             'title': item.product.general_product_type.title,
                         } if item.product.general_product_type else {},
@@ -389,13 +389,13 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     def get_sale_order_mapped(cls, obj):
         if obj.sale_order_mapped:
             opportunity_obj = {
-                'id': obj.sale_order_mapped.opportunity.id,
+                'id': obj.sale_order_mapped.opportunity_id,
                 'code': obj.sale_order_mapped.opportunity.code,
                 'title': obj.sale_order_mapped.opportunity.title,
                 'customer': obj.sale_order_mapped.opportunity.customer.name,
             } if obj.sale_order_mapped.opportunity else {}
             return [{
-                'id': obj.sale_order_mapped.id,
+                'id': obj.sale_order_mapped_id,
                 'code': obj.sale_order_mapped.code,
                 'title': obj.sale_order_mapped.title,
                 'opportunity': opportunity_obj
@@ -406,13 +406,13 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     def get_quotation_mapped(cls, obj):
         if obj.quotation_mapped:
             opportunity_obj = {
-                'id': obj.quotation_mapped.opportunity.id,
+                'id': obj.quotation_mapped.opportunity_id,
                 'code': obj.quotation_mapped.opportunity.code,
                 'title': obj.quotation_mapped.opportunity.title,
                 'customer': obj.quotation_mapped.opportunity.customer.name,
             } if obj.quotation_mapped.opportunity else {}
             return [{
-                'id': obj.quotation_mapped.id,
+                'id': obj.quotation_mapped_id,
                 'code': obj.quotation_mapped.code,
                 'title': obj.quotation_mapped.title,
                 'opportunity': opportunity_obj
@@ -431,7 +431,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_beneficiary(cls, obj):
         return {
-            'id': obj.beneficiary.id,
+            'id': obj.beneficiary_id,
             'code': obj.beneficiary.code,
             'full_name': obj.beneficiary.get_full_name(),
             'group': {
@@ -511,7 +511,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     }
                 )
             return {
-                'id': obj.supplier.id,
+                'id': obj.supplier_id,
                 'code': obj.supplier.code,
                 'name': obj.supplier.name,
                 'owner': {
