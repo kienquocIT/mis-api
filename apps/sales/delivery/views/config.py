@@ -30,6 +30,9 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     list_hidden_field = ['company_id']
     create_hidden_field = ['company_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related("lead_picking", "lead_delivery")
+
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
     )

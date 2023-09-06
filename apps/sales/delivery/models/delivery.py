@@ -15,7 +15,7 @@ __all__ = [
 ]
 
 
-class OrderDelivery(MasterDataAbstractModel):
+class OrderDelivery(DataAbstractModel):
     # sale order
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
