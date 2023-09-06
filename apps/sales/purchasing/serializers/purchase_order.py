@@ -78,7 +78,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
         required=False
     )
     product = serializers.UUIDField()
-    uom_order_request = serializers.UUIDField()
+    uom_order_request = serializers.UUIDField(required=False)
     uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
 
@@ -168,6 +168,21 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'id': obj.uom_order_request_id,
             'title': obj.uom_order_request.title,
             'code': obj.uom_order_request.code,
+            'uom_group': {
+                'id': obj.uom_order_request.group_id,
+                'title': obj.uom_order_request.group.title,
+                'code': obj.uom_order_request.group.code,
+                'uom_reference': {
+                    'id': obj.uom_order_request.group.uom_reference_id,
+                    'title': obj.uom_order_request.group.uom_reference.title,
+                    'code': obj.uom_order_request.group.uom_reference.code,
+                    'ratio': obj.uom_order_request.group.uom_reference.ratio,
+                    'rounding': obj.uom_order_request.group.uom_reference.rounding,
+                } if obj.uom_order_request.group.uom_reference else {},
+            },
+            'ratio': obj.uom_order_request.ratio,
+            'rounding': obj.uom_order_request.rounding,
+            'is_referenced_unit': obj.uom_order_request.is_referenced_unit,
         } if obj.uom_order_request else {}
 
     @classmethod
@@ -176,6 +191,21 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'id': obj.uom_order_actual_id,
             'title': obj.uom_order_actual.title,
             'code': obj.uom_order_actual.code,
+            'uom_group': {
+                'id': obj.uom_order_actual.group_id,
+                'title': obj.uom_order_actual.group.title,
+                'code': obj.uom_order_actual.group.code,
+                'uom_reference': {
+                    'id': obj.uom_order_actual.group.uom_reference_id,
+                    'title': obj.uom_order_actual.group.uom_reference.title,
+                    'code': obj.uom_order_actual.group.uom_reference.code,
+                    'ratio': obj.uom_order_actual.group.uom_reference.ratio,
+                    'rounding': obj.uom_order_actual.group.uom_reference.rounding,
+                } if obj.uom_order_actual.group.uom_reference else {},
+            },
+            'ratio': obj.uom_order_actual.ratio,
+            'rounding': obj.uom_order_actual.rounding,
+            'is_referenced_unit': obj.uom_order_actual.is_referenced_unit,
         } if obj.uom_order_actual else {}
 
     @classmethod
