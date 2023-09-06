@@ -59,7 +59,7 @@ class ValidAssignTask:
         # check user có trong team
         for data in datas:
             member = data.get('member')  # member: dict => {}
-            if member['id'] == str(obj_assignee.id) or str(obj_assignee.id) == str(opp_data.sale_person.id):
+            if member['id'] == str(obj_assignee.id):
                 return True
         # check user là người tạo
         if str(opp_data.employee_inherit_id) == str(obj_assignee.id):
@@ -286,7 +286,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     def validate_parent_n(cls, value):
         if value.parent_n:
             raise serializers.ValidationError(
-                {'title': django.utils.translation.gettext_lazy("Can not create another sub-task form sub-task")}
+                {'title': SaleTask.VALID_PARENT_N}
             )
         return value
 
@@ -559,11 +559,11 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
             if task_list.count() == task_list.filter(task_status__task_kind=2).count():
                 return True
             raise serializers.ValidationError(
-                {'task': django.utils.translation.gettext_lazy("Please complete Sub-task before")}
+                {'task': SaleTask.ERROR_COMPLETE_SUB_TASK}
             )
 
         raise serializers.ValidationError(
-            {'task': django.utils.translation.gettext_lazy("Data request is missing please reload and try again.")}
+            {'task': SaleTask.ERROR_UPDATE_SUB_TASK}
         )
 
     @classmethod
@@ -571,7 +571,7 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
         if OpportunityLogWork.objects.filter(task=instance).count():
             return True
         raise serializers.ValidationError({
-            'log time': django.utils.translation.gettext_lazy("Please Log time before complete task")
+            'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE
         })
 
     def update(self, instance, validated_data):
@@ -613,7 +613,7 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
         if match:
             return str(input_string)
         raise serializers.ValidationError(
-            {'time_spent': django.utils.translation.gettext_lazy("Time spent is wrong format.")}
+            {'time_spent': SaleTask.ERROR_TIME_SPENT}
         )
 
     @classmethod
@@ -623,7 +623,7 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
             if employee == assign_employee:
                 return employee
         raise serializers.ValidationError(
-            {'employee': django.utils.translation.gettext_lazy("You do not permission to log time this task")}
+            {'employee': SaleTask.ERROR_NOT_PERMISSION}
         )
 
     def create(self, validated_data):
