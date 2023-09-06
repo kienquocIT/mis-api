@@ -25,7 +25,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
-            'return_date': '2023-06-06 11:21:00.000000',
+            'return_date': '2023-06-06',
             'money_gave': True
         }
         response1 = self.client.post(url, data1, format='json')
@@ -47,7 +47,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             ],
             check_sum_second=True,
         )
-
         return response1
 
     def test_ap_list(self):

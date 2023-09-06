@@ -104,9 +104,12 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         all_item = obj.advance_payment.all()
         product_items = []
         for item in all_item:
-            tax_dict = None
-            if item.tax:
-                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate}
+            tax_dict = {
+                'id': item.tax_id,
+                'code': item.tax.code,
+                'title': item.tax.title,
+                'rate': item.tax.rate
+            } if item.tax else {}
 
             product_obj = {}
             if item.product_id:
@@ -118,7 +121,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                         'id': item.product.general_product_type.id,
                         'code': item.product.general_product_type.code,
                         'title': item.product.general_product_type.title,
-                    }
+                    } if item.product.general_product_type else {}
                 }
 
             product_items.append(
@@ -131,12 +134,12 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                         'id': item.product_unit_of_measure_id,
                         'code': item.product_unit_of_measure.code,
                         'title': item.product_unit_of_measure.title
-                    },
+                    } if item.product_unit_of_measure else {},
                     'product_uom_group': {
                         'id': item.product_unit_of_measure_id,
                         'code': item.product_unit_of_measure.code,
                         'title': item.product_unit_of_measure.title
-                    },
+                    } if item.product_unit_of_measure_id else {},
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                     'unit_price': item.product_unit_price,
                     'subtotal_price': item.subtotal_price,
@@ -340,9 +343,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         all_item = obj.advance_payment.all()
         product_items = []
         for item in all_item:
-            tax_dict = None
-            if item.tax:
-                tax_dict = {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate}
+            tax_dict = {
+                'id': item.tax_id,
+                'code': item.tax.code,
+                'title': item.tax.title,
+                'rate': item.tax.rate
+            } if item.tax else {},
             product_items.append(
                 {
                     'id': item.id,
@@ -354,7 +360,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                             'id': item.product.general_product_type.id,
                             'code': item.product.general_product_type.code,
                             'title': item.product.general_product_type.title,
-                        }
+                        } if item.product.general_product_type else {},
                     },
                     'tax': tax_dict,
                     'product_quantity': item.product_quantity,
@@ -362,12 +368,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                         'id': item.product_unit_of_measure_id,
                         'code': item.product_unit_of_measure.code,
                         'title': item.product_unit_of_measure.title
-                    },
+                    } if item.product_unit_of_measure else {},
                     'product_uom_group': {
                         'id': item.product_unit_of_measure_id,
                         'code': item.product_unit_of_measure.code,
                         'title': item.product_unit_of_measure.title
-                    },
+                    } if item.product_unit_of_measure else {},
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                     'unit_price': item.product_unit_price,
                     'subtotal_price': item.subtotal_price,
@@ -382,14 +388,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_mapped(cls, obj):
         if obj.sale_order_mapped:
-            opportunity_obj = {}
-            if obj.sale_order_mapped.opportunity:
-                opportunity_obj = {
-                    'id': obj.sale_order_mapped.opportunity.id,
-                    'code': obj.sale_order_mapped.opportunity.code,
-                    'title': obj.sale_order_mapped.opportunity.title,
-                    'customer': obj.sale_order_mapped.opportunity.customer.name,
-                }
+            opportunity_obj = {
+                'id': obj.sale_order_mapped.opportunity.id,
+                'code': obj.sale_order_mapped.opportunity.code,
+                'title': obj.sale_order_mapped.opportunity.title,
+                'customer': obj.sale_order_mapped.opportunity.customer.name,
+            } if obj.sale_order_mapped.opportunity else {}
             return [{
                 'id': obj.sale_order_mapped.id,
                 'code': obj.sale_order_mapped.code,
@@ -401,14 +405,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation_mapped(cls, obj):
         if obj.quotation_mapped:
-            opportunity_obj = {}
-            if obj.quotation_mapped.opportunity:
-                opportunity_obj = {
-                    'id': obj.quotation_mapped.opportunity.id,
-                    'code': obj.quotation_mapped.opportunity.code,
-                    'title': obj.quotation_mapped.opportunity.title,
-                    'customer': obj.quotation_mapped.opportunity.customer.name,
-                }
+            opportunity_obj = {
+                'id': obj.quotation_mapped.opportunity.id,
+                'code': obj.quotation_mapped.opportunity.code,
+                'title': obj.quotation_mapped.opportunity.title,
+                'customer': obj.quotation_mapped.opportunity.customer.name,
+            } if obj.quotation_mapped.opportunity else {}
             return [{
                 'id': obj.quotation_mapped.id,
                 'code': obj.quotation_mapped.code,
@@ -419,14 +421,12 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity_mapped(cls, obj):
-        if obj.opportunity_mapped:
-            return [{
-                'id': obj.opportunity_mapped_id,
-                'code': obj.opportunity_mapped.code,
-                'title': obj.opportunity_mapped.title,
-                'customer': obj.opportunity_mapped.customer.name,
-            }]
-        return []
+        return [{
+            'id': obj.opportunity_mapped_id,
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title,
+            'customer': obj.opportunity_mapped.customer.name,
+        }] if obj.opportunity_mapped else []
 
     @classmethod
     def get_beneficiary(cls, obj):
@@ -438,7 +438,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'id': obj.beneficiary.group_id,
                 'title': obj.beneficiary.group.title,
                 'code': obj.beneficiary.group.code
-            }
+            } if obj.beneficiary.group else {}
         }
 
     @classmethod
@@ -514,8 +514,14 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'id': obj.supplier.id,
                 'code': obj.supplier.code,
                 'name': obj.supplier.name,
-                'owner': {'id': obj.supplier.owner_id, 'fullname': obj.supplier.owner.fullname},
-                'industry': {'id': obj.supplier.industry_id, 'title': obj.supplier.industry.title},
+                'owner': {
+                    'id': obj.supplier.owner_id,
+                    'fullname': obj.supplier.owner.fullname
+                } if obj.supplier.owner else {},
+                'industry': {
+                    'id': obj.supplier.industry_id,
+                    'title': obj.supplier.industry.title
+                } if obj.supplier.industry else {},
                 'bank_accounts_mapped': bank_accounts_mapped_list
             }
         return {}
