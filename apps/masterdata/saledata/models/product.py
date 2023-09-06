@@ -1,7 +1,6 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
-from apps.shared import MasterDataAbstractModel
 from django.utils.translation import gettext_lazy as _
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
     'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
