@@ -99,7 +99,7 @@ def sub_validate_volume_obj(initial_data, validate_data):
     if volume_obj and validate_data.get('volume', None):
         volume_obj = volume_obj.first()
         return {
-            'id': volume_ob_id,
+            'id': volume_obj.id,
             'title': volume_obj.title,
             'measure': volume_obj.measure,
             'value': validate_data['volume']
@@ -114,7 +114,7 @@ def sub_validate_weight_obj(initial_data, validate_data):
     if weight_obj and validate_data.get('weight', None):
         weight_obj = weight_obj.first()
         return {
-            'id': weight_obj_id,
+            'id': weight_obj.id,
             'title': weight_obj.title,
             'measure': weight_obj.measure,
             'value': validate_data['weight']
