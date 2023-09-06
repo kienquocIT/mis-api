@@ -158,7 +158,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     code = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
-    owner = serializers.UUIDField(required=False, allow_null=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -176,7 +175,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             'account_type',
             'account_type_selection',
             'account_group',
-            'owner',
             'manager',
             'parent_account_mapped',
             'tax_code',
@@ -208,15 +206,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
         if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).exists():
             raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
-
-    @classmethod
-    def validate_owner(cls, value):
-        if value:
-            try:
-                return Contact.objects.get(id=value)
-            except Contact.DoesNotExist:
-                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
-        return None
 
     @classmethod
     def validate_account_type(cls, value):
@@ -312,9 +301,12 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             for obj in contact_mapped:
                 try:
                     contact = Contact.objects.get(id=obj.get('id', None))
-                    contact.is_primary = obj['owner']
+                    contact.is_primary = obj['is_owner']
                     contact.account_name = account
                     contact.save()
+                    if obj['is_owner']:
+                        account.owner = contact
+                        account.save()
                 except Contact.DoesNotExist:
                     raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
         return account
@@ -322,7 +314,6 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
 class AccountDetailSerializer(AbstractDetailSerializerModel):
     contact_mapped = serializers.SerializerMethodField()
-    owner = serializers.SerializerMethodField()
     account_group = serializers.SerializerMethodField()
     currency = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
@@ -343,7 +334,6 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'code',
             'website',
             'account_type',
-            "owner",
             'manager',
             'parent_account_mapped',
             "account_group",
@@ -419,20 +409,6 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
-    def get_owner(cls, obj):
-        if obj.owner:
-            contact_owner_information = {'id': str(obj.owner.owner_id), 'fullname': obj.owner.owner.get_full_name(2)}
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.fullname,
-                'job_title': obj.owner.job_title,
-                'email': obj.owner.email,
-                'mobile': obj.owner.mobile,
-                'contact_owner': contact_owner_information
-            }
-        return {}
-
-    @classmethod
     def get_payment_term_customer_mapped(cls, obj):
         if obj.payment_term_customer_mapped:
             return {
@@ -469,7 +445,11 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                                 'job_title': i.job_title,
                                 'email': i.email,
                                 'mobile': i.mobile,
-                                'owner': i.is_primary
+                                'is_owner': i.is_primary,
+                                'owner': {
+                                    'id': i.owner_id,
+                                    'fullname': i.owner.get_full_name(2)
+                                }
                             })
                     )
                 else:
@@ -480,7 +460,11 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                             'job_title': i.job_title,
                             'email': i.email,
                             'mobile': i.mobile,
-                            'owner': i.is_primary
+                            'is_owner': i.is_primary,
+                            'owner': {
+                                'id': i.owner_id,
+                                'fullname': i.owner.get_full_name(2)
+                            }
                         }
                     )
             return list_contact_mapped
@@ -554,7 +538,6 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
 class AccountUpdateSerializer(serializers.ModelSerializer):
     name = serializers.CharField(max_length=150)
     tax_code = serializers.CharField(max_length=150, required=False, allow_null=True)
-    owner = serializers.UUIDField(required=False, allow_null=True)
     account_group = serializers.UUIDField(required=False, allow_null=True)
     industry = serializers.UUIDField(required=False, allow_null=True)
     account_type = serializers.ListField(child=serializers.UUIDField(required=True))
@@ -575,7 +558,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
             'account_type',
             'account_type_selection',
             'account_group',
-            'owner',
             'manager',
             'parent_account_mapped',
             'tax_code',
@@ -606,15 +588,6 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         if Account.objects.filter_current(fill__tenant=True, fill__company=True, tax_code=value).count() > 1:
             raise serializers.ValidationError({"Tax code": AccountsMsg.TAX_CODE_IS_EXIST})
         return value
-
-    @classmethod
-    def validate_owner(cls, value):
-        if value:
-            try:
-                return Contact.objects.get(id=value)
-            except Contact.DoesNotExist:
-                raise serializers.ValidationError({"Owner": AccountsMsg.CONTACT_NOT_EXIST})
-        return None
 
     @classmethod
     def validate_account_type(cls, value):
@@ -731,9 +704,12 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         for obj in contact_mapped:
             try:
                 contact = Contact.objects.get(id=obj.get('id', None))
-                contact.is_primary = obj['owner']
+                contact.is_primary = obj['is_owner']
                 contact.account_name = instance
                 contact.save()
+                if obj['is_owner']:
+                    instance.owner = contact
+                    instance.save()
             except Contact.DoesNotExist:
                 raise serializers.ValidationError({"Contact": AccountsMsg.CONTACT_NOT_EXIST})
         return instance
