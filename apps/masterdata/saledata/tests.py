@@ -351,7 +351,11 @@ class ProductTestCase(AdvanceTestCase):
                 'code',
                 'title',
                 'general_product_type',
-                'general_product_category'
+                'general_product_category',
+                'general_uom_group',
+                'sale_tax',
+                'sale_default_uom',
+                'price_list_mapped'
             ],
             check_sum_second=True,
         )

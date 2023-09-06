@@ -528,6 +528,9 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
             'expense_id',
             'tax',
             'plan_after_tax',
+            'product_title',
+            'product_id',
+            'is_product'
         )
 
     @classmethod

@@ -1,10 +1,17 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
-from apps.shared import MasterDataAbstractModel
+from django.utils.translation import gettext_lazy as _
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
     'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements'
+]
+
+
+TRACEABILITY_METHOD_SELECTION = [
+    (0, _('None')),
+    (1, _('Batch/Lot number')),
+    (2, _('Serial number'))
 ]
 
 
@@ -118,6 +125,8 @@ class Product(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='uom_group'
     )
+    general_traceability_method = models.SmallIntegerField(choices=TRACEABILITY_METHOD_SELECTION, default=0)
+
     width = models.FloatField(null=True)
     height = models.FloatField(null=True)
     length = models.FloatField(null=True)
