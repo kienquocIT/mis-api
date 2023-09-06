@@ -99,9 +99,9 @@ class PurchaseOrder(DataAbstractModel):
 
         # update quantity remain on purchase request product
         if self.system_status in [2, 3]:
-            for PORequest in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
-                PORequest.purchase_request_product.remain_for_purchase_order -= PORequest.quantity_order
-                PORequest.purchase_request_product.save()
+            for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
+                po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
+                po_request.purchase_request_product.save()
 
         # hit DB
         super().save(*args, **kwargs)
