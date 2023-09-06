@@ -159,6 +159,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'general_product_type',
             'general_product_category',
             'general_uom_group',
+            'general_traceability_method',
             'width',
             'height',
             'length',
@@ -387,6 +388,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
             },
+            'traceability_method': obj.general_traceability_method,
             'product_size': {
                 "width": obj.width,
                 "height": obj.height,
@@ -502,6 +504,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'general_product_type',
             'general_product_category',
             'general_uom_group',
+            'general_traceability_method',
             'width',
             'height',
             'length',
