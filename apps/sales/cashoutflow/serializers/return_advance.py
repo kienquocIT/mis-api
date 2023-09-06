@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
+from apps.shared import RETURN_ADVANCE_STATUS
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
@@ -39,9 +40,7 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_status(cls, obj):
-        if obj.status == 0:
-            return "Approved"
-        return obj.status
+        return str(dict(RETURN_ADVANCE_STATUS).get(obj.status))
 
 
 class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):

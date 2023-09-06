@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class PriceMsg:
+    PRICE_SOURCE_NOT_EXIST = _('Price list source does not exist')
     TITLE_EXIST = _('Name is already exist.')
     CODE_EXIST = _('Code is already exist.')
     ABBREVIATION_EXIST = _('Abbreviation is already exist.')

@@ -263,7 +263,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
-             'purchase_status', ],
+             'purchase_status', 'contact', 'note', 'purchase_request_product_datas', 'pretax_amount', 'taxes', 'total_price'],
             check_sum_second=True,
         )
 
