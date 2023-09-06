@@ -232,7 +232,7 @@ class Quotation(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "QUO"
+        char = "SQ"
         if not self.code:
             temper = "%04d" % (quotation + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"

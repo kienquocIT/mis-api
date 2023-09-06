@@ -10,6 +10,8 @@ from apps.shared.translations.expense import ExpenseMsg
 
 class ExpenseListSerializer(serializers.ModelSerializer):
     expense_type = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -28,6 +30,24 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.expense_type_id,
                 'title': obj.expense_type.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
             }
         return {}
 
@@ -169,6 +189,8 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
+        price_obj = ExpensePrice.objects.filter(expense=obj).select_related('price', 'currency')
+
         price_list = [
             {
                 'id': item.price_id,
@@ -178,7 +200,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 'currency': item.currency_id,
                 'is_primary': item.currency.is_primary,
                 'abbreviation': item.currency.abbreviation
-            } for item in obj.expense.all()
+            } for item in price_obj
         ]
         return price_list
 

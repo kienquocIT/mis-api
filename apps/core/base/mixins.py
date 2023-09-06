@@ -1,23 +1,13 @@
 from apps.core.base.models import PlanApplication
-from apps.core.tenant.models import TenantPlan
 from apps.shared import ResponseController, BaseListMixin
 
 
 class ApplicationListMixin(BaseListMixin):
     def tenant_application_list(self, request, *args, **kwargs):
         kwargs.update(self.setup_list_field_hidden(request.user))
-        tenant_plan_id_list = TenantPlan.objects.filter(
-            tenant_id=request.user.tenant_current_id
-        ).values_list(
-            'plan__id',
-            flat=True
-        )
         plan_application_id_list = PlanApplication.objects.filter(
-            plan_id__in=tenant_plan_id_list
-        ).values_list(
-            'application__id',
-            flat=True
-        )
+            plan_id__in=request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+        ).values_list('application__id', flat=True)
         if plan_application_id_list:
             kwargs.update({'id__in': plan_application_id_list})
         queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))

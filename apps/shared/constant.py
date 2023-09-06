@@ -70,6 +70,7 @@ MAP_FIELD_TITLE = {
     'saledata.account': 'name',
     'quotation.quotation': 'title',
     'saleorder.saleorder': 'title',
+    'delivery.orderdeliverysub': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -192,3 +193,7 @@ RECEIPT_STATUS = (
     (2, 'Partially received'),
     (3, 'None'),
 )
+
+RETURN_ADVANCE_STATUS = [
+    (0, _('Approved')),
+]

@@ -26,6 +26,10 @@ class PurchaseOrder(DataAbstractModel):
         default=list,
         help_text="read data purchase quotations, use for get list or detail"
     )
+    purchase_request_products_data = models.JSONField(
+        default=list,
+        help_text="read data purchase request products not map any PO, use for get list or detail"
+    )
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -234,6 +238,13 @@ class PurchaseOrderProduct(SimpleAbstractModel):
 
 
 class PurchaseOrderRequestProduct(SimpleAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_request_product_order",
+        null=True
+    )
     purchase_request_product = models.ForeignKey(
         'purchasing.PurchaseRequestProduct',
         on_delete=models.CASCADE,

@@ -509,6 +509,11 @@ class RuntimeStageHandler:
                 self.runtime_obj.save()
                 stage_obj_currently.to_stage = next_stage
                 stage_obj_currently.save()
+
+                # check if stage is approved then auto added
+                if next_stage.code == 'approved':
+                    # call added doc obj
+                    DocHandler.force_added_with_runtime(self.runtime_obj)
             if is_next_stage:
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')

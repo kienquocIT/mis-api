@@ -1,6 +1,7 @@
 from datetime import date
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
+from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure, \
+    Expense
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
@@ -742,3 +743,8 @@ def update_parent_account():
 def update_credit_card_type():
     AccountCreditCards.objects.all().update(credit_card_type=1)
     return True
+
+
+def clear_data_expense():
+    Expense.objects.all().delete()
+    print('Delete Done')

@@ -231,12 +231,13 @@ class SaleOrder(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         # auto create code (temporary)
+        # if self.system_status in [2, 3]:
         sale_order = SaleOrder.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
             is_delete=False
         ).count()
-        char = "SO"
+        char = "OR"
         if not self.code:
             temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"

@@ -3,8 +3,8 @@ import json
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
-    SimpleAbstractModel, MasterDataAbstractModel,
-    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP,
+    SimpleAbstractModel,
+    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel, MasterDataAbstractModel,
 )
 
 __all__ = [
@@ -167,7 +167,7 @@ class OrderDelivery(MasterDataAbstractModel):
         permissions = ()
 
 
-class OrderDeliverySub(MasterDataAbstractModel):
+class OrderDeliverySub(DataAbstractModel):
     order_delivery = models.ForeignKey(
         OrderDelivery,
         on_delete=models.CASCADE,

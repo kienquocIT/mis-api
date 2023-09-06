@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import ProductPriceList
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
@@ -123,6 +124,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            'workflow_runtime_id',
         )
 
     @classmethod
@@ -346,7 +348,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         sale_order = SaleOrder.objects.create(**validated_data)
         SaleOrderCommonCreate().create_sale_order_sub_models(
