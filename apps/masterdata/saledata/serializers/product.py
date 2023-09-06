@@ -41,7 +41,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_product_type(cls, obj):
         return {
-           'id': str(obj.general_product_type.id),
+           'id': obj.general_product_type_id,
            'title': obj.general_product_type.title,
            'code': obj.general_product_type.code
         } if obj.general_product_type else {}
@@ -49,7 +49,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_product_category(cls, obj):
         return {
-            'id': str(obj.general_product_category.id),
+            'id': obj.general_product_category_id,
             'title': obj.general_product_category.title,
             'code': obj.general_product_category.code
         } if obj.general_product_category else {}
@@ -57,7 +57,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_uom_group(cls, obj):
         return {
-            'id': str(obj.general_uom_group.id),
+            'id': obj.general_uom_group_id,
             'title': obj.general_uom_group.title,
             'code': obj.general_uom_group.code
         } if obj.general_uom_group else {}
@@ -65,7 +65,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_tax(cls, obj):
         return {
-            'id': str(obj.sale_tax.id),
+            'id': obj.sale_tax_id,
             'title': obj.sale_tax.title,
             'code': obj.sale_tax.code,
             'rate': obj.sale_tax.rate
@@ -74,7 +74,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_default_uom(cls, obj):
         return {
-            'id': str(obj.sale_default_uom.id),
+            'id': obj.sale_default_uom_id,
             'title': obj.sale_default_uom.title,
             'code': obj.sale_default_uom.code,
         } if obj.sale_default_uom else {}
@@ -99,7 +99,7 @@ def sub_validate_volume_obj(initial_data, validate_data):
     if volume_obj and validate_data.get('volume', None):
         volume_obj = volume_obj.first()
         return {
-            'id': str(volume_obj.id),
+            'id': volume_ob_id,
             'title': volume_obj.title,
             'measure': volume_obj.measure,
             'value': validate_data['volume']
@@ -114,7 +114,7 @@ def sub_validate_weight_obj(initial_data, validate_data):
     if weight_obj and validate_data.get('weight', None):
         weight_obj = weight_obj.first()
         return {
-            'id': str(weight_obj.id),
+            'id': weight_obj_id,
             'title': weight_obj.title,
             'measure': weight_obj.measure,
             'value': validate_data['weight']
@@ -374,17 +374,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         result = {
             'product_type': {
-                'id': str(obj.general_product_type.id),
+                'id': obj.general_product_type_id,
                 'title': obj.general_product_type.title,
                 'code': obj.general_product_type.code
             },
             'product_category': {
-                'id': str(obj.general_product_category.id),
+                'id': obj.general_product_category_id,
                 'title': obj.general_product_category.title,
                 'code': obj.general_product_category.code
             },
             'uom_group': {
-                'id': str(obj.general_uom_group.id),
+                'id': obj.general_uom_group_id,
                 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
             },
@@ -428,17 +428,17 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         result = {
             'sale_product_cost': obj.sale_cost,
             'default_uom': {
-                'uom_id': str(obj.sale_default_uom.id),
+                'uom_id': obj.sale_default_uom_id,
                 'uom_title': obj.sale_default_uom.title,
                 'uom_code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
-                'id': str(obj.sale_tax.id),
+                'id': obj.sale_tax_id,
                 'title': obj.sale_tax.title,
                 'code': obj.sale_tax.code
             } if obj.sale_tax else {},
             'currency_using': {
-                'id': str(obj.sale_currency_using.id),
+                'id': obj.sale_currency_using_id,
                 'title': obj.sale_currency_using.title,
                 'code': obj.sale_currency_using.code,
                 'abbreviation': obj.sale_currency_using.abbreviation
@@ -451,7 +451,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_inventory_information(cls, obj):
         result = {
             'uom': {
-                'uom_id': str(obj.inventory_uom.id),
+                'uom_id': obj.inventory_uom_id,
                 'uom_title': obj.inventory_uom.title,
                 'uom_code': obj.inventory_uom.code
             } if obj.inventory_uom else {},
@@ -464,12 +464,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         result = {
             'default_uom': {
-                'uom_id': str(obj.purchase_default_uom.id),
+                'uom_id': obj.purchase_default_uom_id,
                 'uom_title': obj.purchase_default_uom.title,
                 'uom_code': obj.purchase_default_uom.code
             } if obj.purchase_default_uom else {},
             'tax': {
-                'id': str(obj.purchase_tax.id),
+                'id': obj.purchase_tax_id,
                 'title': obj.purchase_tax.title,
                 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
