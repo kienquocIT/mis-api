@@ -348,7 +348,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                 'code': item.tax.code,
                 'title': item.tax.title,
                 'rate': item.tax.rate
-            } if item.tax else {},
+            } if item.tax else {}
             product_items.append(
                 {
                     'id': item.id,
