@@ -19,6 +19,10 @@ PRODUCT_OPTION = [
 class ProductListSerializer(serializers.ModelSerializer):
     general_product_type = serializers.SerializerMethodField()
     general_product_category = serializers.SerializerMethodField()
+    general_uom_group = serializers.SerializerMethodField()
+    sale_tax = serializers.SerializerMethodField()
+    sale_default_uom = serializers.SerializerMethodField()
+    price_list_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -27,7 +31,11 @@ class ProductListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'general_product_type',
-            'general_product_category'
+            'general_product_category',
+            'general_uom_group',
+            'sale_tax',
+            'sale_default_uom',
+            'price_list_mapped'
         )
 
     @classmethod
@@ -45,6 +53,43 @@ class ProductListSerializer(serializers.ModelSerializer):
             'title': obj.general_product_category.title,
             'code': obj.general_product_category.code
         } if obj.general_product_category else {}
+
+    @classmethod
+    def get_general_uom_group(cls, obj):
+        return {
+            'id': str(obj.general_uom_group.id),
+            'title': obj.general_uom_group.title,
+            'code': obj.general_uom_group.code
+        } if obj.general_uom_group else {}
+
+    @classmethod
+    def get_sale_tax(cls, obj):
+        return {
+            'id': str(obj.sale_tax.id),
+            'title': obj.sale_tax.title,
+            'code': obj.sale_tax.code,
+            'rate': obj.sale_tax.rate
+        } if obj.sale_tax else {}
+
+    @classmethod
+    def get_sale_default_uom(cls, obj):
+        return {
+            'id': str(obj.sale_default_uom.id),
+            'title': obj.sale_default_uom.title,
+            'code': obj.sale_default_uom.code,
+        } if obj.sale_default_uom else {}
+
+    @classmethod
+    def get_price_list_mapped(cls, obj):
+        result = []
+        for item in obj.product_price_product.all():
+            result.append({
+                'id': item.price_list_id,
+                'title': item.price_list.title,
+                'price': item.price,
+                'currency_abbreviation': item.currency_using.abbreviation
+            })
+        return result
 
 
 def sub_validate_volume_obj(initial_data, validate_data):

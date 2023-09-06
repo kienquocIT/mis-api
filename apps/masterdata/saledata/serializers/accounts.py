@@ -17,6 +17,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     manager = serializers.SerializerMethodField()
     industry = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
+    bank_accounts_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Account
@@ -33,6 +34,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "phone",
             'annual_revenue',
             'contact_mapped',
+            'bank_accounts_mapped'
         )
 
     @classmethod
@@ -57,10 +59,7 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_industry(cls, obj):
         if obj.industry:
-            return {
-                'id': obj.industry_id,
-                'title': obj.industry.title
-            }
+            return {'id': obj.industry_id, 'title': obj.industry.title}
         return {}
 
     @classmethod
@@ -72,6 +71,23 @@ class AccountListSerializer(serializers.ModelSerializer):
                 list_contact_mapped.append(str(i.id))
             return list_contact_mapped
         return []
+
+    @classmethod
+    def get_bank_accounts_mapped(cls, obj):
+        bank_accounts_mapped_list = []
+        for item in obj.account_banks_mapped.all():
+            bank_accounts_mapped_list.append(
+                {
+                    'bank_country_id': item.country_id,
+                    'bank_name': item.bank_name,
+                    'bank_code': item.bank_code,
+                    'bank_account_name': item.bank_account_name,
+                    'bank_account_number': item.bank_account_number,
+                    'bic_swift_code': item.bic_swift_code,
+                    'is_default': item.is_default
+                }
+            )
+        return bank_accounts_mapped_list
 
 
 def create_employee_map_account(account):
