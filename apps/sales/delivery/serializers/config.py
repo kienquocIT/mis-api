@@ -54,6 +54,23 @@ class DeliveryConfigDetailSerializer(serializers.ModelSerializer):
             return person_list
         return []
 
+    @classmethod
+    def get_person_delivery(cls, obj):
+        if obj.person_delivery:
+            person_list = []
+            p_list = Employee.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                id__in=obj.person_delivery
+            )
+            for item in p_list:
+                person_list.append({
+                    "id": str(item.id),
+                    "full_name": f'{item.last_name} {item.first_name}'
+                })
+            return person_list
+        return []
+
     class Meta:
         model = DeliveryConfig
         fields = ('id', 'is_picking', 'is_partial_ship', 'lead_picking', 'lead_delivery', 'person_picking',
