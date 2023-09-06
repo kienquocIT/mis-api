@@ -19,6 +19,8 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'expense_type',
+            'uom_group',
+            'uom',
         )
 
     @swagger_auto_schema(
@@ -54,8 +56,6 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'expense_type', 'uom', 'uom_group'
-        ).prefetch_related(
-            'expense',
         )
 
     @swagger_auto_schema(

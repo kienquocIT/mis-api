@@ -373,3 +373,7 @@ msgstr "Gói không tồn tại hoặc hết hạn"
 #
 msgid "The application doesn't exist or is out of date"
 msgstr "Ứng dụng không tồn tại hoặc hết hạn"
+
+#
+msgid "Approved"
+msgstr "Đã Phê Duyệt"

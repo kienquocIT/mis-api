@@ -237,7 +237,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                     "sale_order_product": None,
                     "product": product.data['result']['id'],
                     "description": "",
-                    "uom": product.data['result']['sale_information']['default_uom']['id'],
+                    "uom": product.data['result']['sale_information']['default_uom']['uom_id'],
                     "quantity": 1,
                     "unit_price": 20000000,
                     "tax": product.data['result']['sale_information']['tax']['id'],
@@ -263,7 +263,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
-             'purchase_status', ],
+             'purchase_status', 'contact', 'note', 'purchase_request_product_datas', 'pretax_amount', 'taxes', 'total_price'],
             check_sum_second=True,
         )
 
