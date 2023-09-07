@@ -98,6 +98,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
 class OrderDeliverySubListSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -106,6 +107,15 @@ class OrderDeliverySubListSerializer(serializers.ModelSerializer):
             many=True,
         ).data
         return prod
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderDeliverySub
@@ -126,6 +136,7 @@ class OrderDeliverySubListSerializer(serializers.ModelSerializer):
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
+            'employee_inherit'
         )
 
 
@@ -164,6 +175,7 @@ class OrderDeliveryListSerializer(serializers.ModelSerializer):
 class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -172,6 +184,15 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             many=True,
         ).data
         return prod
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": str(obj.employee_inherit_id),
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     @classmethod
     def get_attachments(cls, obj):
@@ -227,6 +248,7 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'attachments',
             'delivery_logistic',
             'workflow_runtime_id',
+            'employee_inherit'
         )
 
 
@@ -538,6 +560,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
         # update instance info
         self.update_self_info(instance, validated_data)
+        # if product_done
+        # to do check if not submit product so update common info only
         try:
             with transaction.atomic():
                 self.handle_attach_file(instance, validated_data)

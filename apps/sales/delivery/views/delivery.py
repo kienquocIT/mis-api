@@ -17,7 +17,10 @@ class OrderDeliveryList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary='Order Delivery List',
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -33,7 +36,7 @@ class OrderDeliverySubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('orderdeliveryproduct_set')
+        return super().get_queryset().select_related('employee_inherit').prefetch_related('orderdeliveryproduct_set')
 
     @swagger_auto_schema(
         operation_summary='Order Delivery Sub Detail',
@@ -48,7 +51,9 @@ class OrderDeliverySubDetail(
         operation_description="Put delivery sub detail by ID update done field of product",
         serializer_update=OrderDeliverySubUpdateSerializer
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='delivery', model_code='orderDeliverySub', perm_code='edit', )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
             'user': request.user
