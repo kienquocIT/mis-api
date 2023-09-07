@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RETURN_ADVANCE_STATUS
 from .advance_payment import AdvancePaymentCost
 
 
@@ -10,9 +10,6 @@ __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 RETURN_ADVANCE_METHOD = [
     (0, _('Cash')),
     (1, _('Bank Transfer')),
-]
-RETURN_ADVANCE_STATUS = [
-    (0, _('Approved')),
 ]
 
 
