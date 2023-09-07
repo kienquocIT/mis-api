@@ -173,7 +173,6 @@ class TestCaseOpportunity(AdvanceTestCase):
         account_type = AccountTypeTestCase.test_get_account_type(self).data['result'][0]['id']
         account_group = AccountGroupTestCase.test_create_new(self).data['result']['id']
         employee = TestCaseOpportunity.get_employee(self).data['result'][0]['id']
-        contact = TestCaseOpportunity.test_create_contact(self).data['result']['id']
         industry = IndustryTestCase.test_create_new(self).data['result']['id']
 
         data = {
@@ -181,7 +180,6 @@ class TestCaseOpportunity(AdvanceTestCase):
             "code": "AC01",
             "website": "trucphuong.com.vn",
             "account_type": [account_type],
-            "owner": contact,
             "manager": {employee},
             "parent_account_mapped": None,
             "account_group": account_group,
