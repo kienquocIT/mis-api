@@ -301,10 +301,10 @@ class AccountCreateSerializer(serializers.ModelSerializer):
             for obj in contact_mapped:
                 try:
                     contact = Contact.objects.get(id=obj.get('id', None))
-                    contact.is_primary = obj['is_owner']
+                    contact.is_primary = obj['is_account_owner']
                     contact.account_name = account
                     contact.save()
-                    if obj['is_owner']:
+                    if obj['is_account_owner']:
                         account.owner = contact
                         account.save()
                 except Contact.DoesNotExist:
@@ -445,7 +445,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                                 'job_title': i.job_title,
                                 'email': i.email,
                                 'mobile': i.mobile,
-                                'is_owner': i.is_primary,
+                                'is_account_owner': i.is_primary,
                                 'owner': {
                                     'id': i.owner_id,
                                     'fullname': i.owner.get_full_name(2)
@@ -460,7 +460,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                             'job_title': i.job_title,
                             'email': i.email,
                             'mobile': i.mobile,
-                            'is_owner': i.is_primary,
+                            'is_account_owner': i.is_primary,
                             'owner': {
                                 'id': i.owner_id,
                                 'fullname': i.owner.get_full_name(2)
@@ -704,10 +704,10 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
         for obj in contact_mapped:
             try:
                 contact = Contact.objects.get(id=obj.get('id', None))
-                contact.is_primary = obj['is_owner']
+                contact.is_primary = obj['is_account_owner']
                 contact.account_name = instance
                 contact.save()
-                if obj['is_owner']:
+                if obj['is_account_owner']:
                     instance.owner = contact
                     instance.save()
             except Contact.DoesNotExist:
