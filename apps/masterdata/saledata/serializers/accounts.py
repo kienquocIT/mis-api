@@ -353,7 +353,6 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
             'credit_limit_customer',
             'credit_limit_supplier',
             'currency',
-            'owner',
             'contact_mapped',
             'account_type_selection',
             'workflow_runtime_id',
