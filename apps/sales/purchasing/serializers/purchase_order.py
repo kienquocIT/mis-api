@@ -240,7 +240,7 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
     def get_supplier(cls, obj):
         return {
             'id': obj.supplier_id,
-            'title': obj.supplier.name,
+            'name': obj.supplier.name,
             'code': obj.supplier.code,
         } if obj.supplier else {}
 
@@ -490,3 +490,51 @@ class PurchaseOrderUpdateSerializer(serializers.ModelSerializer):
             is_update=True,
         )
         return instance
+
+
+class PurchaseOrderSaleListSerializer(serializers.ModelSerializer):
+    purchase_requests_data = serializers.SerializerMethodField()
+    supplier = serializers.SerializerMethodField()
+    receipt_status = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PurchaseOrder
+        fields = (
+            'id',
+            'title',
+            'code',
+            'purchase_requests_data',
+            'supplier',
+            'delivered_date',
+            'receipt_status',
+            'system_status',
+        )
+
+    @classmethod
+    def get_purchase_requests_data(cls, obj):
+        return [{
+            'id': purchase_request.id,
+            'title': purchase_request.title,
+            'code': purchase_request.code,
+        } for purchase_request in obj.purchase_requests.all()]
+
+    @classmethod
+    def get_supplier(cls, obj):
+        return {
+            'id': obj.supplier_id,
+            'name': obj.supplier.name,
+            'code': obj.supplier.code,
+        } if obj.supplier else {}
+
+    @classmethod
+    def get_receipt_status(cls, obj):
+        if obj.receipt_status or obj.receipt_status == 0:
+            return dict(RECEIPT_STATUS).get(obj.receipt_status)
+        return None
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None

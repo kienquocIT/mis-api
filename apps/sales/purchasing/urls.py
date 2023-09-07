@@ -4,7 +4,7 @@ from apps.sales.purchasing.views import (
     PurchaseRequestList, PurchaseRequestDetail, PurchaseQuotationRequestList, PurchaseQuotationRequestDetail,
     PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
     PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
-    PurchaseOrderProductList
+    PurchaseOrderProductList, PurchaseOrderSaleList
 )
 
 urlpatterns = [
@@ -32,6 +32,7 @@ urlpatterns = [
 ] + [
     # purchase order
     path('purchase-order/list', PurchaseOrderList.as_view(), name='PurchaseOrderList'),
+    path('purchase-order/list-sale', PurchaseOrderSaleList.as_view(), name='PurchaseOrderSaleList'),
     path('purchase-order/<str:pk>', PurchaseOrderDetail.as_view(), name='PurchaseOrderDetail'),
     path('purchase-order-product/list', PurchaseOrderProductList.as_view(), name='PurchaseOrderProductList'),
 ] + [
