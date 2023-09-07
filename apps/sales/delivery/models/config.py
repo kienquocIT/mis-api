@@ -23,6 +23,7 @@ class DeliveryConfig(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="leader_picking",
         related_name="delivery_config_lead_picking",
+        default=None,
         null=True,
         help_text="Picking leadership"
     )
@@ -31,6 +32,7 @@ class DeliveryConfig(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="lead_delivery",
         related_name="delivery_config_lead_delivery",
+        default=None,
         null=True,
         help_text="Picking leadership"
     )

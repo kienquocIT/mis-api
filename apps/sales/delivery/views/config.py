@@ -46,7 +46,10 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="Delivery Config Update",
         request_body=DeliveryConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='delivery', model_code='orderdiliverysub', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
