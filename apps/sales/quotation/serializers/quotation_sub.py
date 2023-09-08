@@ -481,12 +481,11 @@ class QuotationCommonValidate:
     @classmethod
     def validate_employee_inherit_id(cls, value):
         try:
-            if Employee.objects.get_current(
+            return Employee.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            ):
-                return value
+            ).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
