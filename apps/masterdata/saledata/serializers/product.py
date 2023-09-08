@@ -35,7 +35,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'price_list_mapped'
+            'price_list_mapped',
+            'product_choice'
         )
 
     @classmethod
