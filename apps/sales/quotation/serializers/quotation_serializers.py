@@ -222,7 +222,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -259,7 +259,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -304,8 +304,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return QuotationCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -359,7 +359,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -397,7 +397,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -440,8 +440,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return QuotationCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
