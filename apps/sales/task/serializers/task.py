@@ -55,7 +55,9 @@ class ValidAssignTask:
     @classmethod
     def check_in_opp_member(cls, opp_data, attrs):
         obj_assignee = attrs['assign_to']
-        datas = opp_data.opportunity_sale_team_datas
+        datas = None
+        if hasattr(opp_data, 'opportunity_sale_team_datas'):
+            datas = opp_data.opportunity_sale_team_datas
         # check user có trong team
         for data in datas:
             member = data.get('member')  # member: dict => {}
@@ -74,12 +76,10 @@ class ValidAssignTask:
             raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_NOT_EXIST})
         if opt == 1:
             # assign user in opp team
-            if len(opp_data.opportunity_sale_team_datas):
-                check_in_mem = cls.check_in_opp_member(opp_data, valid_data)
-                if not check_in_mem:
-                    raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_MEMBER})
-            else:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_TEAM_MEMBER_EMPTY})
+            # if len(opp_data.opportunity_sale_team_datas):
+            check_in_mem = cls.check_in_opp_member(opp_data, valid_data)
+            if not check_in_mem:
+                raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_MEMBER})
         elif opt == 2:
             # assign user staff in dept
             if not cls.check_in_dept_member(valid_data):

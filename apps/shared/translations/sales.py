@@ -16,7 +16,6 @@ class SaleMsg:
 class SaleTask:
     ERROR_ASSIGNER = _('Assigner not found')
     ERROR_CONFIG_NOT_FOUND = _('Config not found please contact admin')
-    ERROR_TEAM_MEMBER_EMPTY = _('Team member is empty')
     ERROR_NOT_IN_MEMBER = _('Assignee not in team member')
     ERROR_NOT_IN_DEPARTMENT = _('Assignee not in department')
     ERROR_1_OR_2_OPT = _('Assignee not in department or not in team member')

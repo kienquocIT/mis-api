@@ -34,7 +34,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='view')
+        label_code='task', model_code='opportunityTask', perm_code='view')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -45,7 +45,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='create', )
+        label_code='task', model_code='opportunityTask', perm_code='create', )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
