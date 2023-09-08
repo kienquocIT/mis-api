@@ -8,4 +8,3 @@ from .expense_item import *
 from .expense import *
 from .product import *
 from .price import *
-
