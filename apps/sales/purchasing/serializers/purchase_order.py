@@ -50,7 +50,9 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderRequestProduct
         fields = (
+            'id',
             'purchase_request_product',
+            'purchase_order_product_id',
             'sale_order_product_id',
             'quantity_order',
         )
@@ -131,6 +133,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderProduct
         fields = (
+            'id',
             'product',
             'uom_order_request',
             'uom_order_actual',
