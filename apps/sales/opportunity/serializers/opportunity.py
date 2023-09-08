@@ -435,7 +435,7 @@ class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
                 return {
                     'id': str(obj.id),
                     'code': obj.code,
-                    'group': obj.group,
+                    'group': str(obj.group_id) if obj.group else None,
                     'name': obj.get_full_name(),
                     'email': obj.email,
                 }
