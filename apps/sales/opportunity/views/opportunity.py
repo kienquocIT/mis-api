@@ -22,8 +22,8 @@ class OpportunityList(
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -49,7 +49,10 @@ class OpportunityList(
         operation_description="Create new Opportunity",
         request_body=OpportunityCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="create",
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -61,8 +64,8 @@ class OpportunityDetail(
     queryset = Opportunity.objects
     serializer_detail = OpportunityDetailSerializer
     serializer_update = OpportunityUpdateSerializer
-    update_hidden_field = ['tenant_id', 'company_id']
-    retrieve_hidden_field = ['tenant_id', 'company_id']
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -80,7 +83,10 @@ class OpportunityDetail(
         operation_summary="Opportunity detail",
         operation_description="Get Opportunity detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -89,7 +95,10 @@ class OpportunityDetail(
         operation_description="Update Opportunity by ID",
         request_body=OpportunityUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="edit",
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
