@@ -97,6 +97,12 @@ class PurchaseOrder(DataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
 
+        # update quantity remain on purchase request product
+        if self.system_status in [2, 3]:
+            for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
+                po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
+                po_request.purchase_request_product.save()
+
         # hit DB
         super().save(*args, **kwargs)
 
@@ -268,10 +274,10 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         default=0,
         help_text='quantity order',
     )
-    quantity_remain = models.FloatField(
-        default=0,
-        help_text='quantity remain to order',
-    )
+    # quantity_remain = models.FloatField(
+    #     default=0,
+    #     help_text='quantity remain to order',
+    # )
 
     class Meta:
         verbose_name = 'Purchase Order Request Product'
