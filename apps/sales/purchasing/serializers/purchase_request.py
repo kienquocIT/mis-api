@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
+from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.shared import REQUEST_FOR, PURCHASE_STATUS, SYSTEM_STATUS
@@ -368,6 +369,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
     purchase_request = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequestProduct
@@ -377,6 +379,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'sale_order_product_id',
             'product',
             'uom',
+            'tax',
             'quantity',
             'remain_for_purchase_order',
         )
@@ -391,11 +394,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        return {
-            'id': obj.product_id,
-            'title': obj.product.title,
-            'code': obj.product.code,
-        } if obj.product else {}
+        return ProductForSaleListSerializer(obj.product).data
 
     @classmethod
     def get_uom(cls, obj):
@@ -419,3 +418,12 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
         } if obj.uom else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}

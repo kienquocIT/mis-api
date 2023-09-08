@@ -35,7 +35,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'price_list_mapped'
+            'price_list_mapped',
+            'product_choice'
         )
 
     @classmethod
@@ -99,7 +100,7 @@ def sub_validate_volume_obj(initial_data, validate_data):
     if volume_obj and validate_data.get('volume', None):
         volume_obj = volume_obj.first()
         return {
-            'id': volume_obj.id,
+            'id': str(volume_obj.id),
             'title': volume_obj.title,
             'measure': volume_obj.measure,
             'value': validate_data['volume']
@@ -114,7 +115,7 @@ def sub_validate_weight_obj(initial_data, validate_data):
     if weight_obj and validate_data.get('weight', None):
         weight_obj = weight_obj.first()
         return {
-            'id': weight_obj.id,
+            'id': str(weight_obj.id),
             'title': weight_obj.title,
             'measure': weight_obj.measure,
             'value': validate_data['weight']
@@ -767,7 +768,10 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'default_uom': {
                 'id': obj.sale_default_uom_id,
                 'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code
+                'code': obj.sale_default_uom.code,
+                'ratio': obj.sale_default_uom.ratio,
+                'rounding': obj.sale_default_uom.rounding,
+                'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
             } if obj.sale_default_uom else {},
             'tax_code': {
                 'id': obj.sale_tax_id,
