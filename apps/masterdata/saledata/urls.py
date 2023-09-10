@@ -23,7 +23,7 @@ from apps.masterdata.saledata.views.price import (
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
-    WareHouseCheckAvailableProductList, GoodsReceiptProductsList
+    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail, GoodsReceiptProductsList
 )
 
 urlpatterns = [
@@ -143,3 +143,10 @@ urlpatterns += [
     path('goods-receipt-products', GoodsReceiptProductsList.as_view(), name='GoodsReceiptProductsList'),
 ]
 # // end good receipt
+
+# expense item
+
+urlpatterns += [
+    path('expense-items', ExpenseItemList.as_view(), name='ExpenseItemList'),
+    path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
+]

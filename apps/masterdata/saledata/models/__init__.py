@@ -1,4 +1,3 @@
-# from apps.masterdata.saledata.models import contacts, accounts, config, product
 from .accounts import *
 from .config import *
 from .contacts import *
@@ -8,3 +7,4 @@ from .shipping import *
 from .inventory import *
 from .good_receipt import *
 from .product_warehouse import *
+from .expense_item import *

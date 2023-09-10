@@ -768,7 +768,10 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'default_uom': {
                 'id': obj.sale_default_uom_id,
                 'title': obj.sale_default_uom.title,
-                'code': obj.sale_default_uom.code
+                'code': obj.sale_default_uom.code,
+                'ratio': obj.sale_default_uom.ratio,
+                'rounding': obj.sale_default_uom.rounding,
+                'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
             } if obj.sale_default_uom else {},
             'tax_code': {
                 'id': obj.sale_tax_id,

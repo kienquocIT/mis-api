@@ -124,6 +124,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            # system
             'workflow_runtime_id',
         )
 
@@ -236,7 +237,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -276,7 +277,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             'quotation',
             # total amount of products
@@ -320,8 +321,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -381,7 +382,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -422,7 +423,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             'quotation',
             # total amount of products
@@ -464,8 +465,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
