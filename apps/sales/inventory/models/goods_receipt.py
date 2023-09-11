@@ -8,6 +8,7 @@ class GoodsReceipt(DataAbstractModel):
         default=0,
         help_text='choices= ' + str(GOODS_RECEIPT_TYPE),
     )
+    # FIELDS OF TYPE 0(For purchase order)
     purchase_order = models.ForeignKey(
         'purchasing.PurchaseOrder',
         on_delete=models.CASCADE,
@@ -29,6 +30,14 @@ class GoodsReceipt(DataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='goods_receipt_map_pr'
+    )
+    # FIELDS OF TYPE 1(For inventory adjustment)
+    # FIELDS OF TYPE 2(For production)
+    # COMMON FIELDS
+    remarks = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name='Description of this records',
     )
 
     class Meta:
@@ -97,6 +106,23 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         null=True
     )
     quantity_import = models.FloatField(default=0)
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_description = models.TextField(
+        blank=True,
+        null=True
+    )
+    product_subtotal_price = models.FloatField(default=0)
+    product_subtotal_price_after_tax = models.FloatField(default=0)
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Goods Receipt Product'
