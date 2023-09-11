@@ -1,0 +1,1 @@
+from .goods_receipt import *
