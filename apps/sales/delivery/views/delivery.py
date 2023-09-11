@@ -43,7 +43,7 @@ class OrderDeliverySubDetail(
         operation_description="Get delivery Sub detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True
+        login_require=True, auth_require=False
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
