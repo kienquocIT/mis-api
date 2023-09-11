@@ -88,6 +88,7 @@ class OrderPickingListSerializer(serializers.ModelSerializer):
 
 class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -95,6 +96,15 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
             obj.orderpickingproduct_set.all(),
             many=True,
         ).data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": str(obj.employee_inherit_id),
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderPickingSub
@@ -114,6 +124,7 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
             'remaining_quantity',
             'picked_quantity',
             'delivery_option',
+            'employee_inherit'
         )
 
 
@@ -127,6 +138,7 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
 class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
     products = ProductPickingUpdateSerializer(many=True)
     sale_order_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
     delivery_option = serializers.IntegerField(min_value=0)
 
     @classmethod
@@ -313,28 +325,35 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
-        for item in validated_data['products']:
-            item_key = str(item['product_id']) + "___" + str(item['order'])
-            picked_quantity_total += item['done']
-            product_done[item_key] = {
-                'stock': item['done'],
-                'delivery_data': item['delivery_data']
-            }
-        instance.estimated_delivery_date = validated_data['estimated_delivery_date']
-        instance.remarks = validated_data['remarks']
-        instance.to_location = validated_data['to_location']
-        instance.ware_house = validated_data['ware_house']
-        try:
-            with transaction.atomic():
-                # update picking prod và delivery prod trừ vào warehouse stock
-                pickup_data = self.update_prod_current(instance, product_done, picked_quantity_total)
-                self.update_current_sub(instance, pickup_data, picked_quantity_total)
-        except Exception as err:
-            print(err)
-            raise err
+
+        if 'product' in validated_data and len(validated_data['products']) > 0:
+            for item in validated_data['products']:
+                item_key = str(item['product_id']) + "___" + str(item['order'])
+                picked_quantity_total += item['done']
+                product_done[item_key] = {
+                    'stock': item['done'],
+                    'delivery_data': item['delivery_data']
+                }
+            instance.estimated_delivery_date = validated_data['estimated_delivery_date']
+            instance.remarks = validated_data['remarks']
+            instance.to_location = validated_data['to_location']
+            instance.ware_house = validated_data['ware_house']
+            try:
+                with transaction.atomic():
+                    # update picking prod và delivery prod trừ vào warehouse stock
+                    pickup_data = self.update_prod_current(instance, product_done, picked_quantity_total)
+                    self.update_current_sub(instance, pickup_data, picked_quantity_total)
+            except Exception as err:
+                print(err)
+                raise err
+        else:
+            del validated_data['products']
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
         return instance
 
     class Meta:
         model = OrderPickingSub
         fields = ('products', 'sale_order_id', 'order_picking', 'state', 'estimated_delivery_date', 'ware_house',
-                  'to_location', 'remarks', 'delivery_option')
+                  'to_location', 'remarks', 'delivery_option', 'employee_inherit_id')

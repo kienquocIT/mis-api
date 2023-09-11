@@ -174,8 +174,8 @@ _Application_crm_data = {
         "model_code": "orderpickingsub",
         "app_label": "delivery",
         "is_workflow": False,
-        "option_permission": 1,
-        "option_allowed": [4],
+        "option_permission": 0,
+        "option_allowed": [1, 3, 4],
     },
     "1373e903-909c-4b77-9957-8bcf97e8d6d3": {
         "title": "Delivery",

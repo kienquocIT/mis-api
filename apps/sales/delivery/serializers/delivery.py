@@ -98,6 +98,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
 class OrderDeliverySubListSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -106,6 +107,15 @@ class OrderDeliverySubListSerializer(serializers.ModelSerializer):
             many=True,
         ).data
         return prod
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderDeliverySub
@@ -126,6 +136,7 @@ class OrderDeliverySubListSerializer(serializers.ModelSerializer):
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
+            'employee_inherit'
         )
 
 
@@ -164,6 +175,7 @@ class OrderDeliveryListSerializer(serializers.ModelSerializer):
 class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
     attachments = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -174,6 +186,15 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
         return prod
 
     @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": str(obj.employee_inherit_id),
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
+
+    @classmethod
     def get_attachments(cls, obj):
         if obj.attachments:
             attach = OrderDeliveryAttachment.objects.filter(
@@ -181,9 +202,7 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
                 media_file=obj.attachments
             )
             if attach.exists():
-                # obj.attachments = list((lambda x: x.files, attach))
                 attachments = []
-                # obj.attachments = list(map(lambda x: x['files'], attach))
                 for item in attach:
                     files = item.files
                     attachments.append(
@@ -227,6 +246,7 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
             'attachments',
             'delivery_logistic',
             'workflow_runtime_id',
+            'employee_inherit'
         )
 
 
@@ -239,6 +259,7 @@ class ProductDeliveryUpdateSerializer(serializers.Serializer):  # noqa
 
 class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
     products = ProductDeliveryUpdateSerializer(many=True)
+    employee_inherit_id = serializers.UUIDField()
 
     class Meta:
         model = OrderDeliverySub
@@ -255,7 +276,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             'remarks',
             'products',
             'attachments',
-            'delivery_logistic'
+            'delivery_logistic',
+            'employee_inherit_id'
         )
 
     @classmethod
@@ -535,25 +557,32 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
-
+        if len(product_done) > 0:
         # update instance info
-        self.update_self_info(instance, validated_data)
-        try:
-            with transaction.atomic():
-                self.handle_attach_file(instance, validated_data)
-                if not is_partial and not is_picking:
-                    # config 1
-                    self.config_one(instance, total_done, product_done, config)
-                elif is_partial and not is_picking:
-                    # config 2
-                    self.config_two(instance, total_done, product_done, config)
-                elif is_picking and not is_partial:
-                    # config 3
-                    self.config_three(instance, total_done, product_done, config)
-                else:
-                    # config 4
-                    self.config_four(instance, total_done, product_done, config)
-        except Exception as err:
-            print(err)
-            raise err
+            self.update_self_info(instance, validated_data)
+        # if product_done
+        # to do check if not submit product so update common info only
+            try:
+                with transaction.atomic():
+                    self.handle_attach_file(instance, validated_data)
+                    if not is_partial and not is_picking:
+                        # config 1
+                        self.config_one(instance, total_done, product_done, config)
+                    elif is_partial and not is_picking:
+                        # config 2
+                        self.config_two(instance, total_done, product_done, config)
+                    elif is_picking and not is_partial:
+                        # config 3
+                        self.config_three(instance, total_done, product_done, config)
+                    else:
+                        # config 4
+                        self.config_four(instance, total_done, product_done, config)
+            except Exception as err:
+                print(err)
+                raise err
+        else:
+            del validated_data['products']
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
         return instance
