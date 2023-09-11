@@ -22,6 +22,8 @@ __all__ = [
     'SaleOrderActiveDelivery',
 ]
 
+from apps.shared.translations.sales import DeliverMsg
+
 
 class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = DeliveryConfig.objects
@@ -57,6 +59,16 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 
 class SaleOrderActiveDelivery(APIView):
+
+    @classmethod
+    def check_config(cls, config):
+        if not config.lead_picking and config.is_picking or \
+                not config.lead_delivery:
+            # case 1: có setup picking mà ko chọn leader
+            # case 2: ko setup lead cho delivery
+            return False
+        return True
+
     @swagger_auto_schema(
         operation_summary='Call delivery at SaleOrder Detail',
         operation_description='"id" is Sale Order ID - Start delivery process of this'
@@ -88,12 +100,18 @@ class SaleOrderActiveDelivery(APIView):
                             'detail': 'Need at least once product for delivery process run'
                         }
                     )
-
+                config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
+                if not self.check_config(config):
+                    raise serializers.ValidationError(
+                        {
+                            'detail': DeliverMsg.ERROR_CONFIG
+                        }
+                    )
                 call_task_background(
                     my_task=task_active_delivery_from_sale_order,
                     **{'sale_order_id': str(obj.id)}
                 )
-                config = DeliveryConfig.objects.get(company_id=str(obj.company_id))
+
                 serializer = DeliveryConfigDetailSerializer(config)
                 return ResponseController.success_200(
                     data={'state': 'Successfully', 'config': serializer.data, 'is_not_picking': is_not_picking},
