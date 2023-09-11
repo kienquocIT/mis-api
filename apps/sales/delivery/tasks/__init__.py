@@ -186,6 +186,7 @@ class SaleOrderActiveDeliverySerializer:
         obj.save(update_fields=['sub'])
         return obj
 
+    @decorator_run_workflow
     def _create_order_delivery(
             self,
             delivery_quantity,
@@ -239,7 +240,6 @@ class SaleOrderActiveDeliverySerializer:
             date_created=timezone.now(),
         )
 
-    @decorator_run_workflow
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
         sub_obj = OrderDeliverySub.objects.create(
             code=obj_delivery.code,
