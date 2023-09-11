@@ -564,7 +564,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 }
             ],
             "to_location": "area 01",
-            "ware_house": self.warehouse.data['result']['id']
+            "ware_house": self.warehouse.data['result']['id'],
+            "employee_inherit_id": self.get_employee().data['result'][0]['id']
         }
         response_picking = self.client.put(url_update, data_picking_update, format='json')
         self.assertEqual(response_picking.status_code, 200)
@@ -592,7 +593,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                     },
                     'order': 1,
                 }
-            ]
+            ],
+            "employee_inherit_id": self.get_employee().data['result'][0]['id']
         }
         response_delivery = self.client.put(url_update, data_delivery_update, format='json')
         self.assertEqual(response_delivery.status_code, 200)
