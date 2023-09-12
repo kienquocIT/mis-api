@@ -354,7 +354,7 @@ class PaymentTestCase(AdvanceTestCase):
             response1.data['result'],
             [
                 'id', 'sale_order_mapped', 'quotation_mapped', 'opportunity_mapped', 'title', 'code', 'creator_name',
-                'beneficiary', 'date_created', 'method', 'sale_code_type', 'supplier', 'product_mapped'
+                'beneficiary', 'date_created', 'method', 'sale_code_type', 'supplier', 'expense_items'
             ],
             check_sum_second=True,
         )
@@ -406,7 +406,7 @@ class PaymentTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'sale_order_mapped', 'quotation_mapped', 'opportunity_mapped', 'title', 'code', 'creator_name',
-                'beneficiary', 'date_created', 'method', 'sale_code_type', 'supplier', 'product_mapped'
+                'beneficiary', 'date_created', 'method', 'sale_code_type', 'supplier', 'expense_items'
             ],
             check_sum_second=True,
         )
