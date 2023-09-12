@@ -62,8 +62,7 @@ class SaleOrderActiveDelivery(APIView):
 
     @classmethod
     def check_config(cls, config):
-        if not config.lead_picking and config.is_picking or \
-                not config.lead_delivery:
+        if not config.lead_picking and config.is_picking or not config.lead_delivery:
             # case 1: có setup picking mà ko chọn leader
             # case 2: ko setup lead cho delivery
             return False
