@@ -787,15 +787,6 @@ CONTRACT_APP_CONFIG = {
     "is_workflow": False,
 }
 
-PURCHASE_APP_CONFIG = {
-    "id": "a0d0a456-47b8-47ff-8f99-d9f3353a68ae",
-    "title": "Purchase Request",
-    "code": "purchaserequest",
-    "model_code": "purchaserequest",
-    "app_label": "purchasing",
-    "is_workflow": True,
-}
-
 PURCHASE_QUOTATION_REQUEST_APP_CONFIG = {
     "id": "d78bd5f3-8a8d-48a3-ad62-b50d576ce173",
     "title": "Purchase Quotation Request",
@@ -1015,7 +1006,6 @@ Application_crm_data = {
     "dec012bf-b931-48ba-a746-38b7fd7ca73b": ApplicationConfigFrame(**EMAIL_LOG_APP_CONFIG).data,
     "2fe959e3-9628-4f47-96a1-a2ef03e867e3": ApplicationConfigFrame(**METING_LOG_APP_CONFIG).data,
     "31c9c5b0-717d-4134-b3d0-cc4ca174b168": ApplicationConfigFrame(**CONTRACT_APP_CONFIG).data,
-    "a0d0a456-47b8-47ff-8f99-d9f3353a68ae": ApplicationConfigFrame(**PURCHASE_APP_CONFIG).data,
     "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": ApplicationConfigFrame(**PURCHASE_QUOTATION_REQUEST_APP_CONFIG).data,
     "f52a966a-2eb2-4851-852d-eff61efeb896": ApplicationConfigFrame(**PURCHASE_QUOTATION_APP_CONFIG).data,
     "81a111ef-9c32-4cbd-8601-a3cce884badb": ApplicationConfigFrame(**PURCHASE_ORDER_APP_CONFIG).data,
