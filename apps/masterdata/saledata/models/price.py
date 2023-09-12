@@ -102,7 +102,13 @@ class Price(DataAbstractModel):
         null=True
     )
     price_list_type = models.SmallIntegerField(choices=PRICE_LIST_TYPE)
-    price_list_mapped = models.UUIDField(null=True)
+    price_list_mapped = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        default=None,
+        related_name='price_parent'
+    )
     product = models.ManyToManyField(
         Product,
         through='ProductPriceList',

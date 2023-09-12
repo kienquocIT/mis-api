@@ -67,7 +67,7 @@ class PurchaseOrderCommonCreate:
                 purchase_request_product_id=purchase_request_product['purchase_request_product'],
                 sale_order_product_id=purchase_request_product['sale_order_product'],
                 quantity_order=purchase_request_product['quantity_order'],
-                quantity_remain=purchase_request_product['quantity_remain'],
+                # quantity_remain=purchase_request_product['quantity_remain'],
             ) for purchase_request_product in validated_data['purchase_request_products_data']
         ])
 
@@ -92,7 +92,7 @@ class PurchaseOrderCommonCreate:
                             purchase_order_product=order_product,
                             sale_order_product_id=purchase_request_product['sale_order_product'],
                             quantity_order=purchase_request_product['quantity_order'],
-                            quantity_remain=purchase_request_product['quantity_remain'],
+                            # quantity_remain=purchase_request_product['quantity_remain'],
                         ) for purchase_request_product in data['purchase_request_products_data']
                     ])
         return True

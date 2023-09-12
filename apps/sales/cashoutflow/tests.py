@@ -22,11 +22,10 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'title': 'Tam ung thang 5',
             'sale_code_type': 2,  # non-sale
             'advance_payment_type': 0,  # to_employee
-            'supplier': None,
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
-            'return_date': '2023-06-06 11:21:00.000000',
+            'return_date': '2023-06-06',
             'money_gave': True
         }
         response1 = self.client.post(url, data1, format='json')
@@ -48,7 +47,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             ],
             check_sum_second=True,
         )
-
         return response1
 
     def test_ap_list(self):
@@ -174,13 +172,12 @@ class PaymentTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'phone', 'shipping_address',
                 'billing_address', 'parent_account_mapped', 'account_group', 'tax_code', 'industry', 'total_employees',
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped',
-                'workflow_runtime_id', 'system_status'
+                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status'
             ],
             check_sum_second=True,
         )

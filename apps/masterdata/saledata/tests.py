@@ -70,13 +70,12 @@ class AccountTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'name', 'website', 'code', 'account_type', 'manager', 'owner', 'phone', 'shipping_address',
+                'id', 'name', 'website', 'code', 'account_type', 'manager', 'phone', 'shipping_address',
                 'billing_address', 'parent_account_mapped', 'account_group', 'tax_code', 'industry', 'total_employees',
                 'email', 'payment_term_customer_mapped', 'payment_term_supplier_mapped',
                 'credit_limit_customer', 'credit_limit_supplier', 'currency', 'contact_mapped',
                 'account_type_selection', 'bank_accounts_mapped', 'credit_cards_mapped',
-                'annual_revenue', 'price_list_mapped',
-                'workflow_runtime_id', 'system_status'
+                'annual_revenue', 'price_list_mapped', 'workflow_runtime_id', 'system_status'
             ],
             check_sum_second=True,
         )
@@ -351,7 +350,12 @@ class ProductTestCase(AdvanceTestCase):
                 'code',
                 'title',
                 'general_product_type',
-                'general_product_category'
+                'general_product_category',
+                'general_uom_group',
+                'sale_tax',
+                'sale_default_uom',
+                'price_list_mapped',
+                'product_choice'
             ],
             check_sum_second=True,
         )
@@ -2953,10 +2957,9 @@ class PriceListTestCase(AdvanceTestCase):
             'can_delete': False,  # T-T/F, F-F
             'factor': 1.0,
             'currency': [currency1, currency2],
-            'price_list_mapped': None,
             'price_list_type': 0,
             'valid_time_start': '2023-06-06 11:21:00.000000',
-            'valid_time_end': '2023-07-07 11:21:00.000000'
+            'valid_time_end': '2030-07-07 11:21:00.000000'
         }
         response3 = self.client.post(url, data3, format='json')
         self.assertResponseList(

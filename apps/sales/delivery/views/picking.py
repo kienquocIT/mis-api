@@ -26,7 +26,10 @@ class OrderPickingList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary='Order Picking List',
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='picking', model_code='orderdeliverysub', perm_code='view'
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -43,7 +46,7 @@ class OrderPickingSubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('orderpickingproduct_set')
+        return super().get_queryset().select_related('employee_inherit').prefetch_related('orderpickingproduct_set')
 
     @swagger_auto_schema(
         operation_summary='Order Picking Sub Detail',
@@ -58,6 +61,9 @@ class OrderPickingSubDetail(
         operation_description="Update picked quantity (Done) for Order picking product/sub of table",
         serializer_update=OrderPickingSubUpdateSerializer
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='picking', model_code='orderdeliverysub', perm_code='edit'
+    )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)

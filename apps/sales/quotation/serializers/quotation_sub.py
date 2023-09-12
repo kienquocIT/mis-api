@@ -479,13 +479,13 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
 
     @classmethod
-    def validate_employee_inherit(cls, value):
+    def validate_employee_inherit_id(cls, value):
         try:
             return Employee.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
