@@ -1,7 +1,8 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct
+from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct, \
+    PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
     PurchaseOrderProductListSerializer, PurchaseOrderSaleListSerializer
@@ -72,13 +73,34 @@ class PurchaseOrderDetail(
                 queryset=PurchaseOrderQuotation.objects.select_related('purchase_quotation'),
             ),
             Prefetch(
+                'purchase_order_request_product_order',
+                queryset=PurchaseOrderRequestProduct.objects.select_related(
+                    'purchase_request_product',
+                    'purchase_request_product__purchase_request',
+                    'purchase_request_product__uom',
+                ),
+            ),
+            Prefetch(
                 'purchase_order_product_order',
                 queryset=PurchaseOrderProduct.objects.select_related(
                     'product',
                     'uom_order_request',
+                    'uom_order_request__group',
+                    'uom_order_request__group__uom_reference',
                     'uom_order_actual',
+                    'uom_order_actual__group',
+                    'uom_order_actual__group__uom_reference',
                     'tax',
-                ).prefetch_related('purchase_order_request_order_product'),
+                ).prefetch_related(
+                    Prefetch(
+                        'purchase_order_request_order_product',
+                        queryset=PurchaseOrderRequestProduct.objects.select_related(
+                            'purchase_request_product',
+                            'purchase_request_product__purchase_request',
+                            'purchase_request_product__uom',
+                        )
+                    )
+                ),
             ),
         )
 

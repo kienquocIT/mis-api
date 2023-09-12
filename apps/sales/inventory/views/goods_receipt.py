@@ -1,13 +1,11 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.inventory.models import GoodsReceipt
+from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
+    GoodsReceiptWarehouse
 from apps.sales.inventory.serializers.goods_receipt import GoodsReceiptListSerializer, GoodsReceiptCreateSerializer, \
     GoodsReceiptUpdateSerializer, GoodsReceiptDetailSerializer
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
-    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
-    PurchaseOrderProductListSerializer, PurchaseOrderSaleListSerializer
+from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -65,9 +63,37 @@ class GoodsReceiptDetail(
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            "purchase_order",
             "supplier",
         ).prefetch_related(
             'purchase_requests',
+            Prefetch(
+                'goods_receipt_product_goods_receipt',
+                queryset=GoodsReceiptProduct.objects.select_related(
+                    'product',
+                    'uom',
+                    'tax',
+                ).prefetch_related(
+                    Prefetch(
+                        'goods_receipt_request_product_gr_product',
+                        queryset=GoodsReceiptRequestProduct.objects.select_related(
+                            'purchase_request_product',
+                            'purchase_request_product__purchase_request',
+                            'purchase_request_product__uom',
+                        ).prefetch_related(
+                            Prefetch(
+                                'goods_receipt_warehouse_request_product',
+                                queryset=GoodsReceiptWarehouse.objects.select_related(
+                                    'warehouse'
+                                ).prefetch_related(
+                                    'goods_receipt_lot_gr_warehouse',
+                                    'goods_receipt_serial_gr_warehouse',
+                                )
+                            ),
+                        )
+                    ),
+                ),
+            ),
         )
 
     @swagger_auto_schema(

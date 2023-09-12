@@ -324,8 +324,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_request_products_data(cls, obj):
-        return PurchaseOrderRequestProductListSerializer(PurchaseOrderRequestProduct.objects.filter(
-            purchase_order=obj,
+        return PurchaseOrderRequestProductListSerializer(obj.purchase_order_request_product_order.filter(
+            # purchase_order=obj,
             purchase_order_product__isnull=True
         ), many=True).data
 

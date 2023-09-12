@@ -47,6 +47,22 @@ class GoodsReceipt(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        # auto create code (temporary)
+        goods_receipt = GoodsReceipt.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "GR"
+        if not self.code:
+            temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
+            code = f"{char}{temper}"
+            self.code = code
+
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 class GoodsReceiptPurchaseRequest(SimpleAbstractModel):
     goods_receipt = models.ForeignKey(
@@ -120,6 +136,7 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    product_unit_price = models.FloatField(default=0)
     product_subtotal_price = models.FloatField(default=0)
     product_subtotal_price_after_tax = models.FloatField(default=0)
     order = models.IntegerField(default=1)
