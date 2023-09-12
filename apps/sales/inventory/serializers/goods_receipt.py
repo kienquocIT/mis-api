@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.workflow.tasks import decorator_run_workflow
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
@@ -285,6 +285,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'code',
             'goods_receipt_type',
             'purchase_order',
+            'date_received',
             'system_status',
         )
 
@@ -327,6 +328,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'purchase_requests',
             'remarks',
+            'date_received',
             # line detail
             'goods_receipt_product',
             # system
@@ -386,6 +388,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
             'supplier',
             'purchase_requests',
             'remarks',
+            'date_received',
             # line detail
             'goods_receipt_product',
             # system
@@ -426,13 +429,22 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
+    purchase_order = serializers.UUIDField(required=False)
     supplier = serializers.UUIDField(required=False)
+    purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
+    goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceipt
         fields = (
             'title',
+            'purchase_order',
             'supplier',
+            'purchase_requests',
+            'remarks',
+            'date_received',
+            # line detail
+            'goods_receipt_product',
             # system
             'system_status',
         )

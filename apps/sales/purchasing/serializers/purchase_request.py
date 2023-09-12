@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
-from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
 from apps.shared import REQUEST_FOR, PURCHASE_STATUS, SYSTEM_STATUS
@@ -394,7 +393,54 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_product(cls, obj):
-        return ProductForSaleListSerializer(obj.product).data
+        return {
+            'id': obj.product_id,
+            'code': obj.product.code,
+            'title': obj.product.title,
+            'general_information': {
+                'product_type': {
+                    'id': obj.product.general_product_type_id,
+                    'title': obj.product.general_product_type.title,
+                    'code': obj.product.general_product_type.code
+                } if obj.product.general_product_type else {},
+                'product_category': {
+                    'id': obj.product.general_product_category_id,
+                    'title': obj.product.general_product_category.title,
+                    'code': obj.product.general_product_category.code
+                } if obj.product.general_product_category else {},
+                'uom_group': {
+                    'id': obj.product.general_uom_group_id,
+                    'title': obj.product.general_uom_group.title,
+                    'code': obj.product.general_uom_group.code
+                } if obj.product.general_uom_group else {},
+            },
+            'sale_information': {
+                'default_uom': {
+                    'id': obj.product.sale_default_uom_id,
+                    'title': obj.product.sale_default_uom.title,
+                    'code': obj.product.sale_default_uom.code,
+                    'ratio': obj.product.sale_default_uom.ratio,
+                    'rounding': obj.product.sale_default_uom.rounding,
+                    'is_referenced_unit': obj.product.sale_default_uom.is_referenced_unit,
+                } if obj.product.sale_default_uom else {},
+                'tax_code': {
+                    'id': obj.product.sale_tax_id,
+                    'title': obj.product.sale_tax.title,
+                    'code': obj.product.sale_tax.code,
+                    'rate': obj.product.sale_tax.rate
+                } if obj.product.sale_tax else {},
+                'currency_using': {
+                    'id': obj.product.sale_currency_using_id,
+                    'title': obj.product.sale_currency_using.title,
+                    'code': obj.product.sale_currency_using.code,
+                } if obj.product.sale_currency_using else {},
+                'length': obj.product.length,
+                'width': obj.product.width,
+                'height': obj.product.height,
+            },
+            'product_choice': obj.product.product_choice,
+            'sale_cost': obj.product.sale_cost,
+        }
 
     @classmethod
     def get_uom(cls, obj):

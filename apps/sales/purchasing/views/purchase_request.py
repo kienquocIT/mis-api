@@ -107,6 +107,7 @@ class PurchaseRequestProductList(BaseListMixin):
         return super().get_queryset().select_related(
             'purchase_request',
             'product',
+            'product__general_product_type',
             'product__general_product_category',
             'product__general_uom_group',
             'product__sale_default_uom',

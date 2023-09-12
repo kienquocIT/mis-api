@@ -39,6 +39,7 @@ class GoodsReceipt(DataAbstractModel):
         null=True,
         verbose_name='Description of this records',
     )
+    date_received = models.DateTimeField(null=True)
 
     class Meta:
         verbose_name = 'Goods Receipt'
