@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg
@@ -17,7 +17,7 @@ PRODUCT_OPTION = [
 
 
 class ProductListSerializer(serializers.ModelSerializer):
-    general_product_type = serializers.SerializerMethodField()
+    general_product_types_mapped = serializers.SerializerMethodField()
     general_product_category = serializers.SerializerMethodField()
     general_uom_group = serializers.SerializerMethodField()
     sale_tax = serializers.SerializerMethodField()
@@ -30,7 +30,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'general_product_type',
+            'general_product_types_mapped',
             'general_product_category',
             'general_uom_group',
             'sale_tax',
@@ -40,12 +40,12 @@ class ProductListSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_general_product_type(cls, obj):
-        return {
-           'id': obj.general_product_type_id,
-           'title': obj.general_product_type.title,
-           'code': obj.general_product_type.code
-        } if obj.general_product_type else {}
+    def get_general_product_types_mapped(cls, obj):
+        return [{
+           'id': str(item.id),
+           'title': item.title,
+           'code': item.code
+        } for item in obj.general_product_types_mapped.all()]
 
     @classmethod
     def get_general_product_category(cls, obj):
@@ -133,12 +133,20 @@ def setup_price_list_data_in_sale(initial_data):
     return sale_price_list
 
 
+def create_product_types_mapped(product_obj, product_types_mapped_list):
+    bulk_info = []
+    for item in product_types_mapped_list:
+        bulk_info.append(ProductProductType(product=product_obj, product_type_id=item))
+    ProductProductType.objects.filter(product=product_obj).delete()
+    ProductProductType.objects.bulk_create(bulk_info)
+    return True
+
+
 class ProductCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
     )
-    general_product_type = serializers.UUIDField()
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
@@ -157,7 +165,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'description',
             'product_choice',
             # General
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             'general_traceability_method',
@@ -179,13 +186,6 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'purchase_default_uom',
             'purchase_tax',
         )
-
-    @classmethod
-    def validate_general_product_type(cls, value):
-        try:
-            return ProductType.objects.get(id=value)
-        except ProductType.DoesNotExist:
-            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
@@ -337,6 +337,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
 
         product = Product.objects.create(**validated_data, code=new_code)
 
+        create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
+
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
@@ -374,11 +376,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_information(cls, obj):
         result = {
-            'product_type': {
-                'id': obj.general_product_type_id,
-                'title': obj.general_product_type.title,
-                'code': obj.general_product_type.code
-            },
+            'general_product_types_mapped': [{
+                'id': str(product_type.id),
+                'title': product_type.title,
+                'code': product_type.code
+            } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': obj.general_product_category_id,
                 'title': obj.general_product_category.title,
@@ -483,7 +485,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     product_choice = serializers.ListField(
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
     )
-    general_product_type = serializers.UUIDField()
     general_product_category = serializers.UUIDField()
     general_uom_group = serializers.UUIDField()
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
@@ -502,7 +503,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'description',
             'product_choice',
             # General
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             'general_traceability_method',
@@ -524,13 +524,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'purchase_default_uom',
             'purchase_tax',
         )
-
-    @classmethod
-    def validate_general_product_type(cls, value):
-        try:
-            return ProductType.objects.get(id=value)
-        except ProductType.DoesNotExist:
-            raise serializers.ValidationError({'general_product_type': ProductMsg.DOES_NOT_EXIST})
 
     @classmethod
     def validate_general_product_category(cls, value):
@@ -681,6 +674,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
 
+        create_product_types_mapped(instance, self.initial_data.get('product_types_mapped_list', []))
+
         if 'volume' in validated_data and 'weight' in validated_data:
             measure_data = {'weight': validated_data['weight'], 'volume': validated_data['volume']}
             if measure_data:
@@ -745,11 +740,11 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_information(cls, obj):
         return {
-            'product_type': {
-                'id': obj.general_product_type_id,
-                'title': obj.general_product_type.title,
-                'code': obj.general_product_type.code
-            } if obj.general_product_type else {},
+            'product_type': [{
+                'id': str(product_type.id),
+                'title': product_type.title,
+                'code': product_type.code
+            } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
                 'id': obj.general_product_category_id,
                 'title': obj.general_product_category.title,

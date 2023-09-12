@@ -317,7 +317,6 @@ class ProductList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'general_product_type',
             'general_product_category',
         )
 
@@ -356,7 +355,6 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'product_price_product__currency_using',
             'product_price_product__price_list',
         ).select_related(
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             'sale_default_uom',
@@ -389,7 +387,6 @@ class ProductForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             "sale_default_uom",

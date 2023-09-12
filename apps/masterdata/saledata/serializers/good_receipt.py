@@ -8,10 +8,8 @@ from apps.masterdata.saledata.models import (
     GoodReceipt, Account, GoodReceiptProduct, ProductWareHouse, GoodReceiptAttachment
 )
 
-__all__ = [
-    'GoodReceiptListSerializer', 'GoodReceiptCreateSerializer', 'GoodReceiptDetailSerializer',
-    'GoodReceiptUpdateSerializer', 'GoodReceiptProductSerializer'
-]
+__all__ = ['GoodReceiptListSerializer', 'GoodReceiptCreateSerializer', 'GoodReceiptDetailSerializer',
+           'GoodReceiptUpdateSerializer']
 
 
 class ProductListUtil:
