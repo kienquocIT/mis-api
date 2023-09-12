@@ -393,6 +393,7 @@ class ProductForSaleList(BaseListMixin):
             "sale_tax",
             "sale_currency_using",
         ).prefetch_related(
+            'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),

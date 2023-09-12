@@ -398,11 +398,11 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'code': obj.product.code,
             'title': obj.product.title,
             'general_information': {
-                'product_type': {
-                    'id': obj.product.general_product_type_id,
-                    'title': obj.product.general_product_type.title,
-                    'code': obj.product.general_product_type.code
-                } if obj.product.general_product_type else {},
+                'product_type': [{
+                    'id': general_product_type.id,
+                    'title': general_product_type.title,
+                    'code': general_product_type.code
+                } for general_product_type in obj.product.general_product_types_mapped.all()],
                 'product_category': {
                     'id': obj.product.general_product_category_id,
                     'title': obj.product.general_product_category.title,
