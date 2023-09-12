@@ -1,7 +1,9 @@
 from datetime import date
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure, \
-    Expense
+from apps.masterdata.saledata.models.product import (
+    ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
+    Expense, ProductProductType
+)
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )

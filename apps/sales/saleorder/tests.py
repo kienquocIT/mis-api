@@ -306,7 +306,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
-            'general_product_type': product_type['id'],
+            'product_types_mapped_list': [product_type['id']],
             'general_product_category': product_category['id'],
             'general_uom_group': uom_group.data['result']['id'],
             'length': 50,

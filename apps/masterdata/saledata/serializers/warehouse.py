@@ -10,7 +10,8 @@ __all__ = [
     'WareHouseDetailSerializer',
     'WareHouseUpdateSerializer',
     'ProductWareHouseStockListSerializer',
-    'ProductWareHouseListSerializer'
+    'ProductWareHouseListSerializer',
+    'WareHouseListSerializerForInventoryAdjustment',
 ]
 
 from apps.shared import TypeCheck
@@ -94,3 +95,33 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductWareHouse
         fields = '__all__'
+
+
+class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):
+    product_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'is_active',
+            'product_list'
+        )
+
+    @classmethod
+    def get_product_list(cls, obj):
+        results = []
+        for item in obj.products.all():
+            results.append({
+                'id': str(item.id),
+                'title': item.title,
+                'uom': {
+                    'id': item.inventory_uom_id,
+                    'code': item.inventory_uom.code,
+                    'title': item.inventory_uom.title
+                } if item.inventory_uom else {}
+            })
+        return results

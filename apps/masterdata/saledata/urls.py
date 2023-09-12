@@ -21,9 +21,9 @@ from apps.masterdata.saledata.views.price import (
     PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
 )
 from apps.masterdata.saledata.views import (
-    ShippingList, ShippingDetail,
+    ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
-    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
+    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail
 )
 
 urlpatterns = [
@@ -121,6 +121,11 @@ urlpatterns += [
 # warehouse
 urlpatterns += [
     path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
+    path(
+        'warehouses-for-inventory-adjustment',
+        WareHouseListForInventoryAdjustment.as_view(),
+        name='WareHouseListForInventoryAdjustment'
+    ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
     path(

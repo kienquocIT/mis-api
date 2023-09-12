@@ -39,7 +39,7 @@ class PromotionTestCase(AdvanceTestCase):
         data1 = {
             "title": "Laptop HP 6R",
             "product_choice": [],
-            'general_product_type': product_type['id'],
+            'product_types_mapped_list': [product_type['id']],
             'general_product_category': product_category['id'],
             'general_uom_group': uom_group.data['result']['id']
         }

@@ -19,9 +19,8 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
             'advance_payment__currency',
-            'advance_payment__product',
-            'advance_payment__product_unit_of_measure',
-            'advance_payment__tax',
+            'advance_payment__expense_type',
+            'advance_payment__expense_tax',
         ).select_related(
             'sale_order_mapped__opportunity',
             'quotation_mapped__opportunity',
@@ -57,7 +56,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'advance_payment__product',
+            'advance_payment__expense_type',
         )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')
