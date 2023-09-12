@@ -24,11 +24,14 @@ class TenantPlanSerializer(serializers.ModelSerializer):
                 'id': obj.plan_id,
                 'title': obj.plan.title,
                 'code': obj.plan.code,
-                'application': [{
-                    'id': x.id,
-                    'title': x.title,
-                    'code': x.code,
-                } for x in obj.plan.applications.all()]
+                'application': [
+                    {
+                        'id': x.id,
+                        'title': x.title,
+                        'code': x.code,
+                        'app_depend_on': x.app_depend_on,
+                    } for x in obj.plan.applications.all()
+                ],
             }
         return {}
 

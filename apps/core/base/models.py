@@ -1,3 +1,5 @@
+import json
+
 from django.db import models
 from jsonfield import JSONField
 
@@ -87,6 +89,95 @@ class Application(CoreAbstractModel):
         verbose_name='Option code was allowed',
         # help_text='[1,2,3,4]'
     )
+    app_depend_on = models.JSONField(
+        default=list,
+        help_text=json.dumps(
+            [
+                '{app_id}', '{app_id}', '{app_id}',
+            ]
+        ),
+        verbose_name='App ID depend',
+    )
+    permit_mapping = models.JSONField(
+        default=dict,
+        verbose_name='Permit map Range and Depends On',
+    )
+    permit_mapping_sample = {
+        # range:
+        #   '*': match with all range the system supported
+        #   or '1', '2', '3', '4', ... etc
+        # app_depends_on:
+        #   MAIN KEY:
+        #       - '': match with any key in range
+        #           - It's append, not override depends on config key
+        #           - This config is force apply
+        #       - '1'|'2'|'3'|...etc: [required range same this key ]
+        #           - Active depends on app when range value match with key
+        #   CHILD:
+        #       MAIN KEY:
+        #           - {app_id} : ID of depends on application
+        #       CHILD:
+        #           MAIN KEY:
+        #               - {permit_code}: Code of permit allowed
+        #           CHILD:
+        #               - {code_range}: Range active when match case
+        #                   - "==" : get range main fill into this.
+        #                   - "1" | "2" | ...etc
+        # local_depends_on:
+        #   MAIN KEY: same level in "app_depends_on"
+        #   CHILD:
+        #       MAIN KEY:
+        #           - {permit_code}: Code of permit allowed
+        #       CHILD:
+        #           - {code_range}: Range active when match case
+        #               - "==" : get range main fill into this.
+        #               - "1" | "2" | ...etc
+        'view': {
+            'range': ['*'],
+            'app_depends_on': {
+                '': {
+                    '{app_id}': {
+                        'view': 4,
+                    },
+                },
+            },
+            'local_depends_on': {},
+        },
+        'create': {
+            'range': ['1'],
+            'app_depends_on': {
+                '': {
+                    '{app_id}': {
+                        'view': '4',
+                    }
+                },
+                '1': {
+                    '{app_id}': {
+                        'view': '1',
+                    }
+                },
+            },
+            'local_depends_on': {
+                '1': {
+                    'view': '==',
+                },
+            },
+        },
+        'edit': {
+            'range': ['1', '2', '3'],
+            'app_depends_on': {},
+            'local_depends_on': {
+                '': {
+                    'view': '=='
+                },
+            }
+        },
+        'delete': {
+            'range': [],
+            'app_depends_on': {},
+            'local_depends_on': {},
+        },
+    }
 
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
