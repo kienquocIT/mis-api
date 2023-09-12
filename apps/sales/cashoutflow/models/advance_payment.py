@@ -81,38 +81,21 @@ class AdvancePayment(DataAbstractModel):
 
 
 class AdvancePaymentCost(SimpleAbstractModel):
-    advance_payment = models.ForeignKey(
-        AdvancePayment,
-        on_delete=models.CASCADE,
-        related_name='advance_payment'
-    )
-    product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        null=True
-    )
-    product_unit_of_measure = models.ForeignKey(
-        'saledata.UnitOfMeasure',
-        on_delete=models.CASCADE,
-    )
-    product_quantity = models.IntegerField()
-    product_unit_price = models.FloatField(default=0)
-    tax = models.ForeignKey(
-        'saledata.Tax',
-        null=True,
-        on_delete=models.CASCADE
-    )
-    tax_price = models.FloatField(default=0)
-    subtotal_price = models.FloatField(default=0)
-    after_tax_price = models.FloatField(default=0)
+    advance_payment = models.ForeignKey(AdvancePayment, on_delete=models.CASCADE, related_name='advance_payment')
+    expense_name = models.CharField(max_length=150, null=True)
+    expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
+    expense_uom_name = models.CharField(max_length=150, null=True)
+    expense_quantity = models.IntegerField()
+    expense_unit_price = models.FloatField(default=0)
+    expense_tax = models.ForeignKey('saledata.Tax', null=True, on_delete=models.CASCADE)
+    expense_tax_price = models.FloatField(default=0)
+    expense_subtotal_price = models.FloatField(default=0)
+    expense_after_tax_price = models.FloatField(default=0)
 
     sum_return_value = models.FloatField(default=0)
     sum_converted_value = models.FloatField(default=0)
 
-    currency = models.ForeignKey(
-        'saledata.Currency',
-        on_delete=models.CASCADE
-    )
+    currency = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
     date_created = models.DateTimeField(
         default=timezone.now,
         editable=False,
