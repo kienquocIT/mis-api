@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg
