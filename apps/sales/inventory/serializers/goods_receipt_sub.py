@@ -1,0 +1,209 @@
+from rest_framework import serializers
+
+from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models.accounts import Account
+from apps.masterdata.saledata.models.price import Tax
+from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
+from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
+from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, \
+    PurchaseOrderRequestProduct, PurchaseOrder
+from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg
+
+
+class GoodsReceiptCommonCreate:
+
+    @classmethod
+    def create_m2m_goods_receipt_pr(cls, purchase_requests, instance):
+        GoodsReceiptPurchaseRequest.objects.bulk_create([GoodsReceiptPurchaseRequest(
+            goods_receipt=instance,
+            purchase_request_id=purchase_request_id,
+        ) for purchase_request_id in purchase_requests])
+        return True
+
+    @classmethod
+    def create_goods_receipt_product(cls, goods_receipt_product, instance):
+        for gr_product in goods_receipt_product:
+            purchase_request_products_data = []
+            if 'purchase_request_products_data' in gr_product:
+                purchase_request_products_data = gr_product['purchase_request_products_data']
+                del gr_product['purchase_request_products_data']
+            new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
+            #
+            for pr_product in purchase_request_products_data:
+                warehouse_data = []
+                if 'warehouse_data' in pr_product:
+                    warehouse_data = pr_product['warehouse_data']
+                    del pr_product['warehouse_data']
+                new_pr_product = GoodsReceiptRequestProduct.objects.create(
+                    goods_receipt=instance,
+                    goods_receipt_product=new_gr_product,
+                    **pr_product
+                )
+                #
+                for warehouse in warehouse_data:
+                    lot_data = []
+                    serial_data = []
+                    if 'lot_data' in warehouse:
+                        lot_data = warehouse['lot_data']
+                        del warehouse['lot_data']
+                    if 'serial_data' in warehouse:
+                        serial_data = warehouse['serial_data']
+                        del warehouse['serial_data']
+                    new_warehouse = GoodsReceiptWarehouse.objects.create(
+                        goods_receipt=instance,
+                        goods_receipt_request_product=new_pr_product,
+                        **warehouse
+                    )
+                    #
+                    for lot in lot_data:
+                        GoodsReceiptLot.objects.create(
+                            goods_receipt=instance,
+                            goods_receipt_warehouse=new_warehouse,
+                            **lot
+                        )
+                    for serial in serial_data:
+                        GoodsReceiptSerial.objects.create(
+                            goods_receipt=instance,
+                            goods_receipt_warehouse=new_warehouse,
+                            **serial
+                        )
+        return True
+
+    @classmethod
+    def delete_old_m2m_goods_receipt_pr(cls, instance):
+        old_goods_receipt_pr = GoodsReceiptPurchaseRequest.objects.filter(goods_receipt=instance)
+        if old_goods_receipt_pr:
+            old_goods_receipt_pr.delete()
+        return True
+
+    @classmethod
+    def delete_old_product(cls, instance):
+        old_product = PurchaseOrderProduct.objects.filter(purchase_order=instance)
+        if old_product:
+            pr_products = PurchaseOrderRequestProduct.objects.filter(purchase_order_product__in=old_product)
+            if pr_products:
+                pr_products.delete()
+            old_product.delete()
+        return True
+
+    @classmethod
+    def create_goods_receipt_sub_models(cls, purchase_requests, goods_receipt_product, instance, is_update=False):
+        if purchase_requests:
+            if is_update is True:
+                cls.delete_old_m2m_goods_receipt_pr(instance=instance)
+            cls.create_m2m_goods_receipt_pr(
+                purchase_requests=purchase_requests,
+                instance=instance
+            )
+        if goods_receipt_product:
+            if is_update is True:
+                cls.delete_old_product(instance=instance)
+            cls.create_goods_receipt_product(
+                goods_receipt_product=goods_receipt_product,
+                instance=instance
+            )
+        return True
+
+
+class GoodsReceiptCommonValidate:
+
+    @classmethod
+    def validate_purchase_order(cls, value):
+        try:
+            return PurchaseOrder.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except PurchaseOrder.DoesNotExist:
+            raise serializers.ValidationError({'purchase_order': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_supplier(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'supplier': AccountsMsg.ACCOUNT_NOT_EXIST})
+
+    @classmethod
+    def validate_purchase_requests(cls, value):
+        if isinstance(value, list):
+            if PurchaseRequest.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id__in=value
+            ).count() == len(value):
+                return value
+            raise serializers.ValidationError({'detail': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST})
+        raise serializers.ValidationError({'detail': PurchaseRequestMsg.PURCHASE_REQUEST_IS_ARRAY})
+
+    @classmethod
+    def validate_purchase_order_product(cls, value):
+        try:
+            return PurchaseOrderProduct.objects.get(id=value)
+        except PurchaseOrderProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                'purchase_order_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_purchase_request_product(cls, value):
+        try:
+            return PurchaseRequestProduct.objects.get(id=value)
+        except PurchaseRequestProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                'purchase_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_product(cls, value):
+        try:
+            if value is None:
+                return None
+            return Product.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Product.DoesNotExist:
+            raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_uom(cls, value):
+        try:
+            if value is None:
+                return None
+            return UnitOfMeasure.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except UnitOfMeasure.DoesNotExist:
+            raise serializers.ValidationError({'unit_of_measure': ProductMsg.UNIT_OF_MEASURE_NOT_EXIST})
+
+    @classmethod
+    def validate_tax(cls, value):
+        try:
+            return Tax.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Tax.DoesNotExist:
+            raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_warehouse(cls, value):
+        try:
+            return WareHouse.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except WareHouse.DoesNotExist:
+            raise serializers.ValidationError({'warehouse': ProductMsg.TAX_DOES_NOT_EXIST})

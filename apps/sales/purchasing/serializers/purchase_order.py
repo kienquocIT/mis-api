@@ -50,7 +50,9 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderRequestProduct
         fields = (
+            'id',
             'purchase_request_product',
+            'purchase_order_product_id',
             'sale_order_product_id',
             'quantity_order',
         )
@@ -131,6 +133,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderProduct
         fields = (
+            'id',
             'product',
             'uom_order_request',
             'uom_order_actual',
@@ -160,6 +163,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'id': obj.product_id,
             'title': obj.product.title,
             'code': obj.product.code,
+            'general_traceability_method': obj.product.general_traceability_method,
         } if obj.product else {}
 
     @classmethod
@@ -320,8 +324,8 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_purchase_request_products_data(cls, obj):
-        return PurchaseOrderRequestProductListSerializer(PurchaseOrderRequestProduct.objects.filter(
-            purchase_order=obj,
+        return PurchaseOrderRequestProductListSerializer(obj.purchase_order_request_product_order.filter(
+            # purchase_order=obj,
             purchase_order_product__isnull=True
         ), many=True).data
 

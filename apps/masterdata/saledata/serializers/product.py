@@ -741,7 +741,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': str(product_type.id),
+                'id': product_type.id,
                 'title': product_type.title,
                 'code': product_type.code
             } for product_type in obj.general_product_types_mapped.all()],

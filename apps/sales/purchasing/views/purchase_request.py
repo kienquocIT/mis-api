@@ -107,7 +107,17 @@ class PurchaseRequestProductList(BaseListMixin):
         return super().get_queryset().select_related(
             'purchase_request',
             'product',
+            'product__general_product_category',
+            'product__general_uom_group',
+            'product__sale_default_uom',
+            'product__sale_tax',
+            'product__sale_currency_using',
             'uom',
+            'uom__group',
+            'uom__group__uom_reference',
+            'tax',
+        ).prefetch_related(
+            'product__general_product_types_mapped'
         ).order_by('-purchase_request__date_created')
 
     @swagger_auto_schema(

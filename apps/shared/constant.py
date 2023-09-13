@@ -198,3 +198,10 @@ RECEIPT_STATUS = (
 RETURN_ADVANCE_STATUS = [
     (0, _('Approved')),
 ]
+
+# Good receipt
+GOODS_RECEIPT_TYPE = (
+    (0, 'For purchase order'),
+    (1, 'For inventory adjustment'),
+    (2, 'For production'),
+)
