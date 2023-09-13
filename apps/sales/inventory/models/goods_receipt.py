@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.masterdata.saledata.models import ProductWareHouse
 from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
 
@@ -60,6 +61,28 @@ class GoodsReceipt(DataAbstractModel):
             temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
             self.code = code
+
+        # push data to ProductWareHouse
+        if self.system_status in [2, 3]:
+            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=self):
+                tenant_id = self.tenant_id
+                company_id = self.company_id
+                warehouse_id = gr_warehouse.warehouse_id
+                product_id = gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id
+                uom_id = ''
+                tax_id = gr_warehouse.goods_receipt_request_product.goods_receipt_product.tax_id
+                amount = gr_warehouse.quantity_import
+                unit_price = gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price
+                ProductWareHouse.push_from_receipt(
+                    tenant_id=tenant_id,
+                    company_id=company_id,
+                    product_id=product_id,
+                    warehouse_id=warehouse_id,
+                    uom_id=uom_id,
+                    tax_id=tax_id,
+                    amount=amount,
+                    unit_price=unit_price,
+                )
 
         # hit DB
         super().save(*args, **kwargs)
