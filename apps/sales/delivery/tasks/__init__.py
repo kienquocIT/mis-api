@@ -117,7 +117,7 @@ class SaleOrderActiveDeliverySerializer:
                 is_promotion=m2m_obj.is_promotion,
                 product_unit_price=m2m_obj.product_unit_price,
                 product_tax_value=m2m_obj.product_tax_value,
-                product_subtotal_price=m2m_obj.product_subtotal_price,
+                product_subtotal_price=m2m_obj.product_subtotal_price
             )
             obj_tmp.put_backup_data()
             m2m_obj_arr.append(obj_tmp)
@@ -144,12 +144,11 @@ class SaleOrderActiveDeliverySerializer:
             remarks='',
             delivery_option=1 if self.config_obj.is_partial_ship else 0,  # 0: Full, 1: Partial
             sub=None,
-
             pickup_quantity=pickup_quantity,
             picked_quantity_before=0,
-            # remaining_quantity=0, # autofill by pickup_quantity - picked_quantity_before
             picked_quantity=0,
             pickup_data={},
+            employee_inherit=self.config_obj.lead_picking
         )
 
         # setup SUB
@@ -177,7 +176,8 @@ class SaleOrderActiveDeliverySerializer:
             config_at_that_point={
                 "is_picking": self.config_obj.is_picking,
                 "is_partial_ship": self.config_obj.is_partial_ship
-            }
+            },
+            employee_inherit=self.config_obj.lead_picking
         )
         OrderPickingProduct.objects.bulk_create(m2m_obj_arr)
 
@@ -238,6 +238,7 @@ class SaleOrderActiveDeliverySerializer:
             ready_quantity=delivery_quantity if self.check_has_prod_services > 0 else 0,
             delivery_data=[],
             date_created=timezone.now(),
+            employee_inherit=self.config_obj.lead_delivery,
         )
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
@@ -266,6 +267,7 @@ class SaleOrderActiveDeliverySerializer:
                 "is_partial_ship": self.config_obj.is_partial_ship
             },
             system_status=1,
+            employee_inherit=self.config_obj.lead_delivery
         )
         return sub_obj
 
@@ -293,7 +295,6 @@ class SaleOrderActiveDeliverySerializer:
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
                     OrderDeliveryProduct.objects.bulk_create(_y)
-                    # raise ValueError('Cancel with check!')
                     if obj_delivery:
                         return True, ''
                     raise ValueError('Have exception in create picking or delivery process')
