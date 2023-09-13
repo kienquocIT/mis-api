@@ -99,7 +99,6 @@ class ProductWareHouse(MasterDataAbstractModel):
             try:
                 obj = cls.objects.get(
                     tenant_id=tenant_id, company_id=company_id, product_id=product_id, warehouse_id=warehouse_id,
-                    uom_id=uom_id
                 )
             except cls.DoesNotExist:
                 raise ValueError('Product not found in warehouse with UOM')
