@@ -508,6 +508,13 @@ class SaleOrderExpense(MasterDataAbstractModel):
         related_name="sale_order_expense_expense",
         null=True
     )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="sale_order_expense_expense_item",
+        null=True
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,

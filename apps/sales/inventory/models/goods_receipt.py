@@ -69,16 +69,19 @@ class GoodsReceipt(DataAbstractModel):
                 company_id = self.company_id
                 warehouse_id = gr_warehouse.warehouse_id
                 product_id = gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id
-                uom_id = ''
                 tax_id = gr_warehouse.goods_receipt_request_product.goods_receipt_product.tax_id
-                amount = gr_warehouse.quantity_import
                 unit_price = gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price
+                uom_product_inventory = \
+                    gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
+                uom_product_gr = gr_warehouse.goods_receipt_request_product.goods_receipt_product.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                amount = gr_warehouse.quantity_import * final_ratio
                 ProductWareHouse.push_from_receipt(
                     tenant_id=tenant_id,
                     company_id=company_id,
                     product_id=product_id,
                     warehouse_id=warehouse_id,
-                    uom_id=uom_id,
+                    uom_id='uom_id',
                     tax_id=tax_id,
                     amount=amount,
                     unit_price=unit_price,

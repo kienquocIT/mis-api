@@ -82,6 +82,11 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                 "sale_order_product_sale_order",
                 queryset=SaleOrderProduct.objects.select_related(
                     "product",
+                    'product__general_product_category',
+                    'product__general_uom_group',
+                    "product__sale_default_uom",
+                    "product__sale_tax",
+                    "product__sale_currency_using",
                     "unit_of_measure",
                     "tax",
                     "promotion",
@@ -92,6 +97,11 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                 "sale_order_cost_sale_order",
                 queryset=SaleOrderCost.objects.select_related(
                     "product",
+                    'product__general_product_category',
+                    'product__general_uom_group',
+                    "product__sale_default_uom",
+                    "product__sale_tax",
+                    "product__sale_currency_using",
                     "unit_of_measure",
                     "tax",
                     "shipping",
