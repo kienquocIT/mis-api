@@ -6,8 +6,7 @@ from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
-from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, \
-    PurchaseOrderRequestProduct, PurchaseOrder
+from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg
 
 
@@ -29,7 +28,7 @@ class GoodsReceiptCommonCreate:
                 purchase_request_products_data = gr_product['purchase_request_products_data']
                 del gr_product['purchase_request_products_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
-            #
+            # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             for pr_product in purchase_request_products_data:
                 warehouse_data = []
                 if 'warehouse_data' in pr_product:
@@ -40,7 +39,7 @@ class GoodsReceiptCommonCreate:
                     goods_receipt_product=new_gr_product,
                     **pr_product
                 )
-                #
+                # create sub model GoodsReceiptWarehouse mapping goods_receipt_request_product
                 for warehouse in warehouse_data:
                     lot_data = []
                     serial_data = []
@@ -55,7 +54,7 @@ class GoodsReceiptCommonCreate:
                         goods_receipt_request_product=new_pr_product,
                         **warehouse
                     )
-                    #
+                    # create sub model GoodsReceiptLot + GoodsReceiptSerial mapping goods_receipt_warehouse
                     for lot in lot_data:
                         GoodsReceiptLot.objects.create(
                             goods_receipt=instance,
@@ -78,13 +77,34 @@ class GoodsReceiptCommonCreate:
         return True
 
     @classmethod
-    def delete_old_product(cls, instance):
-        old_product = PurchaseOrderProduct.objects.filter(purchase_order=instance)
-        if old_product:
-            pr_products = PurchaseOrderRequestProduct.objects.filter(purchase_order_product__in=old_product)
-            if pr_products:
-                pr_products.delete()
-            old_product.delete()
+    def delete_old_goods_receipt_product(cls, instance):
+        old_gr_product = GoodsReceiptProduct.objects.filter(goods_receipt=instance)
+        if old_gr_product:
+            old_pr_product = GoodsReceiptRequestProduct.objects.filter(
+                goods_receipt=instance,
+                goods_receipt_product__in=old_gr_product
+            )
+            if old_pr_product:
+                old_warehouse = GoodsReceiptWarehouse.objects.filter(
+                    goods_receipt=instance,
+                    goods_receipt_request_product__in=old_pr_product,
+                )
+                if old_warehouse:
+                    old_lot = GoodsReceiptLot.objects.filter(
+                            goods_receipt=instance,
+                            goods_receipt_warehouse__in=old_warehouse,
+                    )
+                    if old_lot:
+                        old_lot.delete()
+                    old_serial = GoodsReceiptSerial.objects.filter(
+                            goods_receipt=instance,
+                            goods_receipt_warehouse__in=old_warehouse,
+                    )
+                    if old_serial:
+                        old_serial.delete()
+                    old_warehouse.delete()
+                old_pr_product.delete()
+            old_gr_product.delete()
         return True
 
     @classmethod
@@ -98,7 +118,7 @@ class GoodsReceiptCommonCreate:
             )
         if goods_receipt_product:
             if is_update is True:
-                cls.delete_old_product(instance=instance)
+                cls.delete_old_goods_receipt_product(instance=instance)
             cls.create_goods_receipt_product(
                 goods_receipt_product=goods_receipt_product,
                 instance=instance
