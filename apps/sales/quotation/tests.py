@@ -489,6 +489,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "quotation_expenses_data": [
                 {
                     "expense": None,
+                    "expense_item": None,
                     "product": product_id,
                     "expense_title": "Chi phí tiếp khách",
                     "expense_code": "010",
@@ -507,6 +508,7 @@ class TestCaseQuotation(AdvanceTestCase):
                 },
                 {
                     "expense": None,
+                    "expense_item": None,
                     "product": product_id,
                     "expense_title": "Chi phí quản lý",
                     "expense_code": "005",
