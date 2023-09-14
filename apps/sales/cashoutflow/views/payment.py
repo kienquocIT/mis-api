@@ -117,7 +117,9 @@ class PaymentConfigList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Payment Config",
         request_body=PaymentConfigUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'company_current': request.user.company_current
