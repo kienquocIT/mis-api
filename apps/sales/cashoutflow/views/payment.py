@@ -25,7 +25,10 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         operation_summary="Payment list",
         operation_description="Payment list",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='payment', model_code='payment', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -34,7 +37,10 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Payment",
         request_body=PaymentCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='payment', model_code='payment', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -53,7 +59,10 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     @swagger_auto_schema(operation_summary='Detail Payment')
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='payment', model_code='payment', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
