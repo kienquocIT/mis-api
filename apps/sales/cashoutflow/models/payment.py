@@ -222,4 +222,3 @@ class PaymentConfig(SimpleAbstractModel):
         verbose_name_plural = 'Payment Configs'
         default_permissions = ()
         permissions = ()
-        

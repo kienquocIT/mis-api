@@ -13,8 +13,8 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     serializer_list = PaymentListSerializer
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -44,8 +44,8 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = PaymentListSerializer
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
