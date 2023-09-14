@@ -155,6 +155,7 @@ class ApplicationPermitSerializer(serializers.Serializer):  # noqa
 
 class OpportunityMemberPermissionUpdateSerializer(serializers.ModelSerializer):
     app_permit = serializers.ListField(child=ApplicationPermitSerializer())
+    employee_current = serializers.UUIDField()
 
     class Meta:
         model = OpportunitySaleTeamMember
@@ -167,7 +168,7 @@ class OpportunityMemberPermissionUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def check_perm_edit(cls, instance, employee_current):
-        return employee_current == str(instance.opportunity.employee_inherit_id)
+        return employee_current == instance.opportunity.employee_inherit_id
 
     def update(self, instance, validated_data):
         if self.check_perm_edit(instance, validated_data['employee_current']):
