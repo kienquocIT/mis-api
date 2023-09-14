@@ -7,9 +7,11 @@ from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
     OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData
-from apps.sales.task.models import OpportunityTask
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
+
+__all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer']
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -857,125 +859,3 @@ class OpportunityForSaleListSerializer(serializers.ModelSerializer):
         if obj.is_deal_close or obj.is_close_lost:
             return True
         return False
-
-
-class OpportunityMemberSerializer(serializers.Serializer):  # noqa
-    id = serializers.UUIDField()
-
-    @classmethod
-    def validate_id(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Employee.objects.get(
-                    id=value
-                )
-                return obj.id
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': OpportunityMsg.MEMBER_NOT_EXIST})
-
-
-class OpportunityAddMemberSerializer(serializers.ModelSerializer):
-    members = serializers.ListField(child=OpportunityMemberSerializer())
-    employee_current = serializers.UUIDField(required=True)
-    opportunity = serializers.UUIDField(required=True)
-
-    class Meta:
-        model = Opportunity
-        fields = (
-            'employee_current',
-            'opportunity',
-            'members',
-        )
-
-    def validate(self, validate_data):
-        if len(validate_data['members']) > 0:
-            member_add = OpportunitySaleTeamMember.objects.filter(
-                opportunity_id=validate_data['opportunity'],
-                member_id=validate_data['employee_current']
-            )
-            if member_add.exists():
-                if not self.check_perm_add_member(member_add.first()):
-                    raise serializers.ValidationError(
-                        {
-                            'employee_current': OpportunityMsg.EMPLOYEE_CAN_ADD_MEMBER
-                        }
-                    )
-            else:
-                raise serializers.ValidationError(
-                    {
-                        'employee_current': OpportunityMsg.EMPLOYEE_NOT_IN_SALE_TEAM
-                    }
-                )
-        return validate_data
-
-    @staticmethod
-    def check_perm_add_member(obj):
-        return obj.permit_add_member
-
-    def update(self, instance, validated_data):
-        for member in validated_data['members']:
-            OpportunitySaleTeamMember.objects.create(
-                opportunity=instance,
-                member_id=member['id'],
-                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
-            )
-        return instance
-
-
-class OpportunityMemberDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = '__all__'
-
-
-class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
-    employee_delete = serializers.UUIDField(required=True)
-    opportunity = serializers.UUIDField(required=True)
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = (
-            'employee_delete',
-            'opportunity',
-        )
-
-    def validate(self, validate_data):
-        member_delete = OpportunitySaleTeamMember.objects.filter(
-            opportunity_id=validate_data['opportunity'],
-            member_id=validate_data['employee_delete']
-        )
-        if member_delete.exists():
-            if not OpportunityAddMemberSerializer.check_perm_add_member(member_delete.first()):
-                raise serializers.ValidationError(
-                    {
-                        'member': OpportunityMsg.EMPLOYEE_CAN_NOT_DELETE
-                    }
-                )
-        else:
-            raise serializers.ValidationError(
-                {
-                    'member': OpportunityMsg.EMPLOYEE_NOT_IN_SALE_TEAM
-                }
-            )
-        return validate_data
-
-    @classmethod
-    def check_task_not_completed(cls, instance):
-        tasks = OpportunityTask.objects.filter(
-            opportunity=instance.opportunity,
-            assign_to=instance.member
-        ).select_related('task_status')
-
-        return all(task.task_status.task_kind == 2 for task in tasks)
-
-    def update(self, instance, validated_data):
-
-        if not self.check_task_not_completed(instance):
-            raise serializers.ValidationError(
-                {
-                    'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
-                }
-            )
-
-        instance.delete()
-        return instance

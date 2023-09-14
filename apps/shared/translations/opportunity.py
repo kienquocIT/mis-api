@@ -20,3 +20,6 @@ class OpportunityMsg:
     EMPLOYEE_CAN_NOT_DELETE = _('You can not delete member because you do not have permission')
     EMPLOYEE_CAN_ADD_MEMBER = _('You can not add member because you do not have permission')
     EMPLOYEE_NOT_IN_SALE_TEAM = _('You can not delete or add member because you not in sale team')
+
+    APPLICATION_NOT_EXIST = _('Application not exist')
+    NOT_EDIT_PERM_MEMBER = _('Only Sale Person can update member permissions')

@@ -3,7 +3,8 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import OpportunityListSerializer, OpportunityUpdateSerializer, \
     OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer, \
-    OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer
+    OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer, \
+    OpportunityMemberPermissionUpdateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -178,6 +179,22 @@ class OpportunityDeleteMember(BaseUpdateMixin):
         operation_summary="Add member for Opportunity",
         operation_description="Add member for Opportunity",
         request_body=OpportunityMemberDeleteSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+
+class MemberPermissionUpdateSerializer(BaseUpdateMixin):
+    queryset = OpportunitySaleTeamMember.objects
+    serializer_update = OpportunityMemberPermissionUpdateSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Update permit for member in Opportunity",
+        operation_description="Update permit for member in Opportunity",
+        request_body=OpportunityMemberPermissionUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=False,

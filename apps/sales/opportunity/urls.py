@@ -7,7 +7,7 @@ from .views import (
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
     OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList, OpportunityMemberDetail,
-    OpportunityAddMember, OpportunityDeleteMember
+    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer
 )
 
 urlpatterns = [
@@ -43,4 +43,9 @@ urlpatterns = [
     path('member/detail/<str:pk>', OpportunityMemberDetail.as_view(), name='OpportunityMemberDetail'),
     path('add-member/<str:pk>', OpportunityAddMember.as_view(), name='OpportunityAddMember'),
     path('member/delete/<str:pk>', OpportunityDeleteMember.as_view(), name='OpportunityDeleteMember'),
+    path(
+        'member/set/permission/<str:pk>',
+        MemberPermissionUpdateSerializer.as_view(),
+        name='MemberPermissionUpdateSerializer'
+    )
 ]
