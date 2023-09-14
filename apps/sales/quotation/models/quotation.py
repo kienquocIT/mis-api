@@ -575,6 +575,13 @@ class QuotationExpense(MasterDataAbstractModel):
         related_name="quotation_expense_expense",
         null=True
     )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="quotation_expense_expense_item",
+        null=True
+    )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,

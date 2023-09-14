@@ -93,6 +93,11 @@ class QuotationDetail(
                 "quotation_product_quotation",
                 queryset=QuotationProduct.objects.select_related(
                     "product",
+                    'product__general_product_category',
+                    'product__general_uom_group',
+                    "product__sale_default_uom",
+                    "product__sale_tax",
+                    "product__sale_currency_using",
                     "unit_of_measure",
                     "tax",
                     "promotion",
@@ -103,6 +108,11 @@ class QuotationDetail(
                 "quotation_cost_quotation",
                 queryset=QuotationCost.objects.select_related(
                     "product",
+                    'product__general_product_category',
+                    'product__general_uom_group',
+                    "product__sale_default_uom",
+                    "product__sale_tax",
+                    "product__sale_currency_using",
                     "unit_of_measure",
                     "tax",
                     "shipping",

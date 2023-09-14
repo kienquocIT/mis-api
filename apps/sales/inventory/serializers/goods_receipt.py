@@ -449,6 +449,18 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
             'system_status',
         )
 
+    @classmethod
+    def validate_purchase_order(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+
+    @classmethod
+    def validate_supplier(cls, value):
+        return GoodsReceiptCommonValidate.validate_supplier(value=value)
+
+    @classmethod
+    def validate_purchase_requests(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_requests(value=value)
+
     def update(self, instance, validated_data):
         purchase_requests = []
         goods_receipt_product = []
