@@ -126,6 +126,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'sale_order_indicators_data',
             # system
             'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod

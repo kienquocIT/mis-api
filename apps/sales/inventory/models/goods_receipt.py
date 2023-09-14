@@ -62,8 +62,8 @@ class GoodsReceipt(DataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
 
-        # push data to ProductWareHouse
         if self.system_status in [2, 3]:
+            # push data to ProductWareHouse
             for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=self):
                 uom_product_inventory = \
                     gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
@@ -79,6 +79,7 @@ class GoodsReceipt(DataAbstractModel):
                     amount=gr_warehouse.quantity_import * final_ratio,
                     unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
                 )
+            # update receipt status to PurchaseOrder
 
         # hit DB
         super().save(*args, **kwargs)
