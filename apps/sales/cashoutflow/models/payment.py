@@ -11,7 +11,8 @@ __all__ = [
     'PaymentCostItemsDetail',
     'PaymentSaleOrder',
     'PaymentQuotation',
-    'PaymentOpportunity'
+    'PaymentOpportunity',
+    'PaymentConfig'
 ]
 
 SALE_CODE_TYPE = [
@@ -123,6 +124,7 @@ class PaymentCostItems(SimpleAbstractModel):
         related_name='payment_cost'
     )
     sale_code_mapped = models.UUIDField(null=True)
+    sale_code_mapped_code = models.CharField(max_length=150, null=True)
     real_value = models.FloatField(default=0, help_text='Value which is NOT CONVERTED from Advance Payment')
     converted_value = models.FloatField(default=0, help_text='Value which is CONVERTED from Advance Payment')
     sum_value = models.FloatField(default=0, help_text='Sum value (include real_value and value_converted')
@@ -204,5 +206,19 @@ class PaymentOpportunity(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Payment Opportunity'
         verbose_name_plural = 'Payments Opportunities'
+        default_permissions = ()
+        permissions = ()
+
+
+class PaymentConfig(SimpleAbstractModel):
+    company = models.ForeignKey(
+        'company.Company',
+        on_delete=models.CASCADE,
+    )
+    employee_allowed = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Payment Config'
+        verbose_name_plural = 'Payment Configs'
         default_permissions = ()
         permissions = ()
