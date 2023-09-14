@@ -194,11 +194,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_products_data(cls, obj):
         return SaleOrderProductsListSerializer(
-            obj.sale_order_product_sale_order.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.sale_order_product_sale_order.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
@@ -210,11 +207,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_costs_data(cls, obj):
         return SaleOrderCostsListSerializer(
-            obj.sale_order_cost_sale_order.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.sale_order_cost_sale_order.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
