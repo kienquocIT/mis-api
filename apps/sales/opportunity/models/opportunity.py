@@ -737,7 +737,7 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
                     'is_create': False,
                     'is_edit': False,
                     'is_view_own_activity': False,
-                    'is_View_team_activity': False,
+                    'is_view_team_activity': False,
                 }
             }
         ),
