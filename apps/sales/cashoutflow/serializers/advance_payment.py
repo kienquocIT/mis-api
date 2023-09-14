@@ -94,7 +94,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                 is_close = True
             return {
                 'id': obj.opportunity_mapped_id,
-                # 'code': obj.opportunity_mapped.code,
+                'code': obj.opportunity_mapped.code,
                 'is_close': is_close
             }
         return {}
