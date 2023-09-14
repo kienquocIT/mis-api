@@ -99,42 +99,40 @@ def create_sale_code_object(payment_obj, initial_data):
     2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
     """
     sale_code = initial_data.get('sale_code_list', [])
-    if initial_data.get('sale_code_type', None) == 0:
-        if len(sale_code) == 1:
-            sale_code_id = sale_code[0].get('sale_code_id', None)
-            sale_code_detail = sale_code[0].get('sale_code_detail', None)
+    if initial_data.get('sale_code_type', None) == 0 and len(sale_code) == 1:
+        sale_code_id = sale_code[0].get('sale_code_id', None)
+        sale_code_detail = sale_code[0].get('sale_code_detail', None)
+        if sale_code_detail == 0:
+            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+        if sale_code_detail == 1:
+            PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+        if sale_code_detail == 2:
+            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+    if initial_data.get('sale_code_type', None) == 3 and len(sale_code) > 0:
+        so_bulk_info = []
+        qo_info = []
+        op_bulk_info = []
+        for item in sale_code:
+            sale_code_id = item.get('sale_code_id', None)
+            sale_code_detail = item.get('sale_code_detail', None)
             if sale_code_detail == 0:
-                PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+                so_bulk_info.append(
+                    PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+                )
             if sale_code_detail == 1:
-                PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+                qo_info.append(
+                    PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+                )
             if sale_code_detail == 2:
-                PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
-    if initial_data.get('sale_code_type', None) == 3:
-        if len(sale_code) > 0:
-            so_bulk_info = []
-            qo_info = []
-            op_bulk_info = []
-            for item in sale_code:
-                sale_code_id = item.get('sale_code_id', None)
-                sale_code_detail = item.get('sale_code_detail', None)
-                if sale_code_detail == 0:
-                    so_bulk_info.append(
-                        PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
-                    )
-                if sale_code_detail == 1:
-                    qo_info.append(
-                        PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
-                    )
-                if sale_code_detail == 2:
-                    op_bulk_info.append(
-                        PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
-                    )
-            PaymentSaleOrder.objects.filter(payment_mapped=payment_obj).delete()
-            PaymentSaleOrder.objects.bulk_create(so_bulk_info)
-            PaymentQuotation.objects.filter(payment_mapped=payment_obj).delete()
-            PaymentQuotation.objects.bulk_create(qo_info)
-            PaymentOpportunity.objects.filter(payment_mapped=payment_obj).delete()
-            PaymentOpportunity.objects.bulk_create(op_bulk_info)
+                op_bulk_info.append(
+                    PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+                )
+        PaymentSaleOrder.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentSaleOrder.objects.bulk_create(so_bulk_info)
+        PaymentQuotation.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentQuotation.objects.bulk_create(qo_info)
+        PaymentOpportunity.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentOpportunity.objects.bulk_create(op_bulk_info)
     return True
 
 
