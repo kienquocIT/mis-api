@@ -759,3 +759,9 @@ def update_employee_inherit_return_advance():
         advance_return.employee_created = advance_return.creator
         advance_return.save()
     print('Update done')
+
+
+def make_sure_function_purchase_request_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).purchase_request_config()
+    print('Make sure function purchase_request_config is done!')
