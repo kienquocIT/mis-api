@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import (
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail,
+    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentConfig,
     AdvancePaymentCost, PaymentQuotation, PaymentSaleOrder, PaymentOpportunity
 )
 from apps.masterdata.saledata.models import Currency
@@ -98,31 +98,41 @@ def create_sale_code_object(payment_obj, initial_data):
     1. sale_code_type = 0 (Sale): get 'sale_code_detail', then sub-create Payment map with each SaleCode
     2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
     """
-    if initial_data.get('sale_code_type', None) == 0:
-        sale_code_id = initial_data.get('sale_code', None)
-        if sale_code_id:
-            if initial_data.get('sale_code_detail', None) == 0:
-                PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
-            if initial_data.get('sale_code_detail', None) == 1:
-                PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
-            if initial_data.get('sale_code_detail', None) == 2:
-                PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
-    if initial_data.get('sale_code_type', None) == 3:
-        sale_order_selected_list = initial_data.get('sale_order_selected_list', [])
-        quotation_selected_list = initial_data.get('quotation_selected_list', [])
-        opportunity_selected_list = initial_data.get('opportunity_selected_list', [])
-        sale_order_bulk_info = []
-        for item in sale_order_selected_list:
-            sale_order_bulk_info.append(PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=item))
-        PaymentSaleOrder.objects.bulk_create(sale_order_bulk_info)
-        quotation_bulk_info = []
-        for item in quotation_selected_list:
-            quotation_bulk_info.append(PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=item))
-        PaymentQuotation.objects.bulk_create(quotation_bulk_info)
-        opportunity_bulk_info = []
-        for item in opportunity_selected_list:
-            opportunity_bulk_info.append(PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=item))
-        PaymentOpportunity.objects.bulk_create(opportunity_bulk_info)
+    sale_code = initial_data.get('sale_code_list', [])
+    if initial_data.get('sale_code_type', None) == 0 and len(sale_code) == 1:
+        sale_code_id = sale_code[0].get('sale_code_id', None)
+        sale_code_detail = sale_code[0].get('sale_code_detail', None)
+        if sale_code_detail == 0:
+            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+        if sale_code_detail == 1:
+            PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+        if sale_code_detail == 2:
+            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+    if initial_data.get('sale_code_type', None) == 3 and len(sale_code) > 0:
+        so_bulk_info = []
+        qo_info = []
+        op_bulk_info = []
+        for item in sale_code:
+            sale_code_id = item.get('sale_code_id', None)
+            sale_code_detail = item.get('sale_code_detail', None)
+            if sale_code_detail == 0:
+                so_bulk_info.append(
+                    PaymentSaleOrder(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+                )
+            if sale_code_detail == 1:
+                qo_info.append(
+                    PaymentQuotation(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
+                )
+            if sale_code_detail == 2:
+                op_bulk_info.append(
+                    PaymentOpportunity(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+                )
+        PaymentSaleOrder.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentSaleOrder.objects.bulk_create(so_bulk_info)
+        PaymentQuotation.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentQuotation.objects.bulk_create(qo_info)
+        PaymentOpportunity.objects.filter(payment_mapped=payment_obj).delete()
+        PaymentOpportunity.objects.bulk_create(op_bulk_info)
     return True
 
 
@@ -153,11 +163,11 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
-        sale_code = self.initial_data.get('sale_code', None)
+        sale_code_list = self.initial_data.get('sale_code_list', None)
         sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
         quotation_selected_list = self.initial_data.get('quotation_selected_list', [])
         opp_selected_list = self.initial_data.get('opportunity_selected_list', [])
-        if not sale_code:
+        if len(sale_code_list) < 1:
             if len(sale_order_selected_list) < 1 and len(quotation_selected_list) < 1 and len(opp_selected_list) < 1:
                 raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
         if self.initial_data.get('product_valid_list', []):
@@ -359,3 +369,46 @@ class PaymentCostItemsListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_id(cls, obj):
         return obj.payment_cost.product_id
+
+
+class PaymentConfigListSerializer(serializers.ModelSerializer):
+    employee_allowed = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentConfig
+        fields = ('employee_allowed',)
+
+    @classmethod
+    def get_employee_allowed(cls, obj):
+        return {
+            'id': obj.employee_allowed_id,
+            'code': obj.employee_allowed.code,
+            'full_name': obj.employee_allowed.get_full_name(2)
+        } if obj.employee_allowed else {}
+
+
+class PaymentConfigUpdateSerializer(serializers.ModelSerializer):
+    employees_allowed_list = serializers.ListSerializer(child=serializers.UUIDField(), required=False)
+    employee_allowed = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = PaymentConfig
+        fields = (
+            'employees_allowed_list',
+            'employee_allowed'
+        )
+
+    def create(self, validated_data):
+        bulk_info = []
+        company_current = self.context.get('company_current', None)
+        for item in self.initial_data.get('employees_allowed_list', []):
+            bulk_info.append(PaymentConfig(employee_allowed_id=item, company=company_current))
+        PaymentConfig.objects.filter(company=company_current).delete()
+        objs = PaymentConfig.objects.bulk_create(bulk_info)
+        return objs[0]
+
+
+class PaymentConfigDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentConfig
+        fields = '__all__'
