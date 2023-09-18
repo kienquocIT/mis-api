@@ -11,6 +11,7 @@ urlpatterns = [
     path('api/', include('apps.masterdata.urls')),
     path('api/private-system/', include('apps.sharedapp.urls')),
     path('api/', include('apps.sales.urls')),
+    path('api/', include('apps.eoffice.urls')),
     path('django-admin/', admin.site.urls),
 ]
 
