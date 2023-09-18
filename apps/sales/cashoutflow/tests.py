@@ -1,6 +1,7 @@
 from django.urls import reverse
 from rest_framework import status
-from apps.masterdata.saledata.tests import IndustryTestCase, ProductTestCase
+from apps.masterdata.saledata.tests import IndustryTestCase, ExpenseItemTestCase, \
+    TaxAndTaxCategoryTestCase
 from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
@@ -28,7 +29,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'return_date': '2023-06-06',
             'money_gave': True
         }
-        response1 = self.client.post(url, data1, format='json')
+        response1 = self.client.post(url, data1, format='json') # noqa
         self.assertResponseList(
             response1,
             status_code=status.HTTP_201_CREATED,
@@ -417,350 +418,234 @@ class PaymentTestCase(AdvanceTestCase):
         return response
 
 
-# class ReturnAdvanceTestCase(AdvanceTestCase):
-#     def setUp(self) -> None:
-#         self.maxDiff = None
-#         self.client = APIClient()
-#         self.authenticated()
-#
-#     def get_employee(self):
-#         url = reverse("EmployeeList")
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_product_type(self):
-#         url = reverse('ProductTypeList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'San pham 1',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def test_get_product_type(self, product_type_id=None):
-#         if not product_type_id:
-#             # change to .data['result']['id'] after change data returned create_product_type
-#             product_type_id = self.create_product_type().data['result']['id']
-#         url = reverse('ProductTypeDetail', kwargs={'pk': product_type_id})
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'description', 'is_default']
-#         )
-#         return response
-#
-#     def create_product_category(self):
-#         url = reverse('ProductCategoryList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Hardware',
-#                 'description': '',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def create_uom_group(self):
-#         url = reverse('UnitOfMeasureGroupList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 'title': 'Time',
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response
-#
-#     def create_uom(self):
-#         data_uom_gr = self.create_uom_group()
-#         url = reverse('UnitOfMeasureList')
-#         response = self.client.post(
-#             url,
-#             {
-#                 "code": "MIN",
-#                 "title": "minute",
-#                 "group": data_uom_gr.data['result']['id'],
-#                 "ratio": 1,
-#                 "rounding": 5,
-#                 "is_referenced_unit": True
-#             },
-#             format='json'
-#         )
-#         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-#         return response, data_uom_gr
-#
-#     def get_base_unit_measure(self):
-#         url = reverse('BaseItemUnitList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_new_tax_category(self):
-#         url_tax_category = reverse("TaxCategoryList")
-#         data = {
-#             "title": "Thuế doanh nghiệp kinh doanh tư nhân",
-#             "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
-#         }
-#         response = self.client.post(url_tax_category, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'description', 'is_default'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def create_new_tax(self):
-#         url_tax = reverse("TaxList")
-#         tax_category = self.create_new_tax_category()
-#         data = {
-#             "title": "Thuế bán hành VAT-10%",
-#             "code": "VAT-10",
-#             "rate": 10,
-#             "category": tax_category.data['result']['id'],
-#             "type": 0
-#         }
-#         response = self.client.post(url_tax, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             ['id', 'title', 'code', 'rate', 'category', 'type'],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def get_price_list(self):
-#         url = reverse('PriceList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def get_currency(self):
-#         url = reverse('CurrencyList')
-#         response = self.client.get(url, format='json')
-#         return response
-#
-#     def create_product(self):
-#         self.url = reverse("ProductList")
-#         product = ProductTestCase.test_create_product(self)
-#         return product
-#
-#     def test_ap_create(self):
-#         product = self.create_product()
-#         url = reverse("AdvancePaymentList")
-#         data = {
-#             'title': 'Tam ung thang 5',
-#             'sale_code_type': 2,  # non-sale
-#             'advance_payment_type': 0,  # to_employee
-#             'supplier': None,
-#             'method': 1,  # bank
-#             'creator_name': self.get_employee().data['result'][0]['id'],
-#             'beneficiary': self.get_employee().data['result'][0]['id'],
-#             'return_date': '2023-06-06 11:21:00.000000',
-#             'money_gave': True,
-#             'product_valid_list': [
-#                 {
-#                     'product_id': product.data['result']['id'],
-#                     'quantity': 1,
-#                     'tax_id': product.data['result']['sale_information']['tax']['id'],
-#                     'unit_of_measure_id': product.data['result']['sale_information']['default_uom']['uom_id'],
-#                     'unit_price': 20000000,
-#                     'tax_price': 2000000,
-#                     'subtotal_price': 20000000,
-#                     'after_tax_price': 22000000,
-#                 }
-#             ]
-#         }
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'money_gave',
-#                 'sale_code_type', 'quotation_mapped', 'sale_order_mapped', 'opportunity_mapped', 'supplier',
-#                 'method', 'beneficiary', 'expense_items', 'advance_value', 'to_payment', 'return_value',
-#                 'remain_value', 'converted_payment_list'
-#             ],
-#             check_sum_second=True,
-#         )
-#
-#         return response
-#
-#     def test_create_return_advance(self):
-#         advance_payment = self.test_ap_create()
-#         employee_id = self.get_employee().data['result'][0]['id']
-#         url = reverse("ReturnAdvanceList")
-#         cost_data = []
-#         return_total = 0
-#         for item in advance_payment.data['result']['product_items']:
-#             cost_data.append(
-#                 {
-#                     'advance_payment_cost': item['id'],
-#                     'remain_value': item['remain_total'],
-#                     'return_value': item['remain_total'],
-#                 }
-#             )
-#             return_total += item['remain_total']
-#
-#         data = {
-#             "title": 'Hoan ung thang 5',
-#             "advance_payment": advance_payment.data['result']['id'],
-#             "method": 0,
-#             "creator": employee_id,
-#             "beneficiary": employee_id,
-#             "status": 0,
-#             "money_received": True,
-#             "cost": cost_data,
-#             "return_total": return_total,
-#         }
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_201_CREATED,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received',
-#                 'creator', 'beneficiary', 'method', 'status', 'cost', 'return_total'
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_create_return_advance_fail(self):
-#         advance_payment = self.test_ap_create()
-#         employee_id = self.get_employee().data['result'][0]['id']
-#         url = reverse("ReturnAdvanceList")
-#         cost_data = []
-#         return_total = 0
-#         for item in advance_payment.data['result']['product_items']:
-#             cost_data.append(
-#                 {
-#                     'advance_payment_cost': item['id'],
-#                     'remain_value': item['remain_total'],
-#                     'return_value': item['remain_total'] + 500,
-#                 }
-#             )
-#             return_total += item['remain_total']
-#
-#         data = { # noqa
-#             "title": 'Hoan ung thang 5',
-#             "advance_payment": '1',
-#             "method": 0,
-#             "creator": employee_id,
-#             "beneficiary": employee_id,
-#             "status": 0,
-#             "money_received": True,
-#             "cost": cost_data,
-#             "return_total": return_total,
-#         }
-#         response = self.client.post(url, data, format='json')
-#         self.assertResponseList(
-#             response,
-#             status_code=status.HTTP_400_BAD_REQUEST,
-#             key_required=['errors', 'status'],
-#             all_key=['errors', 'status'],
-#             all_key_from=response.data,
-#             type_match={'errors': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['errors'],
-#             [
-#                 'Input return', 'advance_payment'
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_get_list_return_advance(self):
-#         self.test_create_return_advance()
-#         url = reverse("ReturnAdvanceList")
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
-#             all_key_from=response.data,
-#             type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
-#         )
-#         self.assertEqual(
-#             len(response.data['result']), 1
-#         )
-#         self.assertCountEqual(
-#             response.data['result'][0],
-#             [
-#                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'status', 'return_total'
-#             ],
-#             check_sum_second=True,
-#         )
-#         return response
-#
-#     def test_get_detail_return_advance(self, data_id=None):
-#         data_created = None
-#         if not data_id:
-#             data_created = self.test_create_return_advance()
-#             data_id = data_created.data['result']['id']
-#         url = reverse("ReturnAdvanceDetail", kwargs={'pk': data_id})
-#         response = self.client.get(url, format='json')
-#         self.assertResponseList(  # noqa
-#             response,
-#             status_code=status.HTTP_200_OK,
-#             key_required=['result', 'status'],
-#             all_key=['result', 'status'],
-#             all_key_from=response.data,
-#             type_match={'result': dict, 'status': int},
-#         )
-#         self.assertCountEqual(
-#             response.data['result'],
-#             [
-#                 'id', 'code', 'title', 'advance_payment', 'creator', 'beneficiary', 'method', 'status',
-#                 'money_received', 'date_created', 'cost', 'return_total'
-#             ],
-#             check_sum_second=True,
-#         )
-#         if not data_id:
-#             self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
-#             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
-#         else:
-#             self.assertEqual(response.data['result']['id'], data_id)
-#         return response
+class ReturnAdvanceTestCase(AdvanceTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+        self.client = APIClient()
+        self.authenticated()
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(url_tax_category, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_ap_create(self):
+        url = reverse("AdvancePaymentList")
+        expense1, expense2 = ExpenseItemTestCase.test_create_new_expense(self)
+        tax = TaxAndTaxCategoryTestCase.test_create_new_tax(self)
+        data = {
+            'title': 'Tam ung thang 5',
+            'sale_code_type': 2,  # non-sale
+            'advance_payment_type': 0,  # to_employee
+            'supplier': None,
+            'method': 1,  # bank
+            'creator_name': self.get_employee().data['result'][0]['id'],
+            'beneficiary': self.get_employee().data['result'][0]['id'],
+            'return_date': '2024-06-06 11:21:00.000000',
+            'money_gave': True,
+            'expense_valid_list': [
+                {
+                    'expense_name': 'Expense Item so 1',
+                    'expense_type_id': expense1.data['result']['id'],
+                    'expense_tax_id': tax.data['result']['id'],
+                    'expense_quantity': 2,
+                    'expense_unit_price': 20000000,
+                    'expense_tax_price': 20000000 * (tax.data['result']['rate']/100),
+                    'expense_subtotal_price': 20000000,
+                    'expense_after_tax_price': 20000000 + 20000000 * (tax.data['result']['rate']/100),
+                    'expense_uom_name': 'manhour',
+                }
+            ]
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'money_gave',
+                'sale_code_type', 'quotation_mapped', 'sale_order_mapped', 'opportunity_mapped', 'supplier',
+                'method', 'beneficiary', 'expense_items', 'advance_value', 'to_payment', 'return_value',
+                'remain_value', 'converted_payment_list'
+            ],
+            check_sum_second=True,
+        )
+
+        return response
+
+    def test_create_return_advance(self):
+        advance_payment = self.test_ap_create()
+        employee_id = self.get_employee().data['result'][0]['id']
+        url = reverse("ReturnAdvanceList")
+        cost_data = []
+        return_total = 0
+        for item in advance_payment.data['result']['expense_items']:
+            cost_data.append(
+                {
+                    'advance_payment_cost': item['id'],
+                    'expense_name': item['expense_name'],
+                    'expense_type': item['expense_type']['id'],
+                    'remain_value': item['remain_total'],
+                    'return_value': item['remain_total'],
+                }
+            )
+            return_total += item['remain_total']
+
+        data = {
+            "title": 'Hoan ung thang 5',
+            "advance_payment": advance_payment.data['result']['id'],
+            "method": 0,
+            "creator": employee_id,
+            "beneficiary": employee_id,
+            "status": 0,
+            "money_received": True,
+            "cost": cost_data,
+            "return_total": return_total,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received',
+                'creator', 'beneficiary', 'method', 'status', 'cost', 'return_total'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_create_return_advance_fail(self):
+        advance_payment = self.test_ap_create()
+        employee_id = self.get_employee().data['result'][0]['id']
+        url = reverse("ReturnAdvanceList")
+        cost_data = []
+        return_total = 0
+        for item in advance_payment.data['result']['expense_items']:
+            cost_data.append(
+                {
+                    'advance_payment_cost': item['id'],
+                    'expense_name': item['expense_name'],
+                    'expense_type': item['expense_type']['id'],
+                    'remain_value': item['remain_total'],
+                    'return_value': item['remain_total'] + 500,
+                }
+            )
+            return_total += item['remain_total']
+
+        data = {  # noqa
+            "title": 'Hoan ung thang 5',
+            "advance_payment": '1',
+            "method": 0,
+            "creator": employee_id,
+            "beneficiary": employee_id,
+            "status": 0,
+            "money_received": True,
+            "cost": cost_data,
+            "return_total": return_total,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['errors'],
+            [
+                'Input return', 'advance_payment'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_list_return_advance(self):
+        self.test_create_return_advance()
+        url = reverse("ReturnAdvanceList")
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            [
+                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'status', 'return_total'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_detail_return_advance(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created = self.test_create_return_advance()
+            data_id = data_created.data['result']['id']
+        url = reverse("ReturnAdvanceDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id', 'code', 'title', 'advance_payment', 'creator', 'beneficiary', 'method', 'status',
+                'money_received', 'date_created', 'cost', 'return_total'
+            ],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
