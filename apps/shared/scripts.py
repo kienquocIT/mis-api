@@ -734,6 +734,15 @@ def clear_data_expense():
     print('Delete Done')
 
 
+def update_employee_inherit_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for advance_return in objs:
+        advance_return.employee_inherit = advance_return.creator
+        advance_return.employee_created = advance_return.creator
+        advance_return.save()
+    print('Update done')
+
+
 def make_sure_leave_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).leave_config()

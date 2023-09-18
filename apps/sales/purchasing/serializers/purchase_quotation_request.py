@@ -55,7 +55,7 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
     def get_purchase_requests(cls, obj):
         purchase_request_list = []
         for item in obj.purchase_request_mapped.all():
-            purchase_request_list.append(item.id)
+            purchase_request_list.append({'id': str(item.id), 'code': item.code, 'title': item.title})
         return purchase_request_list
 
     @classmethod
@@ -69,9 +69,16 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'code': item.product.code,
                     'title': item.product.title,
-                    'uom': {'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title} if item.uom else {},
-                    'tax': {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title} if item.tax else {}
-                },
+                    'uom': {
+                        'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
+                    } if item.uom else {},
+                    'uom_group': {
+                        'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
+                    } if item.uom else {},
+                    'tax': {
+                        'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
+                    } if item.tax else {}
+                } if item.product else {},
                 'description': item.description,
                 'quantity': item.quantity,
                 'unit_price': item.unit_price,

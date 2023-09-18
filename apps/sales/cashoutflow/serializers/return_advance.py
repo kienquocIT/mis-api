@@ -45,11 +45,14 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
 
 class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
     advance_payment_cost = serializers.UUIDField(required=True)
+    expense_type = serializers.UUIDField()
 
     class Meta:
         model = ReturnAdvanceCost
         fields = (
             'advance_payment_cost',
+            'expense_name',
+            'expense_type',
             'remain_value',
             'return_value',
         )
@@ -105,6 +108,8 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
                 ReturnAdvanceCost(
                     return_advance=return_advance,
                     advance_payment_cost_id=data['advance_payment_cost'],
+                    expense_name=data['expense_name'],
+                    expense_type_id=data['expense_type'],
                     remain_value=data['remain_value'],
                     return_value=data['return_value']
                 )
@@ -167,39 +172,20 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_cost(cls, obj):
-        advance_payment = obj.advance_payment
-        list_return_advance = advance_payment.return_advance_payment.all()
-
-        dict_money_returned = {}
-
-        for item in advance_payment.advance_payment.all():
-            dict_money_returned[item.id] = item.after_tax_price
-
-        for item in list_return_advance:
-            if item.status == 0:
-                for cost in item.return_advance.all():
-                    if cost.advance_payment_cost_id in dict_money_returned:
-                        dict_money_returned[cost.advance_payment_cost_id] -= cost.return_value
-
-        result = []
-        for item in obj.return_advance.all():
-            remain_total = dict_money_returned[item.advance_payment_cost_id]
-            if obj.status == 0:
-                remain_total = item.remain_value
-            result.append(
-                {
-                    'id': item.advance_payment_cost_id,
-                    'product': {
-                        'id': item.advance_payment_cost.product_id,
-                        'code': item.advance_payment_cost.product.code,
-                        'title': item.advance_payment_cost.product.title
-                    },
-                    'product_type': item.advance_payment_cost.product.general_product_type.title,
-                    'remain_total': remain_total,
-                    'return_price': item.return_value,
-                }
-            )
-        return result
+        costs = ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type')
+        list_result = []
+        for cost in costs:
+            list_result.append({
+                'advance_payment_cost': cost.advance_payment_cost_id,
+                'expense_name': cost.expense_name,
+                'expense_type': {
+                    'id': cost.expense_type_id,
+                    'title': cost.expense_type.title,
+                },
+                'remain_total': cost.remain_value,
+                'return_value': cost.return_value,
+            })
+        return list_result
 
 
 class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):

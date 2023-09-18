@@ -6,9 +6,12 @@ from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
-    OpportunityConfigStage, OpportunityStage
+    OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
+
+__all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer']
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -124,8 +127,19 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         win_rate = stage.win_rate
 
         opportunity = Opportunity.objects.create(**validated_data, win_rate=win_rate)
+
+        # create M2M Opportunity and Product Category
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
+        # create stage default for Opportunity
         OpportunityStage.objects.create(stage=stage, opportunity=opportunity, is_current=True)
+        # set sale_person in sale team
+        OpportunitySaleTeamMember.objects.create(
+            opportunity=opportunity,
+            member=validated_data['employee_inherit'],
+            permit_app=OpportunityMemberPermitData.PERMIT_DATA,
+            permit_view_this_opp=True,
+            permit_add_member=True,
+        )
         return opportunity
 
 
@@ -416,34 +430,6 @@ class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
         return None
 
 
-class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
-    member = serializers.UUIDField(allow_null=False)
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = (
-            'member',
-        )
-
-    @classmethod
-    def validate_member(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Employee.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'code': obj.code,
-                    'group': str(obj.group_id) if obj.group else None,
-                    'name': obj.get_full_name(),
-                    'email': obj.email,
-                }
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': OpportunityMsg.NOT_EXIST})
-        return None
-
-
 class OpportunityStageUpdateSerializer(serializers.ModelSerializer):
     stage = serializers.UUIDField(allow_null=False)
     is_current = serializers.BooleanField()
@@ -487,7 +473,6 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     is_input_rate = serializers.BooleanField(required=False)
     employee_inherit = serializers.UUIDField(required=False)
-    opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
     list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
@@ -513,7 +498,6 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'opportunity_competitors_datas',
             'opportunity_contact_role_datas',
             'customer_decision_factor',
-            'opportunity_sale_team_datas',
             'stage',
             'lost_by_other_reason',
             'list_stage',
@@ -637,12 +621,6 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
                 instance
             )
 
-        if 'opportunity_sale_team_datas' in validated_data:
-            CommonOpportunityUpdate.update_opportunity_sale_team(
-                validated_data['opportunity_sale_team_datas'],
-                instance
-            )
-
         if 'list_stage' in validated_data:
             list_stage = validated_data.pop('list_stage', [])
             CommonOpportunityUpdate.update_opportunity_stage(
@@ -666,6 +644,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     end_customer = serializers.SerializerMethodField()
     product_category = serializers.SerializerMethodField()
     customer_decision_factor = serializers.SerializerMethodField()
+    opportunity_sale_team_datas = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -805,6 +784,23 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 } for item in factor
             ]
         return []
+
+    @classmethod
+    def get_opportunity_sale_team_datas(cls, obj):
+        sale_team = OpportunitySaleTeamMember.objects.filter(opportunity=obj)
+        list_result = []
+        for member in sale_team:
+            list_result.append(
+                {
+                    'id': member.id,
+                    'member': {
+                        'id': member.member_id,
+                        'name': member.member.get_full_name(),
+                        'email': member.member.email,
+                    }
+                }
+            )
+        return list_result
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

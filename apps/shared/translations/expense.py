@@ -12,3 +12,4 @@ class ExpenseMsg:
     IS_REQUIRED = _('must be required')
 
     PARENT_NOT_EXIST = _('Expense parent does not exist.')
+    EXPENSE_ITEM_NOT_EXIST = _('Expense item not exist.')
