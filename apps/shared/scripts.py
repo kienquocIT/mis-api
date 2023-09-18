@@ -747,3 +747,9 @@ def make_sure_leave_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).leave_config()
     print('Leave config is done!')
+
+
+def make_sure_function_purchase_request_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).purchase_request_config()
+    print('Make sure function purchase_request_config is done!')
