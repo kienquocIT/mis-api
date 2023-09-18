@@ -89,6 +89,7 @@ INSTALLED_APPS = \
         'apps.sales.task',
         'apps.sales.purchasing',
         'apps.sales.inventory',
+        'apps.eoffice.leave',
     ]
 
 MIDDLEWARE = [
