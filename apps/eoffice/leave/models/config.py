@@ -1,17 +1,15 @@
 from django.db import models
 
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
-
-__all__ = ['LeaveConfig', 'LeaveType']
-
 from apps.shared.translations import LeaveMsg
 
-
 PAID_BY = (
-    (1, str(LeaveMsg.PAID_BY_01)),
-    (2, str(LeaveMsg.PAID_BY_02)),
-    (3, str(LeaveMsg.PAID_BY_03)),
+    (1, str(LeaveMsg.PAID_BY_ONE)),
+    (2, str(LeaveMsg.PAID_BY_TWO)),
+    (3, str(LeaveMsg.PAID_BY_THREE)),
 )
+
+__all__ = ['LeaveConfig', 'LeaveType']
 
 
 class LeaveConfig(SimpleAbstractModel):

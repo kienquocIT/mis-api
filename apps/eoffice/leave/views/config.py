@@ -1,12 +1,10 @@
-__all__ = ['LeaveConfigDetail']
-
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.eoffice.leave.mixins import LeaveDestroyMixin
 from apps.eoffice.leave.models import LeaveConfig, LeaveType
-from apps.eoffice.leave.serializers import LeaveConfigDetailSerializer, LeaveTypeConfigCreateSerializer,\
+from apps.eoffice.leave.serializers import LeaveConfigDetailSerializer, LeaveTypeConfigCreateSerializer, \
     LeaveTypeConfigUpdateSerializer, LeaveTypeConfigDetailSerializer, LeaveTypeConfigDeleteSerializer
-from apps.shared import BaseRetrieveMixin, BaseUpdateMixin, mask_view, BaseCreateMixin, BaseDestroyMixin
+from apps.shared import BaseRetrieveMixin, BaseUpdateMixin, mask_view, BaseCreateMixin
 
 __all__ = ['LeaveConfigDetail', 'LeaveTypeConfigCreate', 'LeaveTypeConfigUpdate']
 

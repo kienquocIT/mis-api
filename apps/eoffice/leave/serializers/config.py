@@ -2,12 +2,11 @@ from django.http import HttpResponse
 
 from rest_framework import serializers
 
-__all__ = ['LeaveConfigDetailSerializer', 'LeaveTypeConfigCreateSerializer', 'LeaveTypeConfigDetailSerializer',
-           'LeaveTypeConfigUpdateSerializer', 'LeaveTypeConfigDeleteSerializer'
-           ]
-
 from apps.eoffice.leave.models import LeaveConfig, LeaveType
 from apps.shared import LEAVE_YEARS_SENIORITY, LeaveMsg
+
+__all__ = ['LeaveConfigDetailSerializer', 'LeaveTypeConfigCreateSerializer', 'LeaveTypeConfigDetailSerializer',
+           'LeaveTypeConfigUpdateSerializer', 'LeaveTypeConfigDeleteSerializer']
 
 
 class LeaveConfigDetailSerializer(serializers.ModelSerializer):
@@ -40,7 +39,7 @@ class LeaveConfigDetailSerializer(serializers.ModelSerializer):
         return leave_type
 
     @classmethod
-    def get_year_senior(cls, obj):
+    def get_year_senior(cls):
         return LEAVE_YEARS_SENIORITY
 
     class Meta:
@@ -56,7 +55,6 @@ class LeaveTypeConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
@@ -115,7 +113,6 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigDeleteSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = LeaveType
         fields = ('id',)
