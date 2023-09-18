@@ -1,7 +1,9 @@
 from datetime import date
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure, \
-    Expense
+from apps.masterdata.saledata.models.product import (
+    ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
+    Expense, ProductProductType
+)
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
 )
@@ -748,3 +750,12 @@ def update_credit_card_type():
 def clear_data_expense():
     Expense.objects.all().delete()
     print('Delete Done')
+
+
+def update_employee_inherit_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for advance_return in objs:
+        advance_return.employee_inherit = advance_return.creator
+        advance_return.employee_created = advance_return.creator
+        advance_return.save()
+    print('Update done')

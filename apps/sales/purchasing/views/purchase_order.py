@@ -1,9 +1,11 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer,\
-    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer
+from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, PurchaseOrderProduct, \
+    PurchaseOrderRequestProduct
+from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
+    PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
+    PurchaseOrderProductListSerializer, PurchaseOrderSaleListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -71,13 +73,34 @@ class PurchaseOrderDetail(
                 queryset=PurchaseOrderQuotation.objects.select_related('purchase_quotation'),
             ),
             Prefetch(
+                'purchase_order_request_product_order',
+                queryset=PurchaseOrderRequestProduct.objects.select_related(
+                    'purchase_request_product',
+                    'purchase_request_product__purchase_request',
+                    'purchase_request_product__uom',
+                ),
+            ),
+            Prefetch(
                 'purchase_order_product_order',
                 queryset=PurchaseOrderProduct.objects.select_related(
                     'product',
                     'uom_order_request',
+                    'uom_order_request__group',
+                    'uom_order_request__group__uom_reference',
                     'uom_order_actual',
+                    'uom_order_actual__group',
+                    'uom_order_actual__group__uom_reference',
                     'tax',
-                ).prefetch_related('purchase_order_request_order_product'),
+                ).prefetch_related(
+                    Prefetch(
+                        'purchase_order_request_order_product',
+                        queryset=PurchaseOrderRequestProduct.objects.select_related(
+                            'purchase_request_product',
+                            'purchase_request_product__purchase_request',
+                            'purchase_request_product__uom',
+                        )
+                    )
+                ),
             ),
         )
 
@@ -103,3 +126,59 @@ class PurchaseOrderDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class PurchaseOrderProductList(BaseListMixin):
+    queryset = PurchaseOrderProduct.objects
+    filterset_fields = {
+        'purchase_order_id': ['in', 'exact'],
+    }
+    serializer_list = PurchaseOrderProductListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product',
+            'uom_order_request',
+            'uom_order_actual',
+            'tax',
+        ).prefetch_related('purchase_order_request_order_product')
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Order Product List",
+        operation_description="Get Purchase Order Product List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# use for another sale apps
+class PurchaseOrderSaleList(
+    BaseListMixin,
+    BaseCreateMixin
+):
+    queryset = PurchaseOrder.objects
+    filterset_fields = {
+        'supplier_id': ['exact'],
+        'contact_id': ['exact'],
+    }
+    serializer_list = PurchaseOrderSaleListSerializer
+    serializer_detail = PurchaseOrderSaleListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "supplier",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Purchase order sale List",
+        operation_description="Get Purchase order sale List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaseorder', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

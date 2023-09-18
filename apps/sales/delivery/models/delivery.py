@@ -3,8 +3,7 @@ import json
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
-    SimpleAbstractModel,
-    DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel, MasterDataAbstractModel,
+    SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
 )
 
 __all__ = [
@@ -15,7 +14,7 @@ __all__ = [
 ]
 
 
-class OrderDelivery(MasterDataAbstractModel):
+class OrderDelivery(DataAbstractModel):
     # sale order
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
@@ -275,10 +274,12 @@ class OrderDeliverySub(DataAbstractModel):
         default=list,
         null=True,
         verbose_name='delivery shipping and billing address',
-        help_text=json.dumps({
-            "shipping_address": "lorem ipsum dolor sit amet",
-            "billing_address": "consectetur adipiscing elit."
-        }),
+        help_text=json.dumps(
+            {
+                "shipping_address": "lorem ipsum dolor sit amet",
+                "billing_address": "consectetur adipiscing elit."
+            }
+        ),
     )
 
     def set_and_check_quantity(self):

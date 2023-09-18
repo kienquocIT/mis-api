@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.hr.models import Employee
 from apps.masterdata.promotion.models import Promotion
-from apps.masterdata.saledata.models import Shipping
+from apps.masterdata.saledata.models import Shipping, ExpenseItem
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import Account, AccountShippingAddress, AccountBillingAddress
 from apps.masterdata.saledata.models.config import PaymentTerm
@@ -14,6 +14,7 @@ from apps.sales.quotation.models import QuotationProduct, QuotationTerm, Quotati
     QuotationIndicator
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, ShippingMsg, PromoMsg
+from apps.shared.translations.expense import ExpenseMsg
 
 
 class QuotationCommonCreate:
@@ -22,6 +23,7 @@ class QuotationCommonCreate:
     def validate_product_cost_expense(cls, dict_data, is_product=False, is_expense=False, is_cost=False):
         product = {}
         expense = {}
+        expense_item = {}
         unit_of_measure = {}
         tax = {}
         promotion = {}
@@ -32,6 +34,9 @@ class QuotationCommonCreate:
         if 'expense' in dict_data:
             expense = dict_data['expense']
             del dict_data['expense']
+        if 'expense_item' in dict_data:
+            expense_item = dict_data['expense_item']
+            del dict_data['expense_item']
         if 'unit_of_measure' in dict_data:
             unit_of_measure = dict_data['unit_of_measure']
             del dict_data['unit_of_measure']
@@ -55,6 +60,7 @@ class QuotationCommonCreate:
         if is_expense is True:
             return {
                 'expense': expense,
+                'expense_item': expense_item,
                 'product': product,
                 'unit_of_measure': unit_of_measure,
                 'tax': tax,
@@ -148,6 +154,7 @@ class QuotationCommonCreate:
                 QuotationExpense.objects.create(
                     quotation=instance,
                     expense_id=data['expense'].get('id', None),
+                    expense_item_id=data['expense_item'].get('id', None),
                     product_id=data['product'].get('id', None),
                     unit_of_measure_id=data['unit_of_measure'].get('id', None),
                     tax_id=data['tax'].get('id', None),
@@ -387,6 +394,24 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'expense': ProductMsg.EXPENSE_DOES_NOT_EXIST})
 
     @classmethod
+    def validate_expense_item(cls, value):
+        try:
+            if value is None:
+                return {}
+            expense_item = ExpenseItem.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+            return {
+                'id': str(expense_item.id),
+                'title': expense_item.title,
+                'code': expense_item.code
+            }
+        except ExpenseItem.DoesNotExist:
+            raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
+
+    @classmethod
     def validate_price_list(cls, value):
         if isinstance(value, list):
             price_list = Price.objects.filter_current(
@@ -479,13 +504,13 @@ class QuotationCommonValidate:
             raise serializers.ValidationError({'customer_billing': AccountsMsg.ACCOUNT_BILLING_NOT_EXIST})
 
     @classmethod
-    def validate_employee_inherit(cls, value):
+    def validate_employee_inherit_id(cls, value):
         try:
             return Employee.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
@@ -792,10 +817,16 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
     expense = serializers.CharField(
         max_length=550,
         allow_null=True,
+        required=False,
+    )
+    expense_item = serializers.CharField(
+        max_length=550,
+        allow_null=True,
     )
     product = serializers.CharField(
         max_length=550,
         allow_null=True,
+        required=False,
     )
     unit_of_measure = serializers.CharField(
         max_length=550
@@ -809,6 +840,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
         model = QuotationExpense
         fields = (
             'expense',
+            'expense_item',
             'product',
             'unit_of_measure',
             'tax',
@@ -834,6 +866,10 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_expense(cls, value):
         return QuotationCommonValidate().validate_expense(value=value)
+
+    @classmethod
+    def validate_expense_item(cls, value):
+        return QuotationCommonValidate().validate_expense_item(value=value)
 
     @classmethod
     def validate_product(cls, value):

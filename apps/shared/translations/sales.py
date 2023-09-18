@@ -41,3 +41,7 @@ class PurchaseRequestMsg:
 
 class PurchasingMsg:
     PURCHASE_QUOTATION_NOT_EXIST = _('Purchase quotation does not exist')
+
+
+class DeliverMsg:
+    ERROR_CONFIG = _('Please setup Leader of Picking/Delivery in config page before create request')

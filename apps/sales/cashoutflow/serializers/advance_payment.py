@@ -14,7 +14,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     to_payment = serializers.SerializerMethodField()
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
-    product_items = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
@@ -40,7 +40,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
-            'product_items',
+            'expense_items',
             'opportunity_id',
         )
 
@@ -94,62 +94,44 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                 is_close = True
             return {
                 'id': obj.opportunity_mapped_id,
-                # 'code': obj.opportunity_mapped.code,
+                'code': obj.opportunity_mapped.code,
                 'is_close': is_close
             }
         return {}
 
     @classmethod
-    def get_product_items(cls, obj):
+    def get_expense_items(cls, obj):
         all_item = obj.advance_payment.all()
-        product_items = []
+        expense_items = []
         for item in all_item:
-            tax_dict = {
-                'id': item.tax_id,
-                'code': item.tax.code,
-                'title': item.tax.title,
-                'rate': item.tax.rate
-            } if item.tax else {}
-
-            product_obj = {}
-            if item.product_id:
-                product_obj = {
-                    'id': item.product_id,
-                    'code': item.product.code,
-                    'title': item.product.title,
-                    'type': {
-                        'id': item.product.general_product_type_id,
-                        'code': item.product.general_product_type.code,
-                        'title': item.product.general_product_type.title,
-                    } if item.product.general_product_type else {}
-                }
-
-            product_items.append(
+            expense_items.append(
                 {
                     'id': item.id,
-                    'product': product_obj,
-                    'tax': tax_dict,
-                    'product_quantity': item.product_quantity,
-                    'product_uom': {
-                        'id': item.product_unit_of_measure_id,
-                        'code': item.product_unit_of_measure.code,
-                        'title': item.product_unit_of_measure.title
-                    } if item.product_unit_of_measure else {},
-                    'product_uom_group': {
-                        'id': item.product_unit_of_measure_id,
-                        'code': item.product_unit_of_measure.code,
-                        'title': item.product_unit_of_measure.title
-                    } if item.product_unit_of_measure_id else {},
-                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                    'unit_price': item.product_unit_price,
-                    'subtotal_price': item.subtotal_price,
-                    'after_tax_price': item.after_tax_price,
+                    'expense_name': item.expense_name,
+                    'expense_type': {
+                        'id': item.expense_type_id,
+                        'code': item.expense_type.code,
+                        'title': item.expense_type.title,
+                    } if item.expense_type else {},
+                    'expense_uom_name': item.expense_uom_name,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_unit_price': item.expense_unit_price,
+                    'expense_tax': {
+                        'id': item.expense_tax_id,
+                        'code': item.expense_tax.code,
+                        'title': item.expense_tax.title,
+                        'rate': item.expense_tax.rate
+                    } if item.expense_tax else {},
+                    'expense_tax_price': item.expense_tax_price,
+                    'expense_subtotal_price': item.expense_subtotal_price,
+                    'expense_after_tax_price': item.expense_after_tax_price,
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.after_tax_price - item.sum_return_value - item.sum_converted_value,
+                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
+                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                 }
             )
-        return product_items
+        return expense_items
 
     @classmethod
     def get_advance_payment_type(cls, obj):
@@ -160,7 +142,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_advance_value(cls, obj):
         all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
         return sum_ap_value
 
     @classmethod
@@ -178,7 +160,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_remain_value(cls, obj):
         all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
         return sum_ap_value - sum_return_value - sum_payment_converted_value
@@ -199,7 +181,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         return None
 
 
-def create_product_items(instance, product_valid_list):
+def create_expense_items(advance_payment_obj, expense_valid_list):
     vnd_currency = Currency.objects.filter_current(
         fill__tenant=True,
         fill__company=True,
@@ -207,23 +189,10 @@ def create_product_items(instance, product_valid_list):
     ).first()
     if vnd_currency:
         bulk_info = []
-        for item in product_valid_list:
-            bulk_info.append(
-                AdvancePaymentCost(
-                    advance_payment=instance,
-                    product_id=item.get('product_id', None),
-                    product_unit_of_measure_id=item.get('unit_of_measure_id', None),
-                    product_quantity=item.get('quantity', None),
-                    product_unit_price=item.get('unit_price', None),
-                    tax_id=item.get('tax_id', None),
-                    tax_price=item.get('tax_price', None),
-                    subtotal_price=item.get('subtotal_price', None),
-                    after_tax_price=item.get('after_tax_price', None),
-                    currency=vnd_currency,
-                )
-            )
+        for item in expense_valid_list:
+            bulk_info.append(AdvancePaymentCost(**item, advance_payment=advance_payment_obj, currency=vnd_currency))
         if len(bulk_info) > 0:
-            AdvancePaymentCost.objects.filter(advance_payment=instance).delete()
+            AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
             AdvancePaymentCost.objects.bulk_create(bulk_info)
         return True
     return False
@@ -278,10 +247,10 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             else:
                 raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
 
-        if self.initial_data.get('product_valid_list', []):
-            for item in self.initial_data['product_valid_list']:
-                if not item.get('product_id', None):
-                    raise serializers.ValidationError({'Product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+        if self.initial_data.get('expense_valid_list', []):
+            for item in self.initial_data['expense_valid_list']:
+                if not item.get('expense_type_id', None):
+                    raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
         return validate_data
 
     def create(self, validated_data):
@@ -295,13 +264,13 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             new_code = 'AP.CODE.000' + str(new_code)
 
         advance_payment_obj = AdvancePayment.objects.create(**validated_data, code=new_code)
-        if self.initial_data.get('product_valid_list', []):
-            create_product_items(advance_payment_obj, self.initial_data.get('product_valid_list', []))
+        if self.initial_data.get('expense_valid_list', []):
+            create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', []))
         return advance_payment_obj
 
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
-    product_items = serializers.SerializerMethodField()
+    expense_items = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
@@ -330,7 +299,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'method',
             'beneficiary',
-            'product_items',
+            'expense_items',
             'advance_value',
             'to_payment',
             'return_value',
@@ -339,51 +308,38 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_product_items(cls, obj):
+    def get_expense_items(cls, obj):
         all_item = obj.advance_payment.all()
-        product_items = []
+        expense_items = []
         for item in all_item:
-            tax_dict = {
-                'id': item.tax_id,
-                'code': item.tax.code,
-                'title': item.tax.title,
-                'rate': item.tax.rate
-            } if item.tax else {}
-            product_items.append(
+            expense_items.append(
                 {
                     'id': item.id,
-                    'product': {
-                        'id': item.product_id,
-                        'code': item.product.code,
-                        'title': item.product.title,
-                        'type': {
-                            'id': item.product.general_product_type_id,
-                            'code': item.product.general_product_type.code,
-                            'title': item.product.general_product_type.title,
-                        } if item.product.general_product_type else {},
-                    },
-                    'tax': tax_dict,
-                    'product_quantity': item.product_quantity,
-                    'product_uom': {
-                        'id': item.product_unit_of_measure_id,
-                        'code': item.product_unit_of_measure.code,
-                        'title': item.product_unit_of_measure.title
-                    } if item.product_unit_of_measure else {},
-                    'product_uom_group': {
-                        'id': item.product_unit_of_measure_id,
-                        'code': item.product_unit_of_measure.code,
-                        'title': item.product_unit_of_measure.title
-                    } if item.product_unit_of_measure else {},
-                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
-                    'unit_price': item.product_unit_price,
-                    'subtotal_price': item.subtotal_price,
-                    'after_tax_price': item.after_tax_price,
+                    'expense_name': item.expense_name,
+                    'expense_type': {
+                        'id': item.expense_type_id,
+                        'code': item.expense_type.code,
+                        'title': item.expense_type.title,
+                    } if item.expense_type else {},
+                    'expense_uom_name': item.expense_uom_name,
+                    'expense_quantity': item.expense_quantity,
+                    'expense_unit_price': item.expense_unit_price,
+                    'expense_tax': {
+                        'id': item.expense_tax_id,
+                        'code': item.expense_tax.code,
+                        'title': item.expense_tax.title,
+                        'rate': item.expense_tax.rate
+                    } if item.expense_tax else {},
+                    'expense_tax_price': item.expense_tax_price,
+                    'expense_subtotal_price': item.expense_subtotal_price,
+                    'expense_after_tax_price': item.expense_after_tax_price,
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.after_tax_price - item.sum_return_value - item.sum_converted_value,
+                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
+                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                 }
             )
-        return product_items
+        return expense_items
 
     @classmethod
     def get_sale_order_mapped(cls, obj):
@@ -444,7 +400,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_advance_value(cls, obj):
         all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
         return sum_ap_value
 
     @classmethod
@@ -462,7 +418,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_remain_value(cls, obj):
         all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.after_tax_price for item in all_items)
+        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
         sum_return_value = sum(item.sum_return_value for item in all_items)
         sum_payment_converted_value = sum(item.sum_converted_value for item in all_items)
         return sum_ap_value - sum_return_value - sum_payment_converted_value
@@ -471,7 +427,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     def get_converted_payment_list(cls, obj):
         all_items = obj.advance_payment.all()
         all_converted_items = PaymentCostItemsDetail.objects.filter(
-            product_converted__in=all_items
+            expense_converted__in=all_items
         ).select_related('payment_mapped')
         converted_payment_list = []
         payment_code_list = []
@@ -487,11 +443,11 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     converted_payment_list.append({
                         'payment_code': payment_code,
                         'payment_title': item.payment_mapped.title,
-                        'payment_value_converted': item.product_value_converted
+                        'payment_value_converted': item.expense_value_converted
                     })
                     payment_code_list.append(payment_code)
             else:
-                result['payment_value_converted'] = result['payment_value_converted'] + item.product_value_converted
+                result['payment_value_converted'] = result['payment_value_converted'] + item.expense_value_converted
         return converted_payment_list
 
     @classmethod

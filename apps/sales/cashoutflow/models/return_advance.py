@@ -81,6 +81,17 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         null=True,
         related_name='advance_payment_cost',
     )
+    expense_type = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='return_advance_expense'
+    )
+    expense_name = models.CharField(
+        max_length=150,
+        null=True
+    )
+
     remain_value = models.FloatField(
         default=0,
     )

@@ -13,7 +13,7 @@ ignore=
     migrations,builder,locale,statics,routers,misapi,logs,build.sh,manage.py,
     .pylintrc,tests.py,tests,admin.py,
     mockup_data.py,crawl_vietnam_address.py,vietnam_info,
-    mail.py,scripts.py,signals.py
+    mail.py,scripts.py,signals.py,sharedapp
 ignore-patterns=z_testing_.*?py
 disable=
     C0114, # missing-module-docstring

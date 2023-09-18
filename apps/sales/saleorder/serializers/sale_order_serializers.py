@@ -124,6 +124,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            # system
             'workflow_runtime_id',
         )
 
@@ -193,11 +194,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_products_data(cls, obj):
         return SaleOrderProductsListSerializer(
-            obj.sale_order_product_sale_order.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.sale_order_product_sale_order.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
@@ -209,11 +207,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_costs_data(cls, obj):
         return SaleOrderCostsListSerializer(
-            obj.sale_order_cost_sale_order.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.sale_order_cost_sale_order.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
@@ -236,7 +231,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -276,7 +271,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             'quotation',
             # total amount of products
@@ -320,8 +315,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -381,7 +376,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -422,7 +417,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             'quotation',
             # total amount of products
@@ -464,8 +459,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return SaleOrderCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return SaleOrderCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):

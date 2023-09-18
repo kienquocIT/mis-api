@@ -182,7 +182,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
-            'general_product_type': product_type['id'],
+            'product_types_mapped_list': [product_type['id']],
             'general_product_category': product_category['id'],
             'general_uom_group': uom_group.data['result']['id'],
             'length': 50,
@@ -349,7 +349,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
-            'general_product_type': product_type['id'],
+            'product_types_mapped_list': [product_type['id']],
             'general_product_category': product_category['id'],
             'general_uom_group': uom_group.data['result']['id'],
             'length': 50,
@@ -489,6 +489,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "quotation_expenses_data": [
                 {
                     "expense": None,
+                    "expense_item": None,
                     "product": product_id,
                     "expense_title": "Chi phí tiếp khách",
                     "expense_code": "010",
@@ -507,6 +508,7 @@ class TestCaseQuotation(AdvanceTestCase):
                 },
                 {
                     "expense": None,
+                    "expense_item": None,
                     "product": product_id,
                     "expense_title": "Chi phí quản lý",
                     "expense_code": "005",

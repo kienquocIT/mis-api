@@ -113,8 +113,12 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                         'id': item.product_id,
                         'code': item.product.code,
                         'title': item.product.title,
-                        'uom': {'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title} if item.uom else {},
-                        'tax': {'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title} if item.tax else {}
+                        'uom': {
+                            'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
+                        } if item.uom else {},
+                        'tax': {
+                            'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
+                        } if item.tax else {}
                     },
                     'description': item.description,
                     'quantity': item.quantity,

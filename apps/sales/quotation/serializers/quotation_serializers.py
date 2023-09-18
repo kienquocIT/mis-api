@@ -113,6 +113,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'date_created',
             # indicator tab
             'quotation_indicators_data',
+            # system
             'workflow_runtime_id',
         )
 
@@ -178,11 +179,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation_products_data(cls, obj):
         return QuotationProductsListSerializer(
-            obj.quotation_product_quotation.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.quotation_product_quotation.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
@@ -194,11 +192,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation_costs_data(cls, obj):
         return QuotationCostsListSerializer(
-            obj.quotation_cost_quotation.select_related(
-                "product__sale_default_uom",
-                "product__sale_tax",
-                "product__sale_currency_using",
-            ).prefetch_related(
+            obj.quotation_cost_quotation.prefetch_related(
+                'product__general_product_types_mapped',
                 Prefetch(
                     'product__product_price_product',
                     queryset=ProductPriceList.objects.select_related('price_list'),
@@ -221,7 +216,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     contact = serializers.CharField(
         max_length=550
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -258,7 +253,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -303,8 +298,8 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return QuotationCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):
@@ -358,7 +353,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         max_length=550,
         required=False
     )
-    employee_inherit = serializers.UUIDField(
+    employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
@@ -396,7 +391,7 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
             'opportunity',
             'customer',
             'contact',
-            'employee_inherit',
+            'employee_inherit_id',
             'payment_term',
             # total amount of products
             'total_product_pretax_amount',
@@ -439,8 +434,8 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
         return QuotationCommonValidate().validate_contact(value=value)
 
     @classmethod
-    def validate_employee_inherit(cls, value):
-        return QuotationCommonValidate().validate_employee_inherit(value=value)
+    def validate_employee_inherit_id(cls, value):
+        return QuotationCommonValidate().validate_employee_inherit_id(value=value)
 
     @classmethod
     def validate_payment_term(cls, value):

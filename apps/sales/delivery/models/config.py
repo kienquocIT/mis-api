@@ -18,6 +18,32 @@ class DeliveryConfig(SimpleAbstractModel):
         default=False,
         verbose_name='Partial delivery',
     )
+    lead_picking = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        verbose_name="leader_picking",
+        related_name="delivery_config_lead_picking",
+        default=None,
+        null=True,
+        help_text="Picking leadership"
+    )
+    lead_delivery = models.ForeignKey(
+        'hr.Employee',
+        on_delete=models.CASCADE,
+        verbose_name="lead_delivery",
+        related_name="delivery_config_lead_delivery",
+        default=None,
+        null=True,
+        help_text="Picking leadership"
+    )
+    person_picking = models.JSONField(
+        default=dict, verbose_name='list of employee can pick package',
+        null=True
+    )
+    person_delivery = models.JSONField(
+        default=dict, verbose_name='list of employee can pick package',
+        null=True
+    )
 
     class Meta:
         verbose_name = 'Delivery Config of Company'

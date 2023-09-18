@@ -317,7 +317,6 @@ class ProductList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'general_product_type',
             'general_product_category',
         )
 
@@ -325,7 +324,10 @@ class ProductList(BaseListMixin, BaseCreateMixin):
         operation_summary="Product list",
         operation_description="Product list",
     )
-    @mask_view(login_require=True, auth_require=False, )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='saledata', model_code='product', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -336,7 +338,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='saledata', model_code='product', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -356,7 +358,6 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'product_price_product__currency_using',
             'product_price_product__price_list',
         ).select_related(
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             'sale_default_uom',
@@ -368,14 +369,17 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     @swagger_auto_schema(operation_summary='Detail Product')
-    @mask_view(login_require=True, auth_require=False, )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='saledata', model_code='product', perm_code='view',
+    )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Product", request_body=ProductUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='saledata', model_code='product', perm_code='edit',
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
@@ -389,13 +393,13 @@ class ProductForSaleList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'general_product_type',
             'general_product_category',
             'general_uom_group',
             "sale_default_uom",
             "sale_tax",
             "sale_currency_using",
         ).prefetch_related(
+            'general_product_types_mapped',
             Prefetch(
                 'product_price_product',
                 queryset=ProductPriceList.objects.select_related('price_list'),

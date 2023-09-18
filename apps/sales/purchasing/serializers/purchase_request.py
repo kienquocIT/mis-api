@@ -368,6 +368,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
     purchase_request = serializers.SerializerMethodField()
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    tax = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseRequestProduct
@@ -377,6 +378,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'sale_order_product_id',
             'product',
             'uom',
+            'tax',
             'quantity',
             'remain_for_purchase_order',
         )
@@ -393,9 +395,52 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
     def get_product(cls, obj):
         return {
             'id': obj.product_id,
-            'title': obj.product.title,
             'code': obj.product.code,
-        } if obj.product else {}
+            'title': obj.product.title,
+            'general_information': {
+                'product_type': [{
+                    'id': general_product_type.id,
+                    'title': general_product_type.title,
+                    'code': general_product_type.code
+                } for general_product_type in obj.product.general_product_types_mapped.all()],
+                'product_category': {
+                    'id': obj.product.general_product_category_id,
+                    'title': obj.product.general_product_category.title,
+                    'code': obj.product.general_product_category.code
+                } if obj.product.general_product_category else {},
+                'uom_group': {
+                    'id': obj.product.general_uom_group_id,
+                    'title': obj.product.general_uom_group.title,
+                    'code': obj.product.general_uom_group.code
+                } if obj.product.general_uom_group else {},
+            },
+            'sale_information': {
+                'default_uom': {
+                    'id': obj.product.sale_default_uom_id,
+                    'title': obj.product.sale_default_uom.title,
+                    'code': obj.product.sale_default_uom.code,
+                    'ratio': obj.product.sale_default_uom.ratio,
+                    'rounding': obj.product.sale_default_uom.rounding,
+                    'is_referenced_unit': obj.product.sale_default_uom.is_referenced_unit,
+                } if obj.product.sale_default_uom else {},
+                'tax_code': {
+                    'id': obj.product.sale_tax_id,
+                    'title': obj.product.sale_tax.title,
+                    'code': obj.product.sale_tax.code,
+                    'rate': obj.product.sale_tax.rate
+                } if obj.product.sale_tax else {},
+                'currency_using': {
+                    'id': obj.product.sale_currency_using_id,
+                    'title': obj.product.sale_currency_using.title,
+                    'code': obj.product.sale_currency_using.code,
+                } if obj.product.sale_currency_using else {},
+                'length': obj.product.length,
+                'width': obj.product.width,
+                'height': obj.product.height,
+            },
+            'product_choice': obj.product.product_choice,
+            'sale_cost': obj.product.sale_cost,
+        }
 
     @classmethod
     def get_uom(cls, obj):
@@ -419,3 +464,12 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
         } if obj.uom else {}
+
+    @classmethod
+    def get_tax(cls, obj):
+        return {
+            'id': obj.tax_id,
+            'title': obj.tax.title,
+            'code': obj.tax.code,
+            'rate': obj.tax.rate,
+        } if obj.tax else {}

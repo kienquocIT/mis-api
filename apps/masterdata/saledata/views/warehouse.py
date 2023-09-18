@@ -7,13 +7,14 @@ from apps.masterdata.saledata.models import (
     WareHouse, ProductWareHouse
 )
 from apps.masterdata.saledata.serializers import (
-    WareHouseListSerializer, WareHouseCreateSerializer,
+    WareHouseListSerializer, WareHouseCreateSerializer, WareHouseListSerializerForInventoryAdjustment,
     WareHouseDetailSerializer, WareHouseUpdateSerializer,
     ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
 )
 
 __all__ = [
-    'WareHouseList', 'WareHouseDetail', 'WareHouseCheckAvailableProductList', 'ProductWareHouseList'
+    'WareHouseList', 'WareHouseDetail', 'WareHouseCheckAvailableProductList', 'ProductWareHouseList',
+    'WareHouseListForInventoryAdjustment',
 ]
 
 
@@ -104,6 +105,23 @@ class ProductWareHouseList(BaseListMixin):
         return super().get_queryset().select_related('product', 'warehouse')
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WareHouseListForInventoryAdjustment(BaseListMixin):
+    queryset = WareHouse.objects
+    serializer_list = WareHouseListSerializerForInventoryAdjustment
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    search_fields = ("title", "code",)
+    filterset_fields = {
+        "is_active": ['exact'],
+    }
+
+    @swagger_auto_schema(operation_summary='WareHouse List')
     @mask_view(
         login_require=True, auth_require=False,
     )

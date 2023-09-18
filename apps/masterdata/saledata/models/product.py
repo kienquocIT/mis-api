@@ -4,7 +4,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 
 __all__ = [
     'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
-    'ExpensePrice', 'ExpenseRole', 'ProductMeasurements'
+    'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType'
 ]
 
 
@@ -107,11 +107,12 @@ class Product(DataAbstractModel):
     )
 
     # General
-    general_product_type = models.ForeignKey(
+    general_product_types_mapped = models.ManyToManyField(
         ProductType,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name='product_type'
+        through='ProductProductType',
+        symmetrical=False,
+        blank=True,
+        related_name='product_map_product_types'
     )
     general_product_category = models.ForeignKey(
         ProductCategory,
@@ -313,5 +314,19 @@ class ProductMeasurements(SimpleAbstractModel):
         related_name="product_volume",
         limit_choices_to={'title__in': ['volume', 'weight']}
     )
-
     value = models.FloatField()
+
+
+class ProductProductType(SimpleAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_product_types'
+    )
+    product_type = models.ForeignKey(ProductType, on_delete=models.CASCADE)
+
+    class Meta:
+        verbose_name = 'Product ProductTypes'
+        verbose_name_plural = 'Products ProductTypes'
+        default_permissions = ()
+        permissions = ()
