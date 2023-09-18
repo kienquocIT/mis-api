@@ -35,6 +35,7 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
 
 class OrderPickingSubListSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
@@ -42,6 +43,15 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
             obj.orderpickingproduct_set.all(),
             many=True,
         ).data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderPickingSub
@@ -53,6 +63,7 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
             'state',
             'estimated_delivery_date',
             'products',
+            'employee_inherit'
         )
 
 

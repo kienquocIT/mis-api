@@ -11,6 +11,7 @@ from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
+from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
     IndicatorDefaultData,
@@ -741,6 +742,14 @@ class ConfigDefaultData:
                 )
             LeaveType.objects.bulk_create(temp_leave_type)
 
+    def purchase_request_config(self):
+        PurchaseRequestConfig.objects.create(
+            employee_reference=[],
+            company=self.company_obj,
+            tenant=self.company_obj.tenant,
+            code='',
+        )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
@@ -755,6 +764,7 @@ class ConfigDefaultData:
         self.process_function_config()
         self.process_config()
         self.leave_config()
+        self.purchase_request_config()
         return True
 
 
