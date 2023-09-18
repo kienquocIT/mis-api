@@ -90,7 +90,10 @@ class PurchaseRequestListForPQR(BaseListMixin):
         operation_summary="Purchase Request List For Purchase Quotation Request",
         operation_description="Get Purchase Request List For Purchase Quotation Request",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='purchasing', model_code='purchaserequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 

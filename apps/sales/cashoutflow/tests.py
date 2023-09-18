@@ -336,7 +336,12 @@ class PaymentTestCase(AdvanceTestCase):
         data1 = {
             'title': 'Thanh toan thang 5',
             'sale_code_type': 0,  # sale
-            'sale_code': self.create_sale_order().data['result']['id'],
+            'sale_code_list': [
+                {
+                    'sale_code_id': self.create_sale_order().data['result']['id'],
+                    'sale_code_detail': 0
+                }
+            ],
             'supplier': self.create_new_account().data['result']['id'],
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],

@@ -21,14 +21,14 @@ urlpatterns = [
         name='PurchaseQuotationRequestList'
     ),
     path(
-        'purchase-quotation-request-for-pq/list',
-        PurchaseQuotationRequestListForPQ.as_view(),
-        name='PurchaseQuotationRequestListForPQ'
-    ),
-    path(
         'purchase-quotation-request/<str:pk>',
         PurchaseQuotationRequestDetail.as_view(),
         name='PurchaseQuotationRequestDetail'
+    ),
+    path(
+        'purchase-quotation-request-for-pq/list',
+        PurchaseQuotationRequestListForPQ.as_view(),
+        name='PurchaseQuotationRequestListForPQ'
     ),
 ] + [
     # purchase order

@@ -212,7 +212,6 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     )
     @mask_view(
         login_require=True, auth_require=True,
-        employee_require=True,
         label_code='saledata', model_code='account', perm_code='create'
     )
     def post(self, request, *args, **kwargs):

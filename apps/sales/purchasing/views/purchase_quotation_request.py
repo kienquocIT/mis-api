@@ -9,12 +9,11 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
     queryset = PurchaseQuotationRequest.objects
-
     serializer_list = PurchaseQuotationRequestListSerializer
     serializer_create = PurchaseQuotationRequestCreateSerializer
     serializer_detail = PurchaseQuotationRequestDetailSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -48,7 +47,8 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
 class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = PurchaseQuotationRequest.objects
     serializer_detail = PurchaseQuotationRequestDetailSerializer
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -69,14 +69,16 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class PurchaseQuotationRequestListForPQ(BaseListMixin):
     queryset = PurchaseQuotationRequest.objects
-
     serializer_list = PurchaseQuotationRequestListForPQSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation Request List For Purchase Quotation",
         operation_description="Get Purchase Quotation Request List For Purchase Quotation",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='purchasing', model_code='purchasequotationrequest', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
