@@ -1,6 +1,6 @@
 from .plan_app_sub.base import Application_base_data as _Application_base_data
 from .plan_app_sub.crm import Application_crm_data as _Application_crm_data
-# from .plan_app_sub.eoffice import Application_eoffice_data as _Application_eoffice_data
+from .plan_app_sub.eoffice import Application_eoffice_data as _Application_eoffice_data
 
 __all__ = [
     "SubscriptionPlan_data",
@@ -37,7 +37,7 @@ SubscriptionPlan_data = {
 Application_data = {
     **_Application_base_data,
     **_Application_crm_data,
-    # **Application_eoffice_data,
+    **_Application_eoffice_data,
 }
 
 _PlanApplication_base_data = {
@@ -159,7 +159,7 @@ PlanApplication_data = {
     **_PlanApplication_base_data,
     **_PlanApplication_hrm_data,
     **_PlanApplication_sale_data,
-    # **_PlanApplication_eoffice_data,
+    **_PlanApplication_eoffice_data,
 }
 
 
