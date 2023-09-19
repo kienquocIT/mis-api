@@ -205,3 +205,11 @@ GOODS_RECEIPT_TYPE = (
     (1, 'For inventory adjustment'),
     (2, 'For production'),
 )
+
+# Warehouse type
+WAREHOUSE_TYPE = (
+    (0, 'None'),
+    (1, _('Drop Ship')),
+    (2, _('Bin Location')),
+    (3, _('Agency / Partner Location')),
+)

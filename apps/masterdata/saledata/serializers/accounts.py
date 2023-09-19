@@ -53,7 +53,11 @@ class AccountListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_owner(cls, obj):
         if obj.owner:
-            return {'id': obj.owner_id, 'fullname': obj.owner.fullname}
+            return {
+                'id': obj.owner_id,
+                'fullname': obj.owner.fullname,
+                'job_title': obj.owner.job_title
+            }
         return {}
 
     @classmethod
