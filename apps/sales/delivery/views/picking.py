@@ -27,8 +27,8 @@ class OrderPickingList(BaseListMixin):
         operation_summary='Order Picking List',
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='picking', model_code='orderdeliverysub', perm_code='view'
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderPickingSub', perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -52,7 +52,10 @@ class OrderPickingSubDetail(
         operation_summary='Order Picking Sub Detail',
         operation_description="Get picking sub detail by ID",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderPickingSub', perm_code='view',
+    )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
 
@@ -62,8 +65,8 @@ class OrderPickingSubDetail(
         serializer_update=OrderPickingSubUpdateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='picking', model_code='orderdeliverysub', perm_code='edit'
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderPickingSub', perm_code='edit'
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)

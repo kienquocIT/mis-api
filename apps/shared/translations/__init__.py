@@ -18,3 +18,4 @@ from .advancepayment import AdvancePaymentMsg
 from .good_receipt import GRMsg
 from .shipping import ShippingMsg
 from .inventory import WarehouseMsg
+from .eoffices import *

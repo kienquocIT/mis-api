@@ -43,7 +43,8 @@ class OrderDeliverySubDetail(
         operation_description="Get delivery Sub detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -54,7 +55,7 @@ class OrderDeliverySubDetail(
         serializer_update=OrderDeliverySubUpdateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='delivery', model_code='orderDeliverySub', perm_code='edit', )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {
