@@ -155,6 +155,7 @@ class TenantDiagram(APIView):
                     'name': employee_obj.group.title,
                     'relationship': self._get_relationship_group(group_obj=employee_obj.group),
                     'typeData': 2,
+                    'group_level': employee_obj.group.group_level.level,
                 }
             if action == '2':  # sibling
                 arr = []
@@ -191,6 +192,7 @@ class TenantDiagram(APIView):
                     'title': manager_title,
                     'relationship': self._get_relationship_group(group_obj=group_obj, has_children=True),
                     'typeData': 2,
+                    'group_level': employee_obj.group.group_level.level,
                     'children': [
                         {
                             'id': obj.id,
@@ -233,6 +235,7 @@ class TenantDiagram(APIView):
                             group_obj=group_obj.parent_n, has_children=True
                         ),
                         'typeData': 2,
+                        'group_level': group_obj.parent_n.group_level.level,
                     }
                 return {
                     'id': group_obj.company_id,
@@ -264,7 +267,7 @@ class TenantDiagram(APIView):
                     )
                 return self._return_children(data=arr)
             if action == '2':  # sibling
-                group_objs = Group.objects.filter_current(
+                group_objs = Group.objects.select_related('group_level').filter_current(
                     **filter_get_child,
                     fill__tenant=True, fill__company=True
                 ).exclude(id=group_obj.id)
@@ -281,6 +284,7 @@ class TenantDiagram(APIView):
                             'name': obj.title,
                             'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
                             'typeData': 2,
+                            'group_level': obj.group_level.level,
                         }
                     )
                 return self._return_sibling(data=arr)
@@ -297,6 +301,7 @@ class TenantDiagram(APIView):
                             group_obj=group_obj.parent_n, has_children=True
                         ),
                         'typeData': 2,
+                        'group_level': group_obj.parent_n.group_level.level,
                     }
                 else:
                     parent_data = {
@@ -309,7 +314,7 @@ class TenantDiagram(APIView):
                         'typeData': 1,
                     }
 
-                children_objs = Group.objects.filter_current(
+                children_objs = Group.objects.select_related('group_level').filter_current(
                     **filter_get_child,
                     fill__tenant=True, fill__company=True,
                 )
@@ -326,6 +331,7 @@ class TenantDiagram(APIView):
                                 group_obj=obj, has_sibling=has_sibling,
                             ),
                             'typeData': 2,
+                            'group_level': obj.group_level.level,
                         } for obj in children_objs
                     ]
                 }
@@ -350,7 +356,9 @@ class TenantDiagram(APIView):
                     'typeData': 0,
                 }
             if action == '1':  # children
-                group_objs = Group.objects.filter_current(parent_n__isnull=True, fill__tenant=True, fill__company=True)
+                group_objs = Group.objects.select_related('group_level').filter_current(
+                    parent_n__isnull=True, fill__tenant=True, fill__company=True
+                )
                 has_sibling = group_objs.count() > 1
                 arr = []
                 for obj in group_objs:
@@ -364,6 +372,7 @@ class TenantDiagram(APIView):
                             'name': obj.title,
                             'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
                             'typeData': 2,
+                            'group_level': obj.group_level.level,
                         }
                     )
                 return self._return_children(data=arr)
@@ -456,6 +465,7 @@ class TenantDiagram(APIView):
                     group_obj=main_group, has_children=True,
                 ),
                 'typeData': 2,
+                'group_level': main_group.group_level.level,
                 'children': [{
                     'id': employee_obj.id,
                     'name': employee_obj.get_full_name(),
@@ -481,6 +491,7 @@ class TenantDiagram(APIView):
                         group_obj=group_start, has_children=True,
                     ),
                     'typeData': 2,
+                    'group_level': group_start.group_level.level,
                     'children': [tree_data],
                 }
                 group_start = group_start.parent_n
