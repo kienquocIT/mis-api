@@ -101,16 +101,21 @@ class TenantDiagram(APIView):
     def _get_relationship_company(cls, company_obj, has_sibling=None, has_children=None):
         data = str(deepcopy(cls.relationship_default))
         data = '1' + data[1:]  # auto parent is tenant
-        if has_sibling is True or Company.objects.filter_current(fill__tenant=True).exists():
+        if has_sibling is True or Company.objects.filter_current(
+                tenant_id=company_obj.tenant_id, fill__tenant=True
+        ).exists():
             data = data[0:1] + '1' + data[2:]
-        if has_children is True or Group.objects.filter_current(fill__tenant=True, fill__company=True).exists():
+        if has_children is True or Group.objects.filter_current(
+                company_id=company_obj.id,
+                fill__tenant=True, fill__company=True
+        ).exists():
             data = data[0:2] + '1'
         return data
 
     @classmethod
     def _get_relationship_tenant(cls, tenant_obj, has_children=None):
         data = str(deepcopy(cls.relationship_default))
-        if has_children is True or Company.objects.filter_current(fill__tenant=True).exists():
+        if has_children is True or Company.objects.filter_current(tenant_id=tenant_obj.id, fill__tenant=True).exists():
             data = data[0:2] + '1'
         return data
 
@@ -122,10 +127,10 @@ class TenantDiagram(APIView):
     def _return_children(cls, data):
         return {'children': data if isinstance(data, list) else []}
 
-    def get_employee(self, pk, action):  # employee: type = 3
+    def get_employee(self, pk_id, action):  # employee: type = 3
         try:
             employee_obj = Employee.objects.select_related('group').get_current(
-                pk=pk,
+                pk=pk_id,
                 fill__tenant=True, fill__company=True
             )
         except Employee.DoesNotExist:
@@ -141,12 +146,12 @@ class TenantDiagram(APIView):
                     'relationship': self._get_relationship_group(group_obj=employee_obj.group),
                     'typeData': 2,
                 }
-            elif action == '2':  # sibling
+            if action == '2':  # sibling
                 arr = []
                 employee_objs = Employee.objects.filter_current(
                     fill__tenant=True, fill__company=True, group_id=employee_obj.group_id
                 ).exclude(id=employee_obj.id)
-                has_sibling = True if employee_objs.count() >= 1 else False
+                has_sibling = employee_objs.count() >= 1
                 for obj in employee_objs:
                     arr.append(
                         {
@@ -161,7 +166,7 @@ class TenantDiagram(APIView):
                         }
                     )
                 return self._return_sibling(data=arr)
-            elif action == '3':  # families
+            if action == '3':  # families
                 group_obj = employee_obj.group
                 manager_title = '**'
                 if group_obj and group_obj.first_manager and group_obj.first_manager_id:
@@ -169,7 +174,7 @@ class TenantDiagram(APIView):
                 children_objs = Employee.objects.filter_current(
                     fill__tenant=True, fill__company=True, group_id=group_obj.id
                 ).exclude(id=employee_obj.id)
-                children_has_sibling = True if children_objs.count() > 0 else False
+                children_has_sibling = children_objs.count() > 0
                 return {
                     'id': employee_obj.group.id,
                     'name': employee_obj.group.title,
@@ -191,20 +196,19 @@ class TenantDiagram(APIView):
                 }
         raise exceptions.NotFound()
 
-    def get_group(self, pk, action):  # group: type = 2
+    def get_group(self, pk_id, action):  # group: type = 2
         try:
             group_obj = Group.objects.select_related('company').get_current(
-                pk=pk,
+                pk=pk_id,
                 fill__tenant=True, fill__company=True
             )
         except Group.DoesNotExist:
             raise exceptions.NotFound()
 
         if group_obj and hasattr(group_obj, 'id') and getattr(group_obj, 'company_id', None):
+            filter_get_child = {'parent_n__isnull': True}
             if group_obj.parent_n:
                 filter_get_child = {'parent_n': group_obj.parent_n}
-            else:
-                filter_get_child = {'parent_n__isnull': True}
 
             if action == '0':  # parent
                 if group_obj.parent_n:
@@ -226,13 +230,13 @@ class TenantDiagram(APIView):
                     ),
                     'typeData': 1,
                 }
-            elif action == '1':  # children
+            if action == '1':  # children
                 employee_objs = Employee.objects.filter_current(
                     group_id=group_obj.id,
                     fill__tenant=True,
                     fill__company=True
                 )
-                has_sibling = True if employee_objs.count() > 1 else False
+                has_sibling = employee_objs.count() > 1
                 arr = []
                 for obj in employee_objs:
                     arr.append(
@@ -246,12 +250,12 @@ class TenantDiagram(APIView):
                         }
                     )
                 return self._return_children(data=arr)
-            elif action == '2':  # sibling
+            if action == '2':  # sibling
                 group_objs = Group.objects.filter_current(
                     **filter_get_child,
                     fill__tenant=True, fill__company=True
                 ).exclude(id=group_obj.id)
-                has_sibling = True if group_objs.count() >= 1 else False
+                has_sibling = group_objs.count() >= 1
                 arr = []
                 for obj in group_objs:
                     arr.append(
@@ -264,7 +268,7 @@ class TenantDiagram(APIView):
                         }
                     )
                 return self._return_sibling(data=arr)
-            elif action == '3':  # families
+            if action == '3':  # families
                 if group_obj.parent_n:
                     parent_data = {
                         'id': group_obj.parent_n.id,
@@ -290,7 +294,7 @@ class TenantDiagram(APIView):
                     **filter_get_child,
                     fill__tenant=True, fill__company=True,
                 )
-                has_sibling = True if children_objs.count() > 0 else False
+                has_sibling = children_objs.count() > 0
                 return {
                     **parent_data,
                     'children': [
@@ -308,9 +312,9 @@ class TenantDiagram(APIView):
 
         raise exceptions.NotFound()
 
-    def get_company(self, pk, action):
+    def get_company(self, pk_id, action):
         try:
-            company_obj = Company.objects.get_current(pk=pk, fill__tenant=True)
+            company_obj = Company.objects.get_current(pk=pk_id, fill__tenant=True)
         except Company.DoesNotExist:
             raise exceptions.NotFound()
 
@@ -325,9 +329,9 @@ class TenantDiagram(APIView):
                     ),
                     'typeData': 0,
                 }
-            elif action == '1':  # children
+            if action == '1':  # children
                 group_objs = Group.objects.filter_current(parent_n__isnull=True, fill__tenant=True, fill__company=True)
-                has_sibling = True if group_objs.count() > 1 else False
+                has_sibling = group_objs.count() > 1
                 arr = []
                 for obj in group_objs:
                     arr.append(
@@ -340,11 +344,11 @@ class TenantDiagram(APIView):
                         }
                     )
                 return self._return_children(data=arr)
-            elif action == '2':  # siblings
+            if action == '2':  # siblings
                 company_objs = Company.objects.filter_current(tenant=company_obj.tenant, fill__tenant=True).exclude(
                     id=company_obj.id
                 )
-                has_siblings = True if company_objs.count() > 0 else False
+                has_siblings = company_objs.count() > 0
                 arr = []
                 for obj in company_objs:
                     arr.append(
@@ -357,7 +361,7 @@ class TenantDiagram(APIView):
                         }
                     )
                 return self._return_sibling(data=arr)
-            elif action == '3':  # families
+            if action == '3':  # families
                 parent_data = {
                     'id': company_obj.tenant.id,
                     'title': '**',
@@ -371,7 +375,7 @@ class TenantDiagram(APIView):
                     tenant=company_obj.tenant,
                     fill__tenant=True
                 ).exclude(id=company_obj.id)
-                has_sibling = True if children_objs.count() > 0 else False
+                has_sibling = children_objs.count() > 0
                 return {
                     **parent_data,
                     'children': [
@@ -388,16 +392,19 @@ class TenantDiagram(APIView):
                 }
         raise exceptions.NotFound()
 
-    def get_tenant(self, pk, action):
+    def get_tenant(self, pk_id, action):
         try:
-            tenant_obj = Tenant.objects.get(id=self.request.user.tenant_current_id)
+            if pk_id == self.request.user.tenant_current_id:
+                tenant_obj = Tenant.objects.get_current(id=pk_id)
+            else:
+                raise exceptions.NotFound()
         except Tenant.DoesNotExist:
             raise exceptions.NotFound()
 
         if tenant_obj and hasattr(tenant_obj, 'id'):
             if action == '1':  # children
                 company_objs = Company.objects.filter_current(tenant=tenant_obj, fill__tenant=True)
-                has_sibling = True if company_objs.count() > 1 else False
+                has_sibling = company_objs.count() > 1
                 arr = []
                 for obj in company_objs:
                     arr.append(
@@ -482,27 +489,26 @@ class TenantDiagram(APIView):
 
     def parse_params(self, params_dict: dict):
         if self.request.user.tenant_current_id:
-            _get_first_current = True if params_dict.get('first_current', False) in [1, '1'] else False
+            _get_first_current = params_dict.get('first_current', False) in [1, '1']
             if _get_first_current is True:
                 return self.get_first_current()
-            else:
-                _type = params_dict.get('type', None)
-                _action = params_dict.get('action', None)
-                _id = params_dict.get('id', None)
-                if (
-                        _id and
-                        TypeCheck.check_uuid(_id) and
-                        _type in ['0', '1', '2', '3'] and
-                        _action in ['0', '1', '2']
-                ):
-                    if _type == '0':
-                        return self.get_tenant(pk=_id, action=_action)
-                    elif _type == '1':
-                        return self.get_company(pk=_id, action=_action)
-                    elif _type == '2':
-                        return self.get_group(pk=_id, action=_action)
-                    elif _type == '3':
-                        return self.get_employee(pk=_id, action=_action)
+            _type = params_dict.get('type', None)
+            _action = params_dict.get('action', None)
+            _id = params_dict.get('id', None)
+            if (
+                    _id and
+                    TypeCheck.check_uuid(_id) and
+                    _type in ['0', '1', '2', '3'] and
+                    _action in ['0', '1', '2']
+            ):
+                if _type == '0':
+                    return self.get_tenant(pk_id=_id, action=_action)
+                if _type == '1':
+                    return self.get_company(pk_id=_id, action=_action)
+                if _type == '2':
+                    return self.get_group(pk_id=_id, action=_action)
+                if _type == '3':
+                    return self.get_employee(pk_id=_id, action=_action)
             return {}
         raise exceptions.NotFound()
 
