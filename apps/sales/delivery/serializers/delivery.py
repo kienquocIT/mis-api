@@ -98,7 +98,7 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
 class OrderDeliverySubListSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
-    products = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):

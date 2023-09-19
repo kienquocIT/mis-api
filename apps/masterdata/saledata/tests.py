@@ -278,7 +278,7 @@ class ProductTestCase(AdvanceTestCase):
             'width': 30,
             'height': 10,
             'volume': 15000,
-            'weight':  200,
+            'weight': 200,
             # sale
             'sale_default_uom': unit_of_measure.data['result']['id'],
             'sale_tax': tax_code.data['result']['id'],
@@ -3089,4 +3089,151 @@ class PriceListTestCase(AdvanceTestCase):
             self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
         else:
             self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+
+class ExpenseItemTestCase(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def test_create_new_expense(self):
+        url = reverse('ExpenseItemList')
+        data = {
+            'code': 'E01',
+            'title': 'Chi phí số 1',
+            'description': '',
+        }
+
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'description', 'expense_parent', 'is_active', 'level', 'is_parent'],
+            check_sum_second=True,
+        )
+
+        data1 = {
+            'code': 'E02',
+            'title': 'Chi phí số 2',
+            'description': '',
+        }
+
+        response1 = self.client.post(url, data1, format='json')
+        self.assertResponseList(
+            response1,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response1.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response1.data['result'],
+            ['id', 'code', 'title', 'description', 'expense_parent', 'is_active', 'level', 'is_parent'],
+            check_sum_second=True,
+        )
+        return response, response1
+
+    def test_create_expense_with_parent_expense(self):
+        expense, _ = self.test_create_new_expense()
+        url = reverse('ExpenseItemList')
+        data = {
+            'code': 'E02',
+            'title': 'Chi phí số 1 con',
+            'description': '',
+            'expense_parent': expense.data['result']['id'],
+        }
+
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'description', 'expense_parent', 'is_active', 'level', 'is_parent'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_expense_list(self):
+        self.test_create_new_expense()
+        url = reverse('ExpenseItemList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 2
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            ['id', 'code', 'title', 'description', 'expense_parent', 'is_active', 'level', 'is_parent'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_expense_detail(self, data_id=None):
+        data_created = None
+        if not data_id:
+            data_created, _ = self.test_create_new_expense()
+            data_id = data_created.data['result']['id']
+        url = reverse("ExpenseItemDetail", kwargs={'pk': data_id})
+        response = self.client.get(url, format='json')  # noqa
+        self.assertEqual(response.status_code, 200)
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'code', 'title', 'description', 'is_active', 'level', 'expense_parent'],
+            check_sum_second=True,
+        )
+        if not data_id:
+            self.assertEqual(response.data['result']['id'], data_created.data['result']['id'])
+            self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
+        else:
+            self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_expense_update(self):
+        expense1, expense2 = self.test_create_new_expense()
+        url = reverse("ExpenseItemDetail", kwargs={'pk': expense2.data['result']['id']})
+        data = {
+            "code": "E02",
+            "title": "Chi phí số 2",
+            "description": "123",
+            "expense_parent": expense1.data['result']['id'],
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_get_expense_detail(data_id=expense2.data['result']['id'])
+        expense1 = self.test_get_expense_detail(data_id=expense1.data['result']['id'])
+        self.assertEqual(str(data_changed.data['result']['expense_parent']['id']), expense1.data['result']['id'])
+        self.assertEqual(data_changed.data['result']['level'], expense1.data['result']['level'] + 1)
         return response
