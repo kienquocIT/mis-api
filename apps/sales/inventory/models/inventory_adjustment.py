@@ -1,7 +1,5 @@
 from django.db import models
-
-from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class InventoryAdjustment(DataAbstractModel):

@@ -8,8 +8,8 @@ from apps.sales.inventory.models import (
 
 def create_inventory_adjustment_warehouses(obj, data):
     bulk_info = []
-    for warehouse_id in data:
-        bulk_info.append(InventoryAdjustmentWarehouse(warehouse_mapped_id=warehouse_id, inventory_adjustment_mapped=obj))
+    for wh_id in data:
+        bulk_info.append(InventoryAdjustmentWarehouse(warehouse_mapped_id=wh_id, inventory_adjustment_mapped=obj))
     InventoryAdjustmentWarehouse.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentWarehouse.objects.bulk_create(bulk_info)
     return True
@@ -17,8 +17,8 @@ def create_inventory_adjustment_warehouses(obj, data):
 
 def create_inventory_adjustment_employees_in_charge(obj, data):
     bulk_info = []
-    for employee_id in data:
-        bulk_info.append(InventoryAdjustmentEmployeeInCharge(employee_mapped_id=employee_id, inventory_adjustment_mapped=obj))
+    for em_id in data:
+        bulk_info.append(InventoryAdjustmentEmployeeInCharge(employee_mapped_id=em_id, inventory_adjustment_mapped=obj))
     InventoryAdjustmentEmployeeInCharge.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentEmployeeInCharge.objects.bulk_create(bulk_info)
     return True

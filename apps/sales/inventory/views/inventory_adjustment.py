@@ -1,4 +1,3 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
     InventoryAdjustment
@@ -27,7 +26,7 @@ class InventoryAdjustmentList(
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -39,7 +38,7 @@ class InventoryAdjustmentList(
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='create',
+        # label_code='inventory', model_code='inventoryadjustment', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -66,7 +65,7 @@ class InventoryAdjustmentDetail(
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -78,7 +77,7 @@ class InventoryAdjustmentDetail(
     )
     @mask_view(
         login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='edit',
+        # label_code='inventory', model_code='inventoryadjustment', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
