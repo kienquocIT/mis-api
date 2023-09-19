@@ -206,6 +206,16 @@ GOODS_RECEIPT_TYPE = (
     (2, 'For production'),
 )
 
+# e-office Leave
+LEAVE_YEARS_SENIORITY = [
+    {'from_rage': 5, 'to_rage': 9, 'added': 1},
+    {'from_rage': 10, 'to_rage': 14, 'added': 2},
+    {'from_rage': 15, 'to_rage': 19, 'added': 3},
+    {'from_rage': 20, 'to_rage': 24, 'added': 4},
+    {'from_rage': 25, 'to_rage': 29, 'added': 5},
+    {'from_rage': 30, 'to_rage': 34, 'added': 6},
+]
+
 # Warehouse type
 WAREHOUSE_TYPE = (
     (0, 'None'),

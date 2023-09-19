@@ -303,24 +303,6 @@ def make_sure_sale_order_indicator_config():
     print('Make sure sale order indicator config is done!')
 
 
-def delete_delivery_picking():
-    # delete delivery
-    order_delivery = OrderDelivery.objects.all()
-    order_delivery.update(sub=None)
-    OrderDeliverySub.objects.all().delete()
-    order_delivery.delete()
-
-    # delete picking
-    order_picking = OrderPicking.objects.all()
-    order_picking.update(sub=None)
-    OrderPickingSub.objects.all().delete()
-    order_picking.delete()
-
-    # reset warehouse
-    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
-    print("delete done.")
-
-
 def update_stage_for_opportunity():
     opp = Opportunity.objects.filter(stage=None)
     bulk_data = []
@@ -759,3 +741,15 @@ def update_employee_inherit_return_advance():
         advance_return.employee_created = advance_return.creator
         advance_return.save()
     print('Update done')
+
+
+def make_sure_leave_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_config()
+    print('Leave config is done!')
+
+
+def make_sure_function_purchase_request_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).purchase_request_config()
+    print('Make sure function purchase_request_config is done!')

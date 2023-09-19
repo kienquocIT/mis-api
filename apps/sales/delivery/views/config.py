@@ -74,7 +74,7 @@ class SaleOrderActiveDelivery(APIView):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='delivery', model_code='orderpickingsub', perm_code='create',
+        label_code='delivery', model_code='orderDeliverySub', perm_code='create',
     )
     def post(self, request, *args, pk, **kwargs):
         cls_model = DisperseModel(app_model='saleorder.SaleOrder').get_model()

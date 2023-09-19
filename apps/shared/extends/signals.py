@@ -9,7 +9,9 @@ from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
+from apps.eoffice.leave.models import LeaveConfig, LeaveType
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
+from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
     IndicatorDefaultData,
@@ -670,6 +672,84 @@ class ConfigDefaultData:
             code='',
         )
 
+    def leave_config(self):
+        config, created = LeaveConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={},
+        )
+        if created:
+            default_list = [
+                    {
+                        'code': 'MA', 'title': 'Maternity leave-social insurance', 'paid_by': 2,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+
+                    },
+                    {
+                        'code': 'SC', 'title': 'Sick yours child-social insurance', 'paid_by': 2,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'SY', 'title': 'Sick yourself-social insurance', 'paid_by': 2,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'FF', 'title': 'Funeral your family (max 3 days)', 'paid_by': 1,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'MC', 'title': 'Marriage your child (max 1 days)', 'paid_by': 1,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'MY', 'title': 'Marriage yourself (max 3 days)', 'paid_by': 1,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'UP', 'title': 'Unpaid leave', 'paid_by': 3,
+                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    },
+                    {
+                        'code': 'ANPY', 'title': 'Annual leave-previous year balance', 'paid_by': 1,
+                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
+                    },
+                    {
+                        'code': 'AN', 'title': 'Annual leave', 'paid_by': 1,
+                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
+                    },
+                ]
+            temp_leave_type = []
+            for item in default_list:
+                temp_leave_type.append(
+                    LeaveType(
+                        company=config.company,
+                        leave_config=config,
+                        code=item['code'],
+                        title=item['title'],
+                        paid_by=item['paid_by'],
+                        balance_control=item['balance_control'],
+                        is_lt_system=item['is_lt_system'],
+                        is_lt_edit=item['is_lt_edit'],
+                    )
+                )
+            LeaveType.objects.bulk_create(temp_leave_type)
+
+    def purchase_request_config(self):
+        PurchaseRequestConfig.objects.create(
+            employee_reference=[],
+            company=self.company_obj,
+            tenant=self.company_obj.tenant,
+            code='',
+        )
+
     def call_new(self):
         self.company_config()
         self.delivery_config()
@@ -683,6 +763,8 @@ class ConfigDefaultData:
         self.task_config()
         self.process_function_config()
         self.process_config()
+        self.leave_config()
+        self.purchase_request_config()
         return True
 
 
