@@ -127,6 +127,13 @@ class TenantDiagram(APIView):
     def _return_children(cls, data):
         return {'children': data if isinstance(data, list) else []}
 
+    @classmethod
+    def _parse_employee__title(cls, employee_obj):
+        role_title_arr = [x.title for x in employee_obj.role.all()]
+        if len(role_title_arr) > 0:
+            return ", ".join(role_title_arr)
+        return '**'
+
     def get_employee(self, pk_id, action):  # employee: type = 3
         try:
             employee_obj = Employee.objects.select_related('group').get_current(
@@ -139,16 +146,19 @@ class TenantDiagram(APIView):
         if employee_obj and hasattr(employee_obj, 'id') and getattr(employee_obj, 'group_id', None):
             # make sure employee is objects and has group_id
             if action == '0':  # parent
+                manager_title = '**'
+                if employee_obj.group and employee_obj.group.first_manager and employee_obj.group.first_manager_id:
+                    manager_title = employee_obj.group.first_manager.get_full_name()
                 return {
                     'id': employee_obj.group_id,
-                    'title': '**',
+                    'title': manager_title,
                     'name': employee_obj.group.title,
                     'relationship': self._get_relationship_group(group_obj=employee_obj.group),
                     'typeData': 2,
                 }
             if action == '2':  # sibling
                 arr = []
-                employee_objs = Employee.objects.filter_current(
+                employee_objs = Employee.objects.prefetch_related('role').filter_current(
                     fill__tenant=True, fill__company=True, group_id=employee_obj.group_id
                 ).exclude(id=employee_obj.id)
                 has_sibling = employee_objs.count() >= 1
@@ -156,7 +166,7 @@ class TenantDiagram(APIView):
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': self._parse_employee__title(obj),
                             'name': obj.get_full_name(),
                             'avatar': obj.avatar if obj.avatar else None,
                             'relationship': self._get_relationship_employee(
@@ -171,7 +181,7 @@ class TenantDiagram(APIView):
                 manager_title = '**'
                 if group_obj and group_obj.first_manager and group_obj.first_manager_id:
                     manager_title = group_obj.first_manager.get_full_name()
-                children_objs = Employee.objects.filter_current(
+                children_objs = Employee.objects.prefetch_related('role').filter_current(
                     fill__tenant=True, fill__company=True, group_id=group_obj.id
                 ).exclude(id=employee_obj.id)
                 children_has_sibling = children_objs.count() > 0
@@ -184,7 +194,7 @@ class TenantDiagram(APIView):
                     'children': [
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': self._parse_employee__title(obj),
                             'name': obj.get_full_name(),
                             'avatar': obj.avatar if obj.avatar else None,
                             'relationship': self._get_relationship_employee(
@@ -196,7 +206,7 @@ class TenantDiagram(APIView):
                 }
         raise exceptions.NotFound()
 
-    def get_group(self, pk_id, action):  # group: type = 2
+    def get_group(self, pk_id, action):  # group: type = 2 # pylint: disable=R0912
         try:
             group_obj = Group.objects.select_related('company').get_current(
                 pk=pk_id,
@@ -212,9 +222,12 @@ class TenantDiagram(APIView):
 
             if action == '0':  # parent
                 if group_obj.parent_n:
+                    manager_title = '**'
+                    if group_obj.parent_n and group_obj.parent_n.first_manager and group_obj.parent_n.first_manager_id:
+                        manager_title = group_obj.parent_n.first_manager.get_full_name()
                     return {
                         'id': group_obj.parent_n.id,
-                        'title': '**',
+                        'title': manager_title,
                         'name': group_obj.parent_n.title,
                         'relationship': self._get_relationship_group(
                             group_obj=group_obj.parent_n, has_children=True
@@ -223,7 +236,7 @@ class TenantDiagram(APIView):
                     }
                 return {
                     'id': group_obj.company_id,
-                    'title': '**',
+                    'title': group_obj.company.representative_fullname,
                     'name': group_obj.company.title,
                     'relationship': self._get_relationship_company(
                         company_obj=group_obj.company, has_children=True
@@ -231,7 +244,7 @@ class TenantDiagram(APIView):
                     'typeData': 1,
                 }
             if action == '1':  # children
-                employee_objs = Employee.objects.filter_current(
+                employee_objs = Employee.objects.prefetch_related('role').filter_current(
                     group_id=group_obj.id,
                     fill__tenant=True,
                     fill__company=True
@@ -242,7 +255,7 @@ class TenantDiagram(APIView):
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': self._parse_employee__title(obj),
                             'name': obj.get_full_name(),
                             'avatar': obj.avatar if obj.avatar else None,
                             'relationship': self._get_relationship_employee(employee_obj=obj, has_sibling=has_sibling),
@@ -258,10 +271,13 @@ class TenantDiagram(APIView):
                 has_sibling = group_objs.count() >= 1
                 arr = []
                 for obj in group_objs:
+                    manager_title = '**'
+                    if obj and obj.first_manager and obj.first_manager_id:
+                        manager_title = obj.first_manager.get_full_name()
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': manager_title,
                             'name': obj.title,
                             'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
                             'typeData': 2,
@@ -270,9 +286,12 @@ class TenantDiagram(APIView):
                 return self._return_sibling(data=arr)
             if action == '3':  # families
                 if group_obj.parent_n:
+                    manager_title = '**'
+                    if group_obj.parent_n and group_obj.parent_n.first_manager and group_obj.parent_n.first_manager_id:
+                        manager_title = group_obj.parent_n.first_manager.get_full_name()
                     parent_data = {
                         'id': group_obj.parent_n.id,
-                        'title': '**',
+                        'title': manager_title,
                         'name': group_obj.parent_n.title,
                         'relationship': self._get_relationship_group(
                             group_obj=group_obj.parent_n, has_children=True
@@ -282,7 +301,7 @@ class TenantDiagram(APIView):
                 else:
                     parent_data = {
                         'id': group_obj.company_id,
-                        'title': '**',
+                        'title': group_obj.company.representative_fullname,
                         'name': group_obj.company.title,
                         'relationship': self._get_relationship_company(
                             company_obj=group_obj.company, has_children=True
@@ -300,7 +319,8 @@ class TenantDiagram(APIView):
                     'children': [
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': obj.first_manager.get_full_name()
+                            if obj.first_manager and obj.first_manager_id else '**',
                             'name': obj.get_full_name(),
                             'relationship': self._get_relationship_group(
                                 group_obj=obj, has_sibling=has_sibling,
@@ -322,7 +342,7 @@ class TenantDiagram(APIView):
             if action == '0':  # parent
                 return {
                     'id': company_obj.tenant.id,
-                    'title': '**',
+                    'title': company_obj.tenant.representative_fullname,
                     'name': company_obj.tenant.title,
                     'relationship': self._get_relationship_tenant(
                         tenant_obj=company_obj.tenant, has_children=True
@@ -334,10 +354,13 @@ class TenantDiagram(APIView):
                 has_sibling = group_objs.count() > 1
                 arr = []
                 for obj in group_objs:
+                    manager_title = '**'
+                    if obj and obj.first_manager and obj.first_manager_id:
+                        manager_title = obj.first_manager.get_full_name()
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': manager_title,
                             'name': obj.title,
                             'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
                             'typeData': 2,
@@ -354,7 +377,7 @@ class TenantDiagram(APIView):
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': obj.representative_fullname,
                             'name': obj.title,
                             'relationship': self._get_relationship_company(company_obj=obj, has_sibling=has_siblings),
                             'typeData': 1,
@@ -364,7 +387,7 @@ class TenantDiagram(APIView):
             if action == '3':  # families
                 parent_data = {
                     'id': company_obj.tenant.id,
-                    'title': '**',
+                    'title': company_obj.tenant.representative_fullname,
                     'name': company_obj.tenant.title,
                     'relationship': self._get_relationship_tenant(
                         tenant_obj=company_obj.tenant, has_children=True
@@ -381,7 +404,7 @@ class TenantDiagram(APIView):
                     'children': [
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': obj.representative_fullname,
                             'name': obj.title,
                             'relationship': self._get_relationship_company(
                                 company_obj=obj, has_sibling=has_sibling,
@@ -410,7 +433,7 @@ class TenantDiagram(APIView):
                     arr.append(
                         {
                             'id': obj.id,
-                            'title': '**',
+                            'title': obj.representative_fullname,
                             'name': obj.title,
                             'relationship': self._get_relationship_company(company_obj=obj, has_sibling=has_sibling),
                             'typeData': 1,
@@ -422,10 +445,13 @@ class TenantDiagram(APIView):
     def _first_current_sequent_department(self, employee_obj):
         main_group = employee_obj.group
         if main_group and hasattr(main_group, 'id'):
+            manager_title = '**'
+            if main_group and main_group.first_manager and main_group.first_manager_id:
+                manager_title = main_group.first_manager.get_full_name()
             tree_data = {
                 'id': main_group.id,
                 'name': main_group.title,
-                'title': '**',
+                'title': manager_title,
                 'relationship': self._get_relationship_group(
                     group_obj=main_group, has_children=True,
                 ),
@@ -433,7 +459,7 @@ class TenantDiagram(APIView):
                 'children': [{
                     'id': employee_obj.id,
                     'name': employee_obj.get_full_name(),
-                    'title': '**',
+                    'title': self._parse_employee__title(employee_obj),
                     'avatar': employee_obj.avatar if employee_obj.avatar else None,
                     'relationship': self._get_relationship_employee(
                         employee_obj=employee_obj,
@@ -444,10 +470,13 @@ class TenantDiagram(APIView):
             counter = 20
             group_start = main_group.parent_n
             while group_start is not None or counter > 20:
+                manager_title = '**'
+                if group_start and group_start.first_manager and group_start.first_manager_id:
+                    manager_title = group_start.first_manager.get_full_name()
                 tree_data = {
                     'id': group_start.id,
                     'name': group_start.title,
-                    'title': '**',
+                    'title': manager_title,
                     'relationship': self._get_relationship_group(
                         group_obj=group_start, has_children=True,
                     ),
@@ -459,27 +488,33 @@ class TenantDiagram(APIView):
         return {}
 
     def get_first_current(self):
-        employee_obj = self.request.user.employee_current
-        if employee_obj and hasattr(employee_obj, 'id'):
-            data_tmp = self._first_current_sequent_department(employee_obj=employee_obj)
-            if data_tmp:
-                employee_group_data = [self._first_current_sequent_department(employee_obj=employee_obj)]
-            else:
-                employee_group_data = []
+        employee_id = self.request.user.employee_current_id
+        if employee_id:
+            try:
+                employee_obj = Employee.objects.prefetch_related('role').get_current(
+                    pk=employee_id, fill__tenant=True, fill__company=True
+                )
+                data_tmp = self._first_current_sequent_department(employee_obj=employee_obj)
+                if data_tmp:
+                    employee_group_data = [data_tmp]
+                else:
+                    employee_group_data = []
+            except Employee.DoesNotExist:
+                raise exceptions.NotFound()
         else:
             employee_group_data = []
 
         return {
             'id': self.request.user.tenant_current.id,
             'name': self.request.user.tenant_current.title,
-            'title': '**',
+            'title': self.request.user.tenant_current.representative_fullname,
             'relationship': self._get_relationship_tenant(tenant_obj=self.request.user.tenant_current),
             'typeData': 0,
             'children': [
                 {
                     'id': self.request.user.company_current.id,
                     'name': self.request.user.company_current.title,
-                    'title': '**',
+                    'title': self.request.user.company_current.representative_fullname,
                     'relationship': self._get_relationship_company(company_obj=self.request.user.company_current),
                     'typeData': 1,
                     'children': employee_group_data,
