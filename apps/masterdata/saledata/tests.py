@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 from django.urls import reverse
 from rest_framework import status
 
@@ -2302,13 +2304,42 @@ class WareHouseTestCase(AdvanceTestCase):
         self.client = APIClient()
         self.authenticated()
 
+    def get_city(self):
+        url = reverse("CityList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_district(self, city_id):
+        params = {
+            'city_id': city_id
+        }
+        url = reverse("DistrictList")
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
+        return response
+
+    def get_ward(self):
+        url = reverse("WardList")
+        response = self.client.get(url, format='json')
+        return response
+
     def test_warehouse_create(self):
+        city = [item for item in self.get_city().data['result'] if item['title'] == 'TP Hồ Chí Minh']
+        district = [item for item in self.get_district(city[0]['id']).data['result'] if item['title'] == 'Quận 7']
+        ward = self.get_ward().data['result'][0]['id']
+
         url = reverse("WareHouseList")
         data = {
             'title': 'Kho lưu trữ số 1',
-            'code': 'WareHouse_1',
             'description': 'Lưu trữ linh kiện bán lẻ ở Tân Bình',
             'is_active': True,
+            'address': 'chung cư ABC',
+            'type': 0,
+            'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, TP Hồ Chí Minh',
+            'city': city[0]['id'],
+            'district': district[0]['id'],
+            'ward': ward,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
@@ -2321,7 +2352,8 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district', 'type',
+             'agency'],
             check_sum_second=True,
         )
         return response
@@ -2366,7 +2398,8 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district', 'type',
+             'agency'],
             check_sum_second=True,
         )
         if not data_id:

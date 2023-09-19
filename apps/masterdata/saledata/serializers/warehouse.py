@@ -36,7 +36,6 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
         model = WareHouse
         fields = (
             'title',
-            'code',
             'remarks',
             'is_active',
             'city',
