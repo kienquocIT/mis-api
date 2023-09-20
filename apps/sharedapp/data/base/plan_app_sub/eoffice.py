@@ -1,7 +1,7 @@
 from apps.sharedapp.data.base.settings import ApplicationConfigFrame
 
 __all__ = [
-    'Application_eoffice_data'
+    'Application_eOffice_data'
 ]
 
 LEAVE_APP_CONFIG = {
@@ -12,7 +12,7 @@ LEAVE_APP_CONFIG = {
     "app_label": "eoffice",
     "is_workflow": True,
     "app_depend_on": [
-    #     "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
     #     "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
     #     "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
     #     "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
@@ -87,6 +87,6 @@ LEAVE_APP_CONFIG = {
     },
 }
 
-Application_eoffice_data = {
+Application_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data,
 }

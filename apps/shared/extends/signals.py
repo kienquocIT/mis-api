@@ -738,6 +738,10 @@ class ConfigDefaultData:
                         balance_control=item['balance_control'],
                         is_lt_system=item['is_lt_system'],
                         is_lt_edit=item['is_lt_edit'],
+                        is_check_expiration=item['is_check_expiration'],
+                        data_expired=item['data_expired'],
+                        no_of_paid=item['no_of_paid'],
+                        prev_year=item['prev_year'],
                     )
                 )
             LeaveType.objects.bulk_create(temp_leave_type)

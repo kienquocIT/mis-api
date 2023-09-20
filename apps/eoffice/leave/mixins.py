@@ -10,7 +10,7 @@ class LeaveDestroyMixin(BaseDestroyMixin):
                 self.get_queryset().filter(**kwargs)
             ).first()
             if not instance.is_lt_system and instance.is_lt_edit:
-                state = self.perform_destroy(instance)
+                state = self.perform_destroy(instance, True)
                 if state:
                     return ResponseController.no_content_204()
                 return ResponseController.internal_server_error_500()
