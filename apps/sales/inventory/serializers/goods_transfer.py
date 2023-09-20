@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import Product, ProductWareHouse, WareHouse, UnitOfMeasure
+from apps.masterdata.saledata.models import  ProductWareHouse, WareHouse, UnitOfMeasure
 from apps.sales.inventory.models import GoodsTransfer
 
 __all__ = ['GoodsTransferListSerializer', 'GoodsTransferCreateSerializer', 'GoodsTransferDetailSerializer',

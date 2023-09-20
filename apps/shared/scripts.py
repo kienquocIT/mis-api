@@ -27,7 +27,8 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
+from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
+    OpportunitySaleTeamMember, OpportunityMemberPermitData
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
@@ -694,15 +695,17 @@ def update_opportunity_contact_role_datas():
         list_data = []
         for data in opp.opportunity_contact_role_datas:
             obj_contact = Contact.objects.get(id=data['contact']['id'])
-            list_data.append({
-                'type_customer': data['type_customer'],
-                'role': data['role'],
-                'job_title': data['job_title'],
-                'contact': {
-                    'id': str(obj_contact.id),
-                    'fullname': obj_contact.fullname,
+            list_data.append(
+                {
+                    'type_customer': data['type_customer'],
+                    'role': data['role'],
+                    'job_title': data['job_title'],
+                    'contact': {
+                        'id': str(obj_contact.id),
+                        'fullname': obj_contact.fullname,
+                    }
                 }
-            })
+            )
         opp.opportunity_contact_role_datas = list_data
         opp.save()
 
@@ -753,3 +756,56 @@ def make_sure_function_purchase_request_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).purchase_request_config()
     print('Make sure function purchase_request_config is done!')
+
+
+def update_sale_person_opportunity():
+    opps = Opportunity.objects.filter(sale_person=None)
+    for opp in opps:
+        opp.sale_person_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_inherit_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_created_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.save(update_fields=['sale_person_id', 'employee_inherit_id', 'employee_created_id'])
+    print('Update Done!')
+
+
+def update_sale_team_datas_backup_for_opp():
+    opportunities = Opportunity.objects.all().select_related('employee_inherit')
+    for opp in opportunities:
+        sale_team_data = []
+        is_owner_in_opp = False
+        opp_members = OpportunitySaleTeamMember.objects.filter(opportunity=opp).select_related('member')
+        for item in opp_members:
+            if item.member == opp.employee_inherit:
+                is_owner_in_opp = True
+                break
+
+        for item in opp_members:
+            sale_team_data.append(
+                {
+                    'member': {
+                        'id': str(item.member_id),
+                        'email': item.member.email,
+                        'name': item.member.get_full_name(),
+                    }
+                }
+            )
+
+        if not is_owner_in_opp:
+            sale_team_data.insert(
+                0, {'member': {
+                    'id': str(opp.employee_inherit_id),
+                    'email': opp.employee_inherit.email,
+                    'name': opp.employee_inherit.get_full_name(),
+                }}
+            )
+        opp.opportunity_sale_team_datas = sale_team_data
+        opp.save(update_fields=['opportunity_sale_team_datas'])
+    print('Update Done !')
+
+
+def update_permit_for_member_in_opp():
+    sale_team = OpportunitySaleTeamMember.objects.filter(permit_app__exact={})
+    for item in sale_team:
+        item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
+        item.save(update_fields=['permit_app'])
+    print('Update Done !')
