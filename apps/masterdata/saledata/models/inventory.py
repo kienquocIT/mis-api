@@ -55,7 +55,7 @@ class WareHouse(MasterDataAbstractModel):
         related_name='warehouse_agency'
     )
 
-    type = models.SmallIntegerField(
+    warehouse_type = models.SmallIntegerField(
         choices=WAREHOUSE_TYPE,
         default=0,
     )

@@ -44,7 +44,7 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'address',
             'agency',
             'full_address',
-            'type',
+            'warehouse_type',
         )
 
     @classmethod
@@ -70,12 +70,13 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'remarks',
+            'address',
             'is_active',
             'full_address',
             'city',
             'ward',
             'district',
-            'type',
+            'warehouse_type',
             'agency',
         )
 
@@ -102,7 +103,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
         if obj.district:
             return {
                 'id': obj.district_id,
-                'name': obj.district.title,
+                'title': obj.district.title,
             }
         return {}
 
@@ -111,7 +112,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
         if obj.ward:
             return {
                 'id': obj.ward_id,
-                'name': obj.ward.title,
+                'title': obj.ward.title,
             }
         return {}
 
@@ -120,7 +121,7 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100, required=False)
     remarks = serializers.CharField(required=False)
     is_active = serializers.BooleanField(required=False)
-    agency = serializers.UUIDField(required=False)
+    agency = serializers.UUIDField(required=False, allow_null=True)
     city = serializers.UUIDField(required=False)
     district = serializers.UUIDField(required=False)
     ward = serializers.UUIDField(required=False)
@@ -139,7 +140,7 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'address',
             'agency',
             'full_address',
-            'type',
+            'warehouse_type',
         )
 
     @classmethod
@@ -238,9 +239,15 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
 
 
 class ProductWareHouseListSerializer(serializers.ModelSerializer):
+    agency = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductWareHouse
         fields = '__all__'
+
+    @classmethod
+    def get_agency(cls, obj):
+        return obj.warehouse.agency_id
 
 
 class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):
