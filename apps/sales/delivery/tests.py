@@ -316,7 +316,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # system
                 'workflow_runtime_id',
+                'is_active',
             ],
             check_sum_second=True,
         )
