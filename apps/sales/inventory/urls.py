@@ -1,7 +1,7 @@
 from django.urls import path
 
-from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail
-from apps.sales.inventory.views.goods_receipt import GoodsReceiptList, GoodsReceiptDetail
+# from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail
+from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail
 from apps.sales.inventory.views.inventory_adjustment import InventoryAdjustmentList, InventoryAdjustmentDetail
 
 urlpatterns = [
@@ -14,7 +14,7 @@ urlpatterns = [
 ]
 
 # good transfer
-urlpatterns += [
-    path('good-transfer/list', GoodsTransferList.as_view(), name='GoodsTransferList'),
-    path('good-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferList'),
-]
+# urlpatterns += [
+#     path('good-transfer/list', GoodsTransferList.as_view(), name='GoodsTransferList'),
+#     path('good-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferList'),
+# ]
