@@ -515,18 +515,16 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
 class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
     tax = serializers.SerializerMethodField()
     plan_after_tax = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrderExpense
         fields = (
             'id',
             'expense_title',
-            'expense_id',
+            'expense_item',
             'tax',
             'plan_after_tax',
-            'product_title',
-            'product_id',
-            'is_product'
         )
 
     @classmethod
@@ -538,6 +536,12 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_after_tax(cls, obj):
         return obj.expense_subtotal_price + obj.expense_tax_amount
+
+    @classmethod
+    def get_expense_item(cls, obj):
+        if obj.expense_item:
+            return {'id': obj.expense_item_id, 'code': obj.expense_item.code, 'title': obj.expense_item.title}
+        return {}
 
 
 class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):

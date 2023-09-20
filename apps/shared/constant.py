@@ -215,3 +215,17 @@ LEAVE_YEARS_SENIORITY = [
     {'from_rage': 25, 'to_rage': 29, 'added': 5},
     {'from_rage': 30, 'to_rage': 34, 'added': 6},
 ]
+
+# Warehouse type
+WAREHOUSE_TYPE = (
+    (0, 'None'),
+    (1, _('Drop Ship')),
+    (2, _('Bin Location')),
+    (3, _('Agency / Partner Location')),
+)
+
+# Goods transfer
+GOODS_TRANSFER_TYPE = (
+    (0, _('Goods transfer')),
+    (1, _('Send/return consigned goods')),
+)
