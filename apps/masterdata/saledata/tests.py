@@ -2335,7 +2335,7 @@ class WareHouseTestCase(AdvanceTestCase):
             'description': 'Lưu trữ linh kiện bán lẻ ở Tân Bình',
             'is_active': True,
             'address': 'chung cư ABC',
-            'type': 0,
+            'warehouse_type': 0,
             'full_address': 'chung cư ABC, Phường Phú Mỹ, Quận 7, TP Hồ Chí Minh',
             'city': city[0]['id'],
             'district': district[0]['id'],
@@ -2352,8 +2352,8 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district', 'type',
-             'agency'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
+             'warehouse_type', 'agency', 'address'],
             check_sum_second=True,
         )
         return response
@@ -2398,8 +2398,8 @@ class WareHouseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district', 'type',
-             'agency'],
+            ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
+             'warehouse_type', 'agency', 'address'],
             check_sum_second=True,
         )
         if not data_id:
