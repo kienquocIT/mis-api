@@ -155,8 +155,15 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
                     'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
                 }
             )
-        self.update_opportunity_sale_team_data_backup(instance)
-        instance.delete()
+        if instance.member == instance.opportunity.employee_inherit:
+            raise serializers.ValidationError(
+                {
+                    'member': OpportunityMsg.NOT_DELETE_SALE_PERSON
+                }
+            )
+        else:
+            self.update_opportunity_sale_team_data_backup(instance)
+            instance.delete()
         return instance
 
 
