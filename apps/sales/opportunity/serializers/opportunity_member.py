@@ -148,22 +148,24 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
         return True
 
     def update(self, instance, validated_data):
-
+        # check task not completed
         if not self.check_task_not_completed(instance):
             raise serializers.ValidationError(
                 {
                     'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
                 }
             )
+
+        # check delete sale person
         if instance.member == instance.opportunity.employee_inherit:
             raise serializers.ValidationError(
                 {
                     'member': OpportunityMsg.NOT_DELETE_SALE_PERSON
                 }
             )
-        else:
-            self.update_opportunity_sale_team_data_backup(instance)
-            instance.delete()
+
+        self.update_opportunity_sale_team_data_backup(instance)
+        instance.delete()
         return instance
 
 
