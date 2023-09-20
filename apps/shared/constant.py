@@ -223,3 +223,9 @@ WAREHOUSE_TYPE = (
     (2, _('Bin Location')),
     (3, _('Agency / Partner Location')),
 )
+
+# Goods transfer
+GOODS_TRANSFER_TYPE = (
+    (0, _('Goods transfer')),
+    (1, _('Send/return consigned goods')),
+)
