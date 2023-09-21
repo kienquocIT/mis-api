@@ -156,7 +156,7 @@ class TenantDiagram(APIView):
         return 0
 
     @classmethod
-    def get_level_offset__employee(cls, employee_obj, from_group, max_level):
+    def get_level_offset__employee(cls, from_group, max_level):
         if from_group and hasattr(from_group, 'id'):
             offset_minus = max_level - from_group.group_level.level
             if offset_minus > 0:
@@ -192,7 +192,7 @@ class TenantDiagram(APIView):
 
         set_current_deny_other = kwargs.get('set_current_deny_other', False)
         if set_current_deny_other is True:
-            data['is_current'] = True if company_obj.id == self.request.user.company_current_id else False
+            data['is_current'] = company_obj.id == self.request.user.company_current_id
             data['relationship'] = data['relationship'] \
                 if company_obj.id == self.request.user.company_current_id else '100'
 
@@ -238,7 +238,7 @@ class TenantDiagram(APIView):
             ),
             'typeData': 3,
             'levelOffset': self.get_level_offset__employee(
-                employee_obj=employee_obj, from_group=from_group, max_level=max_level,
+                from_group=from_group, max_level=max_level,
             ),
         }
 
@@ -345,7 +345,7 @@ class TenantDiagram(APIView):
                     parent_n_id=group_obj.id,
                     fill__tenant=True, fill__company=True
                 )
-                child_group_sibling = True if child_group_objs.count() > 1 else False
+                child_group_sibling = child_group_objs.count() > 1
                 result += [
                     self._parse__group(
                         group_obj=obj, has_sibling=child_group_sibling, from_group=group_obj, is_call_children=True,
@@ -357,7 +357,7 @@ class TenantDiagram(APIView):
                 child_employee_objs = Employee.objects.filter_current(
                     group_id=group_obj.id, fill__tenant=True, fill__company=True
                 )
-                child_employee_sibling = True if child_employee_objs.count() > 1 else False
+                child_employee_sibling = child_employee_objs.count() > 1
                 result += [
                     self._parse__employee(
                         employee_obj=obj, has_sibling=child_employee_sibling, from_group=group_obj, max_level=max_level
@@ -374,7 +374,7 @@ class TenantDiagram(APIView):
                 children_objs = Group.objects.filter_current(
                     **filter_group, fill__tenant=True, fill__company=True
                 ).exclude(id=group_obj.id)
-                has_sibling = True if children_objs.count() > 0 else False
+                has_sibling = children_objs.count() > 0
 
                 return self._return_sibling(
                     data=[
@@ -423,7 +423,7 @@ class TenantDiagram(APIView):
                 child_objs = Employee.objects.filter_current(
                     group=employee_obj.group, fill__tenant=True, fill__company=True
                 )
-                has_sibling = True if child_objs.count() > 1 else False
+                has_sibling = child_objs.count() > 1
                 max_level = self.get_max_level()
                 return self._return_sibling(
                     data=[
@@ -437,7 +437,7 @@ class TenantDiagram(APIView):
                 child_objs = Employee.objects.filter_current(
                     group=employee_obj.group, fill__tenant=True, fill__company=True
                 )
-                has_sibling = True if child_objs.count() > 1 else False
+                has_sibling = child_objs.count() > 1
                 return {
                     **self._parse__group(group_obj=employee_obj.group),
                     'children': [
@@ -582,7 +582,7 @@ class TenantDiagram(APIView):
             parent_n_id=group_id,
             fill__tenant=True, fill__company=True
         )
-        child_group_sibling = True if child_group_objs.count() > 1 else False
+        child_group_sibling = child_group_objs.count() > 1
         result += [
             self._parse__group(
                 group_obj=obj, has_sibling=child_group_sibling,
@@ -594,7 +594,7 @@ class TenantDiagram(APIView):
             group_id=group_id,
             fill__tenant=True, fill__company=True,
         )
-        child_employee_sibling = True if child_employee_objs.count() > 1 else False
+        child_employee_sibling = child_employee_objs.count() > 1
         result += [
             self._parse__employee(
                 employee_obj=obj, has_sibling=child_employee_sibling,
@@ -605,7 +605,7 @@ class TenantDiagram(APIView):
 
     def get_all_group_not_parent(self):
         group_objs = Group.objects.filter_current(parent_n__isnull=True, fill__tenant=True, fill__company=True)
-        has_sibling = True if group_objs.count() > 1 else False
+        has_sibling = group_objs.count() > 1
         return [
             self._parse__group(
                 group_obj=obj, has_sibling=has_sibling
@@ -630,11 +630,11 @@ class TenantDiagram(APIView):
                     ]
                 }
             return {}
-        elif all_option == '1':
+        if all_option == '1':
             # get all group of current company
             # return self.get_all_summary_group()
             return self.get_all_group_not_parent()
-        elif all_option == '2':
+        if all_option == '2':
             # get employee of group
             if group_id and TypeCheck.check_uuid(group_id):
                 return self.get_all_children_of_group(group_id=group_id)
@@ -645,7 +645,7 @@ class TenantDiagram(APIView):
     # // GET ALL
     ######################################
 
-    def parse_params(self, params_dict: dict):
+    def parse_params(self, params_dict: dict):  # pylint: disable=R0911
         if self.request.user.tenant_current_id:
             # all structure of company current + label of tenant (not get another company)
             _get_all_of_company = params_dict.get('get_all', '0') in [1, '1']
