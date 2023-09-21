@@ -326,7 +326,7 @@ class TenantDiagram(APIView):
 
         raise exceptions.NotFound()
 
-    def get_on_demand__group(self, pk_id, action):
+    def get_on_demand__group(self, pk_id, action):  # pylint: disable=R0914
         try:
             group_obj = Group.objects.select_related('company').get_current(
                 pk=pk_id, is_delete=False,
@@ -370,8 +370,24 @@ class TenantDiagram(APIView):
 
                 return self._return_children(data=result)
             if action == '2':  # sibling
+                result = []
+
+                # group children
                 if group_obj.parent_n_id:
                     filter_group = {'parent_n_id': group_obj.parent_n_id}
+
+                    # employee children
+                    employee_objs = Employee.objects.filter_current(
+                        group=group_obj.parent_n, is_delete=False,
+                        fill__tenant=True, fill__company=True,
+                    )
+                    employee_has_sibling = True if employee_objs.count() > 1 else None
+                    result += [
+                        self._parse__employee(
+                            employee_obj=obj, has_sibling=employee_has_sibling,
+                            from_group=group_obj.parent_n, max_level=self.get_max_level(),
+                        ) for obj in employee_objs
+                    ]
                 else:
                     filter_group = {'parent_n_id__isnull': True}
 
@@ -380,14 +396,13 @@ class TenantDiagram(APIView):
                     fill__tenant=True, fill__company=True,
                 ).exclude(id=group_obj.id)
                 has_sibling = children_objs.count() > 0
+                result += [
+                    self._parse__group(
+                        group_obj=obj, has_sibling=has_sibling, from_group=group_obj,
+                    ) for obj in children_objs
+                ]
 
-                return self._return_sibling(
-                    data=[
-                        self._parse__group(
-                            group_obj=obj, has_sibling=has_sibling, from_group=group_obj,
-                        ) for obj in children_objs
-                    ]
-                )
+                return self._return_sibling(data=result)
 
             if action == '3':  # families
                 if group_obj.parent_n_id:
