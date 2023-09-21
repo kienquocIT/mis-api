@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 from uuid import uuid4
 from django.urls import reverse
 from rest_framework import status
@@ -152,6 +153,26 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response, data_uom_gr
+
+    def get_city(self):
+        url = reverse("CityList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_district(self, city_id):
+        params = {
+            'city_id': city_id
+        }
+        url = reverse("DistrictList")
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
+        return response
+
+    def get_ward(self):
+        url = reverse("WardList")
+        response = self.client.get(url, format='json')
+        return response
 
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")

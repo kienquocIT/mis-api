@@ -1,6 +1,6 @@
 from .plan_app_sub.base import Application_base_data as _Application_base_data
 from .plan_app_sub.crm import Application_crm_data as _Application_crm_data
-# from .plan_app_sub.eoffice import Application_eoffice_data as _Application_eoffice_data
+from .plan_app_sub.eoffice import Application_eOffice_data as _Application_eOffice_data
 
 __all__ = [
     "SubscriptionPlan_data",
@@ -37,7 +37,7 @@ SubscriptionPlan_data = {
 Application_data = {
     **_Application_base_data,
     **_Application_crm_data,
-    # **Application_eoffice_data,
+    **_Application_eOffice_data,
 }
 
 _PlanApplication_base_data = {
@@ -188,8 +188,8 @@ _PlanApplication_sale_data = {
     },
 }
 
-_PlanApplication_eoffice_data = {
-    "9dc9aeec-37d0-4a69-abe8-ae609ae23f17": {
+_PlanApplication_eOffice_data = {
+    "baff033a-c416-47e1-89af-b6653534f06e": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "baff033a-c416-47e1-89af-b6653534f06e",  # Leave
     }
@@ -199,7 +199,7 @@ PlanApplication_data = {
     **_PlanApplication_base_data,
     **_PlanApplication_hrm_data,
     **_PlanApplication_sale_data,
-    # **_PlanApplication_eoffice_data,
+    **_PlanApplication_eOffice_data,
 }
 
 
