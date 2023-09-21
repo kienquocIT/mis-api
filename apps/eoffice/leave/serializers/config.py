@@ -39,7 +39,8 @@ class LeaveConfigDetailSerializer(serializers.ModelSerializer):
         return leave_type
 
     @classmethod
-    def get_year_senior(cls):  # noqa
+    def get_year_senior(cls, obj):  # noqa
+        print(obj)
         return LEAVE_YEARS_SENIORITY
 
     class Meta:
