@@ -46,6 +46,11 @@ class Company(CoreAbstractModel):
         null=True,
         max_length=25
     )
+    language = models.CharField(
+        verbose_name='language',
+        default='vi',
+        max_length=25
+    )
 
     # media
     media_company_id = models.UUIDField(null=True)
