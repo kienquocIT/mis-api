@@ -3,9 +3,10 @@ from copy import deepcopy
 from rest_framework import generics, exceptions
 from rest_framework.views import APIView
 from drf_yasg.utils import swagger_auto_schema
+from django.db.models import Max
 
 from apps.core.company.models import Company
-from apps.core.hr.models import Group, Employee
+from apps.core.hr.models import Group, Employee, GroupLevel
 from apps.core.base.models import Application, PlanApplication
 from apps.core.base.serializers import ApplicationListSerializer
 from apps.core.tenant.models import TenantPlan, Tenant
@@ -58,6 +59,7 @@ class TenantApps(APIView):
 
 class TenantDiagram(APIView):
     relationship_default = '000'  # no parent, no sibling, no children
+    default_group_filter = {'company_id': ''}
 
     """
         type:
@@ -77,7 +79,8 @@ class TenantDiagram(APIView):
         data = str(deepcopy(cls.relationship_default))
         data = '1' + data[1:]  # auto parent is group
         if has_sibling is True or Employee.objects.filter_current(
-                fill__tenant=True, fill__company=True, group_id=employee_obj.group_id
+                group_id=employee_obj.group_id, is_active=True, is_delete=False,
+                fill__tenant=True, fill__company=True,
         ).exclude(id=employee_obj.id).exists():
             data = data[0:1] + '1' + data[2:]
         return data
@@ -87,13 +90,17 @@ class TenantDiagram(APIView):
         data = str(deepcopy(cls.relationship_default))
         data = '1' + data[1:]  # auto parent is company
         if has_sibling is True or Group.objects.filter_current(
-                fill__tenant=True, fill__company=True, parent_n=group_obj.parent_n
+                parent_n=group_obj.parent_n, is_delete=False,
+                fill__tenant=True, fill__company=True,
         ).exclude(id=group_obj.id).exists():
             data = data[0:1] + '1' + data[2:]
         if has_children is True or Employee.objects.filter_current(
+                group_id=group_obj.id, is_active=True, is_delete=False,
                 fill__tenant=True, fill__company=True,
-                group_id=group_obj.id,
-        ).exists():
+        ).exists() or Group.objects.filter_current(
+            parent_n=group_obj, is_delete=False,
+            fill__tenant=True, fill__company=True,
+        ):
             data = data[0:2] + '1'
         return data
 
@@ -106,7 +113,7 @@ class TenantDiagram(APIView):
         ).exists():
             data = data[0:1] + '1' + data[2:]
         if has_children is True or Group.objects.filter_current(
-                company_id=company_obj.id,
+                company_id=company_obj.id, is_delete=False,
                 fill__tenant=True, fill__company=True
         ).exists():
             data = data[0:2] + '1'
@@ -134,297 +141,122 @@ class TenantDiagram(APIView):
             return ", ".join(role_title_arr)
         return '**'
 
-    def get_employee(self, pk_id, action):  # employee: type = 3
-        try:
-            employee_obj = Employee.objects.select_related('group').get_current(
-                pk=pk_id,
-                fill__tenant=True, fill__company=True
-            )
-        except Employee.DoesNotExist:
-            raise exceptions.NotFound()
+    @classmethod
+    def get_max_level(cls):
+        level_num = GroupLevel.objects.filter_current(
+            fill__tenant=True, fill__company=True
+        ).aggregate(Max('level'))['level__max']
+        if isinstance(level_num, int):
+            return level_num
+        return 0
 
-        if employee_obj and hasattr(employee_obj, 'id') and getattr(employee_obj, 'group_id', None):
-            # make sure employee is objects and has group_id
-            if action == '0':  # parent
-                manager_title = '**'
-                if employee_obj.group and employee_obj.group.first_manager and employee_obj.group.first_manager_id:
-                    manager_title = employee_obj.group.first_manager.get_full_name()
-                return {
-                    'id': employee_obj.group_id,
-                    'title': manager_title,
-                    'name': employee_obj.group.title,
-                    'relationship': self._get_relationship_group(group_obj=employee_obj.group),
-                    'typeData': 2,
-                    'group_level': employee_obj.group.group_level.level,
-                }
-            if action == '2':  # sibling
-                arr = []
-                employee_objs = Employee.objects.prefetch_related('role').filter_current(
-                    fill__tenant=True, fill__company=True, group_id=employee_obj.group_id
-                ).exclude(id=employee_obj.id)
-                has_sibling = employee_objs.count() >= 1
-                for obj in employee_objs:
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': self._parse_employee__title(obj),
-                            'name': obj.get_full_name(),
-                            'avatar': obj.avatar if obj.avatar else None,
-                            'relationship': self._get_relationship_employee(
-                                employee_obj=employee_obj, has_sibling=has_sibling
-                            ),
-                            'typeData': 3,
-                        }
-                    )
-                return self._return_sibling(data=arr)
-            if action == '3':  # families
-                group_obj = employee_obj.group
-                manager_title = '**'
-                if group_obj and group_obj.first_manager and group_obj.first_manager_id:
-                    manager_title = group_obj.first_manager.get_full_name()
-                children_objs = Employee.objects.prefetch_related('role').filter_current(
-                    fill__tenant=True, fill__company=True, group_id=group_obj.id
-                ).exclude(id=employee_obj.id)
-                children_has_sibling = children_objs.count() > 0
-                return {
-                    'id': employee_obj.group.id,
-                    'name': employee_obj.group.title,
-                    'title': manager_title,
-                    'relationship': self._get_relationship_group(group_obj=group_obj, has_children=True),
-                    'typeData': 2,
-                    'group_level': employee_obj.group.group_level.level,
-                    'children': [
-                        {
-                            'id': obj.id,
-                            'title': self._parse_employee__title(obj),
-                            'name': obj.get_full_name(),
-                            'avatar': obj.avatar if obj.avatar else None,
-                            'relationship': self._get_relationship_employee(
-                                employee_obj=employee_obj, has_sibling=children_has_sibling
-                            ),
-                            'typeData': 3,
-                        } for obj in children_objs
-                    ]
-                }
-        raise exceptions.NotFound()
+    @classmethod
+    def get_level_offset__group(cls, group_obj, from_group, is_call_children=False):
+        if from_group and hasattr(from_group, 'id'):
+            offset_minus = group_obj.group_level.level - from_group.group_level.level
+            if offset_minus > 0:
+                if is_call_children is True:
+                    return offset_minus - 1
+                return offset_minus
+        return 0
 
-    def get_group(self, pk_id, action):  # group: type = 2 # pylint: disable=R0912
-        try:
-            group_obj = Group.objects.select_related('company').get_current(
-                pk=pk_id,
-                fill__tenant=True, fill__company=True
-            )
-        except Group.DoesNotExist:
-            raise exceptions.NotFound()
+    @classmethod
+    def get_level_offset__employee(cls, from_group, max_level):
+        if from_group and hasattr(from_group, 'id'):
+            offset_minus = max_level - from_group.group_level.level
+            if offset_minus > 0:
+                return offset_minus
+        elif max_level:
+            return max_level
+        return 0
 
-        if group_obj and hasattr(group_obj, 'id') and getattr(group_obj, 'company_id', None):
-            filter_get_child = {'parent_n__isnull': True}
-            if group_obj.parent_n:
-                filter_get_child = {'parent_n': group_obj.parent_n}
+    def _parse__tenant(self, tenant_obj, **kwargs):
+        return {
+            'id': tenant_obj.id,
+            'name': tenant_obj.title,
+            'title': tenant_obj.representative_fullname,
+            'relationship': self._get_relationship_tenant(tenant_obj=tenant_obj),
+            'typeData': 0,
+            'levelOffset': 0,
+        }
 
-            if action == '0':  # parent
-                if group_obj.parent_n:
-                    manager_title = '**'
-                    if group_obj.parent_n and group_obj.parent_n.first_manager and group_obj.parent_n.first_manager_id:
-                        manager_title = group_obj.parent_n.first_manager.get_full_name()
-                    return {
-                        'id': group_obj.parent_n.id,
-                        'title': manager_title,
-                        'name': group_obj.parent_n.title,
-                        'relationship': self._get_relationship_group(
-                            group_obj=group_obj.parent_n, has_children=True
-                        ),
-                        'typeData': 2,
-                        'group_level': group_obj.parent_n.group_level.level,
-                    }
-                return {
-                    'id': group_obj.company_id,
-                    'title': group_obj.company.representative_fullname,
-                    'name': group_obj.company.title,
-                    'relationship': self._get_relationship_company(
-                        company_obj=group_obj.company, has_children=True
-                    ),
-                    'typeData': 1,
-                }
-            if action == '1':  # children
-                employee_objs = Employee.objects.prefetch_related('role').filter_current(
-                    group_id=group_obj.id,
-                    fill__tenant=True,
-                    fill__company=True
-                )
-                has_sibling = employee_objs.count() > 1
-                arr = []
-                for obj in employee_objs:
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': self._parse_employee__title(obj),
-                            'name': obj.get_full_name(),
-                            'avatar': obj.avatar if obj.avatar else None,
-                            'relationship': self._get_relationship_employee(employee_obj=obj, has_sibling=has_sibling),
-                            'typeData': 3,
-                        }
-                    )
-                return self._return_children(data=arr)
-            if action == '2':  # sibling
-                group_objs = Group.objects.select_related('group_level').filter_current(
-                    **filter_get_child,
-                    fill__tenant=True, fill__company=True
-                ).exclude(id=group_obj.id)
-                has_sibling = group_objs.count() >= 1
-                arr = []
-                for obj in group_objs:
-                    manager_title = '**'
-                    if obj and obj.first_manager and obj.first_manager_id:
-                        manager_title = obj.first_manager.get_full_name()
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': manager_title,
-                            'name': obj.title,
-                            'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
-                            'typeData': 2,
-                            'group_level': obj.group_level.level,
-                        }
-                    )
-                return self._return_sibling(data=arr)
-            if action == '3':  # families
-                if group_obj.parent_n:
-                    manager_title = '**'
-                    if group_obj.parent_n and group_obj.parent_n.first_manager and group_obj.parent_n.first_manager_id:
-                        manager_title = group_obj.parent_n.first_manager.get_full_name()
-                    parent_data = {
-                        'id': group_obj.parent_n.id,
-                        'title': manager_title,
-                        'name': group_obj.parent_n.title,
-                        'relationship': self._get_relationship_group(
-                            group_obj=group_obj.parent_n, has_children=True
-                        ),
-                        'typeData': 2,
-                        'group_level': group_obj.parent_n.group_level.level,
-                    }
-                else:
-                    parent_data = {
-                        'id': group_obj.company_id,
-                        'title': group_obj.company.representative_fullname,
-                        'name': group_obj.company.title,
-                        'relationship': self._get_relationship_company(
-                            company_obj=group_obj.company, has_children=True
-                        ),
-                        'typeData': 1,
-                    }
+    def _parse__company(self, company_obj, **kwargs):
+        has_children = kwargs.get('has_children', None)
+        has_sibling = kwargs.get('has_sibling', None)
 
-                children_objs = Group.objects.select_related('group_level').filter_current(
-                    **filter_get_child,
-                    fill__tenant=True, fill__company=True,
-                )
-                has_sibling = children_objs.count() > 0
-                return {
-                    **parent_data,
-                    'children': [
-                        {
-                            'id': obj.id,
-                            'title': obj.first_manager.get_full_name()
-                            if obj.first_manager and obj.first_manager_id else '**',
-                            'name': obj.get_full_name(),
-                            'relationship': self._get_relationship_group(
-                                group_obj=obj, has_sibling=has_sibling,
-                            ),
-                            'typeData': 2,
-                            'group_level': obj.group_level.level,
-                        } for obj in children_objs
-                    ]
-                }
+        data = {
+            'id': company_obj.id,
+            'title': company_obj.representative_fullname,
+            'name': company_obj.title,
+            'relationship': self._get_relationship_company(
+                company_obj=company_obj, has_sibling=has_sibling, has_children=has_children
+            ),
+            'typeData': 1,
+            'levelOffset': 0,
+        }
 
-        raise exceptions.NotFound()
+        set_current_deny_other = kwargs.get('set_current_deny_other', False)
+        if set_current_deny_other is True:
+            data['is_current'] = company_obj.id == self.request.user.company_current_id
+            data['relationship'] = data['relationship'] \
+                if company_obj.id == self.request.user.company_current_id else '000'
 
-    def get_company(self, pk_id, action):
-        try:
-            company_obj = Company.objects.get_current(pk=pk_id, fill__tenant=True)
-        except Company.DoesNotExist:
-            raise exceptions.NotFound()
+        return data
 
-        if company_obj and hasattr(company_obj, 'id'):
-            if action == '0':  # parent
-                return {
-                    'id': company_obj.tenant.id,
-                    'title': company_obj.tenant.representative_fullname,
-                    'name': company_obj.tenant.title,
-                    'relationship': self._get_relationship_tenant(
-                        tenant_obj=company_obj.tenant, has_children=True
-                    ),
-                    'typeData': 0,
-                }
-            if action == '1':  # children
-                group_objs = Group.objects.select_related('group_level').filter_current(
-                    parent_n__isnull=True, fill__tenant=True, fill__company=True
-                )
-                has_sibling = group_objs.count() > 1
-                arr = []
-                for obj in group_objs:
-                    manager_title = '**'
-                    if obj and obj.first_manager and obj.first_manager_id:
-                        manager_title = obj.first_manager.get_full_name()
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': manager_title,
-                            'name': obj.title,
-                            'relationship': self._get_relationship_group(group_obj=obj, has_sibling=has_sibling),
-                            'typeData': 2,
-                            'group_level': obj.group_level.level,
-                        }
-                    )
-                return self._return_children(data=arr)
-            if action == '2':  # siblings
-                company_objs = Company.objects.filter_current(tenant=company_obj.tenant, fill__tenant=True).exclude(
-                    id=company_obj.id
-                )
-                has_siblings = company_objs.count() > 0
-                arr = []
-                for obj in company_objs:
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': obj.representative_fullname,
-                            'name': obj.title,
-                            'relationship': self._get_relationship_company(company_obj=obj, has_sibling=has_siblings),
-                            'typeData': 1,
-                        }
-                    )
-                return self._return_sibling(data=arr)
-            if action == '3':  # families
-                parent_data = {
-                    'id': company_obj.tenant.id,
-                    'title': company_obj.tenant.representative_fullname,
-                    'name': company_obj.tenant.title,
-                    'relationship': self._get_relationship_tenant(
-                        tenant_obj=company_obj.tenant, has_children=True
-                    ),
-                    'typeData': 0,
-                }
-                children_objs = Company.objects.filter_current(
-                    tenant=company_obj.tenant,
-                    fill__tenant=True
-                ).exclude(id=company_obj.id)
-                has_sibling = children_objs.count() > 0
-                return {
-                    **parent_data,
-                    'children': [
-                        {
-                            'id': obj.id,
-                            'title': obj.representative_fullname,
-                            'name': obj.title,
-                            'relationship': self._get_relationship_company(
-                                company_obj=obj, has_sibling=has_sibling,
-                            ),
-                            'typeData': 1,
-                        } for obj in children_objs
-                    ]
-                }
-        raise exceptions.NotFound()
+    def _parse__group(self, group_obj, **kwargs):
+        has_children = kwargs.get('has_children', None)
+        has_sibling = kwargs.get('has_sibling', None)
+        from_group = kwargs.get('from_group', None)
+        is_call_children = kwargs.get('is_call_children', False)
 
-    def get_tenant(self, pk_id, action):
+        manager_title = '**'
+        if group_obj and group_obj.first_manager and group_obj.first_manager_id:
+            manager_title = group_obj.first_manager.get_full_name()
+        group_level = group_obj.group_level.level if group_obj.group_level else 1
+
+        return {
+            'id': group_obj.id,
+            'title': manager_title,
+            'name': group_obj.title,
+            'relationship': self._get_relationship_group(
+                group_obj=group_obj, has_children=has_children, has_sibling=has_sibling
+            ),
+            'group_level': group_level,
+            'typeData': 2,
+            'levelOffset': self.get_level_offset__group(
+                group_obj=group_obj, from_group=from_group, is_call_children=is_call_children
+            ),
+        }
+
+    def _parse__employee(self, employee_obj, **kwargs):
+        has_sibling = kwargs.get('has_sibling', None)
+        from_group = kwargs.get('from_group', None)
+        max_level = kwargs.get('max_level', None)
+
+        return {
+            'id': employee_obj.id,
+            'title': self._parse_employee__title(employee_obj),
+            'name': employee_obj.get_full_name(),
+            'avatar': employee_obj.avatar if employee_obj.avatar else None,
+            'relationship': self._get_relationship_employee(
+                employee_obj=employee_obj, has_sibling=has_sibling
+            ),
+            'typeData': 3,
+            'levelOffset': self.get_level_offset__employee(
+                from_group=from_group, max_level=max_level,
+            ),
+        }
+
+    ######################################
+    # GET ON DEMAND
+    # Action:
+    #   - Parent
+    #   - Sibling
+    #   - Children
+    #   - Families
+    ######################################
+
+    def get_on_demand__tenant(self, pk_id, action):
         try:
             if pk_id == self.request.user.tenant_current_id:
                 tenant_obj = Tenant.objects.get_current(id=pk_id)
@@ -437,61 +269,239 @@ class TenantDiagram(APIView):
             if action == '1':  # children
                 company_objs = Company.objects.filter_current(tenant=tenant_obj, fill__tenant=True)
                 has_sibling = company_objs.count() > 1
-                arr = []
-                for obj in company_objs:
-                    arr.append(
-                        {
-                            'id': obj.id,
-                            'title': obj.representative_fullname,
-                            'name': obj.title,
-                            'relationship': self._get_relationship_company(company_obj=obj, has_sibling=has_sibling),
-                            'typeData': 1,
-                        }
-                    )
-                return self._return_children(data=arr)
+                return self._return_children(
+                    data=[
+                        self._parse__company(
+                            company_obj=obj, has_sibling=has_sibling, set_current_deny_other=True
+                        ) for obj in company_objs
+                    ]
+                )
         raise exceptions.NotFound()
+
+    def get_on_demand__company(self, pk_id, action):
+        try:
+            if pk_id == str(self.request.user.company_current_id):
+                company_obj = Company.objects.get_current(pk=pk_id, fill__tenant=True)
+            else:
+                raise exceptions.NotFound()
+        except Company.DoesNotExist:
+            raise exceptions.NotFound()
+
+        if company_obj and hasattr(company_obj, 'id'):
+            if action == '0':  # parent
+                return self._parse__tenant(company_obj.tenant)
+            if action == '1':  # children
+                group_objs = Group.objects.select_related('group_level').filter_current(
+                    parent_n__isnull=True, is_delete=False,
+                    fill__tenant=True, fill__company=True
+                )
+                has_sibling = group_objs.count() > 1
+                return self._return_children(
+                    data=[
+                        self._parse__group(group_obj=obj, has_sibling=has_sibling) for obj in group_objs
+                    ]
+                )
+            if action == '2':  # siblings
+                company_objs = Company.objects.filter_current(tenant=company_obj.tenant, fill__tenant=True).exclude(
+                    id=company_obj.id
+                )
+                has_siblings = company_objs.count() > 0
+                return self._return_sibling(
+                    data=[
+                        self._parse__company(
+                            company_obj=obj, has_sibling=has_siblings, set_current_deny_other=True
+                        ) for obj in company_objs
+                    ]
+                )
+            if action == '3':  # families
+                children_objs = Company.objects.filter_current(tenant=company_obj.tenant, fill__tenant=True).exclude(
+                    id=company_obj.id
+                )
+                has_sibling = children_objs.count() > 0
+                return {
+                    **self._parse__tenant(tenant_obj=company_obj.tenant),
+                    'children': [
+                        self._parse__company(
+                            company_obj=obj, has_sibling=has_sibling, set_current_deny_other=True
+                        ) for obj in children_objs
+                    ]
+                }
+
+        raise exceptions.NotFound()
+
+    def get_on_demand__group(self, pk_id, action):  # pylint: disable=R0914
+        try:
+            group_obj = Group.objects.select_related('company').get_current(
+                pk=pk_id, is_delete=False,
+                fill__tenant=True, fill__company=True
+            )
+        except Group.DoesNotExist:
+            raise exceptions.NotFound()
+
+        if group_obj and hasattr(group_obj, 'id'):
+            if action == '0':  # parent
+                if group_obj.parent_n_id:
+                    return self._parse__group(group_obj=group_obj.parent_n)
+                return self._parse__company(company_obj=group_obj.company, has_children=True)
+            if action == '1':  # children
+                result = []
+
+                # group children
+                child_group_objs = Group.objects.filter_current(
+                    parent_n_id=group_obj.id, is_delete=False,
+                    fill__tenant=True, fill__company=True
+                ).exclude(id=group_obj.id)
+                child_group_sibling = child_group_objs.count() > 1
+                result += [
+                    self._parse__group(
+                        group_obj=obj, has_sibling=child_group_sibling, from_group=group_obj, is_call_children=True,
+                    ) for obj in child_group_objs
+                ]
+
+                # employee children
+                max_level = self.get_max_level()
+                child_employee_objs = Employee.objects.filter_current(
+                    group_id=group_obj.id, is_active=True, is_delete=False,
+                    fill__tenant=True, fill__company=True
+                )
+                child_employee_sibling = child_employee_objs.count() > 1
+                result += [
+                    self._parse__employee(
+                        employee_obj=obj, has_sibling=child_employee_sibling, from_group=group_obj, max_level=max_level
+                    ) for obj in child_employee_objs
+                ]
+
+                return self._return_children(data=result)
+            if action == '2':  # sibling
+                result = []
+
+                # group children
+                if group_obj.parent_n_id:
+                    filter_group = {'parent_n_id': group_obj.parent_n_id}
+
+                    # employee children
+                    employee_objs = Employee.objects.filter_current(
+                        group=group_obj.parent_n, is_delete=False,
+                        fill__tenant=True, fill__company=True,
+                    )
+                    employee_has_sibling = True if employee_objs.count() > 1 else None
+                    result += [
+                        self._parse__employee(
+                            employee_obj=obj, has_sibling=employee_has_sibling,
+                            from_group=group_obj.parent_n, max_level=self.get_max_level(),
+                        ) for obj in employee_objs
+                    ]
+                else:
+                    filter_group = {'parent_n_id__isnull': True}
+
+                children_objs = Group.objects.filter_current(
+                    **filter_group, is_delete=False,
+                    fill__tenant=True, fill__company=True,
+                ).exclude(id=group_obj.id)
+                has_sibling = children_objs.count() > 0
+                result += [
+                    self._parse__group(
+                        group_obj=obj, has_sibling=has_sibling, from_group=group_obj,
+                    ) for obj in children_objs
+                ]
+
+                return self._return_sibling(data=result)
+
+            if action == '3':  # families
+                if group_obj.parent_n_id:
+                    parent_data = self._parse__group(group_obj=group_obj.parent_n)
+                else:
+                    parent_data = self._parse__company(company_obj=group_obj.company, has_children=True)
+
+                children_objs = Group.objects.filter_current(
+                    is_delete=False,
+                    fill__tenant=True, fill__company=True,
+                ).exclude(id=group_obj.id)
+                has_sibling = children_objs.count() > 0
+                return {
+                    **parent_data,
+                    'children': [
+                        self._parse__group(
+                            group_obj=obj, has_sibling=has_sibling, from_group=group_obj
+                        ) for obj in children_objs
+                    ]
+                }
+
+        raise exceptions.NotFound()
+
+    def get_on_demand__employee(self, pk_id, action):
+        try:
+            employee_obj = Employee.objects.select_related('group').get_current(
+                pk=pk_id, is_active=True, is_delete=False,
+                fill__tenant=True, fill__company=True
+            )
+        except Employee.DoesNotExist:
+            raise exceptions.NotFound()
+
+        if employee_obj and hasattr(employee_obj, 'id') and getattr(employee_obj, 'group_id', None):
+            if action == '0':  # parent
+                return self._parse__group(group_obj=employee_obj.group)
+            if action == '1':  # children
+                ...
+            if action == '2':  # sibling
+                child_objs = Employee.objects.filter_current(
+                    group=employee_obj.group, is_active=True, is_delete=False,
+                    fill__tenant=True, fill__company=True
+                ).exclude(id=employee_obj.id)
+                has_sibling = child_objs.count() > 1
+                max_level = self.get_max_level()
+                return self._return_sibling(
+                    data=[
+                        self._parse__employee(
+                            employee_obj=obj, has_sibling=has_sibling,
+                            from_group=employee_obj.group, max_level=max_level,
+                        ) for obj in child_objs
+                    ]
+                )
+            if action == '3':  # families
+                child_objs = Employee.objects.filter_current(
+                    group=employee_obj.group, is_active=True, is_delete=False,
+                    fill__tenant=True, fill__company=True
+                ).exclude(id=employee_obj.id)
+                has_sibling = child_objs.count() > 1
+                return {
+                    **self._parse__group(group_obj=employee_obj.group),
+                    'children': [
+                        self._parse__employee(employee_obj=obj, has_sibling=has_sibling) for obj in child_objs
+                    ]
+                }
+
+        raise exceptions.NotFound()
+
+    ######################################
+    # // GET ON DEMAND
+    ######################################
+
+    ######################################
+    # GET FIRST
+    ######################################
 
     def _first_current_sequent_department(self, employee_obj):
         main_group = employee_obj.group
         if main_group and hasattr(main_group, 'id'):
-            manager_title = '**'
-            if main_group and main_group.first_manager and main_group.first_manager_id:
-                manager_title = main_group.first_manager.get_full_name()
+            max_level = self.get_max_level()
             tree_data = {
-                'id': main_group.id,
-                'name': main_group.title,
-                'title': manager_title,
-                'relationship': self._get_relationship_group(
-                    group_obj=main_group, has_children=True,
-                ),
-                'typeData': 2,
-                'group_level': main_group.group_level.level,
-                'children': [{
-                    'id': employee_obj.id,
-                    'name': employee_obj.get_full_name(),
-                    'title': self._parse_employee__title(employee_obj),
-                    'avatar': employee_obj.avatar if employee_obj.avatar else None,
-                    'relationship': self._get_relationship_employee(
+                **self._parse__group(group_obj=main_group),
+                'children': [
+                    self._parse__employee(
                         employee_obj=employee_obj,
+                        from_group=main_group,
+                        max_level=max_level
                     ),
-                    'typeData': 3,
-                }],
+                ],
             }
             counter = 20
             group_start = main_group.parent_n
             while group_start is not None or counter > 20:
-                manager_title = '**'
-                if group_start and group_start.first_manager and group_start.first_manager_id:
-                    manager_title = group_start.first_manager.get_full_name()
+                tmp_group_data = self._parse__group(group_obj=group_start, has_children=True)
+                print('main_group_data: ', tmp_group_data)
                 tree_data = {
-                    'id': group_start.id,
-                    'name': group_start.title,
-                    'title': manager_title,
-                    'relationship': self._get_relationship_group(
-                        group_obj=group_start, has_children=True,
-                    ),
-                    'typeData': 2,
-                    'group_level': group_start.group_level.level,
+                    **tmp_group_data,
                     'children': [tree_data],
                 }
                 group_start = group_start.parent_n
@@ -503,7 +513,8 @@ class TenantDiagram(APIView):
         if employee_id:
             try:
                 employee_obj = Employee.objects.prefetch_related('role').get_current(
-                    pk=employee_id, fill__tenant=True, fill__company=True
+                    pk=employee_id, is_active=True, is_delete=False,
+                    fill__tenant=True, fill__company=True
                 )
                 data_tmp = self._first_current_sequent_department(employee_obj=employee_obj)
                 if data_tmp:
@@ -515,29 +526,117 @@ class TenantDiagram(APIView):
         else:
             employee_group_data = []
 
+        tenant_data = self._parse__tenant(tenant_obj=self.request.user.tenant_current)
         return {
-            'id': self.request.user.tenant_current.id,
-            'name': self.request.user.tenant_current.title,
-            'title': self.request.user.tenant_current.representative_fullname,
-            'relationship': self._get_relationship_tenant(tenant_obj=self.request.user.tenant_current),
-            'typeData': 0,
+            **tenant_data,
             'children': [
                 {
-                    'id': self.request.user.company_current.id,
-                    'name': self.request.user.company_current.title,
-                    'title': self.request.user.company_current.representative_fullname,
-                    'relationship': self._get_relationship_company(company_obj=self.request.user.company_current),
-                    'typeData': 1,
-                    'children': employee_group_data,
-                },
+                    **self._parse__company(company_obj=self.request.user.company_current, set_current_deny_other=True),
+                    'children': employee_group_data
+                }
             ]
         }
 
-    def parse_params(self, params_dict: dict):
+    ######################################
+    #  // GET FIRST
+    ######################################
+
+    ######################################
+    # GET ALL
+    ######################################
+
+    def get_all_children_of_group(self, group_id):
+        result = []
+
+        # group children
+        child_group_objs = Group.objects.filter_current(
+            parent_n_id=group_id, is_delete=False,
+            fill__tenant=True, fill__company=True
+        )
+        child_group_sibling = child_group_objs.count() > 1
+        result += [
+            self._parse__group(
+                group_obj=obj, has_sibling=child_group_sibling,
+            ) for obj in child_group_objs
+        ]
+
+        # employee children
+        child_employee_objs = Employee.objects.filter_current(
+            group_id=group_id, is_active=True, is_delete=False,
+            fill__tenant=True, fill__company=True,
+        )
+        child_employee_sibling = child_employee_objs.count() > 1
+        result += [
+            self._parse__employee(
+                employee_obj=obj, has_sibling=child_employee_sibling,
+            ) for obj in child_employee_objs
+        ]
+
+        return result
+
+    def get_all_group_not_parent(self):
+        group_objs = Group.objects.filter_current(
+            parent_n__isnull=True, is_delete=False,
+            fill__tenant=True, fill__company=True,
+        )
+        has_sibling = group_objs.count() > 1
+        return [
+            self._parse__group(
+                group_obj=obj, has_sibling=has_sibling
+            ) for obj in group_objs
+        ]
+
+    def get_all_by_current(self, all_option, group_id=None):
+        user_obj = self.request.user
+        if all_option is None or all_option == '0':
+            if user_obj.tenant_current and user_obj.tenant_current_id:
+                # get tenant + all company
+                return {
+                    'group_count': Group.objects.filter_current(
+                        is_delete=False,
+                        fill__tenant=True, fill__company=True
+                    ).count(),
+                    'max_level': self.get_max_level(),
+
+                    **self._parse__tenant(tenant_obj=user_obj.tenant_current),
+                    'children': [
+                        {
+                            **self._parse__company(company_obj=company_obj, set_current_deny_other=True),
+                            'children': [],
+                        } for company_obj in Company.objects.filter(tenant_id=user_obj.tenant_current_id)
+                    ]
+                }
+            return {}
+        if all_option == '1':
+            # get all group of current company
+            # return self.get_all_summary_group()
+            return self.get_all_group_not_parent()
+        if all_option == '2':
+            # get employee of group
+            if group_id and TypeCheck.check_uuid(group_id):
+                return self.get_all_children_of_group(group_id=group_id)
+            return []
+        return {}
+
+    ######################################
+    # // GET ALL
+    ######################################
+
+    def parse_params(self, params_dict: dict):  # pylint: disable=R0911
         if self.request.user.tenant_current_id:
-            _get_first_current = params_dict.get('first_current', False) in [1, '1']
+            # all structure of company current + label of tenant (not get another company)
+            _get_all_of_company = params_dict.get('get_all', '0') in [1, '1']
+            if _get_all_of_company is True:
+                _get_all_option = params_dict.get('get_all_option', None)
+                group_id = params_dict.get('get_all__group_id', None)
+                return self.get_all_by_current(all_option=_get_all_option, group_id=group_id)
+
+            # structure first level from tenant to employee request (to company when user not linked employee)
+            _get_first_current = params_dict.get('first_current', '0') in [1, '1']
             if _get_first_current is True:
                 return self.get_first_current()
+
+            # utility get parent, children, sibling, families
             _type = params_dict.get('type', None)
             _action = params_dict.get('action', None)
             _id = params_dict.get('id', None)
@@ -548,18 +647,19 @@ class TenantDiagram(APIView):
                     _action in ['0', '1', '2']
             ):
                 if _type == '0':
-                    return self.get_tenant(pk_id=_id, action=_action)
+                    return self.get_on_demand__tenant(pk_id=_id, action=_action)
                 if _type == '1':
-                    return self.get_company(pk_id=_id, action=_action)
+                    return self.get_on_demand__company(pk_id=_id, action=_action)
                 if _type == '2':
-                    return self.get_group(pk_id=_id, action=_action)
+                    return self.get_on_demand__group(pk_id=_id, action=_action)
                 if _type == '3':
-                    return self.get_employee(pk_id=_id, action=_action)
+                    return self.get_on_demand__employee(pk_id=_id, action=_action)
             return {}
         raise exceptions.NotFound()
 
     @swagger_auto_schema(operation_summary='Org Chart Company')
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        self.default_group_filter = {'company_id': request.user.company_current_id}
         result = self.parse_params(params_dict=request.query_params.dict())
         return ResponseController.success_200(data=result, key_data='result')

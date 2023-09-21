@@ -328,7 +328,7 @@ msgstr "Số lượng lấy hàng phải nhỏ hơn hoặc bằng số lượng 
 
 #
 msgid "Can not update when status is Done!"
-msgstr "Không thể lưu khi phiếu đã hoàn tất"
+msgstr "Không thể lưu khi phiếu đã hoàn tất!"
 
 #
 msgid "Done quantity not equal remain quantity!"
@@ -377,3 +377,11 @@ msgstr "Ứng dụng không tồn tại hoặc hết hạn"
 #
 msgid "Approved"
 msgstr "Đã Phê Duyệt"
+
+#
+msgid "Please setup Leader of Picking/Delivery in config page before create request"
+msgstr "Vui lòng chọn quản lý cho chức năng Lấy hàng/Giao hàng trong trang cấu hình trước khi tạo yêu cầu"
+
+#
+msgid "Estimated Delivery date is required!"
+msgstr "Ngày giao hàng dự kiến là bắt buộc!"
