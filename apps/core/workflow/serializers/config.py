@@ -146,12 +146,7 @@ class WorkflowDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_node(cls, obj):
-        return NodeDetailSerializer(
-            Node.objects.filter(
-                workflow=obj
-            ),
-            many=True
-        ).data
+        return NodeDetailSerializer(obj.node_workflow.all(), many=True).data
 
     @classmethod
     def get_association(cls, obj):
@@ -458,7 +453,7 @@ class CommonCreateUpdate:
     ):
         collab_in_forms = CollaborationInForm.objects.create(
             node=node_create,
-            app_property_id=collab_in_form.get('property', {}).get('id', None)
+            app_property_id=collab_in_form.get('app_property', {}).get('id', None)
         )
         if collab_in_forms:
             CollaborationInFormZone.objects.bulk_create(

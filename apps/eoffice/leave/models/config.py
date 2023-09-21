@@ -5,9 +5,9 @@ from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 __all__ = ['LeaveConfig', 'LeaveType']
 
 PAID_BY = (
-    (1, 'company'),
-    (2, 'social'),
-    (3, 'unpaid'),
+    (1, 'Company salary'),
+    (2, 'Social insurance'),
+    (3, 'Unpaid'),
 )
 
 
