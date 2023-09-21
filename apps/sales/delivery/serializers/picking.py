@@ -1,7 +1,6 @@
 from django.utils import timezone
 from django.db import transaction
 from rest_framework import serializers
-import django.utils.translation
 
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from apps.sales.delivery.models import (
@@ -15,6 +14,8 @@ __all__ = [
     'OrderPickingSubListSerializer',
     'OrderPickingSubUpdateSerializer',
 ]
+
+from apps.shared.translations.sales import DeliverMsg
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
@@ -157,7 +158,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         if value == 1:
             raise serializers.ValidationError(
                 {
-                    'state': django.utils.translation.gettext_lazy('Can not update when status is Done!')
+                    'state': DeliverMsg.ERROR_STATE
                 }
             )
         return value
@@ -191,9 +192,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 else:
                     raise serializers.ValidationError(
                         {
-                            'products': django.utils.translation.gettext_lazy(
-                                'out of stock'
-                            )
+                            'products': DeliverMsg.ERROR_OUT_STOCK
                         }
                     )
         ProductWareHouse.objects.bulk_update(prod_update, fields=['picked_ready'])
@@ -262,7 +261,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(
-                {'products': django.utils.translation.gettext_lazy('Done quantity not equal remain quantity!')}
+                {'products': DeliverMsg.ERROR_QUANTITY}
             )
         return pickup_data_temp
 
@@ -284,7 +283,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
             delivery_option=instance.delivery_option,
-            config_at_that_point=instance.config_at_that_point
+            config_at_that_point=instance.config_at_that_point,
+            employee_inherit=instance.employee_inherit
         )
 
         picking.sub = new_sub
@@ -332,12 +332,21 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picking.state = 1
             picking.save(update_fields=['state'])
 
+    def validate(self, validate_data):
+        if len(validate_data['products']) > 0 and 'estimated_delivery_date' not in validate_data:
+            raise serializers.ValidationError(
+                {
+                    'detail': DeliverMsg.ERROR_ESTIMATED_DATE
+                }
+            )
+        return validate_data
+
     def update(self, instance, validated_data):
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
 
-        if 'product' in validated_data and len(validated_data['products']) > 0:
+        if 'products' in validated_data and len(validated_data['products']) > 0:
             for item in validated_data['products']:
                 item_key = str(item['product_id']) + "___" + str(item['order'])
                 picked_quantity_total += item['done']
