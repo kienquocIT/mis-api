@@ -97,7 +97,10 @@ class TenantDiagram(APIView):
         if has_children is True or Employee.objects.filter_current(
                 group_id=group_obj.id, is_active=True, is_delete=False,
                 fill__tenant=True, fill__company=True,
-        ).exists():
+        ).exists() or Group.objects.filter_current(
+            parent_n=group_obj, is_delete=False,
+            fill__tenant=True, fill__company=True,
+        ):
             data = data[0:2] + '1'
         return data
 
@@ -196,7 +199,7 @@ class TenantDiagram(APIView):
         if set_current_deny_other is True:
             data['is_current'] = company_obj.id == self.request.user.company_current_id
             data['relationship'] = data['relationship'] \
-                if company_obj.id == self.request.user.company_current_id else '100'
+                if company_obj.id == self.request.user.company_current_id else '000'
 
         return data
 
@@ -495,8 +498,10 @@ class TenantDiagram(APIView):
             counter = 20
             group_start = main_group.parent_n
             while group_start is not None or counter > 20:
+                tmp_group_data = self._parse__group(group_obj=group_start, has_children=True)
+                print('main_group_data: ', tmp_group_data)
                 tree_data = {
-                    **self._parse__group(group_obj=group_start),
+                    **tmp_group_data,
                     'children': [tree_data],
                 }
                 group_start = group_start.parent_n
