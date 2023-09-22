@@ -18,7 +18,7 @@ from apps.core.hr.serializers.employee_serializers import (
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
-    ResponseController, HttpMsg,
+    ResponseController, HttpMsg, TypeCheck,
 )
 from apps.shared.media_cloud_apis import APIUtil, MediaForceAPI
 
@@ -53,8 +53,8 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
-    list_hidden_field = ['tenant_id',]
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = ('tenant_id', 'company_id')
+    create_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
         return super().get_queryset().select_related(
