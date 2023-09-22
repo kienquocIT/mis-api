@@ -46,11 +46,6 @@ class Company(CoreAbstractModel):
         null=True,
         max_length=25
     )
-    language = models.CharField(
-        verbose_name='language',
-        default='vi',
-        max_length=25
-    )
 
     # media
     media_company_id = models.UUIDField(null=True)
@@ -62,6 +57,14 @@ class Company(CoreAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @property
+    def config(self) -> Union[None, models.Model]:
+        try:
+            return CompanyConfig.objects.get(company=self)
+        except CompanyConfig.DoesNotExist:
+            pass
+        return None
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
@@ -307,6 +310,8 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
     @classmethod
     def all_user_of_company(cls, company_id: Union[UUID, str]):
-        return list(set(
-            cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
-        ))
+        return list(
+            set(
+                cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
+            )
+        )

@@ -484,13 +484,14 @@ class ConfigDefaultData:
         self.company_obj = company_obj
 
     def company_config(self):
-        CompanyConfig.objects.get_or_create(
+        obj, _created = CompanyConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={
                 'language': 'vi',
                 'currency': BaseCurrency.objects.get(code='VND'),
             },
         )
+        return obj
 
     def delivery_config(self):
         DeliveryConfig.objects.get_or_create(
@@ -675,14 +676,14 @@ class ConfigDefaultData:
             code='',
         )
 
-    def leave_config(self):
+    def leave_config(self, company_config):
         config, created = LeaveConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={},
         )
         if created:
             #
-            translation.activate(self.company_obj.language if self.company_obj.language else 'vi')
+            translation.activate(company_config.language if company_config else 'vi')
             default_list = [
                     {
                         'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
@@ -691,42 +692,42 @@ class ConfigDefaultData:
 
                     },
                     {
-                        'code': 'SC', 'title': 'Sick yours child-social insurance', 'paid_by': 2,
+                        'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'SY', 'title': 'Sick yourself-social insurance', 'paid_by': 2,
+                        'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'FF', 'title': 'Funeral your family (max 3 days)', 'paid_by': 1,
+                        'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'MC', 'title': 'Marriage your child (max 1 days)', 'paid_by': 1,
+                        'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'MY', 'title': 'Marriage yourself (max 3 days)', 'paid_by': 1,
+                        'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'UP', 'title': 'Unpaid leave', 'paid_by': 3,
+                        'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'ANPY', 'title': 'Annual leave-previous year balance', 'paid_by': 1,
+                        'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
                     },
                     {
-                        'code': 'AN', 'title': 'Annual leave', 'paid_by': 1,
+                        'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
                     },
@@ -760,7 +761,7 @@ class ConfigDefaultData:
         )
 
     def call_new(self):
-        self.company_config()
+        config = self.company_config()
         self.delivery_config()
         self.quotation_config()
         self.sale_order_config()
@@ -772,7 +773,7 @@ class ConfigDefaultData:
         self.task_config()
         self.process_function_config()
         self.process_config()
-        self.leave_config()
+        self.leave_config(config)
         self.purchase_request_config()
         return True
 
