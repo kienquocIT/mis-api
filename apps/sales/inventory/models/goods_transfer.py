@@ -31,9 +31,12 @@ class GoodsTransfer(DataAbstractModel):
                         'id': 'warehouse_id',
                         'title': 'warehouse_title',
                     },
-                    'product': {  # product in warehouse
-                        'id': 'product_id',
-                        'title': 'product_title',
+                    'warehouse_product': {  # product in warehouse
+                        'id': 'id',
+                        'product_data':{
+                            'id': 'product_id',
+                            'title': 'product_title',
+                        }
                     },
                     'uom': {
                         'id': 'uom_id',
