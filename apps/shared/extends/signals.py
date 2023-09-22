@@ -484,13 +484,14 @@ class ConfigDefaultData:
         self.company_obj = company_obj
 
     def company_config(self):
-        return CompanyConfig.objects.get_or_create(
+        obj, _created = CompanyConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={
                 'language': 'vi',
                 'currency': BaseCurrency.objects.get(code='VND'),
             },
         )
+        return obj
 
     def delivery_config(self):
         DeliveryConfig.objects.get_or_create(
