@@ -385,3 +385,39 @@ msgstr "Vui lòng chọn quản lý cho chức năng Lấy hàng/Giao hàng tron
 #
 msgid "Estimated Delivery date is required!"
 msgstr "Ngày giao hàng dự kiến là bắt buộc!"
+
+#
+msgid "Maternity leave-social insurance"
+msgstr "Nghỉ thai sản"
+
+#
+msgid "Sick yours child-social insurance"
+msgstr "Con cái bị bệnh"
+
+#
+msgid "Sick yourself-social insurance"
+msgstr "Bản thân bị bệnh"
+
+#
+msgid "Funeral your family (max 3 days)"
+msgstr "Nghỉ ma chay trong gia đình (nhiều nhất 3 ngày)"
+
+#
+msgid "Marriage your child (max 1 days)"
+msgstr "Nghỉ đám cưới của con cái (nhiều nhất 1 ngày)"
+
+#
+msgid "Marriage yourself (max 3 days)"
+msgstr "Nghỉ đám cưới của tôi (nhiều nhất 3 ngày)"
+
+#
+msgid "Unpaid leave"
+msgstr "Nghỉ không lương"
+
+#
+msgid "Annual leave-previous year balance"
+msgstr "Phép dư năm trước"
+
+#
+msgid "Annual leave"
+msgstr "Nghỉ phép năm"

@@ -84,6 +84,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Expenses use for sale applications
 class ExpenseForSaleList(BaseListMixin):
     queryset = Expense.objects
+    search_fields = ['title']
     serializer_list = ExpenseForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 

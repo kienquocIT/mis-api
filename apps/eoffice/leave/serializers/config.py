@@ -31,7 +31,7 @@ class LeaveConfigDetailSerializer(serializers.ModelSerializer):
             } for item in LeaveType.objects.filter(
                 leave_config=obj,
                 company_id=company_id
-            ).values_list(
+            ).order_by('-date_created').values_list(
                 'id', 'title', 'code', 'paid_by', 'remark', 'balance_control', 'is_lt_system', 'is_lt_edit',
                 'is_check_expiration', 'no_of_paid', 'prev_year'
             )
@@ -39,7 +39,8 @@ class LeaveConfigDetailSerializer(serializers.ModelSerializer):
         return leave_type
 
     @classmethod
-    def get_year_senior(cls):
+    def get_year_senior(cls, obj):  # noqa
+        print(obj)
         return LEAVE_YEARS_SENIORITY
 
     class Meta:
@@ -83,7 +84,7 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
-                  'title', 'code', 'is_lt_system', 'is_lt_edit')
+                  'title', 'code', 'is_lt_system', 'is_lt_edit', 'no_of_paid', 'prev_year')
 
     @classmethod
     def validate_leave_config(cls, value):
@@ -91,15 +92,15 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_ID_CONFIG})
         return value
 
-    @classmethod
-    def validate_code(cls, value):
-        if value and LeaveType.objects.filter_current(code=value, fill__company=True).exists():
+    def validate_code(self, value):
+        if value and LeaveType.objects.exclude(id=str(self.instance.id)).filter_current(
+                code=value, fill__company=True
+        ).exists():
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TYPE_CODE})
         return value
 
-    @classmethod
-    def validate_title(cls, value):
-        if not value:
+    def validate_title(self, value):
+        if not value and self.instance.code != 'AN' or self.instance.code != 'ANPY':
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 

@@ -108,6 +108,7 @@ class OpportunityDetail(
 # Opportunity List use for Sale Apps
 class OpportunityForSaleList(BaseListMixin):
     queryset = Opportunity.objects
+    search_fields = ['title']
     filterset_fields = {
         'employee_inherit': ['exact'],
         'quotation': ['exact', 'isnull'],

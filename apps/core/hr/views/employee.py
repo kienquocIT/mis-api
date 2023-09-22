@@ -53,8 +53,8 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = ('tenant_id', 'company_id')
+    create_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -139,16 +139,16 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     queryset = Employee.objects
+    filterset_fields = {
+        'company_id': ['exact'],
+    }
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
     list_hidden_field = ['tenant_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'group',
-            'user'
-        )
+        return super().get_queryset().select_related('group').prefetch_related('role')
 
     @swagger_auto_schema(
         operation_summary="Employee Company list",
