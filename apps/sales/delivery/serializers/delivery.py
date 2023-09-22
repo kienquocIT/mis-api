@@ -586,4 +586,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
+            delivery = instance.order_delivery
+            delivery.employee_inherit = instance.employee_inherit
+            delivery.save()
         return instance

@@ -371,6 +371,9 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
+            picking = instance.order_picking
+            picking.employee_inherit = instance.employee_inherit
+            picking.save()
         return instance
 
     class Meta:
