@@ -691,42 +691,42 @@ class ConfigDefaultData:
 
                     },
                     {
-                        'code': 'SC', 'title': 'Sick yours child-social insurance', 'paid_by': 2,
+                        'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'SY', 'title': 'Sick yourself-social insurance', 'paid_by': 2,
+                        'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'FF', 'title': 'Funeral your family (max 3 days)', 'paid_by': 1,
+                        'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'MC', 'title': 'Marriage your child (max 1 days)', 'paid_by': 1,
+                        'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'MY', 'title': 'Marriage yourself (max 3 days)', 'paid_by': 1,
+                        'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'UP', 'title': 'Unpaid leave', 'paid_by': 3,
+                        'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
-                        'code': 'ANPY', 'title': 'Annual leave-previous year balance', 'paid_by': 1,
+                        'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
                     },
                     {
-                        'code': 'AN', 'title': 'Annual leave', 'paid_by': 1,
+                        'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
                     },
