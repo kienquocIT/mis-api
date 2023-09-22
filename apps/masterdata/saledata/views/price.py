@@ -72,6 +72,7 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class TaxList(BaseListMixin, BaseCreateMixin):
     queryset = Tax.objects
+    search_fields = ['title']
     serializer_list = TaxListSerializer
     serializer_create = TaxCreateSerializer
     serializer_detail = TaxDetailSerializer

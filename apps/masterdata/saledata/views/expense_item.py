@@ -11,6 +11,7 @@ __all__ = ['ExpenseItemList', 'ExpenseItemDetail']
 
 class ExpenseItemList(BaseListMixin, BaseCreateMixin):
     queryset = ExpenseItem.objects
+    search_fields = ['title']
     serializer_list = ExpenseItemListSerializer
     serializer_create = ExpenseItemCreateSerializer
     serializer_detail = ExpenseItemListSerializer
