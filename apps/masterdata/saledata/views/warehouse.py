@@ -100,6 +100,9 @@ class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    filterset_fields = {
+        "warehouse_id": ["exact"],
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related('product', 'warehouse')

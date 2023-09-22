@@ -162,6 +162,18 @@ class ProductWareHouse(MasterDataAbstractModel):
             pass
         return 0
 
+    @classmethod
+    def pop_from_transfer(cls, instance_id, amount):
+        try:
+            obj = cls.objects.get(
+                id=instance_id
+            )
+        except cls.DoesNotExist:
+            raise ValueError('Product not found in warehouse with UOM')
+        obj.stock_amount -= amount
+        obj.save(update_fields=['stock_amount'])
+        return True
+
     def before_save(self, **kwargs):
         if kwargs.get('force_insert', False):
             if self.product:

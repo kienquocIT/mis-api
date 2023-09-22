@@ -26,6 +26,7 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'code',
             'remarks',
             'is_active',
+            'agency'
         )
 
 
