@@ -248,6 +248,7 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasure.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
