@@ -215,6 +215,13 @@ class GoodsReceiptWarehouse(SimpleAbstractModel):
         related_name="goods_receipt_warehouse_request_product",
         null=True
     )
+    goods_receipt_product = models.ForeignKey(
+        GoodsReceiptProduct,
+        on_delete=models.CASCADE,
+        verbose_name="goods receipt product",
+        related_name="goods_receipt_warehouse_gr_product",
+        null=True
+    )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',
         on_delete=models.CASCADE,

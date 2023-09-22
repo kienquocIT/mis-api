@@ -161,6 +161,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField(required=False)
     tax = serializers.UUIDField(required=False)
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
+    warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceiptProduct
@@ -178,6 +179,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
+            'warehouse_data'
         )
 
     @classmethod
