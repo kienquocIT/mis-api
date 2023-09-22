@@ -123,9 +123,9 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
     remarks = serializers.CharField(required=False)
     is_active = serializers.BooleanField(required=False)
     agency = serializers.UUIDField(required=False, allow_null=True)
-    city = serializers.UUIDField(required=False)
-    district = serializers.UUIDField(required=False)
-    ward = serializers.UUIDField(required=False)
+    # city = serializers.UUIDField(required=False)
+    # district = serializers.UUIDField(required=False)
+    # ward = serializers.UUIDField(required=False)
     address = serializers.CharField(required=False)
     full_address = serializers.CharField(required=False)
 
