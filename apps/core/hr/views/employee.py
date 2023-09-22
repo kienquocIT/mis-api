@@ -18,7 +18,7 @@ from apps.core.hr.serializers.employee_serializers import (
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
-    ResponseController, HttpMsg, TypeCheck,
+    ResponseController, HttpMsg,
 )
 from apps.shared.media_cloud_apis import APIUtil, MediaForceAPI
 
