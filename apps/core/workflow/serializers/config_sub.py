@@ -2,13 +2,14 @@ from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
 from apps.core.hr.models import Employee
-from apps.core.workflow.models import Node, Zone, Association  # pylint: disable-msg=E0611
+from apps.core.workflow.models import Node, Zone, Association, CollaborationInForm, \
+    CollaborationOutForm, CollabInWorkflow  # pylint: disable-msg=E0611
 from apps.shared import HRMsg, BaseMsg
 
 
-# Collaborator
-class CollabInFormSerializer(serializers.Serializer):  # noqa
-    property = serializers.CharField(
+# # COLLAB IN FORM
+class CollabInFormSerializer(serializers.ModelSerializer):  # noqa
+    app_property = serializers.CharField(
         max_length=550,
         required=False
     )
@@ -17,8 +18,16 @@ class CollabInFormSerializer(serializers.Serializer):  # noqa
         required=False
     )
 
+    class Meta:
+        model = CollaborationInForm
+        fields = (
+            'id',
+            'app_property',
+            'zone',
+        )
+
     @classmethod
-    def validate_property(cls, value):
+    def validate_app_property(cls, value):
         try:
             proper = ApplicationProperty.objects.get(id=value)
             return {
@@ -27,10 +36,39 @@ class CollabInFormSerializer(serializers.Serializer):  # noqa
                 'code': proper.code
             }
         except ApplicationProperty.DoesNotExist:
-            raise serializers.ValidationError({'detail': BaseMsg.PROPERTY_NOT_EXIST})
+            raise serializers.ValidationError({'app_property': BaseMsg.PROPERTY_NOT_EXIST})
 
 
-class CollabOutFormSerializer(serializers.Serializer):  # noqa
+class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
+    app_property = serializers.SerializerMethodField()
+    zone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CollaborationInForm
+        fields = (
+            'id',
+            'app_property',
+            'zone',
+        )
+
+    @classmethod
+    def get_app_property(cls, obj):
+        return {
+            'id': obj.app_property_id,
+            'title': obj.app_property.title,
+            'code': obj.app_property.code,
+        } if obj.app_property else {}
+
+    @classmethod
+    def get_zone(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone.all()
+        ]
+
+
+# COLLAB OUT FORM
+class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
     employee_list = serializers.ListField(
         child=serializers.CharField(required=False),
         required=False
@@ -39,6 +77,14 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+
+    class Meta:
+        model = CollaborationOutForm
+        fields = (
+            'id',
+            'employee_list',
+            'zone',
+        )
 
     @classmethod
     def validate_employee_list(cls, value):
@@ -52,10 +98,45 @@ class CollabOutFormSerializer(serializers.Serializer):  # noqa
                 {'id': str(employee.id), 'full_name': employee.get_full_name(2)}
                 for employee in employee_list
             ]
-        raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
+        raise serializers.ValidationError({'employee_list': HRMsg.EMPLOYEES_NOT_EXIST})
 
 
-class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
+class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
+    employee_list = serializers.SerializerMethodField()
+    zone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CollaborationOutForm
+        fields = (
+            'id',
+            'employee_list',
+            'zone',
+        )
+
+    @classmethod
+    def get_employee_list(cls, obj):
+        return [
+            {
+                'id': employee.id,
+                'full_name': employee.get_full_name(2),
+                'code': employee.code,
+                'role': [
+                    {'id': role.id, 'title': role.title, 'code': role.code}
+                    for role in employee.role.all()
+                ]
+            } for employee in obj.employees.all()
+        ]
+
+    @classmethod
+    def get_zone(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone.all()
+        ]
+
+
+# COLLAB IN WORKFLOW
+class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
     employee = serializers.CharField(
         required=False
     )
@@ -63,6 +144,14 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+
+    class Meta:
+        model = CollabInWorkflow
+        fields = (
+            'id',
+            'employee',
+            'zone',
+        )
 
     @classmethod
     def validate_employee(cls, value):
@@ -80,7 +169,44 @@ class CollabInWorkflowSerializer(serializers.Serializer):  # noqa
                 ]
             }
         except Employee.DoesNotExist:
-            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
+            raise serializers.ValidationError({'employee': HRMsg.EMPLOYEE_NOT_EXIST})
+
+
+class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
+    employee = serializers.SerializerMethodField()
+    zone = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CollabInWorkflow
+        fields = (
+            'id',
+            'employee',
+            'zone',
+        )
+
+    @classmethod
+    def get_employee(cls, obj):
+        return {
+            'id': obj.employee_id,
+            'full_name': obj.employee.get_full_name(2),
+            'code': obj.employee.code,
+            'group': {
+                'id': obj.employee.group_id,
+                'title': obj.employee.group.title,
+                'code': obj.employee.group.code
+            } if obj.employee.group else {},
+            'role': [
+                {'id': role.id, 'title': role.title, 'code': role.code}
+                for role in obj.employee.role.all()
+            ],
+        } if obj.employee else {}
+
+    @classmethod
+    def get_zone(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone.all()
+        ]
 
 
 # Node
@@ -100,9 +226,9 @@ class NodeListSerializer(serializers.ModelSerializer):
 class NodeDetailSerializer(serializers.ModelSerializer):
     actions = serializers.JSONField()
     zone_initial_node = serializers.JSONField()
-    collab_in_form = serializers.JSONField()
-    collab_out_form = serializers.JSONField()
-    collab_in_workflow = serializers.JSONField()
+    collab_in_form = serializers.SerializerMethodField()
+    collab_out_form = serializers.SerializerMethodField()
+    collab_in_workflow = serializers.SerializerMethodField()
     condition = serializers.JSONField()
 
     class Meta:
@@ -124,6 +250,43 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'coordinates',
             'condition'
         )
+
+    @classmethod
+    def get_collab_in_form(cls, obj):
+        if obj.is_system is False and obj.option_collaborator == 0:
+            return CollabInFormListSerializer(
+                CollaborationInForm.objects.filter(node=obj).select_related(
+                    'app_property',
+                ).prefetch_related(
+                    'zone',
+                ).first()
+            ).data
+        return {}
+
+    @classmethod
+    def get_collab_out_form(cls, obj):
+        if obj.is_system is False and obj.option_collaborator == 1:
+            return CollabOutFormListSerializer(
+                CollaborationOutForm.objects.filter(node=obj).prefetch_related(
+                    'employees',
+                    'zone',
+                ).first()
+            ).data
+        return {}
+
+    @classmethod
+    def get_collab_in_workflow(cls, obj):
+        if obj.is_system is False and obj.option_collaborator == 2:
+            return CollabInWorkflowListSerializer(
+                CollabInWorkflow.objects.filter(node=obj).select_related(
+                    'employee',
+                    'employee__group',
+                ).prefetch_related(
+                    'zone'
+                ),
+                many=True
+            ).data
+        return []
 
 
 class NodeCreateSerializer(serializers.ModelSerializer):
@@ -149,6 +312,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
         model = Node
         fields = (
             'title',
+            'code',
             'remark',
             'actions',
             'option_collaborator',
