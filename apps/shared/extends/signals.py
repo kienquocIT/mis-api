@@ -3,6 +3,8 @@ import logging
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
 from django.dispatch import receiver
+from django.utils import translation
+from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import Files
 from apps.core.log.models import Notifications
@@ -28,6 +30,7 @@ from apps.sales.saleorder.models import (
 )
 from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
+
 
 logger = logging.getLogger(__name__)
 
@@ -678,9 +681,11 @@ class ConfigDefaultData:
             defaults={},
         )
         if created:
+            #
+            translation.activate(self.company_obj.language if self.company_obj.language else 'vi')
             default_list = [
                     {
-                        'code': 'MA', 'title': 'Maternity leave-social insurance', 'paid_by': 2,
+                        'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
 

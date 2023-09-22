@@ -159,6 +159,7 @@ class PurchaseOrderSaleList(
     BaseCreateMixin
 ):
     queryset = PurchaseOrder.objects
+    search_fields = ['title']
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
