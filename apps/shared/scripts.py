@@ -798,13 +798,20 @@ def update_sale_team_datas_backup_for_opp():
                     'name': opp.employee_inherit.get_full_name(),
                 }}
             )
+            OpportunitySaleTeamMember.objects.create(
+                opportunity=opp,
+                member=opp.employee_inherit,
+                permit_view_this_opp=True,
+                permit_add_member=True,
+                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
+            )
         opp.opportunity_sale_team_datas = sale_team_data
         opp.save(update_fields=['opportunity_sale_team_datas'])
     print('Update Done !')
 
 
 def update_permit_for_member_in_opp():
-    sale_team = OpportunitySaleTeamMember.objects.filter(permit_app__exact={})
+    sale_team = OpportunitySaleTeamMember.objects.filter()
     for item in sale_team:
         item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
         item.save(update_fields=['permit_app'])

@@ -173,8 +173,10 @@ class ApplicationPermitSerializer(serializers.Serializer):  # noqa
     app = serializers.UUIDField()
     is_create = serializers.BooleanField()
     is_edit = serializers.BooleanField()
-    is_view_own_activity = serializers.BooleanField()
-    is_view_team_activity = serializers.BooleanField()
+    is_view = serializers.BooleanField()
+    is_all = serializers.BooleanField()
+    is_delete = serializers.BooleanField()
+    belong_to = serializers.IntegerField()
 
     @classmethod
     def validate_app(cls, value):
@@ -214,8 +216,10 @@ class OpportunityMemberPermissionUpdateSerializer(serializers.ModelSerializer):
                 data = {
                     'is_create': item['is_create'],
                     'is_edit': item['is_edit'],
-                    'is_view_own_activity': item['is_view_own_activity'],
-                    'is_view_team_activity': item['is_view_team_activity'],
+                    'is_view': item['is_view'],
+                    'is_delete': item['is_delete'],
+                    'is_all': item['is_all'],
+                    'belong_to': item['belong_to'],
                 }
                 permit_app_data[item['app']] = data
 
