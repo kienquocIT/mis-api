@@ -274,6 +274,7 @@ class AccountsMapEmployeesList(BaseListMixin):
 # Account List use for Sale Apps
 class AccountForSaleList(BaseListMixin):
     queryset = Account.objects
+    search_fields = ['name']
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

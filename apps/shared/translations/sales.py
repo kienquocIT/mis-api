@@ -46,4 +46,8 @@ class PurchasingMsg:
 
 
 class DeliverMsg:
+    ERROR_STATE = _('Can not update when status is Done!')
     ERROR_CONFIG = _('Please setup Leader of Picking/Delivery in config page before create request')
+    ERROR_ESTIMATED_DATE = _('Estimated Delivery date is required!')
+    ERROR_OUT_STOCK = _('out of stock')
+    ERROR_QUANTITY = _('Done quantity not equal remain quantity!')

@@ -295,6 +295,7 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
             # system
             'system_status',
             'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod
