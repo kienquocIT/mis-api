@@ -484,7 +484,7 @@ class ConfigDefaultData:
         self.company_obj = company_obj
 
     def company_config(self):
-        CompanyConfig.objects.get_or_create(
+        return CompanyConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={
                 'language': 'vi',
@@ -675,14 +675,14 @@ class ConfigDefaultData:
             code='',
         )
 
-    def leave_config(self):
+    def leave_config(self, company_config):
         config, created = LeaveConfig.objects.get_or_create(
             company=self.company_obj,
             defaults={},
         )
         if created:
             #
-            translation.activate(self.company_obj.language if self.company_obj.language else 'vi')
+            translation.activate(company_config.language if company_config else 'vi')
             default_list = [
                     {
                         'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
@@ -760,7 +760,7 @@ class ConfigDefaultData:
         )
 
     def call_new(self):
-        self.company_config()
+        config = self.company_config()
         self.delivery_config()
         self.quotation_config()
         self.sale_order_config()
@@ -772,7 +772,7 @@ class ConfigDefaultData:
         self.task_config()
         self.process_function_config()
         self.process_config()
-        self.leave_config()
+        self.leave_config(config)
         self.purchase_request_config()
         return True
 
