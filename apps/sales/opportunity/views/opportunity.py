@@ -213,7 +213,8 @@ class OpportunityMemberList(BaseRetrieveMixin):
         operation_description="Get Opportunity Member List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
