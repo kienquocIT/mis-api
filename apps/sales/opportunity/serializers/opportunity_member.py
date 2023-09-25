@@ -7,7 +7,28 @@ from apps.sales.task.models import OpportunityTask
 from apps.shared.translations.opportunity import OpportunityMsg
 
 __all__ = ['OpportunityAddMemberSerializer', 'OpportunityMemberDetailSerializer', 'OpportunityMemberDeleteSerializer',
-           'OpportunityMemberPermissionUpdateSerializer']
+           'OpportunityMemberPermissionUpdateSerializer', 'OpportunityMemberListSerializer']
+
+
+class OpportunityMemberListSerializer(serializers.ModelSerializer):
+    sale_team = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = ('sale_team',)
+
+    @classmethod
+    def get_sale_team(cls, obj):
+        sale_team = OpportunitySaleTeamMember.objects.filter(opportunity=obj)
+        return [{
+
+            'id': item.id,
+            'member': {
+                'id': item.member_id,
+                'name': item.member.get_full_name(),
+                'email': item.member.email,
+            }
+        } for item in sale_team]
 
 
 class OpportunityMemberSerializer(serializers.Serializer):  # noqa
