@@ -161,6 +161,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField(required=False)
     tax = serializers.UUIDField(required=False)
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
+    warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceiptProduct
@@ -178,6 +179,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
+            'warehouse_data'
         )
 
     @classmethod
@@ -202,6 +204,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
+    warehouse_data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceiptProduct
@@ -220,6 +223,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
+            'warehouse_data',
         )
 
     @classmethod
@@ -269,6 +273,10 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             obj.goods_receipt_request_product_gr_product.all(),
             many=True
         ).data
+
+    @classmethod
+    def get_warehouse_data(cls, obj):
+        return GoodsReceiptWarehouseListSerializer(obj.goods_receipt_warehouse_gr_product.all(), many=True).data
 
 
 # GOODS RECEIPT BEGIN
