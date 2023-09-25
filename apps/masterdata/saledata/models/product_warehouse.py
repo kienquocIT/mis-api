@@ -201,7 +201,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                     'code': str(self.tax.code),
                     'rate': str(self.tax.rate),
                     'category_id': str(self.tax.category),
-                    'type': self.tax.type,
+                    'type': self.tax.tax_type,
                 }
         return True
 

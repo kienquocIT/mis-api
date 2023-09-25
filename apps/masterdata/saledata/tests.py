@@ -234,7 +234,7 @@ class ProductTestCase(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -247,7 +247,7 @@ class ProductTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -946,7 +946,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -959,7 +959,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -973,7 +973,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -995,7 +995,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": "Thuế bán hàng tư nhân",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response1 = self.client.post(url_tax, data1, format='json')
         self.assertResponseList(
@@ -1017,7 +1017,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": "Thuế bán hàng tư nhân VAT-5%",
             "code": 'VAT-5',
             "rate": 10,
-            "type": 0
+            "tax_type": 0
         }
         response2 = self.client.post(url_tax, data2, format='json')
         self.assertResponseList(
@@ -1052,7 +1052,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response3.data['errors'],
-            ['type'],
+            ['tax_type'],
             check_sum_second=True,
         )
         return None
@@ -1067,7 +1067,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": "",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -1090,7 +1090,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": "Thuế bán hàng tư nhân",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response1 = self.client.post(url_tax, data1, format='json')
         self.assertResponseList(
@@ -1113,7 +1113,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "title": "Thuế bán hàng tư nhân VAT-5%",
             "rate": 10,
             "category": "",
-            "type": 0
+            "tax_type": 0
         }
         response2 = self.client.post(url_tax, data2, format='json')
         self.assertResponseList(
@@ -1149,7 +1149,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'code', 'title', 'rate', 'category', 'type'],
+            ['id', 'code', 'title', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -1172,7 +1172,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'code', 'title', 'rate', 'category', 'type'],
+            ['id', 'code', 'title', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         if not data_id:
@@ -1192,7 +1192,7 @@ class TaxAndTaxCategoryTestCase(AdvanceTestCase):
             "code": 'VAT-10',
             "rate": rate_change,
             "category": data_created.data['result']['category']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
