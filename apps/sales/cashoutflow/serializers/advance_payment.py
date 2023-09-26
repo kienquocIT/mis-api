@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
-    PaymentCostItemsDetail, PaymentCostItems,
+    PaymentCostItems,
     ReturnAdvance, ReturnAdvanceCost
 )
 from apps.sales.saleorder.models import SaleOrder
@@ -127,7 +127,9 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
                     'expense_after_tax_price': item.expense_after_tax_price,
-                    'others_payment_total': sum([item.real_value for item in PaymentCostItems.objects.filter(sale_code_mapped=obj.quotation_mapped_id)]),
+                    'others_payment_total': sum(item.real_value for item in PaymentCostItems.objects.filter(
+                        sale_code_mapped=obj.quotation_mapped_id
+                    )),
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
                     'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
@@ -372,7 +374,9 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'returned_total': item.sum_return_value,
                     'to_payment_total': item.sum_converted_value,
                     'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
-                    'others_payment_total': [item.real_value for item in PaymentCostItems.objects.filter(sale_code_mapped=obj.id)],
+                    'others_payment_total': sum(item.real_value for item in PaymentCostItems.objects.filter(
+                        sale_code_mapped=obj.id
+                    )),
                     'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                 }
             )
@@ -398,12 +402,14 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity_mapped(cls, obj):
-        return [{
-            'id': obj.opportunity_mapped_id,
-            'code': obj.opportunity_mapped.code,
-            'title': obj.opportunity_mapped.title,
-            'customer': obj.opportunity_mapped.customer.name,
-        }] if obj.opportunity_mapped else []
+        if obj.opportunity_mapped:
+            return [{
+                'id': obj.opportunity_mapped_id,
+                'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
+                'customer': obj.opportunity_mapped.customer.name,
+            }]
+        return []
 
     @classmethod
     def get_sale_code_relate(cls, obj):

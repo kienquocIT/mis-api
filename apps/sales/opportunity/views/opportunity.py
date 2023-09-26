@@ -218,4 +218,3 @@ class OpportunityMemberList(BaseRetrieveMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
-

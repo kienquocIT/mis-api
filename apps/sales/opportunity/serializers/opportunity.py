@@ -4,7 +4,6 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
-from apps.sales.cashoutflow.models import PaymentCostItems
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
     OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData
