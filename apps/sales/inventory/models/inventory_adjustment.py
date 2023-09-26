@@ -1,5 +1,7 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
+from django.utils import timezone
+
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
 class InventoryAdjustment(DataAbstractModel):
@@ -50,7 +52,7 @@ class InventoryAdjustmentEmployeeInCharge(SimpleAbstractModel):
         permissions = ()
 
 
-class InventoryAdjustmentItem(SimpleAbstractModel):
+class InventoryAdjustmentItem(MasterDataAbstractModel):
     inventory_adjustment_mapped = models.ForeignKey(
         InventoryAdjustment,
         on_delete=models.CASCADE,
@@ -73,6 +75,9 @@ class InventoryAdjustmentItem(SimpleAbstractModel):
     )
     select_for_action = models.BooleanField(default=False)
     action_status = models.BooleanField(default=False)
+    date_modified = models.DateTimeField(
+        default=timezone.now
+    )
 
     class Meta:
         verbose_name = 'Inventory Adjustment Item'
