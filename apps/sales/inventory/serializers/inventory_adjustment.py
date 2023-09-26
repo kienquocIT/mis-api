@@ -170,3 +170,43 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
+
+
+# Inventory adjustment list use for other apps
+class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
+    inventory_adjustment_product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryAdjustment
+        fields = (
+            'id',
+            'code',
+            'title',
+            'inventory_adjustment_product',
+        )
+
+    @classmethod
+    def get_inventory_adjustment_product(cls, obj):
+        return [{
+            'id': ia_product.id,
+            'product': {
+                'id': ia_product.product_mapped_id,
+                'title': ia_product.product_mapped.title,
+                'code': ia_product.product_mapped.code,
+            } if ia_product.product_mapped else {},
+            'uom': {
+                'id': ia_product.uom_mapped_id,
+                'title': ia_product.uom_mapped.title,
+                'code': ia_product.uom_mapped.code,
+            } if ia_product.uom_mapped else {},
+            'warehouse': {
+                'id': ia_product.warehouse_mapped_id,
+                'title': ia_product.warehouse_mapped.title,
+                'code': ia_product.warehouse_mapped.code,
+            } if ia_product.warehouse_mapped else {},
+            'quantity_import': ia_product.book_quantity,
+            'count': ia_product.count,
+            'select_for_action': ia_product.select_for_action,
+            'action_status': ia_product.action_status,
+            'product_unit_price': ia_product.product_mapped.sale_cost if ia_product.product_mapped else 0,
+        } for ia_product in obj.inventory_adjustment_item_mapped.filter(select_for_action=True)]

@@ -1,10 +1,12 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import (
-    InventoryAdjustment
+    InventoryAdjustment, InventoryAdjustmentItem
 )
 from apps.sales.inventory.serializers.inventory_adjustment import (
     InventoryAdjustmentListSerializer, InventoryAdjustmentDetailSerializer,
-    InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer
+    InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer,
+    InventoryAdjustmentOtherListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -81,3 +83,34 @@ class InventoryAdjustmentDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+# Inventory adjustment list use for other apps
+class InventoryAdjustmentOtherList(BaseListMixin):
+    queryset = InventoryAdjustment.objects
+    serializer_list = InventoryAdjustmentOtherListSerializer
+    serializer_detail = InventoryAdjustmentOtherListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            Prefetch(
+                'inventory_adjustment_item_mapped',
+                queryset=InventoryAdjustmentItem.objects.select_related(
+                    'product_mapped',
+                    'uom_mapped',
+                    'warehouse_mapped',
+                ),
+            ),
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Inventory Adjustment Other List",
+        operation_description="Get Inventory Adjustment Other List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='inventoryadjustment', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
