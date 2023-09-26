@@ -479,6 +479,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'customer': obj.opportunity_mapped.customer.name,
                 }
             }
+        return {}
 
     @classmethod
     def get_beneficiary(cls, obj):
