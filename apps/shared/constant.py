@@ -229,3 +229,18 @@ GOODS_TRANSFER_TYPE = (
     (0, _('Goods transfer')),
     (1, _('Send/return consigned goods')),
 )
+
+# Inventory Adjustment Item action type
+
+IA_ITEM_ACTION_TYPE = (
+    (0, _('Equal')),
+    (1, _('Decreasing')),
+    (2, _('Increasing')),
+)
+
+# Goods issue type
+
+GOODS_ISSUE_TYPE = (
+    (0, _('For Inventory Adjustment')),
+    (1, _('Liquidation')),
+)

@@ -1,5 +1,5 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
 class InventoryAdjustment(DataAbstractModel):
@@ -56,11 +56,21 @@ class InventoryAdjustmentItem(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='inventory_adjustment_item_mapped'
     )
+    product_warehouse = models.ForeignKey(
+        'saledata.ProductWareHouse',
+        on_delete=models.CASCADE,
+        default=None,
+    )
     product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     book_quantity = models.IntegerField()
     count = models.IntegerField()
+    action_type = models.SmallIntegerField(
+        choices=IA_ITEM_ACTION_TYPE,
+        verbose_name='check increase, decrease or equal stock amount',
+        default=0,
+    )
     select_for_action = models.BooleanField(default=False)
     action_status = models.BooleanField(default=False)
 

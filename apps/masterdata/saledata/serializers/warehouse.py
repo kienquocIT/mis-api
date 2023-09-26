@@ -268,14 +268,12 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
     @classmethod
     def get_product_list(cls, obj):
         results = []
-        for item in obj.products.all():
+        products = ProductWareHouse.objects.filter(warehouse=obj)
+        for item in products:
             results.append({
                 'id': str(item.id),
-                'title': item.title,
-                'inventory_uom': {
-                    'id': item.inventory_uom_id,
-                    'code': item.inventory_uom.code,
-                    'title': item.inventory_uom.title
-                } if item.inventory_uom else {}
+                'product': item.product_data,
+                'stock_amount': item.stock_amount,
+                'inventory_uom': item.uom_data,
             })
         return results
