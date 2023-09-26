@@ -1,8 +1,10 @@
+import json
+
 from django.db import models
 
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
-__all__ = ['LeaveConfig', 'LeaveType']
+__all__ = ['LeaveConfig', 'LeaveType', 'WorkingCalendarConfig', 'WorkingYearConfig', 'WorkingHolidayConfig']
 
 PAID_BY = (
     (1, 'Company salary'),
@@ -84,3 +86,84 @@ class LeaveType(MasterDataAbstractModel):
         verbose_name_plural = 'Leave Config of Company'
         default_permissions = ()
         permissions = ()
+
+
+class WorkingCalendarConfig(MasterDataAbstractModel):
+    working_days = models.JSONField(
+        default=dict,
+        verbose_name='json working days',
+        help_text=json.dumps(
+            {
+                'mon': {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'tue': {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'wed': {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'thu': {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'fri': {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'sat': {
+                    'work': False,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                'sun': {
+                    'work': False,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                }
+            }
+        )
+    )
+
+    class Meta:
+        verbose_name = 'Leave Holiday of Company'
+        verbose_name_plural = 'Leave Holiday of Company'
+        default_permissions = ()
+        permissions = ()
+
+
+class WorkingYearConfig(SimpleAbstractModel):
+    working_calendar = models.ForeignKey(
+        'leave.WorkingCalendarConfig',
+        on_delete=models.CASCADE,
+        verbose_name="working calendar config",
+        related_name="working_year_working_calendar",
+        null=True
+    )
+    config_year = models.IntegerField(
+        default=1995,
+        verbose_name='number year holiday',
+    )
+
+
+class WorkingHolidayConfig(SimpleAbstractModel):
+    holiday_date_from = models.DateField(verbose_name='holiday from', null=True)
+    holiday_date_to = models.DateField(verbose_name='holiday to', null=True)
+    year = models.ForeignKey(
+        'leave.WorkingYearConfig',
+        on_delete=models.CASCADE,
+        verbose_name="working calendar config",
+        related_name="working_year_working_calendar",
+        null=True
+    )
+    remark = models.CharField(
+        max_length=500, null=False, verbose_name='description'
+    )

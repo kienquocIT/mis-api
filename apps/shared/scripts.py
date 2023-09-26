@@ -748,7 +748,8 @@ def update_employee_inherit_return_advance():
 
 def make_sure_leave_config():
     for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_config()
+        ConfigDefaultData(obj).leave_config(None)
+        ConfigDefaultData(obj).working_calendar_config()
     print('Leave config is done!')
 
 
