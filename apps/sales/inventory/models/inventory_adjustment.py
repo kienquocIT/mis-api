@@ -82,6 +82,6 @@ class InventoryAdjustmentItem(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Inventory Adjustment Item'
         verbose_name_plural = 'Inventory Adjustment Items'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
