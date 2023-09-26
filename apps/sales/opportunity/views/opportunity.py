@@ -201,3 +201,4 @@ class MemberPermissionUpdateSerializer(BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+

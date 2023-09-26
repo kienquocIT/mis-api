@@ -4,6 +4,7 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
+from apps.sales.cashoutflow.models import PaymentCostItems
 from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
     OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData
@@ -56,8 +57,13 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.employee_inherit:
             return {
                 'id': obj.employee_inherit_id,
-                'name': obj.employee_inherit.get_full_name(),
+                'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title,
+                    'code': obj.employee_inherit.group.code,
+                }
             }
         return {}
 
@@ -126,7 +132,25 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
         win_rate = stage.win_rate
 
-        opportunity = Opportunity.objects.create(**validated_data, win_rate=win_rate)
+        sale_team_data = [
+            {
+                'member': {
+                    'id': str(validated_data['employee_inherit'].id),
+                    'full_name': validated_data['employee_inherit'].get_full_name(),
+                    'code': validated_data['employee_inherit'].code,
+                    'group': {
+                        'id': str(validated_data['employee_inherit'].group_id),
+                        'title': validated_data['employee_inherit'].group.title
+                    }
+                }
+            }
+        ]
+
+        opportunity = Opportunity.objects.create(
+            **validated_data,
+            opportunity_sale_team_datas=sale_team_data,
+            win_rate=win_rate
+        )
 
         # create M2M Opportunity and Product Category
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
@@ -339,22 +363,6 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                 )
             )
         OpportunityContactRole.objects.bulk_create(bulk_data)
-        return True
-
-    @classmethod
-    def update_opportunity_sale_team(cls, data, instance):
-        # delete old record
-        OpportunitySaleTeamMember.objects.filter(opportunity=instance).delete()
-        # create new
-        bulk_data = []
-        for item in data:
-            bulk_data.append(
-                OpportunitySaleTeamMember(
-                    opportunity=instance,
-                    member_id=item['member']['id']
-                )
-            )
-        OpportunitySaleTeamMember.objects.bulk_create(bulk_data)
         return True
 
     @classmethod
@@ -837,7 +845,7 @@ class OpportunityForSaleListSerializer(serializers.ModelSerializer):
         if obj.sale_person:
             return {
                 'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
+                'full_name': obj.sale_person.get_full_name(),
                 'code': obj.sale_person.code,
             }
         return {}

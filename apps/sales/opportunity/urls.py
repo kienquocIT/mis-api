@@ -7,7 +7,7 @@ from .views import (
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
     OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList, OpportunityMemberDetail,
-    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer
+    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer,
 )
 
 urlpatterns = [

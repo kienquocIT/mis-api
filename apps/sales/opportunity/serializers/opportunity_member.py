@@ -16,14 +16,12 @@ class OpportunityMemberSerializer(serializers.Serializer):  # noqa
     @classmethod
     def validate_id(cls, value):
         try:  # noqa
-            if value is not None:
-                obj = Employee.objects.get(
-                    id=value
-                )
-                return obj.id
+            emp = Employee.objects.get(
+                id=value
+            )
+            return emp
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee': OpportunityMsg.MEMBER_NOT_EXIST})
-        return None
 
 
 class OpportunityAddMemberSerializer(serializers.ModelSerializer):
@@ -43,7 +41,7 @@ class OpportunityAddMemberSerializer(serializers.ModelSerializer):
         if len(validate_data['members']) > 0:
             member_add = OpportunitySaleTeamMember.objects.filter(
                 opportunity_id=validate_data['opportunity'],
-                member_id=validate_data['employee_current']
+                member=validate_data['employee_current']
             )
             if member_add.exists():
                 if not self.check_perm_add_member(member_add.first()):
@@ -65,12 +63,34 @@ class OpportunityAddMemberSerializer(serializers.ModelSerializer):
         return obj.permit_add_member
 
     def update(self, instance, validated_data):
+        sale_team_data = instance.opportunity_sale_team_datas
+        bulk_data = []
         for member in validated_data['members']:
-            OpportunitySaleTeamMember.objects.create(
-                opportunity=instance,
-                member_id=member['id'],
-                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
+            bulk_data.append(
+                OpportunitySaleTeamMember(
+                    opportunity=instance,
+                    member=member['id'],
+                    permit_app=OpportunityMemberPermitData.PERMIT_DATA,
+                )
             )
+            sale_team_data.append(
+                {
+                    'member': {
+                        'id': str(member['id'].id),
+                        'full_name': member['id'].get_full_name(),
+                        'code': member['id'].code,
+                        'group': {
+                            'id': str(member['id'].group_id),
+                            'title': member['id'].group.title
+                        }
+                    }
+                }
+            )
+
+        instance.opportunity_sale_team_datas = sale_team_data
+        instance.save(update_fields=['opportunity_sale_team_datas'])
+        OpportunitySaleTeamMember.objects.bulk_create(bulk_data)
+
         return instance
 
 
@@ -120,6 +140,17 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
 
         return all(task.task_status.task_kind == 2 for task in tasks)
 
+    @classmethod
+    def update_opportunity_sale_team_data_backup(cls, instance):
+        opportunity = instance.opportunity
+        sale_team_data = []
+        for member in opportunity.opportunity_sale_team_datas:
+            if member['member']['id'] != str(instance.member_id):
+                sale_team_data.append(member)
+        opportunity.opportunity_sale_team_datas = sale_team_data
+        opportunity.save(update_fields=['opportunity_sale_team_datas'])
+        return True
+
     def update(self, instance, validated_data):
 
         if not self.check_task_not_completed(instance):
@@ -128,7 +159,7 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
                     'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
                 }
             )
-
+        self.update_opportunity_sale_team_data_backup(instance)
         instance.delete()
         return instance
 
