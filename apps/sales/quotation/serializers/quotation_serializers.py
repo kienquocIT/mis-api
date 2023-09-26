@@ -120,6 +120,7 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'quotation_indicators_data',
             # system
             'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod

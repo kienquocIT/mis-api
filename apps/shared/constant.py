@@ -208,10 +208,39 @@ GOODS_RECEIPT_TYPE = (
 
 # e-office Leave
 LEAVE_YEARS_SENIORITY = [
-    {'from_rage': 5, 'to_rage': 9, 'added': 1},
-    {'from_rage': 10, 'to_rage': 14, 'added': 2},
-    {'from_rage': 15, 'to_rage': 19, 'added': 3},
-    {'from_rage': 20, 'to_rage': 24, 'added': 4},
-    {'from_rage': 25, 'to_rage': 29, 'added': 5},
-    {'from_rage': 30, 'to_rage': 34, 'added': 6},
+    {'from_range': 5, 'to_range': 9, 'added': 1},
+    {'from_range': 10, 'to_range': 14, 'added': 2},
+    {'from_range': 15, 'to_range': 19, 'added': 3},
+    {'from_range': 20, 'to_range': 24, 'added': 4},
+    {'from_range': 25, 'to_range': 29, 'added': 5},
+    {'from_range': 30, 'to_range': 34, 'added': 6},
 ]
+
+# Warehouse type
+WAREHOUSE_TYPE = (
+    (0, 'None'),
+    (1, _('Drop Ship')),
+    (2, _('Bin Location')),
+    (3, _('Agency / Partner Location')),
+)
+
+# Goods transfer
+GOODS_TRANSFER_TYPE = (
+    (0, _('Goods transfer')),
+    (1, _('Send/return consigned goods')),
+)
+
+# Inventory Adjustment Item action type
+
+IA_ITEM_ACTION_TYPE = (
+    (0, _('Equal')),
+    (1, _('Decreasing')),
+    (2, _('Increasing')),
+)
+
+# Goods issue type
+
+GOODS_ISSUE_TYPE = (
+    (0, _('For Inventory Adjustment')),
+    (1, _('Liquidation')),
+)

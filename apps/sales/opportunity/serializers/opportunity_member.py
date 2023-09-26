@@ -7,7 +7,28 @@ from apps.sales.task.models import OpportunityTask
 from apps.shared.translations.opportunity import OpportunityMsg
 
 __all__ = ['OpportunityAddMemberSerializer', 'OpportunityMemberDetailSerializer', 'OpportunityMemberDeleteSerializer',
-           'OpportunityMemberPermissionUpdateSerializer']
+           'OpportunityMemberPermissionUpdateSerializer', 'OpportunityMemberListSerializer']
+
+
+class OpportunityMemberListSerializer(serializers.ModelSerializer):
+    sale_team = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = ('sale_team',)
+
+    @classmethod
+    def get_sale_team(cls, obj):
+        sale_team = OpportunitySaleTeamMember.objects.filter(opportunity=obj)
+        return [{
+
+            'id': item.id,
+            'member': {
+                'id': item.member_id,
+                'name': item.member.get_full_name(),
+                'email': item.member.email,
+            }
+        } for item in sale_team]
 
 
 class OpportunityMemberSerializer(serializers.Serializer):  # noqa
@@ -152,13 +173,22 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
         return True
 
     def update(self, instance, validated_data):
-
+        # check task not completed
         if not self.check_task_not_completed(instance):
             raise serializers.ValidationError(
                 {
                     'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
                 }
             )
+        self.update_opportunity_sale_team_data_backup(instance)
+        # check delete sale person
+        if instance.member == instance.opportunity.employee_inherit:
+            raise serializers.ValidationError(
+                {
+                    'member': OpportunityMsg.NOT_DELETE_SALE_PERSON
+                }
+            )
+
         self.update_opportunity_sale_team_data_backup(instance)
         instance.delete()
         return instance
@@ -168,8 +198,10 @@ class ApplicationPermitSerializer(serializers.Serializer):  # noqa
     app = serializers.UUIDField()
     is_create = serializers.BooleanField()
     is_edit = serializers.BooleanField()
-    is_view_own_activity = serializers.BooleanField()
-    is_view_team_activity = serializers.BooleanField()
+    is_view = serializers.BooleanField()
+    is_all = serializers.BooleanField()
+    is_delete = serializers.BooleanField()
+    belong_to = serializers.IntegerField()
 
     @classmethod
     def validate_app(cls, value):
@@ -209,8 +241,10 @@ class OpportunityMemberPermissionUpdateSerializer(serializers.ModelSerializer):
                 data = {
                     'is_create': item['is_create'],
                     'is_edit': item['is_edit'],
-                    'is_view_own_activity': item['is_view_own_activity'],
-                    'is_view_team_activity': item['is_view_team_activity'],
+                    'is_view': item['is_view'],
+                    'is_delete': item['is_delete'],
+                    'is_all': item['is_all'],
+                    'belong_to': item['belong_to'],
                 }
                 permit_app_data[item['app']] = data
 

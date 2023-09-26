@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse,
+    WareHouse, ProductWareHouse, Account,
 )
 
 __all__ = [
@@ -14,7 +14,7 @@ __all__ = [
     'WareHouseListSerializerForInventoryAdjustment',
 ]
 
-from apps.shared import TypeCheck
+from apps.shared import TypeCheck, WarehouseMsg
 
 
 class WareHouseListSerializer(serializers.ModelSerializer):
@@ -26,30 +26,132 @@ class WareHouseListSerializer(serializers.ModelSerializer):
             'code',
             'remarks',
             'is_active',
+            'agency'
         )
 
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
+    agency = serializers.UUIDField(required=False)
+
     class Meta:
         model = WareHouse
-        fields = ('title', 'code', 'remarks', 'is_active')
+        fields = (
+            'title',
+            'remarks',
+            'is_active',
+            'city',
+            'district',
+            'ward',
+            'address',
+            'agency',
+            'full_address',
+            'warehouse_type',
+        )
+
+    @classmethod
+    def validate_agency(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return None
 
 
 class WareHouseDetailSerializer(serializers.ModelSerializer):
+    agency = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+    district = serializers.SerializerMethodField()
+    ward = serializers.SerializerMethodField()
+
     class Meta:
         model = WareHouse
-        fields = ('id', 'title', 'code', 'remarks', 'is_active')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'address',
+            'is_active',
+            'full_address',
+            'city',
+            'ward',
+            'district',
+            'warehouse_type',
+            'agency',
+        )
+
+    @classmethod
+    def get_agency(cls, obj):
+        if obj.agency:
+            return {
+                'id': obj.agency_id,
+                'name': obj.agency.name,
+            }
+        return {}
+
+    @classmethod
+    def get_city(cls, obj):
+        if obj.city:
+            return {
+                'id': obj.city_id,
+                'title': obj.city.title,
+            }
+        return {}
+
+    @classmethod
+    def get_district(cls, obj):
+        if obj.district:
+            return {
+                'id': obj.district_id,
+                'title': obj.district.title,
+            }
+        return {}
+
+    @classmethod
+    def get_ward(cls, obj):
+        if obj.ward:
+            return {
+                'id': obj.ward_id,
+                'title': obj.ward.title,
+            }
+        return {}
 
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=100, required=False)
-    code = serializers.CharField(max_length=100, required=False)
     remarks = serializers.CharField(required=False)
     is_active = serializers.BooleanField(required=False)
+    agency = serializers.UUIDField(required=False, allow_null=True)
+    # city = serializers.UUIDField(required=False)
+    # district = serializers.UUIDField(required=False)
+    # ward = serializers.UUIDField(required=False)
+    address = serializers.CharField(required=False)
+    full_address = serializers.CharField(required=False)
 
     class Meta:
         model = WareHouse
-        fields = ('title', 'code', 'remarks', 'is_active')
+        fields = (
+            'title',
+            'remarks',
+            'is_active',
+            'city',
+            'district',
+            'ward',
+            'address',
+            'agency',
+            'full_address',
+            'warehouse_type',
+        )
+
+    @classmethod
+    def validate_agency(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return None
 
 
 class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
@@ -138,9 +240,15 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
 
 
 class ProductWareHouseListSerializer(serializers.ModelSerializer):
+    agency = serializers.SerializerMethodField()
+
     class Meta:
         model = ProductWareHouse
         fields = '__all__'
+
+    @classmethod
+    def get_agency(cls, obj):
+        return obj.warehouse.agency_id
 
 
 class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):
@@ -160,14 +268,12 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
     @classmethod
     def get_product_list(cls, obj):
         results = []
-        for item in obj.products.all():
+        products = ProductWareHouse.objects.filter(warehouse=obj)
+        for item in products:
             results.append({
                 'id': str(item.id),
-                'title': item.title,
-                'inventory_uom': {
-                    'id': item.inventory_uom_id,
-                    'code': item.inventory_uom.code,
-                    'title': item.inventory_uom.title
-                } if item.inventory_uom else {}
+                'product': item.product_data,
+                'stock_amount': item.stock_amount,
+                'inventory_uom': item.uom_data,
             })
         return results

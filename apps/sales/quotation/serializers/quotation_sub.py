@@ -648,7 +648,32 @@ class QuotationProductsListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.promotion_id,
             'title': obj.promotion.title,
-            'code': obj.promotion.code
+            'code': obj.promotion.code,
+            'valid_date_start': obj.promotion.valid_date_start,
+            'valid_date_end': obj.promotion.valid_date_end,
+            'remark': obj.promotion.remark,
+            'currency': {
+                'id': obj.promotion.currency_id,
+                'title': obj.promotion.currency.title,
+                'abbreviation': obj.promotion.currency.abbreviation,
+            } if obj.promotion.currency else {},
+            'customer_type': obj.promotion.customer_type,
+            'customer_by_list': obj.promotion.customer_by_list,
+            'customer_by_condition': obj.promotion.customer_by_condition,
+            'customer_remark': obj.promotion.customer_remark,
+            'is_discount': obj.promotion.is_discount,
+            'is_gift': obj.promotion.is_gift,
+            'discount_method': obj.promotion.discount_method,
+            'gift_method': obj.promotion.gift_method,
+            'sale_order_used': [
+                {
+                    'customer_id': order_used[0],
+                    'date_created': order_used[1],
+                } for order_used in obj.promotion.sale_order_product_promotion.values_list(
+                    'sale_order__customer_id',
+                    'sale_order__date_created'
+                )
+            ]
         } if obj.promotion else {}
 
     @classmethod

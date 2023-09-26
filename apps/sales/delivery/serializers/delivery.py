@@ -452,7 +452,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             actual_delivery_date=instance.actual_delivery_date,
             customer_data=instance.customer_data,
             contact_data=instance.contact_data,
-            config_at_that_point=instance.config_at_that_point
+            config_at_that_point=instance.config_at_that_point,
+            employee_inherit=instance.employee_inherit
         )
         return new_sub
 
@@ -585,4 +586,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
+            instance.order_delivery.employee_inherit = instance.employee_inherit
+            instance.order_delivery.save()
         return instance

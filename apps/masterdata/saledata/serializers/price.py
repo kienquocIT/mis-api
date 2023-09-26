@@ -63,7 +63,7 @@ class TaxListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('id', 'code', 'title', 'rate', 'category', 'type')
+        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type')
 
     @classmethod
     def get_category(cls, obj):
@@ -81,7 +81,7 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('title', 'code', 'rate', 'category', 'type')
+        fields = ('title', 'code', 'rate', 'category', 'tax_type')
 
     @classmethod
     def validate_code(cls, value):
@@ -100,7 +100,7 @@ class TaxDetailSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('id', 'code', 'title', 'rate', 'category', 'type')
+        fields = ('id', 'code', 'title', 'rate', 'category', 'tax_type')
 
     @classmethod
     def get_category(cls, obj):
@@ -117,7 +117,7 @@ class TaxUpdateSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = Tax
-        fields = ('title', 'rate', 'category', 'type')
+        fields = ('title', 'rate', 'category', 'tax_type')
 
 
 # Currency

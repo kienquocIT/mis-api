@@ -248,6 +248,7 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasure.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
@@ -314,6 +315,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ProductDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -388,6 +390,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Products use for sale applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
+    search_fields = ['title']
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

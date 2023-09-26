@@ -1,9 +1,10 @@
 import json
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
@@ -707,7 +708,7 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         permissions = ()
 
 
-class OpportunitySaleTeamMember(SimpleAbstractModel):
+class OpportunitySaleTeamMember(MasterDataAbstractModel):
     opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
@@ -719,6 +720,10 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Member of Sale Team of Opportunity',
         related_name='opportunity_sale_team_member_member',
+    )
+    date_modified = models.DateTimeField(
+        help_text='Date modified this record in last',
+        default=timezone.now,
     )
 
     permit_view_this_opp = models.BooleanField(
@@ -736,8 +741,10 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
                 'app_id': {
                     'is_create': False,
                     'is_edit': False,
-                    'is_view_own_activity': False,
-                    'is_view_team_activity': False,
+                    'is_view': False,
+                    'is_delete': False,
+                    'all': False,
+                    'belong_to': 0  # 0: user , 1: opportunity member
                 }
             }
         ),
@@ -784,68 +791,90 @@ class OpportunityMemberPermitData:
         'e66cfb5a-b3ce-4694-a4da-47618f53de4c': {  # Task
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '14dbc606-1453-4023-a2cf-35b1cd9e3efd': {  # Call
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         'dec012bf-b931-48ba-a746-38b7fd7ca73b': {  # Email
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '2fe959e3-9628-4f47-96a1-a2ef03e867e3': {  # Meeting with customer
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '319356b4-f16c-4ba4-bdcb-e1b0c2a2c124': {  # Doc for customer
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         'b9650500-aba7-44e3-b6e0-2542622702a3': {  # Quotation
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         'a870e392-9ad2-4fe2-9baa-298a38691cf2': {  # Sale Order
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '1373e903-909c-4b77-9957-8bcf97e8d6d3': {  # Delivery
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '57725469-8b04-428a-a4b0-578091d0e4f5': {  # Advance Payment
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '1010563f-7c94-42f9-ba99-63d5d26a1aca': {  # Payment
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
         '65d36757-557e-4534-87ea-5579709457d7': {  # Advance Return
             'is_create': False,
             'is_edit': False,
-            'is_view_own_activity': False,
-            'is_view_team_activity': False,
+            'is_view': False,
+            'is_delete': False,
+            'all': False,
+            'belong_to': 0
         },
     }
 
