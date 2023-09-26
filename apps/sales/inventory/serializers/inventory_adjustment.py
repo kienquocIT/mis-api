@@ -9,7 +9,14 @@ from apps.sales.inventory.models import (
 def create_inventory_adjustment_warehouses(obj, data):
     bulk_info = []
     for wh_id in data:
-        bulk_info.append(InventoryAdjustmentWarehouse(warehouse_mapped_id=wh_id, inventory_adjustment_mapped=obj))
+        bulk_info.append(
+            InventoryAdjustmentWarehouse(
+                warehouse_mapped_id=wh_id,
+                inventory_adjustment_mapped=obj,
+                tenant=obj.tenant,
+                company=obj.company,
+            )
+        )
     InventoryAdjustmentWarehouse.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentWarehouse.objects.bulk_create(bulk_info)
     return True
@@ -170,6 +177,12 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
+
+
+class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InventoryAdjustmentItem
+        fields = '__all__'
 
 
 # Inventory adjustment list use for other apps

@@ -1,5 +1,7 @@
 from django.db import models
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from django.utils import timezone
+
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel, IA_ITEM_ACTION_TYPE
 
 
 class InventoryAdjustment(DataAbstractModel):
@@ -50,23 +52,36 @@ class InventoryAdjustmentEmployeeInCharge(SimpleAbstractModel):
         permissions = ()
 
 
-class InventoryAdjustmentItem(SimpleAbstractModel):
+class InventoryAdjustmentItem(MasterDataAbstractModel):
     inventory_adjustment_mapped = models.ForeignKey(
         InventoryAdjustment,
         on_delete=models.CASCADE,
         related_name='inventory_adjustment_item_mapped'
+    )
+    product_warehouse = models.ForeignKey(
+        'saledata.ProductWareHouse',
+        on_delete=models.CASCADE,
+        default=None,
     )
     product_mapped = models.ForeignKey('saledata.Product', on_delete=models.CASCADE)
     warehouse_mapped = models.ForeignKey('saledata.WareHouse', on_delete=models.CASCADE)
     uom_mapped = models.ForeignKey('saledata.UnitOfMeasure', on_delete=models.CASCADE)
     book_quantity = models.IntegerField()
     count = models.IntegerField()
+    action_type = models.SmallIntegerField(
+        choices=IA_ITEM_ACTION_TYPE,
+        verbose_name='check increase, decrease or equal stock amount',
+        default=0,
+    )
     select_for_action = models.BooleanField(default=False)
     action_status = models.BooleanField(default=False)
+    date_modified = models.DateTimeField(
+        default=timezone.now
+    )
 
     class Meta:
         verbose_name = 'Inventory Adjustment Item'
         verbose_name_plural = 'Inventory Adjustment Items'
-        ordering = ()
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
