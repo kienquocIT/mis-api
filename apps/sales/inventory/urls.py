@@ -1,7 +1,6 @@
 from django.urls import path
 
-from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail, GoodsIssueList, GoodsIssueDetail
-from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail
+from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail, GoodsReceiptList, GoodsReceiptDetail
 from apps.sales.inventory.views.inventory_adjustment import InventoryAdjustmentList, InventoryAdjustmentDetail, \
     InventoryAdjustmentProductList
 
