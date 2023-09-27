@@ -1,12 +1,10 @@
 from django.urls import path
 
-from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail
-from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail
-from apps.sales.inventory.views.inventory_adjustment import InventoryAdjustmentList, InventoryAdjustmentDetail, \
-    InventoryAdjustmentOtherList
+from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail, \
+    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentProductList, InventoryAdjustmentOtherList
 
 urlpatterns = [
-    # good receipt
+    # goods receipt
     path('goods-receipt/list', GoodsReceiptList.as_view(), name='GoodsReceiptList'),
     path('goods-receipt/<str:pk>', GoodsReceiptDetail.as_view(), name='GoodsReceiptDetail'),
     # inventory adjustment
@@ -17,10 +15,21 @@ urlpatterns = [
         name='InventoryAdjustmentOtherList'
     ),
     path('inventory-adjustment/<str:pk>', InventoryAdjustmentDetail.as_view(), name='InventoryAdjustmentDetail'),
+    path(
+        'inventory-adjustment/product/list/<str:inventory_adjustment_mapped_id>',
+        InventoryAdjustmentProductList.as_view(),
+        name='InventoryAdjustmentProductList'
+    )
 ]
 
-# good transfer
+# goods transfer
 urlpatterns += [
-    path('good-transfer/list', GoodsTransferList.as_view(), name='GoodsTransferList'),
-    path('good-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferList'),
+    path('goods-transfer/list', GoodsTransferList.as_view(), name='GoodsTransferList'),
+    path('goods-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferList'),
 ]
+
+# goods issue
+# urlpatterns += [
+#     path('goods-issue/list', GoodsIssueList.as_view(), name='GoodsIssueList'),
+#     path('goods-issue/<str:pk>', GoodsIssueDetail.as_view(), name='GoodsIssueDetail'),
+# ]

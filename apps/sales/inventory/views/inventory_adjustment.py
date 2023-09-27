@@ -5,9 +5,8 @@ from apps.sales.inventory.models import (
 )
 from apps.sales.inventory.serializers.inventory_adjustment import (
     InventoryAdjustmentListSerializer, InventoryAdjustmentDetailSerializer,
-    InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer,
-    InventoryAdjustmentOtherListSerializer
-)
+    InventoryAdjustmentCreateSerializer, InventoryAdjustmentUpdateSerializer, InventoryAdjustmentProductListSerializer,
+    InventoryAdjustmentOtherListSerializer)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -83,6 +82,29 @@ class InventoryAdjustmentDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class InventoryAdjustmentProductList(BaseListMixin):
+    queryset = InventoryAdjustmentItem.objects
+    serializer_list = InventoryAdjustmentProductListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'uom_mapped',
+            'product_mapped',
+            'warehouse_mapped',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Inventory Adjustment Product List",
+        operation_description="Get Inventory Adjustment Product List",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 # Inventory adjustment list use for other apps
