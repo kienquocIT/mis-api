@@ -282,6 +282,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 # GOODS RECEIPT BEGIN
 class GoodsReceiptListSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
+    inventory_adjustment = serializers.SerializerMethodField()
     goods_receipt_type = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
@@ -293,6 +294,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'code',
             'goods_receipt_type',
             'purchase_order',
+            'inventory_adjustment',
             'date_received',
             'system_status',
         )
@@ -310,6 +312,14 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'title': obj.purchase_order.title,
             'code': obj.purchase_order.code,
         } if obj.purchase_order else {}
+
+    @classmethod
+    def get_inventory_adjustment(cls, obj):
+        return {
+            'id': obj.inventory_adjustment_id,
+            'title': obj.inventory_adjustment.title,
+            'code': obj.inventory_adjustment.code,
+        } if obj.inventory_adjustment else {}
 
     @classmethod
     def get_system_status(cls, obj):
@@ -384,8 +394,9 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
 
 class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    purchase_order = serializers.UUIDField(required=False)
-    supplier = serializers.UUIDField(required=False)
+    purchase_order = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
+    supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
 
@@ -394,6 +405,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -407,6 +419,10 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_purchase_order(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
 
     @classmethod
     def validate_supplier(cls, value):
@@ -439,6 +455,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
 
 class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
     purchase_order = serializers.UUIDField(required=False)
+    inventory_adjustment = serializers.UUIDField(required=False)
     supplier = serializers.UUIDField(required=False)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
@@ -448,6 +465,7 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
         fields = (
             'title',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -461,6 +479,10 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_purchase_order(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
 
     @classmethod
     def validate_supplier(cls, value):

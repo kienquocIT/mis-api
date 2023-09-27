@@ -33,6 +33,13 @@ class GoodsReceipt(DataAbstractModel):
         related_name='goods_receipt_map_pr'
     )
     # FIELDS OF TYPE 1(For inventory adjustment)
+    inventory_adjustment = models.ForeignKey(
+        'inventory.InventoryAdjustment',
+        on_delete=models.CASCADE,
+        verbose_name="inventory adjustment",
+        related_name="goods_receipt_ia",
+        null=True,
+    )
     # FIELDS OF TYPE 2(For production)
     # COMMON FIELDS
     remarks = models.TextField(

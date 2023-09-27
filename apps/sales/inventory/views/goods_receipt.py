@@ -20,12 +20,13 @@ class GoodsReceiptList(
     serializer_list = GoodsReceiptListSerializer
     serializer_create = GoodsReceiptCreateSerializer
     serializer_detail = GoodsReceiptListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             "purchase_order",
+            "inventory_adjustment",
         )
 
     @swagger_auto_schema(
@@ -59,7 +60,7 @@ class GoodsReceiptDetail(
     queryset = GoodsReceipt.objects
     serializer_detail = GoodsReceiptDetailSerializer
     serializer_update = GoodsReceiptUpdateSerializer
-    update_hidden_field = ['employee_modified_id']
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
