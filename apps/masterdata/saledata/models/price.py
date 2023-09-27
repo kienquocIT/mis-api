@@ -47,7 +47,7 @@ class Tax(MasterDataAbstractModel):
     # type = 0 is 'Sale'
     # type = 1 is 'Purchase'
     # type = 2 is both 'Sale' and 'Purchase'
-    type = models.IntegerField()
+    tax_type = models.IntegerField()
 
     class Meta:
         verbose_name = 'Tax'

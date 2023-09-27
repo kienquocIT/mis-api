@@ -748,7 +748,8 @@ def update_employee_inherit_return_advance():
 
 def make_sure_leave_config():
     for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_config()
+        ConfigDefaultData(obj).leave_config(None)
+        ConfigDefaultData(obj).working_calendar_config()
     print('Leave config is done!')
 
 
@@ -792,11 +793,13 @@ def update_sale_team_datas_backup_for_opp():
 
         if not is_owner_in_opp:
             sale_team_data.insert(
-                0, {'member': {
-                    'id': str(opp.employee_inherit_id),
-                    'email': opp.employee_inherit.email,
-                    'name': opp.employee_inherit.get_full_name(),
-                }}
+                0, {
+                    'member': {
+                        'id': str(opp.employee_inherit_id),
+                        'email': opp.employee_inherit.email,
+                        'name': opp.employee_inherit.get_full_name(),
+                    }
+                }
             )
             OpportunitySaleTeamMember.objects.create(
                 opportunity=opp,
@@ -816,3 +819,12 @@ def update_permit_for_member_in_opp():
         item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
         item.save(update_fields=['permit_app'])
     print('Update Done !')
+
+
+def update_tenant_for_sub_table_opp():
+    members = OpportunitySaleTeamMember.objects.all()
+    for member in members:
+        member.company = member.opportunity.company
+        member.tenant = member.opportunity.tenant
+        member.save()
+    print('Update Done!')

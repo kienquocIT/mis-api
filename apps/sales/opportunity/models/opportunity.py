@@ -1,9 +1,10 @@
 import json
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
@@ -707,7 +708,7 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         permissions = ()
 
 
-class OpportunitySaleTeamMember(SimpleAbstractModel):
+class OpportunitySaleTeamMember(MasterDataAbstractModel):
     opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
@@ -719,6 +720,10 @@ class OpportunitySaleTeamMember(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name='Member of Sale Team of Opportunity',
         related_name='opportunity_sale_team_member_member',
+    )
+    date_modified = models.DateTimeField(
+        help_text='Date modified this record in last',
+        default=timezone.now,
     )
 
     permit_view_this_opp = models.BooleanField(

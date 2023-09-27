@@ -108,7 +108,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -121,7 +121,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response

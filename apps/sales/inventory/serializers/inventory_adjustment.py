@@ -9,7 +9,12 @@ from apps.sales.inventory.models import (
 def create_inventory_adjustment_warehouses(obj, data):
     bulk_info = []
     for wh_id in data:
-        bulk_info.append(InventoryAdjustmentWarehouse(warehouse_mapped_id=wh_id, inventory_adjustment_mapped=obj))
+        bulk_info.append(
+            InventoryAdjustmentWarehouse(
+                warehouse_mapped_id=wh_id,
+                inventory_adjustment_mapped=obj,
+            )
+        )
     InventoryAdjustmentWarehouse.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentWarehouse.objects.bulk_create(bulk_info)
     return True
@@ -27,7 +32,14 @@ def create_inventory_adjustment_employees_in_charge(obj, data):
 def create_inventory_adjustment_items(obj, data):
     bulk_info = []
     for item in data:
-        bulk_info.append(InventoryAdjustmentItem(**item, inventory_adjustment_mapped=obj))
+        bulk_info.append(
+            InventoryAdjustmentItem(
+                **item,
+                inventory_adjustment_mapped=obj,
+                tenant=obj.tenant,
+                company=obj.company,
+            )
+        )
     InventoryAdjustmentItem.objects.filter(inventory_adjustment_mapped=obj).delete()
     InventoryAdjustmentItem.objects.bulk_create(bulk_info)
     return True
@@ -51,11 +63,13 @@ class InventoryAdjustmentListSerializer(serializers.ModelSerializer):
         all_item = obj.warehouses_mapped.all()
         data = []
         for item in all_item:
-            data.append({
-                'warehouse_id': str(item.id),
-                'warehouse_code': item.code,
-                'warehouse_title': item.title,
-            })
+            data.append(
+                {
+                    'warehouse_id': str(item.id),
+                    'warehouse_code': item.code,
+                    'warehouse_title': item.title,
+                }
+            )
         return data
 
 
@@ -170,3 +184,53 @@ class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
         create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
+
+
+class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
+    product_mapped = serializers.SerializerMethodField()
+    warehouse_mapped = serializers.SerializerMethodField()
+    uom_mapped = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryAdjustmentItem
+        fields = (
+            'id',
+            'book_quantity',
+            'count',
+            'action_type',
+            'inventory_adjustment_mapped',
+            'product_warehouse',
+            'product_mapped',
+            'warehouse_mapped',
+            'uom_mapped',
+        )
+
+    @classmethod
+    def get_product_mapped(cls, obj):
+        if obj.product_mapped:
+            return {
+                'id': obj.product_mapped_id,
+                'title': obj.product_mapped.title,
+                'code': obj.product_mapped.code,
+            }
+        return {}
+
+    @classmethod
+    def get_warehouse_mapped(cls, obj):
+        if obj.product_mapped:
+            return {
+                'id': obj.product_mapped_id,
+                'title': obj.product_mapped.title,
+                'code': obj.product_mapped.code,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_mapped(cls, obj):
+        if obj.product_mapped:
+            return {
+                'id': obj.product_mapped_id,
+                'title': obj.product_mapped.title,
+                'code': obj.product_mapped.code,
+            }
+        return {}

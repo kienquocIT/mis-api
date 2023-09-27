@@ -4,7 +4,7 @@ from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import OpportunityListSerializer, OpportunityUpdateSerializer, \
     OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer, \
     OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer, \
-    OpportunityMemberPermissionUpdateSerializer
+    OpportunityMemberPermissionUpdateSerializer, OpportunityMemberListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -202,3 +202,19 @@ class MemberPermissionUpdateSerializer(BaseUpdateMixin):
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class OpportunityMemberList(BaseRetrieveMixin):
+    queryset = Opportunity.objects
+    serializer_detail = OpportunityMemberListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity Member List",
+        operation_description="Get Opportunity Member List",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
