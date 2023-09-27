@@ -41,10 +41,25 @@ class AdvancePaymentTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response1.data['result'],
             [
-                'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'money_gave',
-                'sale_code_type', 'quotation_mapped', 'sale_order_mapped', 'opportunity_mapped', 'supplier',
-                'method', 'beneficiary', 'expense_items', 'advance_value', 'to_payment', 'return_value',
-                'remain_value', 'converted_payment_list'
+                'id',
+                'title',
+                'code',
+                'advance_payment_type',
+                'date_created',
+                'return_date',
+                'money_gave',
+                'sale_code_type',
+                'quotation_mapped',
+                'sale_order_mapped',
+                'sale_code_relate',
+                'opportunity_mapped',
+                'supplier',
+                'method',
+                'beneficiary',
+                'expense_items',
+                'advance_value',
+                'payment_value_list',
+                'returned_value_list'
             ],
             check_sum_second=True,
         )
@@ -95,10 +110,25 @@ class AdvancePaymentTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'money_gave',
-                'sale_code_type', 'quotation_mapped', 'sale_order_mapped', 'opportunity_mapped', 'supplier',
-                'method', 'beneficiary', 'expense_items', 'advance_value', 'to_payment', 'return_value',
-                'remain_value', 'converted_payment_list'
+                'id',
+                'title',
+                'code',
+                'advance_payment_type',
+                'date_created',
+                'return_date',
+                'money_gave',
+                'sale_code_type',
+                'quotation_mapped',
+                'sale_order_mapped',
+                'sale_code_relate',
+                'opportunity_mapped',
+                'supplier',
+                'method',
+                'beneficiary',
+                'expense_items',
+                'advance_value',
+                'payment_value_list',
+                'returned_value_list'
             ],
             check_sum_second=True,
         )
@@ -498,10 +528,25 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'title', 'code', 'advance_payment_type', 'date_created', 'return_date', 'money_gave',
-                'sale_code_type', 'quotation_mapped', 'sale_order_mapped', 'opportunity_mapped', 'supplier',
-                'method', 'beneficiary', 'expense_items', 'advance_value', 'to_payment', 'return_value',
-                'remain_value', 'converted_payment_list'
+                'id',
+                'title',
+                'code',
+                'advance_payment_type',
+                'date_created',
+                'return_date',
+                'money_gave',
+                'sale_code_type',
+                'quotation_mapped',
+                'sale_order_mapped',
+                'sale_code_relate',
+                'opportunity_mapped',
+                'supplier',
+                'method',
+                'beneficiary',
+                'expense_items',
+                'advance_value',
+                'payment_value_list',
+                'returned_value_list'
             ],
             check_sum_second=True,
         )
