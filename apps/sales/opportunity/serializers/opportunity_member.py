@@ -103,7 +103,7 @@ class OpportunityAddMemberSerializer(serializers.ModelSerializer):
                         'group': {
                             'id': str(member['id'].group_id),
                             'title': member['id'].group.title
-                        }
+                        } if member['id'].group else {}
                     }
                 }
             )

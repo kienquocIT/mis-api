@@ -51,7 +51,7 @@ class QuotationListSerializer(serializers.ModelSerializer):
                 'id': obj.employee_inherit.group_id,
                 'title': obj.employee_inherit.group.title,
                 'code': obj.employee_inherit.group.code,
-            }
+            } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
     @classmethod
