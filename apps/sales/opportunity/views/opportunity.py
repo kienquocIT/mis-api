@@ -238,12 +238,6 @@ class OpportunityListForCashOutFlow(BaseListMixin):
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        tmp = super().get_queryset().select_related(
-            "customer",
-            "sale_person",
-        ).prefetch_related(
-            "opportunity_stage_opportunity__stage",
-        )
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
