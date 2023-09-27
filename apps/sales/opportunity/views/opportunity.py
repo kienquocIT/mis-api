@@ -1,10 +1,13 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
-from apps.sales.opportunity.serializers import OpportunityListSerializer, OpportunityUpdateSerializer, \
-    OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer, \
-    OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer, \
-    OpportunityMemberPermissionUpdateSerializer, OpportunityMemberListSerializer
+from apps.sales.opportunity.serializers import (
+    OpportunityListSerializer, OpportunityUpdateSerializer,
+    OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer,
+    OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer,
+    OpportunityMemberPermissionUpdateSerializer, OpportunityMemberListSerializer,
+    OpportunityListSerializerForCashOutFlow
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -218,3 +221,44 @@ class OpportunityMemberList(BaseRetrieveMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class OpportunityListForCashOutFlow(BaseListMixin):
+    queryset = Opportunity.objects
+    filterset_fields = {
+        'employee_inherit': ['exact'],
+        'quotation': ['exact', 'isnull'],
+        'sale_order': ['exact', 'isnull'],
+        'is_close_lost': ['exact'],
+        'is_deal_close': ['exact'],
+        'id': ['in'],
+    }
+    serializer_list = OpportunityListSerializerForCashOutFlow
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        tmp = super().get_queryset().select_related(
+            "customer",
+            "sale_person",
+        ).prefetch_related(
+            "opportunity_stage_opportunity__stage",
+        )
+        return super().get_queryset().select_related(
+            "customer",
+            "sale_person",
+        ).prefetch_related(
+            "opportunity_stage_opportunity__stage",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity List For Cash Outflow",
+        operation_description="Get Opportunity List For Cash Outflow",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        self.paginator.page_size = -1
+        return self.list(request, *args, **kwargs)

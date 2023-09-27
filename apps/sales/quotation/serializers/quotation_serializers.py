@@ -47,11 +47,6 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'id': obj.employee_inherit_id,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
-            'group': {
-                'id': obj.employee_inherit.group_id,
-                'title': obj.employee_inherit.group.title,
-                'code': obj.employee_inherit.group.code,
-            } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
     @classmethod
@@ -554,6 +549,11 @@ class QuotationListSerializerForCashOutFlow(serializers.ModelSerializer):
             'id': obj.employee_inherit_id,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code,
+            } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
     @classmethod

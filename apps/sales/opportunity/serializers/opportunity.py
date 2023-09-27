@@ -11,7 +11,7 @@ from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
 __all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
-           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer']
+           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow']
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -58,11 +58,6 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'id': obj.employee_inherit_id,
                 'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
-                'group': {
-                    'id': obj.employee_inherit.group_id,
-                    'title': obj.employee_inherit.group.title,
-                    'code': obj.employee_inherit.group.code,
-                } if obj.employee_inherit.group else {}
             }
         return {}
 
@@ -843,6 +838,77 @@ class OpportunityForSaleListSerializer(serializers.ModelSerializer):
                 'id': obj.sale_person_id,
                 'full_name': obj.sale_person.get_full_name(),
                 'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.opportunity_stage_opportunity:
+            stages = obj.opportunity_stage_opportunity.all()
+            return [
+                {
+                    'id': stage.stage.id,
+                    'is_current': stage.is_current,
+                    'indicator': stage.stage.indicator
+                } for stage in stages]
+        return []
+
+    @classmethod
+    def get_is_close(cls, obj):
+        if obj.is_deal_close or obj.is_close_lost:
+            return True
+        return False
+
+
+class OpportunityListSerializerForCashOutFlow(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    is_close = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'open_date',
+            'quotation_id',
+            'sale_order_id',
+            'opportunity_sale_team_datas',
+            'close_date',
+            'stage',
+            'is_close'
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            shipping_address_list = []
+            for item in obj.customer.account_mapped_shipping_address.all():
+                shipping_address_list.append(item.full_address)
+            return {
+                'id': obj.customer_id,
+                'title': obj.customer.name,
+                'code': obj.customer.code,
+                'shipping_address': shipping_address_list
+            }
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.employee_inherit:
+            return {
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title,
+                    'code': obj.employee_inherit.group.code,
+                } if obj.employee_inherit.group else {}
             }
         return {}
 
