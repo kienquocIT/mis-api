@@ -80,7 +80,7 @@ def create_payment_cost_items(payment_obj, payment_cost_list):
     return True
 
 
-def create_product_items(instance, payment_expense_valid_list):
+def create_expense_items(instance, payment_expense_valid_list):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
     if vnd_currency:
         bulk_info = []
@@ -190,7 +190,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
         create_sale_code_object(payment_obj, self.initial_data)
         if len(self.initial_data.get('payment_expense_valid_list', [])) > 0:
-            create_product_items(payment_obj, self.initial_data.get('payment_expense_valid_list', []))
+            create_expense_items(payment_obj, self.initial_data.get('payment_expense_valid_list', []))
         return payment_obj
 
 
@@ -224,19 +224,16 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     def get_sale_order_mapped(cls, obj):
         all_sale_order_mapped = []
         for item in obj.sale_order_mapped.all().select_related('opportunity'):
-            opportunity_obj = {}
-            if item.opportunity:
-                opportunity_obj = {
-                    'id': item.opportunity.id,
-                    'code': item.opportunity.code,
-                    'title': item.opportunity.title,
-                    'customer': item.opportunity.customer.name,
-                }
             all_sale_order_mapped.append({
                 'id': str(item.id),
                 'code': item.code,
                 'title': item.title,
-                'opportunity': opportunity_obj
+                'opportunity': {
+                    'id': item.opportunity.id,
+                    'code': item.opportunity.code,
+                    'title': item.opportunity.title,
+                    'customer': item.opportunity.customer.name,
+                } if item.opportunity else {},
             })
         return all_sale_order_mapped
 

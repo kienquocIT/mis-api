@@ -98,8 +98,12 @@ class OpportunityAddMemberSerializer(serializers.ModelSerializer):
                 {
                     'member': {
                         'id': str(member['id'].id),
-                        'name': member['id'].get_full_name(),
-                        'email': member['id'].email
+                        'full_name': member['id'].get_full_name(),
+                        'code': member['id'].code,
+                        'group': {
+                            'id': str(member['id'].group_id),
+                            'title': member['id'].group.title
+                        } if member['id'].group else {}
                     }
                 }
             )
@@ -176,7 +180,7 @@ class OpportunityMemberDeleteSerializer(serializers.ModelSerializer):
                     'member': OpportunityMsg.EXIST_TASK_NOT_COMPLETED
                 }
             )
-
+        self.update_opportunity_sale_team_data_backup(instance)
         # check delete sale person
         if instance.member == instance.opportunity.employee_inherit:
             raise serializers.ValidationError(
