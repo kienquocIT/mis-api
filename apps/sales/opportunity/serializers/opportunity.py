@@ -56,8 +56,13 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.employee_inherit:
             return {
                 'id': obj.employee_inherit_id,
-                'name': obj.employee_inherit.get_full_name(),
+                'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title,
+                    'code': obj.employee_inherit.group.code,
+                } if obj.employee_inherit.group else {}
             }
         return {}
 
@@ -130,8 +135,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             {
                 'member': {
                     'id': str(validated_data['employee_inherit'].id),
-                    'name': validated_data['employee_inherit'].get_full_name(),
-                    'email': validated_data['employee_inherit'].email
+                    'full_name': validated_data['employee_inherit'].get_full_name(),
+                    'code': validated_data['employee_inherit'].code,
+                    'email': validated_data['employee_inherit'].email,
                 }
             }
         ]
@@ -835,7 +841,7 @@ class OpportunityForSaleListSerializer(serializers.ModelSerializer):
         if obj.sale_person:
             return {
                 'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
+                'full_name': obj.sale_person.get_full_name(),
                 'code': obj.sale_person.code,
             }
         return {}
