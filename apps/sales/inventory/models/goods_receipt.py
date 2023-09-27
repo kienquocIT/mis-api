@@ -102,7 +102,7 @@ class GoodsReceipt(DataAbstractModel):
             code = f"{char}{temper}"
             self.code = code
 
-        if self.system_status not in [2, 3]:
+        if self.system_status in [2, 3]:
             self.push_to_product_warehouse(self)
             # update receipt status to PurchaseOrder
 
