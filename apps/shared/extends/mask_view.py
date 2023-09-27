@@ -124,29 +124,47 @@ class PermissionChecking:  # pylint: disable=R0902
         key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
         if key in permissions_parsed:
             perm = permissions_parsed[key]
-            if perm and isinstance(perm, dict):
-                return perm
+            if perm and isinstance(perm, dict) and 'general' in perm and isinstance(perm['general'], dict):
+                return perm['general']
         return {}
 
-    def get_perm_id(self, permission_by_id) -> list[str]:
+    def get_perm_id(self, permissions_parsed) -> list[str]:
         key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
-        if key in permission_by_id:
-            perm = permission_by_id[key]
-            if perm and isinstance(perm, list):
-                return perm
+        if key in permissions_parsed:
+            perm = permissions_parsed[key]
+            if perm and isinstance(perm, dict) and 'ids' in perm and isinstance(perm['ids'], list):
+                return perm['ids']
         return []
+
+    def get_perm_opp(self, permissions_parsed) -> dict:
+        key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
+        if key in permissions_parsed:
+            perm = permissions_parsed[key]
+            if perm and isinstance(perm, dict) and 'opp' in perm and isinstance(perm['opp'], dict):
+                return perm['opp']
+        return {}
+
+    def get_perm_prj(self, permissions_parsed) -> dict:
+        key = f'{self.label_code}.{self.model_code}.{self.perm_code}'.lower()
+        if key in permissions_parsed:
+            perm = permissions_parsed[key]
+            if perm and isinstance(perm, dict) and 'prj' in perm and isinstance(perm['prj'], dict):
+                return perm['prj']
+        return {}
 
     def get_all_config_perm(self):
         result = {
             'employee': {
                 'configured': self.get_perm_configured(permissions_parsed=self.permissions_parsed),
-                'id': self.get_perm_id(permission_by_id=self.permission_by_id),
+                'id': self.get_perm_id(permissions_parsed=self.permissions_parsed),
+                'opp': self.get_perm_opp(permissions_parsed=self.permissions_parsed),
+                'prj': self.get_perm_prj(permissions_parsed=self.permissions_parsed),
             },
-            'roles': []
+            'roles': [],
         }
         for role_data in self.role_datas:
             configured = self.get_perm_configured(permissions_parsed=role_data['permissions_parsed'])
-            by_id = self.get_perm_id(permission_by_id=role_data['permission_by_id'])
+            by_id = self.get_perm_id(permissions_parsed=role_data['permissions_parsed'])
             if configured or by_id:
                 result['roles'].append(
                     {
@@ -374,7 +392,7 @@ class AuthPermission:
 
         return True
 
-    def auth_check(self, auth_require: bool) -> Union[True, ResponseController]:
+    def auth_check(self, auth_require: bool, bastion_field_require: bool) -> Union[True, ResponseController]:
         self.set_auth_required(auth_require)
 
         has_check_perm = self.has_check_perm
@@ -434,6 +452,9 @@ def mask_view(**parent_kwargs):
             # check Authenticated + Allow Permit
             auth_require: bool = parent_kwargs.get('auth_require', False)
 
+            # check bastion_field
+            bastion_field_require: bool = parent_kwargs.get('bastion_field_require', False)
+
             # Use func custom get filter | override get_filter_dict in class view
             use_custom_get_filter_auth: bool = parent_kwargs.get('use_custom_get_filter_auth', False)
 
@@ -478,7 +499,9 @@ def mask_view(**parent_kwargs):
 
             # check by pass with flag admin
             # check auth permission require | verify from data input
-            filter_or_resp = cls_auth_check.auth_check(auth_require=auth_require)
+            filter_or_resp = cls_auth_check.auth_check(
+                auth_require=auth_require, bastion_field_require=bastion_field_require,
+            )
             if isinstance(filter_or_resp, Response):
                 return filter_or_resp
             if filter_or_resp is not True:

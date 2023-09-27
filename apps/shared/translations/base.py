@@ -12,3 +12,4 @@ class BaseMsg:
 
 class PermissionMsg:
     PERMISSION_INCORRECT = _('Permission format is incorrect')
+    SOME_PLAN_WAS_EXPIRED_OR_NOT_FOUND = _('Some subscription is expired or not found')

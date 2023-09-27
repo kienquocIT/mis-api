@@ -11,12 +11,20 @@ from apps.shared import (
     GENDER_CHOICE, TypeCheck, MediaForceAPI, StringHandler,
 )
 
+from apps.shared import PermissionController
+
 
 class PermOption(TypedDict, total=False):
     option: int
 
 
 class PermissionAbstractModel(models.Model):
+    permission_simple_sample = {
+        'hr.employee.view': {
+            '{range}': '{range_data}'
+        }
+    }
+
     # by ID
     permission_by_id_sample = {
         'hr.employee.view': [],
@@ -45,13 +53,88 @@ class PermissionAbstractModel(models.Model):
         }
     ]
     permission_by_configured = models.JSONField(
-        default=list, verbose_name='Permissions was configured by Administrator'
+        default=list, verbose_name='Permissions was configured by Administrator',
+    )
+
+    # by opportunity
+    permission_by_opp_sample_before_sync = {
+        '{opp_id}': [
+            {
+                "id": "e388f95e-457b-4cf6-8689-0171e71fa58f",
+                "app_id": "50348927-2c4f-4023-b638-445469c66953",
+                "app_data": {
+                    "id": "50348927-2c4f-4023-b638-445469c66953",
+                    "title": "Employee",
+                    "code": "employee",
+                },
+                "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
+                "plan_data": {
+                    "id": "395eb68e-266f-45b9-b667-bd2086325522",
+                    "title": "HRM",
+                    "code": "hrm",
+                },
+                "create": True, "view": True, "edit": False, "delete": False,
+                "range": "{'me'|'all'}",
+            }
+        ],
+    }
+    permission_by_opp_sample = {
+        '{opp_id}': {
+            'hr.employee.view': {
+                'me': {},
+                'all': {},
+            }
+        }
+    }
+    permission_by_opp = models.JSONField(
+        default=dict, verbose_name='Permission was configured at Opportunity',
+    )
+
+    # by project
+    permission_by_project_sample = {
+        '{project_id}': [
+            {
+                "id": "e388f95e-457b-4cf6-8689-0171e71fa58f",
+                "app_id": "50348927-2c4f-4023-b638-445469c66953",
+                "app_data": {
+                    "id": "50348927-2c4f-4023-b638-445469c66953",
+                    "title": "Employee",
+                    "code": "employee",
+                },
+                "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
+                "plan_data": {
+                    "id": "395eb68e-266f-45b9-b667-bd2086325522",
+                    "title": "HRM",
+                    "code": "hrm",
+                },
+                "create": True, "view": True, "edit": False, "delete": False,
+                "range": "{'me'|'all'}",
+            }
+        ]
+    }
+    permission_by_project = models.JSONField(
+        default=dict, verbose_name='Permission was configured at Project',
     )
 
     # as sum data permissions
     permissions_parsed_sample = {
         'hr.employee.view': {
-                '4': {},
+            '4': {},
+            'ids': {
+                '{doc_id}': {},
+            },
+            'opp': {
+                '{opp_id}': {
+                    'me': {},
+                    'all': {},
+                },
+            },
+            'prj': {
+                '{project_id}': {
+                    'me': {},
+                    'all': {},
+                },
+            },
         },
         'hr.employee.edit': {'4': {}},
         '{app_label}.{model_code}.{perm_code}': {'{range_code}': {}},
@@ -60,6 +143,11 @@ class PermissionAbstractModel(models.Model):
 
     # summary keys
     permission_keys = ('permission_by_id', 'permission_by_configured')
+
+    def get_tenant_id(self):
+        if hasattr(self, 'tenant_id'):
+            return self.tenant_id
+        raise ValueError('Model extend to PermissionAbstract must be required field "tenant" relate to Tenant Model')
 
     class Meta:
         abstract = True
@@ -77,7 +165,26 @@ class PermissionAbstractModel(models.Model):
             permission_by_id[key] = list(set(permission_by_id[key] + [str(doc_id)]))
 
             self.permission_by_id = permission_by_id
-            super().save(update_fields=['permission_by_id'])
+            self.permissions_parsed = PermissionController(tenant_id=self.get_tenant_id()).get_permission_parsed(
+                instance=self
+            )
+            super().save(update_fields=['permission_by_id', 'permissions_parsed'])
+        return self
+
+    def append_permit_by_opp(self, opp_id, perm_config):
+        cls_control = PermissionController(tenant_id=self.get_tenant_id())
+        perm_config_validated = cls_control.valid(attrs=perm_config, bastion_from='opp')
+        self.permission_by_opp[opp_id] = cls_control.parse_from_config_to_simple(perm_config_validated)
+        self.permissions_parsed = cls_control.get_permission_parsed(instance=self)
+        super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
+        return self
+
+    def append_permit_by_prj(self, prj_id, perm_config):
+        cls_control = PermissionController(tenant_id=self.get_tenant_id())
+        perm_config_validated = cls_control.valid(attrs=perm_config, bastion_from='prj')
+        self.permission_by_project[prj_id] = cls_control.parse_from_config_to_simple(perm_config_validated)
+        self.permissions_parsed = cls_control.get_permission_parsed(instance=self)
+        super().save(update_fields=['permission_by_project', 'permissions_parsed'])
         return self
 
     def save(self, *args, **kwargs):

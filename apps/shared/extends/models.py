@@ -12,7 +12,7 @@ from .managers import NormalManager
 from ..constant import SYSTEM_STATUS
 
 __all__ = [
-    'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
+    'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
     'DisperseModel',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
@@ -111,6 +111,31 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
 
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
+
+
+class BastionFieldAbstractModel(SimpleAbstractModel):
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_employee_inherit',
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        null=True, on_delete=models.SET_NULL,
+        help_text='Relate to Opportunity',
+        related_name='%(app_label)s_%(class)s_opp',
+    )
+    project = models.ForeignKey(
+        'project.Project',
+        null=True, on_delete=models.SET_NULL,
+        help_text='Relate to Project',
+        related_name='%(app_label)s_%(class)s_prj',
+    )
+
+    class Meta:
+        abstract = True
+        verbose_name = 'Bastion Field Abstract'
+        verbose_name_plural = 'Bastion Field Abstract'
 
 
 class MasterDataAbstractModel(SimpleAbstractModel):
