@@ -160,6 +160,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField(required=False)
     uom = serializers.UUIDField(required=False)
     tax = serializers.UUIDField(required=False)
+    warehouse = serializers.UUIDField(required=False)
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
@@ -170,6 +171,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'tax',
+            'warehouse',
             'quantity_import',
             'product_title',
             'product_code',
@@ -198,11 +200,16 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     def validate_tax(cls, value):
         return GoodsReceiptCommonValidate.validate_tax(value=value)
 
+    @classmethod
+    def validate_warehouse(cls, value):
+        return GoodsReceiptCommonValidate.validate_warehouse(value=value)
+
 
 class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
     warehouse_data = serializers.SerializerMethodField()
 
@@ -214,6 +221,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'tax',
+            'warehouse',
             'quantity_import',
             'product_title',
             'product_code',
@@ -266,6 +274,14 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
 
     @classmethod
     def get_purchase_request_products_data(cls, obj):
@@ -330,6 +346,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
 
 class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
+    inventory_adjustment = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
@@ -343,6 +360,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'code',
             'goods_receipt_type',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -362,6 +380,14 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'title': obj.purchase_order.title,
             'code': obj.purchase_order.code,
         } if obj.purchase_order else {}
+
+    @classmethod
+    def get_inventory_adjustment(cls, obj):
+        return {
+            'id': obj.inventory_adjustment_id,
+            'title': obj.inventory_adjustment.title,
+            'code': obj.inventory_adjustment.code,
+        } if obj.inventory_adjustment else {}
 
     @classmethod
     def get_supplier(cls, obj):
@@ -403,6 +429,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsReceipt
         fields = (
+            'goods_receipt_type',
             'title',
             'purchase_order',
             'inventory_adjustment',
@@ -463,6 +490,7 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsReceipt
         fields = (
+            'goods_receipt_type',
             'title',
             'purchase_order',
             'inventory_adjustment',
