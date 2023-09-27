@@ -276,29 +276,6 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-# class SaleOrderProductList(BaseListMixin):
-#     queryset = SaleOrderProduct.objects
-#     filterset_fields = {
-#         'sale_order_id': ['exact', 'in']
-#     }
-#     serializer_list = SaleOrderProductListSerializer
-#
-#     def get_queryset(self):
-#         return super().get_queryset().select_related(
-#             "product"
-#         ).filter(
-#             product__isnull=False
-#         )
-#
-#     @swagger_auto_schema(
-#         operation_summary="SaleOrderProduct List",
-#         operation_description="Get SaleOrderProduct List",
-#     )
-#     @mask_view(login_require=True, auth_require=False)
-#     def get(self, request, *args, **kwargs):
-#         return self.list(request, *args, **kwargs)
-
-
 class ProductListSaleOrder(BaseRetrieveMixin):
     queryset = SaleOrder.objects
     serializer_detail = SaleOrderProductListSerializer
