@@ -45,6 +45,11 @@ class GoodsIssueDetail(
     serializer_detail = GoodsIssueDetailSerializer
     detail_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "inventory_adjustment",
+        )
+
     @swagger_auto_schema(
         operation_summary="Goods issue detail",
         operation_description="Get Goods issue detail by ID",

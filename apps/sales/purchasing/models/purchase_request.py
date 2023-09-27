@@ -62,7 +62,7 @@ class PurchaseRequest(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_system_status(self):
+    def update_purchase_status(self):
         products = PurchaseRequestProduct.objects.filter(purchase_request=self)
         is_ordered = True
         for product in products:

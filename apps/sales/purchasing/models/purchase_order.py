@@ -107,7 +107,7 @@ class PurchaseOrder(DataAbstractModel):
                 po_request.purchase_request_product.save()
 
         for purchase_request in list_purchase_request:
-            purchase_request.update_system_status()
+            purchase_request.update_purchase_status()
         # hit DB
         super().save(*args, **kwargs)
 
