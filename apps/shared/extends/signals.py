@@ -11,7 +11,7 @@ from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
-from apps.eoffice.leave.models import LeaveConfig, LeaveType
+from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
@@ -681,6 +681,8 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={},
         )
+        if not company_config:
+            company_config = CompanyConfig.objects.get(company=self.company_obj)
         if created:
             #
             translation.activate(company_config.language if company_config else 'vi')
@@ -760,6 +762,51 @@ class ConfigDefaultData:
             code='',
         )
 
+    def working_calendar_config(self):
+        WorkingCalendarConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'working_days':
+                    {
+                        'mon': {
+                            'work': True,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'tue': {
+                            'work': True,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'wed': {
+                            'work': True,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'thu': {
+                            'work': True,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'fri': {
+                            'work': True,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'sat': {
+                            'work': False,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        },
+                        'sun': {
+                            'work': False,
+                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                        }
+                    }
+            },
+        )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -775,6 +822,7 @@ class ConfigDefaultData:
         self.process_config()
         self.leave_config(config)
         self.purchase_request_config()
+        self.working_calendar_config()
         return True
 
 

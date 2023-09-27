@@ -2,11 +2,14 @@ from django.http import HttpResponse
 
 from rest_framework import serializers
 
-from apps.eoffice.leave.models import LeaveConfig, LeaveType
+from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig, \
+    WorkingHolidayConfig
 from apps.shared import LEAVE_YEARS_SENIORITY, LeaveMsg
 
 __all__ = ['LeaveConfigDetailSerializer', 'LeaveTypeConfigCreateSerializer', 'LeaveTypeConfigDetailSerializer',
-           'LeaveTypeConfigUpdateSerializer', 'LeaveTypeConfigDeleteSerializer']
+           'LeaveTypeConfigUpdateSerializer', 'LeaveTypeConfigDeleteSerializer', 'WorkingCalendarConfigListSerializer',
+           'WorkingYearSerializer', 'WorkingHolidaySerializer'
+           ]
 
 
 class LeaveConfigDetailSerializer(serializers.ModelSerializer):
@@ -125,3 +128,39 @@ class LeaveTypeConfigDeleteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_DELETE_LEAVE_TYPE})
         #
         return '', HttpResponse(status=204)
+
+
+class WorkingCalendarConfigListSerializer(serializers.ModelSerializer):
+    years = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkingCalendarConfig
+        fields = ('id', 'working_days', 'years')
+
+    @classmethod
+    def get_years(cls, obj):
+        filter_list = WorkingYearConfig.objects.filter(working_calendar=obj.id).order_by('config_year')
+        if filter_list.exists():
+            list_year = [
+                {
+                    'id': item[0],
+                    'config_year': item[1],
+                    'list_holiday': WorkingHolidaySerializer(
+                        WorkingHolidayConfig.objects.filter(year_id=item[0])
+                        , many=True).data
+                } for item in filter_list.values_list('id', 'config_year')
+            ]
+            return list_year
+        return {}
+
+
+class WorkingYearSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkingYearConfig
+        fields = ('id', 'working_calendar', 'config_year')
+
+
+class WorkingHolidaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkingHolidayConfig
+        fields = ('id', 'holiday_date_to', 'remark', 'year')

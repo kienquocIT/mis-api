@@ -33,7 +33,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='advance_payment', model_code='advancepayment', perm_code='view',
+        label_code='advancepayment', model_code='advancepayment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -45,7 +45,7 @@ class AdvancePaymentList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='advance_payment', model_code='advancepayment', perm_code='create',
+        label_code='advancepayment', model_code='advancepayment', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -68,7 +68,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='advance_payment', model_code='advancepayment', perm_code='view',
+        label_code='advancepayment', model_code='advancepayment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -76,7 +76,7 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=AdvancePaymentUpdateSerializer)
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='advance_payment', model_code='advancepayment', perm_code='edit',
+        label_code='advancepayment', model_code='advancepayment', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.serializer_class = AdvancePaymentUpdateSerializer

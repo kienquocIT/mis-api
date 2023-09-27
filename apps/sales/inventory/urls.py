@@ -1,8 +1,7 @@
 from django.urls import path
 
-from apps.sales.inventory.views import GoodsTransferList, GoodsTransferDetail, GoodsReceiptList, GoodsReceiptDetail, \
-    GoodsIssueList, GoodsIssueDetail
-from apps.sales.inventory.views.inventory_adjustment import InventoryAdjustmentList, InventoryAdjustmentDetail, \
+from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail, \
+    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList, GoodsIssueDetail, \
     InventoryAdjustmentProductList
 
 urlpatterns = [
@@ -11,6 +10,11 @@ urlpatterns = [
     path('goods-receipt/<str:pk>', GoodsReceiptDetail.as_view(), name='GoodsReceiptDetail'),
     # inventory adjustment
     path('inventory-adjustments', InventoryAdjustmentList.as_view(), name='InventoryAdjustmentList'),
+    path(
+        'inventory-adjustments-other',
+        InventoryAdjustmentOtherList.as_view(),
+        name='InventoryAdjustmentOtherList'
+    ),
     path('inventory-adjustment/<str:pk>', InventoryAdjustmentDetail.as_view(), name='InventoryAdjustmentDetail'),
     path(
         'inventory-adjustment/product/list/<str:inventory_adjustment_mapped_id>',
