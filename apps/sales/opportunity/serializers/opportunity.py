@@ -138,10 +138,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                     'full_name': validated_data['employee_inherit'].get_full_name(),
                     'code': validated_data['employee_inherit'].code,
                     'email': validated_data['employee_inherit'].email,
-                    'group': {
-                        'id': str(validated_data['employee_inherit'].group_id),
-                        'title': validated_data['employee_inherit'].group.title
-                    }
                 }
             }
         ]
