@@ -1,8 +1,8 @@
 from django.urls import path
 
 from apps.sales.inventory.views import GoodsReceiptList, GoodsReceiptDetail, GoodsTransferList, GoodsTransferDetail, \
-    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList, GoodsIssueDetail, \
-    InventoryAdjustmentProductList
+    InventoryAdjustmentList, InventoryAdjustmentDetail, InventoryAdjustmentOtherList, GoodsIssueList, \
+    GoodsIssueDetail, InventoryAdjustmentProductList
 
 urlpatterns = [
     # goods receipt
