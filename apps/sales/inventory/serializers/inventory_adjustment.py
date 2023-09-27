@@ -217,20 +217,20 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_warehouse_mapped(cls, obj):
-        if obj.product_mapped:
+        if obj.warehouse_mapped:
             return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
+                'id': obj.warehouse_mapped_id,
+                'title': obj.warehouse_mapped.title,
+                'code': obj.warehouse_mapped.code,
             }
         return {}
 
     @classmethod
     def get_uom_mapped(cls, obj):
-        if obj.product_mapped:
+        if obj.uom_mapped:
             return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
+                'id': obj.uom_mapped_id,
+                'title': obj.uom_mapped.title,
+                'code': obj.uom_mapped.code,
             }
         return {}

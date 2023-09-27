@@ -27,6 +27,7 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
+from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
     OpportunitySaleTeamMember, OpportunityMemberPermitData
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
@@ -826,4 +827,13 @@ def update_tenant_for_sub_table_opp():
         member.company = member.opportunity.company
         member.tenant = member.opportunity.tenant
         member.save()
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_inventory_adjustment():
+    objs = InventoryAdjustmentItem.objects.all()
+    for obj in objs:
+        obj.company = obj.inventory_adjustment_mapped.company
+        obj.tenant = obj.inventory_adjustment_mapped.tenant
+        obj.save()
     print('Update Done!')

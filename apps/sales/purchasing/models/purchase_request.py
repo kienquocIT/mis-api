@@ -62,6 +62,20 @@ class PurchaseRequest(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def update_system_status(self):
+        products = PurchaseRequestProduct.objects.filter(purchase_request=self)
+        is_ordered = True
+        for product in products:
+            if product.remain_for_purchase_order != 0:
+                is_ordered = False
+                break
+        if is_ordered:
+            self.purchase_status = 2
+        else:
+            self.purchase_status = 1
+        self.save(update_fields=['purchase_status'])
+        return True
+
     def save(self, *args, **kwargs):
         # auto create code (temporary)
         purchase_request = PurchaseRequest.objects.filter_current(

@@ -98,11 +98,16 @@ class PurchaseOrder(DataAbstractModel):
             self.code = code
 
         # update quantity remain on purchase request product
+        list_purchase_request = []
         if self.system_status in [2, 3]:
             for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
                 po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
+                if po_request.purchase_request_product.purchase_request not in list_purchase_request:
+                    list_purchase_request.append(po_request.purchase_request_product.purchase_request)
                 po_request.purchase_request_product.save()
 
+        for pr in list_purchase_request:
+            pr.update_system_status()
         # hit DB
         super().save(*args, **kwargs)
 
