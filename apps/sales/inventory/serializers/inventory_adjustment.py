@@ -222,4 +222,4 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
             'select_for_action': ia_product.select_for_action,
             'action_status': ia_product.action_status,
             'product_unit_price': ia_product.product_mapped.sale_cost if ia_product.product_mapped else 0,
-        } for ia_product in obj.inventory_adjustment_item_mapped.filter(select_for_action=True)]
+        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2)]
