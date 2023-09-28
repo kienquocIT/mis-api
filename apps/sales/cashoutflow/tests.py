@@ -575,8 +575,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             "title": 'Hoan ung thang 5',
             "advance_payment": advance_payment.data['result']['id'],
             "method": 0,
-            "creator": employee_id,
-            "beneficiary": employee_id,
+            "employee_created": employee_id,
+            "employee_inherit": employee_id,
             "status": 0,
             "money_received": True,
             "cost": cost_data,
@@ -595,7 +595,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received',
-                'creator', 'beneficiary', 'method', 'status', 'cost', 'return_total'
+                'employee_created', 'employee_inherit', 'method', 'status', 'cost', 'return_total'
             ],
             check_sum_second=True,
         )
@@ -623,8 +623,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             "title": 'Hoan ung thang 5',
             "advance_payment": '1',
             "method": 0,
-            "creator": employee_id,
-            "beneficiary": employee_id,
+            "employee_created": employee_id,
+            "employee_inherit": employee_id,
             "status": 0,
             "money_received": True,
             "cost": cost_data,
@@ -690,7 +690,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'code', 'title', 'advance_payment', 'creator', 'beneficiary', 'method', 'status',
+                'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method', 'status',
                 'money_received', 'date_created', 'cost', 'return_total'
             ],
             check_sum_second=True,
