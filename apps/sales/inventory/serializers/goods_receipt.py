@@ -252,7 +252,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
                     'ratio': obj.uom.group.uom_reference.ratio,
                     'rounding': obj.uom.group.uom_reference.rounding,
                 } if obj.uom.group.uom_reference else {},
-            },
+            } if obj.uom.group else {},
             'ratio': obj.uom.ratio,
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
