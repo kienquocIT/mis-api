@@ -244,3 +244,8 @@ GOODS_ISSUE_TYPE = (
     (0, _('For Inventory Adjustment')),
     (1, _('Liquidation')),
 )
+
+RETURN_ADVANCE_MONEY_RECEIVED = (
+    (True, _('Received')),
+    (False, _('Waiting')),
+)

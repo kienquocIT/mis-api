@@ -29,7 +29,11 @@ class OpportunityList(
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = [
+        'tenant_id',
+        'company_id',
+        'employee_created_id',
+    ]
 
     def get_queryset(self):
         return super().get_queryset().select_related(

@@ -15,7 +15,10 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = [
+        'tenant_id',
+        'company_id',
+    ]
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -57,7 +60,7 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'advance_payment', 'beneficiary'
+            'advance_payment', 'employee_inherit'
         )
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')

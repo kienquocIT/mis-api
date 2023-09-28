@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
-from apps.shared import RETURN_ADVANCE_STATUS
+from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
@@ -34,9 +34,7 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_money_received(cls, obj):
-        if obj.money_received:
-            return "Received"
-        return "Waiting"
+        return str(dict(RETURN_ADVANCE_MONEY_RECEIVED).get(obj.money_received))
 
     @classmethod
     def get_status(cls, obj):
@@ -84,8 +82,8 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             'title',
             'advance_payment',
             'method',
-            'creator',
-            'beneficiary',
+            'employee_created',
+            'employee_inherit',
             'status',
             'money_received',
             'cost',
@@ -133,7 +131,7 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
     cost = serializers.SerializerMethodField()
     advance_payment = serializers.SerializerMethodField()
-    beneficiary = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -142,8 +140,8 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'advance_payment',
-            'creator',
-            'beneficiary',
+            'employee_created',
+            'employee_inherit',
             'method',
             'status',
             'money_received',
@@ -162,11 +160,11 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
         return {}
 
     @classmethod
-    def get_beneficiary(cls, obj):
-        if obj.beneficiary:
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
             return {
-                'id': obj.beneficiary_id,
-                'name': obj.beneficiary.get_full_name(),
+                'id': obj.employee_inherit_id,
+                'name': obj.employee_inherit.get_full_name(),
             }
         return {}
 
