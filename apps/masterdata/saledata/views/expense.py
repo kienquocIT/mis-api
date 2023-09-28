@@ -10,6 +10,7 @@ from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveM
 
 class ExpenseList(BaseListMixin, BaseCreateMixin):
     queryset = Expense.objects
+    search_fields = ['title']
     serializer_list = ExpenseListSerializer
     serializer_create = ExpenseCreateSerializer
     serializer_detail = ExpenseDetailSerializer

@@ -189,6 +189,13 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
+    def update_status_inventory_adjustment_item(cls, item_id):
+        item = InventoryAdjustmentItem.objects.get(id=item_id)
+        item.action_status = True
+        item.save(update_fields=['action_status'])
+        return True
+
+    @classmethod
     def common_create_sub_goods_issue(cls, instance, data):
         bulk_data = []
         for item in data:
@@ -211,7 +218,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
             )
             bulk_data.append(obj)
             cls.update_product_amount(item)
+            cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'])
         GoodsIssueProduct.objects.bulk_create(bulk_data)
+
         return True
 
     def create(self, validated_data):

@@ -838,3 +838,12 @@ def update_tenant_for_sub_table_inventory_adjustment():
         obj.tenant = obj.inventory_adjustment_mapped.tenant
         obj.save()
     print('Update Done!')
+
+
+def update_tenant_for_sub_table_purchase_request():
+    objs = PurchaseRequestProduct.objects.all()
+    for obj in objs:
+        obj.company = obj.purchase_request.company
+        obj.tenant = obj.purchase_request.tenant
+        obj.save()
+    print('Update Done!')

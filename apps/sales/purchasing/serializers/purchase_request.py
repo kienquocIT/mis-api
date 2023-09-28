@@ -236,7 +236,9 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 quantity=data['quantity'],
                 remain_for_purchase_order=data['quantity'],
                 unit_price=data['unit_price'],
-                sub_total_price=data['sub_total_price']
+                sub_total_price=data['sub_total_price'],
+                tenant=purchase_request.tenant,
+                company=purchase_request.company,
             )
             if pr_product.sale_order_product:
                 pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity

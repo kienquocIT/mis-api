@@ -9,6 +9,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class GoodsIssueList(BaseListMixin, BaseCreateMixin):
     queryset = GoodsIssue.objects
+    search_fields = ['title']
     serializer_list = GoodsIssueListSerializer
     serializer_create = GoodsIssueCreateSerializer
     serializer_detail = GoodsIssueDetailSerializer

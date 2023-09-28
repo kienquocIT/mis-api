@@ -29,6 +29,7 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
 # Create your views here.
 class ProductTypeList(BaseListMixin, BaseCreateMixin):
     queryset = ProductType.objects
+    search_fields = ['title']
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
@@ -85,6 +86,7 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     queryset = ProductCategory.objects
+    search_fields = ['title']
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
@@ -193,6 +195,7 @@ class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasureGroup.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
@@ -420,6 +423,7 @@ class ProductForSaleList(BaseListMixin):
 
 class UnitOfMeasureOfGroupLaborList(BaseListMixin):
     queryset = UnitOfMeasure.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureOfGroupLaborListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

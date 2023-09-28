@@ -1,6 +1,7 @@
 from django.db import models
+from django.utils import timezone
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, REQUEST_FOR, PURCHASE_STATUS
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
 class PurchaseRequest(DataAbstractModel):
@@ -93,7 +94,7 @@ class PurchaseRequest(DataAbstractModel):
         super().save(*args, **kwargs)
 
 
-class PurchaseRequestProduct(SimpleAbstractModel):
+class PurchaseRequestProduct(MasterDataAbstractModel):
     purchase_request = models.ForeignKey(
         PurchaseRequest,
         on_delete=models.CASCADE,
@@ -138,6 +139,10 @@ class PurchaseRequestProduct(SimpleAbstractModel):
     remain_for_purchase_order = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not purchased order yet, update when PO finish"
+    )
+
+    date_modified = models.DateTimeField(
+        default=timezone.now,
     )
 
     class Meta:
