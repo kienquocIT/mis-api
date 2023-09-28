@@ -840,6 +840,13 @@ def update_tenant_for_sub_table_inventory_adjustment():
     print('Update Done!')
 
 
+def update_quantity_remain_pr_product():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save(update_fields=['remain_for_purchase_order'])
+    print('update done.')
+
+
 def update_tenant_for_sub_table_purchase_request():
     objs = PurchaseRequestProduct.objects.all()
     for obj in objs:

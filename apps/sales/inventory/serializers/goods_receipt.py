@@ -481,9 +481,9 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
-    purchase_order = serializers.UUIDField(required=False)
-    inventory_adjustment = serializers.UUIDField(required=False)
-    supplier = serializers.UUIDField(required=False)
+    purchase_order = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
+    supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
 

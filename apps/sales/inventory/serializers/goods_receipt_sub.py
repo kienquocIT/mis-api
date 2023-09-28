@@ -50,7 +50,7 @@ class GoodsReceiptCommonCreate:
                     warehouse_data=warehouse_data,
                     instance=instance,
                     new_product=new_pr_product,
-                    is_has_pr=False
+                    is_has_pr=True
                 )
             # If PO doesn't have PR
             # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
