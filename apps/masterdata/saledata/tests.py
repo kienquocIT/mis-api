@@ -2040,16 +2040,6 @@ class ExpenseTestCase(AdvanceTestCase):
         return response
 
     @staticmethod
-    def create_expense_type(self):
-        data = {
-            'title': 'chi phí nhân công',
-            'description': ''
-        }
-        url = reverse("ExpenseTypeList")
-        response = self.client.post(url, data, format='json')
-        return response
-
-    @staticmethod
     def create_uom_group(self):
         url = reverse('UnitOfMeasureGroupList')
         response = self.client.post(
@@ -2101,13 +2091,11 @@ class ExpenseTestCase(AdvanceTestCase):
 
     def test_create_new_expense(self):
         currency = self.get_currency(self).data['result']  # noqa
-        expense_type = self.create_expense_type(self).data['result']
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "title": "Chi phí nhân công sản xuất",
-            "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
             "role": [],
@@ -2132,19 +2120,17 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'price_list', 'expense_type', 'uom_group', 'uom', 'role'],
+            ['id', 'title', 'code', 'price_list', 'uom_group', 'uom', 'role'],
             check_sum_second=True,
         )
         return response, price_list
 
     def test_create_expense_missing_data(self):
         currency = self.get_currency(self).data['result']  # noqa
-        expense_type = self.create_expense_type(self).data['result']
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {
-            "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
             "role": [],
@@ -2174,7 +2160,6 @@ class ExpenseTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
         data1 = {  # noqa
-            "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
             "role": [],
@@ -2202,46 +2187,15 @@ class ExpenseTestCase(AdvanceTestCase):
             ['title'],
             check_sum_second=True,
         )
-
-        data2 = {  # noqa
-            "title": "Chi phí nhân công sản xuất",
-            "uom_group": uom_group['id'],
-            "uom": uom['id'],
-            "role": [],
-            "data_price_list": [
-                {
-                    'id': price_list['id'],
-                    'value': 0,
-                    'is_auto_update': False,
-                }
-            ],
-            "currency_using": currency[0]['id']
-        }
-        response2 = self.client.post(url, data2, format='json')
-        self.assertResponseList(
-            response2,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response2.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response2.data['errors'],
-            ['expense_type'],
-            check_sum_second=True,
-        )
         return response
 
     def test_update_expense(self):
         currency = self.get_currency(self).data['result']  # noqa
-        expense_type = self.create_expense_type(self).data['result']
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "title": "Chi phí nhân công sản xuất",
-            "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
             "role": [],
@@ -2262,7 +2216,6 @@ class ExpenseTestCase(AdvanceTestCase):
 
         data_update = {  # noqa
             "title": "Chi phí nhân công vệ sinh",
-            "expense_type": expense_type['id'],
             "uom_group": uom_group['id'],
             "uom": uom['id'],
             "role": [],
