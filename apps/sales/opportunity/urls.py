@@ -14,7 +14,7 @@ from .views import (
 urlpatterns = [
     path('config', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
     path('lists', OpportunityList.as_view(), name='OpportunityList'),
-    path('lists-for-cash-outflow', OpportunityListForCashOutFlow.as_view(), name='OpportunityListForCashOutFlow'),
+    path('list-for-cash-outflow', OpportunityListForCashOutFlow.as_view(), name='OpportunityListForCashOutFlow'),
     path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
 
