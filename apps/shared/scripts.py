@@ -854,3 +854,12 @@ def update_tenant_for_sub_table_purchase_request():
         obj.tenant = obj.purchase_request.tenant
         obj.save()
     print('Update Done!')
+
+
+def update_employee_inherit_and_created_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for obj in objs:
+        obj.employee_inherit = obj.beneficiary
+        obj.employee_created = obj.creator
+        obj.save()
+    print('Update Done!')
