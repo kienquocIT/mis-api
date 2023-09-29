@@ -74,7 +74,7 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
                     } if item.uom else {},
                     'uom_group': {
                         'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
-                    } if item.uom else {},
+                    } if item.uom.group else {},
                     'tax': {
                         'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
                     } if item.tax else {}
