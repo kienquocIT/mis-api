@@ -845,3 +845,21 @@ def update_quantity_remain_pr_product():
         pr_product.remain_for_purchase_order = pr_product.quantity
         pr_product.save(update_fields=['remain_for_purchase_order'])
     print('update done.')
+
+
+def update_tenant_for_sub_table_purchase_request():
+    objs = PurchaseRequestProduct.objects.all()
+    for obj in objs:
+        obj.company = obj.purchase_request.company
+        obj.tenant = obj.purchase_request.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_and_created_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for obj in objs:
+        obj.employee_inherit = obj.beneficiary
+        obj.employee_created = obj.creator
+        obj.save()
+    print('Update Done!')
