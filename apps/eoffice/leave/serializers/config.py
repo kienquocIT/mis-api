@@ -81,6 +81,8 @@ class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
+    prev_year = serializers.SerializerMethodField(allow_null=True)
+
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
@@ -99,8 +101,9 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TYPE_CODE})
         return value
 
-    def validate_title(self, value):
-        if not value and self.instance.code != 'AN' or self.instance.code != 'ANPY':
+    @classmethod
+    def validate_title(cls, value):
+        if not value:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
