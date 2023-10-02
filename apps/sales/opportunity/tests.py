@@ -203,7 +203,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": customer,
             "product_category": [],
-            "employee_inherit": emp
+            "employee_inherit_id": emp
         }
         url = reverse("OpportunityList")
         response = self.client.post(url, data, format='json')
@@ -227,7 +227,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": '83de3bab-edc2-4d72-ac11-dfa4540cec88',
             "product_category": [],
-            "employee_inherit": emp,
+            "employee_inherit_id": emp,
 
         }
         response1 = self.client.post(url, data1, format='json')
@@ -250,7 +250,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": customer,
             "product_category": [],
-            "employee_inherit": '83de3bab-edc2-4d72-ac11-dfa4540cec88'
+            "employee_inherit_id": '83de3bab-edc2-4d72-ac11-dfa4540cec88'
         }
         response2 = self.client.post(url, data2, format='json')
 

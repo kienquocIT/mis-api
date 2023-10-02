@@ -9,3 +9,4 @@ class LeaveMsg:
     ERROR_LEAVE_TYPE_CODE = _('This code is available please choice other code.')
     ERROR_LEAVE_TITLE = _('Title is required.')
     ERROR_DELETE_LEAVE_TYPE = _('This type can\'t delete')
+    ERROR_DUPLICATE_YEAR = _('This year had available in your company')

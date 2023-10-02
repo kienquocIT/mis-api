@@ -84,7 +84,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
-    employee_inherit = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
 
     class Meta:
         model = Opportunity
@@ -92,7 +92,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
-            'employee_inherit',
+            'employee_inherit_id',
             'open_date',
         )
 
@@ -108,13 +108,14 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
-    def validate_employee_inherit(cls, value):
+    def validate_employee_inherit_id(cls, value):
         try:
-            return Employee.objects.get_current(
+            emp = Employee.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
+            return emp.id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
@@ -126,13 +127,14 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
         win_rate = stage.win_rate
 
+        employee_inherit = Employee.objects.get(id=validated_data['employee_inherit_id'])
         sale_team_data = [
             {
                 'member': {
-                    'id': str(validated_data['employee_inherit'].id),
-                    'full_name': validated_data['employee_inherit'].get_full_name(),
-                    'code': validated_data['employee_inherit'].code,
-                    'email': validated_data['employee_inherit'].email,
+                    'id': str(employee_inherit.id),
+                    'full_name': employee_inherit.get_full_name(),
+                    'code': employee_inherit.code,
+                    'email': employee_inherit.email,
                 }
             }
         ]
@@ -140,7 +142,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         opportunity = Opportunity.objects.create(
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,
-            win_rate=win_rate
+            win_rate=win_rate,
         )
 
         # create M2M Opportunity and Product Category
@@ -150,7 +152,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         # set sale_person in sale team
         OpportunitySaleTeamMember.objects.create(
             opportunity=opportunity,
-            member=validated_data['employee_inherit'],
+            member=employee_inherit,
             permit_app=OpportunityMemberPermitData.PERMIT_DATA,
             permit_view_this_opp=True,
             permit_add_member=True,

@@ -27,6 +27,7 @@ from . import MediaForceAPI
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
+from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
     OpportunitySaleTeamMember, OpportunityMemberPermitData
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
@@ -827,4 +828,38 @@ def update_tenant_for_sub_table_opp():
         member.company = member.opportunity.company
         member.tenant = member.opportunity.tenant
         member.save()
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_inventory_adjustment():
+    objs = InventoryAdjustmentItem.objects.all()
+    for obj in objs:
+        obj.company = obj.inventory_adjustment_mapped.company
+        obj.tenant = obj.inventory_adjustment_mapped.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_quantity_remain_pr_product():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save(update_fields=['remain_for_purchase_order'])
+    print('update done.')
+
+
+def update_tenant_for_sub_table_purchase_request():
+    objs = PurchaseRequestProduct.objects.all()
+    for obj in objs:
+        obj.company = obj.purchase_request.company
+        obj.tenant = obj.purchase_request.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_and_created_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for obj in objs:
+        obj.employee_inherit = obj.beneficiary
+        obj.employee_created = obj.creator
+        obj.save()
     print('Update Done!')

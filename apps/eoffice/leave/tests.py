@@ -33,38 +33,38 @@ class LeaveTestCase(AdvanceTestCase):
                     {
                         'mon': {
                             'work': True,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'tue': {
                             'work': True,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'wed': {
                             'work': True,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'thu': {
                             'work': True,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'fri': {
                             'work': True,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'sat': {
                             'work': False,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
                         'sun': {
                             'work': False,
-                            'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         }
                     }
             },

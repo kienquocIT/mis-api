@@ -10,7 +10,7 @@ class ShippingList(BaseListMixin, BaseCreateMixin):
     serializer_list = ShippingListSerializer
     serializer_create = ShippingCreateSerializer
     serializer_detail = ShippingDetailSerializer
-
+    search_fields = ['title']
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 

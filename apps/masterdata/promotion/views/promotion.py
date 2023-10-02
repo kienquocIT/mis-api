@@ -103,8 +103,16 @@ class PromotionCheckList(BaseListMixin):
                         filter_q |= Q(customers_map_promotion__id=val_of_key)
         # return query filter
         if len(filter_q) > 0:
-            return super().get_queryset().filter(**filter_expires).filter(filter_q)
-        return super().get_queryset().filter(**filter_expires)
+            return super().get_queryset().select_related(
+                'currency'
+            ).prefetch_related(
+                'sale_order_product_promotion'
+            ).filter(**filter_expires).filter(filter_q)
+        return super().get_queryset().select_related(
+            'currency'
+        ).prefetch_related(
+            'sale_order_product_promotion'
+        ).filter(**filter_expires)
 
     @swagger_auto_schema(
         operation_summary="Promotion list",

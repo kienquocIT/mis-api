@@ -14,6 +14,7 @@ class PurchaseRequestList(
 ):
     queryset = PurchaseRequest.objects
 
+    search_fields = ['title']
     serializer_list = PurchaseRequestListSerializer
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_create = PurchaseRequestCreateSerializer

@@ -26,16 +26,6 @@ class ReturnAdvance(DataAbstractModel):
         help_text='0 is Cash, 1 is Bank Transfer',
         default=0
     )
-    creator = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='creator_name'
-    )
-    beneficiary = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='beneficiary'
-    )
     status = models.SmallIntegerField(
         choices=RETURN_ADVANCE_STATUS,
         verbose_name='status of Return Advance',

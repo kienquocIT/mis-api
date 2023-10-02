@@ -43,6 +43,7 @@ class PurchaseRequestMsg:
 
 class PurchasingMsg:
     PURCHASE_QUOTATION_NOT_EXIST = _('Purchase quotation does not exist')
+    PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
 
 
 class DeliverMsg:
@@ -51,3 +52,8 @@ class DeliverMsg:
     ERROR_ESTIMATED_DATE = _('Estimated Delivery date is required!')
     ERROR_OUT_STOCK = _('out of stock')
     ERROR_QUANTITY = _('Done quantity not equal remain quantity!')
+
+
+class InventoryMsg:
+    GOODS_RECEIPT_NOT_EXIST = _('Goods receipt does not exist')
+    INVENTORY_ADJUSTMENT_NOT_EXIST = _('Inventory adjustment does not exist')
