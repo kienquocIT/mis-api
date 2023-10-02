@@ -193,19 +193,21 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
     def get_warehouse_uom(self, obj):
         tenant_id = self.context.get('tenant_id', None)
         company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
         if tenant_id and company_id and TypeCheck.check_uuid_list(
                 [tenant_id, company_id]
         ):
             record = ProductWareHouse.objects.filter_current(
                 tenant_id=tenant_id, company_id=company_id,
-                warehouse_id=obj.id
+                warehouse_id=obj.id, product_id=product_id
             )
-            return {
-                'id': str(record.first().uom_id),
-                'ratio': record.first().uom.ratio,
-                'rounding': record.first().uom.rounding,
-                'title': record.first().uom.title
-            }
+            if record.exists():
+                return {
+                    'id': str(record.first().uom_id),
+                    'ratio': record.first().uom.ratio,
+                    'rounding': record.first().uom.rounding,
+                    'title': record.first().uom.title
+                }
         return {}
 
     def get_original_info(self, obj):
