@@ -8,7 +8,7 @@ from apps.shared import LEAVE_YEARS_SENIORITY, LeaveMsg
 
 __all__ = ['LeaveConfigDetailSerializer', 'LeaveTypeConfigCreateSerializer', 'LeaveTypeConfigDetailSerializer',
            'LeaveTypeConfigUpdateSerializer', 'LeaveTypeConfigDeleteSerializer', 'WorkingCalendarConfigListSerializer',
-           'WorkingYearSerializer', 'WorkingHolidaySerializer'
+           'WorkingYearSerializer', 'WorkingHolidaySerializer', 'WorkingCalendarConfigUpdateSerializer'
            ]
 
 
@@ -149,7 +149,7 @@ class WorkingCalendarConfigListSerializer(serializers.ModelSerializer):
                     'id': item[0],
                     'config_year': item[1],
                     'list_holiday': WorkingHolidaySerializer(
-                        WorkingHolidayConfig.objects.filter(year_id=item[0])
+                        WorkingHolidayConfig.objects.filter(year_id=item[0]).order_by('holiday_date_to')
                         , many=True).data
                 } for item in filter_list.values_list('id', 'config_year')
             ]
@@ -157,10 +157,24 @@ class WorkingCalendarConfigListSerializer(serializers.ModelSerializer):
         return {}
 
 
+class WorkingCalendarConfigUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkingCalendarConfig
+        fields = ('id', 'working_days')
+
+
 class WorkingYearSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkingYearConfig
         fields = ('id', 'working_calendar', 'config_year')
+
+    def validate_config_year(self, value):
+        if WorkingYearConfig.objects.filter(
+                working_calendar_id=str(self.initial_data['working_calendar']),
+                config_year=value
+        ).exists():
+            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_DUPLICATE_YEAR})
+        return value
 
 
 class WorkingHolidaySerializer(serializers.ModelSerializer):
