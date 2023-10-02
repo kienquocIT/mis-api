@@ -320,6 +320,10 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'general_product_category',
+            'general_uom_group',
+            'sale_tax',
+            'sale_default_uom',
+            'inventory_uom'
         )
 
     @swagger_auto_schema(

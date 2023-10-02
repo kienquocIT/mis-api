@@ -6,6 +6,7 @@ from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
+from apps.masterdata.saledata.models.product_warehouse import ProductWareHouse
 from apps.shared import ProductMsg
 from .product_sub import CommonCreateUpdateProduct
 
@@ -23,6 +24,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_tax = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
+    product_warehouse_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -36,7 +38,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'sale_tax',
             'sale_default_uom',
             'price_list_mapped',
-            'product_choice'
+            'product_choice',
+            'product_warehouse_detail'
         )
 
     @classmethod
@@ -90,6 +93,29 @@ class ProductListSerializer(serializers.ModelSerializer):
                 'price': item.price,
                 'currency_abbreviation': item.currency_using.abbreviation
             })
+        return result
+
+    @classmethod
+    def get_product_warehouse_detail(cls, obj):
+        result = []
+        product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+        for item in product_warehouse:
+            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
+            uom_ratio_des = item.uom.ratio if item.uom else 0
+            if uom_ratio_src and uom_ratio_des:
+                ratio_convert = float(uom_ratio_src / uom_ratio_des)
+                result.append(
+                    {
+                        'warehouse': {
+                            'id': item.warehouse_id,
+                            'title': item.warehouse.title,
+                            'code': item.warehouse.code,
+                        } if item.warehouse else {},
+                        'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
+                        'wait_for_delivery_amount': ratio_convert * item.picked_ready,
+                        'wait_for_receipt_amount': ratio_convert * 0
+                    }
+                )
         return result
 
 
@@ -358,6 +384,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     sale_information = serializers.SerializerMethodField()
     inventory_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
+    product_warehouse_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -371,6 +398,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'sale_information',
             'purchase_information',
             'product_choice',
+            'product_warehouse_detail'
         )
 
     @classmethod
@@ -477,6 +505,27 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
         }
+        return result
+
+    @classmethod
+    def get_product_warehouse_detail(cls, obj):
+        result = []
+        product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+        for item in product_warehouse:
+            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
+            uom_ratio_des = item.uom.ratio if item.uom else 0
+            if uom_ratio_src and uom_ratio_des:
+                ratio_convert = float(uom_ratio_src / uom_ratio_des)
+                result.append({
+                    'warehouse': {
+                        'id': item.warehouse_id,
+                        'title': item.warehouse.title,
+                        'code': item.warehouse.code,
+                    } if item.warehouse else {},
+                    'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
+                    'wait_for_delivery_amount': ratio_convert * item.picked_ready,
+                    'wait_for_receipt_amount': ratio_convert * 0
+                })
         return result
 
 
