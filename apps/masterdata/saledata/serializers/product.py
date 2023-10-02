@@ -6,7 +6,6 @@ from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
-from apps.masterdata.saledata.models.product_warehouse import ProductWareHouse
 from apps.shared import ProductMsg
 from .product_sub import CommonCreateUpdateProduct
 
