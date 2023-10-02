@@ -64,7 +64,8 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'contact_mapped',
             'purchase_quotation_request_mapped'
         ).prefetch_related(
-            'purchase_quotation'
+            'purchase_quotation__uom',
+            'purchase_quotation__tax',
         )
 
     @swagger_auto_schema(

@@ -127,13 +127,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
                     'expense_after_tax_price': item.expense_after_tax_price,
-                    'others_payment_total': sum(item.real_value for item in PaymentCostItems.objects.filter(
-                        sale_code_mapped=obj.quotation_mapped_id
-                    )),
-                    'returned_total': item.sum_return_value,
-                    'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
-                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                 }
             )
         return expense_items
@@ -371,13 +364,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
                     'expense_after_tax_price': item.expense_after_tax_price,
-                    'returned_total': item.sum_return_value,
-                    'to_payment_total': item.sum_converted_value,
-                    'remain_total': item.expense_after_tax_price - item.sum_return_value - item.sum_converted_value,
-                    'others_payment_total': sum(item.real_value for item in PaymentCostItems.objects.filter(
-                        sale_code_mapped=obj.id
-                    )),
-                    'currency': {'id': item.currency_id, 'abbreviation': item.currency.abbreviation},
                 }
             )
         return expense_items
@@ -520,7 +506,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         all_ap_relate = get_advance_payment_relate(obj)
         all_returned_items = ReturnAdvanceCost.objects.filter(
             return_advance_id__in=[item.id for item in ReturnAdvance.objects.filter(advance_payment__in=all_ap_relate)]
-        ).select_related('expense_type')
+        )
         returned_value_list = []
         for item in all_returned_items:
             returned_value_list.append({

@@ -62,7 +62,7 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
     def get_products_mapped(cls, obj):
         product_mapped_list = []
         index = 1
-        for item in obj.purchase_quotation_request.all().select_related('product', 'uom', 'tax'):
+        for item in obj.purchase_quotation_request.all():
             product_mapped_list.append({
                 'index': index,
                 'product': {
@@ -193,7 +193,7 @@ class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_list(cls, obj):
         product_list = []
-        for item in obj.purchase_quotation_request.all().select_related('product', 'uom', 'tax'):
+        for item in obj.purchase_quotation_request.all():
             product_list.append({
                 'id': item.product_id,
                 'title': item.product.title,

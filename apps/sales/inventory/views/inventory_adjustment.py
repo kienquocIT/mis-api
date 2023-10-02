@@ -56,7 +56,10 @@ class InventoryAdjustmentDetail(
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'inventory_adjustment_item_mapped'
+            'inventory_adjustment_item_mapped__product_mapped',
+            'inventory_adjustment_item_mapped__warehouse_mapped',
+            'inventory_adjustment_item_mapped__uom_mapped',
+            'employees_in_charge_mapped'
         )
 
     @swagger_auto_schema(

@@ -105,7 +105,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
     def get_products_mapped(cls, obj):
         product_mapped_list = []
         index = 1
-        for item in obj.purchase_quotation.all().select_related('product', 'uom', 'tax'):
+        for item in obj.purchase_quotation.all():
             product_mapped_list.append(
                 {
                     'index': index,

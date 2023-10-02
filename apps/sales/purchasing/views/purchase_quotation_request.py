@@ -17,7 +17,7 @@ class PurchaseQuotationRequestList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'purchase_quotation_request', 'purchase_request_mapped'
+            'purchase_request_mapped'
         )
 
     @swagger_auto_schema(
@@ -52,7 +52,9 @@ class PurchaseQuotationRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'purchase_quotation_request', 'purchase_request_mapped'
+            'purchase_quotation_request__product',
+            'purchase_quotation_request__uom__group',
+            'purchase_quotation_request__tax',
         )
 
     @swagger_auto_schema(
@@ -71,6 +73,13 @@ class PurchaseQuotationRequestListForPQ(BaseListMixin):
     queryset = PurchaseQuotationRequest.objects
     serializer_list = PurchaseQuotationRequestListForPQSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related(
+            'purchase_quotation_request__product',
+            'purchase_quotation_request__uom',
+            'purchase_quotation_request__tax',
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation Request List For Purchase Quotation",
