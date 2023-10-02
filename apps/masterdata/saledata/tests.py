@@ -324,7 +324,8 @@ class ProductTestCase(AdvanceTestCase):
                 'inventory_information',
                 'sale_information',
                 'purchase_information',
-                'product_choice'
+                'product_choice',
+                'product_warehouse_detail'
             ],
             check_sum_second=True,
         )
@@ -357,7 +358,8 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_tax',
                 'sale_default_uom',
                 'price_list_mapped',
-                'product_choice'
+                'product_choice',
+                'product_warehouse_detail'
             ],
             check_sum_second=True,
         )
@@ -391,6 +393,7 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_information',
                 'purchase_information',
                 'product_choice',
+                'product_warehouse_detail'
             ],
             check_sum_second=True,
         )
