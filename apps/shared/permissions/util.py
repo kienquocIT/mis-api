@@ -121,6 +121,9 @@ class PermissionController:
     def valid_config(
             self, config_data, plan_id_arr: list = None, app_id_arr: list = None, checked_data: list = None
     ):  # pylint: disable=R0914
+        if not checked_data:
+            config_data = []
+
         if not plan_id_arr:
             plan_id_arr = []
         if not app_id_arr:
