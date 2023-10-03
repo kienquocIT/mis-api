@@ -4,7 +4,7 @@ from django_filters.rest_framework import filters
 from rest_framework import exceptions
 
 from apps.masterdata.saledata.models import Account
-from apps.shared import TypeCheck, PermissionChecking
+from apps.shared import TypeCheck, EmployeeAttribute
 
 __all__ = [
     'AccountListFilter',
@@ -43,17 +43,15 @@ class AccountListFilter(django_filters.FilterSet):
 
                     filter_q = Q()
                     if value == 'same':
-                        employee_ids = PermissionChecking.get_employee_same_group(
-                            employee_obj=employee_current,
-                            is_append_me=True,
-                        )
+                        employee_ids = EmployeeAttribute(
+                            employee_obj=employee_current, is_append_me=True
+                        ).employee_same_group_ids
                         for employee_id in employee_ids:
                             filter_q |= Q(**{name: {'id': employee_id}})
                     elif value == 'staff':
-                        employee_ids = PermissionChecking.get_employee_my_staff(
-                            employee_obj=employee_current,
-                            is_append_me=True,
-                        )
+                        employee_ids = EmployeeAttribute(
+                            employee_obj=employee_current, is_append_me=True
+                        ).employee_staff_ids
                         for employee_id in employee_ids:
                             filter_q |= Q(**{name: {'id': employee_id}})
 
