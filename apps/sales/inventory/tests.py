@@ -610,7 +610,10 @@ class InventoryTestCase(AdvanceTestCase):
         return response
 
     def test_create_goods_transfer(self):
-        _, _ = PickingDeliveryTestCase.test_2_complete_picking_delivery(self)
+        self.update_config_picking()
+        _delivery, _delivery_sub = self.create_delivery()
+        _picking, _picking_sub = self.create_picking()
+        # _, _ = PickingDeliveryTestCase.test_2_complete_picking_delivery(self)
         new_warehouse = self.create_new_warehouse()
         products_warehouse = self.get_product_warehouse().data['result']
 
@@ -715,7 +718,10 @@ class InventoryTestCase(AdvanceTestCase):
         return response
 
     def test_create_goods_issue(self):
-        _, _ = PickingDeliveryTestCase.test_2_complete_picking_delivery(self)
+        self.update_config_picking()
+        _delivery, _delivery_sub = self.create_delivery()
+        _picking, _picking_sub = self.create_picking()
+        # _, _ = PickingDeliveryTestCase.test_2_complete_picking_delivery(self)
         products_warehouse = self.get_product_warehouse().data['result']
         url = reverse('GoodsIssueList')
         data = {
