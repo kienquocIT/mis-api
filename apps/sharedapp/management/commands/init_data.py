@@ -36,7 +36,7 @@ class Command(BaseCommand):
         #     f'{sys.style.WARNING(str(item[0]))}: {self.style.SUCCESS(str(item[1]))} loaded, '
         #     f'{sys.style.ERROR(str(item[2]))} diff'
         # )
-        if check_app_depends_and_mapping:
+        if check_app_depends_and_mapping():
             is_limit_wards = options.get('limit_wards', False)
             text_destroy_diff = options.get('destroy_diff', '')
             arr_destroy_diff = []

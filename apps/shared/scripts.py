@@ -22,7 +22,7 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse,
 )
-from . import MediaForceAPI
+from . import MediaForceAPI, PermissionController
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
@@ -863,3 +863,23 @@ def update_employee_inherit_and_created_return_advance():
         obj.employee_created = obj.creator
         obj.save()
     print('Update Done!')
+
+
+def new_permit_parsed():
+    print('New permit parsed is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        setattr(
+            obj,
+            'permissions_parsed',
+            PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        )
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        setattr(
+            obj,
+            'permissions_parsed',
+            PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        )
+    print('New permit parsed is successfully!')

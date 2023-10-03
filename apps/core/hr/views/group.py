@@ -198,14 +198,6 @@ class GroupParentList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().filter(is_delete=False)
 
-    def setup_list_field_hidden(self, user, **kwargs):
-        data = super().setup_list_field_hidden(user)
-        if 'level' in self.kwargs:
-            level = int(self.kwargs['level'])
-            del self.kwargs['level']
-            data['group_level__level__lt'] = level
-        return data
-
     def error_auth_require(self):
         return self.list_empty()
 
