@@ -873,24 +873,13 @@ def new_permit_parsed():
         if str(obj.id) in ['9afa6107-a1f9-4d06-b855-aa60b25a70aa', 'ad2fd817-2878-40d0-b05d-4d87a0189de7']:
             obj.permission_by_configured = []
         print('Employee: ', obj.id, obj.get_full_name())
-        PermissionsUpdateSerializer.force_permissions(
-            instance=obj, validated_data={
-                'permission_by_configured': PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(
-                    instance=obj
-                )
-            }
-        )
-        # obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
         obj.save()
 
     for obj in Role.objects.all():
         if str(obj.id) in ['88caae0f-c53a-44d4-b4d8-c9d3856eca66', '54233b73-a4ee-4c2e-8729-8dd33bcaa303']:
             obj.permission_by_configured = []
         print('Role: ', obj.id, obj.title)
-        setattr(
-            obj,
-            'permissions_parsed',
-            PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
-        )
+        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit parsed is successfully!')
