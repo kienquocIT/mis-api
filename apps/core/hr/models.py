@@ -160,9 +160,9 @@ class PermissionAbstractModel(models.Model):
 
             permission_by_id = self.permission_by_id
             if key not in permission_by_id:
-                permission_by_id[key] = []
+                permission_by_id[key] = {}
 
-            permission_by_id[key] = list(set(permission_by_id[key] + [str(doc_id)]))
+            permission_by_id[key] = {**permission_by_id[key], str(doc_id): {}}
 
             self.permission_by_id = permission_by_id
             self.permissions_parsed = PermissionController(tenant_id=self.get_tenant_id()).get_permission_parsed(

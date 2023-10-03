@@ -425,3 +425,7 @@ msgstr "Phép dư năm trước"
 #
 msgid "Annual leave"
 msgstr "Nghỉ phép năm"
+
+#
+msgid "View config is enable authenticated checking but not provide value of permit"
+msgstr "Cấu hình lớp xử lý yêu cầu HTTP yêu cầu kiểm tra xác thực quyền nhưng không cung cấp giá trị quyền"

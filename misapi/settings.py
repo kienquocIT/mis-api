@@ -529,8 +529,8 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
 # -- Tracing
 
 # Display config about DB, Cache, CELERY,...
-OS_DEBUG = os.environ.get('DEBUG', DEBUG)
-if OS_DEBUG is True or OS_DEBUG in [1, '1']:
+DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
+if DEBUG is True:
     # debug toolbar IP Internal
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]

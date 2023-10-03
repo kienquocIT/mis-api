@@ -4,13 +4,16 @@ from apps.shared import ResponseController, BaseListMixin
 
 class ApplicationListMixin(BaseListMixin):
     def tenant_application_list(self, request, *args, **kwargs):
-        kwargs.update(self.setup_list_field_hidden(request.user))
+        filter_kwargs = {
+            **kwargs,
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
         plan_application_id_list = PlanApplication.objects.filter(
             plan_id__in=request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
         ).values_list('application__id', flat=True)
         if plan_application_id_list:
-            kwargs.update({'id__in': plan_application_id_list})
-        queryset = self.filter_queryset(self.get_queryset().filter(**kwargs))
+            filter_kwargs.update({'id__in': plan_application_id_list})
+        queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs))
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True)
