@@ -381,6 +381,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         sale_order = self.create_sale_order().data['result']
         sale_order_id = sale_order['id']
         delivery = OrderDelivery.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
@@ -400,6 +402,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertTrue(OrderDelivery.objects.filter(id=obj_delivery.id).exists())
 
         sub = OrderDeliverySub.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             code=obj_delivery.code,
             id=uuid4(),
             order_delivery_id=obj_delivery.id,
@@ -475,6 +479,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         sale_order_id = sale_order['id']
         warehouse = self.warehouse.data['result']
         picking = OrderPicking.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             sale_order_id=sale_order_id,
             ware_house_id=warehouse['id'],
             state=0,
@@ -491,6 +497,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         self.assertTrue(OrderPicking.objects.filter(id=obj_picking.id).exists())
 
         sub = OrderPickingSub.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             code=obj_picking.code,
             id=uuid4(),
             order_picking_id=obj_picking.id,
@@ -560,7 +568,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         picking, picking_sub = self.create_picking()
         # complete picking
         picking_prod = OrderPickingProduct.objects.filter(picking_sub_id=picking_sub.id).first()
-        url_update = reverse('OrderPickingSubDetail', args=[picking_sub.id])
+        url_update = reverse('OrderPickingSubDetail', kwargs={'pk': picking_sub.id})
         data_picking_update = {
             "order_picking": picking.id,
             "sale_order_id": self.sale_order.data['result']['id'],
