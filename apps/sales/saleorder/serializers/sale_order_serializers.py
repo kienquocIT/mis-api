@@ -221,7 +221,10 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    opportunity = serializers.UUIDField()
+    opportunity = serializers.UUIDField(
+        required=False,
+        allow_null=True,
+    )
     customer = serializers.UUIDField()
     contact = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
