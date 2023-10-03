@@ -435,10 +435,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             if self.cls_check.decor.auth_require is True:
                 if self.cls_check.permit_cls.config_data__exist:
                     if obj and body_data:
-                        return all(
-                            self.cls_check.permit_cls.config_data__check_obj_and_body_data(
-                                obj=obj, body_data=body_data
-                            )
+                        return self.cls_check.permit_cls.config_data__check_obj_and_body_data(
+                            obj=obj, body_data=body_data
                         )
                     if obj:
                         return self.cls_check.permit_cls.config_data__check_obj(obj=obj)

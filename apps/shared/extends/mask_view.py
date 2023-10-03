@@ -1,3 +1,4 @@
+from copy import deepcopy
 from functools import wraps
 from typing import Union, Literal
 from uuid import uuid4
@@ -775,6 +776,7 @@ class PermissionController:
 
     _config_data__check_obj = None
     _config_data__check_body_data = None
+    _config_data__check_obj_and_body_data = None
 
     @classmethod
     def check_permit_each_item(cls, key_full, data, obj_or_dict):
@@ -866,90 +868,57 @@ class PermissionController:
     def config_data__check_body_data(self, body_data: dict[str, any]) -> bool:
         """
         """
-        if body_data and isinstance(body_data, dict) and self._config_data__check_body_data is None:
-            if self.config_data__simple_list and isinstance(self.config_data__simple_list, list):
-                is_allow = False
-                for data_item in self.config_data__simple_list:
-                    one_item_allow = None
-                    for key_full, data in data_item.items():
-                        if is_allow is True:
-                            break
+        if self._config_data__check_body_data is None:
+            if body_data and isinstance(body_data, dict):
+                if self.config_data__simple_list and isinstance(self.config_data__simple_list, list):
+                    is_allow = False
+                    for data_item in self.config_data__simple_list:
+                        one_item_allow = None
+                        for key_full, data in data_item.items():
+                            if is_allow is True:
+                                break
 
-                        one_item_allow = self.check_permit_each_item(
-                            key_full=key_full,
-                            data=data,
-                            obj_or_dict=body_data,
-                        )
+                            one_item_allow = self.check_permit_each_item(
+                                key_full=key_full,
+                                data=data,
+                                obj_or_dict=body_data,
+                            )
+                            if one_item_allow is True:
+                                one_item_allow = True
+                                continue
+                            else:
+                                one_item_allow = False
+                                break
+
                         if one_item_allow is True:
-                            one_item_allow = True
-                            continue
-                        else:
-                            one_item_allow = False
+                            # Operator is "OR" so one child is True so All is True
+                            is_allow = True
                             break
 
-                    if one_item_allow is True:
-                        # Operator is "OR" so one child is True so All is True
-                        is_allow = True
-                        break
-
-                self._config_data__check_body_data = is_allow
+                    self._config_data__check_body_data = is_allow
+                else:
+                    self._config_data__check_body_data = False
             else:
-                self._config_data__check_body_data = False
+                # auto allow = True when body_data check is dict empty
+                self._config_data__check_body_data = True
         else:
             self._config_data__check_body_data = False
         return self._config_data__check_body_data
 
-    def config_data__check_obj_and_body_data(self, obj, body_data) -> tuple[bool, bool]:
-        if obj and hasattr(obj, 'id') and body_data and isinstance(body_data, dict):
-            if self._config_data__check_obj is None or self._config_data__check_body_data is None:
-                obj__is_allow = False if self._config_data__check_obj is None else self._config_data__check_obj
-                data__is_allow = (
-                    False if self._config_data__check_body_data is None else self._config_data__check_body_data
-                )
-                if self.config_data__simple_list and isinstance(self.config_data__simple_list, list):
-                    for data_item in self.config_data__simple_list:
-                        obj__one_item_allow = None
-                        data__one_item_allow = None
-                        for key_full, data in data_item.items():
-                            if obj__is_allow is True and data__is_allow is True:
-                                break
-
-                            if obj__one_item_allow is not True:
-                                obj__one_item_allow__tmp = self.check_permit_each_item(
-                                    key_full=key_full,
-                                    data=data,
-                                    obj_or_dict=obj,
-                                )
-                                if obj__one_item_allow__tmp is True:
-                                    obj__one_item_allow = True
-                                    continue
-                                else:
-                                    obj__one_item_allow = False
-                                    break
-
-                            if data__one_item_allow is not True:
-                                data__one_item_allow__tmp = self.check_permit_each_item(
-                                    key_full=key_full,
-                                    data=data,
-                                    obj_or_dict=body_data,
-                                )
-                                if data__one_item_allow__tmp is True:
-                                    data__one_item_allow = True
-                                    continue
-                                else:
-                                    data__one_item_allow = False
-                                    break
-
-                        if obj__one_item_allow is True:
-                            obj__is_allow = True
-                        if data__one_item_allow is True:
-                            data__is_allow = True
-                        if obj__one_item_allow is True and data__one_item_allow is True:
-                            break
-
-                self._config_data__check_obj = obj__is_allow
-                self._config_data__check_body_data = data__is_allow
-        return self._config_data__check_obj, self._config_data__check_body_data
+    def config_data__check_obj_and_body_data(self, obj, body_data) -> bool:
+        if not self._config_data__check_obj_and_body_data:
+            if obj and hasattr(obj, 'id') and body_data and isinstance(body_data, dict):
+                obj_copy = deepcopy(obj)
+                if 'employee_inherit' in body_data:
+                    setattr(obj_copy, 'employee_inherit_id', body_data['employee_inherit'])
+                if 'opportunity' in body_data:
+                    setattr(obj_copy, 'opportunity_id', body_data['opportunity'])
+                if 'project' in body_data:
+                    setattr(obj_copy, 'project_id', body_data['project'])
+                self._config_data__check_obj_and_body_data = self.config_data__check_obj(obj=obj_copy)
+            else:
+                self._config_data__check_obj_and_body_data = False
+        return self._config_data__check_obj_and_body_data
 
     def __init__(self, cls_employee_attr: EmployeeAttribute, config_check_permit: dict[str, str], **kwargs):
         # config_check_permit sample:

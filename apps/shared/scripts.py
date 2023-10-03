@@ -2,10 +2,10 @@ from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
-    Expense, ProductProductType
+    Expense, ProductProductType,
 )
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
@@ -22,14 +22,16 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse,
 )
-from . import MediaForceAPI, PermissionController
+from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.inventory.models import InventoryAdjustmentItem
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog, \
-    OpportunitySaleTeamMember, OpportunityMemberPermitData
+from ..sales.opportunity.models import (
+    Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
+    OpportunitySaleTeamMember, OpportunityMemberPermitData,
+)
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
@@ -868,18 +870,27 @@ def update_employee_inherit_and_created_return_advance():
 def new_permit_parsed():
     print('New permit parsed is starting...')
     for obj in Employee.objects.all():
+        if str(obj.id) in ['9afa6107-a1f9-4d06-b855-aa60b25a70aa', 'ad2fd817-2878-40d0-b05d-4d87a0189de7']:
+            obj.permission_by_configured = []
         print('Employee: ', obj.id, obj.get_full_name())
-        setattr(
-            obj,
-            'permissions_parsed',
-            PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        PermissionsUpdateSerializer.force_permissions(
+            instance=obj, validated_data={
+                'permission_by_configured': PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(
+                    instance=obj
+                )
+            }
         )
+        # obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
 
     for obj in Role.objects.all():
+        if str(obj.id) in ['88caae0f-c53a-44d4-b4d8-c9d3856eca66', '54233b73-a4ee-4c2e-8729-8dd33bcaa303']:
+            obj.permission_by_configured = []
         print('Role: ', obj.id, obj.title)
         setattr(
             obj,
             'permissions_parsed',
             PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
         )
+        obj.save()
     print('New permit parsed is successfully!')
