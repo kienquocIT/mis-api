@@ -5,6 +5,7 @@ from uuid import UUID
 
 from django.conf import settings
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 
 from django_filters import rest_framework as filters
@@ -546,6 +547,10 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def filter_append_manual(self) -> dict:
         return {}
 
+    @property
+    def get_object__field_hidden(self):
+        return self.cls_check.attr.setup_hidden(from_view='retrieve')
+
     def get_object(self):
         """
         [OVERRODE from REST FRAMEWORK]
@@ -575,7 +580,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 f"or QuerySet, not '{klass__name}'."
             )
         try:
-            field_hidden = self.cls_check.attr.setup_hidden(from_view='retrieve')
+            field_hidden = self.get_object__field_hidden
             filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
             if self.query_extend_base_model:
                 obj = queryset.get(
@@ -677,24 +682,18 @@ class BaseListMixin(BaseMixin):
     def get_object(self):
         raise TypeError("Not allow use get_object() for List Mixin.")
 
-    def list(self, request, *args, **kwargs):
-        """
-        Support call get list data.
-        Args:
-            request:
-            *args:
-            **kwargs:
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return self.cls_check.permit_cls.config_data__to_q
 
-        Returns:
-
-        """
-        is_minimal, _is_skip_auth = self.parse_header(request)
-
-        filter_kwargs_q = self.cls_check.permit_cls.config_data__to_q
-        filter_kwargs = {
-            **kwargs,
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            **self.kwargs,
             **self.cls_check.attr.setup_hidden(from_view='list'),
         }
+
+    def get_queryset_and_filter_queryset(self, is_minimal, filter_kwargs, filter_kwargs_q):
         if is_minimal is True:
             if self.use_cache_minimal and self.query_extend_base_model:
                 queryset = self.filter_queryset(
@@ -713,7 +712,27 @@ class BaseListMixin(BaseMixin):
                 queryset = self.filter_queryset(
                     self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
                 )
+        return queryset
 
+    def list(self, request, *args, **kwargs):
+        """
+        Support call get list data.
+        Args:
+            request:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        is_minimal, _is_skip_auth = self.parse_header(request)
+        filter_kwargs_q = self.filter_kwargs_q
+        filter_kwargs = self.filter_kwargs
+        queryset = self.get_queryset_and_filter_queryset(
+            is_minimal=is_minimal,
+            filter_kwargs=filter_kwargs,
+            filter_kwargs_q=filter_kwargs_q
+        )
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True, is_minimal=is_minimal)
