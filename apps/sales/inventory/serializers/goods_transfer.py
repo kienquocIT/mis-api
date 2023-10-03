@@ -134,8 +134,6 @@ class GoodsTransferCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsTransfer
         fields = (
-            'id',
-            'code',
             'title',
             'note',
             'agency',

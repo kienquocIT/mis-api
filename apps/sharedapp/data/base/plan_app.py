@@ -252,7 +252,7 @@ class FullPermitHandle:
 
         for app_id, config_data in app_depends_on.items():
             app_depend_data = {'id': app_id, **Application_data[app_id]}
-            for permit_code, range_code in local_depends_on.items():
+            for permit_code, range_code in config_data.items():
                 result.append(
                     cls.parse_one_permit_allow(
                         app_data=app_depend_data,
