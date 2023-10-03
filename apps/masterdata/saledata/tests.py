@@ -359,7 +359,8 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_default_uom',
                 'price_list_mapped',
                 'product_choice',
-                'product_warehouse_detail'
+                'product_warehouse_detail',
+                'general_price'
             ],
             check_sum_second=True,
         )

@@ -125,6 +125,11 @@ class InventoryAdjustmentDetailSerializer(serializers.ModelSerializer):
         for item in all_item:
             data.append(
                 {
+                    'product_warehouse_mapped': {
+                        'id': item.product_warehouse_id,
+                        'code': item.product_warehouse.code,
+                        'title': item.product_warehouse.title
+                    } if item.product_mapped else {},
                     'product_mapped': {
                         'id': item.product_mapped_id,
                         'code': item.product_mapped.code,
@@ -174,14 +179,12 @@ class InventoryAdjustmentCreateSerializer(serializers.ModelSerializer):
 class InventoryAdjustmentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = InventoryAdjustment
-        fields = ('title',)
+        fields = ()
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_inventory_adjustment_warehouses(instance, self.initial_data.get('ia_warehouses_data', []))
-        create_inventory_adjustment_employees_in_charge(instance, self.initial_data.get('ia_employees_in_charge', []))
         create_inventory_adjustment_items(instance, self.initial_data.get('ia_items_data', []))
         return instance
 
