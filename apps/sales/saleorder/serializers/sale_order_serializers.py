@@ -221,26 +221,13 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    opportunity = serializers.CharField(
-        max_length=550,
-        required=False,
+    opportunity = serializers.UUIDField()
+    customer = serializers.UUIDField()
+    contact = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
+    payment_term = serializers.UUIDField()
+    quotation = serializers.UUIDField(
         allow_null=True,
-    )
-    customer = serializers.CharField(
-        max_length=550
-    )
-    contact = serializers.CharField(
-        max_length=550
-    )
-    employee_inherit_id = serializers.UUIDField(
-        required=False,
-        allow_null=True,
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
-    quotation = serializers.CharField(
-        max_length=550,
         required=False
     )
     # sale order tabs
@@ -364,30 +351,29 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderUpdateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.CharField(
-        max_length=550,
+    opportunity = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    customer = serializers.CharField(
-        max_length=550,
-        required=False
+    customer = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
-    contact = serializers.CharField(
-        max_length=550,
-        required=False
+    contact = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    payment_term = serializers.CharField(
-        max_length=550,
-        required=False
+    payment_term = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
-    quotation = serializers.CharField(
-        max_length=550,
-        required=False
+    quotation = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(

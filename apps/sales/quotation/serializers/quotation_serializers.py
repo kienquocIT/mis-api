@@ -206,24 +206,11 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
 
 class QuotationCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    opportunity = serializers.CharField(
-        max_length=550,
-        required=False,
-        allow_null=True,
-    )
-    customer = serializers.CharField(
-        max_length=550
-    )
-    contact = serializers.CharField(
-        max_length=550
-    )
-    employee_inherit_id = serializers.UUIDField(
-        required=False,
-        allow_null=True,
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
+    opportunity = serializers.UUIDField()
+    customer = serializers.UUIDField()
+    contact = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
+    payment_term = serializers.UUIDField()
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
         many=True,
@@ -341,26 +328,25 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
 
 
 class QuotationUpdateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.CharField(
-        max_length=550,
+    opportunity = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    customer = serializers.CharField(
-        max_length=550,
-        required=False
+    customer = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
-    contact = serializers.CharField(
-        max_length=550,
-        required=False
+    contact = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    payment_term = serializers.CharField(
-        max_length=550,
-        required=False
+    payment_term = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
