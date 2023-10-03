@@ -14,15 +14,15 @@ WORKFLOW_APP_CONFIG = {
     "option_permission": 1,
     "option_allowed": [4],
     "app_depend_on": [
-        # "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
     ],
     "permit_mapping": {
         "view": {
-            "range": ["1", "4"],
+            "range": ["4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4",
-                # }
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4",
+                }
             },
             "local_depends_on": {},
             "opp": {},
@@ -31,15 +31,15 @@ WORKFLOW_APP_CONFIG = {
         "create": {
             "range": ["4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4",
-                # }
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4",
+                }
             },
             "local_depends_on": {
-                # "view": "4",
+                "view": "4",
             },
             "opp": {
-                "range": ["1", "4"],
+                "range": ["4"],
                 "app_depends_on": {},
                 "local_depends_on": {},
             },
@@ -47,23 +47,23 @@ WORKFLOW_APP_CONFIG = {
         "edit": {
             "range": ["1", "4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4",
-                # }
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4",
+                }
             },
             "local_depends_on": {
-                # "view": "4",
+                "view": "4",
             },
         },
         "delete": {
             "range": ["1", "4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4",
-                # }
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4",
+                }
             },
             "local_depends_on": {
-                # "view": "4",
+                "view": "4",
             },
         },
     }
