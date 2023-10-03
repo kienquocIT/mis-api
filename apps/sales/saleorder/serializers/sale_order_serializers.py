@@ -668,3 +668,14 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
             }
             for item in so_product
         ]
+
+
+class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'code',
+            'title',
+            'employee_inherit',
+        )
