@@ -159,8 +159,6 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = GoodsIssue
         fields = (
-            'id',
-            'code',
             'title',
             'date_issue',
             'note',
@@ -218,7 +216,8 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
             )
             bulk_data.append(obj)
             cls.update_product_amount(item)
-            cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'])
+            if item['inventory_adjustment_item']:
+                cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'])
         GoodsIssueProduct.objects.bulk_create(bulk_data)
 
         return True
