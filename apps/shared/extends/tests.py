@@ -178,6 +178,7 @@ class AdvanceTestCase(TestCase):
             resp_data['result'].items(),
             check_sum_second=False,
         )
+        self.tenant_id = resp_data['result']['id']
         return resp_data['result']
 
     def _login(self):
@@ -226,4 +227,5 @@ class AdvanceTestCase(TestCase):
             )
             employee_obj.is_admin_company = True
             employee_obj.save()
+        self.company_id = response.data['result']['company_current']['id']
         return response.data['result']
