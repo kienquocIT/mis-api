@@ -236,7 +236,9 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 quantity=data['quantity'],
                 remain_for_purchase_order=data['quantity'],
                 unit_price=data['unit_price'],
-                sub_total_price=data['sub_total_price']
+                sub_total_price=data['sub_total_price'],
+                tenant=purchase_request.tenant,
+                company=purchase_request.company,
             )
             if pr_product.sale_order_product:
                 pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity
@@ -353,6 +355,9 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
                 'id': item.product_id,
                 'title': item.product.title,
                 'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
+                'uom_group': {
+                    'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
+                } if item.uom.group else {},
                 'quantity': item.quantity,
                 'purchase_request_id': item.purchase_request_id,
                 'purchase_request_code': item.purchase_request.code,
@@ -459,7 +464,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                     'ratio': obj.uom.group.uom_reference.ratio,
                     'rounding': obj.uom.group.uom_reference.rounding,
                 } if obj.uom.group.uom_reference else {},
-            },
+            } if obj.uom.group else {},
             'ratio': obj.uom.ratio,
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,

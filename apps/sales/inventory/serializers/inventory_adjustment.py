@@ -217,20 +217,60 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_warehouse_mapped(cls, obj):
-        if obj.product_mapped:
+        if obj.warehouse_mapped:
             return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
+                'id': obj.warehouse_mapped_id,
+                'title': obj.warehouse_mapped.title,
+                'code': obj.warehouse_mapped.code,
             }
         return {}
 
     @classmethod
     def get_uom_mapped(cls, obj):
-        if obj.product_mapped:
+        if obj.uom_mapped:
             return {
-                'id': obj.product_mapped_id,
-                'title': obj.product_mapped.title,
-                'code': obj.product_mapped.code,
+                'id': obj.uom_mapped_id,
+                'title': obj.uom_mapped.title,
+                'code': obj.uom_mapped.code,
             }
         return {}
+
+
+# Inventory adjustment list use for other apps
+class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
+    inventory_adjustment_product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = InventoryAdjustment
+        fields = (
+            'id',
+            'code',
+            'title',
+            'inventory_adjustment_product',
+        )
+
+    @classmethod
+    def get_inventory_adjustment_product(cls, obj):
+        return [{
+            'id': ia_product.id,
+            'product': {
+                'id': ia_product.product_mapped_id,
+                'title': ia_product.product_mapped.title,
+                'code': ia_product.product_mapped.code,
+            } if ia_product.product_mapped else {},
+            'uom': {
+                'id': ia_product.uom_mapped_id,
+                'title': ia_product.uom_mapped.title,
+                'code': ia_product.uom_mapped.code,
+            } if ia_product.uom_mapped else {},
+            'warehouse': {
+                'id': ia_product.warehouse_mapped_id,
+                'title': ia_product.warehouse_mapped.title,
+                'code': ia_product.warehouse_mapped.code,
+            } if ia_product.warehouse_mapped else {},
+            'quantity_import': (ia_product.count - ia_product.book_quantity),
+            'select_for_action': ia_product.select_for_action,
+            'action_status': ia_product.action_status,
+            'product_unit_price': 0,
+            'product_subtotal_price': 0,
+        } for ia_product in obj.inventory_adjustment_item_mapped.filter(action_type=2)]

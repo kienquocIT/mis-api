@@ -12,9 +12,8 @@ from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, E
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
-    ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail, ProductForSaleList,
-    UnitOfMeasureOfGroupLaborList,
+    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
+    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -55,9 +54,6 @@ urlpatterns += [
     path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
-
-    path('expense-types', ExpenseTypeList.as_view(), name='ExpenseTypeList'),
-    path('expense-type/<str:pk>', ExpenseTypeDetail.as_view(), name='ExpenseTypeDetail'),
 
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),

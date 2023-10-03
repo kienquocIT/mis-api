@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
-    'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
+    'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType'
 ]
 
@@ -34,18 +34,6 @@ class ProductCategory(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'ProductCategory'
         verbose_name_plural = 'ProductCategories'
-        ordering = ('date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class ExpenseType(MasterDataAbstractModel):
-    description = models.CharField(blank=True, max_length=200)
-    is_default = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'ExpenseType'
-        verbose_name_plural = 'ExpenseTypes'
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
@@ -195,14 +183,6 @@ class Product(DataAbstractModel):
 
 
 class Expense(MasterDataAbstractModel):
-    expense_type = models.ForeignKey(
-        ExpenseType,
-        verbose_name='Type of Expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_type',
-        default=None,
-    )
     uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         verbose_name='Unit of Measure Group apply for expense',

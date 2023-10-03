@@ -33,6 +33,13 @@ class GoodsReceipt(DataAbstractModel):
         related_name='goods_receipt_map_pr'
     )
     # FIELDS OF TYPE 1(For inventory adjustment)
+    inventory_adjustment = models.ForeignKey(
+        'inventory.InventoryAdjustment',
+        on_delete=models.CASCADE,
+        verbose_name="inventory adjustment",
+        related_name="goods_receipt_ia",
+        null=True,
+    )
     # FIELDS OF TYPE 2(For production)
     # COMMON FIELDS
     remarks = models.TextField(
@@ -49,6 +56,39 @@ class GoodsReceipt(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def push_to_product_warehouse(cls, gr_obj):
+        # push data to ProductWareHouse
+        if gr_obj.goods_receipt_type == 0:
+            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=gr_obj):
+                uom_product_inventory = \
+                    gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
+                uom_product_gr = gr_warehouse.goods_receipt_request_product.goods_receipt_product.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                ProductWareHouse.push_from_receipt(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id,
+                    warehouse_id=gr_warehouse.warehouse_id,
+                    uom_id=uom_product_inventory.id,
+                    tax_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.tax_id,
+                    amount=gr_warehouse.quantity_import * final_ratio,
+                    unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
+                )
+        elif gr_obj.goods_receipt_type == 1:
+            for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=gr_obj):
+                ProductWareHouse.push_from_receipt(
+                    tenant_id=gr_obj.tenant_id,
+                    company_id=gr_obj.company_id,
+                    product_id=gr_product.product_id,
+                    warehouse_id=gr_product.warehouse_id,
+                    uom_id=gr_product.product.inventory_uom_id,
+                    tax_id=gr_product.tax_id,
+                    amount=gr_product.quantity_import,
+                    unit_price=gr_product.product_unit_price,
+                )
+        return True
+
     def save(self, *args, **kwargs):
         # auto create code (temporary)
         goods_receipt = GoodsReceipt.objects.filter_current(
@@ -63,22 +103,7 @@ class GoodsReceipt(DataAbstractModel):
             self.code = code
 
         if self.system_status in [2, 3]:
-            # push data to ProductWareHouse
-            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=self):
-                uom_product_inventory = \
-                    gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
-                uom_product_gr = gr_warehouse.goods_receipt_request_product.goods_receipt_product.uom
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=self.tenant_id,
-                    company_id=self.company_id,
-                    product_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_product_inventory.id,
-                    tax_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.tax_id,
-                    amount=gr_warehouse.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
-                )
+            self.push_to_product_warehouse(self)
             # update receipt status to PurchaseOrder
 
         # hit DB
@@ -140,6 +165,13 @@ class GoodsReceiptProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="tax",
         related_name="goods_receipt_product_tax",
+        null=True
+    )
+    warehouse = models.ForeignKey(
+        'saledata.WareHouse',
+        on_delete=models.CASCADE,
+        verbose_name="warehouse",
+        related_name="goods_receipt_product_warehouse",
         null=True
     )
     quantity_import = models.FloatField(default=0)

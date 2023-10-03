@@ -5,9 +5,10 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder
-from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg
+from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg
+from apps.shared.translations.sales import InventoryMsg
 
 
 class GoodsReceiptCommonCreate:
@@ -49,7 +50,7 @@ class GoodsReceiptCommonCreate:
                     warehouse_data=warehouse_data,
                     instance=instance,
                     new_product=new_pr_product,
-                    is_has_pr=False
+                    is_has_pr=True
                 )
             # If PO doesn't have PR
             # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
@@ -159,6 +160,8 @@ class GoodsReceiptCommonValidate:
 
     @classmethod
     def validate_purchase_order(cls, value):
+        if value is None:
+            return value
         try:
             return PurchaseOrder.objects.get_current(
                 fill__tenant=True,
@@ -166,10 +169,25 @@ class GoodsReceiptCommonValidate:
                 id=value
             )
         except PurchaseOrder.DoesNotExist:
-            raise serializers.ValidationError({'purchase_order': AccountsMsg.ACCOUNT_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_order': PurchasingMsg.PURCHASE_ORDER_NOT_EXIST})
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        if value is None:
+            return value
+        try:
+            return InventoryAdjustment.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except InventoryAdjustment.DoesNotExist:
+            raise serializers.ValidationError({'inventory_adjustment': InventoryMsg.INVENTORY_ADJUSTMENT_NOT_EXIST})
 
     @classmethod
     def validate_supplier(cls, value):
+        if value is None:
+            return value
         try:
             return Account.objects.get_current(
                 fill__tenant=True,

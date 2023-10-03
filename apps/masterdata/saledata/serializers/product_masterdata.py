@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, ProductMeasurements
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, ProductMeasurements
 )
 from apps.shared import ProductMsg
 
@@ -100,55 +100,6 @@ class ProductCategoryUpdateSerializer(serializers.ModelSerializer):  # noqa
     #             title=value
     #     ).exists():
     #         raise serializers.ValidationError({"title": ProductMsg.PRODUCT_CATEGORY_EXIST})
-    #     return value
-
-
-# Expense Type
-class ExpenseTypeListSerializer(serializers.ModelSerializer):  # noqa
-
-    class Meta:
-        model = ExpenseType
-        fields = ('id', 'title', 'description')
-
-
-class ExpenseTypeCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
-
-    class Meta:
-        model = ExpenseType
-        fields = ('title', 'description')
-
-    # @classmethod
-    # def validate_title(cls, value):
-    #     if ExpenseType.objects.filter_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             title=value
-    #     ).exists():
-    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
-    #     return value
-
-
-class ExpenseTypeDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ExpenseType
-        fields = ('id', 'title', 'description')
-
-
-class ExpenseTypeUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
-
-    class Meta:
-        model = ExpenseType
-        fields = ('title', 'description')
-
-    # def validate_title(self, value):
-    #     if value != self.instance.title and ExpenseType.objects.filter_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             title=value
-    #     ).exists():
-    #         raise serializers.ValidationError(ProductMsg.EXPENSE_TYPE_EXIST)
     #     return value
 
 

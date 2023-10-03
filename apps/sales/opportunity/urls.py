@@ -7,12 +7,14 @@ from .views import (
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
     OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList, OpportunityMemberDetail,
-    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer, OpportunityMemberList
+    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer, OpportunityMemberList,
+    OpportunityListForCashOutFlow
 )
 
 urlpatterns = [
     path('config', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
     path('lists', OpportunityList.as_view(), name='OpportunityList'),
+    path('list-for-cash-outflow', OpportunityListForCashOutFlow.as_view(), name='OpportunityListForCashOutFlow'),
     path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
 
