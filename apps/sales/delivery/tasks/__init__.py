@@ -186,7 +186,7 @@ class SaleOrderActiveDeliverySerializer:
         obj.save(update_fields=['sub'])
         return obj
 
-    @decorator_run_workflow
+    # @decorator_run_workflow
     def _create_order_delivery(
             self,
             delivery_quantity,
@@ -239,6 +239,7 @@ class SaleOrderActiveDeliverySerializer:
             delivery_data=[],
             date_created=timezone.now(),
             employee_inherit=self.config_obj.lead_delivery,
+            system_status=1
         )
 
     def _create_order_delivery_sub(self, obj_delivery, sub_id, delivery_quantity):
@@ -266,7 +267,7 @@ class SaleOrderActiveDeliverySerializer:
                 "is_picking": self.config_obj.is_picking,
                 "is_partial_ship": self.config_obj.is_partial_ship
             },
-            system_status=1,
+            system_status=obj_delivery.system_status,
             employee_inherit=self.config_obj.lead_delivery
         )
         return sub_obj
