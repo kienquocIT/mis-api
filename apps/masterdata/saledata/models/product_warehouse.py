@@ -12,6 +12,7 @@ class ProductWareHouse(MasterDataAbstractModel):
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product of WareHouse',
+        related_name='product_warehouse_product'
     )
     warehouse = models.ForeignKey(
         'saledata.WareHouse',

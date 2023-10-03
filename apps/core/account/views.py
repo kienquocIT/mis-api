@@ -32,11 +32,9 @@ class UserList(AccountListMixin, AccountCreateMixin):
     search_fields = ('full_name_search', 'email', 'username')
     filterset_fields = ('email', 'username', 'first_name', 'last_name')
 
-    def filter_append_manual(self):
+    def list_hidden_field_manual_after(self) -> dict[str, any]:
         if self.request.user.company_current_id:
-            return {
-                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
-            }
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
         raise exceptions_more.Empty200
 
     @swagger_auto_schema(
@@ -73,11 +71,9 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     serializer_detail = UserDetailSerializer
     serializer_update = UserUpdateSerializer
 
-    def filter_append_manual(self):
+    def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
         if self.request.user.company_current_id:
-            return {
-                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
-            }
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
         raise exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Detail User')
