@@ -206,6 +206,7 @@ class InventoryAdjustmentProductListSerializer(serializers.ModelSerializer):
             'product_mapped',
             'warehouse_mapped',
             'uom_mapped',
+            'action_status',
         )
 
     @classmethod

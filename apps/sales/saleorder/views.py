@@ -5,7 +5,7 @@ from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAp
     SaleOrderProduct, SaleOrderCost
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
-    SaleOrderProductListSerializer
+    SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
@@ -287,3 +287,20 @@ class ProductListSaleOrder(BaseRetrieveMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class SaleOrderPurchasingStaffList(BaseListMixin):
+    queryset = SaleOrder.objects
+    serializer_list = SaleOrderPurchasingStaffListSerializer
+    filterset_fields = {
+        'employee_inherit': ['exact', 'in'],
+    }
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order List For Purchasing Staff",
+        operation_description="Get Sale Order List For Purchasing Staff"
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
