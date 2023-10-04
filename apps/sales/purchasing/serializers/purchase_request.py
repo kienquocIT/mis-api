@@ -445,6 +445,23 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                 'width': obj.product.width,
                 'height': obj.product.height,
             },
+            'purchase_information': {
+                'uom': {
+                    'id': obj.product.purchase_default_uom_id,
+                    'title': obj.product.purchase_default_uom.title,
+                    'code': obj.product.purchase_default_uom.code,
+                    'ratio': obj.product.purchase_default_uom.ratio,
+                    'rounding': obj.product.purchase_default_uom.rounding,
+                    'is_referenced_unit': obj.product.purchase_default_uom.is_referenced_unit,
+                } if obj.product.purchase_default_uom else {},
+                'tax': {
+                    'id': obj.product.purchase_tax_id,
+                    'title': obj.product.purchase_tax.title,
+                    'code': obj.product.purchase_tax.code,
+                    'rate': obj.product.purchase_tax.rate
+                } if obj.product.purchase_tax else {},
+            },
+            'description': obj.product.description,
             'product_choice': obj.product.product_choice,
             'sale_cost': obj.product.sale_cost,
         }
