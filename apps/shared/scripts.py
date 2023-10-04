@@ -883,3 +883,40 @@ def new_permit_parsed():
         obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit parsed is successfully!')
+
+
+def update_backup_data_purchase_request():
+    for pr in PurchaseRequest.objects.all():
+        data = []
+
+        for item in pr.purchase_request_product_datas:
+            product_obj = Product.objects.get(id=item['product']['id'])
+            data_product = {
+                'id': str(product_obj.id),
+                'title': product_obj.title,
+                'code': product_obj.code,
+                'uom_group': str(product_obj.general_uom_group_id),
+            }
+
+            tax_obj = Tax.objects.get(id=item['tax']['id'])
+            data_tax = {
+                'id': str(tax_obj.id),
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            }
+            data.append(
+                {
+                    'tax': data_tax,
+                    'product': data_product,
+                    'uom': item['uom'],
+                    'description': item['description'],
+                    'unit_price': item['unit_price'],
+                    'sale_order_product': item['sale_order_product'],
+                    'quantity': item['quantity'],
+                    'sub_total_price': item['unit_price'] * item['quantity'],
+                }
+            )
+
+        pr.purchase_request_product_datas = data
+        pr.save(update_fields=['purchase_request_product_datas'])
+    print('Update Done !')

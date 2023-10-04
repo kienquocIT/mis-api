@@ -80,6 +80,18 @@ class PurchaseRequestDetail(
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
+    @swagger_auto_schema(
+        operation_summary="Purchase Request update",
+        operation_description="Update Purchase Request by ID",
+        request_body=PurchaseRequestDetailSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaserequest', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
 
 class PurchaseRequestListForPQR(BaseListMixin):
     queryset = PurchaseRequest.objects

@@ -637,8 +637,8 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_data(cls, obj):
         so_product = SaleOrderProduct.objects.select_related(
-            'product__sale_default_uom',
-            'product__sale_tax',
+            'product__purchase_default_uom',
+            'product__purchase_tax',
             'product__general_uom_group',
         ).filter(
             sale_order=obj,
@@ -653,16 +653,17 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'title': item.product.title,
                     'code': item.product.code,
+                    'description': item.product.description,
                     'product_choice': item.product.product_choice,
                     'uom': {
-                        'id': item.product.sale_default_uom.id,
-                        'title': item.product.sale_default_uom.title
+                        'id': item.product.purchase_default_uom_id,
+                        'title': item.product.purchase_default_uom.title
                     },
                     'uom_group': item.product.general_uom_group.title,
                     'tax_code': {
-                        'id': item.product.sale_tax_id,
-                        'title': item.product.sale_tax.title,
-                        'rate': item.product.sale_tax.rate
+                        'id': item.product.purchase_tax_id,
+                        'title': item.product.purchase_tax.title,
+                        'rate': item.product.purchase_tax.rate
                     },
                 }
             }

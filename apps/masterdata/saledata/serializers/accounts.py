@@ -774,7 +774,13 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
+        return {
+            'id': obj.owner_id,
+            'fullname': obj.owner.fullname,
+            'email': obj.owner.email,
+            'mobile': obj.owner.mobile,
+            'job_title': obj.owner.job_title,
+        } if obj.owner else {}
 
     @classmethod
     def get_industry(cls, obj):

@@ -61,7 +61,6 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
-    request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -87,10 +86,6 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_request_for(cls, obj):
-        return str(dict(REQUEST_FOR).get(obj.request_for))
-
-    @classmethod
     def get_sale_order(cls, obj):
         if obj.sale_order:
             return {
@@ -106,6 +101,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.supplier_id,
                 'name': obj.supplier.name,
+                'code': obj.supplier.code,
             }
         return None
 
@@ -114,7 +110,10 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
         if obj.supplier:
             return {
                 'id': obj.contact_id,
-                'name': obj.contact.fullname,
+                'fullname': obj.contact.fullname,
+                'job_title': obj.contact.job_title,
+                'email': obj.contact.email,
+                'mobile': obj.contact.mobile,
             }
         return None
 
@@ -170,6 +169,8 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(product.id),
                 'title': product.title,
+                'code': product.code,
+                'uom_group': str(product.general_uom_group_id),
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': PurchaseRequestMsg.DOES_NOT_EXIST})
@@ -185,6 +186,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(tax.id),
                 'title': tax.title,
+                'rate': tax.rate,
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': PurchaseRequestMsg.DOES_NOT_EXIST})
