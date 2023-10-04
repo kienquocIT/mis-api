@@ -186,6 +186,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "245e9f47-df59-4d4a-b355-7eff2859247f",  # Expense Item
     },
+    "dd16a86c-4aef-46ec-9302-19f30b101cf5": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "dd16a86c-4aef-46ec-9302-19f30b101cf5",  # Goods Receipt
+    },
 }
 
 _PlanApplication_eOffice_data = {
