@@ -4,27 +4,30 @@ from apps.shared import (
     BaseListMixin, BaseRetrieveMixin,
     mask_view, BaseUpdateMixin, BaseDestroyMixin,
 )
-from apps.sales.delivery.models import OrderPicking, OrderPickingSub
+from apps.sales.delivery.models import OrderPickingSub
 from apps.sales.delivery.serializers import (
-    OrderPickingListSerializer,
+    OrderPickingSubListSerializer,
     OrderPickingSubDetailSerializer, OrderPickingSubUpdateSerializer,
 )
 
 
 __all__ = [
-    'OrderPickingList',
+    'OrderPickingSubList',
     'OrderPickingSubDetail',
 ]
 
 
-class OrderPickingList(BaseListMixin):
-    queryset = OrderPicking.objects
-    serializer_list = OrderPickingListSerializer
+class OrderPickingSubList(BaseListMixin):
+    queryset = OrderPickingSub.objects
+    serializer_list = OrderPickingSubListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
+
     @swagger_auto_schema(
-        operation_summary='Order Picking List',
+        operation_summary='Order Picking Sub List',
     )
     @mask_view(
         login_require=True, auth_require=True,
