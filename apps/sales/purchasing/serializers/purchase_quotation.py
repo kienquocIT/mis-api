@@ -113,6 +113,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                         'id': item.product_id,
                         'code': item.product.code,
                         'title': item.product.title,
+                        'description': item.product.description,
                         'uom': {
                             'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
                         } if item.uom else {},
@@ -120,7 +121,6 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                             'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
                         } if item.tax else {}
                     },
-                    'description': item.description,
                     'quantity': item.quantity,
                     'unit_price': item.unit_price,
                     'subtotal_price': item.subtotal_price
@@ -137,7 +137,6 @@ def create_pq_map_products(purchase_quotation_obj, product_list):
             PurchaseQuotationProduct(
                 purchase_quotation=purchase_quotation_obj,
                 product_id=item.get('product_id', None),
-                description=item.get('product_description', None),
                 uom_id=item.get('product_uom_id', None),
                 quantity=item.get('product_quantity', None),
                 unit_price=item.get('product_unit_price', None),

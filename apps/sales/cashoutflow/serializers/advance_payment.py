@@ -364,6 +364,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
                     'expense_after_tax_price': item.expense_after_tax_price,
+                    'remain_total': item.expense_subtotal_price - item.sum_return_value - item.sum_converted_value
                 }
             )
         return expense_items
