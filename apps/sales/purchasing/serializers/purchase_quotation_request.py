@@ -69,6 +69,7 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'code': item.product.code,
                     'title': item.product.title,
+                    'description': item.product.description,
                     'uom': {
                         'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
                     } if item.uom else {},
@@ -79,7 +80,6 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
                         'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
                     } if item.tax else {}
                 } if item.product else {},
-                'description': item.description,
                 'quantity': item.quantity,
                 'unit_price': item.unit_price,
                 'subtotal_price': item.subtotal_price
@@ -105,16 +105,7 @@ def create_pqr_map_products(purchase_quotation_request_obj, product_list):
     bulk_info = []
     for item in product_list:
         bulk_info.append(
-            PurchaseQuotationRequestProduct(
-                purchase_quotation_request=purchase_quotation_request_obj,
-                product_id=item.get('product_id', None),
-                description=item.get('product_description', None),
-                uom_id=item.get('product_uom_id', None),
-                quantity=item.get('product_quantity', None),
-                unit_price=item.get('product_unit_price', None),
-                tax_id=item.get('product_taxes', None),
-                subtotal_price=item.get('product_subtotal_price', None),
-            )
+            PurchaseQuotationRequestProduct(**item, purchase_quotation_request=purchase_quotation_request_obj)
         )
     PurchaseQuotationRequestProduct.objects.bulk_create(bulk_info)
     return True
@@ -197,6 +188,7 @@ class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):
             product_list.append({
                 'id': item.product_id,
                 'title': item.product.title,
+                'description': item.product.description,
                 'uom': {
                     'id': item.uom_id,
                     'title': item.uom.title,
@@ -207,6 +199,5 @@ class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):
                 'product_unit_price': item.unit_price,
                 'product_subtotal_price': item.subtotal_price,
                 'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
-                'description': item.description
             })
         return product_list

@@ -32,6 +32,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'description',
             'general_product_types_mapped',
             'general_product_category',
             'general_uom_group',
