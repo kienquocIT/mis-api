@@ -32,17 +32,15 @@ class PurchaseQuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_supplier_mapped(cls, obj):
-        if obj.supplier_mapped:
-            return {
-                'id': obj.supplier_mapped_id,
-                'code': obj.supplier_mapped.code,
-                'name': obj.supplier_mapped.name,
-                'owner': {
-                    'id': obj.supplier_mapped.owner_id,
-                    'fullname': obj.supplier_mapped.owner.fullname
-                } if obj.supplier_mapped.owner else {}
-            }
-        return {}
+        return {
+            'id': obj.supplier_mapped_id,
+            'code': obj.supplier_mapped.code,
+            'name': obj.supplier_mapped.name,
+            'owner': {
+                'id': obj.supplier_mapped.owner_id,
+                'fullname': obj.supplier_mapped.owner.fullname
+            } if obj.supplier_mapped.owner else {}
+        } if obj.supplier_mapped else {}
 
 
 class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
