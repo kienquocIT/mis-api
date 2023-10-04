@@ -73,6 +73,8 @@ class GoodsReceiptDetail(
                 queryset=GoodsReceiptProduct.objects.select_related(
                     'product',
                     'uom',
+                    'uom__group',
+                    'uom__group__uom_reference',
                     'tax',
                 ).prefetch_related(
                     Prefetch(

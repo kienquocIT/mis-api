@@ -117,6 +117,7 @@ class PurchaseRequestProductList(BaseListMixin):
             'product__sale_tax',
             'product__sale_currency_using',
             'product__purchase_default_uom',
+            'product__purchase_tax',
             'uom',
             'uom__group',
             'uom__group__uom_reference',

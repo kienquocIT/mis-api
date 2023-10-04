@@ -180,26 +180,14 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation_products_data(cls, obj):
         return QuotationProductsListSerializer(
-            obj.quotation_product_quotation.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.quotation_product_quotation.all(),
             many=True
         ).data
 
     @classmethod
     def get_quotation_costs_data(cls, obj):
         return QuotationCostsListSerializer(
-            obj.quotation_cost_quotation.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.quotation_cost_quotation.all(),
             many=True
         ).data
 

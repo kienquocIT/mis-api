@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
     QuotationProduct, QuotationCost
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
@@ -98,10 +99,18 @@ class QuotationDetail(
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "promotion",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
             Prefetch(
@@ -113,9 +122,17 @@ class QuotationDetail(
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
         )
