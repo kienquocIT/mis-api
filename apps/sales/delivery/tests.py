@@ -263,7 +263,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "opportunity": opportunity,
             "customer": customer,
             "contact": contact,
-            "sale_person": employee,
+            "employee_inherit_id": employee,
             "payment_term": payment_term,
         }
         url = reverse("SaleOrderList")

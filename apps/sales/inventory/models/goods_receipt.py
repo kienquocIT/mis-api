@@ -59,7 +59,7 @@ class GoodsReceipt(DataAbstractModel):
     @classmethod
     def push_to_product_warehouse(cls, gr_obj):
         # push data to ProductWareHouse
-        if gr_obj.goods_receipt_type == 0:
+        if gr_obj.goods_receipt_type == 0:  # GR for PO
             for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=gr_obj):
                 uom_product_inventory = \
                     gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
@@ -75,7 +75,7 @@ class GoodsReceipt(DataAbstractModel):
                     amount=gr_warehouse.quantity_import * final_ratio,
                     unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
                 )
-        elif gr_obj.goods_receipt_type == 1:
+        elif gr_obj.goods_receipt_type == 1:  # GR for IA
             for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=gr_obj):
                 ProductWareHouse.push_from_receipt(
                     tenant_id=gr_obj.tenant_id,

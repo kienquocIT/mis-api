@@ -26,7 +26,7 @@ urlpatterns = [
 # goods transfer
 urlpatterns += [
     path('goods-transfer/list', GoodsTransferList.as_view(), name='GoodsTransferList'),
-    path('goods-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferList'),
+    path('goods-transfer/<str:pk>', GoodsTransferDetail.as_view(), name='GoodsTransferDetail'),
 ]
 
 # goods issue
