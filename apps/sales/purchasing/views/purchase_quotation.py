@@ -24,9 +24,9 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
         if 'purchase_quotation_request_mapped__purchase_request_mapped__id__in' in data_filter:
             return super().get_queryset().select_related(
                 'purchase_quotation_request_mapped',
-                'supplier_mapped'
+                'supplier_mapped__owner',
             ).distinct()
-        return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped')
+        return super().get_queryset().select_related('purchase_quotation_request_mapped', 'supplier_mapped__owner')
 
     @swagger_auto_schema(
         operation_summary="Purchase Quotation List",
@@ -64,7 +64,9 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'contact_mapped',
             'purchase_quotation_request_mapped'
         ).prefetch_related(
-            'purchase_quotation'
+            'purchase_quotation__uom',
+            'purchase_quotation__tax',
+            'purchase_quotation__product',
         )
 
     @swagger_auto_schema(
