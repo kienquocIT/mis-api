@@ -57,17 +57,29 @@ class GoodsReceipt(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def push_to_product_warehouse(cls, gr_obj):
+    def generate_code(cls):
+        # auto create code (temporary)
+        goods_receipt = GoodsReceipt.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        char = "GR"
+        temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
+        return f"{char}{temper}"
+
+    @classmethod
+    def push_to_product_warehouse(cls, instance):
         # push data to ProductWareHouse
-        if gr_obj.goods_receipt_type == 0:  # GR for PO
-            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=gr_obj):
+        if instance.goods_receipt_type == 0:  # GR for PO
+            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
                 uom_product_inventory = \
                     gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
                 uom_product_gr = gr_warehouse.goods_receipt_request_product.goods_receipt_product.uom
                 final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 ProductWareHouse.push_from_receipt(
-                    tenant_id=gr_obj.tenant_id,
-                    company_id=gr_obj.company_id,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     product_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id,
                     warehouse_id=gr_warehouse.warehouse_id,
                     uom_id=uom_product_inventory.id,
@@ -75,11 +87,11 @@ class GoodsReceipt(DataAbstractModel):
                     amount=gr_warehouse.quantity_import * final_ratio,
                     unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
                 )
-        elif gr_obj.goods_receipt_type == 1:  # GR for IA
-            for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=gr_obj):
+        elif instance.goods_receipt_type == 1:  # GR for IA
+            for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=instance):
                 ProductWareHouse.push_from_receipt(
-                    tenant_id=gr_obj.tenant_id,
-                    company_id=gr_obj.company_id,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     product_id=gr_product.product_id,
                     warehouse_id=gr_product.warehouse_id,
                     uom_id=gr_product.product.inventory_uom_id,
@@ -90,19 +102,14 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        goods_receipt = GoodsReceipt.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "GR"
-        if not self.code:
-            temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
-
         if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code()
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
             self.push_to_product_warehouse(self)
             # update receipt status to PurchaseOrder
 
