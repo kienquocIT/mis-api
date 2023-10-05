@@ -6,6 +6,7 @@ from uuid import uuid4
 import numpy as np
 
 import rest_framework.exceptions
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
 
@@ -142,6 +143,14 @@ class EmployeeAttribute:
         if not self._model_hr_employee:
             self._model_hr_employee = DisperseModel(app_model='hr.employee').get_model()
         return self._model_hr_employee
+
+    _tenant_id = None
+
+    @property
+    def tenant_id(self):
+        if self.employee_current and hasattr(self.employee_current, 'id'):
+            self._tenant_id = self.employee_current.tenant_id
+        return self._tenant_id
 
     _company_id = None
 
@@ -751,6 +760,8 @@ class PermissionController:
                         if tmp:
                             config_parse_or += tmp
             self._config_data__simple_list = config_parse_or
+            if settings.DEBUG:
+                print('config_data: ', self._config_data__simple_list)
         return self._config_data__simple_list
 
     _config_data__to_q: Q = Q()
@@ -1212,6 +1223,7 @@ def mask_view(**parent_kwargs):
         parent_kwargs = {}
 
     decor_kwargs = {
+        **parent_kwargs,
         'employee_require': parent_kwargs.get('employee_require', ViewConfigDecorator.employee_require),
         'login_require': parent_kwargs.get('login_require', ViewConfigDecorator.login_require),
         'auth_require': parent_kwargs.get('auth_require', ViewConfigDecorator.auth_require),
