@@ -51,6 +51,7 @@ class QuotationList(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='view',
+        opp_enabled=True, prj_enabled=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -63,7 +64,8 @@ class QuotationList(
     @mask_view(
         login_require=True, auth_require=True,
         employee_require=True,
-        label_code='quotation', model_code='quotation', perm_code='create'
+        label_code='quotation', model_code='quotation', perm_code='create',
+        opp_enabled=True, prj_enabled=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -127,6 +129,7 @@ class QuotationDetail(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='view',
+        opp_enabled=True, prj_enabled=True,
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -139,6 +142,7 @@ class QuotationDetail(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='edit',
+        opp_enabled=True, prj_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
