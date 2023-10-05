@@ -760,8 +760,6 @@ class PermissionController:
                         if tmp:
                             config_parse_or += tmp
             self._config_data__simple_list = config_parse_or
-            if settings.DEBUG:
-                print('config_data: ', self._config_data__simple_list)
         return self._config_data__simple_list
 
     _config_data__to_q: Q = Q()
@@ -797,8 +795,24 @@ class PermissionController:
             return getattr(obj_or_dict, _key1, None)
 
         def get_value_special_key_for_dict(_key2):
-            if _key2 in ['employee_inherit_id', 'opportunity_id', 'project_id']:
-                return obj_or_dict.get(_key2.split("_id")[0], None)
+            if _key2 == 'opportunity_id':
+                if 'opportunity_id' in obj_or_dict:
+                    return obj_or_dict['opportunity_id']
+                if 'opportunity' in obj_or_dict:
+                    return obj_or_dict['opportunity']
+
+            if _key2 == 'project_id':
+                if 'project_id' in obj_or_dict:
+                    return obj_or_dict['project_id']
+                if 'project' in obj_or_dict:
+                    return obj_or_dict['project']
+
+            if _key2 == 'employee_inherit_id':
+                if 'employee_inherit_id' in obj_or_dict:
+                    return obj_or_dict['employee_inherit_id']
+                if 'employee_inherit' in obj_or_dict:
+                    return obj_or_dict['employee_inherit']
+
             return obj_or_dict.get(_key2, None)
 
         key_arr = key_full.split("__")
