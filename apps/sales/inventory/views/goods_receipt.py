@@ -5,7 +5,6 @@ from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, Goods
     GoodsReceiptWarehouse
 from apps.sales.inventory.serializers.goods_receipt import GoodsReceiptListSerializer, GoodsReceiptCreateSerializer, \
     GoodsReceiptUpdateSerializer, GoodsReceiptDetailSerializer
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
