@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
-    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer
+    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -57,7 +57,7 @@ class PurchaseRequestDetail(
 ):
     queryset = PurchaseRequest.objects
     serializer_detail = PurchaseRequestDetailSerializer
-    serializer_update = PurchaseRequestDetailSerializer
+    serializer_update = PurchaseRequestUpdateSerializer
 
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
