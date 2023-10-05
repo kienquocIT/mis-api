@@ -354,6 +354,7 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
             product_list.append({
                 'id': item.product_id,
                 'title': item.product.title,
+                'description': item.product.description,
                 'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
                 'uom_group': {
                     'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
@@ -364,7 +365,6 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
                 'product_unit_price': item.unit_price,
                 'product_subtotal_price': item.sub_total_price,
                 'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
-                'description': item.description
             })
         return product_list
 
@@ -443,6 +443,23 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                 'width': obj.product.width,
                 'height': obj.product.height,
             },
+            'purchase_information': {
+                'uom': {
+                    'id': obj.product.purchase_default_uom_id,
+                    'title': obj.product.purchase_default_uom.title,
+                    'code': obj.product.purchase_default_uom.code,
+                    'ratio': obj.product.purchase_default_uom.ratio,
+                    'rounding': obj.product.purchase_default_uom.rounding,
+                    'is_referenced_unit': obj.product.purchase_default_uom.is_referenced_unit,
+                } if obj.product.purchase_default_uom else {},
+                'tax': {
+                    'id': obj.product.purchase_tax_id,
+                    'title': obj.product.purchase_tax.title,
+                    'code': obj.product.purchase_tax.code,
+                    'rate': obj.product.purchase_tax.rate
+                } if obj.product.purchase_tax else {},
+            },
+            'description': obj.product.description,
             'product_choice': obj.product.product_choice,
             'sale_cost': obj.product.sale_cost,
         }

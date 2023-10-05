@@ -153,8 +153,8 @@ class QuotationExpenseList(BaseListMixin):
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "tax"
+        return super().get_queryset().select_related("tax").filter(
+            quotation_id=self.request.query_params['filter_quotation']
         )
 
     @swagger_auto_schema(
@@ -163,7 +163,6 @@ class QuotationExpenseList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        kwargs.update({'quotation_id': request.query_params['filter_quotation']})
         return self.list(request, *args, **kwargs)
 
 

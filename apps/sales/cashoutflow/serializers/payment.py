@@ -323,7 +323,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_expense_items(cls, obj):
         all_expense_items_mapped = []
-        for item in obj.payment.all().select_related('expense_type', 'expense_tax'):
+        for item in obj.payment.all():
             all_expense_items_mapped.append({
                 'id': item.id,
                 'expense_type': {

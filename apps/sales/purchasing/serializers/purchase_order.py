@@ -164,6 +164,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'general_traceability_method': obj.product.general_traceability_method,
+            'description': obj.product.description,
         } if obj.product else {}
 
     @classmethod
