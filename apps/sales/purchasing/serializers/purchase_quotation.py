@@ -32,17 +32,15 @@ class PurchaseQuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_supplier_mapped(cls, obj):
-        if obj.supplier_mapped:
-            return {
-                'id': obj.supplier_mapped_id,
-                'code': obj.supplier_mapped.code,
-                'name': obj.supplier_mapped.name,
-                'owner': {
-                    'id': obj.supplier_mapped.owner_id,
-                    'fullname': obj.supplier_mapped.owner.fullname
-                } if obj.supplier_mapped.owner else {}
-            }
-        return {}
+        return {
+            'id': obj.supplier_mapped_id,
+            'code': obj.supplier_mapped.code,
+            'name': obj.supplier_mapped.name,
+            'owner': {
+                'id': obj.supplier_mapped.owner_id,
+                'fullname': obj.supplier_mapped.owner.fullname
+            } if obj.supplier_mapped.owner else {}
+        } if obj.supplier_mapped else {}
 
 
 class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
@@ -105,7 +103,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
     def get_products_mapped(cls, obj):
         product_mapped_list = []
         index = 1
-        for item in obj.purchase_quotation.all().select_related('product', 'uom', 'tax'):
+        for item in obj.purchase_quotation.all():
             product_mapped_list.append(
                 {
                     'index': index,
@@ -113,6 +111,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                         'id': item.product_id,
                         'code': item.product.code,
                         'title': item.product.title,
+                        'description': item.product.description,
                         'uom': {
                             'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
                         } if item.uom else {},
@@ -120,7 +119,6 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                             'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
                         } if item.tax else {}
                     },
-                    'description': item.description,
                     'quantity': item.quantity,
                     'unit_price': item.unit_price,
                     'subtotal_price': item.subtotal_price
@@ -137,7 +135,6 @@ def create_pq_map_products(purchase_quotation_obj, product_list):
             PurchaseQuotationProduct(
                 purchase_quotation=purchase_quotation_obj,
                 product_id=item.get('product_id', None),
-                description=item.get('product_description', None),
                 uom_id=item.get('product_uom_id', None),
                 quantity=item.get('product_quantity', None),
                 unit_price=item.get('product_unit_price', None),
