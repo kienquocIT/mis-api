@@ -55,7 +55,13 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'payment'
+            'payment__currency',
+            'payment__expense_type',
+            'payment__expense_tax',
+        ).select_related(
+            'supplier__owner',
+            'supplier__industry',
+            'beneficiary__group'
         )
 
     @swagger_auto_schema(operation_summary='Detail Payment')

@@ -84,7 +84,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase:2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(blank=True, max_length=200)
+    description = models.CharField(blank=True, max_length=500)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',

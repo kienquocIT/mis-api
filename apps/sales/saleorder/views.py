@@ -155,9 +155,8 @@ class SaleOrderExpenseList(BaseListMixin):
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "tax",
-            "expense"
+        return super().get_queryset().select_related("tax", "expense").filter(
+            sale_order_id=self.request.query_params['filter_sale_order']
         )
 
     @swagger_auto_schema(
@@ -166,11 +165,6 @@ class SaleOrderExpenseList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        kwargs.update(
-            {
-                'sale_order_id': request.query_params['filter_sale_order'],
-            }
-        )
         return self.list(request, *args, **kwargs)
 
 

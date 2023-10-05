@@ -24,6 +24,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
     product_warehouse_detail = serializers.SerializerMethodField()
+    general_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -31,6 +32,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'description',
             'general_product_types_mapped',
             'general_product_category',
             'general_uom_group',
@@ -38,7 +40,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'price_list_mapped',
             'product_choice',
-            'product_warehouse_detail'
+            'product_warehouse_detail',
+            'general_price'
         )
 
     @classmethod
@@ -116,6 +119,13 @@ class ProductListSerializer(serializers.ModelSerializer):
                     }
                 )
         return result
+
+    @classmethod
+    def get_general_price(cls, obj):
+        general_price = obj.product_price_product.filter(price_list__is_default=1)
+        if general_price.count() > 0:
+            return general_price[0].price
+        return 0
 
 
 def sub_validate_volume_obj(initial_data, validate_data):
@@ -397,7 +407,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'sale_information',
             'purchase_information',
             'product_choice',
-            'product_warehouse_detail'
+            'product_warehouse_detail',
         )
 
     @classmethod

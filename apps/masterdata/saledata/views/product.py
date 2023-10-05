@@ -280,7 +280,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
         operation_description="Product list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='saledata', model_code='product', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -325,7 +325,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Product')
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='saledata', model_code='product', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
