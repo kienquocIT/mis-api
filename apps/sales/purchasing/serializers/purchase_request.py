@@ -61,7 +61,6 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
-    request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -87,10 +86,6 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def get_request_for(cls, obj):
-        return str(dict(REQUEST_FOR).get(obj.request_for))
-
-    @classmethod
     def get_sale_order(cls, obj):
         if obj.sale_order:
             return {
@@ -106,6 +101,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.supplier_id,
                 'name': obj.supplier.name,
+                'code': obj.supplier.code,
             }
         return None
 
@@ -114,7 +110,10 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
         if obj.supplier:
             return {
                 'id': obj.contact_id,
-                'name': obj.contact.fullname,
+                'fullname': obj.contact.fullname,
+                'job_title': obj.contact.job_title,
+                'email': obj.contact.email,
+                'mobile': obj.contact.mobile,
             }
         return None
 
@@ -170,6 +169,8 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(product.id),
                 'title': product.title,
+                'code': product.code,
+                'uom_group': str(product.general_uom_group_id),
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': PurchaseRequestMsg.DOES_NOT_EXIST})
@@ -185,6 +186,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(tax.id),
                 'title': tax.title,
+                'rate': tax.rate,
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': PurchaseRequestMsg.DOES_NOT_EXIST})
@@ -245,6 +247,16 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 pr_product.sale_order_product.save()
             bulk_data.append(pr_product)
         return bulk_data
+
+    @classmethod
+    def delete_product_datas(cls, instance):
+        objs = PurchaseRequestProduct.objects.filter(purchase_request=instance).select_related('sale_order_product')
+        for item in objs:
+            if item.sale_order_product:
+                item.sale_order_product.remain_for_purchase_request += item.quantity
+                item.sale_order_product.save()
+        objs.delete()
+        return True
 
 
 class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
@@ -495,3 +507,103 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+
+class PurchaseRequestUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False)
+    sale_order = serializers.UUIDField(required=False, allow_null=True)
+    request_for = serializers.IntegerField(required=False)
+    supplier = serializers.UUIDField(required=False)
+    contact = serializers.UUIDField(required=False)
+    delivered_date = serializers.DateTimeField(required=False)
+    purchase_status = serializers.IntegerField(required=False)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True, required=False)
+    note = serializers.CharField(allow_blank=True)
+    pretax_amount = serializers.FloatField(required=False)
+    taxes = serializers.FloatField(required=False)
+    total_price = serializers.FloatField(required=False)
+
+    class Meta:
+        model = PurchaseRequest
+        fields = (
+            'title',
+            'supplier',
+            'contact',
+            'request_for',
+            'sale_order',
+            'delivered_date',
+            'purchase_status',
+            'note',
+            'purchase_request_product_datas',
+            'pretax_amount',
+            'taxes',
+            'total_price',
+        )
+
+    @classmethod
+    def validate_supplier(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'supplier': PurchaseRequestMsg.DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_contact(cls, value):
+        try:
+            return Contact.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'contact': PurchaseRequestMsg.DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_sale_order(cls, value):
+        if value:
+            try:
+                return SaleOrder.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order': PurchaseRequestMsg.DOES_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_pretax_amount(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_taxes(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_total_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    def update(self, instance, validated_data):
+        if 'purchase_request_product_datas' in validated_data:
+            PurchaseRequestProductSerializer.delete_product_datas(instance)
+            if len(validated_data['purchase_request_product_datas']) > 0:
+                bulk_data = PurchaseRequestProductSerializer.create_product_datas(
+                    instance,
+                    validated_data['purchase_request_product_datas']
+                )
+                PurchaseRequestProduct.objects.bulk_create(bulk_data)
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
