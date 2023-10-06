@@ -74,18 +74,18 @@ class GoodsReceipt(DataAbstractModel):
         if instance.goods_receipt_type == 0:  # GR for PO
             for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
                 uom_product_inventory = \
-                    gr_warehouse.goods_receipt_request_product.goods_receipt_product.product.inventory_uom
-                uom_product_gr = gr_warehouse.goods_receipt_request_product.goods_receipt_product.uom
+                    gr_warehouse.goods_receipt_product.product.inventory_uom
+                uom_product_gr = gr_warehouse.goods_receipt_product.uom
                 final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 ProductWareHouse.push_from_receipt(
                     tenant_id=instance.tenant_id,
                     company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_id,
+                    product_id=gr_warehouse.goods_receipt_product.product_id,
                     warehouse_id=gr_warehouse.warehouse_id,
                     uom_id=uom_product_inventory.id,
-                    tax_id=gr_warehouse.goods_receipt_request_product.goods_receipt_product.tax_id,
+                    tax_id=gr_warehouse.goods_receipt_product.tax_id,
                     amount=gr_warehouse.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_request_product.goods_receipt_product.product_unit_price,
+                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
                 )
         elif instance.goods_receipt_type == 1:  # GR for IA
             for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=instance):

@@ -28,17 +28,17 @@ class GoodsReceiptCommonCreate:
             if 'purchase_request_products_data' in gr_product:
                 purchase_request_products_data = gr_product['purchase_request_products_data']
                 del gr_product['purchase_request_products_data']
-            warehouse_data = []
+            warehouse_gr_data = []
             if 'warehouse_data' in gr_product:
-                warehouse_data = gr_product['warehouse_data']
+                warehouse_gr_data = gr_product['warehouse_data']
                 del gr_product['warehouse_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
             # If PO have PR
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             for pr_product in purchase_request_products_data:
-                warehouse_data = []
+                warehouse_pr_data = []
                 if 'warehouse_data' in pr_product:
-                    warehouse_data = pr_product['warehouse_data']
+                    warehouse_pr_data = pr_product['warehouse_data']
                     del pr_product['warehouse_data']
                 new_pr_product = GoodsReceiptRequestProduct.objects.create(
                     goods_receipt=instance,
@@ -47,23 +47,22 @@ class GoodsReceiptCommonCreate:
                 )
                 # create sub model GoodsReceiptWarehouse mapping goods_receipt_request_product
                 cls.create_gr_warehouse_lot_serial(
-                    warehouse_data=warehouse_data,
+                    warehouse_data=warehouse_pr_data,
                     instance=instance,
-                    new_product=new_pr_product,
-                    is_has_pr=True
+                    pr_product=new_pr_product,
+                    gr_product=new_gr_product,
                 )
             # If PO doesn't have PR
             # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
             cls.create_gr_warehouse_lot_serial(
-                warehouse_data=warehouse_data,
+                warehouse_data=warehouse_gr_data,
                 instance=instance,
-                new_product=new_gr_product,
-                is_has_pr=False
+                gr_product=new_gr_product
             )
         return True
 
     @classmethod
-    def create_gr_warehouse_lot_serial(cls, warehouse_data, instance, new_product, is_has_pr=False):
+    def create_gr_warehouse_lot_serial(cls, warehouse_data, instance, pr_product=None, gr_product=None):
         for warehouse in warehouse_data:
             lot_data = []
             serial_data = []
@@ -73,18 +72,12 @@ class GoodsReceiptCommonCreate:
             if 'serial_data' in warehouse:
                 serial_data = warehouse['serial_data']
                 del warehouse['serial_data']
-            if is_has_pr is True:
-                new_warehouse = GoodsReceiptWarehouse.objects.create(
-                    goods_receipt=instance,
-                    goods_receipt_request_product=new_product,
-                    **warehouse
-                )
-            else:
-                new_warehouse = GoodsReceiptWarehouse.objects.create(
-                    goods_receipt=instance,
-                    goods_receipt_product=new_product,
-                    **warehouse
-                )
+            new_warehouse = GoodsReceiptWarehouse.objects.create(
+                goods_receipt=instance,
+                goods_receipt_request_product=pr_product,
+                goods_receipt_product=gr_product,
+                **warehouse
+            )
             # create sub model GoodsReceiptLot + GoodsReceiptSerial mapping goods_receipt_warehouse
             for lot in lot_data:
                 GoodsReceiptLot.objects.create(
