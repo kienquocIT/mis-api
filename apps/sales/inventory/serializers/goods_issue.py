@@ -278,4 +278,3 @@ class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         return instance
-
