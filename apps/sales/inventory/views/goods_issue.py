@@ -3,6 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.inventory.models import GoodsIssue
 from apps.sales.inventory.serializers import GoodsIssueListSerializer, GoodsIssueCreateSerializer, \
     GoodsIssueDetailSerializer
+from apps.sales.inventory.serializers.goods_issue import GoodsIssueUpdateSerializer
 
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -44,7 +45,9 @@ class GoodsIssueDetail(
 ):
     queryset = GoodsIssue.objects
     serializer_detail = GoodsIssueDetailSerializer
+    serializer_update = GoodsIssueUpdateSerializer
     detail_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -60,3 +63,14 @@ class GoodsIssueDetail(
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Update Goods issue",
+        operation_description="Update Goods issue by ID",
+        request_body=GoodsIssueUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)

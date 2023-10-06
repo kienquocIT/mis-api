@@ -201,7 +201,6 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
             'opportunity',
         )
 
-
     @swagger_auto_schema(
         operation_summary="OpportunityDocument List",
         operation_description="Get OpportunityDocument List",

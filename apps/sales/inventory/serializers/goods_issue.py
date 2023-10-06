@@ -187,9 +187,9 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def update_status_inventory_adjustment_item(cls, item_id):
+    def update_status_inventory_adjustment_item(cls, item_id, value):
         item = InventoryAdjustmentItem.objects.get(id=item_id)
-        item.action_status = True
+        item.action_status = value
         item.save(update_fields=['action_status'])
         return True
 
@@ -217,7 +217,7 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
             bulk_data.append(obj)
             cls.update_product_amount(item)
             if item['inventory_adjustment_item']:
-                cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'])
+                cls.update_status_inventory_adjustment_item(item['inventory_adjustment_item'], True)
         GoodsIssueProduct.objects.bulk_create(bulk_data)
 
         return True
@@ -226,3 +226,56 @@ class GoodsIssueCreateSerializer(serializers.ModelSerializer):
         instance = GoodsIssue.objects.create(**validated_data)
         self.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
         return instance
+
+
+class GoodsIssueUpdateSerializer(serializers.ModelSerializer):
+    goods_issue_datas = serializers.ListField(child=GoodsIssueProductSerializer(), required=False)
+    inventory_adjustment = serializers.UUIDField(required=False)
+    title = serializers.CharField(required=False)
+    date_issue = serializers.DateTimeField(required=False)
+    goods_issue_type = serializers.IntegerField(required=False)
+    note = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = GoodsIssue
+        fields = (
+            'title',
+            'date_issue',
+            'note',
+            'goods_issue_type',
+            'inventory_adjustment',
+            'goods_issue_datas',
+        )
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        try:
+            return InventoryAdjustment.objects.get(id=value)
+        except InventoryAdjustment.DoesNotExist:
+            raise serializers.ValidationError(
+                {
+                    'inventory_adjustment': GIMsg.IA_NOT_EXIST
+                }
+            )
+
+    @classmethod
+    def revert_stock_amount(cls, instance):
+        objs = GoodsIssueProduct.objects.select_related('product_warehouse').filter(goods_issue=instance)
+        for item in objs:
+            item.product_warehouse.stock_amount += item.quantity
+            item.product_warehouse.save(update_fields=['stock_amount'])
+            if item.inventory_adjustment_item:
+                item.inventory_adjustment_item.action_status = False
+                item.inventory_adjustment_item.save(update_fields=['action_status'])
+        objs.delete()
+        return True
+
+    def update(self, instance, validated_data):
+        if 'goods_issue_datas' in validated_data:
+            self.revert_stock_amount(instance)
+            GoodsIssueCreateSerializer.common_create_sub_goods_issue(instance, validated_data['goods_issue_datas'])
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
