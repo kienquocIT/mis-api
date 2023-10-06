@@ -29,14 +29,15 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             'phone': '0983875345',
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
+        self.company = company_req
         config = DeliveryConfig.objects.get_or_create(
             company_id=company_req.data['result']['id'],
             defaults={
                 'is_picking': False,
                 'is_partial_ship': False,
-            },
+            }
         )
-        self.config = config[0]
+        self.config = config
 
     def get_employee(self):
         url = reverse("EmployeeList")
@@ -396,7 +397,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             remaining_quantity=1,
             ready_quantity=0,
             delivery_data=[],
-            date_created=timezone.now()
+            date_created=timezone.now(),
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_delivery = delivery[0]
         self.assertTrue(OrderDelivery.objects.filter(id=obj_delivery.id).exists())
@@ -424,7 +426,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             config_at_that_point={
                 "is_picking": self.config['is_picking'],
                 "is_partial_ship": self.config['is_partial_ship']
-            }
+            },
+            employee_inherit_id=obj_delivery.employee_inherit_id
         )
         obj_sub = sub[0]
         self.assertTrue(OrderDeliverySub.objects.filter(id=obj_sub.id).exists())
@@ -491,7 +494,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             picked_quantity_before=0,
             remaining_quantity=1,
             picked_quantity=0,
-            date_created=timezone.now()
+            date_created=timezone.now(),
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_picking = picking[0]
         self.assertTrue(OrderPicking.objects.filter(id=obj_picking.id).exists())
@@ -516,7 +520,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             config_at_that_point={
                 "is_picking": self.config['is_picking'],
                 "is_partial_ship": self.config['is_partial_ship']
-            }
+            },
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_sub = sub[0]
         self.assertTrue(OrderPickingSub.objects.filter(id=obj_sub.id).exists())
@@ -604,6 +609,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         delivery_prod = OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub).first()
         url_update = reverse('OrderDeliverySubDetail', args=[delivery_sub.id])
         data_delivery_update = {
+            "tenant_id": self.tenant_id,
+            "company_id": self.company_id,
             "order_delivery": delivery.id,
             "estimated_delivery_date": "2023-07-31",
             "actual_delivery_date": "2023-08-30",

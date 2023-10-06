@@ -4,8 +4,10 @@ from rest_framework import serializers
 
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from apps.sales.delivery.models import (
-    OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
+    OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
+from apps.shared.translations.sales import DeliverMsg
+from ..utils import CommonFunc
 
 __all__ = [
     'OrderPickingListSerializer',
@@ -14,8 +16,6 @@ __all__ = [
     'OrderPickingSubListSerializer',
     'OrderPickingSubUpdateSerializer',
 ]
-
-from apps.shared.translations.sales import DeliverMsg
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
@@ -35,15 +35,7 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
 
 
 class OrderPickingSubListSerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_products(cls, obj):
-        return OrderPickingProductListSerializer(
-            obj.orderpickingproduct_set.all(),
-            many=True,
-        ).data
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -63,38 +55,21 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
             'date_created',
             'state',
             'estimated_delivery_date',
-            'products',
             'employee_inherit'
         )
 
 
 class OrderPickingListSerializer(serializers.ModelSerializer):
-    sub_list = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_sub_list(cls, obj):
-        sub_list = []
-        query_sub_list = OrderPickingSub.objects.filter(
-            tenant_id=obj.tenant_id, company_id=obj.company_id,
-            order_picking=obj
-        )
-        if query_sub_list:
-            for query_sub in query_sub_list:
-                serializer = OrderPickingSubListSerializer(query_sub)
-                sub_list.append(serializer.data)
-
-        return sub_list
 
     class Meta:
-        model = OrderPicking
+        model = OrderPickingSub
         fields = (
+            'code',
             'sale_order_data',
-            'ware_house_data',
-            'estimated_delivery_date',
-            'state',
-            'sub',
-            'sub_list',
             'date_created',
+            'estimated_delivery_date',
+            'employee_inherit',
+            'state',
         )
 
 
@@ -345,6 +320,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
+        CommonFunc.check_update_prod_and_emp(instance, validated_data)
+        print('check update pass')
 
         if 'products' in validated_data and len(validated_data['products']) > 0:
             for item in validated_data['products']:
@@ -368,6 +345,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 raise err
         else:
             del validated_data['products']
+            del validated_data['state']
             for key, value in validated_data.items():
                 setattr(instance, key, value)
             instance.save()
