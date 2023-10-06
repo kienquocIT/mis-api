@@ -1,5 +1,9 @@
+from datetime import timedelta
+
 from django.urls import reverse
+from rest_framework import status
 from rest_framework.test import APIClient
+from django.utils import timezone
 
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig
 from apps.shared.extends.tests import AdvanceTestCase
@@ -70,6 +74,7 @@ class LeaveTestCase(AdvanceTestCase):
             },
         )
         self.working_calendar = working_calendar[0]
+        self.company = company_req
 
     def get_employee(self):
         url = reverse("EmployeeList")
@@ -146,10 +151,72 @@ class LeaveTestCase(AdvanceTestCase):
         self.assertEqual(response.status_code, 204)
         self.assertFalse(WorkingYearConfig.objects.filter(id=holiday['id']).exists())
 
-    def test_delete_detail_leave(self):
+    def test_delete_working_year(self):
         res = self.test_create_working_year()
         year = res.data.get('result')
         url = reverse('WorkingYearDetail', args=[year["id"]])
         response = self.client.delete(url)
         self.assertEqual(response.status_code, 204)
         self.assertFalse(WorkingYearConfig.objects.filter(id=year['id']).exists())
+
+    def test_create_leave_request(self):
+        leave_type = LeaveType.objects.filter_current(
+            company_id=self.company.data['result']['id'],
+            code='ANPY'
+        ).first()
+        time_now = timezone.now().strftime('%Y-%m-%d')
+        data = {
+            'title': 'xin nghỉ làm việc nhà',
+            'employee_inherit': self.get_employee().data['result'][0]['id'],
+            'request_date': time_now,
+            'detail_data': [{
+                "order": 0,
+                "remark": "lorem ipsum",
+                "date_to": time_now,
+                "subtotal": 1,
+                "date_from": time_now,
+                "leave_type": str(leave_type.id),
+                "morning_shift_f": True,
+                "morning_shift_t": False
+            }],
+            'start_day': time_now,
+            'total': 1
+        }
+        response = self.client.post(reverse('LeaveRequestList'), data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_get_list_leave_request(self):
+        self.test_create_leave_request()
+        url = reverse('LeaveRequestList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+
+    def test_get_detail_leave_request(self):
+        res = self.test_create_leave_request()
+        url = reverse('LeaveRequestDetail', args=[res.data['result'].get('id', '')])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, res.data['result'].get('id', ''), None, response.status_code)
+        self.assertContains(response, res.data['result'].get('title', ''), None, response.status_code)
+
+    def test_update_detail_leave_request(self):
+        res = self.test_create_leave_request()
+        url = reverse('LeaveRequestDetail', args=[res.data['result'].get('id', '')])
+        get_detail = self.client.get(url, format='json')
+        data = get_detail.data['result']
+        time_now = (timezone.now() + timedelta(days=1)).strftime('%Y-%m-%d')
+        data_update = {
+            'title': 'xin nghỉ làm việc nhà update',
+            'start_day': time_now
+        }
+        self.client.put(url, data_update, format='json')
+        response = self.client.get(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
