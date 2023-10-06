@@ -194,7 +194,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
     serializer_detail = OpportunityDocumentDetailSerializer
 
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
