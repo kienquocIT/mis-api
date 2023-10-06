@@ -10,3 +10,5 @@ class LeaveMsg:
     ERROR_LEAVE_TITLE = _('Title is required.')
     ERROR_DELETE_LEAVE_TYPE = _('This type can\'t delete')
     ERROR_DUPLICATE_YEAR = _('This year had available in your company')
+    ERROR_EMP_REQUEST = _('Employee inherit is empty!')
+    ERROR_EMP_DAYOFF = _('detail request day off is required')
