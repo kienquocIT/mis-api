@@ -981,6 +981,63 @@ PURCHASE_REQUEST_APP_CONFIG = {
     },
 }
 
+GOODS_RECEIPT_APP_CONFIG = {
+    "id": "dd16a86c-4aef-46ec-9302-19f30b101cf5",
+    "title": "Goods Receipt",
+    "code": "goodsreceipt",
+    "model_code": "goodsreceipt",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "81a111ef-9c32-4cbd-8601-a3cce884badb",  # Purchase order
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+        "828b785a-8f57-4a03-9f90-e0edf96560d7",  # Contact
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "==", },
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "828b785a-8f57-4a03-9f90-e0edf96560d7": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
+
+
+
 Application_crm_data = {
     "828b785a-8f57-4a03-9f90-e0edf96560d7": ApplicationConfigFrame(**CONTACT_APP_CONFIG).data,
     "4e48c863-861b-475a-aa5e-97a4ed26f294": ApplicationConfigFrame(**ACCOUNT_APP_CONFIG).data,
@@ -1011,4 +1068,5 @@ Application_crm_data = {
     "81a111ef-9c32-4cbd-8601-a3cce884badb": ApplicationConfigFrame(**PURCHASE_ORDER_APP_CONFIG).data,
     "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": ApplicationConfigFrame(**PURCHASE_REQUEST_APP_CONFIG).data,
     "245e9f47-df59-4d4a-b355-7eff2859247f": ApplicationConfigFrame(**EXPENSE_ITEM_APP_CONFIG).data,
+    "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data,
 }

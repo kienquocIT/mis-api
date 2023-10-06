@@ -1,9 +1,6 @@
-from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductPriceList
-# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
@@ -180,26 +177,14 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_quotation_products_data(cls, obj):
         return QuotationProductsListSerializer(
-            obj.quotation_product_quotation.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.quotation_product_quotation.all(),
             many=True
         ).data
 
     @classmethod
     def get_quotation_costs_data(cls, obj):
         return QuotationCostsListSerializer(
-            obj.quotation_cost_quotation.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.quotation_cost_quotation.all(),
             many=True
         ).data
 

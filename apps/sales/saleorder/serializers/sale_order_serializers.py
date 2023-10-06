@@ -1,8 +1,6 @@
-from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductPriceList
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
@@ -195,26 +193,14 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_products_data(cls, obj):
         return SaleOrderProductsListSerializer(
-            obj.sale_order_product_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_product_sale_order.all(),
             many=True
         ).data
 
     @classmethod
     def get_sale_order_costs_data(cls, obj):
         return SaleOrderCostsListSerializer(
-            obj.sale_order_cost_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_cost_sale_order.all(),
             many=True
         ).data
 
