@@ -83,7 +83,7 @@ class PurchaseRequestDetail(
     @swagger_auto_schema(
         operation_summary="Purchase Request update",
         operation_description="Update Purchase Request by ID",
-        request_body=PurchaseRequestDetailSerializer,
+        request_body=PurchaseRequestUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
