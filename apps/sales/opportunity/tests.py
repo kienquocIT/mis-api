@@ -219,7 +219,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
+             'close_date', 'stage', 'is_close'],
             check_sum_second=True,
         )
 
@@ -288,7 +288,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
+             'close_date', 'stage', 'is_close'],
             check_sum_second=True,
         )
         return response
@@ -314,7 +314,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             ['id', 'title', 'code', 'customer', 'end_customer', 'product_category', 'budget_value', 'open_date',
              'close_date', 'decision_maker', 'opportunity_product_datas', 'total_product_pretax_amount',
              'total_product_tax', 'total_product', 'opportunity_competitors_datas', 'opportunity_contact_role_datas',
-             'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person', 'opportunity_sale_team_datas',
+             'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person',
              'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close_lost', 'is_deal_close'],
             check_sum_second=True,
         )
