@@ -52,6 +52,7 @@ class DeliverMsg:
     ERROR_ESTIMATED_DATE = _('Estimated Delivery date is required!')
     ERROR_OUT_STOCK = _('out of stock')
     ERROR_QUANTITY = _('Done quantity not equal remain quantity!')
+    ERROR_UPDATE_RULE = _('You can\'t update employee inherit and products stock ready together')
 
 
 class InventoryMsg:

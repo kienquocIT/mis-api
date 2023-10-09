@@ -12,7 +12,7 @@ LEAVE_APP_CONFIG = {
     "app_label": "eoffice",
     "is_workflow": True,
     "app_depend_on": [
-        # "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
     #     "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
     #     "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
     #     "296a1410-8d72-46a8-a0a1-1821f196e66c",  # Opportunity
@@ -28,9 +28,9 @@ LEAVE_APP_CONFIG = {
         "create": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4"
-                # },
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4"
+                },
                 # "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
                 #     "view": "4",
                 # },
@@ -54,9 +54,9 @@ LEAVE_APP_CONFIG = {
         "edit": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
-                # "50348927-2c4f-4023-b638-445469c66953": {
-                #     "view": "4"
-                # },
+                "50348927-2c4f-4023-b638-445469c66953": {
+                    "view": "4"
+                },
                 # "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
                 #     "view": "4",
                 # },

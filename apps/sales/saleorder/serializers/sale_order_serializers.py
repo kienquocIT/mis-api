@@ -1,8 +1,6 @@
-from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductPriceList
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
@@ -195,26 +193,14 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_sale_order_products_data(cls, obj):
         return SaleOrderProductsListSerializer(
-            obj.sale_order_product_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_product_sale_order.all(),
             many=True
         ).data
 
     @classmethod
     def get_sale_order_costs_data(cls, obj):
         return SaleOrderCostsListSerializer(
-            obj.sale_order_cost_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_cost_sale_order.all(),
             many=True
         ).data
 
@@ -626,8 +612,8 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_data(cls, obj):
         so_product = SaleOrderProduct.objects.select_related(
-            'product__sale_default_uom',
-            'product__sale_tax',
+            'product__purchase_default_uom',
+            'product__purchase_tax',
             'product__general_uom_group',
         ).filter(
             sale_order=obj,
@@ -642,16 +628,17 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'title': item.product.title,
                     'code': item.product.code,
+                    'description': item.product.description,
                     'product_choice': item.product.product_choice,
                     'uom': {
-                        'id': item.product.sale_default_uom.id,
-                        'title': item.product.sale_default_uom.title
+                        'id': item.product.purchase_default_uom_id,
+                        'title': item.product.purchase_default_uom.title
                     },
                     'uom_group': item.product.general_uom_group.title,
                     'tax_code': {
-                        'id': item.product.sale_tax_id,
-                        'title': item.product.sale_tax.title,
-                        'rate': item.product.sale_tax.rate
+                        'id': item.product.purchase_tax_id,
+                        'title': item.product.purchase_tax.title,
+                        'rate': item.product.purchase_tax.rate
                     },
                 }
             }

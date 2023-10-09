@@ -354,6 +354,8 @@ class ProductForSaleList(BaseListMixin):
             "sale_default_uom",
             "sale_tax",
             "sale_currency_using",
+            "purchase_default_uom",
+            "purchase_tax",
         ).prefetch_related(
             'general_product_types_mapped',
             Prefetch(

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-# from apps.core.workflow.tasks import decorator_run_workflow
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
@@ -459,7 +459,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     def validate_purchase_requests(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_requests(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         purchase_requests = []
         goods_receipt_product = []

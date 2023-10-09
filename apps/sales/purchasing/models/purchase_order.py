@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, StringHandler
 
 
 class PurchaseOrder(DataAbstractModel):
@@ -84,30 +84,58 @@ class PurchaseOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        purchase_order = PurchaseOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "PO"
-        if not self.code:
-            temper = "%04d" % (purchase_order + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("PO")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
 
-        # update quantity remain on purchase request product
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'PO0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'PO{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def update_remain_and_status_purchase_request(cls, instance):
         list_purchase_request = []
-        if self.system_status in [2, 3]:
-            for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
-                po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
-                if po_request.purchase_request_product.purchase_request not in list_purchase_request:
-                    list_purchase_request.append(po_request.purchase_request_product.purchase_request)
-                po_request.purchase_request_product.save()
-
+        # update quantity remain on purchase request product
+        for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance):
+            po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
+            if po_request.purchase_request_product.purchase_request not in list_purchase_request:
+                list_purchase_request.append(po_request.purchase_request_product.purchase_request)
+            po_request.purchase_request_product.save(update_fields=['remain_for_purchase_order'])
         for purchase_request in list_purchase_request:
             purchase_request.update_purchase_status()
+        return True
+
+    def save(self, *args, **kwargs):
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+            self.update_remain_and_status_purchase_request(self)
+
         # hit DB
         super().save(*args, **kwargs)
 

@@ -72,6 +72,7 @@ MAP_FIELD_TITLE = {
     'saleorder.saleorder': 'title',
     'delivery.orderdeliverysub': 'title',
     'purchasing.purchaseorder': 'title',
+    'inventory.goodsreceipt': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

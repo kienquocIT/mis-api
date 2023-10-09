@@ -92,7 +92,7 @@ class ProcessStepFunctionSerializer(serializers.ModelSerializer):
         return None
 
 
-class ProcessStepSerializer(serializers.Serializer):
+class ProcessStepSerializer(serializers.Serializer):  # noqa
     step = ProcessStepFunctionSerializer(many=True)
 
 

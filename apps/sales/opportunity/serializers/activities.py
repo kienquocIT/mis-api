@@ -332,24 +332,18 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
 
 
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
-    to_contact = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    person_in_charge = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityDocument
         fields = (
             'id',
-            'to_contact',
             'opportunity',
-            'subject',
-            'request_completed_date'
+            'title',
+            'person_in_charge',
+            'request_completed_date',
         )
-
-    @classmethod
-    def get_to_contact(cls, obj):
-        if obj:
-            return None
-        return None
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -361,6 +355,21 @@ class OpportunityDocumentListSerializer(serializers.ModelSerializer):
             }
         return None
 
+    @classmethod
+    def get_person_in_charge(cls, obj):
+        if obj.person_in_charge:
+            persons = obj.person_in_charge.all()
+            list_result = []
+            for person in persons:
+                list_result.append(
+                    {
+                        'id': person.id,
+                        'full_name': person.get_full_name()
+                    }
+                )
+            return list_result
+        return []
+
 
 class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
     person_in_charge = serializers.ListField(child=serializers.UUIDField())
@@ -368,10 +377,10 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityDocument
         fields = (
-            'subject',
+            'title',
             'opportunity',
             'request_completed_date',
-            'kind_of_product',
+            'description',
             'data_documents',
             'person_in_charge'
         )
@@ -453,10 +462,10 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityDocument
         fields = (
-            'subject',
+            'title',
             'opportunity',
             'request_completed_date',
-            'kind_of_product',
+            'description',
             'data_documents',
             'person_in_charge',
             'files',

@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
     SaleOrderProduct, SaleOrderCost
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
@@ -87,10 +88,18 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "promotion",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
             Prefetch(
@@ -102,9 +111,17 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
         )

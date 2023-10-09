@@ -9,6 +9,7 @@ from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from apps.shared import TypeCheck
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
+from ..utils import CommonFunc
 
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
@@ -46,7 +47,7 @@ class WarehouseQuantityHandle:
             in_stock = item.stock_amount - item.sold_amount
             if in_stock > 0:
                 # số lượng trong kho đã quy đổi
-                in_stock_unit = in_stock*target_ratio
+                in_stock_unit = in_stock * target_ratio
                 calc = in_stock_unit - mediate_number
                 if calc >= 0:
                     # đủ hàng
@@ -97,78 +98,39 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
 
 class OrderDeliverySubListSerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
-    def get_products(cls, obj):
-        prod = OrderDeliveryProductListSerializer(
-            obj.orderdeliveryproduct_set.all(),
-            many=True,
-        ).data
-        return prod
-
-    @classmethod
     def get_employee_inherit(cls, obj):
-        if obj.employee_inherit:
-            return {
-                "id": obj.employee_inherit_id,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
-            }
-        return {}
+        return {
+            "id": obj.employee_inherit_id,
+            "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+        } if obj.employee_inherit else {}
 
     class Meta:
         model = OrderDeliverySub
         fields = (
             'id',
-            'date_done',
-            'previous_step',
-            'times',
-            'delivery_quantity',
-            'delivered_quantity_before',
-            'remaining_quantity',
-            'ready_quantity',
-            'delivery_data',
-            'products',
-            'state',
             'code',
             'sale_order_data',
             'date_created',
             'estimated_delivery_date',
             'actual_delivery_date',
-            'employee_inherit'
+            'employee_inherit',
+            'state',
         )
 
 
 class OrderDeliveryListSerializer(serializers.ModelSerializer):
-    sub_list = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_sub_list(cls, obj):
-        sub_list = []
-        query_sub_list = OrderDeliverySub.objects.filter(
-            tenant_id=obj.tenant_id, company_id=obj.company_id,
-            order_delivery=obj
-        )
-        if query_sub_list:
-            for query_sub in query_sub_list:
-                serializer = OrderDeliverySubListSerializer(query_sub)
-                sub_list.append(serializer.data)
-
-        return sub_list
-
     class Meta:
         model = OrderDelivery
         fields = (
             'id',
             'title',
             'code',
-            'sale_order_id',
             'sale_order_data',
             'state',
-            'sub',
-            'sub_list',
-            'date_created', 'date_modified', 'is_active'
+            'is_active',
         )
 
 
@@ -540,6 +502,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         # declare default object
+        CommonFunc.check_update_prod_and_emp(instance, validated_data)
+
         validated_product = validated_data['products']
         config = instance.config_at_that_point
         if not config:
@@ -559,10 +523,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
         if len(product_done) > 0:
-        # update instance info
+            # update instance info
             self.update_self_info(instance, validated_data)
-        # if product_done
-        # to do check if not submit product so update common info only
+            # if product_done
+            # to do check if not submit product so update common info only
             try:
                 with transaction.atomic():
                     self.handle_attach_file(instance, validated_data)

@@ -171,6 +171,8 @@ class PurchaseOrderSaleList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "supplier",
+        ).prefetch_related(
+            'purchase_requests'
         )
 
     @swagger_auto_schema(

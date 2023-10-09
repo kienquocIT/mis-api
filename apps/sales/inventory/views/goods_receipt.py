@@ -5,7 +5,6 @@ from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, Goods
     GoodsReceiptWarehouse
 from apps.sales.inventory.serializers.goods_receipt import GoodsReceiptListSerializer, GoodsReceiptCreateSerializer, \
     GoodsReceiptUpdateSerializer, GoodsReceiptDetailSerializer
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -34,8 +33,8 @@ class GoodsReceiptList(
         operation_description="Get Goods receipt List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -43,11 +42,11 @@ class GoodsReceiptList(
     @swagger_auto_schema(
         operation_summary="Create Goods receipt",
         operation_description="Create new Goods receipt",
-        request_body=PurchaseOrderCreateSerializer,
+        request_body=GoodsReceiptCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -73,6 +72,8 @@ class GoodsReceiptDetail(
                 queryset=GoodsReceiptProduct.objects.select_related(
                     'product',
                     'uom',
+                    'uom__group',
+                    'uom__group__uom_reference',
                     'tax',
                 ).prefetch_related(
                     Prefetch(
@@ -98,12 +99,12 @@ class GoodsReceiptDetail(
         )
 
     @swagger_auto_schema(
-        operation_summary="Goods receipt order detail",
+        operation_summary="Goods receipt detail",
         operation_description="Get Goods receipt detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -114,8 +115,8 @@ class GoodsReceiptDetail(
         request_body=GoodsReceiptUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

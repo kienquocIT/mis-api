@@ -30,7 +30,7 @@ from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPickin
 from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData,
+    OpportunitySaleTeamMember, OpportunityMemberPermitData, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -885,7 +885,93 @@ def new_permit_parsed():
     print('New permit parsed is successfully!')
 
 
+def update_backup_data_purchase_request():
+    for pr in PurchaseRequest.objects.all():
+        data = []
+
+        for item in pr.purchase_request_product_datas:
+            product_obj = Product.objects.get(id=item['product']['id'])
+            data_product = {
+                'id': str(product_obj.id),
+                'title': product_obj.title,
+                'code': product_obj.code,
+                'uom_group': str(product_obj.general_uom_group_id),
+            }
+
+            tax_obj = Tax.objects.get(id=item['tax']['id'])
+            data_tax = {
+                'id': str(tax_obj.id),
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            }
+            data.append(
+                {
+                    'tax': data_tax,
+                    'product': data_product,
+                    'uom': item['uom'],
+                    'description': item['description'],
+                    'unit_price': item['unit_price'],
+                    'sale_order_product': item['sale_order_product'],
+                    'quantity': item['quantity'],
+                    'sub_total_price': item['unit_price'] * item['quantity'],
+                }
+            )
+
+        pr.purchase_request_product_datas = data
+        pr.save(update_fields=['purchase_request_product_datas'])
+    print('Update Done !')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
+
+
 def make_unique_together_opp_member():
+    from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+
     print('Destroy duplicated opp member starting...')
     list_filter = []
     for opp in Opportunity.objects.all():
