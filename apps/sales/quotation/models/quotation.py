@@ -226,30 +226,29 @@ class Quotation(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def generate_code(cls, company_id):
+    def find_max_number(cls, codes):
         num_max = None
-        for item in cls.objects.filter(company_id=company_id).values_list('code', flat=True):
+        for code in codes:
             try:
-                if item != '':
-                    tmp = int(str(item).split('-', maxsplit=1)[0].split("SQ")[1])
-                    if not num_max or (isinstance(num_max, int) and tmp > num_max):
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("SQ")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
                         num_max = tmp
             except Exception as err:
                 print(err)
-        if num_max:
-            if num_max < 10000:
-                if num_max > 1000:
-                    code = 'SQ' + str(num_max + 1)
-                elif num_max > 100:
-                    code = 'SQ0' + str(num_max + 1)
-                elif num_max > 10:
-                    code = 'SQ00' + str(num_max + 1)
-                else:
-                    code = 'SQ000' + str(num_max + 1)
-            else:
-                raise ValueError('Out range 10000 number')
-        else:
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
             code = 'SQ0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'SQ{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
         if cls.objects.filter(code=code, company_id=company_id).exists():
             return cls.generate_code(company_id=company_id)
         return code
