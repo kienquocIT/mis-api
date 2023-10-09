@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
 # CONFIG
@@ -230,21 +230,38 @@ class SaleOrder(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def generate_code(cls):
-        # auto create code (temporary)
-        sale_order = SaleOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "OR"
-        temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
-        return f"{char}{temper}"
+    def generate_code(cls, company_id):
+        num_max = None
+        for item in cls.objects.filter(company_id=company_id).values_list('code', flat=True):
+            try:
+                if item != '':
+                    tmp = int(str(item).split('-', maxsplit=1)[0].split("OR")[1])
+                    if not num_max or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        if num_max:
+            if num_max < 10000:
+                if num_max > 1000:
+                    code = 'OR' + str(num_max + 1)
+                elif num_max > 100:
+                    code = 'OR0' + str(num_max + 1)
+                elif num_max > 10:
+                    code = 'OR00' + str(num_max + 1)
+                else:
+                    code = 'OR000' + str(num_max + 1)
+            else:
+                raise ValueError('Out range 10000 number')
+        else:
+            code = 'OR0001-' + StringHandler.random_str(17)
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code()
+                self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
