@@ -1583,11 +1583,15 @@ class AccountGroupTestCase(AdvanceTestCase):
 
         self.authenticated()
 
-    def test_create_new(self):
+    def test_create_new(self, code=None, title=None):
         url = reverse("AccountGroupList")
+        if not code:
+            code = "AG01"
+        if not title:
+            title = "Nhóm khách hàng dự án"
         data = {  # noqa
-            "code": "AG01",
-            "title": "Nhóm khách hàng dự án",
+            "code": code,
+            "title": title,
             "description": ""
         }
         response = self.client.post(url, data, format='json')
