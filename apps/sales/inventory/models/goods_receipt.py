@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, StringHandler
 
 
 class GoodsReceipt(DataAbstractModel):
@@ -57,16 +57,33 @@ class GoodsReceipt(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def generate_code(cls):
-        # auto create code (temporary)
-        goods_receipt = GoodsReceipt.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "GR"
-        temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
-        return f"{char}{temper}"
+    def generate_code(cls, company_id):
+        num_max = None
+        for item in cls.objects.filter(company_id=company_id).values_list('code', flat=True):
+            try:
+                if item != '':
+                    tmp = int(str(item).split('-', maxsplit=1)[0].split("GR")[1])
+                    if not num_max or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        if num_max:
+            if num_max < 10000:
+                if num_max > 1000:
+                    code = 'GR' + str(num_max + 1)
+                elif num_max > 100:
+                    code = 'GR0' + str(num_max + 1)
+                elif num_max > 10:
+                    code = 'GR00' + str(num_max + 1)
+                else:
+                    code = 'GR000' + str(num_max + 1)
+            else:
+                raise ValueError('Out range 10000 number')
+        else:
+            code = 'GR0001-' + StringHandler.random_str(17)
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
 
     @classmethod
     def push_to_product_warehouse(cls, instance):
@@ -104,7 +121,7 @@ class GoodsReceipt(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code()
+                self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
