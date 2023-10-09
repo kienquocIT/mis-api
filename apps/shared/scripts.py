@@ -920,3 +920,41 @@ def update_backup_data_purchase_request():
         pr.purchase_request_product_datas = data
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
