@@ -30,7 +30,7 @@ from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPickin
 from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData,
+    OpportunitySaleTeamMember, OpportunityMemberPermitData, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -920,6 +920,16 @@ def update_backup_data_purchase_request():
         pr.purchase_request_product_datas = data
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
 
 
 def convert_permit_ids():
