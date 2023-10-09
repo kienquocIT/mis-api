@@ -21,7 +21,8 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Goods transfer List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodstransfer', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -32,7 +33,8 @@ class GoodsTransferList(BaseListMixin, BaseCreateMixin):
         request_body=GoodsTransferCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodstransfer', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -53,7 +55,8 @@ class GoodsTransferDetail(
         operation_description="Get Goods transfer detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodstransfer', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -64,7 +67,8 @@ class GoodsTransferDetail(
         request_body=GoodsTransferUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodstransfer', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

@@ -1035,8 +1035,136 @@ GOODS_RECEIPT_APP_CONFIG = {
     },
 }
 
+GOODS_TRANSFER_APP_CONFIG = {
+    "id": "866f163d-b724-404d-942f-4bc44dc2e2ed",
+    "title": "Goods Transfer",
+    "code": "goodstransfer",
+    "model_code": "goodstransfer",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
 
+GOODS_ISSUE_APP_CONFIG = {
+    "id": "f26d7ce4-e990-420a-8ec6-2dc307467f2c",
+    "title": "Goods Issue",
+    "code": "goodsissue",
+    "model_code": "goodsissue",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+        "c5de0a7d-bea3-4f39-922f-06a40a060aba",  # Inventory Adjustment
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "c5de0a7d-bea3-4f39-922f-06a40a060aba": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "c5de0a7d-bea3-4f39-922f-06a40a060aba": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "c5de0a7d-bea3-4f39-922f-06a40a060aba": {"view": "==", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
 
+GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
+    "id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
+    "title": "Inventory Adjustment",
+    "code": "goodsissue",
+    "model_code": "goodsissue",
+    "app_label": "inventory",
+    "is_workflow": True,
+    "app_depend_on": [
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+            },
+            "local_depends_on": {
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+            },
+            "local_depends_on": {
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+            },
+            "local_depends_on": {
+            },
+        },
+    },
+}
 
 Application_crm_data = {
     "828b785a-8f57-4a03-9f90-e0edf96560d7": ApplicationConfigFrame(**CONTACT_APP_CONFIG).data,
@@ -1069,4 +1197,7 @@ Application_crm_data = {
     "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": ApplicationConfigFrame(**PURCHASE_REQUEST_APP_CONFIG).data,
     "245e9f47-df59-4d4a-b355-7eff2859247f": ApplicationConfigFrame(**EXPENSE_ITEM_APP_CONFIG).data,
     "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data,
+    "866f163d-b724-404d-942f-4bc44dc2e2ed": ApplicationConfigFrame(**GOODS_TRANSFER_APP_CONFIG).data,
+    "f26d7ce4-e990-420a-8ec6-2dc307467f2c": ApplicationConfigFrame(**GOODS_ISSUE_APP_CONFIG).data,
+    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data
 }
