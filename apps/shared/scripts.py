@@ -883,3 +883,35 @@ def new_permit_parsed():
         obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit parsed is successfully!')
+
+
+def make_unique_together_opp_member():
+    print('Destroy duplicated opp member starting...')
+    list_filter = []
+    for opp in Opportunity.objects.all():
+        for opp_member in OpportunitySaleTeamMember.objects.filter(opportunity=opp):
+            tmp = {}
+            if opp_member.tenant_id:
+                tmp['tenant_id'] = opp_member.tenant_id
+            else:
+                tmp['tenant_id__isnull'] = True
+
+            if opp_member.company_id:
+                tmp['company_id'] = opp_member.company_id
+            else:
+                tmp['company_id__isnull'] = True
+
+            if opp_member.member_id:
+                tmp['member_id'] = opp_member.member_id
+            else:
+                tmp['member_id__isnull'] = True
+
+            list_filter.append(tmp)
+
+    for dict_filter in list_filter:
+        objs = OpportunitySaleTeamMember.objects.filter(**dict_filter)
+        print(objs.count(), dict_filter)
+        if objs.count() >= 2:
+            for obj in objs[1:]:
+                obj.delete()
+    print('Destroy duplicated opp member successfully!')

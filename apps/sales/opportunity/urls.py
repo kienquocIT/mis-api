@@ -8,7 +8,8 @@ from .views import (
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
     OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList, OpportunityMemberDetail,
     OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer, OpportunityMemberList,
-    OpportunityListForCashOutFlow
+    OpportunityListForCashOutFlow,
+    MemberOfOpportunityDetail, MemberOfOpportunityDetailAdd,
 )
 
 urlpatterns = [
@@ -17,6 +18,8 @@ urlpatterns = [
     path('list-for-cash-outflow', OpportunityListForCashOutFlow.as_view(), name='OpportunityListForCashOutFlow'),
     path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
+    path('<str:pk_opp>/member/add', MemberOfOpportunityDetailAdd.as_view(), name='MemberOfOpportunityDetailAdd'),
+    path('<str:pk_opp>/member/<str:pk_member>', MemberOfOpportunityDetail.as_view(), name='MemberOfOpportunityDetail'),
 
     path('config/decision-factors', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
     path(

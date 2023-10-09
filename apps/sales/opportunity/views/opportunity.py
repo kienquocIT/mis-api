@@ -8,7 +8,14 @@ from apps.sales.opportunity.serializers import (
     OpportunityMemberPermissionUpdateSerializer, OpportunityMemberListSerializer,
     OpportunityListSerializerForCashOutFlow
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.sales.opportunity.serializers.opp_members import (
+    MemberOfOpportunityDetailSerializer,
+    MemberOfOpportunityUpdateSerializer, MemberOfOpportunityAddSerializer,
+)
+from apps.shared import (
+    BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
+    ResponseController, BaseDestroyMixin,
+)
 
 
 class OpportunityList(
@@ -87,6 +94,7 @@ class OpportunityDetail(
             "quotation",
         ).prefetch_related(
             "stage",
+            "members",
         )
 
     @swagger_auto_schema(
@@ -111,6 +119,148 @@ class OpportunityDetail(
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
+
+
+class MemberOfOpportunityDetailAdd(BaseCreateMixin):
+    queryset = OpportunitySaleTeamMember
+    serializer_create = MemberOfOpportunityAddSerializer
+
+    def get_opp_member_of_current_user(self, opp_obj):
+        return OpportunitySaleTeamMember.objects.filter_current(
+            opportunity=opp_obj,
+            member=self.cls_check.employee_attr.employee_current,
+            fill__tenant=True, fill__company=True
+        ).first()
+
+    @classmethod
+    def get_opp_obj(cls, pk_idx):
+        if TypeCheck.check_uuid(pk_idx):
+            return Opportunity.objects.filter_current(pk=pk_idx, fill__tenant=True, fill__company=True).first()
+        return None
+
+    def check_permit_add_member_opp(self, opp_obj) -> bool:
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
+        if emp_id and str(opp_obj.employee_inherit_id) == str(emp_id):
+            return True
+
+        opp_member_current_user = self.get_opp_member_of_current_user(opp_obj=opp_obj)
+        if opp_member_current_user:
+            return opp_member_current_user.permit_add_member
+        return False
+
+    def create_hidden_field_manual_after(self):
+        return {
+            'tenant_id': self.cls_check.employee_attr.tenant_id,
+            'company_id': self.cls_check.employee_attr.company_id,
+            'opportunity_id': getattr(self, 'opportunity_id', None),
+        }
+
+    def get_serializer_detail_return(self, obj):
+        return {'member': 'Successful'}
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, pk_opp, **kwargs):
+        opp_obj = self.get_opp_obj(pk_opp)
+        if opp_obj:
+            if self.check_permit_add_member_opp(opp_obj=opp_obj):
+                setattr(self, 'opportunity_id', opp_obj.id)
+                return self.create(request, *args, pk_opp, **kwargs)
+            return ResponseController.forbidden_403()
+        return ResponseController.notfound_404()
+
+
+class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
+    queryset = OpportunitySaleTeamMember.objects
+    serializer_detail = MemberOfOpportunityDetailSerializer
+    serializer_update = MemberOfOpportunityUpdateSerializer
+
+    retrieve_hidden_field = ('tenant_id', 'company_id')
+
+    def get_opp_member_of_current_user(self, instance):
+        return OpportunitySaleTeamMember.objects.filter_current(
+            opportunity=instance.opportunity,
+            member=self.cls_check.employee_attr.employee_current,
+            fill__tenant=True, fill__company=True
+        ).first()
+
+    def manual_check_obj_retrieve(self, instance, **kwargs):
+        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
+        if not state:
+            # special case skip with True if current user is employee_inherit
+            emp_id = self.cls_check.employee_attr.employee_current_id
+            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+                return True
+
+            obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
+            if obj_of_current_user:
+                return obj_of_current_user.permit_view_this_opp
+        return state
+
+    def manual_check_obj_update(self, instance, body_data, **kwargs):
+        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
+        if not state:
+            # special case skip with True if current user is employee_inherit
+            emp_id = self.cls_check.employee_attr.employee_current_id
+            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+                return True
+
+            obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
+            if obj_of_current_user:
+                return obj_of_current_user.permit_view_this_opp
+        return state
+
+    def manual_check_obj_destroy(self, instance, **kwargs):
+        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
+        if not state:
+            # special case skip with True if current user is employee_inherit
+            emp_id = self.cls_check.employee_attr.employee_current_id
+            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+                return True
+
+            obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
+            if obj_of_current_user:
+                return obj_of_current_user.permit_view_this_opp
+        return state
+
+    def get_lookup_url_kwarg(self) -> dict:
+        print({
+            'opportunity_id': self.kwargs['pk_opp'],
+            'member_id': self.kwargs['pk_member']
+        })
+        return {
+            'opportunity_id': self.kwargs['pk_opp'],
+            'member_id': self.kwargs['pk_member']
+        }
+
+    @swagger_auto_schema(
+        operation_summary='Get member detail of OPP',
+        operation_description='Check permit by OPP related',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk_opp, pk_member, **kwargs):
+        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
+            return self.retrieve(request, *args, pk_opp, pk_member, **kwargs)
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(
+        operation_summary='Update app and permit for member',
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def put(self, request, *args, pk_opp, pk_member, **kwargs):
+        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
+            return self.update(request, *args, pk_opp, pk_member, **kwargs)
+        return ResponseController.notfound_404()
+
+    @swagger_auto_schema(
+        operation_summary='Remove member from opp'
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def delete(self, request, *args, pk_opp, pk_member, **kwargs):
+        if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
+            return self.destroy(request, *args, pk_opp, pk_member, is_purge=True, **kwargs)
+        return ResponseController.notfound_404()
 
 
 # Opportunity List use for Sale Apps

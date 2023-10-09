@@ -4,6 +4,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 from .config import OpportunityConfigStage, OpportunityConfig
 
@@ -170,6 +171,14 @@ class Opportunity(DataAbstractModel):
         null=True,
         help_text="Delivery use this opportunity",
         related_name="opportunity_map_delivery"
+    )
+    members = models.ManyToManyField(
+        'hr.Employee',
+        through='OpportunitySaleTeamMember',
+        symmetrical=False,
+        through_fields=('opportunity', 'member'),
+        blank=True,
+        related_name='member_of_opp'
     )
 
     class Meta:
@@ -708,13 +717,12 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         permissions = ()
 
 
-class OpportunitySaleTeamMember(MasterDataAbstractModel):
+class OpportunitySaleTeamMember(MasterDataAbstractModel, PermissionAbstractModel):
     opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_sale_team_member_opportunity",
     )
-
     member = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
@@ -750,11 +758,39 @@ class OpportunitySaleTeamMember(MasterDataAbstractModel):
         ),
         verbose_name='permission for member in Tenant App'
     )
+    plan = models.ManyToManyField(
+        'base.SubscriptionPlan',
+        through="PlanMemberOpportunity",
+        through_fields=('opportunity_member', 'plan'),
+        symmetrical=False,
+        blank=True,
+        related_name='member_opp_map_plan'
+    )
 
     class Meta:
         verbose_name = 'Opportunity Sale Team Member'
         verbose_name_plural = 'Opportunity Sale Team Members'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+        unique_together = ('tenant', 'company', 'opportunity', 'member')
+
+
+class PlanMemberOpportunity(SimpleAbstractModel):
+    opportunity_member = models.ForeignKey(
+        OpportunitySaleTeamMember,
+        on_delete=models.CASCADE,
+        related_name='member_opp_plan'
+    )
+    plan = models.ForeignKey(
+        'base.SubscriptionPlan',
+        on_delete=models.CASCADE
+    )
+    application = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Plan of Employee At Opportunity'
+        verbose_name_plural = 'Plan of Employee At Opportunity'
         default_permissions = ()
         permissions = ()
 
