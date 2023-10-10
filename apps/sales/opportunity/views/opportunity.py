@@ -45,7 +45,7 @@ class OpportunityList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "customer",
-            "sale_person",
+            "employee_inherit",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
         )
