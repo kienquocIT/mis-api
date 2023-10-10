@@ -172,11 +172,20 @@ class PermissionAbstractModel(models.Model):
         return self
 
     def append_permit_by_opp(self, opp_id, perm_config):
-        cls_control = PermissionController(tenant_id=self.get_tenant_id())
-        perm_config_validated = cls_control.valid(attrs=perm_config, bastion_from='opp')
-        self.permission_by_opp[opp_id] = cls_control.parse_from_config_to_simple(perm_config_validated)
-        self.permissions_parsed = cls_control.get_permission_parsed(instance=self)
-        super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
+        if opp_id:
+            cls_control = PermissionController(tenant_id=self.get_tenant_id())
+            perm_config_validated = cls_control.valid(attrs=perm_config, bastion_from='opp')
+            self.permission_by_opp[str(opp_id)] = cls_control.parse_from_config_to_simple(perm_config_validated)
+            self.permissions_parsed = cls_control.get_permission_parsed(instance=self)
+            super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
+        return self
+
+    def remove_permit_by_opp(self, opp_id):
+        if opp_id and str(opp_id) in self.permission_by_opp:
+            del self.permission_by_opp[opp_id]
+            cls_control = PermissionController(tenant_id=self.get_tenant_id())
+            self.permissions_parsed = cls_control.get_permission_parsed(instance=self)
+            super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
         return self
 
     def append_permit_by_prj(self, prj_id, perm_config):

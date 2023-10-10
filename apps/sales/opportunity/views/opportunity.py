@@ -31,7 +31,7 @@ class OpportunityList(
         'is_deal_close': ['exact'],
         'id': ['in'],
     }
-    search_fields = ['title']
+    search_fields = ['title', 'code']
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer
@@ -46,6 +46,7 @@ class OpportunityList(
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
+            # "employee_inherit",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
         )

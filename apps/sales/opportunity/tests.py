@@ -3,7 +3,7 @@ from rest_framework import status
 
 from apps.masterdata.saledata.tests import ProductTestCase, TaxAndTaxCategoryTestCase, SalutationTestCase, \
     AccountGroupTestCase, IndustryTestCase, AccountTypeTestCase
-from apps.shared.extends.tests import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase, count_queries
 from rest_framework.test import APIClient
 
 
@@ -270,8 +270,11 @@ class TestCaseOpportunity(AdvanceTestCase):
 
         return response
 
+    @count_queries
     def test_get_list_opportunity(self):
         self.test_create_opportunity()
+        self.max_queries_allowed = 7  # force 7 queries
+        self.set_start_count_queries()
         url = reverse('OpportunityList')
         response = self.client.get(url, format='json')
         self.assertResponseList(  # noqa

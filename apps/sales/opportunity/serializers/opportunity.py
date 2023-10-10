@@ -43,8 +43,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     def get_customer(cls, obj):
         if obj.customer:
             shipping_address_list = []
-            for item in obj.customer.account_mapped_shipping_address.all():
-                shipping_address_list.append(item.full_address)
+            # for item in obj.customer.account_mapped_shipping_address.all():
+            #     shipping_address_list.append(item.full_address)
             return {
                 'id': obj.customer_id,
                 'title': obj.customer.name,
