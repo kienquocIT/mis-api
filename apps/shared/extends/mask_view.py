@@ -220,7 +220,7 @@ class EmployeeAttribute:
             )
         return self._employee_same_group_ids
 
-    _roles = []
+    _roles: list[dict] = None
 
     @property
     def roles(self):
@@ -724,13 +724,13 @@ class PermissionController:
                         or self.config_data['employee']['prj']
                 ):
                     self._has_permit_exist = True
-            elif self.config_data['roles']:
+            if not self._has_permit_exist and self.config_data['roles']:
                 for item in self.config_data['roles']:
                     if (
-                            item['employee']['general']
-                            or item['employee']['ids']
-                            or item['employee']['opp']
-                            or item['employee']['prj']
+                            item['general']
+                            or item['ids']
+                            or item['opp']
+                            or item['prj']
                     ):
                         self._has_permit_exist = True
                         break
