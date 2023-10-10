@@ -968,3 +968,31 @@ def convert_permit_ids():
         obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit IDS is successfully!')
+
+
+def update_product_warehouse_amounts():
+    # update ProductWarehouse
+    for product_warehouse in ProductWareHouse.objects.all():
+        product_warehouse.receipt_amount = product_warehouse.stock_amount
+        product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+        product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
+    # update Product
+    for product in Product.objects.all():
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_actual
+        for product_receipted in product.goods_receipt_product_product.filter(
+            goods_receipt__system_status__in=[2, 3],
+            goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.available_amount = (product_stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
+    print('update product warehouse done.')

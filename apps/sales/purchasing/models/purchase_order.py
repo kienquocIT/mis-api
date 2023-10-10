@@ -125,6 +125,16 @@ class PurchaseOrder(DataAbstractModel):
             purchase_request.update_purchase_status()
         return True
 
+    @classmethod
+    def update_product_wait_receipt_amount(cls, instance):
+        for product_purchase in instance.purchase_order_product_order.all():
+            product_purchase.product.save(**{
+                'update_wait_receipt_amount': True,
+                'quantity_purchase': product_purchase.product_quantity_order_actual,
+                'update_fields': ['wait_receipt_amount', 'available_amount']
+            })
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -134,7 +144,8 @@ class PurchaseOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-            self.update_remain_and_status_purchase_request(self)
+                self.update_remain_and_status_purchase_request(self)
+                self.update_product_wait_receipt_amount(self)
 
         # hit DB
         super().save(*args, **kwargs)

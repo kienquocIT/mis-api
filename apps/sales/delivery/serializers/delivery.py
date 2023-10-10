@@ -44,10 +44,9 @@ class WarehouseQuantityHandle:
                 # nếu trừ đủ update vào warehouse, return true
                 break
             target_ratio = item.uom.ratio
-            in_stock = item.stock_amount - item.sold_amount
-            if in_stock > 0:
+            if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
-                in_stock_unit = in_stock * target_ratio
+                in_stock_unit = item.stock_amount * target_ratio
                 calc = in_stock_unit - mediate_number
                 if calc >= 0:
                     # đủ hàng

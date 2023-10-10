@@ -97,7 +97,6 @@ class ProductWareHouse(MasterDataAbstractModel):
                 uom_id=uom_id, defaults={
                     'tax_id': tax_id,
                     'stock_amount': amount,
-                    'available_amount': amount,
                     'receipt_amount': amount,
                     'unit_price': unit_price,
                 }
@@ -125,8 +124,8 @@ class ProductWareHouse(MasterDataAbstractModel):
                 )
             except cls.DoesNotExist:
                 raise ValueError('Product not found in warehouse with UOM')
-        obj.stock_amount += amount
-        obj.available_amount = (obj.stock_amount - obj.sold_amount)
+        obj.receipt_amount += amount
+        obj.stock_amount = (obj.receipt_amount - obj.sold_amount)
         if lot_data:
             ProductWareHouseLot.create(
                 tenant_id=tenant_id,
@@ -141,7 +140,7 @@ class ProductWareHouse(MasterDataAbstractModel):
                 product_warehouse_id=obj.id,
                 serial_data=serial_data
             )
-        obj.save(update_fields=['stock_amount', 'available_amount'])
+        obj.save(update_fields=['stock_amount', 'receipt_amount'])
         return True
 
     @classmethod
@@ -351,34 +350,3 @@ class ProductWareHouseSerial(MasterDataAbstractModel):
             product_warehouse_id=product_warehouse_id,
         ) for data in serial_data])
         return True
-
-
-class ProductTransaction(MasterDataAbstractModel):
-    product = models.ForeignKey(
-        'saledata.Product',
-        on_delete=models.CASCADE,
-        verbose_name='product',
-        related_name='product_transaction_product'
-    )
-    wait_receipt_amount = models.FloatField(
-        default=0,
-        verbose_name='Wait Receipt Amount',
-        help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
-    )
-    wait_delivery_amount = models.FloatField(
-        default=0,
-        verbose_name='Wait Delivery Amount',
-        help_text='Amount product that ordered but not delivered, update when delivery for sale order'
-    )
-    available_amount = models.FloatField(
-        default=0,
-        verbose_name='Available Stock',
-        help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
-    )
-
-    class Meta:
-        verbose_name = 'Product Transaction'
-        verbose_name_plural = 'Product Transactions'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()

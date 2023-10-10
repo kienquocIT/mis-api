@@ -275,7 +275,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
             results.append({
                 'id': str(item.id),
                 'product': item.product_data,
-                'available_amount': item.stock_amount - item.sold_amount,
+                'available_amount': item.stock_amount,
                 'inventory_uom': item.uom_data,
             })
         return results

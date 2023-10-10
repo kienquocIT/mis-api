@@ -147,6 +147,16 @@ class GoodsReceipt(DataAbstractModel):
             cls.push_by_ia(instance=instance)
         return True
 
+    @classmethod
+    def update_product_wait_receipt_amount(cls, instance):
+        if instance.purchase_order:
+            for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                product_receipt.product.save(**{
+                    'update_wait_receipt_amount': True,
+                    'quantity_receipt': product_receipt.quantity_import,
+                })
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -156,8 +166,9 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-            self.push_to_product_warehouse(self)
-            # update receipt status to PurchaseOrder
+                self.push_to_product_warehouse(self)
+                self.update_product_wait_receipt_amount(self)
+                # update receipt status to PurchaseOrder
 
         # hit DB
         super().save(*args, **kwargs)

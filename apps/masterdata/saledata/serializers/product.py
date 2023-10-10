@@ -408,6 +408,10 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'purchase_information',
             'product_choice',
             'product_warehouse_detail',
+            # Transaction information
+            'wait_delivery_amount',
+            'wait_receipt_amount',
+            'available_amount'
         )
 
     @classmethod
@@ -531,9 +535,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                         'title': item.warehouse.title,
                         'code': item.warehouse.code,
                     } if item.warehouse else {},
-                    'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
-                    'wait_for_delivery_amount': ratio_convert * item.picked_ready,
-                    'wait_for_receipt_amount': ratio_convert * 0
+                    'stock_amount': ratio_convert * item.stock_amount,
                 })
         return result
 

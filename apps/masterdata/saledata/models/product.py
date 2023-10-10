@@ -173,6 +173,22 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
+    # Transaction information
+    wait_delivery_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Delivery Amount',
+        help_text='Amount product that ordered but not delivered, update when delivery for sale order'
+    )
+    wait_receipt_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Receipt Amount',
+        help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
+    )
+    available_amount = models.FloatField(
+        default=0,
+        verbose_name='Available Stock',
+        help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -180,6 +196,23 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    def save(self, *args, **kwargs):
+        if 'update_wait_receipt_amount' in kwargs:
+            del kwargs['update_wait_receipt_amount']
+            if 'quantity_purchase' in kwargs:
+                self.wait_receipt_amount += kwargs['quantity_purchase']
+                del kwargs['quantity_purchase']
+            if 'quantity_receipt' in kwargs:
+                self.wait_receipt_amount -= kwargs['quantity_receipt']
+                del kwargs['quantity_receipt']
+            product_stock_amount = 0
+            for product_warehouse in self.product_warehouse_product.all():
+                product_stock_amount += product_warehouse.stock_amount
+            self.available_amount = (product_stock_amount - self.wait_delivery_amount + self.wait_receipt_amount)
+
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class Expense(MasterDataAbstractModel):
