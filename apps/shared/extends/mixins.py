@@ -435,13 +435,13 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
             if self.cls_check.decor.auth_require is True:
                 if self.cls_check.permit_cls.config_data__exist:
-                    if obj and body_data:
+                    if obj is not None and body_data is not None:
                         return self.cls_check.permit_cls.config_data__check_obj_and_body_data(
                             obj=obj, body_data=body_data
                         )
-                    if obj:
+                    if obj is not None:
                         return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
-                    if body_data:
+                    if body_data is not None:
                         return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
                 return False
             return True
@@ -551,6 +551,18 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def get_object__field_hidden(self):
         return self.cls_check.attr.setup_hidden(from_view='retrieve')
 
+    def get_lookup_url_kwarg(self) -> dict:
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
+            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.'
+        )
+
+        return {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+
     def get_object(self):
         """
         [OVERRODE from REST FRAMEWORK]
@@ -562,15 +574,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        assert lookup_url_kwarg in self.kwargs, (
-            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
-            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.'
-        )
-
         if not hasattr(queryset, "get"):
             klass__name = (
                 queryset.__name__ if isinstance(queryset, type) else queryset.__class__.__name__
@@ -581,7 +584,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             )
         try:
             field_hidden = self.get_object__field_hidden
-            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+            filter_kwargs = self.get_lookup_url_kwarg()
             if self.query_extend_base_model:
                 obj = queryset.get(
                     **filter_kwargs,
@@ -728,6 +731,8 @@ class BaseListMixin(BaseMixin):
         is_minimal, _is_skip_auth = self.parse_header(request)
         filter_kwargs_q = self.filter_kwargs_q
         filter_kwargs = self.filter_kwargs
+        if settings.DEBUG:
+            print(request.path, filter_kwargs_q, filter_kwargs)
         queryset = self.get_queryset_and_filter_queryset(
             is_minimal=is_minimal,
             filter_kwargs=filter_kwargs,
@@ -750,16 +755,29 @@ class BaseCreateMixin(BaseMixin):
     ]  # DataAbstract
     CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
 
+    def manual_check_obj_create(self, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
+    def get_serializer_detail_return(self, obj):
+        return self.get_serializer_detail(obj).data
+
     def create(self, request, *args, **kwargs):
         field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
         body_data = {**request.data, **field_hidden}
-        if self.check_perm_by_obj_or_body_data(body_data=body_data):
+
+        state_check = self.manual_check_obj_create(body_data=body_data)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(body_data=body_data)
+        if state_check is True:
             log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
             obj = self.perform_create(serializer, extras=field_hidden)
             self.write_log(doc_obj=obj, request_data=log_data)
-            return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
+            return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
 
     @staticmethod
@@ -782,9 +800,18 @@ class BaseRetrieveMixin(BaseMixin):
     def retrieve_empty(cls) -> Response:
         return ResponseController.success_200(data={}, key_data='result')
 
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self.check_perm_by_obj_or_body_data(obj=instance):
+        state_check = self.manual_check_obj_retrieve(instance=instance)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(obj=instance)
+        if state_check is True:
             serializer = self.get_serializer_detail(instance)
             return ResponseController.success_200(data=serializer.data, key_data='result')
         return ResponseController.forbidden_403()
@@ -823,6 +850,12 @@ class BaseUpdateMixin(BaseMixin):
                 # check permission default | wait implement so it is True
         return request_data, False, None
 
+    def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
@@ -831,7 +864,11 @@ class BaseUpdateMixin(BaseMixin):
                 **request.data,
                 **field_hidden
             }
-            if self.check_perm_by_obj_or_body_data(obj=instance, body_data=body_data):
+
+            state_check = self.manual_check_obj_update(instance=instance, body_data=body_data)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(obj=instance, body_data=body_data)
+            if state_check is True:
                 body_data, partial, task_id = self.parsed_body(
                     instance=instance, request_data=request.data, user=request.user
                 )
@@ -868,11 +905,20 @@ class BaseUpdateMixin(BaseMixin):
 
 
 class BaseDestroyMixin(BaseMixin):
+    def manual_check_obj_destroy(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            if self.check_perm_by_obj_or_body_data(obj=instance):
+            state_check = self.manual_check_obj_destroy(instance=instance)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(obj=instance)
+            if state_check is True:
                 self.perform_destroy(instance, is_purge)
                 return ResponseController.no_content_204()
             return ResponseController.forbidden_403()

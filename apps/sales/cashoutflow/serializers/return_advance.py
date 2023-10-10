@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
+from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost, AdvancePayment
 from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
@@ -173,22 +173,71 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
         costs = ReturnAdvanceCost.objects.filter(return_advance=obj).select_related('expense_type')
         list_result = []
         for cost in costs:
-            list_result.append({
-                'advance_payment_cost': cost.advance_payment_cost_id,
-                'expense_name': cost.expense_name,
-                'expense_type': {
-                    'id': cost.expense_type_id,
-                    'title': cost.expense_type.title,
-                },
-                'remain_total': cost.remain_value,
-                'return_value': cost.return_value,
-            })
+            list_result.append(
+                {
+                    'id': cost.advance_payment_cost_id,
+                    'expense_name': cost.expense_name,
+                    'expense_type': {
+                        'id': cost.expense_type_id,
+                        'title': cost.expense_type.title,
+                    },
+                    'remain_total': cost.remain_value,
+                    'return_value': cost.return_value,
+                }
+            )
         return list_result
 
 
 class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False)
+    advance_payment = serializers.UUIDField(required=False)
+    method = serializers.IntegerField(required=False)
+    money_received = serializers.BooleanField(required=False)
+    cost = ReturnAdvanceCostCreateSerializer(many=True)
+
     class Meta:
         model = ReturnAdvance
         fields = (
+            'title',
+            'advance_payment',
+            'method',
             'money_received',
+            'cost',
+            'return_total',
         )
+
+    @classmethod
+    def validate_advance_payment(cls, value):
+        try:
+            return AdvancePayment.objects.get(id=value)
+        except AdvancePayment.DoesNotExist:
+            raise serializers.ValidationError({'contact': ReturnAdvanceMsg.ADVANCE_PAYMENT_NOT_EXIST})
+
+    def validate(self, validate_data):
+        count_expense = AdvancePaymentCost.objects.filter(
+            advance_payment=validate_data['advance_payment'],
+        ).count()
+        if len(validate_data['cost']) != count_expense:
+            raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
+        return validate_data
+
+    @classmethod
+    def delete_old_cost(cls, instance):
+        objs = ReturnAdvanceCost.objects.select_related('advance_payment_cost').filter(return_advance=instance)
+        for item in objs:
+            item.advance_payment_cost.sum_return_value -= item.return_value
+            item.advance_payment_cost.save(update_fields=['sum_return_value'])
+        objs.delete()
+        return True
+
+    def update(self, instance, validated_data):
+        data_cost = validated_data.pop('cost')
+        self.delete_old_cost(instance)
+        ReturnAdvanceCreateSerializer.common_create_return_advance_cost(
+            validate_data=data_cost,
+            return_advance=instance
+        )
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance

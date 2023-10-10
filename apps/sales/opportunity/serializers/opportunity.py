@@ -4,9 +4,11 @@ from apps.core.hr.models import Employee
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
-from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
-    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
-    OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData
+from apps.sales.opportunity.models import (
+    Opportunity, OpportunityProductCategory, OpportunityProduct,
+    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
+    OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData,
+)
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -650,7 +652,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
     end_customer = serializers.SerializerMethodField()
     product_category = serializers.SerializerMethodField()
     customer_decision_factor = serializers.SerializerMethodField()
-    opportunity_sale_team_datas = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -675,13 +677,13 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'is_input_rate',
             'customer_decision_factor',
             'sale_person',
-            'opportunity_sale_team_datas',
             'stage',
             'lost_by_other_reason',
             'sale_order',
             'quotation',
             'is_close_lost',
             'is_deal_close',
+            'members',
         )
 
     @classmethod
@@ -802,21 +804,18 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         return []
 
     @classmethod
-    def get_opportunity_sale_team_datas(cls, obj):
-        sale_team = OpportunitySaleTeamMember.objects.filter(opportunity=obj)
-        list_result = []
-        for member in sale_team:
-            list_result.append(
-                {
-                    'id': member.id,
-                    'member': {
-                        'id': member.member_id,
-                        'name': member.member.get_full_name(),
-                        'email': member.member.email,
-                    }
-                }
-            )
-        return list_result
+    def get_members(cls, obj):
+        return [
+            {
+                "id": item.id,
+                "first_name": item.first_name,
+                "last_name": item.last_name,
+                "full_name": item.get_full_name(),
+                "email": item.email,
+                "avatar": item.avatar,
+                "is_active": item.is_active,
+            } for item in obj.members.all()
+        ]
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

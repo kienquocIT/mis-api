@@ -30,7 +30,7 @@ from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPickin
 from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData,
+    OpportunitySaleTeamMember, OpportunityMemberPermitData, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -920,3 +920,84 @@ def update_backup_data_purchase_request():
         pr.purchase_request_product_datas = data
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
+
+
+def make_unique_together_opp_member():
+    from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+
+    print('Destroy duplicated opp member starting...')
+    list_filter = []
+    for opp in Opportunity.objects.all():
+        for opp_member in OpportunitySaleTeamMember.objects.filter(opportunity=opp):
+            tmp = {}
+            if opp_member.tenant_id:
+                tmp['tenant_id'] = opp_member.tenant_id
+            else:
+                tmp['tenant_id__isnull'] = True
+
+            if opp_member.company_id:
+                tmp['company_id'] = opp_member.company_id
+            else:
+                tmp['company_id__isnull'] = True
+
+            if opp_member.member_id:
+                tmp['member_id'] = opp_member.member_id
+            else:
+                tmp['member_id__isnull'] = True
+
+            list_filter.append(tmp)
+
+    for dict_filter in list_filter:
+        objs = OpportunitySaleTeamMember.objects.filter(**dict_filter)
+        print(objs.count(), dict_filter)
+        if objs.count() >= 2:
+            for obj in objs[1:]:
+                obj.delete()
+    print('Destroy duplicated opp member successfully!')

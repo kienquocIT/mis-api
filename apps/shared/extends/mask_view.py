@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from copy import deepcopy
 from functools import wraps
 from typing import Union, Literal
@@ -6,6 +7,7 @@ from uuid import uuid4
 import numpy as np
 
 import rest_framework.exceptions
+from django.conf import settings
 from django.db.models import Q
 from django.http import HttpResponse
 
@@ -143,6 +145,14 @@ class EmployeeAttribute:
             self._model_hr_employee = DisperseModel(app_model='hr.employee').get_model()
         return self._model_hr_employee
 
+    _tenant_id = None
+
+    @property
+    def tenant_id(self):
+        if self.employee_current and hasattr(self.employee_current, 'id'):
+            self._tenant_id = self.employee_current.tenant_id
+        return self._tenant_id
+
     _company_id = None
 
     @property
@@ -210,7 +220,7 @@ class EmployeeAttribute:
             )
         return self._employee_same_group_ids
 
-    _roles = []
+    _roles: list[dict] = None
 
     @property
     def roles(self):
@@ -378,7 +388,7 @@ class ViewAttribute:
     def list_hidden_field(self) -> list[str]:
         if self._list_hidden_field is None:
             data_tmp = getattr(self.view_this, 'list_hidden_field', [])
-            self._list_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, list) else []
+            self._list_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, Iterable) else []
         return self._list_hidden_field
 
     @property
@@ -427,7 +437,7 @@ class ViewAttribute:
     def create_hidden_field(self) -> list[str]:
         if self._create_hidden_field is None:
             data_tmp = getattr(self.view_this, 'create_hidden_field', [])
-            self._create_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, list) else []
+            self._create_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, Iterable) else []
         return self._create_hidden_field
 
     @property
@@ -466,7 +476,7 @@ class ViewAttribute:
     def retrieve_hidden_field(self) -> list[str]:
         if self._retrieve_hidden_field is None:
             data_tmp = getattr(self.view_this, 'retrieve_hidden_field', [])
-            self._retrieve_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, list) else []
+            self._retrieve_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, Iterable) else []
         return self._retrieve_hidden_field
 
     @property
@@ -515,7 +525,7 @@ class ViewAttribute:
     def update_hidden_field(self) -> list[str]:
         if self._update_hidden_field is None:
             data_tmp = getattr(self.view_this, 'update_hidden_field', [])
-            self._update_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, list) else []
+            self._update_hidden_field = data_tmp if data_tmp and isinstance(data_tmp, Iterable) else []
         return self._update_hidden_field
 
     @property
@@ -677,25 +687,26 @@ class PermissionController:
             config_tmp = {'employee': {}, 'roles': []}
 
             # get from employee
-            employee_obj = self.employee_attr.employee_current
-            if employee_obj and self.config_check_permit:
-                permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
-                if permissions_parsed:
-                    config_tmp['employee'] = self.config_data__get_by_config(
-                        permit_config=self.config_check_permit,
-                        permissions_parsed=permissions_parsed,
-                    )
-
-            # get from role
-            for role_data in self.employee_attr.roles:
-                permissions_parsed = role_data[self.KEY_STORAGE_PERMISSION_IN_MODEL]
-                if permissions_parsed:
-                    config_tmp['roles'].append(
-                        self.config_data__get_by_config(
+            if self.config_check_permit:
+                employee_obj = self.employee_attr.employee_current
+                if employee_obj:
+                    permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
+                    if permissions_parsed:
+                        config_tmp['employee'] = self.config_data__get_by_config(
                             permit_config=self.config_check_permit,
                             permissions_parsed=permissions_parsed,
                         )
-                    )
+
+                    # get from role
+                    for role_data in self.employee_attr.roles:
+                        permissions_parsed = role_data[self.KEY_STORAGE_PERMISSION_IN_MODEL]
+                        if permissions_parsed:
+                            config_tmp['roles'].append(
+                                self.config_data__get_by_config(
+                                    permit_config=self.config_check_permit,
+                                    permissions_parsed=permissions_parsed,
+                                )
+                            )
 
             self._config_data = config_tmp
         return self._config_data
@@ -714,13 +725,13 @@ class PermissionController:
                         or self.config_data['employee']['prj']
                 ):
                     self._has_permit_exist = True
-            elif self.config_data['roles']:
+            if not self._has_permit_exist and self.config_data['roles']:
                 for item in self.config_data['roles']:
                     if (
-                            item['employee']['general']
-                            or item['employee']['ids']
-                            or item['employee']['opp']
-                            or item['employee']['prj']
+                            item['general']
+                            or item['ids']
+                            or item['opp']
+                            or item['prj']
                     ):
                         self._has_permit_exist = True
                         break
@@ -1167,10 +1178,10 @@ class ViewChecking:
         """
 
         # check pk in url is UUID
-        if 'pk' in self.attr.view_kwargs:
-            pk_calling = self.attr.view_kwargs['pk']
-            if not TypeCheck.check_uuid(pk_calling):
-                return HttpReturn.error_not_found()
+        for key, value in self.attr.view_kwargs.items():
+            if key.startswith('pk_'):
+                if not TypeCheck.check_uuid(value):
+                    return HttpReturn.error_not_found()
 
         # check login_require | check user in request is exist and not Anonymous
         if self.decor.auth_require or self.decor.employee_require:
@@ -1228,6 +1239,7 @@ def mask_view(**parent_kwargs):
         parent_kwargs = {}
 
     decor_kwargs = {
+        **parent_kwargs,
         'employee_require': parent_kwargs.get('employee_require', ViewConfigDecorator.employee_require),
         'login_require': parent_kwargs.get('login_require', ViewConfigDecorator.login_require),
         'auth_require': parent_kwargs.get('auth_require', ViewConfigDecorator.auth_require),
