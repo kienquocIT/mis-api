@@ -687,25 +687,26 @@ class PermissionController:
             config_tmp = {'employee': {}, 'roles': []}
 
             # get from employee
-            employee_obj = self.employee_attr.employee_current
-            if employee_obj and self.config_check_permit:
-                permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
-                if permissions_parsed:
-                    config_tmp['employee'] = self.config_data__get_by_config(
-                        permit_config=self.config_check_permit,
-                        permissions_parsed=permissions_parsed,
-                    )
-
-            # get from role
-            for role_data in self.employee_attr.roles:
-                permissions_parsed = role_data[self.KEY_STORAGE_PERMISSION_IN_MODEL]
-                if permissions_parsed:
-                    config_tmp['roles'].append(
-                        self.config_data__get_by_config(
+            if self.config_check_permit:
+                employee_obj = self.employee_attr.employee_current
+                if employee_obj:
+                    permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
+                    if permissions_parsed:
+                        config_tmp['employee'] = self.config_data__get_by_config(
                             permit_config=self.config_check_permit,
                             permissions_parsed=permissions_parsed,
                         )
-                    )
+
+                    # get from role
+                    for role_data in self.employee_attr.roles:
+                        permissions_parsed = role_data[self.KEY_STORAGE_PERMISSION_IN_MODEL]
+                        if permissions_parsed:
+                            config_tmp['roles'].append(
+                                self.config_data__get_by_config(
+                                    permit_config=self.config_check_permit,
+                                    permissions_parsed=permissions_parsed,
+                                )
+                            )
 
             self._config_data = config_tmp
         return self._config_data
