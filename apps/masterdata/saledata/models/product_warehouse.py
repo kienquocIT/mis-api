@@ -1,5 +1,7 @@
 __all__ = [
-    'ProductWareHouse'
+    'ProductWareHouse',
+    'ProductWareHouseLot',
+    'ProductWareHouseSerial',
 ]
 from django.db import models
 
@@ -38,15 +40,17 @@ class ProductWareHouse(MasterDataAbstractModel):
     stock_amount = models.FloatField(
         default=0,
         verbose_name="Stock",
-        help_text="Stock of product",
+        help_text="Physical amount product in warehouse, =(receipt_amount - sold_amount)",
     )
-    available_amount = models.FloatField(
+    receipt_amount = models.FloatField(
         default=0,
-        verbose_name='Available Stock',
+        verbose_name='Receipt Amount',
+        help_text='Amount product receipted, update when goods receipt'
     )
     sold_amount = models.FloatField(
         default=0,
         verbose_name='Sold Amount',
+        help_text='Amount product delivered, update when deliver'
     )
     picked_ready = models.FloatField(
         default=0,
@@ -83,6 +87,8 @@ class ProductWareHouse(MasterDataAbstractModel):
             amount: float,
             unit_price: float,
             create_when_not_found: bool = True,
+            lot_data=list,
+            serial_data=list,
             **kwargs
     ):
         if create_when_not_found:
@@ -91,10 +97,26 @@ class ProductWareHouse(MasterDataAbstractModel):
                 uom_id=uom_id, defaults={
                     'tax_id': tax_id,
                     'stock_amount': amount,
+                    'available_amount': amount,
+                    'receipt_amount': amount,
                     'unit_price': unit_price,
                 }
             )
             if _created is True:
+                if lot_data:
+                    ProductWareHouseLot.create(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        product_warehouse_id=obj.id,
+                        lot_data=lot_data
+                    )
+                if serial_data:
+                    ProductWareHouseSerial.create(
+                        tenant_id=tenant_id,
+                        company_id=company_id,
+                        product_warehouse_id=obj.id,
+                        serial_data=serial_data
+                    )
                 return True
         else:
             try:
@@ -104,7 +126,22 @@ class ProductWareHouse(MasterDataAbstractModel):
             except cls.DoesNotExist:
                 raise ValueError('Product not found in warehouse with UOM')
         obj.stock_amount += amount
-        obj.save(update_fields=['stock_amount'])
+        obj.available_amount = (obj.stock_amount - obj.sold_amount)
+        if lot_data:
+            ProductWareHouseLot.create(
+                tenant_id=tenant_id,
+                company_id=company_id,
+                product_warehouse_id=obj.id,
+                lot_data=lot_data
+            )
+        if serial_data:
+            ProductWareHouseSerial.create(
+                tenant_id=tenant_id,
+                company_id=company_id,
+                product_warehouse_id=obj.id,
+                serial_data=serial_data
+            )
+        obj.save(update_fields=['stock_amount', 'available_amount'])
         return True
 
     @classmethod
@@ -240,3 +277,108 @@ class ProductWareHouse(MasterDataAbstractModel):
 #         ordering = ('-date_created',)
 #         default_permissions = ()
 #         permissions = ()
+
+
+class ProductWareHouseLot(MasterDataAbstractModel):
+    product_warehouse = models.ForeignKey(
+        ProductWareHouse,
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse",
+        related_name="product_warehouse_lot_product_warehouse",
+    )
+    lot_number = models.CharField(max_length=100, blank=True, null=True)
+    quantity_import = models.FloatField(default=0)
+    expire_date = models.DateTimeField(null=True)
+    manufacture_date = models.DateTimeField(null=True)
+
+    class Meta:
+        verbose_name = 'Product Warehouse Lot'
+        verbose_name_plural = 'Product Warehouse Lots'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            tenant_id,
+            company_id,
+            product_warehouse_id,
+            lot_data,
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            tenant_id=tenant_id,
+            company_id=company_id,
+            product_warehouse_id=product_warehouse_id,
+        ) for data in lot_data])
+        return True
+
+
+class ProductWareHouseSerial(MasterDataAbstractModel):
+    product_warehouse = models.ForeignKey(
+        ProductWareHouse,
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse",
+        related_name="product_warehouse_serial_product_warehouse",
+    )
+    vendor_serial_number = models.CharField(max_length=100, blank=True, null=True)
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
+    expire_date = models.DateTimeField(null=True)
+    manufacture_date = models.DateTimeField(null=True)
+    warranty_start = models.DateTimeField(null=True)
+    warranty_end = models.DateTimeField(null=True)
+
+    class Meta:
+        verbose_name = 'Product Warehouse Serial'
+        verbose_name_plural = 'Product Warehouse Serials'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            tenant_id,
+            company_id,
+            product_warehouse_id,
+            serial_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            tenant_id=tenant_id,
+            company_id=company_id,
+            product_warehouse_id=product_warehouse_id,
+        ) for data in serial_data])
+        return True
+
+
+class ProductTransaction(MasterDataAbstractModel):
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name='product',
+        related_name='product_transaction_product'
+    )
+    wait_receipt_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Receipt Amount',
+        help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
+    )
+    wait_delivery_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Delivery Amount',
+        help_text='Amount product that ordered but not delivered, update when delivery for sale order'
+    )
+    available_amount = models.FloatField(
+        default=0,
+        verbose_name='Available Stock',
+        help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
+    )
+
+    class Meta:
+        verbose_name = 'Product Transaction'
+        verbose_name_plural = 'Product Transactions'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
