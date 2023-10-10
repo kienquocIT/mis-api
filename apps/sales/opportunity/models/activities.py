@@ -46,7 +46,7 @@ class OpportunityEmail(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
-    content = models.CharField(max_length=500, null=True)
+    content = models.CharField(max_length=1000, null=True)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
         help_text='The record created at value',

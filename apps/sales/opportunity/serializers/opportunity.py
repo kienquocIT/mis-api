@@ -40,14 +40,19 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_customer(cls, obj):
         if obj.customer:
-            shipping_address_list = []
-            for item in obj.customer.account_mapped_shipping_address.all():
-                shipping_address_list.append(item.full_address)
             return {
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
-                'shipping_address': shipping_address_list
+                'shipping_address': [{
+                    'full_address': item.full_address,
+                    'is_default': item.is_default
+                } for item in obj.customer.account_mapped_shipping_address.all()],
+                'contact_mapped': [{
+                    'id': str(item.id),
+                    'fullname': item.fullname,
+                    'email': item.email
+                } for item in obj.customer.contact_account_name.all()]
             }
         return {}
 
@@ -750,8 +755,18 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         if obj.customer:
             return {
                 'id': obj.customer_id,
+                'code': obj.code,
                 'name': obj.customer.name,
                 'annual_revenue': obj.customer.annual_revenue,
+                'shipping_address': [{
+                    'full_address': item.full_address,
+                    'is_default': item.is_default
+                } for item in obj.customer.account_mapped_shipping_address.all()],
+                'contact_mapped': [{
+                    'id': str(item.id),
+                    'fullname': item.fullname,
+                    'email': item.email
+                } for item in obj.customer.contact_account_name.all()]
             }
         return {}
 

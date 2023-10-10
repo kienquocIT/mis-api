@@ -92,17 +92,51 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField() # noqa
+    customer = serializers.SerializerMethodField()
+    contact = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityCallLog
         fields = (
             'id',
             'subject',
             'opportunity',
+            'customer',
             'contact',
             'call_date',
             'input_result',
             'repeat'
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return {}
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.opportunity.customer:
+            return {
+                'id': obj.opportunity.customer_id,
+                'code': obj.opportunity.customer.code,
+                'title': obj.opportunity.customer.name
+            }
+        return {}
+
+    @classmethod
+    def get_contact(cls, obj):
+        if obj.contact:
+            return {
+                'id': obj.contact_id,
+                'fullname': obj.contact.fullname
+            }
+        return {}
 
 
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
@@ -152,8 +186,6 @@ def send_email(email_obj, employee_id, tenant_id, company_id):
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
-    content = serializers.CharField(required=True)
-
     class Meta:
         model = OpportunityEmail
         fields = (
@@ -189,6 +221,8 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityEmail
         fields = (
@@ -200,6 +234,16 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'date_created',
             'opportunity',
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return {}
 
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
@@ -315,6 +359,10 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    employee_attended_list = serializers.SerializerMethodField()
+    customer_member_list = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityMeeting
         fields = (
@@ -329,6 +377,34 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat'
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        if obj.opportunity:
+            return {
+                'id': obj.opportunity_id,
+                'code': obj.opportunity.code,
+                'title': obj.opportunity.title
+            }
+        return {}
+
+    @classmethod
+    def get_employee_attended_list(cls, obj):
+        if obj.employee_attended_list:
+            employee_attended_list = []
+            for item in list(obj.employee_attended_list.all()):
+                employee_attended_list.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
+            return employee_attended_list
+        return {}
+
+    @classmethod
+    def get_customer_member_list(cls, obj):
+        if obj.customer_member_list:
+            customer_member_list = []
+            for item in list(obj.customer_member_list.all()):
+                customer_member_list.append({'id': item.id, 'fullname': item.fullname})
+            return customer_member_list
+        return {}
 
 
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
