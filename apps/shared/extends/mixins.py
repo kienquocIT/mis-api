@@ -731,8 +731,10 @@ class BaseListMixin(BaseMixin):
         is_minimal, _is_skip_auth = self.parse_header(request)
         filter_kwargs_q = self.filter_kwargs_q
         filter_kwargs = self.filter_kwargs
-        if settings.DEBUG:
-            print(request.path, filter_kwargs_q, filter_kwargs)
+        if settings.DEBUG_PERMIT:
+            print('# MIXINS.LIST              :', request.path, )
+            print('#     - filter_kwargs_q    :', filter_kwargs_q)
+            print('#     - filter_kwargs      :', filter_kwargs)
         queryset = self.get_queryset_and_filter_queryset(
             is_minimal=is_minimal,
             filter_kwargs=filter_kwargs,

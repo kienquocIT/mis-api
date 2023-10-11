@@ -1,6 +1,9 @@
 import json
 from copy import deepcopy
+from functools import wraps
 
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -14,10 +17,50 @@ from apps.sharedapp.data.base import FULL_PERMISSIONS_BY_CONFIGURED, FULL_PLAN_I
 from .utils import CustomizeEncoder
 from ..permissions import PermissionsUpdateSerializer
 
-__all__ = ['AdvanceTestCase']
+__all__ = ['AdvanceTestCase', 'count_queries']
+
+
+def count_queries(func):
+    def wrapper(self, *args, **kwargs):
+        with CaptureQueriesContext(connection) as ctx:
+            self.ctx__of_counter_queries = ctx
+            data = func(self, *args, **kwargs)
+            number_of_queries = len(ctx.captured_queries)
+            number_of_queries__reduce = number_of_queries - self.start_count_queries
+            if number_of_queries__reduce > self.max_queries_allowed:
+                msg_err = " ".join(
+                    [
+                        str(item) for item in [
+                            'Testcase: ', self, '\n',
+                            '- Number of queries: ', number_of_queries, '\n',
+                            '- Start count queries from: ', self.start_count_queries, '\n',
+                            '- End count: ', number_of_queries__reduce, '\n',
+                            'The quantity query is greater than number allowed: %s > %s ' % (
+                                str(number_of_queries__reduce), str(self.max_queries_allowed)
+                            )
+                        ]
+                    ]
+                )
+                self.fail(msg_err)
+        return data
+
+    return wraps(func)(wrapper)
 
 
 class AdvanceTestCase(TestCase):
+    def append_start_count_queries(self):
+        if self.ctx__of_counter_queries:
+            self.start_count_queries += len(self.ctx__of_counter_queries.captured_queries)
+
+    def set_start_count_queries(self):
+        if self.ctx__of_counter_queries:
+            self.start_count_queries = len(self.ctx__of_counter_queries.captured_queries)
+
+    ctx__of_counter_queries = None
+    number_queries_pass_auth = 924  # change it if change code in core
+    start_count_queries = 0
+    max_queries_allowed = 5
+
     tenant_code = 'MiS'
     admin_username = 'queptl'
     admin_password = 'queptl@1234'
@@ -105,6 +148,8 @@ class AdvanceTestCase(TestCase):
     def authenticated(self, login_data=None):
         login_data = login_data if login_data is not None else self._login()
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + login_data['token']['access_token'])
+        self.append_start_count_queries()
+        self.max_queries_allowed = 5
 
     def _new_tenant(self):
         url = reverse('NewTenant')
@@ -219,9 +264,11 @@ class AdvanceTestCase(TestCase):
         employee_obj = Employee.objects.get(pk=employee_current_id)
         tenant_current_id = response.data['result']['tenant_current']['id']
         if employee_current_id and tenant_current_id:
-            TenantPlan.objects.bulk_create([
-                TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
-            ])
+            TenantPlan.objects.bulk_create(
+                [
+                    TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
+                ]
+            )
             PermissionsUpdateSerializer.force_permissions(
                 instance=employee_obj, validated_data={'permission_by_configured': FULL_PERMISSIONS_BY_CONFIGURED}
             )
