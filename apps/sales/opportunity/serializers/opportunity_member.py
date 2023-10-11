@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
-from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember, OpportunityMemberPermitData
+from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.task.models import OpportunityTask
 from apps.shared.translations.opportunity import OpportunityMsg
 
@@ -91,7 +91,6 @@ class OpportunityAddMemberSerializer(serializers.ModelSerializer):
                 OpportunitySaleTeamMember(
                     opportunity=instance,
                     member=member['id'],
-                    permit_app=OpportunityMemberPermitData.PERMIT_DATA,
                 )
             )
             sale_team_data.append(

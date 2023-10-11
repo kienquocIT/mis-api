@@ -7,7 +7,7 @@ from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
-    OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData,
+    OpportunityConfigStage, OpportunityStage,
 )
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -155,7 +155,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         OpportunitySaleTeamMember.objects.create(
             opportunity=opportunity,
             member=employee_inherit,
-            permit_app=OpportunityMemberPermitData.PERMIT_DATA,
             permit_view_this_opp=True,
             permit_add_member=True,
         )
