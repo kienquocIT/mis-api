@@ -12,7 +12,10 @@ from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
-from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
+from apps.sales.opportunity.models import (
+    OpportunityConfig, OpportunityConfigStage, StageCondition,
+    OpportunitySaleTeamMember,
+)
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
@@ -30,7 +33,6 @@ from apps.sales.saleorder.models import (
 )
 from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
-
 
 logger = logging.getLogger(__name__)
 
@@ -687,53 +689,53 @@ class ConfigDefaultData:
             #
             translation.activate(company_config.language if company_config else 'vi')
             default_list = [
-                    {
-                        'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                {
+                    'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
 
-                    },
-                    {
-                        'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
-                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
-                    },
-                    {
-                        'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
-                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
-                    },
-                ]
+                },
+                {
+                    'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
+                    'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
+                },
+                {
+                    'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
+                    'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
+                },
+            ]
             temp_leave_type = []
             for item in default_list:
                 temp_leave_type.append(
@@ -904,3 +906,20 @@ def event_new_runtime(sender, instance, created, **kwargs):
     if created:
         instance.append_viewer(instance.doc_employee_inherit)
         instance.append_viewer(instance.doc_employee_created)
+
+
+@receiver(post_save, sender=OpportunitySaleTeamMember)
+def opp_member_event_update(sender, instance, created, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_obj.append_permit_by_opp(
+            opp_id=instance.opportunity_id,
+            perm_config=instance.permission_by_configured,
+        )
+
+
+@receiver(post_delete, sender=OpportunitySaleTeamMember)
+def opp_member_event_destroy(sender, instance, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_obj.remove_permit_by_opp(opp_id=instance.opportunity_id)

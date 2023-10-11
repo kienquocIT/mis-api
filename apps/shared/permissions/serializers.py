@@ -39,9 +39,12 @@ class PermissionDetailSerializer(serializers.ModelSerializer):
             return obj.permissions_parsed[""]
         return {}
 
+    def kwargs_plan_app(self, obj) -> dict:
+        return {self.cls_key_filter: obj}
+
     def get_plan_app(self, obj):
         result = []
-        data_of_plan = self.cls_of_plan.objects.select_related('plan').filter(**{self.cls_key_filter: obj})
+        data_of_plan = self.cls_of_plan.objects.select_related('plan').filter(**self.kwargs_plan_app(obj))
         if data_of_plan:
             for item in data_of_plan:
                 app_list = []

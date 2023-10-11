@@ -37,6 +37,7 @@ SECRET_KEY = 'django-insecure-z+!6=0b0sdkx!#su_z1$+6(*_8&5lo5&%jy8n76c5l1b1um&%t
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG_PERMIT = False
 DEBUG_SIGNAL_CHANGE = False
 
 ALLOWED_HOSTS = []
@@ -268,6 +269,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # test runner override | runner for command: python manage.py test
 TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+TEST_ARGS = ['--keepdb']
+DJANGO_TEST_ARGS=['--keepdb']
 # -- test runner override | runner for command: python manage.py test
 
 # REST API & JWT
@@ -527,6 +530,9 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
     JAEGER_TRACING_PROJECT_NAME = os.environ.get('JAEGER_TRACING_PROJECT_NAME', 'MiS API')
     JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
 # -- Tracing
+
+# debug permit working
+DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
 
 # Display config about DB, Cache, CELERY,...
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']

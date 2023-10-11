@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
@@ -160,6 +161,10 @@ class BookMarkList(BaseListMixin, BaseCreateMixin):
     def error_employee_require(self):
         return self.list_empty()
 
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(employee_id=self.request.user.employee_current_id)
+
     @swagger_auto_schema(operation_summary='BookMark List')
     @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, **kwargs):
@@ -205,6 +210,10 @@ class DocPinedList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().select_related('runtime', 'runtime__stage_currents').prefetch_related(
             'runtime__stage_currents__assignee_of_runtime_stage'
         )
+
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(employee_id=self.request.user.employee_current_id)
 
     @swagger_auto_schema(operation_summary='Doc Pined List')
     @mask_view(login_require=True, auth_require=False, employee_require=True)
