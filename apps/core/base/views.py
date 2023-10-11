@@ -11,7 +11,7 @@ from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationForPermitOpportunityListSerializer
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
 )
 
 
