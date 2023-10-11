@@ -152,8 +152,9 @@ class GoodsReceipt(DataAbstractModel):
         if instance.purchase_order:
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 product_receipt.product.save(**{
-                    'update_wait_receipt_amount': True,
+                    'update_transaction_info': True,
                     'quantity_receipt': product_receipt.quantity_import,
+                    'update_fields': ['wait_receipt_amount', 'available_amount']
                 })
         return True
 

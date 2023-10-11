@@ -56,6 +56,14 @@ class WarehouseQuantityHandle:
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
+
+
+                    # update product wait_delivery_amount
+                    item.product.save(**{
+                        'update_transaction_info': True,
+                        'quantity_delivery': item_sold,
+                        'update_fields': ['wait_delivery_amount', 'available_amount']
+                    })
                 elif calc < 0:
                     # else < 0 ko đù
                     # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)
@@ -66,6 +74,7 @@ class WarehouseQuantityHandle:
                         item.picked_ready = item.picked_ready - in_stock_unit
                     list_update.append(item)
         ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready'])
+        return True
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):

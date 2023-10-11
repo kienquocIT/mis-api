@@ -197,20 +197,33 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        if 'update_wait_receipt_amount' in kwargs:
-            del kwargs['update_wait_receipt_amount']
-            if 'quantity_purchase' in kwargs:
-                self.wait_receipt_amount += kwargs['quantity_purchase']
-                del kwargs['quantity_purchase']
-            if 'quantity_receipt' in kwargs:
-                self.wait_receipt_amount -= kwargs['quantity_receipt']
-                del kwargs['quantity_receipt']
-            product_stock_amount = 0
-            for product_warehouse in self.product_warehouse_product.all():
-                product_stock_amount += product_warehouse.stock_amount
-            self.available_amount = (product_stock_amount - self.wait_delivery_amount + self.wait_receipt_amount)
+    @classmethod
+    def update_transaction_information(cls, instance, **kwargs):
+        del kwargs['update_transaction_info']
+        if 'quantity_purchase' in kwargs:
+            instance.wait_receipt_amount += kwargs['quantity_purchase']
+            del kwargs['quantity_purchase']
+        if 'quantity_receipt' in kwargs:
+            instance.wait_receipt_amount -= kwargs['quantity_receipt']
+            del kwargs['quantity_receipt']
+        if 'quantity_order' in kwargs:
+            instance.wait_delivery_amount += kwargs['quantity_order']
+            del kwargs['quantity_order']
+        if 'quantity_delivery' in kwargs:
+            instance.wait_delivery_amount -= kwargs['quantity_delivery']
+            del kwargs['quantity_delivery']
+        product_stock_amount = 0
+        for product_warehouse in instance.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        instance.available_amount = (
+                product_stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
+        )
+        return kwargs
 
+    def save(self, *args, **kwargs):
+        if 'update_transaction_info' in kwargs:
+            result = self.update_transaction_information(self, **kwargs)
+            kwargs = result
         # hit DB
         super().save(*args, **kwargs)
 

@@ -129,7 +129,7 @@ class PurchaseOrder(DataAbstractModel):
     def update_product_wait_receipt_amount(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
             product_purchase.product.save(**{
-                'update_wait_receipt_amount': True,
+                'update_transaction_info': True,
                 'quantity_purchase': product_purchase.product_quantity_order_actual,
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
