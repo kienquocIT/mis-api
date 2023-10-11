@@ -234,20 +234,6 @@ class OpportunityMemberPermissionUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if self.check_perm_edit(instance, validated_data['employee_current']):
-            permit_app_data = instance.permit_app
-
-            for item in validated_data['app_permit']:
-                data = {
-                    'is_create': item['is_create'],
-                    'is_edit': item['is_edit'],
-                    'is_view': item['is_view'],
-                    'is_delete': item['is_delete'],
-                    'is_all': item['is_all'],
-                    'belong_to': item['belong_to'],
-                }
-                permit_app_data[item['app']] = data
-
-            instance.permit_app = permit_app_data
             instance.permit_view_this_opp = validated_data['permit_view_this_opp']
             instance.permit_add_member = validated_data['permit_add_member']
             instance.save()
