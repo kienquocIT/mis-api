@@ -44,16 +44,17 @@ class WarehouseQuantityHandle:
                 # nếu trừ đủ update vào warehouse, return true
                 break
             target_ratio = item.uom.ratio
-            in_stock = item.stock_amount - item.sold_amount
-            if in_stock > 0:
+            if item.stock_amount > 0:
                 # số lượng trong kho đã quy đổi
-                in_stock_unit = in_stock * target_ratio
+                in_stock_unit = item.stock_amount * target_ratio
                 calc = in_stock_unit - mediate_number
+                item_sold = 0
                 if calc >= 0:
                     # đủ hàng
                     is_done = True
                     item_sold = mediate_number / target_ratio
                     item.sold_amount += item_sold
+                    item.stock_amount = item.receipt_amount- item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
@@ -63,10 +64,20 @@ class WarehouseQuantityHandle:
                     # trừ kho tất cả của record này
                     mediate_number = abs(calc)
                     item.sold_amount += in_stock_unit
+                    item_sold = in_stock_unit
+                    item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - in_stock_unit
                     list_update.append(item)
-        ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready'])
+
+                # update product wait_delivery_amount
+                item.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_delivery': item_sold,
+                    'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                })
+        ProductWareHouse.objects.bulk_update(list_update, fields=['sold_amount', 'picked_ready', 'stock_amount'])
+        return True
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):

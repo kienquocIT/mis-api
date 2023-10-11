@@ -257,6 +257,15 @@ class SaleOrder(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def update_product_wait_delivery_amount(cls, instance):
+        for product_order in instance.sale_order_product_sale_order.all():
+            product_order.product.save(**{
+                'update_transaction_info': True,
+                'quantity_order': product_order.product_quantity,
+                'update_fields': ['wait_delivery_amount', 'available_amount']
+            })
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -266,6 +275,7 @@ class SaleOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                self.update_product_wait_delivery_amount(self)
 
         # hit DB
         super().save(*args, **kwargs)
