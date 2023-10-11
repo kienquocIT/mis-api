@@ -31,7 +31,7 @@ class OpportunityList(
         'is_deal_close': ['exact'],
         'id': ['in'],
     }
-    search_fields = ['title']
+    search_fields = ['title', 'code']
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
     serializer_detail = OpportunityListSerializer

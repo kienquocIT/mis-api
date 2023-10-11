@@ -709,6 +709,8 @@ class PermissionController:
                             )
 
             self._config_data = config_tmp
+            if settings.DEBUG_PERMIT:
+                print('* _config_data             :', self._config_data)
         return self._config_data
 
     _has_permit_exist = None
@@ -762,6 +764,8 @@ class PermissionController:
                         if tmp:
                             config_parse_or += tmp
             self._config_data__simple_list = config_parse_or
+            if settings.DEBUG_PERMIT:
+                print('* _config_data__simple_list:', self._config_data__simple_list)
         return self._config_data__simple_list
 
     _config_data__to_q: Q = Q()
@@ -783,6 +787,8 @@ class PermissionController:
                 ]
             ).django_q
 
+            if settings.DEBUG_PERMIT:
+                print('* _config_data__to_q       :', self._config_data__to_q)
         return self._config_data__to_q
 
     _config_data__check_obj = None

@@ -42,7 +42,7 @@ run_testcase:
     - if [[ ! "$CI_COMMIT_BRANCH" =~ ^(master|sit|dev)$ ]]; then
       python manage.py makemigrations;
       fi
-    - python manage.py test
+    - python manage.py test --parallel
   after_script:
     - rm -rf *.sqlite3
     - exit
