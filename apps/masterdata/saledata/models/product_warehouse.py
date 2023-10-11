@@ -125,7 +125,7 @@ class ProductWareHouse(MasterDataAbstractModel):
             except cls.DoesNotExist:
                 raise ValueError('Product not found in warehouse with UOM')
         obj.receipt_amount += amount
-        obj.stock_amount = (obj.receipt_amount - obj.sold_amount)
+        obj.stock_amount = obj.receipt_amount - obj.sold_amount
         if lot_data:
             ProductWareHouseLot.create(
                 tenant_id=tenant_id,
