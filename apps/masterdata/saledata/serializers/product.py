@@ -23,7 +23,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     sale_tax = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
     price_list_mapped = serializers.SerializerMethodField()
-    product_warehouse_detail = serializers.SerializerMethodField()
     general_price = serializers.SerializerMethodField()
 
     class Meta:
@@ -40,8 +39,12 @@ class ProductListSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'price_list_mapped',
             'product_choice',
-            'product_warehouse_detail',
-            'general_price'
+            'general_price',
+            # Transaction information
+            'stock_amount',
+            'wait_delivery_amount',
+            'wait_receipt_amount',
+            'available_amount'
         )
 
     @classmethod
@@ -97,28 +100,28 @@ class ProductListSerializer(serializers.ModelSerializer):
             })
         return result
 
-    @classmethod
-    def get_product_warehouse_detail(cls, obj):
-        result = []
-        product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
-        for item in product_warehouse:
-            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
-            uom_ratio_des = item.uom.ratio if item.uom else 0
-            if uom_ratio_src and uom_ratio_des:
-                ratio_convert = float(uom_ratio_src / uom_ratio_des)
-                result.append(
-                    {
-                        'warehouse': {
-                            'id': item.warehouse_id,
-                            'title': item.warehouse.title,
-                            'code': item.warehouse.code,
-                        } if item.warehouse else {},
-                        'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
-                        'wait_for_delivery_amount': ratio_convert * item.picked_ready,
-                        'wait_for_receipt_amount': ratio_convert * 0
-                    }
-                )
-        return result
+    # @classmethod
+    # def get_product_warehouse_detail(cls, obj):
+    #     result = []
+    #     product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+    #     for item in product_warehouse:
+    #         uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
+    #         uom_ratio_des = item.uom.ratio if item.uom else 0
+    #         if uom_ratio_src and uom_ratio_des:
+    #             ratio_convert = float(uom_ratio_src / uom_ratio_des)
+    #             result.append(
+    #                 {
+    #                     'warehouse': {
+    #                         'id': item.warehouse_id,
+    #                         'title': item.warehouse.title,
+    #                         'code': item.warehouse.code,
+    #                     } if item.warehouse else {},
+    #                     'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
+    #                     'wait_for_delivery_amount': ratio_convert * item.picked_ready,
+    #                     'wait_for_receipt_amount': ratio_convert * 0
+    #                 }
+    #             )
+    #     return result
 
     @classmethod
     def get_general_price(cls, obj):
@@ -409,6 +412,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'product_choice',
             'product_warehouse_detail',
             # Transaction information
+            'stock_amount',
             'wait_delivery_amount',
             'wait_receipt_amount',
             'available_amount'

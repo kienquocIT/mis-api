@@ -263,7 +263,7 @@ class SaleOrder(DataAbstractModel):
             product_order.product.save(**{
                 'update_transaction_info': True,
                 'quantity_order': product_order.product_quantity,
-                'update_fields': ['wait_delivery_amount', 'available_amount', 'stock_amount']
+                'update_fields': ['wait_delivery_amount', 'available_amount']
             })
 
     def save(self, *args, **kwargs):

@@ -126,14 +126,14 @@ class ProductWareHouse(MasterDataAbstractModel):
                 raise ValueError('Product not found in warehouse with UOM')
         obj.receipt_amount += amount
         obj.stock_amount = obj.receipt_amount - obj.sold_amount
-        if lot_data:
+        if lot_data and isinstance(lot_data, list):
             ProductWareHouseLot.create(
                 tenant_id=tenant_id,
                 company_id=company_id,
                 product_warehouse_id=obj.id,
                 lot_data=lot_data
             )
-        if serial_data:
+        if serial_data and isinstance(serial_data, list):
             ProductWareHouseSerial.create(
                 tenant_id=tenant_id,
                 company_id=company_id,

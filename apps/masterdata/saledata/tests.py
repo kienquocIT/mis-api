@@ -327,6 +327,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_choice',
                 'product_warehouse_detail',
                 # Transaction information
+                'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
                 'available_amount',
@@ -364,8 +365,12 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_default_uom',
                 'price_list_mapped',
                 'product_choice',
-                'product_warehouse_detail',
-                'general_price'
+                'general_price',
+                # Transaction information
+                'stock_amount',
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount'
             ],
             check_sum_second=True,
         )
@@ -401,6 +406,7 @@ class ProductTestCase(AdvanceTestCase):
                 'product_choice',
                 'product_warehouse_detail',
                 # Transaction information
+                'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
                 'available_amount',
