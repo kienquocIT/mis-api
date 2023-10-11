@@ -87,8 +87,8 @@ class ProductWareHouse(MasterDataAbstractModel):
             amount: float,
             unit_price: float,
             create_when_not_found: bool = True,
-            lot_data=list,
-            serial_data=list,
+            lot_data=None,
+            serial_data=None,
             **kwargs
     ):
         if create_when_not_found:
@@ -102,14 +102,14 @@ class ProductWareHouse(MasterDataAbstractModel):
                 }
             )
             if _created is True:
-                if lot_data:
+                if lot_data and isinstance(lot_data, list):
                     ProductWareHouseLot.create(
                         tenant_id=tenant_id,
                         company_id=company_id,
                         product_warehouse_id=obj.id,
                         lot_data=lot_data
                     )
-                if serial_data:
+                if serial_data and isinstance(serial_data, list):
                     ProductWareHouseSerial.create(
                         tenant_id=tenant_id,
                         company_id=company_id,

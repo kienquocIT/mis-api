@@ -59,11 +59,11 @@ class WarehouseQuantityHandle:
 
 
                     # update product wait_delivery_amount
-                    item.product.save(**{
-                        'update_transaction_info': True,
-                        'quantity_delivery': item_sold,
-                        'update_fields': ['wait_delivery_amount', 'available_amount']
-                    })
+                    # item.product.save(**{
+                    #     'update_transaction_info': True,
+                    #     'quantity_delivery': item_sold,
+                    #     'update_fields': ['wait_delivery_amount', 'available_amount']
+                    # })
                 elif calc < 0:
                     # else < 0 ko đù
                     # gán số còn thiếu cho số lượng cần trừ kho (mediate_number_clone)

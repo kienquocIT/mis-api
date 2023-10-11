@@ -154,7 +154,7 @@ class GoodsReceipt(DataAbstractModel):
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
                     'quantity_receipt': product_receipt.quantity_import,
-                    'update_fields': ['wait_receipt_amount', 'available_amount']
+                    'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                 })
         return True
 

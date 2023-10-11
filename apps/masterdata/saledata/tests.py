@@ -325,7 +325,11 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_information',
                 'purchase_information',
                 'product_choice',
-                'product_warehouse_detail'
+                'product_warehouse_detail',
+                # Transaction information
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount',
             ],
             check_sum_second=True,
         )
@@ -395,7 +399,11 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_information',
                 'purchase_information',
                 'product_choice',
-                'product_warehouse_detail'
+                'product_warehouse_detail',
+                # Transaction information
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount',
             ],
             check_sum_second=True,
         )

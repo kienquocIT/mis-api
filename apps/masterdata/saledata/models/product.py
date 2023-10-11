@@ -174,6 +174,11 @@ class Product(DataAbstractModel):
         default=None
     )
     # Transaction information
+    stock_amount = models.FloatField(
+        default=0,
+        verbose_name="Stock Amount",
+        help_text="Total physical amount product in all warehouse",
+    )
     wait_delivery_amount = models.FloatField(
         default=0,
         verbose_name='Wait Delivery Amount',
@@ -205,18 +210,17 @@ class Product(DataAbstractModel):
             del kwargs['quantity_purchase']
         if 'quantity_receipt' in kwargs:
             instance.wait_receipt_amount -= kwargs['quantity_receipt']
+            instance.stock_amount += kwargs['quantity_receipt']
             del kwargs['quantity_receipt']
         if 'quantity_order' in kwargs:
             instance.wait_delivery_amount += kwargs['quantity_order']
             del kwargs['quantity_order']
         if 'quantity_delivery' in kwargs:
             instance.wait_delivery_amount -= kwargs['quantity_delivery']
+            instance.stock_amount -= kwargs['quantity_delivery']
             del kwargs['quantity_delivery']
-        product_stock_amount = 0
-        for product_warehouse in instance.product_warehouse_product.all():
-            product_stock_amount += product_warehouse.stock_amount
         instance.available_amount = (
-                product_stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
+                instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
         )
         return kwargs
 

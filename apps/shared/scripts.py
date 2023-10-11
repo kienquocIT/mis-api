@@ -1011,6 +1011,11 @@ def update_product_warehouse_amounts():
         product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
     # update Product
     for product in Product.objects.all():
+        # product stock_amount
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
         # product wait_receipt_amount
         product_purchased_quantity = 0
         product_receipted_quantity = 0
@@ -1037,9 +1042,6 @@ def update_product_warehouse_amounts():
         #     product_delivered_quantity += product_delivery.delivery_quantity
         # product.wait_delivery_amount = (product_ordered_quantity - product_delivered_quantity)
         # product available_amount
-        product_stock_amount = 0
-        for product_warehouse in product.product_warehouse_product.all():
-            product_stock_amount += product_warehouse.stock_amount
-        product.available_amount = (product_stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
-        product.save(update_fields=['wait_receipt_amount', 'wait_delivery_amount', 'available_amount'])
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['stock_amount', 'wait_receipt_amount', 'wait_delivery_amount', 'available_amount'])
     print('update product warehouse done.')
