@@ -1045,3 +1045,15 @@ def update_product_warehouse_amounts():
         product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
         product.save(update_fields=['stock_amount', 'wait_receipt_amount', 'wait_delivery_amount', 'available_amount'])
     print('update product warehouse done.')
+
+
+def update_product_stock_amount():
+    product = Product.objects.filter(id='ccd941fb-ab1e-43fa-bded-9f22e1ac13d1').first()
+    if product:
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['available_amount', 'stock_amount'])
+    print('update product stock amount done.')
