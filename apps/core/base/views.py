@@ -1,7 +1,6 @@
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.opportunity.models import OpportunityMemberPermitData
 from apps.shared import ResponseController, BaseListMixin, mask_view
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
@@ -12,7 +11,7 @@ from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationForPermitOpportunityListSerializer
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
 )
 
 
@@ -261,28 +260,6 @@ class ApplicationPropertyOpportunityList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Property list have Opportunity config stage data",
         operation_description="Property list have Opportunity config stage data",
-    )
-    @mask_view(
-        login_require=True,
-        auth_require=False
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class ApplicationForPermitOpportunity(BaseListMixin):
-    queryset = Application.objects
-    serializer_list = ApplicationForPermitOpportunityListSerializer
-    list_hidden_field = []
-
-    def get_queryset(self):
-        return super().get_queryset().filter(
-            id__in=OpportunityMemberPermitData.LIST_ID_PERMIT_APP
-        )
-
-    @swagger_auto_schema(
-        operation_summary="Application list for permission in Opportunity",
-        operation_description="Application list for permission in Opportunity",
     )
     @mask_view(
         login_require=True,

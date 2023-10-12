@@ -520,7 +520,7 @@ class PurchaseRequestUpdateSerializer(serializers.ModelSerializer):
     delivered_date = serializers.DateTimeField(required=False)
     purchase_status = serializers.IntegerField(required=False)
     purchase_request_product_datas = PurchaseRequestProductSerializer(many=True, required=False)
-    note = serializers.CharField(allow_blank=True)
+    note = serializers.CharField(allow_blank=True, required=False)
     pretax_amount = serializers.FloatField(required=False)
     taxes = serializers.FloatField(required=False)
     total_price = serializers.FloatField(required=False)

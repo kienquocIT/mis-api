@@ -7,7 +7,7 @@ from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
 from apps.sales.opportunity.models import (
     Opportunity, OpportunityProductCategory, OpportunityProduct,
     OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
-    OpportunityConfigStage, OpportunityStage, OpportunityMemberPermitData,
+    OpportunityConfigStage, OpportunityStage,
 )
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
@@ -155,7 +155,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         OpportunitySaleTeamMember.objects.create(
             opportunity=opportunity,
             member=employee_inherit,
-            permit_app=OpportunityMemberPermitData.PERMIT_DATA,
             permit_view_this_opp=True,
             permit_add_member=True,
         )
@@ -166,7 +165,7 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField(allow_null=True)
     product_category = serializers.UUIDField(allow_null=False, required=True)
     uom = serializers.UUIDField(allow_null=False)
-    tax = serializers.UUIDField(allow_null=False)
+    tax = serializers.UUIDField(allow_null=False, required=False)
 
     class Meta:
         model = OpportunityProduct
@@ -290,7 +289,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                     product_id=product_id,
                     product_category_id=item['product_category']['id'],
                     uom_id=item['uom']['id'],
-                    tax_id=item['tax']['id'],
+                    tax_id=item['tax']['id'] if 'tax' in item else None,
                     product_name=item['product_name'],
                     product_quantity=item['product_quantity'],
                     product_unit_price=item['product_unit_price'],
