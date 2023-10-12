@@ -237,7 +237,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         if 'product' in validate_data:
             warehouse_data = []
             if 'warehouse_data' in validate_data:
-                warehouse_data = validate_data['validate_data']
+                warehouse_data = validate_data['warehouse_data']
             if 'purchase_request_products_data' in validate_data:
                 for pr_product in validate_data['purchase_request_products_data']:
                     if 'warehouse_data' in pr_product:
