@@ -19,12 +19,16 @@ __all__ = [
 
 class OrderPickingSubList(BaseListMixin):
     queryset = OrderPickingSub.objects
+    search_fields = [
+        'order_picking__sale_order__title',
+        'code',
+    ]
     serializer_list = OrderPickingSubListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit')
+        return super().get_queryset().select_related('employee_inherit').order_by('-date_created')
 
     @swagger_auto_schema(
         operation_summary='Order Picking Sub List',
