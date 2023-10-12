@@ -22,7 +22,6 @@ class ProductListSerializer(serializers.ModelSerializer):
     general_uom_group = serializers.SerializerMethodField()
     sale_tax = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
-    price_list_mapped = serializers.SerializerMethodField()
     general_price = serializers.SerializerMethodField()
 
     class Meta:
@@ -37,7 +36,6 @@ class ProductListSerializer(serializers.ModelSerializer):
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'price_list_mapped',
             'product_choice',
             'general_price',
             # Transaction information
@@ -89,46 +87,11 @@ class ProductListSerializer(serializers.ModelSerializer):
         } if obj.sale_default_uom else {}
 
     @classmethod
-    def get_price_list_mapped(cls, obj):
-        result = []
-        for item in obj.product_price_product.all():
-            result.append({
-                'id': item.price_list_id,
-                'title': item.price_list.title,
-                'price': item.price,
-                'currency_abbreviation': item.currency_using.abbreviation
-            })
-        return result
-
-    # @classmethod
-    # def get_product_warehouse_detail(cls, obj):
-    #     result = []
-    #     product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
-    #     for item in product_warehouse:
-    #         uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
-    #         uom_ratio_des = item.uom.ratio if item.uom else 0
-    #         if uom_ratio_src and uom_ratio_des:
-    #             ratio_convert = float(uom_ratio_src / uom_ratio_des)
-    #             result.append(
-    #                 {
-    #                     'warehouse': {
-    #                         'id': item.warehouse_id,
-    #                         'title': item.warehouse.title,
-    #                         'code': item.warehouse.code,
-    #                     } if item.warehouse else {},
-    #                     'stock_amount': ratio_convert * (item.stock_amount - item.sold_amount),
-    #                     'wait_for_delivery_amount': ratio_convert * item.picked_ready,
-    #                     'wait_for_receipt_amount': ratio_convert * 0
-    #                 }
-    #             )
-    #     return result
-
-    @classmethod
     def get_general_price(cls, obj):
-        general_price = obj.product_price_product.filter(price_list__is_default=1)
-        if general_price.count() > 0:
-            return general_price[0].price
-        return 0
+        general_product_price = obj.product_price_product.filter(price_list__is_default=1).first()
+        if general_product_price:
+            return general_product_price.price
+        return None
 
 
 def sub_validate_volume_obj(initial_data, validate_data):

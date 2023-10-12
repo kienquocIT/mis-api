@@ -632,13 +632,13 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'product_choice': item.product.product_choice,
                     'uom': {
                         'id': item.product.purchase_default_uom_id,
-                        'title': item.product.purchase_default_uom.title
+                        'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
                     },
                     'uom_group': item.product.general_uom_group.title,
                     'tax_code': {
                         'id': item.product.purchase_tax_id,
-                        'title': item.product.purchase_tax.title,
-                        'rate': item.product.purchase_tax.rate
+                        'title': item.product.purchase_tax.title if item.product.purchase_tax else '',
+                        'rate': item.product.purchase_tax.rate if item.product.purchase_tax else ''
                     },
                 }
             }
@@ -647,6 +647,8 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
+    is_create_purchase_request = serializers.SerializerMethodField()
+
     class Meta:
         model = SaleOrder
         fields = (
@@ -654,4 +656,10 @@ class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'employee_inherit',
+            'is_create_purchase_request',
         )
+
+    @classmethod
+    def get_is_create_purchase_request(cls, obj):
+        so_product = obj.sale_order_product_sale_order.all()
+        return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)

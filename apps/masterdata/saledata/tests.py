@@ -363,7 +363,6 @@ class ProductTestCase(AdvanceTestCase):
                 'general_uom_group',
                 'sale_tax',
                 'sale_default_uom',
-                'price_list_mapped',
                 'product_choice',
                 'general_price',
                 # Transaction information

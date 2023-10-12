@@ -222,7 +222,6 @@ class TestCasePurchaseRequest(AdvanceTestCase):
     def test_create_purchase_request(self):
         supplier = self.test_create_account()
         product = self.test_create_product()
-        emp_current = self.get_employee()
 
         data = {
             "title": "Purchase Request 1",
@@ -248,7 +247,6 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             "pretax_amount": 20000000,
             "taxes": 2000000,
             "total_price": 22000000,
-            "employee_created": emp_current.data['result'][0]['id']
         }
 
         url = reverse("PurchaseRequestList")
@@ -322,6 +320,45 @@ class TestCasePurchaseRequest(AdvanceTestCase):
             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
         else:
             self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_update_purchase_request(self):
+        purchase_request = self.test_create_purchase_request()
+        unit_price = 20000000
+        quantity = 3
+        product = purchase_request.data['result']['purchase_request_product_datas'][0]['product']
+        tax = purchase_request.data['result']['purchase_request_product_datas'][0]['tax']
+        uom = purchase_request.data['result']['purchase_request_product_datas'][0]['uom']
+        url = reverse("PurchaseRequestDetail", kwargs={'pk': purchase_request.data['result']['id']})
+        data = {
+            "purchase_request_product_datas": [
+                {
+                    "sale_order_product": None,
+                    "product": product['id'],
+                    "description": "",
+                    "uom": uom['id'],
+                    "quantity": quantity,
+                    "unit_price": unit_price,
+                    "tax": tax['id'],
+                    "sub_total_price": quantity * unit_price
+                }
+            ],
+            "pretax_amount": quantity * unit_price,
+            "taxes": quantity * unit_price * (tax['rate'] / 100),
+            "total_price": (quantity * unit_price) + (quantity * unit_price * (
+                        tax['rate'] / 100)),
+        }
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data_changed = self.test_get_detail_purchase_request(data_id=purchase_request.data['result']['id'])
+        self.assertEqual(
+            data_changed.data['result']['purchase_request_product_datas'][0]['sub_total_price'],
+            unit_price * quantity
+        )
+        self.assertEqual(
+            data_changed.data['result']['pretax_amount'],
+            unit_price * quantity
+        )
         return response
 
 

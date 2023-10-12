@@ -22,7 +22,8 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Goods issue List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsissue', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -33,7 +34,8 @@ class GoodsIssueList(BaseListMixin, BaseCreateMixin):
         request_body=GoodsIssueCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsissue', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -59,7 +61,8 @@ class GoodsIssueDetail(
         operation_description="Get Goods issue detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsissue', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -70,7 +73,8 @@ class GoodsIssueDetail(
         request_body=GoodsIssueUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsissue', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

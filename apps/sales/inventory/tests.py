@@ -815,3 +815,38 @@ class InventoryTestCase(AdvanceTestCase):
         else:
             self.assertEqual(response.data['result']['id'], data_id)
         return response
+
+    def test_update_goods_issue(self):
+        goods_issue = self.test_create_goods_issue()
+        quantity = 7
+        title_changed = 'Goods Issue Update'
+        product_data = goods_issue.data['result']['goods_issue_datas'][0]
+        data = {
+            "title": title_changed,
+            "goods_issue_datas": [
+                {
+                    "inventory_adjustment_item": None,
+                    "product_warehouse": product_data['product_warehouse']['id'],
+                    "warehouse": product_data['warehouse']['id'],
+                    "uom": product_data['uom']['id'],
+                    "description": "string",
+                    "quantity": quantity,
+                    "unit_cost": 10000,
+                    "subtotal": 100000,
+                }
+            ]
+        }
+        url = reverse("GoodsIssueDetail", kwargs={'pk': goods_issue.data['result']['id']})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_goods_issue_detail(data_id=goods_issue.data['result']['id'])
+        self.assertEqual(
+            data_changed.data['result']['title'],
+            title_changed
+        )
+        self.assertEqual(
+            data_changed.data['result']['goods_issue_datas'][0]['quantity'],
+            quantity
+        )
+        return response
