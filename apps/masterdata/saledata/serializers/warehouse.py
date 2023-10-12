@@ -168,11 +168,6 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
         if tenant_id and company_id and product_id and uom_id and TypeCheck.check_uuid_list(
                 [tenant_id, company_id, product_id, uom_id]
         ):
-            # return ProductWareHouse.get_stock(
-            #     tenant_id=tenant_id, company_id=company_id,
-            #     warehouse_id=obj.id, product_id=product_id,
-            #     uom_id=uom_id
-            # )
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
                 warehouse_id=obj.id, product_id=product_id,

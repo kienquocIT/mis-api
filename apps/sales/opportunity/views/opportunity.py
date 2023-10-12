@@ -297,7 +297,10 @@ class OpportunityForSaleList(BaseListMixin):
         operation_summary="Opportunity List For Sales",
         operation_description="Get Opportunity List For Sales",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
