@@ -702,6 +702,10 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 'id': obj.employee_inherit_id,
                 'full_name': obj.employee_inherit.get_full_name(),
                 'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title
+                } if obj.employee_inherit.group else {}
             }
         return {}
 

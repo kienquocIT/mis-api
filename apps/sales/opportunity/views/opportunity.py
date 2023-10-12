@@ -92,7 +92,7 @@ class OpportunityDetail(
             "customer",
             "decision_maker",
             "end_customer",
-            "employee_inherit",
+            "employee_inherit__group",
             "sale_order__delivery_of_sale_order",
             "quotation",
         ).prefetch_related(
