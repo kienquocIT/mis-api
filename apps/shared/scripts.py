@@ -1001,3 +1001,59 @@ def make_unique_together_opp_member():
             for obj in objs[1:]:
                 obj.delete()
     print('Destroy duplicated opp member successfully!')
+
+
+def update_product_warehouse_amounts():
+    # update ProductWarehouse
+    for product_warehouse in ProductWareHouse.objects.all():
+        product_warehouse.receipt_amount = product_warehouse.stock_amount
+        product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+        product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
+    # update Product
+    for product in Product.objects.all():
+        # product stock_amount
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        # product wait_receipt_amount
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_actual
+        for product_receipted in product.goods_receipt_product_product.filter(
+            goods_receipt__system_status__in=[2, 3],
+            goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        # product wait_delivery_amount
+        # product_ordered_quantity = 0
+        # product_delivered_quantity = 0
+        # for product_ordered in product.sale_order_product_product.filter(
+        #     sale_order__system_status__in=[2, 3]
+        # ):
+        #     product_ordered_quantity += product_ordered.product_quantity
+        # for product_delivery in product.orderdeliveryproduct_set.filter(
+        #         delivery_sub__order_delivery__sale_order__system_status__in=[2, 3]
+        # ):
+        #     product_delivered_quantity += product_delivery.delivery_quantity
+        # product.wait_delivery_amount = (product_ordered_quantity - product_delivered_quantity)
+        # product available_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['stock_amount', 'wait_receipt_amount', 'wait_delivery_amount', 'available_amount'])
+    print('update product warehouse done.')
+
+
+def update_product_stock_amount():
+    product = Product.objects.filter(id='ccd941fb-ab1e-43fa-bded-9f22e1ac13d1').first()
+    if product:
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['available_amount', 'stock_amount'])
+    print('update product stock amount done.')

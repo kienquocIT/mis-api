@@ -173,6 +173,27 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
+    # Transaction information
+    stock_amount = models.FloatField(
+        default=0,
+        verbose_name="Stock Amount",
+        help_text="Total physical amount product in all warehouse",
+    )
+    wait_delivery_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Delivery Amount',
+        help_text='Amount product that ordered but not delivered, update when delivery for sale order'
+    )
+    wait_receipt_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Receipt Amount',
+        help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
+    )
+    available_amount = models.FloatField(
+        default=0,
+        verbose_name='Available Stock',
+        help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -180,6 +201,38 @@ class Product(DataAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+
+    @classmethod
+    def update_transaction_information(cls, instance, **kwargs):
+        del kwargs['update_transaction_info']
+        if 'quantity_purchase' in kwargs:
+            instance.wait_receipt_amount += kwargs['quantity_purchase']
+            del kwargs['quantity_purchase']
+        if 'quantity_receipt_po' in kwargs:
+            instance.wait_receipt_amount -= kwargs['quantity_receipt_po']
+            instance.stock_amount += kwargs['quantity_receipt_po']
+            del kwargs['quantity_receipt_po']
+        if 'quantity_receipt_ia' in kwargs:
+            instance.stock_amount += kwargs['quantity_receipt_ia']
+            del kwargs['quantity_receipt_ia']
+        if 'quantity_order' in kwargs:
+            instance.wait_delivery_amount += kwargs['quantity_order']
+            del kwargs['quantity_order']
+        if 'quantity_delivery' in kwargs:
+            instance.wait_delivery_amount -= kwargs['quantity_delivery']
+            instance.stock_amount -= kwargs['quantity_delivery']
+            del kwargs['quantity_delivery']
+        instance.available_amount = (
+                instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
+        )
+        return kwargs
+
+    def save(self, *args, **kwargs):
+        if 'update_transaction_info' in kwargs:
+            result = self.update_transaction_information(self, **kwargs)
+            kwargs = result
+        # hit DB
+        super().save(*args, **kwargs)
 
 
 class Expense(MasterDataAbstractModel):
