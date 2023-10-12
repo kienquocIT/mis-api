@@ -283,19 +283,19 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
             product_id = None
             if item['product']:
                 product_id = item['product']['id']
-        bulk_data.append(
-            OpportunityProduct(
-                opportunity=instance,
-                product_id=product_id,
-                product_category_id=item['product_category']['id'],
-                uom_id=item['uom']['id'],
-                tax_id=item['tax']['id'] if 'tax' in item else None,
-                product_name=item['product_name'],
-                product_quantity=item['product_quantity'],
-                product_unit_price=item['product_unit_price'],
-                product_subtotal_price=item['product_subtotal_price'],
+            bulk_data.append(
+                OpportunityProduct(
+                    opportunity=instance,
+                    product_id=product_id,
+                    product_category_id=item['product_category']['id'],
+                    uom_id=item['uom']['id'],
+                    tax_id=item['tax']['id'] if 'tax' in item else None,
+                    product_name=item['product_name'],
+                    product_quantity=item['product_quantity'],
+                    product_unit_price=item['product_unit_price'],
+                    product_subtotal_price=item['product_subtotal_price'],
+                )
             )
-        )
         OpportunityProduct.objects.bulk_create(bulk_data)
         return True
 
