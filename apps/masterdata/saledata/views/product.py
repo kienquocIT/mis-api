@@ -272,7 +272,13 @@ class ProductList(BaseListMixin, BaseCreateMixin):
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'inventory_uom'
+            'inventory_uom',
+        ).prefetch_related(
+            'general_product_types_mapped',
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
         )
 
     @swagger_auto_schema(

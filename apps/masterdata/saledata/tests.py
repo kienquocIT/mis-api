@@ -325,7 +325,12 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_information',
                 'purchase_information',
                 'product_choice',
-                'product_warehouse_detail'
+                'product_warehouse_detail',
+                # Transaction information
+                'stock_amount',
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount',
             ],
             check_sum_second=True,
         )
@@ -358,10 +363,13 @@ class ProductTestCase(AdvanceTestCase):
                 'general_uom_group',
                 'sale_tax',
                 'sale_default_uom',
-                'price_list_mapped',
                 'product_choice',
-                'product_warehouse_detail',
-                'general_price'
+                'general_price',
+                # Transaction information
+                'stock_amount',
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount'
             ],
             check_sum_second=True,
         )
@@ -395,7 +403,12 @@ class ProductTestCase(AdvanceTestCase):
                 'sale_information',
                 'purchase_information',
                 'product_choice',
-                'product_warehouse_detail'
+                'product_warehouse_detail',
+                # Transaction information
+                'stock_amount',
+                'wait_delivery_amount',
+                'wait_receipt_amount',
+                'available_amount',
             ],
             check_sum_second=True,
         )
@@ -1583,11 +1596,15 @@ class AccountGroupTestCase(AdvanceTestCase):
 
         self.authenticated()
 
-    def test_create_new(self):
+    def test_create_new(self, code=None, title=None):
         url = reverse("AccountGroupList")
+        if not code:
+            code = "AG01"
+        if not title:
+            title = "Nhóm khách hàng dự án"
         data = {  # noqa
-            "code": "AG01",
-            "title": "Nhóm khách hàng dự án",
+            "code": code,
+            "title": title,
             "description": ""
         }
         response = self.client.post(url, data, format='json')

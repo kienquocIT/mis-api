@@ -159,7 +159,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             )
             if product_warehouse.exists():
                 prod_warehouse = product_warehouse.first()
-                in_stock = prod_warehouse.stock_amount - prod_warehouse.sold_amount
+                in_stock = prod_warehouse.stock_amount
                 in_stock = (in_stock - prod_warehouse.picked_ready)*prod_warehouse.uom.ratio
                 if in_stock > 0 and in_stock >= picked_unit:
                     prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio

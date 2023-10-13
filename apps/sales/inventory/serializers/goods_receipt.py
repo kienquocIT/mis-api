@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
@@ -203,6 +204,47 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_warehouse(cls, value):
         return GoodsReceiptCommonValidate.validate_warehouse(value=value)
+
+    @classmethod
+    def check_lot_serial_exist(cls, warehouse_data, product_obj):
+        lot_number_list = []
+        serial_number_list = []
+        for warehouse in warehouse_data:
+            warehouse_obj = warehouse.get('warehouse', None)
+            for lot in warehouse.get('lot_data', []):
+                lot_number_list.append(lot.get('lot_number', None))
+            for serial in warehouse.get('serial_data', []):
+                serial_number_list.append(serial.get('serial_number', None))
+            # if ProductWareHouseLot.objects.filter_current(
+            #         fill__tenant=True,
+            #         fill__company=True,
+            #         product_warehouse__warehouse=warehouse_obj,
+            #         product_warehouse__product=product_obj,
+            #         lot_number__in=lot_number_list
+            # ).exists():
+            #     raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+            if ProductWareHouseSerial.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    product_warehouse__warehouse=warehouse_obj,
+                    product_warehouse__product=product_obj,
+                    serial_number__in=serial_number_list
+            ).exists():
+                raise serializers.ValidationError({'serial_number': 'Serial number is exist.'})
+        return True
+
+    def validate(self, validate_data):
+        if 'product' in validate_data:
+            warehouse_data = []
+            if 'warehouse_data' in validate_data:
+                warehouse_data = validate_data['warehouse_data']
+            if 'purchase_request_products_data' in validate_data:
+                for pr_product in validate_data['purchase_request_products_data']:
+                    if 'warehouse_data' in pr_product:
+                        warehouse_data = pr_product['warehouse_data']
+                        self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
+            self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
+        return validate_data
 
 
 class GoodsReceiptProductListSerializer(serializers.ModelSerializer):

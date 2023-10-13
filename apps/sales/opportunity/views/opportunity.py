@@ -7,8 +7,6 @@ from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
     OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer,
-    OpportunityMemberDetailSerializer, OpportunityAddMemberSerializer, OpportunityMemberDeleteSerializer,
-    OpportunityMemberPermissionUpdateSerializer, OpportunityMemberListSerializer,
     OpportunityListSerializerForCashOutFlow
 )
 from apps.sales.opportunity.serializers.opp_members import (
@@ -327,86 +325,12 @@ class OpportunityForSaleList(BaseListMixin):
         operation_summary="Opportunity List For Sales",
         operation_description="Get Opportunity List For Sales",
     )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class OpportunityMemberDetail(BaseRetrieveMixin):
-    queryset = OpportunitySaleTeamMember.objects
-    serializer_detail = OpportunityMemberDetailSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity member detail",
-        operation_description="Get detail member in Opportunity by ID",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-
-class OpportunityAddMember(BaseUpdateMixin):
-    queryset = Opportunity.objects
-    serializer_update = OpportunityAddMemberSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Add member for Opportunity",
-        operation_description="Add member for Opportunity",
-        request_body=OpportunityAddMemberSerializer,
-    )
     @mask_view(
         login_require=True, auth_require=False,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-
-class OpportunityDeleteMember(BaseUpdateMixin):
-    queryset = OpportunitySaleTeamMember.objects
-    serializer_update = OpportunityMemberDeleteSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Add member for Opportunity",
-        operation_description="Add member for Opportunity",
-        request_body=OpportunityMemberDeleteSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-
-class MemberPermissionUpdateSerializer(BaseUpdateMixin):
-    queryset = OpportunitySaleTeamMember.objects
-    serializer_update = OpportunityMemberPermissionUpdateSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Update permit for member in Opportunity",
-        operation_description="Update permit for member in Opportunity",
-        request_body=OpportunityMemberPermissionUpdateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=False,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-
-class OpportunityMemberList(BaseRetrieveMixin):
-    queryset = Opportunity.objects
-    serializer_detail = OpportunityMemberListSerializer
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity Member List",
-        operation_description="Get Opportunity Member List",
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
 
 class OpportunityListForCashOutFlow(BaseListMixin):
