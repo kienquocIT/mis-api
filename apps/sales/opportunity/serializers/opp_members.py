@@ -137,14 +137,6 @@ class MemberOfOpportunityAddSerializer(serializers.Serializer):  # noqa
         tenant_id = validated_data.get('tenant_id')
         company_id = validated_data.get('company_id')
         members = validated_data.pop('members')
-        print(opportunity_id, tenant_id, company_id, members)
-        print(OpportunitySaleTeamMember.objects.filter(
-            opportunity_id=opportunity_id,
-            member=members[0],
-            tenant_id=tenant_id,
-            company_id=company_id,
-
-        ))
         objs = [
             OpportunitySaleTeamMember(
                 opportunity_id=opportunity_id,

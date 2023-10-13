@@ -1,5 +1,8 @@
+from django.conf import settings
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
@@ -16,10 +19,7 @@ from apps.shared import (
 )
 
 
-class OpportunityList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class OpportunityList(BaseListMixin, BaseCreateMixin):
     queryset = Opportunity.objects
     filterset_fields = {
         'employee_inherit': ['exact'],
@@ -29,6 +29,7 @@ class OpportunityList(
         'is_deal_close': ['exact'],
         'id': ['in'],
     }
+    filterset_class = OpportunityListFilters
     search_fields = ['title', 'code']
     serializer_list = OpportunityListSerializer
     serializer_create = OpportunityCreateSerializer
@@ -44,12 +45,39 @@ class OpportunityList(
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
-            "employee_inherit"
+            "employee_inherit",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
             "customer__account_mapped_shipping_address",
             "customer__contact_account_name"
         )
+
+    @classmethod
+    def get_opp_allowed(cls, item_data):
+        if item_data and isinstance(item_data, dict) and 'opp' in item_data and isinstance(item_data['opp'], dict):
+            ids = list(item_data['opp'].keys())
+            if TypeCheck.check_uuid_list(data=ids):
+                return item_data['opp'].keys()
+        return []
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        # permit_data = {"employee": [], "roles": []}
+        opp_ids = []
+        if arr_from_app and isinstance(arr_from_app, list) and len(arr_from_app) == 3:
+            permit_data = self.cls_check.permit_cls.config_data__by_code(
+                label_code=arr_from_app[0],
+                model_code=arr_from_app[1],
+                perm_code=arr_from_app[2],
+                has_roles=False,
+            )
+            if 'employee' in permit_data:
+                opp_ids += self.get_opp_allowed(item_data=permit_data['employee'])
+            if 'roles' in permit_data and isinstance(permit_data['roles'], list):
+                for item_data in permit_data['roles']:
+                    opp_ids += self.get_opp_allowed(item_data=item_data)
+            if settings.DEBUG_PERMIT:
+                print('=> opp_ids:                :', '[HAS FROM APP]', opp_ids)
+        return Q(id__in=list(set(opp_ids)))
 
     @swagger_auto_schema(
         operation_summary="Opportunity List",
@@ -217,7 +245,13 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         if not state:
             # special case skip with True if current user is employee_inherit
             emp_id = self.cls_check.employee_attr.employee_current_id
+
+            if emp_id == instance.member_id:
+                # deny delete member is owner opp.
+                return False
+
             if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+                # owner auto allow in member
                 return True
 
             obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
@@ -226,10 +260,6 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         return state
 
     def get_lookup_url_kwarg(self) -> dict:
-        print({
-            'opportunity_id': self.kwargs['pk_opp'],
-            'member_id': self.kwargs['pk_member']
-        })
         return {
             'opportunity_id': self.kwargs['pk_opp'],
             'member_id': self.kwargs['pk_member']

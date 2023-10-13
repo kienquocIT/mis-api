@@ -158,6 +158,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         OpportunityStage.objects.create(stage=stage, opportunity=opportunity, is_current=True)
         # set sale_person in sale team
         OpportunitySaleTeamMember.objects.create(
+            tenant_id=opportunity.tenant_id,
+            company_id=opportunity.company_id,
             opportunity=opportunity,
             member=employee_inherit,
             permit_view_this_opp=True,

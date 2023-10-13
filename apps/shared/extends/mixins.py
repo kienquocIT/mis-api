@@ -20,6 +20,7 @@ from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 from .controllers import ResponseController
 from .utils import TypeCheck
 from .mask_view import ViewChecking
+from .. import KEY_GET_LIST_FROM_APP, SPLIT_CODE_FROM_APP
 from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
@@ -685,9 +686,47 @@ class BaseListMixin(BaseMixin):
     def get_object(self):
         raise TypeError("Not allow use get_object() for List Mixin.")
 
-    @property
-    def filter_kwargs_q(self) -> Q():
+    def get_query_params(self) -> dict:
+        return self.request.query_params.dict()
+
+    def has_get_list_from_app(self) -> (bool, Union[list[str], None]):
+        """
+        Return state from_app and data if exist
+        """
+        query_params = self.get_query_params()
+        if KEY_GET_LIST_FROM_APP in query_params:
+            from_app = query_params.get(KEY_GET_LIST_FROM_APP, None)
+            if from_app and isinstance(from_app, str) and SPLIT_CODE_FROM_APP in from_app and len(from_app) > 3:
+                arr_from_app = [ite.strip() for ite in from_app.split(SPLIT_CODE_FROM_APP)]
+                if len(arr_from_app) == 3:
+                    return True, arr_from_app
+            return True, None
+        return False, None
+
+    def filter_kwargs_q__from_config(self) -> Q:
+        """
+        Parse config mapped with view to Q() (use for filter in queryset)
+        """
         return self.cls_check.permit_cls.config_data__to_q
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        """
+        Parse config mapped from_app to Q() (use for filter in queryset - for DD another feature)
+        """
+        return Q(id__in=[])
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        return self.filter_kwargs_q__from_config()
 
     @property
     def filter_kwargs(self) -> dict[str, any]:
@@ -729,7 +768,11 @@ class BaseListMixin(BaseMixin):
 
         """
         is_minimal, _is_skip_auth = self.parse_header(request)
+
         filter_kwargs_q = self.filter_kwargs_q
+        if isinstance(filter_kwargs_q, Response):
+            return filter_kwargs_q
+
         filter_kwargs = self.filter_kwargs
         if settings.DEBUG_PERMIT:
             print('# MIXINS.LIST              :', request.path, )
