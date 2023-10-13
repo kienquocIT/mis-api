@@ -130,7 +130,7 @@ class PurchaseOrder(DataAbstractModel):
         for product_purchase in instance.purchase_order_product_order.all():
             product_purchase.product.save(**{
                 'update_transaction_info': True,
-                'quantity_purchase': product_purchase.product_quantity_order_actual,
+                'quantity_purchase': product_purchase.product_quantity_order_request + product_purchase.stock,
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
         return True

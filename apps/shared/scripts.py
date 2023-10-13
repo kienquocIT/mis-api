@@ -1022,7 +1022,7 @@ def update_product_warehouse_amounts():
         for product_purchased in product.purchase_order_product_product.filter(
                 purchase_order__system_status__in=[2, 3]
         ):
-            product_purchased_quantity += product_purchased.product_quantity_order_actual
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
         for product_receipted in product.goods_receipt_product_product.filter(
             goods_receipt__system_status__in=[2, 3],
             goods_receipt__purchase_order__isnull=False,
@@ -1057,3 +1057,23 @@ def update_product_stock_amount():
         product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
         product.save(update_fields=['available_amount', 'stock_amount'])
     print('update product stock amount done.')
+
+
+def update_product_wait_receipt_amount():
+    product = Product.objects.filter(id='4db6a71b-fd96-45fa-bfc0-53e96aee7501').first()
+    if product:
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
+        for product_receipted in product.goods_receipt_product_product.filter(
+                goods_receipt__system_status__in=[2, 3],
+                goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
+    print('update product wait_receipt_amount done.')

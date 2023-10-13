@@ -162,6 +162,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     uom = serializers.UUIDField(required=False)
     tax = serializers.UUIDField(required=False)
     warehouse = serializers.UUIDField(required=False)
+    product_unit_price = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 

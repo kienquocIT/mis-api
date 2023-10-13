@@ -89,8 +89,6 @@ class GoodsReceipt(DataAbstractModel):
         for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
             uom_product_inventory = \
                 gr_warehouse.goods_receipt_product.product.inventory_uom
-            uom_product_gr = gr_warehouse.goods_receipt_product.uom
-            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
             lot_data = []
             serial_data = []
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
@@ -116,7 +114,7 @@ class GoodsReceipt(DataAbstractModel):
                 warehouse_id=gr_warehouse.warehouse_id,
                 uom_id=uom_product_inventory.id,
                 tax_id=gr_warehouse.goods_receipt_product.tax_id,
-                amount=gr_warehouse.quantity_import * final_ratio,
+                amount=gr_warehouse.quantity_import,
                 unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
                 lot_data=lot_data,
                 serial_data=serial_data,
@@ -125,16 +123,19 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def push_by_ia(cls, instance):
-        for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=instance):
+        for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+            uom_product_inventory = product_receipt.product.inventory_uom
+            uom_product_gr = product_receipt.uom
+            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
             ProductWareHouse.push_from_receipt(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
-                product_id=gr_product.product_id,
-                warehouse_id=gr_product.warehouse_id,
-                uom_id=gr_product.product.inventory_uom_id,
-                tax_id=gr_product.tax_id,
-                amount=gr_product.quantity_import,
-                unit_price=gr_product.product_unit_price,
+                product_id=product_receipt.product_id,
+                warehouse_id=product_receipt.warehouse_id,
+                uom_id=product_receipt.product.inventory_uom_id,
+                tax_id=product_receipt.tax_id,
+                amount=product_receipt.quantity_import * final_ratio,
+                unit_price=product_receipt.product_unit_price,
             )
         return True
 
@@ -149,18 +150,24 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def update_product_wait_receipt_amount(cls, instance):
-        if instance.purchase_order:
+        if instance.purchase_order:  # GR for PO
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                uom_product_inventory = product_receipt.product.inventory_uom
+                uom_product_gr = product_receipt.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
-                    'quantity_receipt_po': product_receipt.quantity_import,
+                    'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
                     'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
                 })
-        else:
+        else:  # GR for IA
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                uom_product_inventory = product_receipt.product.inventory_uom
+                uom_product_gr = product_receipt.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
-                    'quantity_receipt_ia': product_receipt.quantity_import,
+                    'quantity_receipt_ia': product_receipt.quantity_import * final_ratio,
                     'update_fields': ['available_amount', 'stock_amount']
                 })
         return True
