@@ -30,7 +30,7 @@ from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPickin
 from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData, OpportunityDocument,
+    OpportunitySaleTeamMember, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -770,58 +770,6 @@ def update_sale_person_opportunity():
         opp.employee_created_id = 'c559833dccb840dca7bb84ef047beb36'
         opp.save(update_fields=['sale_person_id', 'employee_inherit_id', 'employee_created_id'])
     print('Update Done!')
-
-
-def update_sale_team_datas_backup_for_opp():
-    opportunities = Opportunity.objects.all().select_related('employee_inherit')
-    for opp in opportunities:
-        sale_team_data = []
-        is_owner_in_opp = False
-        opp_members = OpportunitySaleTeamMember.objects.filter(opportunity=opp).select_related('member')
-        for item in opp_members:
-            if item.member == opp.employee_inherit:
-                is_owner_in_opp = True
-                break
-
-        for item in opp_members:
-            sale_team_data.append(
-                {
-                    'member': {
-                        'id': str(item.member_id),
-                        'email': item.member.email,
-                        'name': item.member.get_full_name(),
-                    }
-                }
-            )
-
-        if not is_owner_in_opp:
-            sale_team_data.insert(
-                0, {
-                    'member': {
-                        'id': str(opp.employee_inherit_id),
-                        'email': opp.employee_inherit.email,
-                        'name': opp.employee_inherit.get_full_name(),
-                    }
-                }
-            )
-            OpportunitySaleTeamMember.objects.create(
-                opportunity=opp,
-                member=opp.employee_inherit,
-                permit_view_this_opp=True,
-                permit_add_member=True,
-                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
-            )
-        opp.opportunity_sale_team_datas = sale_team_data
-        opp.save(update_fields=['opportunity_sale_team_datas'])
-    print('Update Done !')
-
-
-def update_permit_for_member_in_opp():
-    sale_team = OpportunitySaleTeamMember.objects.filter()
-    for item in sale_team:
-        item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
-        item.save(update_fields=['permit_app'])
-    print('Update Done !')
 
 
 def update_tenant_for_sub_table_opp():
