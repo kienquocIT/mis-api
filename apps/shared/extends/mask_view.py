@@ -8,6 +8,7 @@ import numpy as np
 
 import rest_framework.exceptions
 from django.conf import settings
+from django.contrib.auth.models import AnonymousUser
 from django.db.models import Q
 from django.http import HttpResponse
 
@@ -74,28 +75,11 @@ class HttpReturn:
 
 
 class ViewConfigDecorator:
-    opp_enabled = False
-    prj_enabled = False
-    login_require = True  # require request.user is User Object
-    auth_require = False  # require setup filter query then add view for MIXIN
-    employee_require = False  # require request.user.employee is Employee Object
-    bastion_field_require = False  #
-    use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in view)
-    allow_admin_tenant = False  # allow admin tenant skip filter query
-    allow_admin_company = False  # allow admin company skip filter query
-    label_code = None  # App code need call for filter query
-    model_code = None  # Model code need call for filter query
-    perm_code = None  # Permit code need call from filter query
-
-    _has_allow_admin = False
-
     @property
     def has_allow_admin(self):
         if not self._has_allow_admin:
             self._has_allow_admin = self.allow_admin_tenant or self.allow_admin_company
         return self._has_allow_admin
-
-    _config_check_permit = {}
 
     @property
     def config_check_permit(self) -> dict:
@@ -108,6 +92,22 @@ class ViewConfigDecorator:
         return self._config_check_permit
 
     def __init__(self, parent_kwargs):
+        self.opp_enabled = False
+        self.prj_enabled = False
+        self.login_require = True  # require request.user is User Object
+        self.auth_require = False  # require setup filter query then add view for MIXIN
+        self.employee_require = False  # require request.user.employee is Employee Object
+        self.bastion_field_require = False  #
+        self.use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in
+        # view)
+        self.allow_admin_tenant = False  # allow admin tenant skip filter query
+        self.allow_admin_company = False  # allow admin company skip filter query
+        self.label_code = None  # App code need call for filter query
+        self.model_code = None  # Model code need call for filter query
+        self.perm_code = None  # Permit code need call from filter query
+        self._config_check_permit = {}
+        self._has_allow_admin = False
+
         self.employee_require = parent_kwargs.get('employee_require', self.employee_require)
         self.login_require = parent_kwargs.get('login_require', self.login_require)
         self.auth_require = parent_kwargs.get('auth_require', self.auth_require)
@@ -129,15 +129,11 @@ class EmployeeAttribute:
     Get some data of Employee Objects support for permission or another.
     """
 
-    _model_hr_group = None
-
     @property
     def model_hr_group(self):
         if not self._model_hr_group:
             self._model_hr_group = DisperseModel(app_model='hr.group').get_model()
         return self._model_hr_group
-
-    _model_hr_employee = None
 
     @property
     def model_hr_employee(self):
@@ -145,15 +141,11 @@ class EmployeeAttribute:
             self._model_hr_employee = DisperseModel(app_model='hr.employee').get_model()
         return self._model_hr_employee
 
-    _tenant_id = None
-
     @property
     def tenant_id(self):
         if self.employee_current and hasattr(self.employee_current, 'id'):
             self._tenant_id = self.employee_current.tenant_id
         return self._tenant_id
-
-    _company_id = None
 
     @property
     def company_id(self):
@@ -161,15 +153,11 @@ class EmployeeAttribute:
             self._company_id = self.employee_current.company_id
         return self._company_id
 
-    _group_id_of_employee_current = None
-
     @property
     def group_id_of_employee_current(self) -> str:
         if not self._group_id_of_employee_current and self.employee_current and self.employee_current.group_id:
             self._group_id_of_employee_current = str(self.employee_current.group_id)
         return self._group_id_of_employee_current
-
-    _manager_of_group_ids = []
 
     @property
     def manager_of_group_ids(self) -> list[str]:
@@ -180,8 +168,6 @@ class EmployeeAttribute:
                 ).filter_current(fill__tenant=True, fill__company=True).values_list('id', flat=True).cache()
             ]
         return self._manager_of_group_ids
-
-    _employee_staff_ids = []
 
     @property
     def employee_staff_ids(self) -> list[str]:
@@ -203,8 +189,6 @@ class EmployeeAttribute:
             )
         return self._employee_staff_ids
 
-    _employee_same_group_ids = []
-
     @property
     def employee_same_group_ids(self) -> list[str]:
         if not self._employee_same_group_ids and self.group_id_of_employee_current:
@@ -219,8 +203,6 @@ class EmployeeAttribute:
                 )
             )
         return self._employee_same_group_ids
-
-    _roles: list[dict] = None
 
     @property
     def roles(self):
@@ -237,6 +219,16 @@ class EmployeeAttribute:
         return self._roles
 
     def __init__(self, employee_obj, **kwargs):
+        self._model_hr_group = None
+        self._model_hr_employee = None
+        self._tenant_id = None
+        self._company_id = None
+        self._group_id_of_employee_current = None
+        self._manager_of_group_ids = []
+        self._employee_staff_ids = []
+        self._employee_same_group_ids = []
+        self._roles: list[dict] = None
+
         self.employee_current = employee_obj
         self.employee_current_id = employee_obj.id if employee_obj and hasattr(employee_obj, 'id') else None
         self.is_append_me: bool = kwargs.get('is_append_me', False)
@@ -254,16 +246,17 @@ class ViewAttribute:
     # Properties from User Object
     #######################################
 
-    _user = None
-
     @property
     def user(self):
         if not self._user:
-            cond_state = self.request and hasattr(self.request, 'user') and hasattr(self.request.user, 'id')
+            cond_state = (
+                    self.request
+                    and hasattr(self.request, 'user')
+                    and hasattr(self.request.user, 'id')
+                    and not isinstance(self.request.user, AnonymousUser)
+            )
             self._user = self.request.user if cond_state else None
         return self._user
-
-    _employee_current_id: uuid4 = None
 
     @property
     def employee_current_id(self):
@@ -271,8 +264,6 @@ class ViewAttribute:
             if self.user and hasattr(self.user, 'employee_current_id'):
                 self._employee_current_id = self.user.employee_current_id
         return self._employee_current_id
-
-    _employee_current = None
 
     @property
     def employee_current(self):
@@ -282,16 +273,12 @@ class ViewAttribute:
                 self._employee_current = emp_obj_tmp
         return self._employee_current
 
-    _is_admin_tenant: bool = False
-
     @property
     def is_admin_tenant(self) -> bool:
         if not self._is_admin_tenant:
             if self.user:
                 self._is_admin_tenant = self.user.is_admin_tenant
         return self._is_admin_tenant
-
-    _is_admin_company: bool = False
 
     @property
     def is_admin_company(self) -> bool:
@@ -304,8 +291,6 @@ class ViewAttribute:
     # Properties from Request View Object
     #######################################
 
-    _has_dropdown_list: bool = False
-
     @property
     def has_dropdown_list(self):
         if not self._has_dropdown_list:
@@ -316,8 +301,6 @@ class ViewAttribute:
                 ) == 'true'
         return self._has_dropdown_list
 
-    _has_check_perm: bool = False
-
     @property
     def has_check_perm(self):
         if not self._has_check_perm:
@@ -325,23 +308,17 @@ class ViewAttribute:
                 self._has_check_perm = True
         return self._has_check_perm
 
-    _view_args: list = []
-
     @property
     def view_args(self):
         if not self._view_args:
             self._view_args = self.view_this.args
         return self._view_args
 
-    _view_kwargs: dict = {}
-
     @property
     def view_kwargs(self):
         if not self._view_kwargs:
             self._view_kwargs = self.view_this.kwargs
         return self._view_kwargs
-
-    _error_auth_require: callable = None
 
     @property
     def error_auth_require(self):
@@ -351,8 +328,6 @@ class ViewAttribute:
                 self._error_auth_require = func_call
         return self._error_auth_require
 
-    _error_employee_require: callable = None
-
     @property
     def error_employee_require(self):
         if not self._error_auth_require and self.view_this and hasattr(self.view_this, 'error_employee_require'):
@@ -360,8 +335,6 @@ class ViewAttribute:
             if callable(func_call):
                 self._error_employee_require = func_call
         return self._error_employee_require
-
-    _error_login_require: callable = None
 
     @property
     def error_login_require(self):
@@ -371,18 +344,11 @@ class ViewAttribute:
                 self._error_employee_require = func_call
         return self._error_employee_require
 
-    _request_method = None
-
     @property
     def request_method(self):
         if self._request_method is None and self.request:
             self._request_method = self.request.method.upper()
         return self._request_method
-
-    _list_hidden_field: list[str] = None
-    _list_hidden_field_mapping: dict[str, any] = {}
-    _list_hidden_field_manual_before: dict[str, any] = None
-    _list_hidden_field_manual_after: dict[str, any] = None
 
     @property
     def list_hidden_field(self) -> list[str]:
@@ -428,11 +394,6 @@ class ViewAttribute:
             self._list_hidden_field_manual_after = list_hidden_field_manual
         return self._list_hidden_field_manual_after
 
-    _create_hidden_field: list[str] = None
-    _create_hidden_field_mapping: dict[str, any] = None
-    _create_hidden_field_manual_before: dict[str, any] = None
-    _create_hidden_field_manual_after: dict[str, any] = None
-
     @property
     def create_hidden_field(self) -> list[str]:
         if self._create_hidden_field is None:
@@ -466,11 +427,6 @@ class ViewAttribute:
                 create_hidden_field_manual = func_call()
             self._create_hidden_field_manual_after = create_hidden_field_manual
         return self._create_hidden_field_manual_after
-
-    _retrieve_hidden_field: list[str] = None
-    _retrieve_hidden_field_mapping: dict[str, any] = None
-    _retrieve_hidden_field_manual_before: dict[str, any] = None
-    _retrieve_hidden_field_manual_after: dict[str, any] = None
 
     @property
     def retrieve_hidden_field(self) -> list[str]:
@@ -516,11 +472,6 @@ class ViewAttribute:
             self._retrieve_hidden_field_manual_after = retrieve_hidden_field_manual
         return self._retrieve_hidden_field_manual_after
 
-    _update_hidden_field: list[str] = None
-    _update_hidden_field_mapping: dict[str, any] = None
-    _update_hidden_field_manual_before: dict[str, any] = None
-    _update_hidden_field_manual_after: dict[str, any] = None
-
     @property
     def update_hidden_field(self) -> list[str]:
         if self._update_hidden_field is None:
@@ -556,6 +507,36 @@ class ViewAttribute:
         return self._update_hidden_field_manual_after
 
     def __init__(self, view_this, **kwargs):
+        self._user = None
+        self._employee_current_id: uuid4 = None
+        self._employee_current = None
+        self._is_admin_tenant: bool = False
+        self._is_admin_company: bool = False
+        self._has_dropdown_list: bool = False
+        self._has_check_perm: bool = False
+        self._view_args: list = []
+        self._view_kwargs: dict = {}
+        self._error_auth_require: callable = None
+        self._error_employee_require: callable = None
+        self._error_login_require: callable = None
+        self._request_method = None
+        self._list_hidden_field: list[str] = None
+        self._list_hidden_field_mapping: dict[str, any] = {}
+        self._list_hidden_field_manual_before: dict[str, any] = None
+        self._list_hidden_field_manual_after: dict[str, any] = None
+        self._create_hidden_field: list[str] = None
+        self._create_hidden_field_mapping: dict[str, any] = None
+        self._create_hidden_field_manual_before: dict[str, any] = None
+        self._create_hidden_field_manual_after: dict[str, any] = None
+        self._retrieve_hidden_field: list[str] = None
+        self._retrieve_hidden_field_mapping: dict[str, any] = None
+        self._retrieve_hidden_field_manual_before: dict[str, any] = None
+        self._retrieve_hidden_field_manual_after: dict[str, any] = None
+        self._update_hidden_field: list[str] = None
+        self._update_hidden_field_mapping: dict[str, any] = None
+        self._update_hidden_field_manual_before: dict[str, any] = None
+        self._update_hidden_field_manual_after: dict[str, any] = None
+
         # autofill data to attribute when init | *** Caution must be exercised, not recommend ***
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -644,6 +625,21 @@ class ViewAttribute:
 
 class PermissionController:
     @classmethod
+    def parse_config_permit_check_to_string(cls, config_permit_check: dict):
+        if (
+                config_permit_check
+                and isinstance(config_permit_check, dict)
+                and 'label_code' in config_permit_check
+                and 'model_code' in config_permit_check
+                and 'perm_code' in config_permit_check
+        ):
+            label_code = config_permit_check['label_code']
+            model_code = config_permit_check['model_code']
+            perm_code = config_permit_check['perm_code']
+            return f'{label_code}.{model_code}.{perm_code}'
+        return ''
+
+    @classmethod
     def config_data__get_by_config(cls, permit_config: dict, permissions_parsed: dict):
         label_code = permit_config['label_code']
         model_code = permit_config['model_code']
@@ -679,41 +675,54 @@ class PermissionController:
     KEY_FILTER_PRJ_ID_IN_MODEL = 'project_id'
     ALLOWED_RANGE___PRJ = ['1', '4']
 
-    _config_data: dict = None
+    def get_config_data(self, config_check_permit, has_roles=True):
+        config_tmp = {'employee': {}, 'roles': []}
+        # get from employee
+        if config_check_permit:
+            employee_obj = self.employee_attr.employee_current
+            if employee_obj:
+                permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
+                if permissions_parsed:
+                    config_tmp['employee'] = self.config_data__get_by_config(
+                        permit_config=config_check_permit,
+                        permissions_parsed=permissions_parsed,
+                    )
 
-    @property
-    def config_data(self):
-        if not self._config_data:
-            config_tmp = {'employee': {}, 'roles': []}
-
-            # get from employee
-            if self.config_check_permit:
-                employee_obj = self.employee_attr.employee_current
-                if employee_obj:
-                    permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
-                    if permissions_parsed:
-                        config_tmp['employee'] = self.config_data__get_by_config(
-                            permit_config=self.config_check_permit,
-                            permissions_parsed=permissions_parsed,
-                        )
-
-                    # get from role
+                # get from role
+                if has_roles is True:
                     for role_data in self.employee_attr.roles:
                         permissions_parsed = role_data[self.KEY_STORAGE_PERMISSION_IN_MODEL]
                         if permissions_parsed:
                             config_tmp['roles'].append(
                                 self.config_data__get_by_config(
-                                    permit_config=self.config_check_permit,
+                                    permit_config=config_check_permit,
                                     permissions_parsed=permissions_parsed,
                                 )
                             )
+        return config_tmp
 
+    @property
+    def config_data(self):
+        if not self._config_data:
+            config_tmp = self.get_config_data(self.config_check_permit)
+            code = self.parse_config_permit_check_to_string(self.config_check_permit)
+            if code:
+                self._config_data__by_code[code] = config_tmp
             self._config_data = config_tmp
             if settings.DEBUG_PERMIT:
                 print('* _config_data             :', self._config_data)
         return self._config_data
 
-    _has_permit_exist = None
+    def config_data__by_code(self, label_code, model_code, perm_code, has_roles: bool):
+        config_check_permit = {'label_code': label_code, 'model_code': model_code, 'perm_code': perm_code}
+        code = self.parse_config_permit_check_to_string(config_check_permit)
+        if code and code not in self._config_data__by_code:
+            config_tmp = self.get_config_data(config_check_permit, has_roles=has_roles)
+            self._config_data__by_code[code] = config_tmp
+
+        if settings.DEBUG_PERMIT:
+            print('* _config_data__by_code    :', code, self._config_data__by_code[code])
+        return self._config_data__by_code[code]
 
     @property
     def config_data__exist(self) -> False:
@@ -729,17 +738,25 @@ class PermissionController:
                     self._has_permit_exist = True
             if not self._has_permit_exist and self.config_data['roles']:
                 for item in self.config_data['roles']:
-                    if (
-                            item['general']
-                            or item['ids']
-                            or item['opp']
-                            or item['prj']
-                    ):
+                    if isinstance(item, dict) and item['general'] or item['ids'] or item['opp'] or item['prj']:
                         self._has_permit_exist = True
                         break
         return self._has_permit_exist
 
-    _config_data__simple_list = []
+    def get_config_data__simple_list(self, config_data):
+        config_parse_or = []
+        if config_data and isinstance(config_data, dict):
+            if 'employee' in config_data:
+                tmp = self.config_data__simple_list__item(item_data=config_data['employee'])
+                if tmp:
+                    config_parse_or += tmp
+
+            if 'roles' in config_data:
+                for role_data in config_data['roles']:
+                    tmp = self.config_data__simple_list__item(item_data=role_data)
+                    if tmp:
+                        config_parse_or += tmp
+        return config_parse_or
 
     @property
     def config_data__simple_list(self):
@@ -751,49 +768,34 @@ class PermissionController:
         #     'roles': [{'{config_data__simple_list__item}'}],
         # }
         if not self._config_data__simple_list:
-            config_parse_or = []
-            if self.config_data:
-                if 'employee' in self.config_data:
-                    tmp = self.config_data__simple_list__item(item_data=self.config_data['employee'])
-                    if tmp:
-                        config_parse_or += tmp
-
-                if 'roles' in self.config_data:
-                    for role_data in self.config_data['roles']:
-                        tmp = self.config_data__simple_list__item(item_data=role_data)
-                        if tmp:
-                            config_parse_or += tmp
-            self._config_data__simple_list = config_parse_or
+            self._config_data__simple_list = self.get_config_data__simple_list(config_data=self.config_data)
             if settings.DEBUG_PERMIT:
                 print('* _config_data__simple_list:', self._config_data__simple_list)
         return self._config_data__simple_list
 
-    _config_data__to_q: Q = Q()
+    @classmethod
+    def get_config_data__to_q(cls, config_data__simple_list):
+        if config_data__simple_list and isinstance(config_data__simple_list, list):
+            return FilterComponentList(
+                main_data=[
+                    FilterComponent(
+                        main_data=item,
+                        logic_next='or',
+                    ) for item in config_data__simple_list
+                ]
+            ).django_q
+        return Q()
 
     @property
     def config_data__to_q(self) -> Union[Q, None]:
         """
         Convert config simple list to django.db.models.Q
-        Returns:
-
         """
         if not self._config_data__to_q and self.config_data__simple_list:
-            self._config_data__to_q = FilterComponentList(
-                main_data=[
-                    FilterComponent(
-                        main_data=item,
-                        logic_next='or',
-                    ) for item in self.config_data__simple_list
-                ]
-            ).django_q
-
+            self._config_data__to_q = self.get_config_data__to_q(config_data__simple_list=self.config_data__simple_list)
             if settings.DEBUG_PERMIT:
                 print('* _config_data__to_q       :', self._config_data__to_q)
         return self._config_data__to_q
-
-    _config_data__check_obj = None
-    _config_data__check_body_data = None
-    _config_data__check_obj_and_body_data = None
 
     @classmethod
     def check_permit_each_item(cls, key_full, data, obj_or_dict):
@@ -954,6 +956,15 @@ class PermissionController:
         return self._config_data__check_obj_and_body_data
 
     def __init__(self, cls_employee_attr: EmployeeAttribute, config_check_permit: dict[str, str], **kwargs):
+        self._config_data: dict = None
+        self._config_data__by_code: dict[str, dict] = {}
+        self._has_permit_exist = None
+        self._config_data__simple_list = []
+        self._config_data__to_q: Q = Q()
+        self._config_data__check_obj = None
+        self._config_data__check_body_data = None
+        self._config_data__check_obj_and_body_data = None
+
         # config_check_permit sample:
         # {
         #     'label_code': self.label_code.lower(),
@@ -1137,12 +1148,6 @@ class PermissionController:
 
 
 class ViewChecking:
-    filter_from_config = None
-    filter_parse_to_cls = None
-    filter_parse_to_q = None
-
-    _skip_because_match_with_admin: bool = False
-
     @property
     def skip_because_match_with_admin(self):
         """
@@ -1160,23 +1165,21 @@ class ViewChecking:
                     self._skip_because_match_with_admin = True
         return self._skip_because_match_with_admin
 
-    _permit_cls: PermissionController = None
-
-    @property
-    def permit_cls(self) -> PermissionController:
-        if not self._permit_cls:
-            self._permit_cls = PermissionController(
-                cls_employee_attr=self.employee_attr,
-                config_check_permit=self.decor.config_check_permit,
-                opp_enabled=self.decor.opp_enabled,
-                prj_enabled=self.decor.prj_enabled,
-            )
-        return self._permit_cls
-
     def __init__(self, cls_attr: ViewAttribute, cls_decor: ViewConfigDecorator):
+        self.filter_from_config = None
+        self.filter_parse_to_cls = None
+        self.filter_parse_to_q = None
+        self._skip_because_match_with_admin: bool = False
+
         self.attr = cls_attr
         self.decor = cls_decor
         self.employee_attr = EmployeeAttribute(employee_obj=cls_attr.employee_current)
+        self.permit_cls = PermissionController(
+            cls_employee_attr=self.employee_attr,
+            config_check_permit=self.decor.config_check_permit,
+            opp_enabled=self.decor.opp_enabled,
+            prj_enabled=self.decor.prj_enabled,
+        )
 
     def always_check(self) -> Union[True, ResponseController]:
         """
@@ -1244,29 +1247,11 @@ def mask_view(**parent_kwargs):
     if not isinstance(parent_kwargs, dict):
         parent_kwargs = {}
 
-    decor_kwargs = {
-        **parent_kwargs,
-        'employee_require': parent_kwargs.get('employee_require', ViewConfigDecorator.employee_require),
-        'login_require': parent_kwargs.get('login_require', ViewConfigDecorator.login_require),
-        'auth_require': parent_kwargs.get('auth_require', ViewConfigDecorator.auth_require),
-        'bastion_field_require': parent_kwargs.get('bastion_field_require', ViewConfigDecorator.bastion_field_require),
-        'use_custom_get_filter_auth': parent_kwargs.get(
-            'use_custom_get_filter_auth', ViewConfigDecorator.use_custom_get_filter_auth
-        ),
-        'allow_admin_tenant': parent_kwargs.get('allow_admin_tenant', ViewConfigDecorator.allow_admin_tenant),
-        'allow_admin_company': parent_kwargs.get('allow_admin_company', ViewConfigDecorator.allow_admin_company),
-        'label_code': parent_kwargs.get('label_code', ViewConfigDecorator.label_code),
-        'model_code': parent_kwargs.get('model_code', ViewConfigDecorator.model_code),
-        'perm_code': parent_kwargs.get('perm_code', ViewConfigDecorator.perm_code),
-        'opp_enabled': parent_kwargs.get('opp_enabled', ViewConfigDecorator.opp_enabled),
-        'prj_enabled': parent_kwargs.get('prj_enabled', ViewConfigDecorator.prj_enabled),
-    }
-
     def decorated(func_view):
         def wrapper(self, *args, **kwargs):  # pylint: disable=R0911
             # init cls checking
             _cls_attr = ViewAttribute(view_this=self)
-            _cls_decor = ViewConfigDecorator(parent_kwargs=decor_kwargs)
+            _cls_decor = ViewConfigDecorator(parent_kwargs=parent_kwargs)
             cls_check = ViewChecking(cls_attr=_cls_attr, cls_decor=_cls_decor)
             setattr(self, 'cls_check', cls_check)  # save cls to view for view using it get some data
 
