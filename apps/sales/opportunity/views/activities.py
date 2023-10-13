@@ -46,7 +46,7 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     serializer_detail = OpportunityCallLogDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "contact")
+        return super().get_queryset().select_related("opportunity__customer", "contact")
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog detail",
