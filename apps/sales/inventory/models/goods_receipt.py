@@ -303,6 +303,10 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         null=True
     )
     quantity_import = models.FloatField(default=0)
+    is_stock = models.BooleanField(
+        default=False,
+        help_text="True if GR direct to stock, stock is created from PO when quantity order > quantity request"
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Request Product'

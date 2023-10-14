@@ -107,7 +107,7 @@ class GoodsReceiptWarehouseListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
-    purchase_request_product = serializers.UUIDField()
+    purchase_request_product = serializers.UUIDField(required=False, allow_null=True)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
@@ -116,6 +116,7 @@ class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
             'purchase_request_product',
             'quantity_import',
             'warehouse_data',
+            'is_stock',
         )
 
     @classmethod
