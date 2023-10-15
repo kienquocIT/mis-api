@@ -48,6 +48,8 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
             "employee_inherit",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
+            "customer__account_mapped_shipping_address",
+            "customer__contact_account_name"
         )
 
     @classmethod
@@ -116,7 +118,7 @@ class OpportunityDetail(
             "customer",
             "decision_maker",
             "end_customer",
-            "employee_inherit",
+            "employee_inherit__group",
             "sale_order__delivery_of_sale_order",
             "quotation",
         ).prefetch_related(
@@ -351,8 +353,11 @@ class OpportunityListForCashOutFlow(BaseListMixin):
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
+            "employee_inherit",
+            "employee_inherit__group"
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
+            "customer__account_mapped_shipping_address"
         )
 
     @swagger_auto_schema(
