@@ -6,7 +6,8 @@ from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
-from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder
+from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
+    PurchaseOrderRequestProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg
 from apps.shared.translations.sales import InventoryMsg
 
@@ -209,6 +210,17 @@ class GoodsReceiptCommonValidate:
         except PurchaseOrderProduct.DoesNotExist:
             raise serializers.ValidationError({
                 'purchase_order_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
+    def validate_purchase_order_request_product(cls, value):
+        try:
+            if value is None:
+                return value
+            return PurchaseOrderRequestProduct.objects.get(id=value)
+        except PurchaseOrderRequestProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                'purchase_order_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
             })
 
     @classmethod

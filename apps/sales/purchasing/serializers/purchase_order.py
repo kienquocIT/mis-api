@@ -87,13 +87,10 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_goods_receipt_info(cls, obj):
         gr_completed_quantity = 0
-        if obj.purchase_request_product:
-            for gr_request_product in obj.purchase_request_product.goods_receipt_request_product_pr_product.all():
-                if gr_request_product.goods_receipt.system_status in [2, 3]:
-                    gr_completed_quantity += gr_request_product.quantity_import
-        else:
-            if obj.is_stock is True:
-                gr_completed_quantity = 0
+        # if obj.purchase_request_product:
+        for gr_request_product in obj.gr_request_product_po_request_product.all():
+            if gr_request_product.goods_receipt.system_status in [2, 3]:
+                gr_completed_quantity += gr_request_product.quantity_import
         return {
             'gr_completed_quantity': gr_completed_quantity,
             'gr_remain_quantity': (obj.quantity_order - gr_completed_quantity)

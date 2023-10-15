@@ -107,17 +107,23 @@ class GoodsReceiptWarehouseListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
+    purchase_order_request_product = serializers.UUIDField()
     purchase_request_product = serializers.UUIDField(required=False, allow_null=True)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceiptRequestProduct
         fields = (
+            'purchase_order_request_product',
             'purchase_request_product',
             'quantity_import',
             'warehouse_data',
             'is_stock',
         )
+
+    @classmethod
+    def validate_purchase_order_request_product(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_order_request_product(value=value)
 
     @classmethod
     def validate_purchase_request_product(cls, value):
