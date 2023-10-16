@@ -26,10 +26,6 @@ class PurchaseOrder(DataAbstractModel):
         default=list,
         help_text="read data purchase quotations, use for get list or detail"
     )
-    purchase_request_products_data = models.JSONField(
-        default=list,
-        help_text="read data purchase request products not map any PO, use for get list or detail"
-    )
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -116,7 +112,7 @@ class PurchaseOrder(DataAbstractModel):
     def update_remain_and_status_purchase_request(cls, instance):
         list_purchase_request = []
         # update quantity remain on purchase request product
-        for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance):
+        for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance, is_stock=False):
             po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
             if po_request.purchase_request_product.purchase_request not in list_purchase_request:
                 list_purchase_request.append(po_request.purchase_request_product.purchase_request)
@@ -130,7 +126,7 @@ class PurchaseOrder(DataAbstractModel):
         for product_purchase in instance.purchase_order_product_order.all():
             product_purchase.product.save(**{
                 'update_transaction_info': True,
-                'quantity_purchase': product_purchase.product_quantity_order_actual,
+                'quantity_purchase': product_purchase.product_quantity_order_request + product_purchase.stock,
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
         return True
@@ -300,6 +296,7 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="purchase request product",
         related_name="purchase_order_request_request_product",
+        null=True,
     )
     purchase_order_product = models.ForeignKey(
         PurchaseOrderProduct,
@@ -318,10 +315,17 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         default=0,
         help_text='quantity order',
     )
-    # quantity_remain = models.FloatField(
-    #     default=0,
-    #     help_text='quantity remain to order',
-    # )
+    uom_stock = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of measure",
+        related_name="purchase_order_request_uom_stock",
+        null=True
+    )
+    is_stock = models.BooleanField(
+        default=False,
+        help_text="True if quantity order > quantity request => create quantity stock"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order Request Product'

@@ -27,10 +27,10 @@ from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.inventory.models import InventoryAdjustmentItem
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData, OpportunityDocument,
+    OpportunitySaleTeamMember, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -772,58 +772,6 @@ def update_sale_person_opportunity():
     print('Update Done!')
 
 
-def update_sale_team_datas_backup_for_opp():
-    opportunities = Opportunity.objects.all().select_related('employee_inherit')
-    for opp in opportunities:
-        sale_team_data = []
-        is_owner_in_opp = False
-        opp_members = OpportunitySaleTeamMember.objects.filter(opportunity=opp).select_related('member')
-        for item in opp_members:
-            if item.member == opp.employee_inherit:
-                is_owner_in_opp = True
-                break
-
-        for item in opp_members:
-            sale_team_data.append(
-                {
-                    'member': {
-                        'id': str(item.member_id),
-                        'email': item.member.email,
-                        'name': item.member.get_full_name(),
-                    }
-                }
-            )
-
-        if not is_owner_in_opp:
-            sale_team_data.insert(
-                0, {
-                    'member': {
-                        'id': str(opp.employee_inherit_id),
-                        'email': opp.employee_inherit.email,
-                        'name': opp.employee_inherit.get_full_name(),
-                    }
-                }
-            )
-            OpportunitySaleTeamMember.objects.create(
-                opportunity=opp,
-                member=opp.employee_inherit,
-                permit_view_this_opp=True,
-                permit_add_member=True,
-                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
-            )
-        opp.opportunity_sale_team_datas = sale_team_data
-        opp.save(update_fields=['opportunity_sale_team_datas'])
-    print('Update Done !')
-
-
-def update_permit_for_member_in_opp():
-    sale_team = OpportunitySaleTeamMember.objects.filter()
-    for item in sale_team:
-        item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
-        item.save(update_fields=['permit_app'])
-    print('Update Done !')
-
-
 def update_tenant_for_sub_table_opp():
     members = OpportunitySaleTeamMember.objects.all()
     for member in members:
@@ -1003,6 +951,7 @@ def make_unique_together_opp_member():
     print('Destroy duplicated opp member successfully!')
 
 
+# BEGIN PRODUCT TRANSACTION INFORMATION
 def update_product_warehouse_amounts():
     # update ProductWarehouse
     for product_warehouse in ProductWareHouse.objects.all():
@@ -1022,7 +971,7 @@ def update_product_warehouse_amounts():
         for product_purchased in product.purchase_order_product_product.filter(
                 purchase_order__system_status__in=[2, 3]
         ):
-            product_purchased_quantity += product_purchased.product_quantity_order_actual
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
         for product_receipted in product.goods_receipt_product_product.filter(
             goods_receipt__system_status__in=[2, 3],
             goods_receipt__purchase_order__isnull=False,
@@ -1057,3 +1006,38 @@ def update_product_stock_amount():
         product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
         product.save(update_fields=['available_amount', 'stock_amount'])
     print('update product stock amount done.')
+
+
+def update_product_wait_receipt_amount():
+    product = Product.objects.filter(id='4db6a71b-fd96-45fa-bfc0-53e96aee7501').first()
+    if product:
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
+        for product_receipted in product.goods_receipt_product_product.filter(
+                goods_receipt__system_status__in=[2, 3],
+                goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
+    print('update product wait_receipt_amount done.')
+# END PRODUCT TRANSACTION INFORMATION
+
+
+def update_po_request_product_for_gr_request_product():
+    for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
+        po_id = gr_request_product.goods_receipt.purchase_order_id
+        for item in gr_request_product.purchase_request_product.purchase_order_request_request_product.all():
+            if item.purchase_order_id == po_id:
+                gr_request_product.purchase_order_request_product_id = item.id
+                gr_request_product.save()
+                break
+    print('update_po_request_product_for_gr_request_product done.')
+
+
+
