@@ -749,7 +749,7 @@ class PermissionController:
         if not self._has_permit_exist and self.config_data:
             if self.config_data['employee']:
                 # {'general': {}, 'ids': {}, 'opp': {}, 'prj': {}}
-                if (
+                if isinstance(self.config_data['employee'], dict) and (
                         self.config_data['employee']['general']
                         or self.config_data['employee']['ids']
                         or self.config_data['employee']['opp']
@@ -758,7 +758,12 @@ class PermissionController:
                     self._has_permit_exist = True
             if not self._has_permit_exist and self.config_data['roles']:
                 for item in self.config_data['roles']:
-                    if isinstance(item, dict) and item['general'] or item['ids'] or item['opp'] or item['prj']:
+                    if isinstance(item, dict) and (
+                            item['general']
+                            or item['ids']
+                            or item['opp']
+                            or item['prj']
+                    ):
                         self._has_permit_exist = True
                         break
         return self._has_permit_exist
@@ -920,11 +925,11 @@ class PermissionController:
             self._config_data__check_obj = False
         return self._config_data__check_obj
 
-    def config_data__check_body_data__by_opp(
+    def config_data__check_by_opp(
             self,
             opp_id: Union[str, uuid4],
             employee_inherit_id: Union[str, uuid4],
-            create_hidden_field: list[str] = list,
+            hidden_field: list[str] = list,
     ) -> bool:
         if opp_id and self.config_data and employee_inherit_id:
             try:
@@ -935,15 +940,15 @@ class PermissionController:
             return self.compare_special_permit_with_range_allowed(
                 data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
                 employee_inherit_id=employee_inherit_id,
-                hidden_field=create_hidden_field,
+                hidden_field=hidden_field,
             )
         return False
 
-    def config_data__check_body_data__by_prj(
+    def config_data__check_by_prj(
             self,
             prj_id: Union[str, uuid4],
             employee_inherit_id: Union[str, uuid4],
-            create_hidden_field: list[str] = list,
+            hidden_field: list[str] = list,
     ) -> bool:
         if prj_id and self.config_data and employee_inherit_id:
             try:
@@ -954,7 +959,7 @@ class PermissionController:
             return self.compare_special_permit_with_range_allowed(
                 data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
                 employee_inherit_id=employee_inherit_id,
-                hidden_field=create_hidden_field,
+                hidden_field=hidden_field,
             )
         return False
 
@@ -1003,11 +1008,11 @@ class PermissionController:
             if obj and hasattr(obj, 'id') and body_data and isinstance(body_data, dict):
                 obj_copy = deepcopy(obj)
                 if 'employee_inherit' in body_data:
-                    setattr(obj_copy, 'employee_inherit_id', body_data['employee_inherit'])
+                    setattr(obj_copy, self.KEY_FILTER_INHERITOR_ID_IN_MODEL, body_data['employee_inherit'])
                 if 'opportunity' in body_data:
-                    setattr(obj_copy, 'opportunity_id', body_data['opportunity'])
+                    setattr(obj_copy, self.KEY_FILTER_OPP_ID_IN_MODEL, body_data['opportunity'])
                 if 'project' in body_data:
-                    setattr(obj_copy, 'project_id', body_data['project'])
+                    setattr(obj_copy, self.KEY_FILTER_PRJ_ID_IN_MODEL, body_data['project'])
                 self._config_data__check_obj_and_body_data = self.config_data__check_obj(obj=obj_copy)
             else:
                 self._config_data__check_obj_and_body_data = False
@@ -1275,6 +1280,11 @@ class ViewChecking:
         #       4. []   self.permit_cls.config_data__check_obj_and_body_data
         # *************************************************************
 
+        state_tmp = False
+        if self.decor.config_check_permit:
+            # auto setup permit if config is exists
+            state_tmp = self.permit_cls.config_data and self.permit_cls.config_data__exist
+
         if self.skip_because_match_with_admin:
             # view allow admin and request.user.is_admin are True
             pass_auth_permit = True
@@ -1283,7 +1293,7 @@ class ViewChecking:
                 # always check by permit config
                 if not self.decor.config_check_permit:
                     return HttpReturn.error_config_view_incorrect()
-                pass_auth_permit = self.permit_cls.config_data and self.permit_cls.config_data__exist
+                pass_auth_permit = state_tmp
             else:
                 pass_auth_permit = True
 

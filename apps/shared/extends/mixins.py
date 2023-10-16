@@ -418,10 +418,41 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def check_perm_by_obj_or_body_data(self, obj=None, body_data=None) -> bool:  # pylint: disable=R0911
+    def check_permit_one_time(
+            self, employee_inherit_id, opportunity_id, project_id, hidden_field, obj=None, body_data=None
+    ):
+        if project_id and opportunity_id:
+            # Opp and Project can't have together value.
+            return False
+
+        if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
+            if opportunity_id and TypeCheck.check_uuid(opportunity_id):
+                return self.cls_check.permit_cls.config_data__check_by_opp(
+                    opp_id=opportunity_id,
+                    employee_inherit_id=employee_inherit_id,
+                    hidden_field=hidden_field,
+                )
+            if project_id and TypeCheck.check_uuid(project_id):
+                return self.cls_check.permit_cls.config_data__check_by_prj(
+                    prj_id=project_id,
+                    employee_inherit_id=employee_inherit_id,
+                    hidden_field=hidden_field,
+                )
+        if obj and body_data:
+            return self.cls_check.permit_cls.config_data__check_obj_and_body_data(obj=obj, body_data=body_data)
+        elif obj:
+            return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
+        elif body_data:
+            return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
+        return False
+
+    def check_perm_by_obj_or_body_data(
+            self, obj=None, body_data=None, hidden_field: list[str] = list
+    ) -> bool:  # pylint: disable=R0911
         """
         Check permission with Instance Object was got from views
         Args:
+            hidden_field:
             body_data: Request.body_data
             obj: Instance object
 
@@ -437,29 +468,65 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             if self.cls_check.decor.auth_require is True:
                 if self.cls_check.permit_cls.config_data__exist:
                     if obj is not None and body_data is not None:
-                        return self.cls_check.permit_cls.config_data__check_obj_and_body_data(
-                            obj=obj, body_data=body_data
+                        opportunity_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id__obj = getattr(
+                            obj, self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None,
                         )
-                    if obj is not None:
-                        return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
-                    if body_data is not None:
-                        opportunity_id = body_data.get('opportunity_id', None)
-                        project_id = body_data.get('project_id', None)
-                        employee_inherit_id = body_data.get('employee_inherit_id', None)
-                        if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
-                            if opportunity_id and TypeCheck.check_uuid(opportunity_id):
-                                return self.cls_check.permit_cls.config_data__check_body_data__by_opp(
-                                    opp_id=opportunity_id,
-                                    employee_inherit_id=employee_inherit_id,
-                                    create_hidden_field=self.create_hidden_field,
-                                )
-                            if project_id and TypeCheck.check_uuid(project_id):
-                                return self.cls_check.permit_cls.config_data__check_body_data__by_prj(
-                                    prj_id=project_id,
-                                    employee_inherit_id=employee_inherit_id,
-                                    create_hidden_field=self.create_hidden_field,
-                                )
-                        return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
+                        state = self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id__obj,
+                            opportunity_id=opportunity_id__obj,
+                            project_id=project_id__obj,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                        if state is True:
+                            opportunity_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, opportunity_id__obj
+                            )
+                            project_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, project_id__obj
+                            )
+                            employee_inherit_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, employee_inherit_id__obj
+                            )
+                            state = self.check_permit_one_time(
+                                employee_inherit_id=employee_inherit_id__body,
+                                opportunity_id=opportunity_id__body,
+                                project_id=project_id__body,
+                                hidden_field=hidden_field,
+                                obj=obj, body_data=body_data,
+                            )
+                        return state
+                    elif obj is not None:
+                        opportunity_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = getattr(
+                            obj,
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL,
+                            None,
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                    elif body_data is not None:
+                        opportunity_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = body_data.get(
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                    return False
                 return False
             return True
         return False
@@ -831,7 +898,9 @@ class BaseCreateMixin(BaseMixin):
 
         state_check = self.manual_check_obj_create(body_data=body_data)
         if state_check is None:
-            state_check = self.check_perm_by_obj_or_body_data(body_data=body_data)
+            state_check = self.check_perm_by_obj_or_body_data(
+                body_data=body_data, hidden_field=self.create_hidden_field
+            )
         if state_check is True:
             log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
@@ -871,7 +940,7 @@ class BaseRetrieveMixin(BaseMixin):
         instance = self.get_object()
         state_check = self.manual_check_obj_retrieve(instance=instance)
         if state_check is None:
-            state_check = self.check_perm_by_obj_or_body_data(obj=instance)
+            state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
         if state_check is True:
             serializer = self.get_serializer_detail(instance)
             return ResponseController.success_200(data=serializer.data, key_data='result')
@@ -928,7 +997,11 @@ class BaseUpdateMixin(BaseMixin):
 
             state_check = self.manual_check_obj_update(instance=instance, body_data=body_data)
             if state_check is None:
-                state_check = self.check_perm_by_obj_or_body_data(obj=instance, body_data=body_data)
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    body_data=body_data,
+                    hidden_field=self.update_hidden_field,
+                )
             if state_check is True:
                 body_data, partial, task_id = self.parsed_body(
                     instance=instance, request_data=request.data, user=request.user
@@ -978,7 +1051,10 @@ class BaseDestroyMixin(BaseMixin):
         if self.check_obj_change_or_delete(instance):
             state_check = self.manual_check_obj_destroy(instance=instance)
             if state_check is None:
-                state_check = self.check_perm_by_obj_or_body_data(obj=instance)
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    hidden_field=self.retrieve_hidden_field,
+                )
             if state_check is True:
                 self.perform_destroy(instance, is_purge)
                 return ResponseController.no_content_204()

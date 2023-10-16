@@ -9,6 +9,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import generics, serializers
 from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # special import
@@ -92,6 +93,22 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     @classmethod
     def member_prj_ids_from_prj_id_selected(cls, prj_id) -> list:  # pylint: disable=W0613
         return []
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        # check permit config exists if from_app not calling...
+        if self.cls_check.permit_cls.config_data__exist:
+            return self.filter_kwargs_q__from_config()
+        return Q(id__in=[])
 
     def filter_kwargs_q__from_app(self, arr_from_app) -> Q:  # pylint: disable=R0914, R0912, R0915
         # permit_data = {"employee": [], "roles": []}

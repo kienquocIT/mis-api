@@ -14,10 +14,7 @@ from apps.sales.quotation.serializers.quotation_serializers import QuotationList
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
-class QuotationList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class QuotationList(BaseListMixin, BaseCreateMixin):
     queryset = Quotation.objects
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
