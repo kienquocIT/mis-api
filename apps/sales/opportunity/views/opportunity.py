@@ -1,6 +1,9 @@
+from typing import Union
+
 from django.conf import settings
 from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.response import Response
 
 from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
@@ -60,6 +63,22 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
                 return item_data['opp'].keys()
         return []
 
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        # check permit config exists if from_app not calling...
+        if self.cls_check.permit_cls.config_data__exist:
+            return self.filter_kwargs_q__from_config()
+        return ResponseController.forbidden_403()
+
     def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
         # permit_data = {"employee": [], "roles": []}
         opp_ids = []
@@ -84,7 +103,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Opportunity List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
@@ -103,10 +122,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityDetail(
-    BaseRetrieveMixin,
-    BaseUpdateMixin,
-):
+class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = Opportunity.objects
     serializer_detail = OpportunityDetailSerializer
     serializer_update = OpportunityUpdateSerializer
@@ -126,12 +142,28 @@ class OpportunityDetail(
             "members",
         )
 
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
+        if str(instance.employee_inherit_id) == str(
+                self.cls_check.employee_attr.employee_current_id
+        ) or OpportunitySaleTeamMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                opportunity=instance, permit_view_this_opp=True,
+                member_id=self.cls_check.employee_attr.employee_current_id,
+        ).exists():
+            return True
+        return False
+
+    def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
+        if str(instance.employee_inherit_id) == str(self.cls_check.employee_attr.employee_current_id):
+            return True
+        return False
+
     @swagger_auto_schema(
         operation_summary="Opportunity detail",
         operation_description="Get Opportunity detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False, employee_required=True,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
@@ -143,7 +175,7 @@ class OpportunityDetail(
         request_body=OpportunityUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='opportunity', model_code='opportunity', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
