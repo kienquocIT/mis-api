@@ -27,7 +27,7 @@ from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
 from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.inventory.models import InventoryAdjustmentItem
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
@@ -951,6 +951,7 @@ def make_unique_together_opp_member():
     print('Destroy duplicated opp member successfully!')
 
 
+# BEGIN PRODUCT TRANSACTION INFORMATION
 def update_product_warehouse_amounts():
     # update ProductWarehouse
     for product_warehouse in ProductWareHouse.objects.all():
@@ -1025,3 +1026,18 @@ def update_product_wait_receipt_amount():
         product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
         product.save(update_fields=['wait_receipt_amount', 'available_amount'])
     print('update product wait_receipt_amount done.')
+# END PRODUCT TRANSACTION INFORMATION
+
+
+def update_po_request_product_for_gr_request_product():
+    for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
+        po_id = gr_request_product.goods_receipt.purchase_order_id
+        for item in gr_request_product.purchase_request_product.purchase_order_request_request_product.all():
+            if item.purchase_order_id == po_id:
+                gr_request_product.purchase_order_request_product_id = item.id
+                gr_request_product.save()
+                break
+    print('update_po_request_product_for_gr_request_product done.')
+
+
+

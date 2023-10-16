@@ -295,6 +295,13 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         related_name="goods_receipt_request_product_gr_product",
         null=True
     )
+    purchase_order_request_product = models.ForeignKey(
+        'purchasing.PurchaseOrderRequestProduct',
+        on_delete=models.CASCADE,
+        verbose_name="purchase order request product",
+        related_name="gr_request_product_po_request_product",
+        null=True
+    )
     purchase_request_product = models.ForeignKey(
         'purchasing.PurchaseRequestProduct',
         on_delete=models.CASCADE,
@@ -303,6 +310,10 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         null=True
     )
     quantity_import = models.FloatField(default=0)
+    is_stock = models.BooleanField(
+        default=False,
+        help_text="True if GR direct to stock, stock is created from PO when quantity order > quantity request"
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Request Product'
