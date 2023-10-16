@@ -125,12 +125,14 @@ class MemberOfOpportunityAddSerializer(serializers.Serializer):  # noqa
 
     @classmethod
     def validate_members(cls, attrs):
-        objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
-            fill__tenant=True, fill__company=True, id__in=attrs
-        )
-        if objs.count() == len(attrs) and len(attrs) > 0:
-            return objs
-        return {'members': OpportunityMsg.MEMBER_NOT_EXIST}
+        if len(attrs) > 0:
+            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
+                fill__tenant=True, fill__company=True, id__in=attrs
+            )
+            if objs.count() == len(attrs):
+                return objs
+            raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_NOT_EXIST})
+        raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_REQUIRED})
 
     def create(self, validated_data):
         opportunity_id = validated_data.get('opportunity_id')
