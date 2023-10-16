@@ -295,7 +295,7 @@ class QuotationCommonValidate:
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
