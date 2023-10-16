@@ -78,7 +78,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
 
     @classmethod
     def member_opp_ids_from_opp_id_selected(cls, opp_id) -> list:
-        return OpportunitySaleTeamMember.objects.filter(opportunity_id=opp_id).values_list('member_id', flat=True)
+        return OpportunitySaleTeamMember.objects.filter_current(
+            fill__tenant=True, fill__company=True, opportunity_id=opp_id
+        ).values_list('member_id', flat=True)
 
     @classmethod
     def get_config_from_prj_id_selected(cls, item_data, prj_id) -> Union[dict, None]:

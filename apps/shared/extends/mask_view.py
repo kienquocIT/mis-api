@@ -625,6 +625,26 @@ class ViewAttribute:
 
 class PermissionController:
     @classmethod
+    def compare_special_permit_with_range_allowed(
+            cls, data_permit, employee_current_id, employee_inherit_id, hidden_field
+    ):
+        if isinstance(data_permit, dict) and data_permit:
+            if '4' in data_permit or 4 in data_permit:
+                if 'company' in hidden_field or 'company_id' in hidden_field:
+                    # auto filter_current for employee_inherit in serializers!
+                    return True
+
+                cls_employee = DisperseModel(app_model='hr.Employee').get_model()
+                return cls_employee.objects.filter_current(
+                    fill__tenant=True, fill__company=True,
+                    pk=employee_inherit_id
+                ).exists()
+
+            elif '1' in data_permit or 1 in data_permit:
+                return str(employee_inherit_id) == str(employee_current_id)
+        return False
+
+    @classmethod
     def parse_config_permit_check_to_string(cls, config_permit_check: dict):
         if (
                 config_permit_check
@@ -899,6 +919,44 @@ class PermissionController:
         else:
             self._config_data__check_obj = False
         return self._config_data__check_obj
+
+    def config_data__check_body_data__by_opp(
+            self,
+            opp_id: Union[str, uuid4],
+            employee_inherit_id: Union[str, uuid4],
+            create_hidden_field: list[str] = list,
+    ) -> bool:
+        if opp_id and self.config_data and employee_inherit_id:
+            try:
+                data = self.config_data.get('employee', {}).get('opp', {}).get(str(opp_id), {})
+            except Exception as err:
+                return False
+
+            return self.compare_special_permit_with_range_allowed(
+                data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
+                employee_inherit_id=employee_inherit_id,
+                hidden_field=create_hidden_field,
+            )
+        return False
+
+    def config_data__check_body_data__by_prj(
+            self,
+            prj_id: Union[str, uuid4],
+            employee_inherit_id: Union[str, uuid4],
+            create_hidden_field: list[str] = list,
+    ) -> bool:
+        if prj_id and self.config_data and employee_inherit_id:
+            try:
+                data = self.config_data.get('employee', {}).get('prj', {}).get(str(prj_id), {})
+            except Exception as err:
+                return False
+
+            return self.compare_special_permit_with_range_allowed(
+                data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
+                employee_inherit_id=employee_inherit_id,
+                hidden_field=create_hidden_field,
+            )
+        return False
 
     def config_data__check_body_data(self, body_data: dict[str, any]) -> bool:
         """
