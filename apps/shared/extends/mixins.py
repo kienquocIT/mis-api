@@ -443,8 +443,8 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                     if obj is not None:
                         return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
                     if body_data is not None:
-                        opportunity_id = body_data.get('opportunity', None)
-                        project_id = body_data.get('project', None)
+                        opportunity_id = body_data.get('opportunity_id', None)
+                        project_id = body_data.get('project_id', None)
                         employee_inherit_id = body_data.get('employee_inherit_id', None)
                         if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
                             if opportunity_id and TypeCheck.check_uuid(opportunity_id):
