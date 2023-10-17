@@ -11,7 +11,6 @@ class PurchaseRequest(DataAbstractModel):
         related_name="sale_order",
         null=True,
     )
-
     supplier = models.ForeignKey(
         'saledata.Account',
         on_delete=models.CASCADE,
@@ -26,7 +25,6 @@ class PurchaseRequest(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name="purchase_contact",
     )
-
     delivered_date = models.DateTimeField(
         help_text='Deadline for delivery'
     )
@@ -34,26 +32,25 @@ class PurchaseRequest(DataAbstractModel):
         choices=PURCHASE_STATUS,
         default=0
     )
-
     note = models.CharField(
         max_length=1000
     )
-
     purchase_request_product_datas = models.JSONField(
         default=list,
         help_text="read data product, use for get list or detail purchase",
     )
-
     pretax_amount = models.FloatField(
         help_text='total price of products before tax'
     )
-
     taxes = models.FloatField(
         help_text='total tax'
     )
-
     total_price = models.FloatField(
         help_text='total price of products'
+    )
+    is_all_ordered = models.BooleanField(
+        default=False,
+        help_text="True if all products are ordered by Purchase Order"
     )
 
     class Meta:

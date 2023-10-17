@@ -1029,6 +1029,7 @@ def update_product_wait_receipt_amount():
 # END PRODUCT TRANSACTION INFORMATION
 
 
+# BEGIN INVENTORY
 def update_po_request_product_for_gr_request_product():
     for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
         po_id = gr_request_product.goods_receipt.purchase_order_id
@@ -1038,6 +1039,20 @@ def update_po_request_product_for_gr_request_product():
                 gr_request_product.save()
                 break
     print('update_po_request_product_for_gr_request_product done.')
+# END INVENTORY
+
+
+# BEGIN PURCHASING
+def update_is_all_ordered_pr():
+    for pr in PurchaseRequest.objects.all():
+        pr_product = pr.purchase_request.all()
+        pr_product_done = pr.purchase_request.filter(remain_for_purchase_order=0)
+        if pr_product.count() == pr_product_done.count():
+            pr.is_all_ordered = True
+            pr.save(update_fields=['is_all_ordered'])
+    print('update_is_all_ordered_pr done.')
+# END PURCHASING
+
 
 
 

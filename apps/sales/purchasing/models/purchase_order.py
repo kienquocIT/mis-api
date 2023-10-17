@@ -122,6 +122,16 @@ class PurchaseOrder(DataAbstractModel):
         return True
 
     @classmethod
+    def update_is_all_ordered_purchase_request(cls, instance):
+        for pr_obj in instance.purchase_requests.all():
+            pr_product = pr_obj.purchase_request.all()
+            pr_product_done = pr_obj.purchase_request.filter(remain_for_purchase_order=0)
+            if pr_product.count() == pr_product_done.count():
+                pr_obj.is_all_ordered = True
+                pr_obj.save(update_fields=['is_all_ordered'])
+        return True
+
+    @classmethod
     def update_product_wait_receipt_amount(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
             product_purchase.product.save(**{
@@ -141,6 +151,7 @@ class PurchaseOrder(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
                 self.update_remain_and_status_purchase_request(self)
+                self.update_is_all_ordered_purchase_request(self)
                 self.update_product_wait_receipt_amount(self)
 
         # hit DB

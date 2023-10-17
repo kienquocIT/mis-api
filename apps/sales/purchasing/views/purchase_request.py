@@ -13,6 +13,9 @@ class PurchaseRequestList(
     BaseCreateMixin
 ):
     queryset = PurchaseRequest.objects
+    filterset_fields = {
+        'is_all_ordered': ['exact'],
+    }
 
     search_fields = ['title']
     serializer_list = PurchaseRequestListSerializer
