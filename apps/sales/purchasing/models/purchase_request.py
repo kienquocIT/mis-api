@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS, StringHandler
 
 
 class PurchaseRequest(DataAbstractModel):
@@ -60,32 +60,43 @@ class PurchaseRequest(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def update_purchase_status(self):
-        products = PurchaseRequestProduct.objects.filter(purchase_request=self)
-        is_ordered = True
-        for product in products:
-            if product.remain_for_purchase_order != 0:
-                is_ordered = False
-                break
-        if is_ordered:
-            self.purchase_status = 2
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("PR")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'PR0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'PR{num_str}'
         else:
-            self.purchase_status = 1
-        self.save(update_fields=['purchase_status'])
-        return True
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
 
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        purchase_request = PurchaseRequest.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "PR"
-        if not self.code:
-            temper = "%04d" % (purchase_request + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
 
         # hit DB
         super().save(*args, **kwargs)

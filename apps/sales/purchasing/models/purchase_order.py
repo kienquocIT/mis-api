@@ -110,15 +110,10 @@ class PurchaseOrder(DataAbstractModel):
 
     @classmethod
     def update_remain_and_status_purchase_request(cls, instance):
-        list_purchase_request = []
         # update quantity remain on purchase request product
         for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance, is_stock=False):
             po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
-            if po_request.purchase_request_product.purchase_request not in list_purchase_request:
-                list_purchase_request.append(po_request.purchase_request_product.purchase_request)
             po_request.purchase_request_product.save(update_fields=['remain_for_purchase_order'])
-        for purchase_request in list_purchase_request:
-            purchase_request.update_purchase_status()
         return True
 
     @classmethod
@@ -126,9 +121,13 @@ class PurchaseOrder(DataAbstractModel):
         for pr_obj in instance.purchase_requests.all():
             pr_product = pr_obj.purchase_request.all()
             pr_product_done = pr_obj.purchase_request.filter(remain_for_purchase_order=0)
-            if pr_product.count() == pr_product_done.count():
+            if pr_product.count() == pr_product_done.count():  # All PR products ordered
+                pr_obj.purchase_status = 2
                 pr_obj.is_all_ordered = True
-                pr_obj.save(update_fields=['is_all_ordered'])
+                pr_obj.save(update_fields=['purchase_status', 'is_all_ordered'])
+            else:  # Partial PR products ordered
+                pr_obj.purchase_status = 1
+                pr_obj.save(update_fields=['purchase_status'])
         return True
 
     @classmethod

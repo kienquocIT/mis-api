@@ -16,8 +16,11 @@ class PurchaseRequestList(
     filterset_fields = {
         'is_all_ordered': ['exact'],
     }
-
-    search_fields = ['title']
+    search_fields = [
+        'title',
+        'sale_order__title',
+        'supplier__name',
+    ]
     serializer_list = PurchaseRequestListSerializer
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_create = PurchaseRequestCreateSerializer
