@@ -247,20 +247,14 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 tenant=purchase_request.tenant,
                 company=purchase_request.company,
             )
-            if pr_product.sale_order_product:
-                pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity
-                pr_product.sale_order_product.save()
             bulk_data.append(pr_product)
         return bulk_data
 
     @classmethod
     def delete_product_datas(cls, instance):
         objs = PurchaseRequestProduct.objects.select_related('sale_order_product').filter(purchase_request=instance)
-        for item in objs:
-            if item.sale_order_product:
-                item.sale_order_product.remain_for_purchase_request += item.quantity
-                item.sale_order_product.save(update_fields=['remain_for_purchase_request'])
-        objs.delete()
+        if objs:
+            objs.delete()
         return True
 
 
