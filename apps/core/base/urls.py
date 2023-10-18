@@ -4,7 +4,7 @@ from apps.core.base.views import (
     PlanList, ApplicationPropertyList, ApplicationPropertyEmployeeList, PermissionApplicationList,
     TenantApplicationList,
     CountryList, CityList, DistrictList, WardList, BaseCurrencyList, BaseItemUnitList, IndicatorParamList,
-    ApplicationPropertyOpportunityList, ApplicationForPermitOpportunity
+    ApplicationPropertyOpportunityList
 )
 
 urlpatterns = [
@@ -31,10 +31,5 @@ urlpatterns = [
         'applications-property-opportunity',
         ApplicationPropertyOpportunityList.as_view(),
         name='ApplicationPropertyOpportunityList'
-    ),
-    path(
-        'applications-opportunity-permit',
-        ApplicationForPermitOpportunity.as_view(),
-        name='ApplicationForPermitOpportunity'
     ),
 ]

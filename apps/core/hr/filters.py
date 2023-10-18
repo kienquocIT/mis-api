@@ -1,15 +1,15 @@
-import django_filters
 from django.db.models import Q
 from django_filters.rest_framework import filters
 from rest_framework import exceptions
 
+from apps.shared import BastionFieldAbstractListFilter
 from apps.shared import TypeCheck
 from .models import Employee
 
 __all__ = ['EmployeeListFilter']
 
 
-class EmployeeListFilter(django_filters.FilterSet):
+class EmployeeListFilter(BastionFieldAbstractListFilter):
     group__first_manager__id = filters.CharFilter(
         method='filter_group__first_manager', field_name='group__first_manager__id'
     )

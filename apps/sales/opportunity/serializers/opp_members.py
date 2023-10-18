@@ -1,0 +1,151 @@
+from rest_framework import serializers
+
+from apps.core.hr.serializers.common import HasPermPlanAppUpdateSerializer, validate_license_used
+from apps.core.tenant.models import TenantPlan
+from apps.sales.opportunity.models import PlanMemberOpportunity, OpportunitySaleTeamMember
+from apps.shared import PermissionsUpdateSerializer, PermissionDetailSerializer, Caching, DisperseModel
+from apps.shared.translations.opportunity import OpportunityMsg
+
+
+class MemberOfOpportunityDetailSerializer(PermissionDetailSerializer):
+    cls_of_plan = PlanMemberOpportunity
+    cls_key_filter = 'opportunity_member'
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = (
+            'id', 'date_modified', 'permit_view_this_opp', 'permit_add_member',
+        )
+
+
+class MemberOfOpportunityUpdateSerializer(PermissionsUpdateSerializer):
+    plan_app = HasPermPlanAppUpdateSerializer(required=False, many=True)
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = ('permit_view_this_opp', 'permit_add_member', 'plan_app')
+
+    def validate(self, validate_data):
+        return validate_license_used(validate_data=validate_data)
+
+    @staticmethod
+    def set_up_data_plan_app(validated_data, instance=None):
+        cls_query = PlanMemberOpportunity
+        filter_query = {'opportunity_member': instance}
+        plan_application_dict = {}
+        plan_app_data = []
+        bulk_info = []
+        if 'plan_app' in validated_data:
+            plan_app_data = validated_data['plan_app']
+            del validated_data['plan_app']
+            if instance:
+                # delete old M2M PlanEmployee
+                plan_x_old = cls_query.objects.filter(**filter_query)
+                if plan_x_old:
+                    plan_x_old.delete()
+        if plan_app_data:
+            for plan_app in plan_app_data:
+                plan_code = None
+                app_code_list = []
+                if 'plan' in plan_app:
+                    plan_code = plan_app['plan'].code if plan_app['plan'] else None
+                if 'application' in plan_app:
+                    app_code_list = [app.code for app in plan_app['application']] if plan_app['application'] else []
+                if plan_code and app_code_list:
+                    plan_application_dict.update({plan_code: app_code_list})
+                    bulk_info.append(
+                        cls_query(
+                            **{
+                                'plan': plan_app['plan'],
+                                'application': [str(app.id) for app in plan_app['application']]
+                            }
+                        )
+                    )
+        return plan_application_dict, plan_app_data, bulk_info
+
+    @staticmethod
+    def create_plan_update_tenant_plan(instance, plan_app_data, bulk_info):
+        if instance and plan_app_data and bulk_info:
+            # create M2M PlanEmployee
+            for info in bulk_info:
+                info.opportunity_member = instance
+            PlanMemberOpportunity.objects.bulk_create(bulk_info)
+            # update TenantPlan
+            for plan_data in plan_app_data:
+                if 'plan' in plan_data and 'license_used' in plan_data:
+                    tenant_plan = TenantPlan.objects.filter(
+                        tenant=instance.tenant,
+                        plan=plan_data['plan']
+                    ).first()
+                    if tenant_plan:
+                        tenant_plan.license_used = plan_data['license_used']
+                        tenant_plan.save()
+        Caching().clean_by_prefix_many(table_name_list=['hr_PlanEmployee', 'tenant_TenantPlan'])
+        return True
+
+    def update(self, instance, validated_data):
+        instance, validated_data, _permission_data = self.force_permissions(
+            instance=instance, validated_data=validated_data
+        )
+        plan_application_dict, plan_app_data, bulk_info = self.set_up_data_plan_app(
+            validated_data,
+            instance=instance,
+        )
+        if plan_application_dict:
+            validated_data.update({'plan_application': plan_application_dict})
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        # create M2M PlanEmployee + update TenantPlan
+        self.create_plan_update_tenant_plan(
+            instance=instance,
+            plan_app_data=plan_app_data,
+            bulk_info=bulk_info
+        )
+        return instance
+
+
+class OpportunitySaleTeamMemberSerializer(PermissionDetailSerializer):
+    cls_of_plan = PlanMemberOpportunity
+
+    def kwargs_plan_app(self, obj) -> dict:
+        return {'opportunity_id': obj.opportunity_id}
+
+    class Meta:
+        model = OpportunitySaleTeamMember
+        fields = ('member_id',)
+
+
+class MemberOfOpportunityAddSerializer(serializers.Serializer):  # noqa
+    members = serializers.ListField(
+        child=serializers.UUIDField()
+    )
+
+    @classmethod
+    def validate_members(cls, attrs):
+        if len(attrs) > 0:
+            objs = DisperseModel(app_model='hr.Employee').get_model().objects.filter_current(
+                fill__tenant=True, fill__company=True, id__in=attrs
+            )
+            if objs.count() == len(attrs):
+                return objs
+            raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_NOT_EXIST})
+        raise serializers.ValidationError({'members': OpportunityMsg.MEMBER_REQUIRED})
+
+    def create(self, validated_data):
+        opportunity_id = validated_data.get('opportunity_id')
+        tenant_id = validated_data.get('tenant_id')
+        company_id = validated_data.get('company_id')
+        members = validated_data.pop('members')
+        objs = [
+            OpportunitySaleTeamMember(
+                opportunity_id=opportunity_id,
+                member=member_obj,
+                tenant_id=tenant_id,
+                company_id=company_id,
+            )
+            for member_obj in members
+        ]
+        return OpportunitySaleTeamMember.objects.bulk_create(objs)[0]

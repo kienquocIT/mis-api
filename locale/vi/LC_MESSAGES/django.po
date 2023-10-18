@@ -429,3 +429,23 @@ msgstr "Nghỉ phép năm"
 #
 msgid "View config is enable authenticated checking but not provide value of permit"
 msgstr "Cấu hình lớp xử lý yêu cầu HTTP yêu cầu kiểm tra xác thực quyền nhưng không cung cấp giá trị quyền"
+
+#
+msgid "You can not delete member because you do not have permission"
+msgstr "Bạn không quyền xoá thành viên"
+
+#
+msgid "You can not add member because you do not have permission"
+msgstr "Bạn không có quyền thêm thành viên"
+
+#
+msgid "You can not delete or add member because you not in sale team"
+msgstr "Bạn không có quyền xoá hoặc thêm thành viên"
+
+#
+msgid "Member does not exist in sale team"
+msgstr "Thành viên không tồn tại"
+
+#
+msgid "Members must be required"
+msgstr "Danh sách thành viên là bắt buộc"

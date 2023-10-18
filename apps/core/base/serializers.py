@@ -125,12 +125,3 @@ class IndicatorParamListSerializer(serializers.ModelSerializer):
             'example',
             'param_type'
         )
-
-
-class ApplicationForPermitOpportunityListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Application
-        fields = (
-            'id',
-            'title',
-        )

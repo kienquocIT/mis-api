@@ -12,6 +12,7 @@ class OpportunityMsg:
     CAN_NOT_SEND_EMAIL = _('Can not send email')
 
     MEMBER_NOT_EXIST = _('Member does not exist in sale team')
+    MEMBER_REQUIRED = _('Members must be required')
 
     EMPLOYEE_DELETE_NOT_EXIST = _('Employee delete does not exist in sale team')
 

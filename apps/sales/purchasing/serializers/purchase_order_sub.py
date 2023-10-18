@@ -88,11 +88,12 @@ class PurchaseOrderCommonCreate:
                     PurchaseOrderRequestProduct.objects.bulk_create([
                         PurchaseOrderRequestProduct(
                             purchase_order=instance,
-                            purchase_request_product_id=purchase_request_product['purchase_request_product'],
+                            purchase_request_product_id=purchase_request_product.get('purchase_request_product', None),
                             purchase_order_product=order_product,
-                            sale_order_product_id=purchase_request_product['sale_order_product'],
+                            sale_order_product_id=purchase_request_product.get('sale_order_product', None),
                             quantity_order=purchase_request_product['quantity_order'],
-                            # quantity_remain=purchase_request_product['quantity_remain'],
+                            uom_stock_id=purchase_request_product.get('uom_stock', {}).get('id', None),
+                            is_stock=purchase_request_product.get('is_stock', False),
                         ) for purchase_request_product in data['purchase_request_products_data']
                     ])
         return True
@@ -293,3 +294,9 @@ class PurchasingCommonValidate:
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_product_quantity_order_actual(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'quantity_order': PurchasingMsg.PURCHASE_ORDER_QUANTITY})
+        return value

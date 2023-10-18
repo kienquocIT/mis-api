@@ -44,6 +44,7 @@ class PurchaseRequestMsg:
 class PurchasingMsg:
     PURCHASE_QUOTATION_NOT_EXIST = _('Purchase quotation does not exist')
     PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
+    PURCHASE_ORDER_QUANTITY = _('Quantity order must be greater than 0')
 
 
 class DeliverMsg:
@@ -58,3 +59,4 @@ class DeliverMsg:
 class InventoryMsg:
     GOODS_RECEIPT_NOT_EXIST = _('Goods receipt does not exist')
     INVENTORY_ADJUSTMENT_NOT_EXIST = _('Inventory adjustment does not exist')
+    GOODS_RECEIPT_QUANTITY = _('Quantity import must be greater than 0')

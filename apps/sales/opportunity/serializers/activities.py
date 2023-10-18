@@ -15,7 +15,6 @@ from apps.shared.mail import GmailController
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
-    customer = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
 
     class Meta:
@@ -24,7 +23,6 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'id',
             'subject',
             'opportunity',
-            'customer',
             'contact',
             'call_date',
             'input_result',
@@ -33,32 +31,23 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'code': obj.opportunity.code,
-                'title': obj.opportunity.title
-            }
-        return {}
-
-    @classmethod
-    def get_customer(cls, obj):
-        if obj.opportunity.customer:
-            return {
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title,
+            'customer': {
                 'id': obj.opportunity.customer_id,
                 'code': obj.opportunity.customer.code,
                 'title': obj.opportunity.customer.name
-            }
-        return {}
+            } if obj.opportunity.customer else {}
+        } if obj.opportunity else {}
 
     @classmethod
     def get_contact(cls, obj):
-        if obj.contact:
-            return {
-                'id': obj.contact_id,
-                'fullname': obj.contact.fullname
-            }
-        return {}
+        return {
+            'id': obj.contact_id,
+            'fullname': obj.contact.fullname
+        } if obj.contact else {}
 
 
 class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
@@ -92,6 +81,9 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField() # noqa
+    contact = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityCallLog
         fields = (
@@ -103,6 +95,26 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'input_result',
             'repeat'
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'code': obj.opportunity.customer.code,
+                'title': obj.opportunity.customer.name
+            } if obj.opportunity.customer else {}
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_contact(cls, obj):
+        return {
+            'id': obj.contact_id,
+            'fullname': obj.contact.fullname
+        } if obj.contact else {}
 
 
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
@@ -122,13 +134,11 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'code': obj.opportunity.code,
-                'title': obj.opportunity.title
-            }
-        return {}
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
 
 def send_email(email_obj, employee_id, tenant_id, company_id):
@@ -152,8 +162,6 @@ def send_email(email_obj, employee_id, tenant_id, company_id):
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
-    content = serializers.CharField(required=True)
-
     class Meta:
         model = OpportunityEmail
         fields = (
@@ -189,6 +197,8 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityEmail
         fields = (
@@ -200,6 +210,14 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'date_created',
             'opportunity',
         )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
@@ -224,13 +242,11 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'code': obj.opportunity.code,
-                'title': obj.opportunity.title
-            }
-        return {}
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
     @classmethod
     def get_employee_attended_list(cls, obj):
@@ -315,6 +331,10 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    employee_attended_list = serializers.SerializerMethodField()
+    customer_member_list = serializers.SerializerMethodField()
+
     class Meta:
         model = OpportunityMeeting
         fields = (
@@ -330,36 +350,69 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'repeat'
         )
 
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_attended_list(cls, obj):
+        if obj.employee_attended_list:
+            employee_attended_list = []
+            for item in list(obj.employee_attended_list.all()):
+                employee_attended_list.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
+            return employee_attended_list
+        return {}
+
+    @classmethod
+    def get_customer_member_list(cls, obj):
+        if obj.customer_member_list:
+            customer_member_list = []
+            for item in list(obj.customer_member_list.all()):
+                customer_member_list.append({'id': item.id, 'fullname': item.fullname})
+            return customer_member_list
+        return {}
+
 
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
-    to_contact = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
+    person_in_charge = serializers.SerializerMethodField()
 
     class Meta:
         model = OpportunityDocument
         fields = (
             'id',
-            'to_contact',
             'opportunity',
-            'subject',
-            'request_completed_date'
+            'title',
+            'person_in_charge',
+            'request_completed_date',
         )
 
     @classmethod
-    def get_to_contact(cls, obj):
-        if obj:
-            return None
-        return None
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity.id,
+            'code': obj.opportunity.code,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
     @classmethod
-    def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity.id,
-                'code': obj.opportunity.code,
-                'title': obj.opportunity.title
-            }
-        return None
+    def get_person_in_charge(cls, obj):
+        if obj.person_in_charge:
+            persons = obj.person_in_charge.all()
+            list_result = []
+            for person in persons:
+                list_result.append(
+                    {
+                        'id': person.id,
+                        'full_name': person.get_full_name()
+                    }
+                )
+            return list_result
+        return []
 
 
 class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
@@ -368,10 +421,10 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityDocument
         fields = (
-            'subject',
+            'title',
             'opportunity',
             'request_completed_date',
-            'kind_of_product',
+            'description',
             'data_documents',
             'person_in_charge'
         )
@@ -453,10 +506,10 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityDocument
         fields = (
-            'subject',
+            'title',
             'opportunity',
             'request_completed_date',
-            'kind_of_product',
+            'description',
             'data_documents',
             'person_in_charge',
             'files',
@@ -464,12 +517,10 @@ class OpportunityDocumentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        if obj.opportunity:
-            return {
-                'id': obj.opportunity_id,
-                'title': obj.opportunity.title
-            }
-        return {}
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title
+        } if obj.opportunity else {}
 
     @classmethod
     def get_person_in_charge(cls, obj):
@@ -512,13 +563,11 @@ class OpportunityActivityLogTaskListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_task(cls, obj):
-        if obj.task:
-            return {
-                'id': obj.task.id,
-                'title': obj.task.title,
-                'code': obj.task.code
-            }
-        return {}
+        return {
+            'id': obj.task.id,
+            'title': obj.task.title,
+            'code': obj.task.code
+        } if obj.task else {}
 
     class Meta:
         model = OpportunityActivityLogTask
@@ -540,58 +589,48 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_task(cls, obj):
-        if obj.task:
-            return {
-                'subject': obj.task.subject,
-                'id': str(obj.task.task_id),
-                'activity_name': obj.task.activity_name,
-                'activity_type': obj.task.activity_type,
-            }
-        return {}
+        return {
+            'subject': obj.task.subject,
+            'id': str(obj.task.task_id),
+            'activity_name': obj.task.activity_name,
+            'activity_type': obj.task.activity_type,
+        } if obj.task else {}
 
     @classmethod
     def get_call_log(cls, obj):
-        if obj.call:
-            return {
-                'subject': obj.call.subject,
-                'id': str(obj.call_id),
-                'activity_name': 'Call to customer',
-                'activity_type': 'call',
-            }
-        return {}
+        return {
+            'subject': obj.call.subject,
+            'id': str(obj.call_id),
+            'activity_name': 'Call to customer',
+            'activity_type': 'call',
+        } if obj.call else {}
 
     @classmethod
     def get_meeting(cls, obj):
-        if obj.meeting:
-            return {
-                'subject': obj.meeting.subject,
-                'id': str(obj.meeting_id),
-                'activity_name': 'Meeting with customer',
-                'activity_type': 'meeting',
-            }
-        return {}
+        return {
+            'subject': obj.meeting.subject,
+            'id': str(obj.meeting_id),
+            'activity_name': 'Meeting with customer',
+            'activity_type': 'meeting',
+        } if obj.meeting else {}
 
     @classmethod
     def get_email(cls, obj):
-        if obj.email:
-            return {
-                'subject': obj.email.subject,
-                'id': str(obj.email_id),
-                'activity_name': 'Send email',
-                'activity_type': 'email',
-            }
-        return {}
+        return {
+            'subject': obj.email.subject,
+            'id': str(obj.email_id),
+            'activity_name': 'Send email',
+            'activity_type': 'email',
+        } if obj.email else {}
 
     @classmethod
     def get_document(cls, obj):
-        if obj.document:
-            return {
-                'subject': obj.document.subject,
-                'id': str(obj.document_id),
-                'activity_name': 'Upload document',
-                'activity_type': 'document',
-            }
-        return {}
+        return {
+            'subject': obj.document.subject,
+            'id': str(obj.document_id),
+            'activity_name': 'Upload document',
+            'activity_type': 'document',
+        } if obj.document else {}
 
     class Meta:
         model = OpportunityActivityLogs

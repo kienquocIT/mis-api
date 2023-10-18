@@ -168,11 +168,13 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
         if tenant_id and company_id and product_id and uom_id and TypeCheck.check_uuid_list(
                 [tenant_id, company_id, product_id, uom_id]
         ):
-            return ProductWareHouse.get_stock(
+            product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
                 warehouse_id=obj.id, product_id=product_id,
                 uom_id=uom_id
-            )
+            ).first()
+            if product_warehouse:
+                return product_warehouse.stock_amount
         return 0
 
     def get_picked_ready(self, obj):
@@ -275,7 +277,7 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
             results.append({
                 'id': str(item.id),
                 'product': item.product_data,
-                'available_amount': item.stock_amount - item.sold_amount,
+                'available_amount': item.stock_amount,
                 'inventory_uom': item.uom_data,
             })
         return results

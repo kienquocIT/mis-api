@@ -26,10 +26,10 @@ from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
-from ..sales.inventory.models import InventoryAdjustmentItem
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
-    OpportunitySaleTeamMember, OpportunityMemberPermitData,
+    OpportunitySaleTeamMember, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
@@ -771,58 +771,6 @@ def update_sale_person_opportunity():
     print('Update Done!')
 
 
-def update_sale_team_datas_backup_for_opp():
-    opportunities = Opportunity.objects.all().select_related('employee_inherit')
-    for opp in opportunities:
-        sale_team_data = []
-        is_owner_in_opp = False
-        opp_members = OpportunitySaleTeamMember.objects.filter(opportunity=opp).select_related('member')
-        for item in opp_members:
-            if item.member == opp.employee_inherit:
-                is_owner_in_opp = True
-                break
-
-        for item in opp_members:
-            sale_team_data.append(
-                {
-                    'member': {
-                        'id': str(item.member_id),
-                        'email': item.member.email,
-                        'name': item.member.get_full_name(),
-                    }
-                }
-            )
-
-        if not is_owner_in_opp:
-            sale_team_data.insert(
-                0, {
-                    'member': {
-                        'id': str(opp.employee_inherit_id),
-                        'email': opp.employee_inherit.email,
-                        'name': opp.employee_inherit.get_full_name(),
-                    }
-                }
-            )
-            OpportunitySaleTeamMember.objects.create(
-                opportunity=opp,
-                member=opp.employee_inherit,
-                permit_view_this_opp=True,
-                permit_add_member=True,
-                permit_app=OpportunityMemberPermitData.PERMIT_DATA,
-            )
-        opp.opportunity_sale_team_datas = sale_team_data
-        opp.save(update_fields=['opportunity_sale_team_datas'])
-    print('Update Done !')
-
-
-def update_permit_for_member_in_opp():
-    sale_team = OpportunitySaleTeamMember.objects.filter()
-    for item in sale_team:
-        item.permit_app = OpportunityMemberPermitData.PERMIT_DATA
-        item.save(update_fields=['permit_app'])
-    print('Update Done !')
-
-
 def update_tenant_for_sub_table_opp():
     members = OpportunitySaleTeamMember.objects.all()
     for member in members:
@@ -925,3 +873,191 @@ def leave_available_create():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).leave_available_setup()
     print('create leave available list successfully')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
+
+
+def make_unique_together_opp_member():
+    from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+
+    print('Destroy duplicated opp member starting...')
+    list_filter = []
+    for opp in Opportunity.objects.all():
+        for opp_member in OpportunitySaleTeamMember.objects.filter(opportunity=opp):
+            tmp = {}
+            if opp_member.tenant_id:
+                tmp['tenant_id'] = opp_member.tenant_id
+            else:
+                tmp['tenant_id__isnull'] = True
+
+            if opp_member.company_id:
+                tmp['company_id'] = opp_member.company_id
+            else:
+                tmp['company_id__isnull'] = True
+
+            if opp_member.member_id:
+                tmp['member_id'] = opp_member.member_id
+            else:
+                tmp['member_id__isnull'] = True
+
+            list_filter.append(tmp)
+
+    for dict_filter in list_filter:
+        objs = OpportunitySaleTeamMember.objects.filter(**dict_filter)
+        print(objs.count(), dict_filter)
+        if objs.count() >= 2:
+            for obj in objs[1:]:
+                obj.delete()
+    print('Destroy duplicated opp member successfully!')
+
+
+# BEGIN PRODUCT TRANSACTION INFORMATION
+def update_product_warehouse_amounts():
+    # update ProductWarehouse
+    for product_warehouse in ProductWareHouse.objects.all():
+        product_warehouse.receipt_amount = product_warehouse.stock_amount
+        product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+        product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
+    # update Product
+    for product in Product.objects.all():
+        # product stock_amount
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        # product wait_receipt_amount
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
+        for product_receipted in product.goods_receipt_product_product.filter(
+            goods_receipt__system_status__in=[2, 3],
+            goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        # product wait_delivery_amount
+        # product_ordered_quantity = 0
+        # product_delivered_quantity = 0
+        # for product_ordered in product.sale_order_product_product.filter(
+        #     sale_order__system_status__in=[2, 3]
+        # ):
+        #     product_ordered_quantity += product_ordered.product_quantity
+        # for product_delivery in product.orderdeliveryproduct_set.filter(
+        #         delivery_sub__order_delivery__sale_order__system_status__in=[2, 3]
+        # ):
+        #     product_delivered_quantity += product_delivery.delivery_quantity
+        # product.wait_delivery_amount = (product_ordered_quantity - product_delivered_quantity)
+        # product available_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['stock_amount', 'wait_receipt_amount', 'wait_delivery_amount', 'available_amount'])
+    print('update product warehouse done.')
+
+
+def update_product_stock_amount():
+    product = Product.objects.filter(id='ccd941fb-ab1e-43fa-bded-9f22e1ac13d1').first()
+    if product:
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['available_amount', 'stock_amount'])
+    print('update product stock amount done.')
+
+
+def update_product_wait_receipt_amount():
+    product = Product.objects.filter(id='4db6a71b-fd96-45fa-bfc0-53e96aee7501').first()
+    if product:
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            product_purchased_quantity += product_purchased.product_quantity_order_request + product_purchased.stock
+        for product_receipted in product.goods_receipt_product_product.filter(
+                goods_receipt__system_status__in=[2, 3],
+                goods_receipt__purchase_order__isnull=False,
+        ):
+            product_receipted_quantity += product_receipted.quantity_import
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
+    print('update product wait_receipt_amount done.')
+# END PRODUCT TRANSACTION INFORMATION
+
+
+# BEGIN INVENTORY
+def update_po_request_product_for_gr_request_product():
+    for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
+        po_id = gr_request_product.goods_receipt.purchase_order_id
+        for item in gr_request_product.purchase_request_product.purchase_order_request_request_product.all():
+            if item.purchase_order_id == po_id:
+                gr_request_product.purchase_order_request_product_id = item.id
+                gr_request_product.save()
+                break
+    print('update_po_request_product_for_gr_request_product done.')
+# END INVENTORY
+
+
+# BEGIN PURCHASING
+def update_is_all_ordered_pr():
+    for pr in PurchaseRequest.objects.all():
+        pr_product = pr.purchase_request.all()
+        pr_product_done = pr.purchase_request.filter(remain_for_purchase_order=0)
+        if pr_product.count() == pr_product_done.count():
+            pr.purchase_status = 2
+            pr.is_all_ordered = True
+            pr.save(update_fields=['purchase_status', 'is_all_ordered'])
+        else:
+            pr.purchase_status = 1
+            pr.save(update_fields=['purchase_status'])
+    print('update_is_all_ordered_pr done.')
+# END PURCHASING

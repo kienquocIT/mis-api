@@ -385,8 +385,6 @@ class InventoryTestCase(AdvanceTestCase):
         sale_order = self.create_sale_order().data['result']
         sale_order_id = sale_order['id']
         delivery = OrderDelivery.objects.get_or_create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
@@ -406,8 +404,6 @@ class InventoryTestCase(AdvanceTestCase):
         self.assertTrue(OrderDelivery.objects.filter(id=obj_delivery.id).exists())
 
         sub = OrderDeliverySub.objects.get_or_create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
             code=obj_delivery.code,
             id=uuid4(),
             order_delivery_id=obj_delivery.id,
@@ -483,8 +479,6 @@ class InventoryTestCase(AdvanceTestCase):
         sale_order_id = sale_order['id']
         warehouse = self.warehouse.data['result']
         picking = OrderPicking.objects.get_or_create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
             sale_order_id=sale_order_id,
             ware_house_id=warehouse['id'],
             state=0,
@@ -501,8 +495,6 @@ class InventoryTestCase(AdvanceTestCase):
         self.assertTrue(OrderPicking.objects.filter(id=obj_picking.id).exists())
 
         sub = OrderPickingSub.objects.get_or_create(
-            tenant_id=self.tenant_id,
-            company_id=self.company_id,
             code=obj_picking.code,
             id=uuid4(),
             order_picking_id=obj_picking.id,
@@ -822,4 +814,39 @@ class InventoryTestCase(AdvanceTestCase):
             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
         else:
             self.assertEqual(response.data['result']['id'], data_id)
+        return response
+
+    def test_update_goods_issue(self):
+        goods_issue = self.test_create_goods_issue()
+        quantity = 7
+        title_changed = 'Goods Issue Update'
+        product_data = goods_issue.data['result']['goods_issue_datas'][0]
+        data = {
+            "title": title_changed,
+            "goods_issue_datas": [
+                {
+                    "inventory_adjustment_item": None,
+                    "product_warehouse": product_data['product_warehouse']['id'],
+                    "warehouse": product_data['warehouse']['id'],
+                    "uom": product_data['uom']['id'],
+                    "description": "string",
+                    "quantity": quantity,
+                    "unit_cost": 10000,
+                    "subtotal": 100000,
+                }
+            ]
+        }
+        url = reverse("GoodsIssueDetail", kwargs={'pk': goods_issue.data['result']['id']})
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        data_changed = self.test_goods_issue_detail(data_id=goods_issue.data['result']['id'])
+        self.assertEqual(
+            data_changed.data['result']['title'],
+            title_changed
+        )
+        self.assertEqual(
+            data_changed.data['result']['goods_issue_datas'][0]['quantity'],
+            quantity
+        )
         return response

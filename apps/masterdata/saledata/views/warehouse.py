@@ -82,6 +82,12 @@ class WareHouseCheckAvailableProductList(BaseListMixin):
     serializer_list = ProductWareHouseStockListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
+
     @swagger_auto_schema()
     @mask_view(
         login_require=True, auth_require=False,

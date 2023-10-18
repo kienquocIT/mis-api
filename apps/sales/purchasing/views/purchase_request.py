@@ -13,8 +13,15 @@ class PurchaseRequestList(
     BaseCreateMixin
 ):
     queryset = PurchaseRequest.objects
-
-    search_fields = ['title']
+    filterset_fields = {
+        'is_all_ordered': ['exact'],
+        'system_status': ['exact'],
+    }
+    search_fields = [
+        'title',
+        'sale_order__title',
+        'supplier__name',
+    ]
     serializer_list = PurchaseRequestListSerializer
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_create = PurchaseRequestCreateSerializer
@@ -83,7 +90,7 @@ class PurchaseRequestDetail(
     @swagger_auto_schema(
         operation_summary="Purchase Request update",
         operation_description="Update Purchase Request by ID",
-        request_body=PurchaseRequestDetailSerializer,
+        request_body=PurchaseRequestUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,

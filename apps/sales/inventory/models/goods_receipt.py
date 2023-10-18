@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, StringHandler
 
 
 class GoodsReceipt(DataAbstractModel):
@@ -57,61 +57,133 @@ class GoodsReceipt(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def generate_code(cls):
-        # auto create code (temporary)
-        goods_receipt = GoodsReceipt.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "GR"
-        temper = "%04d" % (goods_receipt + 1)  # pylint: disable=C0209
-        return f"{char}{temper}"
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("GR")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'GR0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'GR{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def push_by_po(cls, instance):
+        for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
+            uom_product_inventory = \
+                gr_warehouse.goods_receipt_product.product.inventory_uom
+            lot_data = []
+            serial_data = []
+            for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
+                lot_data.append({
+                    'lot_number': lot.lot_number,
+                    'quantity_import': lot.quantity_import,
+                    'expire_date': lot.expire_date,
+                    'manufacture_date': lot.manufacture_date,
+                })
+            for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
+                serial_data.append({
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number,
+                    'expire_date': serial.expire_date,
+                    'manufacture_date': serial.manufacture_date,
+                    'warranty_start': serial.warranty_start,
+                    'warranty_end': serial.warranty_end,
+                })
+            ProductWareHouse.push_from_receipt(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=gr_warehouse.goods_receipt_product.product_id,
+                warehouse_id=gr_warehouse.warehouse_id,
+                uom_id=uom_product_inventory.id,
+                tax_id=gr_warehouse.goods_receipt_product.tax_id,
+                amount=gr_warehouse.quantity_import,
+                unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
+                lot_data=lot_data,
+                serial_data=serial_data,
+            )
+        return True
+
+    @classmethod
+    def push_by_ia(cls, instance):
+        for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+            uom_product_inventory = product_receipt.product.inventory_uom
+            uom_product_gr = product_receipt.uom
+            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+            ProductWareHouse.push_from_receipt(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=product_receipt.product_id,
+                warehouse_id=product_receipt.warehouse_id,
+                uom_id=product_receipt.product.inventory_uom_id,
+                tax_id=product_receipt.tax_id,
+                amount=product_receipt.quantity_import * final_ratio,
+                unit_price=product_receipt.product_unit_price,
+            )
+        return True
 
     @classmethod
     def push_to_product_warehouse(cls, instance):
         # push data to ProductWareHouse
         if instance.goods_receipt_type == 0:  # GR for PO
-            for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
-                uom_product_inventory = \
-                    gr_warehouse.goods_receipt_product.product.inventory_uom
-                uom_product_gr = gr_warehouse.goods_receipt_product.uom
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_warehouse.goods_receipt_product.product_id,
-                    warehouse_id=gr_warehouse.warehouse_id,
-                    uom_id=uom_product_inventory.id,
-                    tax_id=gr_warehouse.goods_receipt_product.tax_id,
-                    amount=gr_warehouse.quantity_import * final_ratio,
-                    unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                )
+            cls.push_by_po(instance=instance)
         elif instance.goods_receipt_type == 1:  # GR for IA
-            for gr_product in GoodsReceiptProduct.objects.filter(goods_receipt=instance):
-                ProductWareHouse.push_from_receipt(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=gr_product.product_id,
-                    warehouse_id=gr_product.warehouse_id,
-                    uom_id=gr_product.product.inventory_uom_id,
-                    tax_id=gr_product.tax_id,
-                    amount=gr_product.quantity_import,
-                    unit_price=gr_product.product_unit_price,
-                )
+            cls.push_by_ia(instance=instance)
+        return True
+
+    @classmethod
+    def update_product_wait_receipt_amount(cls, instance):
+        if instance.purchase_order:  # GR for PO
+            for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                uom_product_inventory = product_receipt.product.inventory_uom
+                uom_product_gr = product_receipt.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                product_receipt.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
+                    'update_fields': ['wait_receipt_amount', 'available_amount', 'stock_amount']
+                })
+        else:  # GR for IA
+            for product_receipt in instance.goods_receipt_product_goods_receipt.all():
+                uom_product_inventory = product_receipt.product.inventory_uom
+                uom_product_gr = product_receipt.uom
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                product_receipt.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_receipt_ia': product_receipt.quantity_import * final_ratio,
+                    'update_fields': ['available_amount', 'stock_amount']
+                })
         return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code()
+                self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-            self.push_to_product_warehouse(self)
-            # update receipt status to PurchaseOrder
+                self.push_to_product_warehouse(self)
+                self.update_product_wait_receipt_amount(self)
+                # update receipt status to PurchaseOrder
 
         # hit DB
         super().save(*args, **kwargs)
@@ -223,6 +295,13 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         related_name="goods_receipt_request_product_gr_product",
         null=True
     )
+    purchase_order_request_product = models.ForeignKey(
+        'purchasing.PurchaseOrderRequestProduct',
+        on_delete=models.CASCADE,
+        verbose_name="purchase order request product",
+        related_name="gr_request_product_po_request_product",
+        null=True
+    )
     purchase_request_product = models.ForeignKey(
         'purchasing.PurchaseRequestProduct',
         on_delete=models.CASCADE,
@@ -231,6 +310,10 @@ class GoodsReceiptRequestProduct(SimpleAbstractModel):
         null=True
     )
     quantity_import = models.FloatField(default=0)
+    is_stock = models.BooleanField(
+        default=False,
+        help_text="True if GR direct to stock, stock is created from PO when quantity order > quantity request"
+    )
 
     class Meta:
         verbose_name = 'Goods Receipt Request Product'

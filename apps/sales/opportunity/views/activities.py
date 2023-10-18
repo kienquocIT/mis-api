@@ -41,12 +41,12 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityCallLog.objects
     serializer_detail = OpportunityCallLogDetailSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("opportunity", "contact")
+        return super().get_queryset().select_related("opportunity__customer", "contact")
 
     @swagger_auto_schema(
         operation_summary="OpportunityCallLog detail",
@@ -101,7 +101,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityEmail.objects
     serializer_detail = OpportunityEmailDetailSerializer
 
@@ -159,7 +159,7 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityMeeting.objects
     serializer_detail = OpportunityMeetingDetailSerializer
 
@@ -193,9 +193,12 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityDocumentCreateSerializer
     serializer_detail = OpportunityDocumentDetailSerializer
 
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'opportunity'
+            'opportunity',
         )
 
     @swagger_auto_schema(
@@ -207,6 +210,7 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
 
     @swagger_auto_schema(
         operation_summary="Create OpportunityDocument",
@@ -221,9 +225,10 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
-class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin,):
+class OpportunityDocumentDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityDocument.objects
     serializer_detail = OpportunityDocumentDetailSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")

@@ -18,7 +18,11 @@ class GoodsIssue(DataAbstractModel):
         related_name='goods_issue_ia',
         null=True,
     )
-    note = models.CharField(max_length=1000)
+    note = models.CharField(
+        max_length=1000,
+        default='',
+        blank=True,
+    )
     date_issue = models.DateTimeField()
     goods_issue_datas = models.JSONField(
         help_text=json.dumps(

@@ -16,7 +16,10 @@ from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
-from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
+from apps.sales.opportunity.models import (
+    OpportunityConfig, OpportunityConfigStage, StageCondition,
+    OpportunitySaleTeamMember,
+)
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
@@ -34,7 +37,6 @@ from apps.sales.saleorder.models import (
 )
 from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
-
 
 logger = logging.getLogger(__name__)
 
@@ -691,10 +693,10 @@ class ConfigDefaultData:
             #
             translation.activate(company_config.language if company_config else 'vi')
             default_list = [
-                    {
-                        'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                {
+                    'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
                         'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
@@ -958,3 +960,20 @@ def event_new_runtime(sender, instance, created, **kwargs):
     if created:
         instance.append_viewer(instance.doc_employee_inherit)
         instance.append_viewer(instance.doc_employee_created)
+
+
+@receiver(post_save, sender=OpportunitySaleTeamMember)
+def opp_member_event_update(sender, instance, created, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_obj.append_permit_by_opp(
+            opp_id=instance.opportunity_id,
+            perm_config=instance.permission_by_configured,
+        )
+
+
+@receiver(post_delete, sender=OpportunitySaleTeamMember)
+def opp_member_event_destroy(sender, instance, **kwargs):
+    employee_obj = instance.member
+    if employee_obj and hasattr(employee_obj, 'id'):
+        employee_obj.remove_permit_by_opp(opp_id=instance.opportunity_id)

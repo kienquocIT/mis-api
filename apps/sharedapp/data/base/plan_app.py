@@ -190,6 +190,18 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "dd16a86c-4aef-46ec-9302-19f30b101cf5",  # Goods Receipt
     },
+    "866f163d-b724-404d-942f-4bc44dc2e2ed": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "866f163d-b724-404d-942f-4bc44dc2e2ed",  # Goods Transfer
+    },
+    "f26d7ce4-e990-420a-8ec6-2dc307467f2c": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "f26d7ce4-e990-420a-8ec6-2dc307467f2c",  # Goods Issue
+    },
+    "c5de0a7d-bea3-4f39-922f-06a40a060aba": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",  # Inventory Adjustment
+    },
 }
 
 _PlanApplication_eOffice_data = {

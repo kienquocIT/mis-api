@@ -1,6 +1,11 @@
 from django.utils.translation import gettext_lazy as _
 from .translations import WorkflowMsg
 
+#
+KEY_GET_LIST_FROM_APP = 'list_from_app'
+KEY_GET_LIST_FROM_OPP = 'filter_list_from_opp'
+SPLIT_CODE_FROM_APP = '.'
+
 # Core
 GENDER_CHOICE = (
     ('male', 'Male'),
@@ -73,6 +78,7 @@ MAP_FIELD_TITLE = {
     'delivery.orderdeliverysub': 'title',
     'purchasing.purchaseorder': 'title',
     'inventory.goodsreceipt': 'title',
+    'purchasing.purchaserequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

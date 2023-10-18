@@ -20,6 +20,7 @@ from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 from .controllers import ResponseController
 from .utils import TypeCheck
 from .mask_view import ViewChecking
+from .. import KEY_GET_LIST_FROM_APP, SPLIT_CODE_FROM_APP
 from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
@@ -417,10 +418,41 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def check_perm_by_obj_or_body_data(self, obj=None, body_data=None) -> bool:  # pylint: disable=R0911
+    def check_permit_one_time(
+            self, employee_inherit_id, opportunity_id, project_id, hidden_field, obj=None, body_data=None
+    ):
+        if project_id and opportunity_id:
+            # Opp and Project can't have together value.
+            return False
+
+        if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
+            if opportunity_id and TypeCheck.check_uuid(opportunity_id):
+                return self.cls_check.permit_cls.config_data__check_by_opp(
+                    opp_id=opportunity_id,
+                    employee_inherit_id=employee_inherit_id,
+                    hidden_field=hidden_field,
+                )
+            if project_id and TypeCheck.check_uuid(project_id):
+                return self.cls_check.permit_cls.config_data__check_by_prj(
+                    prj_id=project_id,
+                    employee_inherit_id=employee_inherit_id,
+                    hidden_field=hidden_field,
+                )
+        if obj and body_data:
+            return self.cls_check.permit_cls.config_data__check_obj_and_body_data(obj=obj, body_data=body_data)
+        elif obj:
+            return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
+        elif body_data:
+            return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
+        return False
+
+    def check_perm_by_obj_or_body_data(
+            self, obj=None, body_data=None, hidden_field: list[str] = list
+    ) -> bool:  # pylint: disable=R0911
         """
         Check permission with Instance Object was got from views
         Args:
+            hidden_field:
             body_data: Request.body_data
             obj: Instance object
 
@@ -435,14 +467,66 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
             if self.cls_check.decor.auth_require is True:
                 if self.cls_check.permit_cls.config_data__exist:
-                    if obj and body_data:
-                        return self.cls_check.permit_cls.config_data__check_obj_and_body_data(
-                            obj=obj, body_data=body_data
+                    if obj is not None and body_data is not None:
+                        opportunity_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id__obj = getattr(
+                            obj, self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None,
                         )
-                    if obj:
-                        return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
-                    if body_data:
-                        return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
+                        state = self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id__obj,
+                            opportunity_id=opportunity_id__obj,
+                            project_id=project_id__obj,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                        if state is True:
+                            opportunity_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, opportunity_id__obj
+                            )
+                            project_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, project_id__obj
+                            )
+                            employee_inherit_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, employee_inherit_id__obj
+                            )
+                            state = self.check_permit_one_time(
+                                employee_inherit_id=employee_inherit_id__body,
+                                opportunity_id=opportunity_id__body,
+                                project_id=project_id__body,
+                                hidden_field=hidden_field,
+                                obj=obj, body_data=body_data,
+                            )
+                        return state
+                    elif obj is not None:
+                        opportunity_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = getattr(
+                            obj,
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL,
+                            None,
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                    elif body_data is not None:
+                        opportunity_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = body_data.get(
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            hidden_field=hidden_field,
+                            obj=obj, body_data=body_data,
+                        )
+                    return False
                 return False
             return True
         return False
@@ -551,6 +635,18 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def get_object__field_hidden(self):
         return self.cls_check.attr.setup_hidden(from_view='retrieve')
 
+    def get_lookup_url_kwarg(self) -> dict:
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
+            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.'
+        )
+
+        return {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+
     def get_object(self):
         """
         [OVERRODE from REST FRAMEWORK]
@@ -562,15 +658,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        assert lookup_url_kwarg in self.kwargs, (
-            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
-            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.'
-        )
-
         if not hasattr(queryset, "get"):
             klass__name = (
                 queryset.__name__ if isinstance(queryset, type) else queryset.__class__.__name__
@@ -581,7 +668,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             )
         try:
             field_hidden = self.get_object__field_hidden
-            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+            filter_kwargs = self.get_lookup_url_kwarg()
             if self.query_extend_base_model:
                 obj = queryset.get(
                     **filter_kwargs,
@@ -682,9 +769,47 @@ class BaseListMixin(BaseMixin):
     def get_object(self):
         raise TypeError("Not allow use get_object() for List Mixin.")
 
-    @property
-    def filter_kwargs_q(self) -> Q():
+    def get_query_params(self) -> dict:
+        return self.request.query_params.dict()
+
+    def has_get_list_from_app(self) -> (bool, Union[list[str], None]):
+        """
+        Return state from_app and data if exist
+        """
+        query_params = self.get_query_params()
+        if KEY_GET_LIST_FROM_APP in query_params:
+            from_app = query_params.get(KEY_GET_LIST_FROM_APP, None)
+            if from_app and isinstance(from_app, str) and SPLIT_CODE_FROM_APP in from_app and len(from_app) > 3:
+                arr_from_app = [ite.strip() for ite in from_app.split(SPLIT_CODE_FROM_APP)]
+                if len(arr_from_app) == 3:
+                    return True, arr_from_app
+            return True, None
+        return False, None
+
+    def filter_kwargs_q__from_config(self) -> Q:
+        """
+        Parse config mapped with view to Q() (use for filter in queryset)
+        """
         return self.cls_check.permit_cls.config_data__to_q
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        """
+        Parse config mapped from_app to Q() (use for filter in queryset - for DD another feature)
+        """
+        return Q(id__in=[])
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        return self.filter_kwargs_q__from_config()
 
     @property
     def filter_kwargs(self) -> dict[str, any]:
@@ -726,8 +851,16 @@ class BaseListMixin(BaseMixin):
 
         """
         is_minimal, _is_skip_auth = self.parse_header(request)
+
         filter_kwargs_q = self.filter_kwargs_q
+        if isinstance(filter_kwargs_q, Response):
+            return filter_kwargs_q
+
         filter_kwargs = self.filter_kwargs
+        if settings.DEBUG_PERMIT:
+            print('# MIXINS.LIST              :', request.path, )
+            print('#     - filter_kwargs_q    :', filter_kwargs_q)
+            print('#     - filter_kwargs      :', filter_kwargs)
         queryset = self.get_queryset_and_filter_queryset(
             is_minimal=is_minimal,
             filter_kwargs=filter_kwargs,
@@ -750,16 +883,31 @@ class BaseCreateMixin(BaseMixin):
     ]  # DataAbstract
     CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
 
+    def manual_check_obj_create(self, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
+    def get_serializer_detail_return(self, obj):
+        return self.get_serializer_detail(obj).data
+
     def create(self, request, *args, **kwargs):
         field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
         body_data = {**request.data, **field_hidden}
-        if self.check_perm_by_obj_or_body_data(body_data=body_data):
+
+        state_check = self.manual_check_obj_create(body_data=body_data)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(
+                body_data=body_data, hidden_field=self.create_hidden_field
+            )
+        if state_check is True:
             log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
             obj = self.perform_create(serializer, extras=field_hidden)
             self.write_log(doc_obj=obj, request_data=log_data)
-            return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
+            return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
 
     @staticmethod
@@ -782,9 +930,18 @@ class BaseRetrieveMixin(BaseMixin):
     def retrieve_empty(cls) -> Response:
         return ResponseController.success_200(data={}, key_data='result')
 
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self.check_perm_by_obj_or_body_data(obj=instance):
+        state_check = self.manual_check_obj_retrieve(instance=instance)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
+        if state_check is True:
             serializer = self.get_serializer_detail(instance)
             return ResponseController.success_200(data=serializer.data, key_data='result')
         return ResponseController.forbidden_403()
@@ -823,6 +980,12 @@ class BaseUpdateMixin(BaseMixin):
                 # check permission default | wait implement so it is True
         return request_data, False, None
 
+    def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
@@ -831,7 +994,15 @@ class BaseUpdateMixin(BaseMixin):
                 **request.data,
                 **field_hidden
             }
-            if self.check_perm_by_obj_or_body_data(obj=instance, body_data=body_data):
+
+            state_check = self.manual_check_obj_update(instance=instance, body_data=body_data)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    body_data=body_data,
+                    hidden_field=self.update_hidden_field,
+                )
+            if state_check is True:
                 body_data, partial, task_id = self.parsed_body(
                     instance=instance, request_data=request.data, user=request.user
                 )
@@ -868,11 +1039,23 @@ class BaseUpdateMixin(BaseMixin):
 
 
 class BaseDestroyMixin(BaseMixin):
+    def manual_check_obj_destroy(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            if self.check_perm_by_obj_or_body_data(obj=instance):
+            state_check = self.manual_check_obj_destroy(instance=instance)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    hidden_field=self.retrieve_hidden_field,
+                )
+            if state_check is True:
                 self.perform_destroy(instance, is_purge)
                 return ResponseController.no_content_204()
             return ResponseController.forbidden_403()

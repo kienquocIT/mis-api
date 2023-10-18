@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
 # CONFIG
@@ -230,26 +230,52 @@ class SaleOrder(DataAbstractModel):
         permissions = ()
 
     @classmethod
-    def generate_code(cls):
-        # auto create code (temporary)
-        sale_order = SaleOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "OR"
-        temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
-        return f"{char}{temper}"
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("OR")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'OR0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'OR{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def update_product_wait_delivery_amount(cls, instance):
+        for product_order in instance.sale_order_product_sale_order.all():
+            product_order.product.save(**{
+                'update_transaction_info': True,
+                'quantity_order': product_order.product_quantity,
+                'update_fields': ['wait_delivery_amount', 'available_amount']
+            })
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code()
+                self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                self.update_product_wait_delivery_amount(self)
 
         # hit DB
         super().save(*args, **kwargs)
