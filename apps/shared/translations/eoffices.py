@@ -12,3 +12,4 @@ class LeaveMsg:
     ERROR_DUPLICATE_YEAR = _('This year had available in your company')
     ERROR_EMP_REQUEST = _('Employee inherit is empty!')
     ERROR_EMP_DAYOFF = _('detail request day off is required')
+    ERROR_UPDATE_AVAILABLE_ERROR = _('can not update leave available.')

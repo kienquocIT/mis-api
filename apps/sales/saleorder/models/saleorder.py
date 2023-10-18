@@ -260,11 +260,18 @@ class SaleOrder(DataAbstractModel):
     @classmethod
     def update_product_wait_delivery_amount(cls, instance):
         for product_order in instance.sale_order_product_sale_order.all():
-            product_order.product.save(**{
-                'update_transaction_info': True,
-                'quantity_order': product_order.product_quantity,
-                'update_fields': ['wait_delivery_amount', 'available_amount']
-            })
+            if product_order.product:
+                uom_product_inventory = product_order.product.inventory_uom
+                uom_product_so = product_order.unit_of_measure
+                final_ratio = 1
+                if uom_product_inventory and uom_product_so:
+                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                product_order.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_order': product_order.product_quantity * final_ratio,
+                    'update_fields': ['wait_delivery_amount', 'available_amount']
+                })
+        return True
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:

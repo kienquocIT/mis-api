@@ -196,10 +196,10 @@ PURCHASE_STATUS = [
 
 # Purchase order
 RECEIPT_STATUS = (
-    (0, 'Wait'),
-    (1, 'Received'),
+    (0, 'None'),
+    (1, 'Wait'),
     (2, 'Partially received'),
-    (3, 'None'),
+    (3, 'Received'),
 )
 
 RETURN_ADVANCE_STATUS = [
