@@ -1048,8 +1048,12 @@ def update_is_all_ordered_pr():
         pr_product = pr.purchase_request.all()
         pr_product_done = pr.purchase_request.filter(remain_for_purchase_order=0)
         if pr_product.count() == pr_product_done.count():
+            pr.purchase_status = 2
             pr.is_all_ordered = True
-            pr.save(update_fields=['is_all_ordered'])
+            pr.save(update_fields=['purchase_status', 'is_all_ordered'])
+        else:
+            pr.purchase_status = 1
+            pr.save(update_fields=['purchase_status'])
     print('update_is_all_ordered_pr done.')
 # END PURCHASING
 
