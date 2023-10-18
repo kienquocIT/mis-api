@@ -1,17 +1,21 @@
 import logging
+from copy import deepcopy
+from datetime import date, timedelta
+from uuid import uuid4
 
 from django.db import transaction
 from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
 from django.dispatch import receiver
-from django.utils import translation
+from django.utils import translation, timezone
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.attachments.models import Files
+from apps.core.hr.models import Employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
-from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig
+from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
 from apps.sales.opportunity.models import OpportunityConfig, OpportunityConfigStage, StageCondition
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
@@ -691,7 +695,6 @@ class ConfigDefaultData:
                         'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
                         'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                         'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-
                     },
                     {
                         'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
@@ -726,12 +729,12 @@ class ConfigDefaultData:
                     {
                         'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 6
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                     {
                         'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
                     },
                 ]
             temp_leave_type = []
@@ -807,6 +810,56 @@ class ConfigDefaultData:
             },
         )
 
+    def leave_available_setup(self):
+        # lấy ds leave type có quản lý số dư
+        # lấy danh sách employee
+        # từ ds leave type tạo ds đã lấy tạo mỗi user 1 ds
+        list_avai = []
+        current_date = timezone.now()
+        next_year_date = date(current_date.date().year + 1, 1, 1)
+        last_day_year = next_year_date - timedelta(days=1)
+
+        leave_type = LeaveType.objects.filter(balance_control=True, company=self.company_obj)
+        for item in Employee.objects.filter(is_active=True, company=self.company_obj):
+            for l_type in leave_type:
+                if l_type.code == 'AN' or l_type.code != 'ANPY':
+                    list_avai.append(LeaveAvailable(
+                        leave_type=l_type,
+                        open_year=current_date.year,
+                        total=0,
+                        used=0,
+                        available=0,
+                        expiration_date=last_day_year,
+                        company=self.company_obj,
+                        tenant=self.company_obj.tenant,
+                        employee_inherit=item,
+                    ))
+                if l_type.code == 'ANPY':
+                    prev_current = date(current_date.date().year, 1, 1)
+                    last_prev_day = prev_current - timedelta(days=1)
+                    temp = LeaveAvailable(
+                        leave_type=l_type,
+                        open_year=current_date.year - 1,
+                        total=0,
+                        used=0,
+                        available=0,
+                        expiration_date=last_prev_day,
+                        company=self.company_obj,
+                        tenant=self.company_obj.tenant,
+                        employee_inherit=item
+                    )
+                    list_avai.append(temp)
+                    temp2 = deepcopy(temp)
+                    temp2.leave_available_id = uuid4()
+                    temp2.open_year = deepcopy(current_date.year) - 2
+                    prev_current_2 = date(deepcopy(current_date).date().year - 1, 1, 1)
+                    last_prev_day = prev_current_2 - timedelta(days=1)
+                    temp2.expiration_date = last_prev_day
+                    list_avai.append(temp2)
+
+        if len(list_avai):
+            LeaveAvailable.objects.bulk_create(list_avai)
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -823,6 +876,7 @@ class ConfigDefaultData:
         self.leave_config(config)
         self.purchase_request_config()
         self.working_calendar_config()
+        self.leave_available_setup()
         return True
 
 

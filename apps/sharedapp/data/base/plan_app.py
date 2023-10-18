@@ -196,6 +196,10 @@ _PlanApplication_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "baff033a-c416-47e1-89af-b6653534f06e",  # Leave
+    },
+    "7738935a-0442-4fd4-a7ff-d06a22aaeccf": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "7738935a-0442-4fd4-a7ff-d06a22aaeccf",  # Leave available
     }
 }
 

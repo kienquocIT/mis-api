@@ -26,7 +26,6 @@ from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
 from ..core.hr.models import Employee, Role
-from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
 from ..sales.inventory.models import InventoryAdjustmentItem
 from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
@@ -920,3 +919,9 @@ def update_backup_data_purchase_request():
         pr.purchase_request_product_datas = data
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
+
+
+def leave_available_create():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_setup()
+    print('create leave available list successfully')
