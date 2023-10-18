@@ -77,7 +77,6 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'contact',
             'delivered_date',
-            'system_status',
             'purchase_status',
             'note',
             'sale_order',
