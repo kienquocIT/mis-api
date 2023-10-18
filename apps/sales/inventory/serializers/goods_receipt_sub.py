@@ -281,3 +281,9 @@ class GoodsReceiptCommonValidate:
             )
         except WareHouse.DoesNotExist:
             raise serializers.ValidationError({'warehouse': ProductMsg.TAX_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_quantity_import(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'quantity_import': InventoryMsg.GOODS_RECEIPT_QUANTITY})
+        return value

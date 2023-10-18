@@ -294,3 +294,9 @@ class PurchasingCommonValidate:
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': ProductMsg.TAX_DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_product_quantity_order_actual(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'quantity_order': PurchasingMsg.PURCHASE_ORDER_QUANTITY})
+        return value

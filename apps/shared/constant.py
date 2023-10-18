@@ -78,6 +78,7 @@ MAP_FIELD_TITLE = {
     'delivery.orderdeliverysub': 'title',
     'purchasing.purchaseorder': 'title',
     'inventory.goodsreceipt': 'title',
+    'purchasing.purchaserequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

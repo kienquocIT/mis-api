@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -51,7 +53,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.request_for))
+        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_purchase_status(cls, obj):
@@ -83,6 +85,10 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             'pretax_amount',
             'taxes',
             'total_price',
+            # system
+            'system_status',
+            'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod
@@ -259,6 +265,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
         return True
 
 
+# BEGIN PURCHASE REQUEST
 class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
@@ -281,6 +288,8 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             'pretax_amount',
             'taxes',
             'total_price',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -336,6 +345,7 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
         return value
 
+    @decorator_run_workflow
     def create(self, validated_data):
         purchase_request = PurchaseRequest.objects.create(**validated_data)
         if len(validated_data['purchase_request_product_datas']) > 0:

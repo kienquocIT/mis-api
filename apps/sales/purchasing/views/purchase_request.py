@@ -15,6 +15,7 @@ class PurchaseRequestList(
     queryset = PurchaseRequest.objects
     filterset_fields = {
         'is_all_ordered': ['exact'],
+        'system_status': ['exact'],
     }
     search_fields = [
         'title',

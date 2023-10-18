@@ -115,6 +115,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
     uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
     product_unit_price = serializers.FloatField()
+    product_quantity_order_actual = serializers.FloatField()
 
     class Meta:
         model = PurchaseOrderProduct
@@ -153,6 +154,10 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return PurchasingCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_product_quantity_order_actual(cls, value):
+        return PurchasingCommonValidate().validate_product_quantity_order_actual(value=value)
 
 
 class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
