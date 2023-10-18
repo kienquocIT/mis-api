@@ -51,12 +51,15 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
                 if leave:
                     list_date_res = []
                     for item in date_list:
+                        leave_type_id = item["leave_type"]
+                        if isinstance(item['leave_type'], dict):
+                            leave_type_id = item["leave_type"]['id']
                         list_date_res.append(
                             LeaveRequestDateListRegister(
                                 company_id=company_id,
                                 tenant_id=tenant_id,
                                 order=item["order"],
-                                leave_type_id=item["leave_type"]["id"],
+                                leave_type_id=leave_type_id,
                                 date_from=item["date_from"],
                                 morning_shift_f=item["morning_shift_f"],
                                 date_to=item["date_to"],

@@ -28,7 +28,7 @@ LEAVE_APP_CONFIG = {
                     "view": "4"
                 },
                 "7738935a-0442-4fd4-a7ff-d06a22aaeccf": {
-                    "view": "1",
+                    "view": "4",
                 },
             },
             "local_depends_on": {
@@ -42,7 +42,7 @@ LEAVE_APP_CONFIG = {
                     "view": "4"
                 },
                 "7738935a-0442-4fd4-a7ff-d06a22aaeccf": {
-                    "view": "1",
+                    "view": "4",
                 },
             },
             "local_depends_on": {
@@ -70,12 +70,12 @@ LEAVE_APP_AVAILABLE = {
     ],
     "permit_mapping": {
         "view": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "edit": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
                     "view": "4"

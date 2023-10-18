@@ -852,7 +852,7 @@ class ConfigDefaultData:
                     )
                     list_avai.append(temp)
                     temp2 = deepcopy(temp)
-                    temp2.leave_available_id = uuid4()
+                    temp2.id = uuid4()
                     temp2.open_year = deepcopy(current_date.year) - 2
                     prev_current_2 = date(deepcopy(current_date).date().year - 1, 1, 1)
                     last_prev_day = prev_current_2 - timedelta(days=1)
