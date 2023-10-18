@@ -72,6 +72,10 @@ class PurchaseOrder(DataAbstractModel):
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
     )
+    is_all_receipted = models.BooleanField(
+        default=False,
+        help_text="True if all products are receipted by Goods Receipt"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order'
@@ -284,6 +288,15 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     order = models.IntegerField(
         default=1
     )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order Product'
@@ -335,6 +348,15 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
     is_stock = models.BooleanField(
         default=False,
         help_text="True if quantity order > quantity request => create quantity stock"
+    )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
 
     class Meta:

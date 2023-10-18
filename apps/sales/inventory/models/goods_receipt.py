@@ -85,6 +85,35 @@ class GoodsReceipt(DataAbstractModel):
         return code
 
     @classmethod
+    def update_gr_info_for_po(cls, instance):
+        for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
+            gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+            gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+            gr_po_product.purchase_order_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+        for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
+            gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+            gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+            gr_pr_product.purchase_order_request_product.save(update_fields=[
+                'gr_completed_quantity',
+                'gr_remain_quantity'
+            ])
+        return True
+
+    @classmethod
+    def update_is_all_receipted_po(cls, instance):
+        if instance.purchase_order:
+            po_product = instance.purchase_order.purchase_order_product_order.all()
+            po_product_done = instance.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
+            if po_product.count() == po_product_done.count():
+                instance.purchase_order.receipt_status = 3
+                instance.purchase_order.is_all_receipted = True
+                instance.purchase_order.save(update_fields=['receipt_status', 'is_all_receipted'])
+            else:
+                instance.purchase_order.receipt_status = 2
+                instance.purchase_order.save(update_fields=['receipt_status'])
+        return True
+
+    @classmethod
     def push_by_po(cls, instance):
         for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
             uom_product_inventory = \
@@ -183,7 +212,8 @@ class GoodsReceipt(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 self.push_to_product_warehouse(self)
                 self.update_product_wait_receipt_amount(self)
-                # update receipt status to PurchaseOrder
+                self.update_gr_info_for_po(self)
+                self.update_is_all_receipted_po(self)
 
         # hit DB
         super().save(*args, **kwargs)

@@ -32,7 +32,8 @@ from ..sales.opportunity.models import (
     Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
     OpportunitySaleTeamMember, OpportunityDocument,
 )
-from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
+    PurchaseOrderRequestProduct
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 
@@ -1055,6 +1056,50 @@ def update_is_all_ordered_pr():
             pr.purchase_status = 1
             pr.save(update_fields=['purchase_status'])
     print('update_is_all_ordered_pr done.')
+
+
+def update_gr_info_for_po():
+    # Restart gr_remain_quantity
+    for po_product in PurchaseOrderProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
+        for gr_po_product in po_product.goods_receipt_product_po_product.filter(
+                goods_receipt__system_status__in=[2, 3]
+        ):
+            gr_po_product.purchase_order_product.gr_remain_quantity =\
+                gr_po_product.purchase_order_product.product_quantity_order_actual
+            gr_po_product.purchase_order_product.save(update_fields=['gr_remain_quantity'])
+    for po_pr_product in PurchaseOrderRequestProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
+        for gr_pr_product in po_pr_product.gr_request_product_po_request_product.filter(
+                goods_receipt__system_status__in=[2, 3]
+        ):
+            gr_pr_product.purchase_order_request_product.gr_remain_quantity =\
+                gr_pr_product.purchase_order_request_product.quantity_order
+            gr_pr_product.purchase_order_request_product.save(update_fields=['gr_remain_quantity'])
+    # update_gr_info_for_po
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr_po_product in gr.goods_receipt_product_goods_receipt.all():
+            gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+            gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+            gr_po_product.purchase_order_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+        for gr_pr_product in gr.goods_receipt_request_product_goods_receipt.all():
+            gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+            gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+            gr_pr_product.purchase_order_request_product.save(update_fields=[
+                'gr_completed_quantity',
+                'gr_remain_quantity'
+            ])
+    #
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        if gr.purchase_order:
+            po_product = gr.purchase_order.purchase_order_product_order.all()
+            po_product_done = gr.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
+            if po_product.count() == po_product_done.count():
+                gr.purchase_order.receipt_status = 3
+                gr.purchase_order.is_all_receipted = True
+                gr.purchase_order.save(update_fields=['receipt_status', 'is_all_receipted'])
+            else:
+                gr.purchase_order.receipt_status = 2
+                gr.purchase_order.save(update_fields=['receipt_status'])
+    print('update_gr_info_for_po done.')
 # END PURCHASING
 
 
