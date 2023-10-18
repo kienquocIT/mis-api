@@ -137,9 +137,18 @@ class PurchaseOrder(DataAbstractModel):
     @classmethod
     def update_product_wait_receipt_amount(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
+            uom_product_inventory = product_purchase.product.inventory_uom
+            uom_product_po = product_purchase.uom_order_actual
+            if product_purchase.uom_order_request:
+                uom_product_po = product_purchase.uom_order_request
+            final_ratio = 1
+            if uom_product_inventory and uom_product_po:
+                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
+            product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
+            stock_final = product_purchase.stock * final_ratio
             product_purchase.product.save(**{
                 'update_transaction_info': True,
-                'quantity_purchase': product_purchase.product_quantity_order_request + product_purchase.stock,
+                'quantity_purchase': product_quantity_order_request_final + stock_final,
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
         return True

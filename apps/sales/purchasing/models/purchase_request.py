@@ -88,6 +88,14 @@ class PurchaseRequest(DataAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def update_remain_for_purchase_request_so(cls, instance):
+        for pr_product in instance.purchase_request.all():
+            if pr_product.sale_order_product:
+                pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity
+                pr_product.sale_order_product.save(update_fields=['remain_for_purchase_request'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -97,6 +105,7 @@ class PurchaseRequest(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                self.update_remain_for_purchase_request_so(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -108,47 +117,37 @@ class PurchaseRequestProduct(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name="purchase_request",
     )
-
     sale_order_product = models.ForeignKey(
         'saleorder.SaleOrderProduct',
         on_delete=models.CASCADE,
         related_name="purchase_request_so_product",
         null=True,
     )
-
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name="purchase_request_product",
     )
-
     description = models.CharField(
         max_length=500,
     )
-
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         related_name="purchase_request_uom",
     )
-
     quantity = models.FloatField()
-
     unit_price = models.FloatField()
-
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
         related_name="purchase_request_tax",
     )
-
     sub_total_price = models.FloatField()
-
     remain_for_purchase_order = models.FloatField(
         default=0,
         help_text="this is quantity of product which is not purchased order yet, update when PO finish"
     )
-
     date_modified = models.DateTimeField(
         default=timezone.now,
     )

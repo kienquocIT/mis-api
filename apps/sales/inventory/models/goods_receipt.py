@@ -115,9 +115,20 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def push_by_po(cls, instance):
-        for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=instance):
-            uom_product_inventory = \
-                gr_warehouse.goods_receipt_product.product.inventory_uom
+        for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
+            uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
+            uom_product_gr = gr_warehouse.goods_receipt_product.uom
+            if gr_warehouse.goods_receipt_request_product:
+                if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
+                    po_product = \
+                        gr_warehouse.goods_receipt_request_product.purchase_order_request_product.purchase_order_product
+                    if po_product:
+                        uom_product_gr = po_product.uom_order_actual
+                        if po_product.uom_order_request:
+                            uom_product_gr = po_product.uom_order_request
+            final_ratio = 1
+            if uom_product_inventory and uom_product_gr:
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
             lot_data = []
             serial_data = []
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
@@ -143,7 +154,7 @@ class GoodsReceipt(DataAbstractModel):
                 warehouse_id=gr_warehouse.warehouse_id,
                 uom_id=uom_product_inventory.id,
                 tax_id=gr_warehouse.goods_receipt_product.tax_id,
-                amount=gr_warehouse.quantity_import,
+                amount=gr_warehouse.quantity_import * final_ratio,
                 unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
                 lot_data=lot_data,
                 serial_data=serial_data,
@@ -155,7 +166,9 @@ class GoodsReceipt(DataAbstractModel):
         for product_receipt in instance.goods_receipt_product_goods_receipt.all():
             uom_product_inventory = product_receipt.product.inventory_uom
             uom_product_gr = product_receipt.uom
-            final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+            final_ratio = 1
+            if uom_product_inventory and uom_product_gr:
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
             ProductWareHouse.push_from_receipt(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
@@ -183,7 +196,9 @@ class GoodsReceipt(DataAbstractModel):
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 uom_product_inventory = product_receipt.product.inventory_uom
                 uom_product_gr = product_receipt.uom
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                final_ratio = 1
+                if uom_product_inventory and uom_product_gr:
+                    final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
                     'quantity_receipt_po': product_receipt.quantity_import * final_ratio,
@@ -193,7 +208,9 @@ class GoodsReceipt(DataAbstractModel):
             for product_receipt in instance.goods_receipt_product_goods_receipt.all():
                 uom_product_inventory = product_receipt.product.inventory_uom
                 uom_product_gr = product_receipt.uom
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+                final_ratio = 1
+                if uom_product_inventory and uom_product_gr:
+                    final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
                 product_receipt.product.save(**{
                     'update_transaction_info': True,
                     'quantity_receipt_ia': product_receipt.quantity_import * final_ratio,
