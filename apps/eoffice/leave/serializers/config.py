@@ -59,6 +59,8 @@ class LeaveTypeConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
+    no_of_paid = serializers.IntegerField(required=False)
+
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',

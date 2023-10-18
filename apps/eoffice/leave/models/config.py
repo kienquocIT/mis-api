@@ -73,7 +73,8 @@ class LeaveType(MasterDataAbstractModel):
     no_of_paid = models.IntegerField(
         verbose_name="number of type",
         help_text="number of leave type",
-        default=0
+        default=0,
+        null=True
     )
     prev_year = models.IntegerField(
         verbose_name="Previous year",
