@@ -82,6 +82,7 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
                 'id': obj.purchase_request_product.uom_id,
                 'title': obj.purchase_request_product.uom.title,
                 'code': obj.purchase_request_product.uom.code,
+                'ratio': obj.purchase_request_product.uom.ratio,
             } if obj.purchase_request_product.uom else {},
         } if obj.purchase_request_product else {}
 
@@ -91,6 +92,7 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
             'id': obj.uom_stock_id,
             'title': obj.uom_stock.title,
             'code': obj.uom_stock.code,
+            'ratio': obj.uom_stock.ratio,
         } if obj.uom_stock else {}
 
 
