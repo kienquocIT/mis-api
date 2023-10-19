@@ -86,7 +86,6 @@ class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
-    prev_year = serializers.SerializerMethodField(allow_null=True)
 
     class Meta:
         model = LeaveType
@@ -112,9 +111,12 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
-    def update(self, instance, validated_data):
-        if not instance.is_lt_edit:
+    def validate(self, attrs):
+        if not self.instance.is_lt_edit:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_UPDATE_LEAVE_TYPE})
+        return attrs
+
+    def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
