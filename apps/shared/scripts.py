@@ -1006,7 +1006,9 @@ def update_product_wait_receipt_amount(product_id):
             final_ratio = 1
             if uom_product_inventory and uom_product_po:
                 final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
-            product_quantity_order_request_final = product_purchased.product_quantity_order_request * final_ratio
+            product_quantity_order_request_final = product_purchased.product_quantity_order_actual * final_ratio
+            if product_purchased.purchase_order.purchase_requests.exists():
+                product_quantity_order_request_final = product_purchased.product_quantity_order_request * final_ratio
             stock_final = product_purchased.stock * final_ratio
             product_purchased_quantity += product_quantity_order_request_final + stock_final
         for product_receipted in product.goods_receipt_product_product.filter(

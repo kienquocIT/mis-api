@@ -115,7 +115,7 @@ class PurchaseOrder(DataAbstractModel):
     @classmethod
     def update_remain_and_status_purchase_request(cls, instance):
         # update quantity remain on purchase request product
-        for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance, is_stock=False):
+        for po_request in instance.purchase_order_request_product_order.filter(is_stock=False):
             po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
             po_request.purchase_request_product.save(update_fields=['remain_for_purchase_order'])
         return True
@@ -144,7 +144,9 @@ class PurchaseOrder(DataAbstractModel):
             final_ratio = 1
             if uom_product_inventory and uom_product_po:
                 final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
-            product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
+            product_quantity_order_request_final = product_purchase.product_quantity_order_actual* final_ratio
+            if instance.purchase_requests.exists():
+                product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
             stock_final = product_purchase.stock * final_ratio
             product_purchase.product.save(**{
                 'update_transaction_info': True,
