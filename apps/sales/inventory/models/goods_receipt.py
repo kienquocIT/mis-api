@@ -118,14 +118,14 @@ class GoodsReceipt(DataAbstractModel):
         for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
             uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
             uom_product_gr = gr_warehouse.goods_receipt_product.uom
-            if gr_warehouse.goods_receipt_request_product:
+            if gr_warehouse.goods_receipt_request_product:  # Case has PR
                 if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
-                    po_product = \
-                        gr_warehouse.goods_receipt_request_product.purchase_order_request_product.purchase_order_product
-                    if po_product:
-                        uom_product_gr = po_product.uom_order_actual
-                        if po_product.uom_order_request:
-                            uom_product_gr = po_product.uom_order_request
+                    pr_product = gr_warehouse.goods_receipt_request_product.purchase_order_request_product
+                    if pr_product.is_stock is False:  # Case PR is Product
+                        if pr_product.purchase_request_product:
+                            uom_product_gr = pr_product.purchase_request_product.uom
+                    else:  # Case PR is Stock
+                        uom_product_gr = pr_product.uom_stock
             final_ratio = 1
             if uom_product_inventory and uom_product_gr:
                 final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
