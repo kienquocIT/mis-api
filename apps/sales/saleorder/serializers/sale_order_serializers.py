@@ -635,6 +635,7 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
             'product__purchase_default_uom',
             'product__purchase_tax',
             'product__general_uom_group',
+            'unit_of_measure',
         ).filter(
             sale_order=obj,
             product__isnull=False
@@ -653,14 +654,20 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'uom': {
                         'id': item.product.purchase_default_uom_id,
                         'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
-                    },
-                    'uom_group': item.product.general_uom_group.title,
+                    } if item.product.purchase_default_uom else {},
+                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else '',
                     'tax_code': {
                         'id': item.product.purchase_tax_id,
                         'title': item.product.purchase_tax.title if item.product.purchase_tax else '',
                         'rate': item.product.purchase_tax.rate if item.product.purchase_tax else ''
                     },
-                }
+                } if item.product else {},
+                'uom': {
+                    'id': item.unit_of_measure_id,
+                    'title': item.unit_of_measure.title,
+                    'code': item.unit_of_measure.code,
+                    'ratio': item.unit_of_measure.ratio
+                } if item.unit_of_measure else {},
             }
             for item in so_product
         ]
