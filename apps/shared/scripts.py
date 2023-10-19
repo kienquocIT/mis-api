@@ -1070,7 +1070,7 @@ def update_product_warehouse_receipt_amount():
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
                 lot_data.append({
                     'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import,
+                    'quantity_import': lot.quantity_import * final_ratio,
                     'expire_date': lot.expire_date,
                     'manufacture_date': lot.manufacture_date,
                 })

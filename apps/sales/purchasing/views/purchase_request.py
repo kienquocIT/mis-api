@@ -32,7 +32,7 @@ class PurchaseRequestList(
         return super().get_queryset().select_related(
             'supplier',
             'sale_order',
-        )
+        ).order_by('purchase_status')
 
     @swagger_auto_schema(
         operation_summary="Purchase Request List",

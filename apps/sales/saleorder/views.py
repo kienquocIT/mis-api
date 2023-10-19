@@ -16,6 +16,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 
 class SaleOrderList(BaseListMixin, BaseCreateMixin):
     queryset = SaleOrder.objects
+    search_fields = ['title', 'code']
     filterset_fields = ['delivery_call', 'system_status']
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer

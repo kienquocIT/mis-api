@@ -13,6 +13,7 @@ class GoodsReceiptList(
     BaseCreateMixin
 ):
     queryset = GoodsReceipt.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'purchase_order_id': ['exact'],
     }

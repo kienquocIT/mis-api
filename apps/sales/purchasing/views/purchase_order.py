@@ -14,6 +14,7 @@ class PurchaseOrderList(
     BaseCreateMixin
 ):
     queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
@@ -27,7 +28,7 @@ class PurchaseOrderList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "supplier",
-        )
+        ).order_by('receipt_status')
 
     @swagger_auto_schema(
         operation_summary="Purchase order List",
