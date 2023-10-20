@@ -83,9 +83,14 @@ class LeaveTestCase(AdvanceTestCase):
 
     def test_create_leave_type_01(self):
         lv_type = {
-            'code': 'CODE.TEST.SC', 'title': 'Sick yours child-social insurance', 'paid_by': 2,
-            'balance_control': False, 'is_check_expiration': False,
-            'leave_config': str(self.config.id), 'company_id': str(self.config.company_id)
+            'code': 'CODE.TEST.SC',
+            'title': 'Sick yours child-social insurance',
+            'paid_by': 2,
+            'balance_control': False,
+            'is_check_expiration': False,
+            'leave_config': str(self.config.id),
+            'company_id': str(self.config.company_id),
+            'prev_year': 0
         }
         response_lv_type = self.client.post(reverse('LeaveTypeConfigCreate'), lv_type, format='json')
         self.assertEqual(response_lv_type.status_code, 201)
