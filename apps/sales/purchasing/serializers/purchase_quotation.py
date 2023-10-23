@@ -206,6 +206,7 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
 
 class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
     purchase_quotation = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseQuotationProduct
@@ -213,7 +214,8 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
             'id',
             'purchase_quotation',
             'product_id',
-            'unit_price'
+            'uom',
+            'unit_price',
         )
 
     @classmethod
@@ -223,3 +225,17 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
             'title': obj.purchase_quotation.title,
             'code': obj.purchase_quotation.code,
         } if obj.purchase_quotation else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio,
+            'uom_group': {
+                'id': obj.uom.group_id,
+                'title': obj.uom.group.title,
+                'code': obj.uom.group.code,
+            } if obj.uom.group else {}
+        } if obj.uom else {}
