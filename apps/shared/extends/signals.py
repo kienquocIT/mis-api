@@ -773,47 +773,48 @@ class ConfigDefaultData:
             defaults={
                 'working_days':
                     {
-                        'mon': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'tue': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'wed': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'thu': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'fri': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'sat': {
+                        0: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
-                        'sun': {
+                        1: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        2: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        3: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        4: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        5: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        6: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        }
+                        },
+
                     }
             },
         )
 
     def leave_available_setup(self):
-        # lấy ds leave type có quản lý số dư
+        # lấy ds leave type
         # lấy danh sách employee
         # từ ds leave type tạo ds đã lấy tạo mỗi user 1 ds
         list_avai = []
@@ -821,7 +822,7 @@ class ConfigDefaultData:
         next_year_date = date(current_date.date().year + 1, 1, 1)
         last_day_year = next_year_date - timedelta(days=1)
 
-        leave_type = LeaveType.objects.filter(balance_control=True, company=self.company_obj)
+        leave_type = LeaveType.objects.filter(company=self.company_obj)
         for item in Employee.objects.filter(is_active=True, company=self.company_obj):
             for l_type in leave_type:
                 if l_type.code == 'AN' or l_type.code != 'ANPY':
@@ -835,6 +836,7 @@ class ConfigDefaultData:
                         company=self.company_obj,
                         tenant=self.company_obj.tenant,
                         employee_inherit=item,
+                        check_balance=l_type.balance_control
                     ))
                 if l_type.code == 'ANPY':
                     prev_current = date(current_date.date().year, 1, 1)
@@ -848,7 +850,8 @@ class ConfigDefaultData:
                         expiration_date=last_prev_day,
                         company=self.company_obj,
                         tenant=self.company_obj.tenant,
-                        employee_inherit=item
+                        employee_inherit=item,
+                        check_balance=l_type.balance_control
                     )
                     list_avai.append(temp)
                     temp2 = deepcopy(temp)

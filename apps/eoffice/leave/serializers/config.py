@@ -185,3 +185,11 @@ class WorkingHolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkingHolidayConfig
         fields = ('id', 'holiday_date_to', 'remark', 'year')
+
+    def validate(self, validate_data):
+        if not self.instance and WorkingHolidayConfig.objects.filter(
+                year=validate_data['year'],
+                holiday_date_to=validate_data['holiday_date_to']
+        ).exists():
+            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_DUPLICATE_HOLIDAY})
+        return validate_data
