@@ -1,10 +1,11 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import (
     BaseListMixin, BaseRetrieveMixin,
     mask_view, BaseUpdateMixin, BaseDestroyMixin,
 )
-from apps.sales.delivery.models import OrderPickingSub
+from apps.sales.delivery.models import OrderPickingSub, OrderPickingProduct
 from apps.sales.delivery.serializers import (
     OrderPickingSubListSerializer,
     OrderPickingSubDetailSerializer, OrderPickingSubUpdateSerializer,
@@ -53,7 +54,14 @@ class OrderPickingSubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related('orderpickingproduct_set')
+        return super().get_queryset().select_related('employee_inherit').prefetch_related(
+            Prefetch(
+                'picking_product_picking_sub',
+                queryset=OrderPickingProduct.objects.select_related(
+                    'uom'
+                )
+            ),
+        )
 
     @swagger_auto_schema(
         operation_summary='Order Picking Sub Detail',

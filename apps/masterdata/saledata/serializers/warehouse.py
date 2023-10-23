@@ -243,11 +243,48 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
 
 
 class ProductWareHouseListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
     agency = serializers.SerializerMethodField()
 
     class Meta:
         model = ProductWareHouse
-        fields = '__all__'
+        fields = (
+            'id',
+            'product',
+            'warehouse',
+            'uom',
+            'stock_amount',
+            'receipt_amount',
+            'sold_amount',
+            'agency',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+        } if obj.product else {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
 
     @classmethod
     def get_agency(cls, obj):

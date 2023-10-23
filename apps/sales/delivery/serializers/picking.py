@@ -7,6 +7,7 @@ from apps.sales.delivery.models import (
     OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
 from apps.shared.translations.sales import DeliverMsg
+from ..models.delivery import OrderDeliveryProductWarehouse
 from ..utils import CommonFunc
 
 __all__ = [
@@ -19,6 +20,8 @@ __all__ = [
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
+    uom_data = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderPickingProduct
         fields = (
@@ -32,6 +35,15 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
             'remaining_quantity',
             'picked_quantity',
         )
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
 
 
 class OrderPickingSubListSerializer(serializers.ModelSerializer):
@@ -80,7 +92,7 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_products(cls, obj):
         return OrderPickingProductListSerializer(
-            obj.orderpickingproduct_set.all(),
+            obj.picking_product_picking_sub.all(),
             many=True,
         ).data
 
@@ -197,6 +209,32 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 delivery_prod.delivery_data.append(delivery_data)
                 obj_update.append(delivery_prod)
 
+                # create delivery product warehouse
+                product_warehouse = ProductWareHouse.objects.filter(
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
+                    product_id=key_prod,
+                    warehouse_id=delivery_data['warehouse']
+                ).first()
+                if delivery and delivery_prod and product_warehouse:
+                    delivery_product_warehouse = OrderDeliveryProductWarehouse.objects.filter(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        delivery=delivery,
+                        delivery_product=delivery_prod,
+                        product_warehouse=product_warehouse,
+                    ).first()
+                    if delivery_product_warehouse:
+                        delivery_product_warehouse.total_picking += total
+                    else:
+                        OrderDeliveryProductWarehouse.objects.create(
+                            tenant_id=instance.tenant_id,
+                            company_id=instance.company_id,
+                            delivery=delivery,
+                            delivery_product=delivery_prod,
+                            product_warehouse=product_warehouse,
+                            total_picking=total
+                        )
         cls.plus_product_warehouse_picked(instance, product_update)
         OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
         # update ready stock cho delivery sub
@@ -232,7 +270,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 }
                 this_prod.save(update_fields=['picked_quantity'])
 
-        cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
+        # cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(

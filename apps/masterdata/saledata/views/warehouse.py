@@ -107,11 +107,16 @@ class ProductWareHouseList(BaseListMixin):
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
+        "product_id": ["exact"],
         "warehouse_id": ["exact"],
     }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product', 'warehouse')
+        return super().get_queryset().select_related(
+            'product',
+            'warehouse',
+            'uom',
+        )
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
     @mask_view(
