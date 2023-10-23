@@ -171,7 +171,6 @@ class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=tenant_id, company_id=company_id,
                 warehouse_id=obj.id, product_id=product_id,
-                uom_id=uom_id
             ).first()
             if product_warehouse:
                 return product_warehouse.stock_amount
