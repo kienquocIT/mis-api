@@ -91,7 +91,9 @@ class PurchaseQuotationProductList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'purchase_quotation'
+            'purchase_quotation',
+            'uom',
+            'uom__group'
         ).order_by('-purchase_quotation__date_created')
 
     @swagger_auto_schema(
