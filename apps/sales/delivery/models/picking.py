@@ -305,6 +305,7 @@ class OrderPickingProduct(SimpleAbstractModel):
         'OrderPickingSub',
         on_delete=models.CASCADE,
         verbose_name='Order Picking Sub of Product',
+        related_name='picking_product_picking_sub',
     )
     product = models.ForeignKey(
         'saledata.Product',

@@ -19,6 +19,8 @@ __all__ = [
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
+    uom_data = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderPickingProduct
         fields = (
@@ -32,6 +34,15 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
             'remaining_quantity',
             'picked_quantity',
         )
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
 
 
 class OrderPickingSubListSerializer(serializers.ModelSerializer):
@@ -80,7 +91,7 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_products(cls, obj):
         return OrderPickingProductListSerializer(
-            obj.orderpickingproduct_set.all(),
+            obj.picking_product_picking_sub.all(),
             many=True,
         ).data
 
@@ -158,11 +169,15 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 warehouse_id=delivery_data['warehouse']
             )
             if product_warehouse.exists():
+                final_ratio = 1
                 prod_warehouse = product_warehouse.first()
+                if picked_uom.ratio and prod_warehouse.uom.ratio:
+                    final_ratio = picked_uom.ratio / prod_warehouse.uom.ratio
                 in_stock = prod_warehouse.stock_amount
                 in_stock = (in_stock - prod_warehouse.picked_ready)*prod_warehouse.uom.ratio
                 if in_stock > 0 and in_stock >= picked_unit:
-                    prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
+                    # prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
+                    prod_warehouse.picked_ready += prod_id_temp[key_prod] * final_ratio
                     prod_update.append(prod_warehouse)
                 else:
                     raise serializers.ValidationError(

@@ -1133,10 +1133,12 @@ def restart_po_gr_remain_quantity():
     # Restart gr_remain_quantity
     for po_product in PurchaseOrderProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
         po_product.gr_remain_quantity = po_product.product_quantity_order_actual
-        po_product.save(update_fields=['gr_remain_quantity'])
+        po_product.gr_completed_quantity = 0
+        po_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
     for po_pr_product in PurchaseOrderRequestProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
         po_pr_product.gr_remain_quantity = po_pr_product.quantity_order
-        po_pr_product.save(update_fields=['gr_remain_quantity'])
+        po_pr_product.gr_completed_quantity = 0
+        po_pr_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
     print('restart_po_gr_remain_quantity done.')
 
 
@@ -1146,7 +1148,15 @@ def update_gr_info_for_po():
         for gr_po_product in gr.goods_receipt_product_goods_receipt.all():
             if gr_po_product.purchase_order_product:
                 gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_completed_quantity = round(
+                    gr_po_product.purchase_order_product.gr_completed_quantity,
+                    2
+                )
                 gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_remain_quantity = round(
+                    gr_po_product.purchase_order_product.gr_remain_quantity,
+                    2
+                )
                 gr_po_product.purchase_order_product.save(update_fields=[
                     'gr_completed_quantity',
                     'gr_remain_quantity'
@@ -1154,7 +1164,15 @@ def update_gr_info_for_po():
         for gr_pr_product in gr.goods_receipt_request_product_goods_receipt.all():
             if gr_pr_product.purchase_order_request_product:
                 gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_completed_quantity,
+                    2
+                )
                 gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_remain_quantity,
+                    2
+                )
                 gr_pr_product.purchase_order_request_product.save(update_fields=[
                     'gr_completed_quantity',
                     'gr_remain_quantity'

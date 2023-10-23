@@ -28,7 +28,7 @@ class PurchaseOrderList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "supplier",
-        ).order_by('receipt_status')
+        )
 
     @swagger_auto_schema(
         operation_summary="Purchase order List",

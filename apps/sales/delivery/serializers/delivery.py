@@ -153,7 +153,7 @@ class OrderDeliverySubDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_products(cls, obj):
         prod = OrderDeliveryProductListSerializer(
-            obj.orderdeliveryproduct_set.all(),
+            obj.delivery_product_delivery_sub.all(),
             many=True,
         ).data
         return prod
