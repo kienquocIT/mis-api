@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    MasterDataAbstractModel,
+    # MasterDataAbstractModel,
 )
 
 __all__ = [
@@ -438,95 +438,95 @@ class OrderDeliveryProduct(SimpleAbstractModel):
         permissions = ()
 
 
-class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
-    delivery = models.ForeignKey(
-        OrderDelivery,
-        on_delete=models.CASCADE,
-        verbose_name="delivery",
-        related_name="delivery_product_warehouse_delivery",
-        null=True,
-    )
-    delivery_product = models.ForeignKey(
-        OrderDeliveryProduct,
-        on_delete=models.CASCADE,
-        verbose_name="delivery product",
-        related_name="delivery_product_warehouse_delivery_product",
-        null=True,
-    )
-    product_warehouse = models.ForeignKey(
-        'saledata.ProductWareHouse',
-        on_delete=models.CASCADE,
-        verbose_name="product",
-        related_name="delivery_product_warehouse_product_warehouse",
-        null=True
-    )
-    quantity_delivery = models.FloatField(default=0)
-    total_picking = models.FloatField(default=0)
-
-    class Meta:
-        verbose_name = 'Order Delivery Product Warehouse'
-        verbose_name_plural = 'Order Delivery Products Warehouse'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class OrderDeliveryLot(MasterDataAbstractModel):
-    delivery = models.ForeignKey(
-        OrderDelivery,
-        on_delete=models.CASCADE,
-        verbose_name="delivery",
-        related_name="delivery_lot_delivery",
-    )
-    delivery_product_warehouse = models.ForeignKey(
-        OrderDelivery,
-        on_delete=models.CASCADE,
-        verbose_name="product warehouse",
-        related_name="delivery_lot_product_warehouse",
-    )
-    product_warehouse_lot = models.ForeignKey(
-        'saledata.ProductWareHouseLot',
-        on_delete=models.CASCADE,
-        verbose_name="product warehouse lot",
-        related_name="delivery_lot_product_warehouse_lot",
-    )
-    quantity_delivery = models.FloatField(default=0)
-
-    class Meta:
-        verbose_name = 'Order Delivery Lot'
-        verbose_name_plural = 'Order Delivery Lots'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class OrderDeliverySerial(MasterDataAbstractModel):
-    delivery = models.ForeignKey(
-        OrderDelivery,
-        on_delete=models.CASCADE,
-        verbose_name="delivery",
-        related_name="delivery_serial_delivery",
-    )
-    delivery_product_warehouse = models.ForeignKey(
-        OrderDelivery,
-        on_delete=models.CASCADE,
-        verbose_name="product warehouse",
-        related_name="delivery_serial_product_warehouse",
-    )
-    product_warehouse_serial = models.ForeignKey(
-        'saledata.ProductWareHouseSerial',
-        on_delete=models.CASCADE,
-        verbose_name="product warehouse serial",
-        related_name="delivery_serial_product_warehouse_serial",
-    )
-
-    class Meta:
-        verbose_name = 'Order Delivery Serial'
-        verbose_name_plural = 'Order Delivery Serials'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
+# class OrderDeliveryProductWarehouse(MasterDataAbstractModel):
+#     delivery = models.ForeignKey(
+#         OrderDelivery,
+#         on_delete=models.CASCADE,
+#         verbose_name="delivery",
+#         related_name="delivery_product_warehouse_delivery",
+#         null=True,
+#     )
+#     delivery_product = models.ForeignKey(
+#         OrderDeliveryProduct,
+#         on_delete=models.CASCADE,
+#         verbose_name="delivery product",
+#         related_name="delivery_product_warehouse_delivery_product",
+#         null=True,
+#     )
+#     product_warehouse = models.ForeignKey(
+#         'saledata.ProductWareHouse',
+#         on_delete=models.CASCADE,
+#         verbose_name="product",
+#         related_name="delivery_product_warehouse_product_warehouse",
+#         null=True
+#     )
+#     quantity_delivery = models.FloatField(default=0)
+#     total_picking = models.FloatField(default=0)
+#
+#     class Meta:
+#         verbose_name = 'Order Delivery Product Warehouse'
+#         verbose_name_plural = 'Order Delivery Products Warehouse'
+#         ordering = ('-date_created',)
+#         default_permissions = ()
+#         permissions = ()
+#
+#
+# class OrderDeliveryLot(MasterDataAbstractModel):
+#     delivery = models.ForeignKey(
+#         OrderDelivery,
+#         on_delete=models.CASCADE,
+#         verbose_name="delivery",
+#         related_name="delivery_lot_delivery",
+#     )
+#     delivery_product_warehouse = models.ForeignKey(
+#         OrderDelivery,
+#         on_delete=models.CASCADE,
+#         verbose_name="product warehouse",
+#         related_name="delivery_lot_product_warehouse",
+#     )
+#     product_warehouse_lot = models.ForeignKey(
+#         'saledata.ProductWareHouseLot',
+#         on_delete=models.CASCADE,
+#         verbose_name="product warehouse lot",
+#         related_name="delivery_lot_product_warehouse_lot",
+#     )
+#     quantity_delivery = models.FloatField(default=0)
+#
+#     class Meta:
+#         verbose_name = 'Order Delivery Lot'
+#         verbose_name_plural = 'Order Delivery Lots'
+#         ordering = ('-date_created',)
+#         default_permissions = ()
+#         permissions = ()
+#
+#
+# class OrderDeliverySerial(MasterDataAbstractModel):
+#     delivery = models.ForeignKey(
+#         OrderDelivery,
+#         on_delete=models.CASCADE,
+#         verbose_name="delivery",
+#         related_name="delivery_serial_delivery",
+#     )
+#     delivery_product_warehouse = models.ForeignKey(
+#         OrderDelivery,
+#         on_delete=models.CASCADE,
+#         verbose_name="product warehouse",
+#         related_name="delivery_serial_product_warehouse",
+#     )
+#     product_warehouse_serial = models.ForeignKey(
+#         'saledata.ProductWareHouseSerial',
+#         on_delete=models.CASCADE,
+#         verbose_name="product warehouse serial",
+#         related_name="delivery_serial_product_warehouse_serial",
+#     )
+#
+#     class Meta:
+#         verbose_name = 'Order Delivery Serial'
+#         verbose_name_plural = 'Order Delivery Serials'
+#         ordering = ('-date_created',)
+#         default_permissions = ()
+#         permissions = ()
+#
 
 class OrderDeliveryAttachment(SimpleAbstractModel):
     delivery_sub = models.ForeignKey(

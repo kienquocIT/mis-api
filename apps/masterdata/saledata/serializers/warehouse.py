@@ -258,6 +258,7 @@ class ProductWareHouseListSerializer(serializers.ModelSerializer):
             'stock_amount',
             'receipt_amount',
             'sold_amount',
+            'picked_ready',
             'agency',
         )
 

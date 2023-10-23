@@ -7,7 +7,6 @@ from apps.sales.delivery.models import (
     OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
 from apps.shared.translations.sales import DeliverMsg
-from ..models.delivery import OrderDeliveryProductWarehouse
 from ..utils import CommonFunc
 
 __all__ = [
@@ -170,11 +169,15 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 warehouse_id=delivery_data['warehouse']
             )
             if product_warehouse.exists():
+                final_ratio = 1
                 prod_warehouse = product_warehouse.first()
+                if picked_uom.ratio and prod_warehouse.uom.ratio:
+                    final_ratio = picked_uom.ratio / prod_warehouse.uom.ratio
                 in_stock = prod_warehouse.stock_amount
                 in_stock = (in_stock - prod_warehouse.picked_ready)*prod_warehouse.uom.ratio
                 if in_stock > 0 and in_stock >= picked_unit:
-                    prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
+                    # prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
+                    prod_warehouse.picked_ready += prod_id_temp[key_prod] * final_ratio
                     prod_update.append(prod_warehouse)
                 else:
                     raise serializers.ValidationError(
@@ -209,32 +212,6 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 delivery_prod.delivery_data.append(delivery_data)
                 obj_update.append(delivery_prod)
 
-                # create delivery product warehouse
-                product_warehouse = ProductWareHouse.objects.filter(
-                    tenant_id=instance.tenant_id,
-                    company_id=instance.company_id,
-                    product_id=key_prod,
-                    warehouse_id=delivery_data['warehouse']
-                ).first()
-                if delivery and delivery_prod and product_warehouse:
-                    delivery_product_warehouse = OrderDeliveryProductWarehouse.objects.filter(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        delivery=delivery,
-                        delivery_product=delivery_prod,
-                        product_warehouse=product_warehouse,
-                    ).first()
-                    if delivery_product_warehouse:
-                        delivery_product_warehouse.total_picking += total
-                    else:
-                        OrderDeliveryProductWarehouse.objects.create(
-                            tenant_id=instance.tenant_id,
-                            company_id=instance.company_id,
-                            delivery=delivery,
-                            delivery_product=delivery_prod,
-                            product_warehouse=product_warehouse,
-                            total_picking=total
-                        )
         cls.plus_product_warehouse_picked(instance, product_update)
         OrderDeliveryProduct.objects.bulk_update(obj_update, fields=['ready_quantity', 'delivery_data'])
         # update ready stock cho delivery sub
@@ -270,7 +247,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 }
                 this_prod.save(update_fields=['picked_quantity'])
 
-        # cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
+        cls.update_picking_to_delivery_prod(instance, total_picked, prod_update)
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(
