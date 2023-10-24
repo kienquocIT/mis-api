@@ -18,7 +18,7 @@ urlpatterns = [
     path('request', LeaveRequestList.as_view(), name='LeaveRequestList'),
     path('request/detail/<str:pk>', LeaveRequestDetail.as_view(), name='LeaveRequestDetail'),
     # leave available
-    path('available/list/<str:employee_inherit_id>', LeaveAvailableList.as_view(), name='LeaveAvailableList'),
+    path('available/list', LeaveAvailableList.as_view(), name='LeaveAvailableList'),
     path('available/edit/<str:pk>', LeaveAvailableUpdate.as_view(), name='LeaveAvailableUpdate'),
     path(
         'available/history/<str:employee_inherit_id>', LeaveAvailableHistoryList.as_view(),

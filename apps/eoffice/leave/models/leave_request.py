@@ -153,6 +153,11 @@ class LeaveAvailable(DataAbstractModel):
     )
     expiration_date = models.DateField(
         verbose_name='date expiration',
+        null=True,
+    )
+    check_balance = models.BooleanField(
+        verbose_name="balance control of type related leave type",
+        default=False
     )
 
     class Meta:
