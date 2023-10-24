@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
 from apps.core.hr.models import Role, RoleHolder, PlanRole, Employee, RolePermission, PlanRoleApp
-from apps.shared import HRMsg, PermissionController, TypeCheck, call_task_background
+from apps.shared import HRMsg, TypeCheck, call_task_background
+from apps.shared.permissions.util import PermissionController
 
 from .common import (
     HasPermPlanAppCreateSerializer,
@@ -267,14 +268,16 @@ class RoleDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_app(cls, obj):
         result = []
-        for obj in PlanRole.objects.filter(role=obj).select_related('plan').prefetch_related('application_m2m'):
+        for obj_plan_role in PlanRole.objects.filter(role=obj).select_related('plan').prefetch_related(
+                'application_m2m'
+        ):
             item_data = {
-                'id': obj.plan_id,
-                'title': obj.plan.title,
-                'code': obj.plan.code,
+                'id': obj_plan_role.plan_id,
+                'title': obj_plan_role.plan.title,
+                'code': obj_plan_role.plan.code,
                 'application': []
             }
-            for obj_app in obj.application_m2m.all():
+            for obj_app in obj_plan_role.application_m2m.all():
                 item_data['application'].append(
                     {
                         'id': obj_app.id,

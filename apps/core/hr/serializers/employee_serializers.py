@@ -4,7 +4,8 @@ from rest_framework.exceptions import ValidationError
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
-from apps.shared import HRMsg, AccountMsg, AttMsg, PermissionController, TypeCheck, call_task_background
+from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background
+from apps.shared.permissions.util import PermissionController
 
 from .common import (
     HasPermPlanAppCreateSerializer,
@@ -115,14 +116,16 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_app(cls, obj):
         result = []
-        for obj in PlanEmployee.objects.filter(employee=obj).select_related('plan').prefetch_related('application_m2m'):
+        for obj_plan_employee in PlanEmployee.objects.filter(employee=obj).select_related('plan').prefetch_related(
+                'application_m2m'
+        ):
             item_data = {
-                'id': obj.plan_id,
-                'title': obj.plan.title,
-                'code': obj.plan.code,
+                'id': obj_plan_employee.plan_id,
+                'title': obj_plan_employee.plan.title,
+                'code': obj_plan_employee.plan.code,
                 'application': []
             }
-            for obj_app in obj.application_m2m.all():
+            for obj_app in obj_plan_employee.application_m2m.all():
                 item_data['application'].append(
                     {
                         'id': obj_app.id,

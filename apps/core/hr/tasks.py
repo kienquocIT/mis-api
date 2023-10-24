@@ -4,7 +4,6 @@ __all__ = [
 ]
 
 from celery import shared_task
-from django.conf import settings
 
 from apps.core.hr.models import Employee
 from apps.core.hr.models.utils import PlanAppDistributionController

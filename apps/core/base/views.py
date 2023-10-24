@@ -72,7 +72,7 @@ class ApplicationDetail(BaseRetrieveMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, pk, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class ApplicationPropertyList(BaseListMixin):

@@ -1,5 +1,4 @@
 import json
-from uuid import UUID
 
 from django.db import models
 from django.utils import timezone

@@ -4,9 +4,10 @@ __all__ = [
 
 import os
 import asyncio
-import telegram
 
 from datetime import datetime
+
+import telegram
 
 from django.utils import timezone
 
@@ -45,5 +46,5 @@ class TeleBotPushNotify:
                 chat_id=self.chat_id, text=msg,
                 # parse_mode='Markdown'
             )
-        except Exception as ex:
-            print(ex)
+        except Exception as err:
+            print(err)

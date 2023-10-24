@@ -3,7 +3,8 @@ from rest_framework import serializers
 from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
 from apps.sales.opportunity.models import PlanMemberOpportunity, OpportunitySaleTeamMember
-from apps.shared import Caching, DisperseModel, PermissionController
+from apps.shared import Caching, DisperseModel
+from apps.shared.permissions.util import PermissionController
 from apps.shared.translations.opportunity import OpportunityMsg
 
 

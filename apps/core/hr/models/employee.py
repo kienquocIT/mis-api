@@ -1,8 +1,7 @@
 from django.conf import settings
 from django.db import models
-from django.utils import timezone
 
-from apps.core.hr.models.private_extends import PermissionAbstractModel, SYNC_STATE
+from apps.core.hr.models.private_extends import PermissionAbstractModel
 from apps.core.models import TenantAbstractModel
 from apps.shared import SimpleAbstractModel, GENDER_CHOICE, StringHandler, MediaForceAPI, TypeCheck, DisperseModel
 
@@ -334,7 +333,7 @@ class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):
 
         return app_ids, app_prefix
 
-    def sync_parsed_to_employee(self):
+    def sync_parsed_to_main(self):
         self.employee.permissions_parsed = self.permissions_parsed
         self.employee.save(update_fields=['permissions_parsed'])
 
@@ -342,7 +341,7 @@ class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):
         sync_parsed = kwargs.pop('sync_parsed', False)
         super().save(*args, **kwargs)
         if sync_parsed is True:
-            self.sync_parsed_to_employee()
+            self.sync_parsed_to_main()
 
     class Meta:
         verbose_name = 'Permission of Employee'

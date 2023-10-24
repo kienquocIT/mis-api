@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-class FilterComponent:
+class FilterComponent:  # pylint: disable=R0902
     code_special__exclude = '___exclude'
     _data = None
 

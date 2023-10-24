@@ -5,11 +5,10 @@ __all__ = [
 ]
 
 from typing import TypedDict
-from uuid import UUID
 
 from django.db import models
 
-from apps.shared import PermissionController, PermissionParsedTool
+from apps.shared.permissions.util import PermissionController
 
 SYNC_STATE = (
     (0, 'Fail'),
@@ -160,9 +159,12 @@ class PermissionAbstractModel(models.Model):
         """
         raise NotImplementedError
 
+    def sync_parsed_to_main(self):
+        raise NotImplementedError
+
     def call_sync(self):
-        if hasattr(self, 'sync_parsed_to_employee') and callable(self.sync_parsed_to_employee):
-            self.sync_parsed_to_employee()
+        if hasattr(self, 'sync_parsed_to_main') and callable(self.sync_parsed_to_main):
+            self.sync_parsed_to_main()
             return True
         return False
 

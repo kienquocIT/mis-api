@@ -51,14 +51,6 @@ class DistributionPlan(SimpleAbstractModel):
     )
     is_active = models.BooleanField(default=True)
 
-    def save(self, *args, **kwargs):
-        if self.employee:
-            if not self.tenant_id:
-                self.tenant_id = self.employee.tenant_id
-            if not self.company_id:
-                self.company_id = self.employee.company_id
-        super().save(*args, **kwargs)
-
     class Meta:
         verbose_name = 'Distribution Plan to Employee'
         verbose_name_plural = 'Distribution Plan to Employee'
@@ -86,14 +78,6 @@ class DistributionApplication(SimpleAbstractModel):
         help_text='The record created at value',
     )
     is_active = models.BooleanField(default=True)
-
-    def save(self, *args, **kwargs):
-        if self.employee:
-            if not self.tenant_id:
-                self.tenant_id = self.employee.tenant_id
-            if not self.company_id:
-                self.company_id = self.employee.company_id
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Distribution App to Employee'

@@ -2,8 +2,6 @@ __all__ = [
     'PlanAppDistributionController',
 ]
 
-from celery import shared_task
-
 from apps.shared import ListHandler
 
 from apps.core.tenant.models import TenantPlan

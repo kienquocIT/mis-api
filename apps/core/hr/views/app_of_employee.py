@@ -31,7 +31,7 @@ class EmployeeStorageAppAllList(BaseListMixin):
         }
 
     @property
-    def filter_kwargs_q(self) -> Union[Q, Response]:
+    def filter_kwargs_q(self) -> Union[Q, Response]:  # pylint: disable=R0912
         try:
             employee_obj = Employee.objects.get(pk=self.kwargs['pk'])
         except Employee.DoesNotExist:

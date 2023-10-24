@@ -7,6 +7,8 @@ from django.conf import settings
 
 from rest_framework import serializers
 
+from apps.core.base.models import Application
+
 from ..extends.utils import TypeCheck
 from ..translations.base import PermissionMsg
 from ..extends.models import DisperseModel
@@ -266,8 +268,6 @@ class PermissionParsedTool:
 
     @classmethod
     def get_all_application_by_id(cls):
-        from apps.core.base.models import Application
-
         return {  # caching for db, timeout: default * 10
             str(item.id): item
             for item in Application.objects.filter().cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10)
@@ -504,7 +504,7 @@ class PermissionParsedTool:
             app_ids_or_employee_id = get_app_allowed()
             if isinstance(app_ids_or_employee_id, tuple) and len(app_ids_or_employee_id) == 2:
                 return app_ids_or_employee_id
-            elif isinstance(app_ids_or_employee_id, str) and TypeCheck.check_uuid(app_ids_or_employee_id):
+            if isinstance(app_ids_or_employee_id, str) and TypeCheck.check_uuid(app_ids_or_employee_id):
                 app_ids, app_prefix = [], []
                 dis_app_cls = DisperseModel(app_model=instance.distribution_app_cls_code).get_model()
                 for obj in dis_app_cls.objects.select_related('app').filter(employee_id=app_ids_or_employee_id):
@@ -513,7 +513,7 @@ class PermissionParsedTool:
                 return app_ids, app_prefix
         return [], []
 
-    def parse_to_simple(self, data) -> tuple[dict, dict]:
+    def parse_to_simple(self, data) -> tuple[dict, dict]:  # pylint: disable=R0912,R0914
         """
         Parse config permit to simple for push to field permission_parsed in DB
         Args:
@@ -530,7 +530,7 @@ class PermissionParsedTool:
         """
         result = {}
         result_general = {}
-        if isinstance(data, list):
+        if isinstance(data, list):  # pylint: disable=R1702
             for item in data:
                 if 'app_id' in item and TypeCheck.check_uuid(item['app_id']) and item['app_id'] in self.app_list_by_id:
                     app_obj = self.app_list_by_id[item['app_id']]

@@ -1,7 +1,6 @@
 from django.db import models
-from django.utils import timezone
 
-from apps.core.hr.models.private_extends import PermissionAbstractModel, SYNC_STATE
+from apps.core.hr.models.private_extends import PermissionAbstractModel
 from apps.core.models import TenantAbstractModel
 from apps.shared import SimpleAbstractModel
 
@@ -144,6 +143,10 @@ class PlanRoleApp(SimpleAbstractModel):
 class RolePermission(SimpleAbstractModel, PermissionAbstractModel):
     role = models.OneToOneField(Role, on_delete=models.CASCADE)
 
+    def sync_parsed_to_main(self):
+        self.role.permissions_parsed = self.permissions_parsed
+        self.role.save(update_fields=['permissions_parsed'])
+
     def get_app_allowed(self) -> tuple[list[str], list[str]]:
         app_ids, app_prefix = [], []
         for obj in PlanRoleApp.objects.select_related('application').filter(plan_role__role=self.role):
@@ -152,10 +155,10 @@ class RolePermission(SimpleAbstractModel, PermissionAbstractModel):
         return app_ids, app_prefix
 
     def save(self, *args, **kwargs):
+        sync_parsed = kwargs.pop('sync_parsed', False)
         super().save(*args, **kwargs)
-        # sync permission parsed to Role
-        self.role.permissions_parsed = self.permissions_parsed
-        self.role.save(update_fields=['permissions_parsed'])
+        if sync_parsed is True:
+            self.sync_parsed_to_main()
 
     class Meta:
         verbose_name = 'Permission of Role'

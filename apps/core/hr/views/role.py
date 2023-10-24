@@ -137,4 +137,3 @@ class RoleAppList(BaseListMixin):
     )
     def get(self, request, *args, pk, **kwargs):
         return self.list(request, *args, pk, **kwargs)
-
