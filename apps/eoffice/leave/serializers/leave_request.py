@@ -155,7 +155,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveAvailable
-        fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark')
+        fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark', 'expiration_date')
 
     def create_history(self, instance, validated_data, init_data):
         employee_id = self.context.get('employee_id', None)

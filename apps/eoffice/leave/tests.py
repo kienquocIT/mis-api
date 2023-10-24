@@ -102,7 +102,8 @@ class LeaveTestCase(AdvanceTestCase):
         url_update = reverse('LeaveTypeConfigUpdate', args=[leave["id"]])
         leave_upd = {
             'no_of_paid': 12,
-            'leave_config': str(leave["leave_config"])
+            'leave_config': str(leave["leave_config"]),
+            'balance_control': leave["balance_control"]
         }
         response_leave = self.client.put(url_update, leave_upd, format='json')
         self.assertEqual(response_leave.status_code, 200)

@@ -1,9 +1,11 @@
 from django.http import HttpResponse
+from django.utils import timezone
 
 from rest_framework import serializers
 
+from apps.core.hr.models import Employee
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig, \
-    WorkingHolidayConfig
+    WorkingHolidayConfig, LeaveAvailable
 from apps.shared import LEAVE_YEARS_SENIORITY, LeaveMsg
 
 __all__ = ['LeaveConfigDetailSerializer', 'LeaveTypeConfigCreateSerializer', 'LeaveTypeConfigDetailSerializer',
@@ -84,6 +86,25 @@ class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
+    def leave_type_map_available_employee(self, l_type):
+        for employee in Employee.objects.filter_current(fill__tenant=True, fill__company=True):
+            LeaveAvailable.objects.create(
+                leave_type=l_type,
+                open_year=timezone.now().year,
+                expiration_date=timezone.now().replace(month=12, day=31) if l_type.is_check_expiration else None,
+                check_balance=True,
+                employee_inherit=employee,
+                company_id=self.context.get('company_id', None),
+                tenant_id=self.context.get('tenant_id', None)
+            )
+
+    def create(self, validated_data):
+        leave_type = LeaveType.objects.create(**validated_data)
+        if leave_type.balance_control:
+            # có quản lý số dư
+            self.leave_type_map_available_employee(leave_type)
+        return leave_type
+
 
 class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
 
@@ -91,6 +112,16 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
                   'title', 'code', 'is_lt_system', 'is_lt_edit', 'no_of_paid', 'prev_year')
+
+    @classmethod
+    def update_available_list(cls, l_type):
+        list_available = LeaveAvailable.objects.filter_current(fill__company=True, fill__tenant=True, leave_type=l_type)
+        list_upd = []
+        for available in list_available:
+            available.check_balance = l_type.balance_control
+            list_upd.append(available)
+
+        LeaveAvailable.objects.bulk_update(list_upd, fields=['check_balance'])
 
     @classmethod
     def validate_leave_config(cls, value):
@@ -117,9 +148,14 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
+        change = False
+        if instance.balance_control != validated_data['balance_control']:
+            change = True
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if change:
+            self.update_available_list(instance)
         return instance
 
 
