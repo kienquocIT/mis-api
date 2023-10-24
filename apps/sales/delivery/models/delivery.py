@@ -4,7 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
-    # MasterDataAbstractModel,
+    MasterDataAbstractModel,
 )
 
 __all__ = [
@@ -422,9 +422,44 @@ class OrderDeliveryProduct(SimpleAbstractModel):
             raise ValueError(_("Products must have picked quantity equal to or less than remaining quantity"))
         self.remaining_quantity = self.delivery_quantity - self.delivered_quantity_before
 
+    def create_lot_serial(self):
+        if not self.delivery_lot_delivery_product.exists():
+            for delivery in self.delivery_data:
+                if 'lot_data' in delivery:
+                    OrderDeliveryLot.create(
+                        delivery_product_id=self.id,
+                        delivery_sub_id=self.delivery_sub_id,
+                        delivery_id=self.delivery_sub.order_delivery_id,
+                        tenant_id=self.delivery_sub.tenant_id,
+                        company_id=self.delivery_sub.company_id,
+                        lot_data=delivery['lot_data']
+                    )
+        if not self.delivery_serial_delivery_product.exists():
+            for delivery in self.delivery_data:
+                if 'serial_data' in delivery:
+                    OrderDeliverySerial.create(
+                        delivery_product_id=self.id,
+                        delivery_sub_id=self.delivery_sub_id,
+                        delivery_id=self.delivery_sub.order_delivery_id,
+                        tenant_id=self.delivery_sub.tenant_id,
+                        company_id=self.delivery_sub.company_id,
+                        serial_data=delivery['serial_data']
+                    )
+        return True
+
+    def update_product_warehouse_lot_serial(self):
+        for lot in self.delivery_lot_delivery_product.all():
+            lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery
+            lot.product_warehouse_lot.save(update_fields=['quantity_import'])
+        for serial in self.delivery_serial_delivery_product.all():
+            serial.product_warehouse_serial.is_delete = True
+            serial.product_warehouse_serial.save(update_fields=['is_delete'])
+        return True
+
     def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
+        self.create_lot_serial()
 
     def save(self, *args, **kwargs):
         self.before_save()
@@ -471,62 +506,118 @@ class OrderDeliveryProduct(SimpleAbstractModel):
 #         permissions = ()
 #
 #
-# class OrderDeliveryLot(MasterDataAbstractModel):
-#     delivery = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery",
-#         related_name="delivery_lot_delivery",
-#     )
-#     delivery_product_warehouse = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="product warehouse",
-#         related_name="delivery_lot_product_warehouse",
-#     )
-#     product_warehouse_lot = models.ForeignKey(
-#         'saledata.ProductWareHouseLot',
-#         on_delete=models.CASCADE,
-#         verbose_name="product warehouse lot",
-#         related_name="delivery_lot_product_warehouse_lot",
-#     )
-#     quantity_delivery = models.FloatField(default=0)
-#
-#     class Meta:
-#         verbose_name = 'Order Delivery Lot'
-#         verbose_name_plural = 'Order Delivery Lots'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-#
-#
-# class OrderDeliverySerial(MasterDataAbstractModel):
-#     delivery = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="delivery",
-#         related_name="delivery_serial_delivery",
-#     )
-#     delivery_product_warehouse = models.ForeignKey(
-#         OrderDelivery,
-#         on_delete=models.CASCADE,
-#         verbose_name="product warehouse",
-#         related_name="delivery_serial_product_warehouse",
-#     )
-#     product_warehouse_serial = models.ForeignKey(
-#         'saledata.ProductWareHouseSerial',
-#         on_delete=models.CASCADE,
-#         verbose_name="product warehouse serial",
-#         related_name="delivery_serial_product_warehouse_serial",
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Order Delivery Serial'
-#         verbose_name_plural = 'Order Delivery Serials'
-#         ordering = ('-date_created',)
-#         default_permissions = ()
-#         permissions = ()
-#
+class OrderDeliveryLot(MasterDataAbstractModel):
+    delivery = models.ForeignKey(
+        OrderDelivery,
+        on_delete=models.CASCADE,
+        verbose_name="delivery",
+        related_name="delivery_lot_delivery",
+    )
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="delivery_lot_delivery_sub",
+    )
+    delivery_product = models.ForeignKey(
+        OrderDeliveryProduct,
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_lot_delivery_product",
+    )
+    product_warehouse_lot = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse lot",
+        related_name="delivery_lot_product_warehouse_lot",
+    )
+    quantity_initial = models.FloatField(
+        default=0,
+        help_text='quantity in ProductWarehouseLot at the time create this record'
+    )
+    quantity_delivery = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name = 'Order Delivery Lot'
+        verbose_name_plural = 'Order Delivery Lots'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            delivery_product_id,
+            delivery_sub_id,
+            delivery_id,
+            tenant_id,
+            company_id,
+            lot_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            delivery_product_id=delivery_product_id,
+            delivery_sub_id=delivery_sub_id,
+            delivery_id=delivery_id,
+            tenant_id=tenant_id,
+            company_id=company_id,
+        ) for data in lot_data])
+        return True
+
+
+class OrderDeliverySerial(MasterDataAbstractModel):
+    delivery = models.ForeignKey(
+        OrderDelivery,
+        on_delete=models.CASCADE,
+        verbose_name="delivery",
+        related_name="delivery_serial_delivery",
+    )
+    delivery_sub = models.ForeignKey(
+        OrderDeliverySub,
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="delivery_serial_delivery_sub",
+    )
+    delivery_product = models.ForeignKey(
+        OrderDeliveryProduct,
+        on_delete=models.CASCADE,
+        verbose_name="delivery product",
+        related_name="delivery_serial_delivery_product",
+    )
+    product_warehouse_serial = models.ForeignKey(
+        'saledata.ProductWareHouseSerial',
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse serial",
+        related_name="delivery_serial_product_warehouse_serial",
+    )
+
+    class Meta:
+        verbose_name = 'Order Delivery Serial'
+        verbose_name_plural = 'Order Delivery Serials'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def create(
+            cls,
+            delivery_product_id,
+            delivery_sub_id,
+            delivery_id,
+            tenant_id,
+            company_id,
+            serial_data
+    ):
+        cls.objects.bulk_create([cls(
+            **data,
+            delivery_product_id=delivery_product_id,
+            delivery_sub_id=delivery_sub_id,
+            delivery_id=delivery_id,
+            tenant_id=tenant_id,
+            company_id=company_id,
+        ) for data in serial_data])
+        return True
+
 
 class OrderDeliveryAttachment(SimpleAbstractModel):
     delivery_sub = models.ForeignKey(

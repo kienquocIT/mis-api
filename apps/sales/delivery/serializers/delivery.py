@@ -54,7 +54,7 @@ class WarehouseQuantityHandle:
                     is_done = True
                     item_sold = mediate_number / target_ratio
                     item.sold_amount += item_sold
-                    item.stock_amount = item.receipt_amount- item.sold_amount
+                    item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
