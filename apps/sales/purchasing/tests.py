@@ -726,3 +726,181 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         else:
             self.assertEqual(response.data['result']['id'], data_id)
         return response
+
+
+class TestCasePurchaseQuotationRequest(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def create_product_type(self):
+        url = reverse('ProductTypeList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'San pham 1',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_product_category(self):
+        url = reverse('ProductCategoryList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Hardware',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom_group(self):
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Time',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom(self):
+        data_uom_gr = self.create_uom_group()
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(
+            url,
+            {
+                "code": "MIN",
+                "title": "minute",
+                "group": data_uom_gr.data['result']['id'],
+                "ratio": 1,
+                "rounding": 5,
+                "is_referenced_unit": True
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response, data_uom_gr
+
+    def get_base_unit_measure(self):
+        url = reverse('BaseItemUnitList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(url_tax_category, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default'],
+            check_sum_second=True,
+        )
+        return response
+
+    def create_new_tax(self):
+        url_tax = reverse("TaxList")
+        tax_category = self.create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "tax_type": 0
+        }
+        response = self.client.post(url_tax, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_create_product(self):
+        self.url = reverse("ProductList")
+        product = ProductTestCase.test_create_product(self)
+        return product
+
+    def test_create_purchase_quotation_request(self):
+        product_create = self.test_create_product()
+        product = product_create.data['result']
+        uom = product_create.data['result']['sale_information']['default_uom']
+        tax = product_create.data['result']['sale_information']['tax']
+
+        data = {
+            "title": "Test PQR",
+            "purchase_request_list": [],
+            "delivered_date": "2023-10-09",
+            "status_delivered": 0,
+            "note": 'San pham de vo',
+            "products_selected": {
+                'product_id': product['id'],
+                'uom_id': uom['uom_id'],
+                'quantity': 10,
+                'unit_price': 15000000,
+                'tax_id': tax['id'],
+                'subtotal_price': 180000000,
+            },
+            'pretax_price': 150000000,
+            'taxes_price': 30000,
+            'total_price': 180000000,
+            'purchase_quotation_request_type': 1
+        }
+
+        url = reverse("PurchaseQuotationRequestList")
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'code',
+                'title',
+                'purchase_requests',
+                'delivered_date',
+                'note',
+                'pretax_price',
+                'taxes_price',
+                'total_price',
+                'products_mapped',
+                'purchase_quotation_request_type'
+            ],
+            check_sum_second=True,
+        )
+
+        return response
