@@ -52,7 +52,6 @@ class PurchaseOrderRequestProductSerializer(serializers.ModelSerializer):
 
 class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
     purchase_request_product = serializers.SerializerMethodField()
-    goods_receipt_info = serializers.SerializerMethodField()
     uom_stock = serializers.SerializerMethodField()
 
     class Meta:
@@ -63,9 +62,11 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
             'purchase_order_product_id',
             'sale_order_product_id',
             'quantity_order',
-            'goods_receipt_info',
             'uom_stock',
             'is_stock',
+            # goods receipt information
+            'gr_completed_quantity',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -81,20 +82,9 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
                 'id': obj.purchase_request_product.uom_id,
                 'title': obj.purchase_request_product.uom.title,
                 'code': obj.purchase_request_product.uom.code,
+                'ratio': obj.purchase_request_product.uom.ratio,
             } if obj.purchase_request_product.uom else {},
         } if obj.purchase_request_product else {}
-
-    @classmethod
-    def get_goods_receipt_info(cls, obj):
-        gr_completed_quantity = 0
-        # if obj.purchase_request_product:
-        for gr_request_product in obj.gr_request_product_po_request_product.all():
-            if gr_request_product.goods_receipt.system_status in [2, 3]:
-                gr_completed_quantity += gr_request_product.quantity_import
-        return {
-            'gr_completed_quantity': gr_completed_quantity,
-            'gr_remain_quantity': (obj.quantity_order - gr_completed_quantity)
-        }
 
     @classmethod
     def get_uom_stock(cls, obj):
@@ -102,6 +92,7 @@ class PurchaseOrderRequestProductListSerializer(serializers.ModelSerializer):
             'id': obj.uom_stock_id,
             'title': obj.uom_stock.title,
             'code': obj.uom_stock.code,
+            'ratio': obj.uom_stock.ratio,
         } if obj.uom_stock else {}
 
 
@@ -115,6 +106,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
     uom_order_actual = serializers.UUIDField()
     tax = serializers.UUIDField(required=False, allow_null=True)
     product_unit_price = serializers.FloatField()
+    product_quantity_order_actual = serializers.FloatField()
 
     class Meta:
         model = PurchaseOrderProduct
@@ -153,6 +145,10 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_tax(cls, value):
         return PurchasingCommonValidate().validate_tax(value=value)
+
+    @classmethod
+    def validate_product_quantity_order_actual(cls, value):
+        return PurchasingCommonValidate().validate_product_quantity_order_actual(value=value)
 
 
 class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
@@ -277,7 +273,6 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
     uom_order_request = serializers.SerializerMethodField()
     uom_order_actual = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
-    goods_receipt_info = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrderProduct
@@ -300,8 +295,9 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
-            # goods receipt
-            'goods_receipt_info'
+            # goods receipt information
+            'gr_completed_quantity',
+            'gr_remain_quantity',
         )
 
     @classmethod
@@ -372,17 +368,6 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
-
-    @classmethod
-    def get_goods_receipt_info(cls, obj):
-        gr_completed_quantity = 0
-        for gr_product in obj.goods_receipt_product_po_product.all():
-            if gr_product.goods_receipt.system_status in [2, 3]:
-                gr_completed_quantity += gr_product.quantity_import
-        return {
-            'gr_completed_quantity': gr_completed_quantity,
-            'gr_remain_quantity': (obj.product_quantity_order_actual - gr_completed_quantity)
-        }
 
 
 # PURCHASE ORDER BEGIN

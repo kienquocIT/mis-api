@@ -41,7 +41,9 @@ class OrderDeliverySubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related('orderdeliveryproduct_set')
+        return super().get_queryset().select_related('employee_inherit').prefetch_related(
+            'delivery_product_delivery_sub'
+        )
 
     @swagger_auto_schema(
         operation_summary='Order Delivery Sub Detail',

@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
-from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.opportunity.models import Opportunity
+# from apps.core.workflow.tasks import decorator_run_workflow
+# from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
     QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, QuotationExpenseSerializer, \
     QuotationIndicatorSerializer
-from apps.shared import SaleMsg, SYSTEM_STATUS
+from apps.shared import SYSTEM_STATUS
 
 
 # QUOTATION BEGIN
@@ -298,22 +298,22 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
 
-    def validate(self, validate_data):
-        if 'opportunity_id' in validate_data:
-            if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
-                if opportunity:
-                    if opportunity.quotation_opportunity.exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close:
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
-        return validate_data
+    # def validate(self, validate_data):
+    #     if 'opportunity_id' in validate_data:
+    #         if validate_data['opportunity_id'] is not None:
+    #             opportunity = Opportunity.objects.filter_current(
+    #                 fill__tenant=True,
+    #                 fill__company=True,
+    #                 id=validate_data['opportunity_id']
+    #             ).first()
+    #             if opportunity:
+    #                 if opportunity.quotation_opportunity.exists():
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+    #                 if opportunity.is_close_lost is True or opportunity.is_deal_close:
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+    #     return validate_data
 
-    @decorator_run_workflow
+    # @decorator_run_workflow
     def create(self, validated_data):
         quotation = Quotation.objects.create(**validated_data)
         QuotationCommonCreate().create_quotation_sub_models(
@@ -439,18 +439,18 @@ class QuotationUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
 
-    def validate(self, validate_data):
-        if 'opportunity_id' in validate_data:
-            if validate_data['opportunity_id'] is not None:
-                opportunity = Opportunity.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    id=validate_data['opportunity_id']
-                ).first()
-                if opportunity:
-                    if opportunity.quotation_opportunity.exclude(id=self.instance.id).exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
-        return validate_data
+    # def validate(self, validate_data):
+    #     if 'opportunity_id' in validate_data:
+    #         if validate_data['opportunity_id'] is not None:
+    #             opportunity = Opportunity.objects.filter_current(
+    #                 fill__tenant=True,
+    #                 fill__company=True,
+    #                 id=validate_data['opportunity_id']
+    #             ).first()
+    #             if opportunity:
+    #                 if opportunity.quotation_opportunity.exclude(id=self.instance.id).exists():
+    #                     raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+    #     return validate_data
 
     def update(self, instance, validated_data):
         # check if change opportunity then update field quotation in opportunity to None

@@ -261,9 +261,9 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date', 'system_status',
+            ['id', 'code', 'title', 'request_for', 'sale_order', 'supplier', 'delivered_date',
              'purchase_status', 'contact', 'note', 'purchase_request_product_datas', 'pretax_amount', 'taxes',
-             'total_price'],
+             'total_price', 'system_status', 'workflow_runtime_id', 'is_active', ],
             check_sum_second=True,
         )
 
@@ -310,9 +310,9 @@ class TestCasePurchaseRequest(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'request_for', 'supplier', 'contact', 'delivered_date', 'system_status',
+            ['id', 'title', 'code', 'request_for', 'supplier', 'contact', 'delivered_date',
              'purchase_status', 'note', 'sale_order', 'purchase_request_product_datas', 'pretax_amount',
-             'taxes', 'total_price', ],
+             'taxes', 'total_price', 'system_status', 'workflow_runtime_id', 'is_active', ],
             check_sum_second=True,
         )
         if not data_id:

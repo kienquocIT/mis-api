@@ -1,12 +1,12 @@
 import json
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
-__all__ = ['LeaveRequestDateListRegister', 'LeaveRequest']
+__all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
 
-class LeaveRequestDateListRegister(SimpleAbstractModel):
+class LeaveRequestDateListRegister(DataAbstractModel):
     order = models.IntegerField(
         null=True,
         verbose_name='index row in date list',
@@ -120,5 +120,87 @@ class LeaveRequest(DataAbstractModel):
         verbose_name = 'Leave request'
         verbose_name_plural = 'Leave request'
         ordering = ('-start_day',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaveAvailable(DataAbstractModel):
+    leave_type = models.ForeignKey(
+        'leave.LeaveType',
+        on_delete=models.CASCADE,
+        related_name="leave_annual_available_map_leave_type",
+        help_text='foreign key to leave type model'
+    )
+    open_year = models.IntegerField(
+        verbose_name='Opening year',
+        null=True,
+        help_text='year of annual created'
+    )
+    total = models.FloatField(
+        verbose_name='Total annual can user in this year',
+        null=True,
+        default=0,
+    )
+    used = models.FloatField(
+        verbose_name='employee used',
+        null=True,
+        default=0
+    )
+    available = models.FloatField(
+        verbose_name='number of day can use',
+        null=True,
+        default=0
+    )
+    expiration_date = models.DateField(
+        verbose_name='date expiration',
+        null=True,
+    )
+    check_balance = models.BooleanField(
+        verbose_name="balance control of type related leave type",
+        default=False
+    )
+
+    class Meta:
+        verbose_name = 'Leave annual available each employee'
+        verbose_name_plural = 'Leave annual available each employee'
+        ordering = ('-open_year',)
+        default_permissions = ()
+        permissions = ()
+
+
+class LeaveAvailableHistory(DataAbstractModel):
+    leave_available = models.ForeignKey(
+        'leave.LeaveAvailable',
+        on_delete=models.CASCADE,
+        related_name="leave_available_map_history",
+        help_text='foreign key to leave history'
+    )
+    total = models.FloatField(
+        verbose_name='Total annual can user in this year',
+        null=True,
+        default=0,
+    )
+    action = models.CharField(
+        choices=[('1', 'Increase'), ('2', 'Decrease')], default='1', max_length=10
+    )
+    quantity = models.FloatField(
+        verbose_name='number of day change',
+        null=True,
+        default=0
+    )
+    adjusted_total = models.FloatField(
+        verbose_name='number after change',
+        null=True, default=0
+    )
+    remark = models.CharField(
+        verbose_name='Descriptions',
+        max_length=500,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = 'Leave annual available history each employee'
+        verbose_name_plural = 'Leave annual available history each employee'
+        ordering = ('-date_modified',)
         default_permissions = ()
         permissions = ()

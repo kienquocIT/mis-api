@@ -11,7 +11,7 @@ from apps.shared.extends.tests import AdvanceTestCase
 
 class LeaveTestCase(AdvanceTestCase):
     def setUp(self):
-        self.maxDiff = None
+        self.maxDiff = None  # noqa
         self.client = APIClient()
         self.authenticated()
 
@@ -32,44 +32,44 @@ class LeaveTestCase(AdvanceTestCase):
 
         working_calendar = WorkingCalendarConfig.objects.get_or_create(
             company_id=company_req.data['result']['id'],
-            defaults={
+            defaults={  # noqa
                 'working_days':
                     {
-                        'mon': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'tue': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'wed': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'thu': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'fri': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'sat': {
+                        0: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
-                        'sun': {
+                        1: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        2: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        3: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        4: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        5: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        6: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        }
+                        },
                     }
             },
         )
@@ -83,9 +83,14 @@ class LeaveTestCase(AdvanceTestCase):
 
     def test_create_leave_type_01(self):
         lv_type = {
-            'code': 'CODE.TEST.SC', 'title': 'Sick yours child-social insurance', 'paid_by': 2,
-            'balance_control': False, 'is_check_expiration': False,
-            'leave_config': str(self.config.id), 'company_id': str(self.config.company_id)
+            'code': 'CODE.TEST.SC',
+            'title': 'Sick yours child-social insurance',
+            'paid_by': 2,
+            'balance_control': False,
+            'is_check_expiration': False,
+            'leave_config': str(self.config.id),
+            'company_id': str(self.config.company_id),
+            'prev_year': 0
         }
         response_lv_type = self.client.post(reverse('LeaveTypeConfigCreate'), lv_type, format='json')
         self.assertEqual(response_lv_type.status_code, 201)

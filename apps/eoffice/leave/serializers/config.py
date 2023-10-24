@@ -59,6 +59,8 @@ class LeaveTypeConfigDetailSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
+    no_of_paid = serializers.IntegerField(required=False)
+
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
@@ -84,7 +86,6 @@ class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
-    prev_year = serializers.SerializerMethodField(allow_null=True)
 
     class Meta:
         model = LeaveType
@@ -110,9 +111,12 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
-    def update(self, instance, validated_data):
-        if not instance.is_lt_edit:
+    def validate(self, attrs):
+        if not self.instance.is_lt_edit:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_UPDATE_LEAVE_TYPE})
+        return attrs
+
+    def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
@@ -181,3 +185,11 @@ class WorkingHolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkingHolidayConfig
         fields = ('id', 'holiday_date_to', 'remark', 'year')
+
+    def validate(self, validate_data):
+        if not self.instance and WorkingHolidayConfig.objects.filter(
+                year=validate_data['year'],
+                holiday_date_to=validate_data['holiday_date_to']
+        ).exists():
+            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_DUPLICATE_HOLIDAY})
+        return validate_data

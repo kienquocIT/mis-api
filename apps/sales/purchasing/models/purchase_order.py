@@ -72,6 +72,10 @@ class PurchaseOrder(DataAbstractModel):
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
     )
+    is_all_receipted = models.BooleanField(
+        default=False,
+        help_text="True if all products are receipted by Goods Receipt"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order'
@@ -110,23 +114,43 @@ class PurchaseOrder(DataAbstractModel):
 
     @classmethod
     def update_remain_and_status_purchase_request(cls, instance):
-        list_purchase_request = []
         # update quantity remain on purchase request product
-        for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=instance, is_stock=False):
+        for po_request in instance.purchase_order_request_product_order.filter(is_stock=False):
             po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
-            if po_request.purchase_request_product.purchase_request not in list_purchase_request:
-                list_purchase_request.append(po_request.purchase_request_product.purchase_request)
             po_request.purchase_request_product.save(update_fields=['remain_for_purchase_order'])
-        for purchase_request in list_purchase_request:
-            purchase_request.update_purchase_status()
+        return True
+
+    @classmethod
+    def update_is_all_ordered_purchase_request(cls, instance):
+        for pr_obj in instance.purchase_requests.all():
+            pr_product = pr_obj.purchase_request.all()
+            pr_product_done = pr_obj.purchase_request.filter(remain_for_purchase_order=0)
+            if pr_product.count() == pr_product_done.count():  # All PR products ordered
+                pr_obj.purchase_status = 2
+                pr_obj.is_all_ordered = True
+                pr_obj.save(update_fields=['purchase_status', 'is_all_ordered'])
+            else:  # Partial PR products ordered
+                pr_obj.purchase_status = 1
+                pr_obj.save(update_fields=['purchase_status'])
         return True
 
     @classmethod
     def update_product_wait_receipt_amount(cls, instance):
         for product_purchase in instance.purchase_order_product_order.all():
+            uom_product_inventory = product_purchase.product.inventory_uom
+            uom_product_po = product_purchase.uom_order_actual
+            if product_purchase.uom_order_request:
+                uom_product_po = product_purchase.uom_order_request
+            final_ratio = 1
+            if uom_product_inventory and uom_product_po:
+                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
+            product_quantity_order_request_final = product_purchase.product_quantity_order_actual* final_ratio
+            if instance.purchase_requests.exists():
+                product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
+            stock_final = product_purchase.stock * final_ratio
             product_purchase.product.save(**{
                 'update_transaction_info': True,
-                'quantity_purchase': product_purchase.product_quantity_order_request + product_purchase.stock,
+                'quantity_purchase': product_quantity_order_request_final + stock_final,
                 'update_fields': ['wait_receipt_amount', 'available_amount']
             })
         return True
@@ -141,6 +165,7 @@ class PurchaseOrder(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
                 self.update_remain_and_status_purchase_request(self)
+                self.update_is_all_ordered_purchase_request(self)
                 self.update_product_wait_receipt_amount(self)
 
         # hit DB
@@ -274,6 +299,15 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     order = models.IntegerField(
         default=1
     )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order Product'
@@ -325,6 +359,15 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
     is_stock = models.BooleanField(
         default=False,
         help_text="True if quantity order > quantity request => create quantity stock"
+    )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
     )
 
     class Meta:

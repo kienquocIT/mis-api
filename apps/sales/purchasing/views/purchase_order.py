@@ -14,6 +14,7 @@ class PurchaseOrderList(
     BaseCreateMixin
 ):
     queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
@@ -163,6 +164,8 @@ class PurchaseOrderSaleList(
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
+        'is_all_receipted': ['exact'],
+        'system_status': ['exact'],
     }
     serializer_list = PurchaseOrderSaleListSerializer
     serializer_detail = PurchaseOrderSaleListSerializer

@@ -13,8 +13,15 @@ class PurchaseRequestList(
     BaseCreateMixin
 ):
     queryset = PurchaseRequest.objects
-
-    search_fields = ['title']
+    filterset_fields = {
+        'is_all_ordered': ['exact'],
+        'system_status': ['exact'],
+    }
+    search_fields = [
+        'title',
+        'sale_order__title',
+        'supplier__name',
+    ]
     serializer_list = PurchaseRequestListSerializer
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_create = PurchaseRequestCreateSerializer
@@ -25,7 +32,7 @@ class PurchaseRequestList(
         return super().get_queryset().select_related(
             'supplier',
             'sale_order',
-        )
+        ).order_by('purchase_status')
 
     @swagger_auto_schema(
         operation_summary="Purchase Request List",

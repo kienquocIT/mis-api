@@ -241,8 +241,8 @@ class Caching:
             if key.startswith(table_name_parsed):
                 key_mapped.append(key)
             else:
-                for k in table_ref_parsed_list:
-                    if key.startswith(k):
+                for item in table_ref_parsed_list:
+                    if key.startswith(item):
                         key_mapped.append(key)
         return key_mapped
 
@@ -253,8 +253,8 @@ class Caching:
         """
         key_mapped = []
         for key in all_keys:
-            for k in table_name_parsed_list:
-                if key.startswith(k):
+            for item in table_name_parsed_list:
+                if key.startswith(item):
                     key_mapped.append(key)
         return key_mapped
 

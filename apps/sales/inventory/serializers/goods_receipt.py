@@ -170,6 +170,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     tax = serializers.UUIDField(required=False)
     warehouse = serializers.UUIDField(required=False)
     product_unit_price = serializers.FloatField()
+    quantity_import = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
@@ -212,6 +213,10 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_warehouse(cls, value):
         return GoodsReceiptCommonValidate.validate_warehouse(value=value)
+
+    @classmethod
+    def validate_quantity_import(cls, value):
+        return GoodsReceiptCommonValidate.validate_quantity_import(value=value)
 
     @classmethod
     def check_lot_serial_exist(cls, warehouse_data, product_obj):
