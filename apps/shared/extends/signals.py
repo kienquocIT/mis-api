@@ -5,8 +5,11 @@ from django.db.models.signals import post_save, pre_delete, post_delete, pre_sav
 from django.dispatch import receiver
 from django.utils import translation
 from django.utils.translation import gettext_lazy as _
+from django_celery_results.models import TaskResult
 
 from apps.core.attachments.models import Files
+from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
+from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
@@ -31,8 +34,12 @@ from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
     SaleOrderIndicatorConfig,
 )
-from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
+
+from .caching import Caching
+from .push_notify import TeleBotPushNotify
+from .tasks import call_task_background
+from ..media_cloud_apis import MediaForceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -892,6 +899,7 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     model_code=app_obj.code,
                     perm_code='view',
                     doc_id=str(doc_id),
+                    tenant_id=instance.runtime.tenant_id,
                 )
 
 
@@ -912,7 +920,9 @@ def event_new_runtime(sender, instance, created, **kwargs):
 def opp_member_event_update(sender, instance, created, **kwargs):
     employee_obj = instance.member
     if employee_obj and hasattr(employee_obj, 'id'):
-        employee_obj.append_permit_by_opp(
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.append_permit_by_opp(
+            tenant_id=instance.opportunity.tenant_id,
             opp_id=instance.opportunity_id,
             perm_config=instance.permission_by_configured,
         )
@@ -922,4 +932,60 @@ def opp_member_event_update(sender, instance, created, **kwargs):
 def opp_member_event_destroy(sender, instance, **kwargs):
     employee_obj = instance.member
     if employee_obj and hasattr(employee_obj, 'id'):
-        employee_obj.remove_permit_by_opp(opp_id=instance.opportunity_id)
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.remove_permit_by_opp(tenant_id=instance.opportunity.tenant_id, opp_id=instance.opportunity_id)
+
+
+@receiver(pre_delete, sender=Role)
+@receiver(pre_delete, sender=Employee)
+def destroy_employee_or_role(sender, instance, **kwargs):
+    if isinstance(instance, Role):
+        call_task_background(
+            sync_plan_app_employee,
+            **{
+                'employee_ids': [
+                    str(ite) for ite in RoleHolder.objects.filter(role=instance).values_list('employee_id', flat=True)
+                ],
+            }
+        )
+    elif isinstance(instance, Employee):
+        call_task_background(
+            clear_cache_notify
+        )
+        call_task_background(
+            uninstall_plan_app_employee,
+            **{
+                'employee_id': str(instance.id),
+                'tenant_id': str(instance.tenant_id),
+                'company_id': str(instance.company_id)
+            }
+        )
+
+
+@receiver(post_save, sender=Role)
+@receiver(post_save, sender=Employee)
+def new_employee_or_role(sender, instance, created, **kwargs):
+    if created is True:
+        if isinstance(instance, Employee):
+            EmployeePermission.objects.get_or_create(employee=instance)
+        elif isinstance(instance, Role):
+            RolePermission.objects.get_or_create(role=instance)
+
+
+@receiver(post_save, sender=TaskResult)
+def task_new_consumer(sender, instance, created, **kwargs):
+    if instance.status in ('FAILURE', 'RETRY'):
+        msg = TeleBotPushNotify.generate_msg(
+            idx=instance.id,
+            status=instance.status,
+            group_name='CELERY_TASK',
+            **{
+                'task_name': instance.task_name,
+                'date_created': TeleBotPushNotify.pretty_datetime(instance.date_created),
+                'args': instance.task_args,
+                'kwargs': instance.task_kwargs,
+                'result': instance.result,
+                'traceback': instance.traceback,
+            }
+        )
+        TeleBotPushNotify().send_msg(msg=msg)

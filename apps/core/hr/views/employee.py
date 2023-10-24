@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from drf_yasg.utils import swagger_auto_schema
 
-from rest_framework import generics, serializers
+from rest_framework import generics, serializers, exceptions
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -17,12 +17,12 @@ from apps.sales.opportunity.models import OpportunitySaleTeamMember
 # -- special import
 
 from apps.core.hr.filters import EmployeeListFilter
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, PlanEmployeeApp
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
-    EmployeeUploadAvatarSerializer,
+    EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer,
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
@@ -215,6 +215,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
         label_code='hr', model_code='employee', perm_code='view',
+        skip_filter_employee=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -327,6 +328,7 @@ class EmployeeTenantList(BaseListMixin, generics.GenericAPIView):
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
         label_code='hr', model_code='employee', perm_code='view',
+        skip_filter_employee=True,
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
@@ -374,3 +376,40 @@ class EmployeeMediaToken(APIView):
                 )
 
         return ResponseController.forbidden_403()
+
+
+class EmployeeAppList(BaseListMixin):
+    queryset = PlanEmployeeApp.objects
+    search_fields = ["application__title"]
+    serializer_list = ApplicationOfEmployeeSerializer
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            'plan_employee__employee_id': self.kwargs['pk'],
+        }
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        employee_id = self.kwargs['pk']
+        try:
+            employee_obj = Employee.objects.get(pk=employee_id)
+        except Employee.DoesNotExist:
+            raise exceptions.NotFound
+
+        state = self.check_perm_by_obj_or_body_data(obj=employee_obj, auto_check=True)
+        if state is True:
+            return Q()
+        return self.list_empty()
+
+    @swagger_auto_schema(
+        operation_summary="Application List of Employee",
+        operation_description="Application List of Employee",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='hr', model_code='employee', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.list(request, *args, pk, **kwargs)

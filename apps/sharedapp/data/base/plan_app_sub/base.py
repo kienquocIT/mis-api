@@ -281,10 +281,10 @@ GROUP_APP_CONFIG = {
 }
 
 Application_base_data = {
-    "269f4421-04d8-4528-bc95-148ffd807235": ApplicationConfigFrame(**COMPANY_APP_CONFIG).data,
-    "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a": ApplicationConfigFrame(**USER_APP_CONFIG).data,
-    "50348927-2c4f-4023-b638-445469c66953": ApplicationConfigFrame(**EMPLOYEE_APP_CONFIG).data,
-    "4cdaabcc-09ae-4c13-bb4e-c606eb335b11": ApplicationConfigFrame(**ROLE_APP_CONFIG).data,
-    "e17b9123-8002-4c9b-921b-7722c3c9e3a5": ApplicationConfigFrame(**GROUP_APP_CONFIG).data,
-    "71393401-e6e7-4a00-b481-6097154efa64": ApplicationConfigFrame(**WORKFLOW_APP_CONFIG).data,
+    "269f4421-04d8-4528-bc95-148ffd807235": ApplicationConfigFrame(**COMPANY_APP_CONFIG).data_0(),
+    "af9c6fd3-1815-4d5a-aa24-fca9d095cb7a": ApplicationConfigFrame(**USER_APP_CONFIG).data_0(),
+    "50348927-2c4f-4023-b638-445469c66953": ApplicationConfigFrame(**EMPLOYEE_APP_CONFIG).data_0(),
+    "4cdaabcc-09ae-4c13-bb4e-c606eb335b11": ApplicationConfigFrame(**ROLE_APP_CONFIG).data_0(),
+    "e17b9123-8002-4c9b-921b-7722c3c9e3a5": ApplicationConfigFrame(**GROUP_APP_CONFIG).data_0(),
+    "71393401-e6e7-4a00-b481-6097154efa64": ApplicationConfigFrame(**WORKFLOW_APP_CONFIG).data_0(),
 }

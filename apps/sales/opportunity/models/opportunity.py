@@ -1,4 +1,5 @@
 import json
+from uuid import UUID
 
 from django.db import models
 from django.utils import timezone
@@ -766,6 +767,9 @@ class OpportunitySaleTeamMember(MasterDataAbstractModel, PermissionAbstractModel
         blank=True,
         related_name='member_opp_map_plan'
     )
+
+    def get_app_allowed(self) -> str:
+        return str(self.member_id)
 
     class Meta:
         verbose_name = 'Opportunity Sale Team Member'

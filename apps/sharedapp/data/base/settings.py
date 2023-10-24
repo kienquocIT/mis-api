@@ -79,7 +79,9 @@ class PermitMappingChildSerializer(serializers.Serializer):  # noqa
         if isinstance(attrs, dict):
             for permit_code, range_str in attrs.items():
                 if permit_code not in ApplicationSerializer.permit_allowed:
-                    raise serializers.ValidationError({'permit_mapping': f'Permit code is not support: {str(permit_code)}'})
+                    raise serializers.ValidationError(
+                        {'permit_mapping': f'Permit code is not support: {str(permit_code)}'}
+                    )
 
                 if isinstance(range_str, str):
                     cls.validate_range(range_str, list_or_string='string')
@@ -199,7 +201,17 @@ class ApplicationConfigFrame:
         ser.is_valid(raise_exception=True)
         return True
 
-    @property
-    def data(self):
+    # @property
+    # def data(self):
+    #     self.valid()
+    #     return self._data
+
+    def data_0(self):
+        self._data['depend_follow_main'] = False
+        self.valid()
+        return self._data
+
+    def data_1(self):
+        self._data['depend_follow_main'] = True
         self.valid()
         return self._data

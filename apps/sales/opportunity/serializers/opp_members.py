@@ -1,29 +1,44 @@
 from rest_framework import serializers
 
-from apps.core.hr.serializers.common import HasPermPlanAppUpdateSerializer, validate_license_used
+from apps.core.hr.serializers.common import validate_license_used
 from apps.core.tenant.models import TenantPlan
 from apps.sales.opportunity.models import PlanMemberOpportunity, OpportunitySaleTeamMember
-from apps.shared import PermissionsUpdateSerializer, PermissionDetailSerializer, Caching, DisperseModel
+from apps.shared import Caching, DisperseModel, PermissionController
 from apps.shared.translations.opportunity import OpportunityMsg
 
 
-class MemberOfOpportunityDetailSerializer(PermissionDetailSerializer):
-    cls_of_plan = PlanMemberOpportunity
-    cls_key_filter = 'opportunity_member'
-
+class MemberOfOpportunityDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunitySaleTeamMember
         fields = (
             'id', 'date_modified', 'permit_view_this_opp', 'permit_add_member',
+            'permission_by_configured',
         )
 
 
-class MemberOfOpportunityUpdateSerializer(PermissionsUpdateSerializer):
-    plan_app = HasPermPlanAppUpdateSerializer(required=False, many=True)
+class MemberOfOpportunityUpdateSerializer(serializers.ModelSerializer):
+    permission_by_configured = serializers.JSONField(
+        required=False,
+        help_text=str(
+            [{
+                "id": "UUID or None",
+                "app_id": "UUID",
+                "plan_data": "UUID",
+                "create": bool,
+                "view": bool,
+                "edit": bool,
+                "delete": bool,
+                "range": 'CHOICE("1", "2", "3", "4")',
+            }]
+        ),
+    )
+
+    def validate_permission_by_configured(self, attrs):
+        return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs)
 
     class Meta:
         model = OpportunitySaleTeamMember
-        fields = ('permit_view_this_opp', 'permit_add_member', 'plan_app')
+        fields = ('permit_view_this_opp', 'permit_add_member', 'permission_by_configured')
 
     def validate(self, validate_data):
         return validate_license_used(validate_data=validate_data)
@@ -84,38 +99,10 @@ class MemberOfOpportunityUpdateSerializer(PermissionsUpdateSerializer):
         return True
 
     def update(self, instance, validated_data):
-        instance, validated_data, _permission_data = self.force_permissions(
-            instance=instance, validated_data=validated_data
-        )
-        plan_application_dict, plan_app_data, bulk_info = self.set_up_data_plan_app(
-            validated_data,
-            instance=instance,
-        )
-        if plan_application_dict:
-            validated_data.update({'plan_application': plan_application_dict})
-
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        # create M2M PlanEmployee + update TenantPlan
-        self.create_plan_update_tenant_plan(
-            instance=instance,
-            plan_app_data=plan_app_data,
-            bulk_info=bulk_info
-        )
         return instance
-
-
-class OpportunitySaleTeamMemberSerializer(PermissionDetailSerializer):
-    cls_of_plan = PlanMemberOpportunity
-
-    def kwargs_plan_app(self, obj) -> dict:
-        return {'opportunity_id': obj.opportunity_id}
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = ('member_id',)
 
 
 class MemberOfOpportunityAddSerializer(serializers.Serializer):  # noqa

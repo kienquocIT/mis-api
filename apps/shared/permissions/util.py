@@ -1,16 +1,19 @@
 from uuid import uuid4
 
-from typing import Literal
+from typing import Literal, Union
 
 from django.apps import apps
+from django.conf import settings
 
 from rest_framework import serializers
 
 from ..extends.utils import TypeCheck
 from ..translations.base import PermissionMsg
+from ..extends.models import DisperseModel
 
 __all__ = [
     'PermissionController',
+    'PermissionParsedTool',
 ]
 
 BASTION_FROM_TYPE = Literal['opp', 'prj']  # pylint: disable=C0103
@@ -118,76 +121,105 @@ class PermissionController:
 
         return True
 
-    def valid_config(
-            self, config_data, plan_id_arr: list = None, app_id_arr: list = None, checked_data: list = None
-    ):  # pylint: disable=R0914
+    def plan_check_and_get(self, plan_id_arr: list):
+        plan_id_arr = list(set(plan_id_arr))
+        plan_check_objs = [
+            obj.plan for obj in self.tenant_plan_cls().objects.select_related('plan').filter(
+                plan_id__in=plan_id_arr, tenant_id=self.tenant_id, is_expired=False
+            )
+        ]
+        if len(plan_check_objs) != len(plan_id_arr):
+            raise serializers.ValidationError({'permissions': PermissionMsg.SOME_PLAN_WAS_EXPIRED_OR_NOT_FOUND})
+        plan_data_by_id = {
+            str(obj.id): {
+                'id': str(obj.id),
+                'title': str(obj.title),
+                'code': str(obj.code).lower(),
+            }
+            for obj in plan_check_objs
+        }
+        return plan_data_by_id
+
+    def app_check_and_get(self, app_id_arr: list, call_ext_app_depend=True):
+        app_id_arr = list(set(app_id_arr))
+        app_check_objs = self.application_cls().objects.filter(id__in=app_id_arr)
+        if app_check_objs.count() != len(app_id_arr):
+            raise serializers.ValidationError({'permissions': PermissionMsg.PERMISSION_INCORRECT})
+
+        ext_app_depend = []
+        app_data_by_id = {}
+        for obj in app_check_objs:
+            if call_ext_app_depend is True and obj.app_depend_on and isinstance(obj.app_depend_on, dict):
+                ext_app_depend += list(obj.app_depend_on.keys())
+            app_data_by_id[str(obj.id)] = {
+                'id': str(obj.id),
+                'title': str(obj.title),
+                'code': str(obj.code).lower(),
+                'model_code': str(obj.model_code).lower(),
+                'app_label': str(obj.app_label).lower(),
+                'option_permission': obj.option_permission,
+                'permit_mapping': obj.permit_mapping,
+                'app_depend_on': obj.app_depend_on,
+            }
+        return {
+            **app_data_by_id,
+            **(
+                self.app_check_and_get(app_id_arr=ext_app_depend, call_ext_app_depend=False)
+                if call_ext_app_depend is True else {}
+            ),
+        }
+
+    def valid_config(self, config_data):  # pylint: disable=R0914
+        app_id_arr = []
+        checked_data = []
         if not config_data:
             config_data = []
-
-        if not plan_id_arr:
-            plan_id_arr = []
-        if not app_id_arr:
-            app_id_arr = []
-        if not checked_data:
-            checked_data = []
 
         for item in config_data:
             if item and isinstance(item, dict):
                 _id = item.get('id', None)
                 app_id = item.get('app_id', None)
-                plan_id = item.get('plan_id', None)
                 allow_create = item.get('create', None)
                 allow_view = item.get('view', None)
                 allow_edit = item.get('edit', None)
                 allow_delete = item.get('delete', None)
                 allow_range = item.get('range', None)
-                sub = item.get('sub', None)
 
-                if (
-                        (  # pylint: disable=R0916
-                                (
-                                        _id or TypeCheck.check_uuid(_id)
-                                ) or not _id
-                        ) and app_id and TypeCheck.check_uuid(app_id) and
-                        plan_id and TypeCheck.check_uuid(plan_id) and
-                        isinstance(allow_create, bool) and
-                        isinstance(allow_view, bool) and
-                        isinstance(allow_edit, bool) and
-                        isinstance(allow_delete, bool) and
-                        allow_range in self.ALLOWED_RANGE_DEFAULT
-                ):
-                    if not _id:
-                        _id = uuid4()
-
-                    (sub_plan_id_arr, sub_app_id_arr, sub_checked_data) = self.valid_config(sub)
-                    app_id_arr += sub_app_id_arr + [app_id]
-                    plan_id_arr += sub_plan_id_arr + [plan_id]
-
+                _id_check = (_id or TypeCheck.check_uuid(_id)) or not _id
+                _app_check = app_id and TypeCheck.check_uuid(app_id)
+                _state_allow_check = (
+                        isinstance(allow_create, bool)
+                        and isinstance(allow_view, bool)
+                        and isinstance(allow_edit, bool)
+                        and isinstance(allow_delete, bool)
+                )
+                _range_allow_check = allow_range in self.ALLOWED_RANGE_DEFAULT
+                if _id_check and _app_check and _state_allow_check and _range_allow_check:
+                    app_id_arr.append(str(app_id))
                     checked_data.append(
                         {
-                            'id': str(_id),
+                            'id': str(_id if _id else uuid4()),
                             'app_id': str(app_id),
-                            'plan_id': str(plan_id),
                             'create': bool(allow_create),
                             'view': bool(allow_view),
                             'edit': bool(allow_edit),
                             'delete': bool(allow_delete),
                             'range': allow_range,
-                            'sub': sub_checked_data,
                         }
                     )
                 else:
                     raise serializers.ValidationError({'permissions': PermissionMsg.PERMISSION_INCORRECT})
             else:
                 raise serializers.ValidationError({'permissions': PermissionMsg.PERMISSION_INCORRECT})
-        return plan_id_arr, app_id_arr, checked_data
+
+        app_data_by_id = self.app_check_and_get(app_id_arr=app_id_arr)
+        return app_data_by_id, checked_data
 
     def valid(self, attrs, bastion_from: BASTION_FROM_TYPE = None):  # pylint: disable=R0914,R0912
         """
         {
             "id": "UUID or None",
             "app_id": "UUID",
-            "plan_id": "UUID",
             "create": bool,
             "view": bool,
             "edit": bool,
@@ -197,16 +229,7 @@ class PermissionController:
         Returns:
             {
                 "id": "",
-                "app_data": {
-                    "id": "1",
-                    "title": "Employee",
-                    "code": "employee",
-                },
-                "plan_data": {
-                    "id": "2",
-                    "title": "HRM title",
-                    "code": "hrm",
-                },
+                "app_id": "UUID",
                 "create": true,
                 "view": true,
                 "edit": false,
@@ -215,96 +238,61 @@ class PermissionController:
             }
         """
         if attrs and isinstance(attrs, list):
-            plan_id_arr, app_id_arr, checked_data = self.valid_config(config_data=attrs)
-
-            # check plan
-            plan_id_arr = list(set(plan_id_arr))
-            t_p_objs = self.tenant_plan_cls().objects.select_related('plan').filter(
-                plan_id__in=plan_id_arr, tenant_id=self.tenant_id, is_expired=False
-            )
-            plan_check_objs = [obj.plan for obj in t_p_objs]
-            if len(plan_check_objs) != len(plan_id_arr):
-                raise serializers.ValidationError({'permissions': PermissionMsg.SOME_PLAN_WAS_EXPIRED_OR_NOT_FOUND})
-            plan_data_by_id = {
-                str(obj.id): {
-                    'id': str(obj.id),
-                    'title': str(obj.title),
-                    'code': str(obj.code).lower(),
-                }
-                for obj in plan_check_objs
-            }
-
-            # check app
-            app_id_arr = list(set(app_id_arr))
-            app_check_objs = self.application_cls().objects.filter(id__in=app_id_arr)
-            if app_check_objs.count() != len(app_id_arr):
-                raise serializers.ValidationError({'permissions': PermissionMsg.PERMISSION_INCORRECT})
-            app_data_by_id = {
-                str(obj.id): {
-                    'id': str(obj.id),
-                    'title': str(obj.title),
-                    'code': str(obj.code).lower(),
-                    'model_code': str(obj.model_code).lower(),
-                    'app_label': str(obj.app_label).lower(),
-                    'option_permission': obj.option_permission,
-                    'permit_mapping': obj.permit_mapping,
-                    'app_depend_on': obj.app_depend_on,
-                }
-                for obj in app_check_objs
-            }
-
+            app_data_by_id, checked_data = self.valid_config(config_data=attrs)
             result_data = []
             for item in checked_data:
                 self._valid_allow_option(item=item, app_data_by_id=app_data_by_id, bastion_from=bastion_from)
-                self._main_valid_sub(item=item, sub_item_arr=item['sub'], app_data_by_id=app_data_by_id)
-
-                sub_result = []
-                for sub_item in item['sub']:
-                    self._valid_allow_option(item=sub_item, app_data_by_id=app_data_by_id, bastion_from=bastion_from)
-
-                    sub_result.append(
-                        {
-                            **sub_item,
-                            'app_data': app_data_by_id[sub_item['app_id']],
-                            'plan_data': plan_data_by_id[sub_item['plan_id']],
-                        }
-                    )
-
                 result_data.append(
                     {
                         **item,
-                        'app_data': app_data_by_id[item['app_id']],
-                        'plan_data': plan_data_by_id[item['plan_id']],
-                        'sub': sub_result,
                     }
                 )
-
             return result_data
         return []
 
     @classmethod
-    def push_range_to_key(
-            cls,
-            result, key, allow_range_or_id,
-            config_by_id=None, data_of_range=None, permit_from: PERMIT_FROM_TYPE = None,
-    ):
+    def get_permission_parsed(cls, instance):  # pylint: disable=R0912
+        return PermissionParsedTool().get_permission_parsed(instance)
+
+
+class PermissionParsedTool:
+    def __init__(self, **kwargs):
+        self.app_list_by_id = kwargs.get('app_list_by_id', self.get_all_application_by_id())
+        self.app_prefix_by_id = kwargs.get(
+            'app_prefix_by_id', self.get_app_prefix_by_id(app_list_by_id=self.app_list_by_id)
+        )
+        self.app_ids_allowed = []  # app ids for method parse_to_simple check app is allowed
+        self.app_prefix_allowed = []  # app prefix for method parse_to_simple check app is allowed
+
+    @classmethod
+    def get_all_application_by_id(cls):
+        from apps.core.base.models import Application
+
+        return {  # caching for db, timeout: default * 10
+            str(item.id): item
+            for item in Application.objects.filter().cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10)
+        }
+
+    @classmethod
+    def get_app_prefix_by_id(cls, app_list_by_id):
+        return {
+            str(idx): obj.get_prefix_permit() for idx, obj in app_list_by_id.items()
+        }
+
+    @classmethod
+    def push_range_to_key(cls, result, key, allow_range_or_id, **kwargs):
         """
-        Support update range config to storage with any permit_from
-        OVERRIDE ALLOW RANGE DATA IF ALLOW RANGE IS EXIST!
-        Args:
-            result:
-            key:
-            allow_range_or_id:
-            config_by_id:
-            data_of_range:
-            permit_from:
-
-        Returns:
-
+            Support update range config to storage with any permit_from
+            OVERRIDE ALLOW RANGE DATA IF ALLOW RANGE IS EXIST!
         """
 
+        config_by_id = kwargs.get('config_by_id', None)
+
+        data_of_range = kwargs.get('data_of_range', {})
         if not data_of_range:
             data_of_range = {}
+
+        permit_from: PERMIT_FROM_TYPE = kwargs.get('permit_from', None)
 
         if key not in result:
             result[key] = {}
@@ -335,75 +323,27 @@ class PermissionController:
 
         return result
 
-    def parse_from_config_to_simple(self, permit_config_arr: list[dict[str, any]], result=None):
-        """
-        Support parse from config data (send by UI) to simple before was forced save to storage
-        Args:
-            permit_config_arr:
-            result:
-
-        Returns:
-            {'hr.employee.view': { 'range': {} }
-        """
-        if not result:
-            result = {}
-
-        data_converted = self.valid(attrs=permit_config_arr)
-        for item in data_converted:
-            app_label = item['app_data']['app_label']
-            model_code = item['app_data']['model_code']
-            allow_range = item['range']
-
-            prefix_key = f'{app_label}.{model_code}'
-
-            is_create = item['create']
-            if is_create is True:
-                key = f'{prefix_key}.create'
-                self.push_range_to_key(result, key, allow_range)
-
-            is_view = item['view']
-            if is_view is True:
-                key = f'{prefix_key}.view'
-                self.push_range_to_key(result, key, allow_range)
-
-            is_edit = item['edit']
-            if is_edit is True:
-                key = f'{prefix_key}.edit'
-                self.push_range_to_key(result, key, allow_range)
-
-            is_delete = item['delete']
-            if is_delete is True:
-                key = f'{prefix_key}.delete'
-                self.push_range_to_key(result, key, allow_range)
-
-            item_sub = item.get('sub', [])
-            result = {
-                **result,
-                **(
-                    self.parse_from_config_to_simple(permit_config_arr=item_sub, result=result)
-                    if len(item_sub) > 0 else {}
-                )
-            }
-
-        return result
-
     def push_general(self, result, data):
         """
         Push data general to storage
         """
         if isinstance(data, list):
-            permit_configured_parsed = self.parse_from_config_to_simple(
-                permit_config_arr=data,
-                result=result
-            )
+            permit_configured_parsed, permit_general = self.parse_to_simple(data=data)
+
             for key_permit, value_permit in permit_configured_parsed.items():
                 for allow_range, range_data in value_permit.items():
                     self.push_range_to_key(
-                        result=result,
-                        key=key_permit,
-                        allow_range_or_id=allow_range, data_of_range=range_data,
-                        permit_from='general',
+                        result=result, key=key_permit,
+                        allow_range_or_id=allow_range, data_of_range=range_data, permit_from='general',
                     )
+
+            for key_permit, value_permit in permit_general.items():
+                for allow_range, range_data in value_permit.items():
+                    self.push_range_to_key(
+                        result=result, key=key_permit,
+                        allow_range_or_id=allow_range, data_of_range=range_data, permit_from='general',
+                    )
+
         return result
 
     @classmethod
@@ -425,51 +365,230 @@ class PermissionController:
                         )
         return result
 
-    @classmethod
-    def push_opp(cls, result, data):
+    def push_opp(self, result, data):
         """
         Push data OPP to storage
         """
         if isinstance(data, dict):
             for opp_id, config_perm in data.items():
                 # opp_id:       Opportunity ID is UUID4
-                # config_perm:  'hr.employee.view': { 'me': {}, 'all': {} }
-                for key_permit, value_permit in config_perm.items():
+                # config_perm:  ... same general!
+
+                skip_with_prefix = 'opportunity.opportunity'
+                permit_configured_parsed, permit_general = self.parse_to_simple(data=config_perm)
+
+                for key_permit, value_permit in permit_configured_parsed.items():
+                    if key_permit.startswith(skip_with_prefix):
+                        if settings.DEBUG_PERMIT:
+                            print('=> skip opp in push opp    :', key_permit, value_permit)
+
                     for allow_range, range_data in value_permit.items():
-                        cls.push_range_to_key(
-                            result=result,
-                            key=key_permit,
-                            config_by_id=opp_id,
-                            allow_range_or_id=allow_range,
-                            data_of_range=range_data,
-                            permit_from='opp',
+                        self.push_range_to_key(
+                            result=result, key=key_permit, config_by_id=opp_id,
+                            allow_range_or_id=allow_range, data_of_range=range_data, permit_from='opp',
+                        )
+
+                for key_permit, value_permit in permit_general.items():
+                    if key_permit.startswith(skip_with_prefix):
+                        if settings.DEBUG_PERMIT:
+                            print('=> skip opp in push opp    :', key_permit, value_permit)
+
+                    for allow_range, range_data in value_permit.items():
+                        self.push_range_to_key(
+                            result=result, key=key_permit,
+                            allow_range_or_id=allow_range, data_of_range=range_data, permit_from='general',
                         )
         return result
 
-    @classmethod
-    def push_prj(cls, result, data):
+    def push_prj(self, result, data):
         """
         Push Project data to storage
         """
         if isinstance(data, dict):
             for prj_id, config_perm in data.items():
                 # prj_id:       Project ID is UUID4
-                # config_perma: 'hr.employee.view': { 'me': {}, 'all': {} }
-                for key_permit, value_permit in config_perm.items():
+                # config_perma: ...same general
+
+                skip_with_prefix = 'project.project'
+                permit_configured_parsed, permit_general = self.parse_to_simple(data=config_perm)
+
+                for key_permit, value_permit in permit_configured_parsed.items():
+                    if key_permit.startswith(skip_with_prefix):
+                        if settings.DEBUG_PERMIT:
+                            print('=> skip opp in push opp    :', key_permit, value_permit)
+
                     for allow_range, range_data in value_permit.items():
-                        cls.push_range_to_key(
-                            result=result,
-                            key=key_permit,
-                            config_by_id=prj_id,
-                            allow_range_or_id=allow_range,
-                            data_of_range=range_data,
-                            permit_from='prj',
+                        self.push_range_to_key(
+                            result=result, key=key_permit, config_by_id=prj_id,
+                            allow_range_or_id=allow_range, data_of_range=range_data, permit_from='prj',
                         )
+
+                for key_permit, value_permit in permit_general.items():
+                    if key_permit.startswith(skip_with_prefix):
+                        if settings.DEBUG_PERMIT:
+                            print('=> skip opp in push opp    :', key_permit, value_permit)
+
+                    for allow_range, range_data in value_permit.items():
+                        self.push_range_to_key(
+                            result=result, key=key_permit,
+                            allow_range_or_id=allow_range, data_of_range=range_data, permit_from='general',
+                        )
+
         return result
+
+    @classmethod
+    def push_update_range(cls, result, code_full, range_allowed, main_range=None):
+        code_full = code_full.lower()
+        range_got = cls.confirm_range(range_check=range_allowed, main_range=main_range if main_range else range_allowed)
+        if code_full in result:
+            result[code_full].update({range_got: {}})
+        else:
+            result[code_full] = {range_got: {}}
+
+    @classmethod
+    def confirm_range(cls, range_check, main_range):
+        if range_check == '==':
+            return main_range
+        return range_check
+
+    @classmethod
+    def parse_item(cls, item_data, app_obj) -> Union[None, dict[str, bool]]:
+        has_allow_view = bool(item_data.get('view', False))
+        has_allow_create = bool(item_data.get('create', False))
+        has_allow_edit = bool(item_data.get('edit', False))
+        has_allow_delete = bool(item_data.get('delete', False))
+        has_allow_range = item_data.get('range', None)
+
+        config_range_allowed = app_obj.permit_mapping
+        if not (
+                (
+                        has_allow_view is True
+                        and 'view' in config_range_allowed
+                        and 'range' in config_range_allowed['view']
+                        and has_allow_range in config_range_allowed['view']['range']
+                )
+                or (
+                        has_allow_create is True
+                        and 'create' in config_range_allowed
+                        and 'range' in config_range_allowed['create']
+                        and has_allow_range in config_range_allowed['create']['range']
+                )
+                or (
+                        has_allow_edit is True
+                        and 'edit' in config_range_allowed
+                        and 'range' in config_range_allowed['edit']
+                        and has_allow_range in config_range_allowed['edit']['range']
+                )
+                or (
+                        has_allow_delete
+                        and 'delete' in config_range_allowed
+                        and 'range' in config_range_allowed['delete']
+                        and has_allow_range in config_range_allowed['delete']['range']
+                )
+        ):
+            return None
+
+        return {
+            'view': has_allow_view,
+            'create': has_allow_create,
+            'edit': has_allow_edit,
+            'delete': has_allow_delete,
+            'range': has_allow_range,
+        }
+
+    @classmethod
+    def app_allow_from_instance(cls, instance) -> tuple[list[str], list[str]]:
+        distribution_app_cls_code = getattr(instance, 'distribution_app_cls_code', None)
+        get_app_allowed = getattr(instance, 'get_app_allowed', None)
+        if callable(get_app_allowed) and distribution_app_cls_code:
+            app_ids_or_employee_id = get_app_allowed()
+            if isinstance(app_ids_or_employee_id, tuple) and len(app_ids_or_employee_id) == 2:
+                return app_ids_or_employee_id
+            elif isinstance(app_ids_or_employee_id, str) and TypeCheck.check_uuid(app_ids_or_employee_id):
+                app_ids, app_prefix = [], []
+                dis_app_cls = DisperseModel(app_model=instance.distribution_app_cls_code).get_model()
+                for obj in dis_app_cls.objects.select_related('app').filter(employee_id=app_ids_or_employee_id):
+                    app_ids.append(str(obj.app_id))
+                    app_prefix.append(str(obj.app.get_prefix_permit()))
+                return app_ids, app_prefix
+        return [], []
+
+    def parse_to_simple(self, data) -> tuple[dict, dict]:
+        """
+        Parse config permit to simple for push to field permission_parsed in DB
+        Args:
+            result: [push from calling]
+            data: [{
+              "id":"a482a93f-9665-45d4-b147-9da41245f82e",
+              "view":true,  "create": true, "edit":true, "delete": true, "range":"1",
+              "app_id":"4e48c863-861b-475a-aa5e-97a4ed26f294",
+              "plan_id":"4e082324-45e2-4c27-a5aa-e16a758d5627"
+            }]
+
+        Returns:
+            {"q.q.view": {"range": {}}
+        """
+        result = {}
+        result_general = {}
+        if isinstance(data, list):
+            for item in data:
+                if 'app_id' in item and TypeCheck.check_uuid(item['app_id']) and item['app_id'] in self.app_list_by_id:
+                    app_obj = self.app_list_by_id[item['app_id']]
+                    app_prefix = app_obj.get_prefix_permit()
+                    if item['app_id'] not in self.app_ids_allowed:
+                        if settings.DEBUG_PERMIT:
+                            print('=> parsed to simple skip   :', app_prefix, item['app_id'], item)
+                    else:
+                        parse_item = self.parse_item(item_data=item, app_obj=app_obj)
+                        if parse_item is None:
+                            # skip permit parsed is failure!
+                            if settings.DEBUG_PERMIT:
+                                print('=> Skip parse to simple of :', item)
+                            continue
+
+                        for key_check in ['view', 'create', 'edit', 'delete']:
+                            if parse_item[key_check] is True:
+                                # append main app
+                                self.push_update_range(
+                                    result=result,
+                                    code_full=f"{app_prefix}.{key_check}".lower(),
+                                    range_allowed=parse_item['range'],
+                                )
+
+                                # append depend local
+                                local_depends_on = app_obj.permit_mapping[key_check].get('local_depends_on', {})
+                                for permit_code, permit_range in local_depends_on.items():
+                                    self.push_update_range(
+                                        result=result,
+                                        code_full=f"{app_prefix}.{permit_code}",
+                                        range_allowed=permit_range, main_range=parse_item['range'],
+                                    )
+
+                                # append depend app
+                                app_depends_on = app_obj.permit_mapping[key_check].get('app_depends_on', {})
+                                for depend_app_id, depend_on_data in app_depends_on.items():
+                                    depend_app_obj = self.app_list_by_id.get(depend_app_id, None)
+                                    if depend_app_obj:
+                                        depend_app_prefix = depend_app_obj.get_prefix_permit()
+                                        for permit_code, permit_range in depend_on_data.items():
+                                            # is_main
+                                            #   True: push permit to APP_ID group
+                                            #   False: push permit to general group
+                                            is_main = depend_app_obj.depend_follow_main
+                                            self.push_update_range(
+                                                result=result if is_main is True else result_general,
+                                                code_full=f"{depend_app_prefix}.{permit_code}",
+                                                range_allowed=permit_range, main_range=parse_item['range'],
+                                            )
+        return result, result_general
 
     def get_permission_parsed(self, instance):  # pylint: disable=R0912
         result = {}
         if instance and hasattr(instance, 'id'):
+            self.app_ids_allowed, self.app_prefix_allowed = self.app_allow_from_instance(instance=instance)
+            if not isinstance(self.app_ids_allowed, list) or not isinstance(self.app_prefix_allowed, list):
+                raise ValueError('App allowed return data type not support!')
+
             #
             # parse for general
             #

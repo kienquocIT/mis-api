@@ -8,7 +8,7 @@ from uuid import UUID
 
 from django.conf import settings
 
-__all__ = ['LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
+__all__ = ['LinkListHandler', 'StringHandler', 'ListHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
 
 
 class LinkListHandler:
@@ -52,6 +52,22 @@ class StringHandler:
     def remove_special_characters_translate(text):
         """Fast with string too long"""
         return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
+
+
+class ListHandler:
+    @staticmethod
+    def diff_two_list(arr_a: list[str], arr_b: list[str]) -> (list[str], list[str], list[str]):
+        """
+        Returns:
+            0: letters in "a" but not in "b"
+            1: letters in both "a" and "b"
+            2: letters in "b" but not in "a"
+        """
+        # best performance by set: https://docs.python.org/3/tutorial/datastructures.html#sets
+        both_set = list(set(arr_a) & set(arr_b))
+        left_split = list(set(arr_a) - set(both_set))
+        right_split = list(set(arr_b) - set(both_set))
+        return left_split, both_set, right_split
 
 
 class CustomizeEncoder(json.JSONEncoder):

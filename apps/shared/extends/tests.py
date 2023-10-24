@@ -11,11 +11,11 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.core.tenant.models import TenantPlan
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, EmployeePermission
 from apps.sharedapp.data.base import FULL_PERMISSIONS_BY_CONFIGURED, FULL_PLAN_ID
 
 from .utils import CustomizeEncoder
-from ..permissions import PermissionsUpdateSerializer
+from .. import PermissionController
 
 __all__ = ['AdvanceTestCase', 'count_queries']
 
@@ -269,9 +269,11 @@ class AdvanceTestCase(TestCase):
                     TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
                 ]
             )
-            PermissionsUpdateSerializer.force_permissions(
-                instance=employee_obj, validated_data={'permission_by_configured': FULL_PERMISSIONS_BY_CONFIGURED}
-            )
+
+            # force admin full permit!
+            employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+            employee_permit_obj.permission_by_configured = FULL_PERMISSIONS_BY_CONFIGURED
+            PermissionController(tenant_id=employee_obj.tenant_id).get_permission_parsed(instance=employee_permit_obj)
             employee_obj.is_admin_company = True
             employee_obj.save()
         self.company_id = response.data['result']['company_current']['id']

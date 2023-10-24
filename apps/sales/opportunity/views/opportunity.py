@@ -16,6 +16,7 @@ from apps.sales.opportunity.serializers.opp_members import (
     MemberOfOpportunityDetailSerializer,
     MemberOfOpportunityUpdateSerializer, MemberOfOpportunityAddSerializer,
 )
+from apps.sales.opportunity.serializers.opportunity import OpportunityDetailSimpleSerializer
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck,
     ResponseController, BaseDestroyMixin,
@@ -120,6 +121,47 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
+
+
+class OpportunityDetailGetByCreateFromOpp(BaseRetrieveMixin):
+    # by pass check permit --> only return id title code
+    queryset = Opportunity.objects
+    serializer_detail = OpportunityDetailSimpleSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "customer",
+            "decision_maker",
+            "end_customer",
+            "employee_inherit__group",
+            "sale_order__delivery_of_sale_order",
+            "quotation",
+        ).prefetch_related(
+            "stage",
+            "members",
+        )
+
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
+        if OpportunitySaleTeamMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                opportunity=instance,
+                # permit_view_this_opp=True, # don't check view opp | allow if you are member
+                member_id=self.cls_check.employee_attr.employee_current_id,
+        ).exists():
+            return True
+        return False
+
+    @swagger_auto_schema(
+        operation_summary="Opportunity detail get by create from opp",
+        operation_description="Only return id title code  + allow for all member of opp | Else deny",
+    )
+    @mask_view(
+        login_require=True, auth_require=False, employee_required=True,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
 
 
 class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):

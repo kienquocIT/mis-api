@@ -38,6 +38,7 @@ SECRET_KEY = 'django-insecure-z+!6=0b0sdkx!#su_z1$+6(*_8&5lo5&%jy8n76c5l1b1um&%t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 DEBUG_PERMIT = False
+DEBUG_BG_TASK = False
 DEBUG_SIGNAL_CHANGE = False
 
 ALLOWED_HOSTS = []
@@ -64,6 +65,7 @@ INSTALLED_APPS = \
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
+        'django_extensions',  # some tool for command | https://github.com/django-extensions/django-extensions
     ] + [  # integrate some service management or tracing
         'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
@@ -270,7 +272,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # test runner override | runner for command: python manage.py test
 TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
 TEST_ARGS = ['--keepdb']
-DJANGO_TEST_ARGS=['--keepdb']
+DJANGO_TEST_ARGS = ['--keepdb']
 # -- test runner override | runner for command: python manage.py test
 
 # REST API & JWT
@@ -533,6 +535,7 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
 
 # debug permit working
 DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
+DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
 
 # Display config about DB, Cache, CELERY,...
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']

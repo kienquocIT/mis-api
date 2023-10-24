@@ -88,5 +88,5 @@ LEAVE_APP_CONFIG = {
 }
 
 Application_eOffice_data = {
-    "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data,
+    "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data_0(),
 }

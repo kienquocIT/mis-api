@@ -1,12 +1,16 @@
-from django.db.models import Prefetch
+from typing import Union
+
+from django.db.models import Prefetch, Q
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework import exceptions
+from rest_framework.response import Response
 
 from apps.core.hr.mixins import RoleDestroyMixin
-from apps.core.hr.models import Role, Employee
+from apps.core.hr.models import Role, Employee, PlanRoleApp
 from apps.core.hr.serializers.role_serializers import (
     RoleUpdateSerializer, RoleDetailSerializer,
     RoleCreateSerializer,
-    RoleListSerializer,
+    RoleListSerializer, ApplicationOfRoleSerializer,
 )
 from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin, BaseCreateMixin
 
@@ -96,3 +100,41 @@ class RoleDetail(BaseRetrieveMixin, BaseUpdateMixin, RoleDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class RoleAppList(BaseListMixin):
+    queryset = PlanRoleApp.objects
+    search_fields = ["application__title"]
+    serializer_list = ApplicationOfRoleSerializer
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            'plan_role__role_id': self.kwargs['pk'],
+        }
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        role_id = self.kwargs['pk']
+        try:
+            role_obj = Role.objects.get(pk=role_id)
+        except Role.DoesNotExist:
+            raise exceptions.NotFound
+
+        state = self.check_perm_by_obj_or_body_data(obj=role_obj, auto_check=True)
+        if state is True:
+            return Q()
+        return self.list_empty()
+
+    @swagger_auto_schema(
+        operation_summary="Application List of Employee",
+        operation_description="Application List of Employee",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='hr', model_code='role', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.list(request, *args, pk, **kwargs)
+

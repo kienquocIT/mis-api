@@ -178,6 +178,11 @@ class Application(CoreAbstractModel):
             'local_depends_on': {},
         },
     }
+    depend_follow_main = models.BooleanField(
+        default=True,
+        verbose_name='Depends Follow Main ID',
+        help_text='Default it append to with Main ID Group, False: append to global (same general)'
+    )
 
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
@@ -190,6 +195,9 @@ class Application(CoreAbstractModel):
         ordering = ('title',)
         default_permissions = ()
         permissions = ()
+
+    def get_prefix_permit(self):
+        return f'{self.app_label}.{self.model_code}'.lower()
 
     @classmethod
     def get_range_allow(cls, opt):

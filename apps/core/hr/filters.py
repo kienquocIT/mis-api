@@ -1,12 +1,16 @@
+import django_filters
 from django.db.models import Q
 from django_filters.rest_framework import filters
 from rest_framework import exceptions
 
 from apps.shared import BastionFieldAbstractListFilter
 from apps.shared import TypeCheck
-from .models import Employee
+from .models import Employee, DistributionApplication
 
-__all__ = ['EmployeeListFilter']
+__all__ = [
+    'EmployeeListFilter',
+    'EmployeeStorageAppAllListFilter',
+]
 
 
 class EmployeeListFilter(BastionFieldAbstractListFilter):
@@ -32,3 +36,24 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
                 filter_kwargs |= Q(**{name: manager})
             return queryset.filter(filter_kwargs)
         raise exceptions.AuthenticationFailed
+
+
+class EmployeeStorageAppAllListFilter(django_filters.FilterSet):
+    opportunity = filters.UUIDFilter(method='filter_opportunity')
+    project = filters.UUIDFilter(method='filter_project')
+
+    @classmethod
+    def filter_get_from(cls, queryset, *args, **kwargs):
+        return queryset
+
+    @classmethod
+    def filter_opportunity(cls, queryset, *args, **kwargs):
+        return queryset
+
+    @classmethod
+    def filter_project(cls, queryset, *args, **kwargs):
+        return queryset
+
+    class Meta:
+        model = DistributionApplication
+        fields = ()

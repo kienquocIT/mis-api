@@ -643,6 +643,16 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class OpportunityDetailSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
 class OpportunityDetailSerializer(serializers.ModelSerializer):
     decision_maker = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
