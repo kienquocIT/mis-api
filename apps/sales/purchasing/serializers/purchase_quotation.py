@@ -139,17 +139,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
 def create_pq_map_products(purchase_quotation_obj, product_list):
     bulk_info = []
     for item in product_list:
-        bulk_info.append(
-            PurchaseQuotationProduct(
-                purchase_quotation=purchase_quotation_obj,
-                product_id=item.get('product_id', None),
-                uom_id=item.get('product_uom_id', None),
-                quantity=item.get('product_quantity', None),
-                unit_price=item.get('product_unit_price', None),
-                tax_id=item.get('product_taxes', None),
-                subtotal_price=item.get('product_subtotal_price', None),
-            )
-        )
+        bulk_info.append(PurchaseQuotationProduct(purchase_quotation=purchase_quotation_obj, **item))
     PurchaseQuotationProduct.objects.filter(purchase_quotation=purchase_quotation_obj).delete()
     PurchaseQuotationProduct.objects.bulk_create(bulk_info)
     return True

@@ -934,3 +934,281 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         )
 
         return response
+
+
+class TestCasePurchaseQuotation(AdvanceTestCase):
+    def setUp(self):
+        self.maxDiff = None
+        self.client = APIClient()
+
+        self.authenticated()
+
+    def create_product_type(self):
+        url = reverse('ProductTypeList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'San pham 1',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_product_category(self):
+        url = reverse('ProductCategoryList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Hardware',
+                'description': '',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom_group(self):
+        url = reverse('UnitOfMeasureGroupList')
+        response = self.client.post(
+            url,
+            {
+                'title': 'Time',
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
+    def create_uom(self):
+        data_uom_gr = self.create_uom_group()
+        url = reverse('UnitOfMeasureList')
+        response = self.client.post(
+            url,
+            {
+                "code": "MIN",
+                "title": "minute",
+                "group": data_uom_gr.data['result']['id'],
+                "ratio": 1,
+                "rounding": 5,
+                "is_referenced_unit": True
+            },
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response, data_uom_gr
+
+    def get_base_unit_measure(self):
+        url = reverse('BaseItemUnitList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def create_new_tax_category(self):
+        url_tax_category = reverse("TaxCategoryList")
+        data = {
+            "title": "Thuế doanh nghiệp kinh doanh tư nhân",
+            "description": "Áp dụng cho các hộ gia đình kinh doanh tư nhân",
+        }
+        response = self.client.post(url_tax_category, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'description', 'is_default'],
+            check_sum_second=True,
+        )
+        return response
+
+    def create_new_tax(self):
+        url_tax = reverse("TaxList")
+        tax_category = self.create_new_tax_category()
+        data = {
+            "title": "Thuế bán hành VAT-10%",
+            "code": "VAT-10",
+            "rate": 10,
+            "category": tax_category.data['result']['id'],
+            "tax_type": 0
+        }
+        response = self.client.post(url_tax, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
+            check_sum_second=True,
+        )
+        return response
+
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_currency(self):
+        url = reverse('CurrencyList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_product(self):
+        self.url = reverse("ProductList")
+        product = ProductTestCase.test_create_product(self)
+        return product
+
+    def create_salutation(self):
+        salutation = SalutationTestCase.test_create_new(self)
+        return salutation
+
+    def create_account_group(self):
+        response = AccountGroupTestCase.test_create_new(self, code="AG0002", title="AG test PO")
+        return response
+
+    def create_industry(self):
+        response = IndustryTestCase.test_create_new(self)
+        return response
+
+    def get_account_type(self):
+        url = reverse("AccountTypeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def test_create_contact(self):
+        url = reverse("ContactList")
+        salutation = self.create_salutation()
+        employee = self.get_employee()
+        data = {
+            "owner": employee.data['result'][0]['id'],
+            "job_title": "Giám đốc nè",
+            "biography": "không có",
+            "fullname": "Trịnh Tuấn Nam",
+            "salutation": salutation.data['result']['id'],
+            "phone": "string",
+            "mobile": "string",
+            "email": "string",
+            "report_to": None,
+            "address_information": {},
+            "additional_information": {},
+            "account_name": None,
+            "system_status": 0
+        }
+
+        response = self.client.post(url, data, format='json')
+        return response
+
+    def test_create_account(self):
+        account_type = self.get_account_type().data['result'][0]['id']
+        account_group = self.create_account_group().data['result']['id']
+        employee = self.get_employee().data['result'][0]['id']
+        contact = self.test_create_contact().data['result']['id']
+        industry = self.create_industry().data['result']['id']
+        data = {
+            "name": "Công ty hạt giống, phân bón Trúc Phượng",
+            "code": "SUP01",
+            "website": "trucphuong.com.vn",
+            "account_type": [account_type],
+            "account_type_selection": 0,
+            "account_group": account_group,
+            "manager": [
+                employee
+            ],
+            "parent_account_mapped": None,
+            "tax_code": "string",
+            "industry": industry,
+            "annual_revenue": 1,
+            "total_employees": 1,
+            "phone": "string",
+            "email": "string",
+            "contact_mapped": [
+                {
+                    'id': contact,
+                    'is_account_owner': True
+                }
+            ],
+            "system_status": 0
+        }
+        url = reverse("AccountList")
+        response = self.client.post(url, data, format='json')
+        return response
+
+    def test_create_purchase_quotation(self):
+        product_create = self.test_create_product()
+        product = product_create.data['result']
+        uom = product_create.data['result']['sale_information']['default_uom']
+        tax = product_create.data['result']['sale_information']['tax']
+        account_create = self.test_create_account()
+        account = account_create.data['result']
+        contact_create = self.test_create_contact()
+        contact = contact_create.data['result']
+
+        data = {
+            "title": "Test PQ",
+            "supplier_mapped": account['id'],
+            "contact_mapped": contact['id'],
+            "expiration_date": "2023-10-09 12:00:00",
+            "lead_time_from": 1,
+            "lead_time_to": 3,
+            "lead_time_type": 1,
+            "note": 'San pham de vo',
+            "products_selected": [{
+                'product_id': product['id'],
+                'uom_id': uom['uom_id'],
+                'quantity': 10,
+                'unit_price': 15000000,
+                'tax_id': tax['id'],
+                'subtotal_price': 180000000,
+            }],
+            'pretax_price': 150000000,
+            'taxes_price': 30000,
+            'total_price': 180000000,
+        }
+
+        url = reverse("PurchaseQuotationList")
+        response = self.client.post(url, data, format='json')
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'code',
+                'title',
+                'supplier_mapped',
+                'contact_mapped',
+                'purchase_quotation_request_mapped',
+                'expiration_date',
+                'lead_time_from',
+                'lead_time_to',
+                'lead_time_type',
+                'note',
+                'products_mapped',
+                'pretax_price',
+                'taxes_price',
+                'total_price'
+            ],
+            check_sum_second=True,
+        )
+
+        return response
