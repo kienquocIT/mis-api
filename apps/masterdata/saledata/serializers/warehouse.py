@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse, Account,
+    WareHouse, ProductWareHouse, Account, ProductWareHouseLot,
 )
 
 __all__ = [
@@ -318,3 +318,34 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
                 'inventory_uom': item.uom_data,
             })
         return results
+
+
+class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
+    product_warehouse = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouseLot
+        fields = (
+            'id',
+            'product_warehouse',
+            'lot_number',
+            'quantity_import',
+            'expire_date',
+            'manufacture_date',
+        )
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        return {
+            'id': obj.product_warehouse_id,
+            'product': {
+                'id': obj.product_warehouse.product_id,
+                'title': obj.product_warehouse.product.title,
+                'code': obj.product_warehouse.product.code,
+            } if obj.product_warehouse.product else {},
+            'warehouse': {
+                'id': obj.product_warehouse.warehouse_id,
+                'title': obj.product_warehouse.warehouse.title,
+                'code': obj.product_warehouse.warehouse.code,
+            } if obj.product_warehouse.warehouse else {},
+        }

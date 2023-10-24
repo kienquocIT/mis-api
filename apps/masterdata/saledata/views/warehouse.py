@@ -1,10 +1,11 @@
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.serializers.warehouse import ProductWarehouseLotListSerializer
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse
+    WareHouse, ProductWareHouse, ProductWareHouseLot
 )
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer, WareHouseListSerializerForInventoryAdjustment,
@@ -136,6 +137,29 @@ class WareHouseListForInventoryAdjustment(BaseListMixin):
     }
 
     @swagger_auto_schema(operation_summary='WareHouse List')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseLotList(BaseListMixin):
+    queryset = ProductWareHouseLot.objects
+    search_fields = ['lot_number', ]
+    filterset_fields = {
+        "product_warehouse_id": ["exact"],
+    }
+    serializer_list = ProductWarehouseLotListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product_warehouse__product',
+            'product_warehouse__warehouse',
+        )
+
+    @swagger_auto_schema(operation_summary='Product WareHouse Lot')
     @mask_view(
         login_require=True, auth_require=False,
     )

@@ -24,6 +24,7 @@ from apps.masterdata.saledata.views import (
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail
 )
+from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -124,6 +125,8 @@ urlpatterns += [
     ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
+    path('warehouses-lots', ProductWareHouseLotList.as_view(), name='ProductWareHouseLotList'),
+    # path('warehouses-serials', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
     path(
         'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
         name='WareHouseCheckAvailableProductList'
