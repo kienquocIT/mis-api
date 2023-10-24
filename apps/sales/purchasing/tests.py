@@ -844,10 +844,42 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
         )
         return response
 
+    def get_price_list(self):
+        url = reverse('PriceList')
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_currency(self):
+        url = reverse('CurrencyList')
+        response = self.client.get(url, format='json')
+        return response
+
     def test_create_product(self):
         self.url = reverse("ProductList")
         product = ProductTestCase.test_create_product(self)
         return product
+
+    def create_salutation(self):
+        salutation = SalutationTestCase.test_create_new(self)
+        return salutation
+
+    def create_account_group(self):
+        response = AccountGroupTestCase.test_create_new(self, code="AG0002", title="AG test PO")
+        return response
+
+    def create_industry(self):
+        response = IndustryTestCase.test_create_new(self)
+        return response
+
+    def get_account_type(self):
+        url = reverse("AccountTypeList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_employee(self):
+        url = reverse("EmployeeList")
+        response = self.client.get(url, format='json')
+        return response
 
     def test_create_purchase_quotation_request(self):
         product_create = self.test_create_product()
@@ -857,18 +889,16 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
 
         data = {
             "title": "Test PQR",
-            "purchase_request_list": [],
-            "delivered_date": "2023-10-09",
-            "status_delivered": 0,
+            "delivered_date": "2023-10-09 12:00:00",
             "note": 'San pham de vo',
-            "products_selected": {
+            "products_selected": [{
                 'product_id': product['id'],
                 'uom_id': uom['uom_id'],
                 'quantity': 10,
                 'unit_price': 15000000,
                 'tax_id': tax['id'],
                 'subtotal_price': 180000000,
-            },
+            }],
             'pretax_price': 150000000,
             'taxes_price': 30000,
             'total_price': 180000000,
