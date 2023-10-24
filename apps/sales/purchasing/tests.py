@@ -1154,13 +1154,12 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
         tax = product_create.data['result']['sale_information']['tax']
         account_create = self.test_create_account()
         account = account_create.data['result']
-        contact_create = self.test_create_contact()
-        contact = contact_create.data['result']
+
 
         data = {
             "title": "Test PQ",
             "supplier_mapped": account['id'],
-            "contact_mapped": contact['id'],
+            "contact_mapped": account['contact_mapped'][0]['id'],
             "expiration_date": "2023-10-09 12:00:00",
             "lead_time_from": 1,
             "lead_time_to": 3,
