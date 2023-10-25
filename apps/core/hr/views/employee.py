@@ -230,6 +230,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         label_code='hr', model_code='employee', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_obj': request.user.company_current
+        }
         return self.create(request, *args, **kwargs)
 
 
