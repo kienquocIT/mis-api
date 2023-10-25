@@ -15,7 +15,8 @@ from apps.core.hr.models import Employee, EmployeePermission
 from apps.sharedapp.data.base import FULL_PERMISSIONS_BY_CONFIGURED, FULL_PLAN_ID
 
 from .utils import CustomizeEncoder
-from .. import PermissionController
+from ..permissions.util import PermissionController
+
 
 __all__ = ['AdvanceTestCase', 'count_queries']
 
