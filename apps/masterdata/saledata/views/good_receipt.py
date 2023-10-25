@@ -45,7 +45,7 @@ class GoodReceiptList(
         request_body=GoodReceiptCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         allow_admin_tenant=True, allow_admin_company=True,
     )
     def post(self, request, *args, **kwargs):

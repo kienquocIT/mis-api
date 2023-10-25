@@ -173,6 +173,12 @@ class Employee(TenantAbstractModel):
             return True
         return False
 
+    def append_permit_by_ids(self, app_label, model_code, perm_code, doc_id, tenant_id):
+        employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return employee_permit_obj.append_permit_by_ids(
+            app_label=app_label, model_code=model_code, perm_code=perm_code, doc_id=doc_id, tenant_id=tenant_id
+        )
+
     @classmethod
     def generate_code(cls, company_id):
         num_max = None

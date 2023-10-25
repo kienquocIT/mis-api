@@ -48,51 +48,51 @@ class ProductListUtil:
 
 
 def handle_attach_file(user, instance, validated_attach, create_method):
-    # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
-    relate_app = Application.objects.get(id="47e538a8-17e7-43bb-8c7e-dc936ccaf474")
-    relate_app_code = 'goodreceipt'
-    instance_id = str(instance.id)
-    attachment = validated_attach[0] if validated_attach else None
-    # check file trong API
-    current_attach = GoodReceiptAttachment.objects.filter(good_receipt=instance)
-
-    # kiểm tra current attach trùng media_id với attachments gửi lên
-    if current_attach.exists():
-        attach = current_attach.first()
-        if not str(attach.media_file) == attachment:
-            # this case update new file
-            current_attach.delete()
-        else:
-            # current and update file are the same or attachments is empty
-            return True
-
-    if not user.employee_current:
-        raise serializers.ValidationError(
-            {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
-        )
-    # check file trên cloud
-    if not attachment:
-        return False
-    is_check, attach_check = Files.check_media_file(
-        media_file_id=attachment,
-        media_user_id=str(user.employee_current.media_user_id)
-    )
-    if not is_check:
-        raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
-
-    # step 1: tạo mới file trong File API
-    files = Files.regis_media_file(
-        relate_app, instance_id, relate_app_code, user, media_result=attach_check
-    )
-    # step 2: tạo mới file trong table M2M
-    GoodReceiptAttachment.objects.create(
-        good_receipt=instance,
-        attachment=files,
-        media_file=attachment
-    )
-    instance.attachments = validated_attach
-    if create_method:
-        instance.save(update_fields=['attachments'])
+    # # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
+    # relate_app = Application.objects.get(id="47e538a8-17e7-43bb-8c7e-dc936ccaf474")
+    # relate_app_code = 'goodreceipt'
+    # instance_id = str(instance.id)
+    # attachment = validated_attach[0] if validated_attach else None
+    # # check file trong API
+    # current_attach = GoodReceiptAttachment.objects.filter(good_receipt=instance)
+    #
+    # # kiểm tra current attach trùng media_id với attachments gửi lên
+    # if current_attach.exists():
+    #     attach = current_attach.first()
+    #     if not str(attach.media_file) == attachment:
+    #         # this case update new file
+    #         current_attach.delete()
+    #     else:
+    #         # current and update file are the same or attachments is empty
+    #         return True
+    #
+    # if not user.employee_current:
+    #     raise serializers.ValidationError(
+    #         {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
+    #     )
+    # # check file trên cloud
+    # if not attachment:
+    #     return False
+    # is_check, attach_check = Files.check_media_file(
+    #     media_file_id=attachment,
+    #     media_user_id=str(user.employee_current.media_user_id)
+    # )
+    # if not is_check:
+    #     raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
+    #
+    # # step 1: tạo mới file trong File API
+    # files = Files.regis_media_file(
+    #     relate_app, instance_id, relate_app_code, user, media_result=attach_check
+    # )
+    # # step 2: tạo mới file trong table M2M
+    # GoodReceiptAttachment.objects.create(
+    #     good_receipt=instance,
+    #     attachment=files,
+    #     media_file=attachment
+    # )
+    # instance.attachments = validated_attach
+    # if create_method:
+    #     instance.save(update_fields=['attachments'])
     return True
 
 
