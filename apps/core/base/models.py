@@ -183,6 +183,11 @@ class Application(CoreAbstractModel):
         verbose_name='Depends Follow Main ID',
         help_text='Default it append to with Main ID Group, False: append to global (same general)'
     )
+    filtering_inheritor = models.BooleanField(
+        default=True,
+        verbose_name='Allow Filter Inheritor',
+        help_text='Apply rule filter employee_inherit_id in mask_view'
+    )
 
     def __repr__(self):
         return f'{self.app_label} - {self.model_code}'
@@ -195,6 +200,7 @@ class Application(CoreAbstractModel):
         ordering = ('title',)
         default_permissions = ()
         permissions = ()
+        unique_together = ('app_label', 'model_code')
 
     def get_prefix_permit(self):
         return f'{self.app_label}.{self.model_code}'.lower()

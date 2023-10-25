@@ -708,12 +708,12 @@ RETURN_ADVANCE_APP_CONFIG = {
     ],
     "permit_mapping": {
         "view": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "create": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
@@ -723,7 +723,7 @@ RETURN_ADVANCE_APP_CONFIG = {
             },
         },
         "edit": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {
                 "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
@@ -733,7 +733,7 @@ RETURN_ADVANCE_APP_CONFIG = {
             },
         },
         "delete": {
-            "range": ["4"],
+            "range": ["1", "4"],
             "app_depends_on": {},
             "local_depends_on": {
                 "view": "==",
@@ -1188,43 +1188,142 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
 
 Application_crm_data = {
     # Nhóm 1 ^ 2
-    "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data_1(),
-    "dec012bf-b931-48ba-a746-38b7fd7ca73b": ApplicationConfigFrame(**EMAIL_LOG_APP_CONFIG).data_1(),
-    "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124": ApplicationConfigFrame(**DOCUMENT_FOR_CUSTOMER_APP_CONFIG).data_1(),
-    "e66cfb5a-b3ce-4694-a4da-47618f53de4c": ApplicationConfigFrame(**TASK_APP_CONFIG).data_1(),
-    "31c9c5b0-717d-4134-b3d0-cc4ca174b168": ApplicationConfigFrame(**CONTRACT_APP_CONFIG).data_1(),
-    "57725469-8b04-428a-a4b0-578091d0e4f5": ApplicationConfigFrame(**ADVANCE_PAYMENT_APP_CONFIG).data_1(),
-    "1010563f-7c94-42f9-ba99-63d5d26a1aca": ApplicationConfigFrame(**PAYMENT_APP_CONFIG).data_1(),
-    "65d36757-557e-4534-87ea-5579709457d7": ApplicationConfigFrame(**RETURN_ADVANCE_APP_CONFIG).data_1(),
+    "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "dec012bf-b931-48ba-a746-38b7fd7ca73b": ApplicationConfigFrame(**EMAIL_LOG_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124": ApplicationConfigFrame(**DOCUMENT_FOR_CUSTOMER_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "e66cfb5a-b3ce-4694-a4da-47618f53de4c": ApplicationConfigFrame(**TASK_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "31c9c5b0-717d-4134-b3d0-cc4ca174b168": ApplicationConfigFrame(**CONTRACT_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "57725469-8b04-428a-a4b0-578091d0e4f5": ApplicationConfigFrame(**ADVANCE_PAYMENT_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "1010563f-7c94-42f9-ba99-63d5d26a1aca": ApplicationConfigFrame(**PAYMENT_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "65d36757-557e-4534-87ea-5579709457d7": ApplicationConfigFrame(**RETURN_ADVANCE_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
 
     # Nhóm 1
-    "a870e392-9ad2-4fe2-9baa-298a38691cf2": ApplicationConfigFrame(**SALEORDER_APP_CONFIG).data_1(),
-    "b9650500-aba7-44e3-b6e0-2542622702a3": ApplicationConfigFrame(**QUOTATION_APP_CONFIG).data_1(),
+    "a870e392-9ad2-4fe2-9baa-298a38691cf2": ApplicationConfigFrame(**SALEORDER_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
+    "b9650500-aba7-44e3-b6e0-2542622702a3": ApplicationConfigFrame(**QUOTATION_APP_CONFIG).data(
+        depend_follow_main=True,
+        filtering_inheritor=True,
+    ),
 
     # Nhóm 2
 
     # Nhóm 3
-    "828b785a-8f57-4a03-9f90-e0edf96560d7": ApplicationConfigFrame(**CONTACT_APP_CONFIG).data_0(),
-    "4e48c863-861b-475a-aa5e-97a4ed26f294": ApplicationConfigFrame(**ACCOUNT_APP_CONFIG).data_0(),
-    "296a1410-8d72-46a8-a0a1-1821f196e66c": ApplicationConfigFrame(**OPPORTUNITY_APP_CONFIG).data_0(),
-    "a8badb2e-54ff-4654-b3fd-0d2d3c777538": ApplicationConfigFrame(**PRODUCT_APP_CONFIG).data_0(),
-    "022375ce-c99c-4f11-8841-0a26c85f2fc2": ApplicationConfigFrame(**EXPENSES_APP_CONFIG).data_0(),
-    "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": ApplicationConfigFrame(**WAREHOUSE_APP_CONFIG).data_0(),
-    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": ApplicationConfigFrame(**GOOD_RECEIPT_APP_CONFIG).data_0(),
-    "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a": ApplicationConfigFrame(**PICKING_APP_CONFIG).data_0(),
-    "1373e903-909c-4b77-9957-8bcf97e8d6d3": ApplicationConfigFrame(**DELIVERY_APP_CONFIG).data_0(),
-    "10a5e913-fa51-4127-a632-a8347a55c4bb": ApplicationConfigFrame(**PRICES_APP_CONFIG).data_0(),
-    "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": ApplicationConfigFrame(**SHIPPING_APP_CONFIG).data_0(),
-    "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": ApplicationConfigFrame(**PROMOTION_APP_CONFIG).data_0(),
-    "3407d35d-27ce-407e-8260-264574a216e3": ApplicationConfigFrame(**PAYMENT_TERM_APP_CONFIG).data_0(),
-    "2fe959e3-9628-4f47-96a1-a2ef03e867e3": ApplicationConfigFrame(**METING_LOG_APP_CONFIG).data_0(),
-    "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": ApplicationConfigFrame(**PURCHASE_QUOTATION_REQUEST_APP_CONFIG).data_0(),
-    "f52a966a-2eb2-4851-852d-eff61efeb896": ApplicationConfigFrame(**PURCHASE_QUOTATION_APP_CONFIG).data_0(),
-    "81a111ef-9c32-4cbd-8601-a3cce884badb": ApplicationConfigFrame(**PURCHASE_ORDER_APP_CONFIG).data_0(),
-    "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": ApplicationConfigFrame(**PURCHASE_REQUEST_APP_CONFIG).data_0(),
-    "245e9f47-df59-4d4a-b355-7eff2859247f": ApplicationConfigFrame(**EXPENSE_ITEM_APP_CONFIG).data_0(),
-    "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data_0(),
-    "866f163d-b724-404d-942f-4bc44dc2e2ed": ApplicationConfigFrame(**GOODS_TRANSFER_APP_CONFIG).data_0(),
-    "f26d7ce4-e990-420a-8ec6-2dc307467f2c": ApplicationConfigFrame(**GOODS_ISSUE_APP_CONFIG).data_0(),
-    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data_0()
+    "828b785a-8f57-4a03-9f90-e0edf96560d7": ApplicationConfigFrame(**CONTACT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "4e48c863-861b-475a-aa5e-97a4ed26f294": ApplicationConfigFrame(**ACCOUNT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "296a1410-8d72-46a8-a0a1-1821f196e66c": ApplicationConfigFrame(**OPPORTUNITY_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "a8badb2e-54ff-4654-b3fd-0d2d3c777538": ApplicationConfigFrame(**PRODUCT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "022375ce-c99c-4f11-8841-0a26c85f2fc2": ApplicationConfigFrame(**EXPENSES_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": ApplicationConfigFrame(**WAREHOUSE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": ApplicationConfigFrame(**GOOD_RECEIPT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a": ApplicationConfigFrame(**PICKING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "1373e903-909c-4b77-9957-8bcf97e8d6d3": ApplicationConfigFrame(**DELIVERY_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "10a5e913-fa51-4127-a632-a8347a55c4bb": ApplicationConfigFrame(**PRICES_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "e6a00a1a-d4f9-41b7-b0de-bb1efbe8446a": ApplicationConfigFrame(**SHIPPING_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "f57b9e92-cb01-42e3-b7fe-6166ecd18e9c": ApplicationConfigFrame(**PROMOTION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "3407d35d-27ce-407e-8260-264574a216e3": ApplicationConfigFrame(**PAYMENT_TERM_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "2fe959e3-9628-4f47-96a1-a2ef03e867e3": ApplicationConfigFrame(**METING_LOG_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "d78bd5f3-8a8d-48a3-ad62-b50d576ce173": ApplicationConfigFrame(**PURCHASE_QUOTATION_REQUEST_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "f52a966a-2eb2-4851-852d-eff61efeb896": ApplicationConfigFrame(**PURCHASE_QUOTATION_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "81a111ef-9c32-4cbd-8601-a3cce884badb": ApplicationConfigFrame(**PURCHASE_ORDER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "fbff9b3f-f7c9-414f-9959-96d3ec2fb8bf": ApplicationConfigFrame(**PURCHASE_REQUEST_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "245e9f47-df59-4d4a-b355-7eff2859247f": ApplicationConfigFrame(**EXPENSE_ITEM_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "dd16a86c-4aef-46ec-9302-19f30b101cf5": ApplicationConfigFrame(**GOODS_RECEIPT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "866f163d-b724-404d-942f-4bc44dc2e2ed": ApplicationConfigFrame(**GOODS_TRANSFER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "f26d7ce4-e990-420a-8ec6-2dc307467f2c": ApplicationConfigFrame(**GOODS_ISSUE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=False,
+    ),
+    "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    )
 }

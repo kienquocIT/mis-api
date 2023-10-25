@@ -105,8 +105,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
             if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
                 return self.filter_kwargs_q__from_app(data_from_app)
             return self.list_empty()
+
         # check permit config exists if from_app not calling...
-        if self.cls_check.permit_cls.config_data__exist:
+        if self.simple_check_state_perm_by_list():  # simple check: 1. skip admin, 2: permit_config has data, 3: deny!
             return self.filter_kwargs_q__from_config()
         return Q(id__in=[])
 

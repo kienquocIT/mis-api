@@ -34,7 +34,6 @@ class FilterComponent:  # pylint: disable=R0902
         result = {}
         q__special = Q()
         for key, value in data.items():
-            print(self.skip_filter_employee, key.startswith(self.skip_prefix_key))
             if self.skip_filter_employee is True and key.startswith(self.skip_prefix_key):
                 # skip if flag is turn on and key equal with skip key
                 continue

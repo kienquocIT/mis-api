@@ -4,6 +4,7 @@ from typing import Union
 from uuid import UUID
 
 from django.conf import settings
+from django.core.exceptions import EmptyResultSet
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -446,6 +447,14 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
         return False
 
+    def simple_check_state_perm_by_list(self) -> bool:
+        if self.cls_check.skip_because_match_with_admin is True:
+            # allow when flag is_admin skip turn on
+            return True
+        if self.cls_check.permit_cls.config_data__exist:
+            return True
+        return False
+
     def check_perm_by_obj_or_body_data(self, obj=None, body_data=None, **kwargs) -> bool:  # pylint: disable=R0911
         """
         Check permission with Instance Object was got from views
@@ -867,7 +876,12 @@ class BaseListMixin(BaseMixin):
             filter_kwargs_q=filter_kwargs_q
         )
         if settings.DEBUG_PERMIT:
-            print('#  - SQL                   :', queryset.query)
+            try:
+                if str(queryset.query):
+                    print('#  - SQL                   :', queryset.query)
+            except EmptyResultSet:
+                print('#  - SQL                   :', 'EMPTY')
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True, is_minimal=is_minimal)

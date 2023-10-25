@@ -501,7 +501,6 @@ class TenantDiagram(APIView):
             group_start = main_group.parent_n
             while group_start is not None or counter > 20:
                 tmp_group_data = self._parse__group(group_obj=group_start, has_children=True)
-                print('main_group_data: ', tmp_group_data)
                 tree_data = {
                     **tmp_group_data,
                     'children': [tree_data],

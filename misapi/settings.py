@@ -40,6 +40,8 @@ DEBUG = True
 DEBUG_PERMIT = False
 DEBUG_BG_TASK = False
 DEBUG_SIGNAL_CHANGE = False
+SHOW_TESTCASE_NAME = False
+SHOW_SYSTEM_DATA = False
 
 ALLOWED_HOSTS = []
 ALLOWED_CIDR_NETS = []  # whitelist range IP
@@ -534,6 +536,8 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
 # -- Tracing
 
 # debug permit working
+SHOW_SYSTEM_DATA = True if os.environ.get('SHOW_SYSTEM_DATA', '0') in [1, '1'] else False
+SHOW_TESTCASE_NAME = True if os.environ.get('SHOW_TESTCASE_NAME', '0') in [1, '1'] else False
 DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
 DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
 
