@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse, Account,
+    WareHouse, ProductWareHouse, Account, ProductWareHouseLot, ProductWareHouseSerial,
 )
 
 __all__ = [
@@ -12,6 +12,8 @@ __all__ = [
     'ProductWareHouseStockListSerializer',
     'ProductWareHouseListSerializer',
     'WareHouseListSerializerForInventoryAdjustment',
+    'ProductWarehouseLotListSerializer',
+    'ProductWarehouseSerialListSerializer',
 ]
 
 from apps.shared import TypeCheck, WarehouseMsg
@@ -318,3 +320,73 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
                 'inventory_uom': item.uom_data,
             })
         return results
+
+
+class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
+    product_warehouse = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouseLot
+        fields = (
+            'id',
+            'product_warehouse',
+            'lot_number',
+            'quantity_import',
+            'expire_date',
+            'manufacture_date',
+        )
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        return {
+            'id': obj.product_warehouse_id,
+            'product': {
+                'id': obj.product_warehouse.product_id,
+                'title': obj.product_warehouse.product.title,
+                'code': obj.product_warehouse.product.code,
+            } if obj.product_warehouse.product else {},
+            'warehouse': {
+                'id': obj.product_warehouse.warehouse_id,
+                'title': obj.product_warehouse.warehouse.title,
+                'code': obj.product_warehouse.warehouse.code,
+            } if obj.product_warehouse.warehouse else {},
+            'uom': {
+                'id': obj.product_warehouse.uom_id,
+                'title': obj.product_warehouse.uom.title,
+                'code': obj.product_warehouse.uom.code,
+                'ratio': obj.product_warehouse.uom.ratio,
+            } if obj.product_warehouse.uom else {}
+        }
+
+
+class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
+    product_warehouse = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouseSerial
+        fields = (
+            'id',
+            'product_warehouse',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+        )
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        return {
+            'id': obj.product_warehouse_id,
+            'product': {
+                'id': obj.product_warehouse.product_id,
+                'title': obj.product_warehouse.product.title,
+                'code': obj.product_warehouse.product.code,
+            } if obj.product_warehouse.product else {},
+            'warehouse': {
+                'id': obj.product_warehouse.warehouse_id,
+                'title': obj.product_warehouse.warehouse.title,
+                'code': obj.product_warehouse.warehouse.code,
+            } if obj.product_warehouse.warehouse else {},
+        }

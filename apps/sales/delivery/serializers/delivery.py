@@ -54,7 +54,7 @@ class WarehouseQuantityHandle:
                     is_done = True
                     item_sold = mediate_number / target_ratio
                     item.sold_amount += item_sold
-                    item.stock_amount = item.receipt_amount- item.sold_amount
+                    item.stock_amount = item.receipt_amount - item.sold_amount
                     if config['is_picking']:
                         item.picked_ready = item.picked_ready - item_sold
                     list_update.append(item)
@@ -81,7 +81,9 @@ class WarehouseQuantityHandle:
 
 
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
-    is_not_inventory = serializers.SerializerMethodField(default=False)
+    is_not_inventory = serializers.SerializerMethodField()
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -89,6 +91,24 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             if 1 in obj.product.product_choice:
                 return bool(True)
         return bool(False)
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_traceability_method': obj.product.general_traceability_method,
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio,
+        } if obj.uom else {}
 
     class Meta:
         model = OrderDeliveryProduct

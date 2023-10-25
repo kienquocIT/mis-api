@@ -58,7 +58,9 @@ class OrderPickingSubDetail(
             Prefetch(
                 'picking_product_picking_sub',
                 queryset=OrderPickingProduct.objects.select_related(
-                    'uom'
+                    'product',
+                    'uom',
+                    'product__inventory_uom',
                 )
             ),
         )

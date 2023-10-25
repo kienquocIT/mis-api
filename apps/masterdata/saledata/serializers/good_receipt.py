@@ -198,14 +198,14 @@ class GoodReceiptCreateSerializer(serializers.ModelSerializer):
         do product_list được valid từ serializer nên khi trả vể validate sẽ là object
         trước khi save data thì cần parse lại json đồng thời tạo mới bảng phụ bằng func create_update_product_list.
         """
-        user = self.context.get('user', None)
+        # user = self.context.get('user', None)
         product_list = validated_data.pop('product_list', [])
         instance = GoodReceipt.objects.create(
             **validated_data, product_list=self.reparse_product_list(self.data['product_list'])
         )
         if instance:
             ProductListUtil.create_update_product_list(product_list, instance)
-            handle_attach_file(user, instance, validated_data.get('attachments', None), True)
+            # handle_attach_file(user, instance, validated_data.get('attachments', None), True)
         return instance
 
 
@@ -302,7 +302,7 @@ class GoodReceiptUpdateSerializer(serializers.ModelSerializer):
         )
 
     def update(self, instance, validated_data):
-        user = self.context.get('user', None)
-        handle_attach_file(user, instance, validated_data.get('attachments', None), False)
+        # user = self.context.get('user', None)
+        # handle_attach_file(user, instance, validated_data.get('attachments', None), False)
         instance.save()
         return instance

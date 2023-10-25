@@ -19,6 +19,7 @@ __all__ = [
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
     uom_data = serializers.SerializerMethodField()
 
     class Meta:
@@ -43,6 +44,21 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
             'code': obj.uom.code,
             'ratio': obj.uom.ratio
         } if obj.uom else {}
+
+    @classmethod
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'remarks': obj.product.description,
+            'uom_inventory': {
+                'id': obj.product.inventory_uom_id,
+                'title': obj.product.inventory_uom.title,
+                'code': obj.product.inventory_uom.code,
+                'ratio': obj.product.inventory_uom.ratio,
+            } if obj.product.inventory_uom else {}
+        } if obj.product else {}
 
 
 class OrderPickingSubListSerializer(serializers.ModelSerializer):

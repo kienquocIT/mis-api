@@ -1,7 +1,8 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
-from apps.sales.delivery.models import OrderDeliverySub
+from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
 from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
     OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer
 
@@ -42,7 +43,14 @@ class OrderDeliverySubDetail(
 
     def get_queryset(self):
         return super().get_queryset().select_related('employee_inherit').prefetch_related(
-            'delivery_product_delivery_sub'
+            Prefetch(
+                'delivery_product_delivery_sub',
+                queryset=OrderDeliveryProduct.objects.select_related(
+                    'product',
+                    'uom',
+                )
+            )
+
         )
 
     @swagger_auto_schema(
