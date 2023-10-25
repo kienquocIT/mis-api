@@ -158,6 +158,7 @@ class ProductWareHouseLotList(BaseListMixin):
         return super().get_queryset().select_related(
             'product_warehouse__product',
             'product_warehouse__warehouse',
+            'product_warehouse__uom',
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Lot')

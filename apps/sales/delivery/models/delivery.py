@@ -434,6 +434,7 @@ class OrderDeliveryProduct(SimpleAbstractModel):
                         company_id=self.delivery_sub.company_id,
                         lot_data=delivery['lot_data']
                     )
+            self.update_product_warehouse_lot()
         if not self.delivery_serial_delivery_product.exists():
             for delivery in self.delivery_data:
                 if 'serial_data' in delivery:
@@ -445,12 +446,16 @@ class OrderDeliveryProduct(SimpleAbstractModel):
                         company_id=self.delivery_sub.company_id,
                         serial_data=delivery['serial_data']
                     )
+            self.update_product_warehouse_serial()
         return True
 
-    def update_product_warehouse_lot_serial(self):
+    def update_product_warehouse_lot(self):
         for lot in self.delivery_lot_delivery_product.all():
             lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery
             lot.product_warehouse_lot.save(update_fields=['quantity_import'])
+        return True
+
+    def update_product_warehouse_serial(self):
         for serial in self.delivery_serial_delivery_product.all():
             serial.product_warehouse_serial.is_delete = True
             serial.product_warehouse_serial.save(update_fields=['is_delete'])
@@ -459,10 +464,10 @@ class OrderDeliveryProduct(SimpleAbstractModel):
     def before_save(self):
         self.set_and_check_quantity()
         self.put_backup_data()
-        self.create_lot_serial()
 
     def save(self, *args, **kwargs):
         self.before_save()
+        self.create_lot_serial()
         super().save(*args, **kwargs)
 
     class Meta:
