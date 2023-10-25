@@ -53,7 +53,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
                     for item in date_list:
                         leave_type_id = item["leave_type"]
                         if isinstance(item['leave_type'], dict):
-                            leave_type_id = item["leave_type"]['id']
+                            leave_type_id = leave_type_id["leave_type"]['id']
                         list_date_res.append(
                             LeaveRequestDateListRegister(
                                 company_id=company_id,
@@ -122,6 +122,12 @@ class LeaveRequestDetailSerializer(serializers.ModelSerializer):
             ]
         return []
 
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance
+
 
 class LeaveAvailableListSerializer(serializers.ModelSerializer):
     leave_type = serializers.SerializerMethodField()
@@ -138,7 +144,7 @@ class LeaveAvailableListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveAvailable
-        fields = ('id', 'leave_type', 'open_year', 'total', 'used', 'available', 'expiration_date')
+        fields = ('id', 'leave_type', 'open_year', 'total', 'used', 'available', 'expiration_date', 'check_balance')
 
 
 class LeaveAvailableEditSerializer(serializers.ModelSerializer):
@@ -149,7 +155,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveAvailable
-        fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark')
+        fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark', 'expiration_date')
 
     def create_history(self, instance, validated_data, init_data):
         employee_id = self.context.get('employee_id', None)

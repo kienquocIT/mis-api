@@ -1,7 +1,7 @@
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.shared import ResponseController, BaseListMixin, mask_view
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
@@ -61,6 +61,18 @@ class TenantApplicationList(BaseListMixin):
     def get(self, request, *args, **kwargs):
         kwargs['is_workflow'] = True
         return self.list(request, *args, **kwargs)
+
+
+class ApplicationDetail(BaseRetrieveMixin):
+    queryset = Application.objects
+    serializer_detail = ApplicationListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Tenant Application detail",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class ApplicationPropertyList(BaseListMixin):

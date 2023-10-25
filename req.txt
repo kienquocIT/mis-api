@@ -12,6 +12,7 @@ django-celery-results==2.4.0
 django-compressor==4.1
 django-crum==0.7.9
 django-db-connection-pool[mysql]==1.2.2
+django-extensions==3.2.3
 django-debug-toolbar==3.8.1
 django-filter==22.1
 django-phonenumber-field==7.0.0
@@ -43,6 +44,7 @@ pylint-django==2.5.3
 pymemcache==4.0.0
 python-dotenv==1.0.0
 python-slugify==6.1.2
+python-telegram-bot==20.6
 pytz==2022.6
 rcssmin==1.1.0
 requests==2.31.0

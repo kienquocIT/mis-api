@@ -8,9 +8,11 @@ from django.db.models.signals import post_save, pre_delete, post_delete, pre_sav
 from django.dispatch import receiver
 from django.utils import translation, timezone
 from django.utils.translation import gettext_lazy as _
+from django_celery_results.models import TaskResult
 
 from apps.core.attachments.models import Files
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, RolePermission
+from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
 from apps.core.workflow.models import RuntimeAssignee
@@ -35,8 +37,12 @@ from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
     SaleOrderIndicatorConfig,
 )
-from apps.shared import Caching, MediaForceAPI
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
+
+from .caching import Caching
+from .push_notify import TeleBotPushNotify
+from .tasks import call_task_background
+from ..media_cloud_apis import MediaForceAPI
 
 logger = logging.getLogger(__name__)
 
@@ -773,47 +779,48 @@ class ConfigDefaultData:
             defaults={
                 'working_days':
                     {
-                        'mon': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'tue': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'wed': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'thu': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'fri': {
-                            'work': True,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        },
-                        'sat': {
+                        0: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
                         },
-                        'sun': {
+                        1: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        2: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        3: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        4: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        5: {
+                            'work': True,
+                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
+                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                        },
+                        6: {
                             'work': False,
                             'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
                             'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
-                        }
+                        },
+
                     }
             },
         )
 
     def leave_available_setup(self):
-        # lấy ds leave type có quản lý số dư
+        # lấy ds leave type
         # lấy danh sách employee
         # từ ds leave type tạo ds đã lấy tạo mỗi user 1 ds
         list_avai = []
@@ -821,7 +828,7 @@ class ConfigDefaultData:
         next_year_date = date(current_date.date().year + 1, 1, 1)
         last_day_year = next_year_date - timedelta(days=1)
 
-        leave_type = LeaveType.objects.filter(balance_control=True, company=self.company_obj)
+        leave_type = LeaveType.objects.filter(company=self.company_obj)
         for item in Employee.objects.filter(is_active=True, company=self.company_obj):
             for l_type in leave_type:
                 if l_type.code == 'AN' or l_type.code != 'ANPY':
@@ -831,10 +838,11 @@ class ConfigDefaultData:
                         total=0,
                         used=0,
                         available=0,
-                        expiration_date=last_day_year,
+                        expiration_date=last_day_year if l_type.is_check_expiration or l_type.code == 'AN' else None,
                         company=self.company_obj,
                         tenant=self.company_obj.tenant,
                         employee_inherit=item,
+                        check_balance=l_type.balance_control
                     ))
                 if l_type.code == 'ANPY':
                     prev_current = date(current_date.date().year, 1, 1)
@@ -848,7 +856,8 @@ class ConfigDefaultData:
                         expiration_date=last_prev_day,
                         company=self.company_obj,
                         tenant=self.company_obj.tenant,
-                        employee_inherit=item
+                        employee_inherit=item,
+                        check_balance=l_type.balance_control
                     )
                     list_avai.append(temp)
                     temp2 = deepcopy(temp)
@@ -946,6 +955,7 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     model_code=app_obj.code,
                     perm_code='view',
                     doc_id=str(doc_id),
+                    tenant_id=instance.runtime.tenant_id,
                 )
 
 
@@ -966,7 +976,9 @@ def event_new_runtime(sender, instance, created, **kwargs):
 def opp_member_event_update(sender, instance, created, **kwargs):
     employee_obj = instance.member
     if employee_obj and hasattr(employee_obj, 'id'):
-        employee_obj.append_permit_by_opp(
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.append_permit_by_opp(
+            tenant_id=instance.opportunity.tenant_id,
             opp_id=instance.opportunity_id,
             perm_config=instance.permission_by_configured,
         )
@@ -976,4 +988,60 @@ def opp_member_event_update(sender, instance, created, **kwargs):
 def opp_member_event_destroy(sender, instance, **kwargs):
     employee_obj = instance.member
     if employee_obj and hasattr(employee_obj, 'id'):
-        employee_obj.remove_permit_by_opp(opp_id=instance.opportunity_id)
+        employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permission.remove_permit_by_opp(tenant_id=instance.opportunity.tenant_id, opp_id=instance.opportunity_id)
+
+
+@receiver(pre_delete, sender=Role)
+@receiver(pre_delete, sender=Employee)
+def destroy_employee_or_role(sender, instance, **kwargs):
+    if isinstance(instance, Role):
+        call_task_background(
+            sync_plan_app_employee,
+            **{
+                'employee_ids': [
+                    str(ite) for ite in RoleHolder.objects.filter(role=instance).values_list('employee_id', flat=True)
+                ],
+            }
+        )
+    elif isinstance(instance, Employee):
+        call_task_background(
+            clear_cache_notify
+        )
+        call_task_background(
+            uninstall_plan_app_employee,
+            **{
+                'employee_id': str(instance.id),
+                'tenant_id': str(instance.tenant_id),
+                'company_id': str(instance.company_id)
+            }
+        )
+
+
+@receiver(post_save, sender=Role)
+@receiver(post_save, sender=Employee)
+def new_employee_or_role(sender, instance, created, **kwargs):
+    if created is True:
+        if isinstance(instance, Employee):
+            EmployeePermission.objects.get_or_create(employee=instance)
+        elif isinstance(instance, Role):
+            RolePermission.objects.get_or_create(role=instance)
+
+
+@receiver(post_save, sender=TaskResult)
+def task_new_consumer(sender, instance, created, **kwargs):
+    if instance.status in ('FAILURE', 'RETRY'):
+        msg = TeleBotPushNotify.generate_msg(
+            idx=instance.id,
+            status=instance.status,
+            group_name='CELERY_TASK',
+            **{
+                'task_name': instance.task_name,
+                'date_created': TeleBotPushNotify.pretty_datetime(instance.date_created),
+                'args': instance.task_args,
+                'kwargs': instance.task_kwargs,
+                'result': instance.result,
+                'traceback': instance.traceback,
+            }
+        )
+        TeleBotPushNotify().send_msg(msg=msg)

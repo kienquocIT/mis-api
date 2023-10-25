@@ -2,7 +2,7 @@ from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
-    Expense, ProductProductType,
+    Expense,
 )
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
@@ -22,10 +22,14 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse,
 )
-from . import MediaForceAPI, PermissionController, PermissionsUpdateSerializer
+from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.hr.models import Employee, Role
+from .permissions.util import PermissionController
+from ..core.hr.models import (
+    Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
+    PlanRole, PlanRoleApp,
+)
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse
 from ..sales.opportunity.models import (
@@ -829,7 +833,7 @@ def new_permit_parsed():
         if str(obj.id) in ['88caae0f-c53a-44d4-b4d8-c9d3856eca66', '54233b73-a4ee-4c2e-8729-8dd33bcaa303']:
             obj.permission_by_configured = []
         print('Role: ', obj.id, obj.title)
-        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit parsed is successfully!')
 
@@ -919,7 +923,7 @@ def convert_permit_ids():
                     elif isinstance(data, dict):
                         result[perm_code] = data
         obj.permission_by_id = result
-        obj.permissions_parsed = PermissionController(tenant_id=obj.get_tenant_id()).get_permission_parsed(instance=obj)
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
         obj.save()
     print('New permit IDS is successfully!')
 
@@ -1191,3 +1195,31 @@ def update_gr_info_for_po():
                 gr.purchase_order.save(update_fields=['receipt_status'])
     print('update_gr_info_for_po done.')
 # END PURCHASING
+
+
+def make_permission_records():
+    for obj in Employee.objects.all():
+        print('Employee:', obj)
+        obj_permit, _created = EmployeePermission.objects.get_or_create(employee=obj)
+        obj_permit.call_sync()
+
+
+
+
+
+
+
+
+
+    for obj in Role.objects.all():
+        print('Role:', obj)
+        obj_permit, _created = RolePermission.objects.get_or_create(role=obj)
+        obj_permit.call_sync()
+
+    for obj in OpportunitySaleTeamMember.objects.all():
+        print('Opp-Member:', obj)
+        obj.permission_by_configured = []
+        obj.save()
+
+    print('Make permission records is successful.')
+

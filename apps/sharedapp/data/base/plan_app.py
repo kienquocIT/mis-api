@@ -6,9 +6,9 @@ __all__ = [
     "SubscriptionPlan_data",
     "Application_data",
     "PlanApplication_data",
-    "FULL_PERMISSIONS_BY_CONFIGURED",
     "FULL_PLAN_ID",
     "check_app_depends_and_mapping",
+    "FullPermitHandle",
 ]
 
 SubscriptionPlan_data = {
@@ -101,10 +101,6 @@ _PlanApplication_sale_data = {
     "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
-    },
-    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Good Receipt
     },
     "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
@@ -267,36 +263,6 @@ class FullPermitHandle:
         return {}
 
     @classmethod
-    def get_sub(cls, range_current, app_depends_on, local_depends_on, app_data, plan_data):
-        result = []
-
-        for app_id, config_data in app_depends_on.items():
-            app_depend_data = {'id': app_id, **Application_data[app_id]}
-            for permit_code, range_code in config_data.items():
-                result.append(
-                    cls.parse_one_permit_allow(
-                        app_data=app_depend_data,
-                        plan_data=plan_data,
-                        range_code=range_current if range_code == '==' else range_code,
-                        **cls.parse_permit_code_to_dict(permit_code),
-                        sub_data=[],
-                    )
-                )
-
-        for permit_code, range_code in local_depends_on.items():
-            result.append(
-                cls.parse_one_permit_allow(
-                    app_data=app_data,
-                    plan_data=plan_data,
-                    range_code=range_current if range_code == '==' else range_code,
-                    **cls.parse_permit_code_to_dict(permit_code),
-                    sub_data=[],
-                )
-            )
-
-        return result
-
-    @classmethod
     def get_by_app(cls, app_data, plan_data):
         result = []
         for permit, config in app_data.get('permit_mapping', {}).items():
@@ -306,13 +272,6 @@ class FullPermitHandle:
                     cls.parse_one_permit_allow(
                         app_data=app_data, plan_data=plan_data, range_code=range_code,
                         **cls.parse_permit_code_to_dict(permit),
-                        sub_data=cls.get_sub(
-                            range_current=range_code,
-                            app_depends_on=config.get('app_depends_on', {}),
-                            local_depends_on=config.get('local_depends_on', {}),
-                            app_data=app_data,
-                            plan_data=plan_data,
-                        ),
                     )
                 )
         return result
@@ -329,11 +288,7 @@ class FullPermitHandle:
         return result
 
 
-def get_full_permissions_by_configured():
-    return FullPermitHandle.full_permit()
-
-
-FULL_PERMISSIONS_BY_CONFIGURED = get_full_permissions_by_configured()
+FULL_PERMISSIONS_BY_CONFIGURED = FullPermitHandle.full_permit()
 FULL_PLAN_ID = SubscriptionPlan_data.keys()
 
 

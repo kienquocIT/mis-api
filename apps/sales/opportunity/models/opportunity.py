@@ -767,6 +767,9 @@ class OpportunitySaleTeamMember(MasterDataAbstractModel, PermissionAbstractModel
         related_name='member_opp_map_plan'
     )
 
+    def get_app_allowed(self) -> str:
+        return str(self.member_id)
+
     class Meta:
         verbose_name = 'Opportunity Sale Team Member'
         verbose_name_plural = 'Opportunity Sale Team Members'

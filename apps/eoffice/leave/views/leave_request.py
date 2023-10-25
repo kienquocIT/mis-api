@@ -94,6 +94,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 class LeaveAvailableList(BaseListMixin):
     queryset = LeaveAvailable.objects
     serializer_list = LeaveAvailableListSerializer
+    filterset_fields = ('check_balance', 'employee_inherit_id')
 
     def get_queryset(self):
         return super().get_queryset().select_related('leave_type')
@@ -106,8 +107,8 @@ class LeaveAvailableList(BaseListMixin):
         login_require=True, auth_require=True,
         label_code='eoffice', model_code='leaveAvailable', perm_code='view',
     )
-    def get(self, request, *args, employee_inherit_id, **kwargs):
-        return self.list(request, *args, employee_inherit_id, **kwargs)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class LeaveAvailableUpdate(BaseUpdateMixin):

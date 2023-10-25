@@ -449,3 +449,23 @@ msgstr "Thành viên không tồn tại"
 #
 msgid "Members must be required"
 msgstr "Danh sách thành viên là bắt buộc"
+
+#
+msgid "Plan not found"
+msgstr "Không tìm thấy gói"
+
+#
+msgid "Some app is not found"
+msgstr "Không tìm thấy một số ứng dụng"
+
+#
+msgid "Some app not match with plan"
+msgstr "Một số ứng dụng không liên kết đúng với gói"
+
+#
+msgid "Plan Type is incorrect"
+msgstr "Kiểu gói không đúng"
+
+#
+msgid "Some member not found"
+msgstr "Một số thành viên không tìm thấy"

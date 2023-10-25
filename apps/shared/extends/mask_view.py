@@ -122,6 +122,7 @@ class ViewConfigDecorator:
         self.perm_code: str = parent_kwargs.get('perm_code', self.perm_code)
         self.opp_enabled: bool = parent_kwargs.get('opp_enabled', self.opp_enabled)
         self.prj_enabled: bool = parent_kwargs.get('prj_enabled', self.prj_enabled)
+        self.skip_filter_employee: bool = parent_kwargs.get('skip_filter_employee', False)
 
 
 class EmployeeAttribute:
@@ -189,6 +190,20 @@ class EmployeeAttribute:
             )
         return self._employee_staff_ids
 
+    def employee_staff_ids__exclude_me(self):
+        employee_staff_ids = list(self.employee_staff_ids)
+        if self.employee_current_id and str(self.employee_current_id) in employee_staff_ids:
+            employee_staff_ids.remove(str(self.employee_current_id))
+        return employee_staff_ids
+
+    def employee_staff_ids__append_me(self):
+        employee_staff_ids = list(self.employee_staff_ids)
+        if self.employee_current_id and str(self.employee_current_id) not in employee_staff_ids:
+            employee_staff_ids.append(
+                str(self.employee_current_id)
+            )
+        return employee_staff_ids
+
     @property
     def employee_same_group_ids(self) -> list[str]:
         if not self._employee_same_group_ids and self.group_id_of_employee_current:
@@ -204,6 +219,22 @@ class EmployeeAttribute:
             )
         return self._employee_same_group_ids
 
+    def employee_same_group_ids__exclude_me(self):
+        employee_same_group_ids = list(self.employee_same_group_ids)
+        if employee_same_group_ids and isinstance(employee_same_group_ids, list):
+            if self.employee_current_id and str(self.employee_current_id) in employee_same_group_ids:
+                employee_same_group_ids.remove(str(self.employee_current_id))
+            return employee_same_group_ids
+        return []
+
+    def employee_same_group_ids__append_me(self):
+        employee_same_group_ids = list(self.employee_same_group_ids)
+        if self.employee_current_id and str(self.employee_current_id) not in employee_same_group_ids:
+            employee_same_group_ids.append(
+                str(self.employee_current_id)
+            )
+        return employee_same_group_ids
+
     @property
     def roles(self):
         if self._roles is None and self.employee_current and hasattr(self.employee_current, 'role'):
@@ -212,7 +243,6 @@ class EmployeeAttribute:
                     'id': obj.id,
                     'title': obj.title,
                     'permissions_parsed': obj.permissions_parsed if obj.permissions_parsed else {},
-                    'permission_by_id': obj.permission_by_id if obj.permission_by_id else {},
                 }
                 for obj in self.employee_current.role.all().cache()
             ]
@@ -227,6 +257,7 @@ class EmployeeAttribute:
         self._manager_of_group_ids = []
         self._employee_staff_ids = []
         self._employee_same_group_ids = []
+        self._employee_in_company_ids = []
         self._roles: list[dict] = None
 
         self.employee_current = employee_obj
@@ -660,13 +691,9 @@ class PermissionController:
         return ''
 
     @classmethod
-    def config_data__get_by_config(cls, permit_config: dict, permissions_parsed: dict):
-        label_code = permit_config['label_code']
-        model_code = permit_config['model_code']
-        perm_code = permit_config['perm_code']
-
-        default_data = {'general': {}, 'ids': {}, 'opp': {}, 'prj': {}}
-        key = f'{label_code}.{model_code}.{perm_code}'.lower()
+    def config_data__get_by_config(cls, app_obj, perm_code, permissions_parsed: dict):
+        default_data = {'general': {}, 'ids': {}, 'opp': {}, 'prj': {}, 'app_obj': app_obj}
+        key = f'{app_obj.app_label}.{app_obj.model_code}.{perm_code}'.lower()
         if key in permissions_parsed:
             perm = permissions_parsed[key]
             if perm and isinstance(perm, dict):
@@ -699,12 +726,28 @@ class PermissionController:
         config_tmp = {'employee': {}, 'roles': []}
         # get from employee
         if config_check_permit:
+            # get app obj
+            label_code = config_check_permit.get('label_code', None)
+            model_code = config_check_permit.get('model_code', None)
+            perm_code = config_check_permit.get('perm_code', None)
+            application_obj = None
+            if label_code and model_code and perm_code:
+                app_obj_tmp = DisperseModel(app_model='base.application').get_model().objects.filter(
+                    app_label=label_code, model_code=model_code,
+                ).cache(timeout=settings.CACHE_EXPIRES_DEFAULT * 10).first()
+                if settings.DEBUG_PERMIT:
+                    print('=> Application Object      :', app_obj_tmp, label_code, model_code, perm_code)
+                if app_obj_tmp and app_obj_tmp.permit_mapping and perm_code in app_obj_tmp.permit_mapping:
+                    application_obj = app_obj_tmp
+
+            # get employee obj
             employee_obj = self.employee_attr.employee_current
-            if employee_obj:
+            if employee_obj and application_obj:
                 permissions_parsed = getattr(employee_obj, self.KEY_STORAGE_PERMISSION_IN_MODEL, {})
                 if permissions_parsed:
                     config_tmp['employee'] = self.config_data__get_by_config(
-                        permit_config=config_check_permit,
+                        app_obj=application_obj,
+                        perm_code=perm_code,
                         permissions_parsed=permissions_parsed,
                     )
 
@@ -715,7 +758,8 @@ class PermissionController:
                         if permissions_parsed:
                             config_tmp['roles'].append(
                                 self.config_data__get_by_config(
-                                    permit_config=config_check_permit,
+                                    app_obj=application_obj,
+                                    perm_code=perm_code,
                                     permissions_parsed=permissions_parsed,
                                 )
                             )
@@ -781,6 +825,7 @@ class PermissionController:
                     tmp = self.config_data__simple_list__item(item_data=role_data)
                     if tmp:
                         config_parse_or += tmp
+            config_parse_or = [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in config_parse_or)]
         return config_parse_or
 
     @property
@@ -798,14 +843,14 @@ class PermissionController:
                 print('* _config_data__simple_list:', self._config_data__simple_list)
         return self._config_data__simple_list
 
-    @classmethod
-    def get_config_data__to_q(cls, config_data__simple_list):
+    def get_config_data__to_q(self, config_data__simple_list):
         if config_data__simple_list and isinstance(config_data__simple_list, list):
             return FilterComponentList(
                 main_data=[
                     FilterComponent(
                         main_data=item,
                         logic_next='or',
+                        skip_filter_employee=self.cls_decor.skip_filter_employee,
                     ) for item in config_data__simple_list
                 ]
             ).django_q
@@ -880,6 +925,12 @@ class PermissionController:
                     one_item_allow = False
             elif lookup_key == 'in':
                 if data and isinstance(data, list) and str(data_obj_key) in [str(x) for x in data]:
+                    one_item_allow = True
+                else:
+                    # operator "AND" so one False is all False
+                    one_item_allow = False
+            elif lookup_key == '_exclude':
+                if not data or (data and str(data_obj_key) != str(data)):
                     one_item_allow = True
                 else:
                     # operator "AND" so one False is all False
@@ -1018,7 +1069,7 @@ class PermissionController:
                 self._config_data__check_obj_and_body_data = False
         return self._config_data__check_obj_and_body_data
 
-    def __init__(self, cls_employee_attr: EmployeeAttribute, config_check_permit: dict[str, str], **kwargs):
+    def __init__(self, cls_employee_attr: EmployeeAttribute, cls_decor: ViewConfigDecorator, **kwargs):
         self._config_data: dict = None
         self._config_data__by_code: dict[str, dict] = {}
         self._has_permit_exist = None
@@ -1036,7 +1087,8 @@ class PermissionController:
         # }
 
         self.employee_attr = cls_employee_attr
-        self.config_check_permit = config_check_permit
+        self.cls_decor = cls_decor
+        self.config_check_permit = cls_decor.config_check_permit
         # opp_enabled: bool = False, prj_enabled: bool = False,
         self.opp_enabled: bool = kwargs.get('opp_enabled', False)
         self.prj_enabled: bool = kwargs.get('prj_enabled', False)
@@ -1054,56 +1106,88 @@ class PermissionController:
 
         result_or = []
 
-        general_data = item_data.get('general', {})
-        if general_data:
-            tmp = self.config_data__simple_list__item__parse_range(
-                allowed_range_or_ids_data=general_data,
-                from_permit='general',
-            )
-            if tmp:
-                result_or.append(tmp)
+        app_obj = item_data.get('app_obj', None)
+        if app_obj:
+            general_data = item_data.get('general', {})
+            if general_data:
+                tmp = self.config_data__simple_list__item__parse_range(
+                    allowed_range_or_ids_data=general_data,
+                    filtering_inheritor=app_obj.filtering_inheritor,
+                    from_permit='general',
+                )
+                if tmp:
+                    result_or.append(tmp)
 
-        ids_data = item_data.get('ids', {})
-        if ids_data:
-            tmp = self.config_data__simple_list__item__parse_range(
-                allowed_range_or_ids_data=ids_data,
-                from_permit='ids',
-            )
-            if tmp:
-                result_or.append(tmp)
+            ids_data = item_data.get('ids', {})
+            if ids_data:
+                tmp = self.config_data__simple_list__item__parse_range(
+                    allowed_range_or_ids_data=ids_data,
+                    filtering_inheritor=app_obj.filtering_inheritor,
+                    from_permit='ids',
+                )
+                if tmp:
+                    result_or.append(tmp)
 
-        if self.opp_enabled is True:
-            opp_data = item_data.get('opp', {})
-            if opp_data:
-                for opp_id, opp_value in opp_data.items():
-                    tmp = self.config_data__simple_list__item__parse_range(
-                        allowed_range_or_ids_data=opp_value,
-                        from_permit='opp',
-                        from_id=opp_id,
-                    )
-                    if tmp:
-                        result_or.append(tmp)
+            if self.opp_enabled is True:
+                opp_data = item_data.get('opp', {})
+                if opp_data:
+                    for opp_id, opp_value in opp_data.items():
+                        tmp = self.config_data__simple_list__item__parse_range(
+                            allowed_range_or_ids_data=opp_value,
+                            filtering_inheritor=app_obj.filtering_inheritor,
+                            from_permit='opp',
+                            from_id=opp_id,
+                        )
+                        if tmp:
+                            result_or.append(tmp)
 
-        if self.prj_enabled is True:
-            prj_data = item_data.get('prj', {})
-            if prj_data:
-                for prj_id, prj_value in prj_data.items():
-                    tmp = self.config_data__simple_list__item__parse_range(
-                        allowed_range_or_ids_data=prj_value,
-                        from_permit='prj',
-                        from_id=prj_id
-                    )
-                    if tmp:
-                        result_or.append(tmp)
-
+            if self.prj_enabled is True:
+                prj_data = item_data.get('prj', {})
+                if prj_data:
+                    for prj_id, prj_value in prj_data.items():
+                        tmp = self.config_data__simple_list__item__parse_range(
+                            allowed_range_or_ids_data=prj_value,
+                            filtering_inheritor=app_obj.filtering_inheritor,
+                            from_permit='prj',
+                            from_id=prj_id
+                        )
+                        if tmp:
+                            result_or.append(tmp)
+        else:
+            if settings.DEBUG_PERMIT:
+                print('=> skip parse simple            :', 'Application Object is not found', item_data)
         return result_or
 
     def config_data__simple_list__item__parse_range(  # pylint: disable=R0915
-            self, allowed_range_or_ids_data, from_permit='general', from_id=None
+            self, allowed_range_or_ids_data, filtering_inheritor, from_permit='general', from_id=None
     ) -> dict:
         """
         Support convert a item config of zone in permit code to data filter
             - Zone in permit code: 'general', 'ids', 'opp', 'prj'
+        allowed_range_or_ids_data: support in ["1", "2", "3", "4"]
+        ```python
+            from itertools import combinations
+            numbers = ["1", "2", "3", "4"]
+            for combination in combinations(numbers, r=None):
+                print(combination)
+        ```
+        ```output.txt
+            ()
+            (1)
+            (2)
+            (3)
+            (4)
+            (1, 2)
+            (1, 3)
+            (1, 4)
+            (2, 3)
+            (2, 4)
+            (3, 4)
+            (1, 2, 3)
+            (1, 2, 4)
+            (1, 3, 4)
+            (2, 3, 4)
+        ```
         """
         data = {}
 
@@ -1114,63 +1198,116 @@ class PermissionController:
             return data
 
         if from_permit == 'general':
-            if '4' in allowed_range_or_ids_data:
-                if self.employee_attr.company_id:
+            # key and value default force query return empty
+            key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in'
+            value_filter = []
+
+            np_all_key = np.array(list(allowed_range_or_ids_data.keys()))
+            if settings.DEBUG_PERMIT:
+                print('* [GENERAL] np_all_key     :', np_all_key)
+            #
+            # itertools.combinations(["1", "2", "3", "4"], r=None) => result case + empty + full
+            #
+            if np.array_equal(np_all_key, np.array([])):
+                # empty keep default
+                pass
+            elif np.array_equal(np_all_key, np.array(['1'])):
+                # only me | keep default if current user haven't employee related!
+                if self.employee_attr.employee_current_id:
+                    key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL
+                    value_filter = str(self.employee_attr.employee_current_id)
+            elif np.array_equal(np_all_key, np.array(['2'])):
+                # staff + exclude me
+                value_filter = self.employee_attr.employee_staff_ids__exclude_me()
+            elif np.array_equal(np_all_key, np.array(['3'])):
+                # same group + exclude me
+                value_filter = self.employee_attr.employee_same_group_ids__exclude_me()
+            elif np.array_equal(np_all_key, np.array(['4'])):
+                # everybody + exclude me if current user has employee related!
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+                if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                    # push exclude me to data
                     data.update(
-                        {self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id}
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude': str(
+                                self.employee_attr.employee_current_id
+                            )
+                        }
                     )
+            elif np.array_equal(np_all_key, np.array(['1', '2'])):
+                # staff + append me
+                value_filter = self.employee_attr.employee_staff_ids__append_me()
+            elif np.array_equal(np_all_key, np.array(['1', '3'])):
+                # same group + append me
+                value_filter = self.employee_attr.employee_same_group_ids__append_me()
+            elif np.array_equal(np_all_key, np.array(['1', '4'])):
+                # everybody + append me (append me in here is not append filter exclude me to data)
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+            elif np.array_equal(np_all_key, np.array(['2', '3'])):
+                # staff + same group + exclude me
+                value_filter = self.employee_attr.employee_staff_ids__exclude_me() + \
+                               self.employee_attr.employee_same_group_ids__exclude_me()
+            elif np.array_equal(np_all_key, np.array(['2', '4'])):
+                # everybody + skip staff + exclude me if current user has employee related!
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+                if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                    # push exclude me to data
+                    data.update(
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude': str(
+                                self.employee_attr.employee_current_id
+                            )
+                        }
+                    )
+            elif np.array_equal(np_all_key, np.array(['3', '4'])):
+                # everybody + skip same group + exclude me if current user has employee related!
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+                if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                    # push exclude me to data
+                    data.update(
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude': str(
+                                self.employee_attr.employee_current_id
+                            )
+                        }
+                    )
+            elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
+                # staff + same group + append me
+                value_filter = self.employee_attr.employee_staff_ids__append_me() + \
+                               self.employee_attr.employee_same_group_ids__exclude_me()
+            elif np.array_equal(np_all_key, np.array(['1', '2', '4'])):
+                # everybody + skip staff + skip exclude me
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+            elif np.array_equal(np_all_key, np.array(['1', '3', '4'])):
+                # everybody + skip same group + skip exclude me
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+            elif np.array_equal(np_all_key, np.array(['2', '3', '4'])):
+                # everybody + skip staff + skip same group + exclude me
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
+                if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                    # push exclude me to data
+                    data.update(
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude': str(
+                                self.employee_attr.employee_current_id
+                            )
+                        }
+                    )
+            elif np.array_equal(np_all_key, np.array(['1', '2', '3', '4'])):
+                # everybody + skip staff + skip same group + skip exclude me
+                key_filter = self.KEY_FILTER_COMPANY_ID_IN_MODEL
+                value_filter = self.employee_attr.company_id
             else:
-                np_all_key = np.array(list(allowed_range_or_ids_data.keys()))
-                if np.array_equal(np_all_key, np.array(['1'])):
-                    if self.employee_attr.employee_current_id:
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL: self.employee_attr.employee_current_id}
-                        )
-                elif np.array_equal(np_all_key, np.array(['1', '2'])):
-                    # append staff + me
-                    if self.employee_attr.employee_staff_ids or self.employee_attr.employee_current_id:
-                        ids_data = self.employee_attr.employee_staff_ids + [self.employee_attr.employee_current_id]
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': ids_data}
-                        )
-                elif np.array_equal(np_all_key, np.array(['1', '3'])):
-                    # append same group + me
-                    if self.employee_attr.employee_same_group_ids or self.employee_attr.employee_current_id:
-                        ids_data = self.employee_attr.employee_same_group_ids + [self.employee_attr.employee_current_id]
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': ids_data}
-                        )
-                elif np.array_equal(np_all_key, np.array(['2'])):
-                    # append staff
-                    if self.employee_attr.employee_staff_ids:
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_staff_ids}
-                        )
-                elif np.array_equal(np_all_key, np.array(['2', '3'])):
-                    # same group + staff
-                    if self.employee_attr.employee_staff_ids or self.employee_attr.employee_same_group_ids:
-                        ids_data = self.employee_attr.employee_staff_ids + self.employee_attr.employee_same_group_ids
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': ids_data}
-                        )
-                elif np.array_equal(np_all_key, np.array(['3'])):
-                    # same group
-                    if self.employee_attr.employee_same_group_ids:
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_same_group_ids}
-                        )
-                elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
-                    # same group + staff + me
-                    if (
-                            self.employee_attr.employee_staff_ids or
-                            self.employee_attr.employee_same_group_ids or
-                            self.employee_attr.employee_current_id
-                    ):
-                        ids_data = self.employee_attr.employee_staff_ids + self.employee_attr.employee_same_group_ids
-                        ids_data.append(self.employee_attr.employee_current_id)
-                        data.update(
-                            {self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': ids_data}
-                        )
+                print('[General] Unbelievable! **Auto filter inherit id in empty list**')
+
+            data.update({key_filter: value_filter})
 
             if data:
                 if self.opp_enabled:
@@ -1180,33 +1317,57 @@ class PermissionController:
             return data
 
         if from_id:
+            # keep default filter return to empty with "id__in=[]"
+            key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in'
+            value_filter = []
+
             np_all_key = np.array(list(allowed_range_or_ids_data.keys()))
             if from_permit == 'opp':
-                if np.array_equal(np_all_key, np.array(['1', '4'])) or np.array_equal(np_all_key, np.array(['4'])):
-                    data.update(
-                        {self.KEY_FILTER_OPP_ID_IN_MODEL: from_id}
-                    )
-                elif np.array_equal(np_all_key, np.array(['1'])):
+                if settings.DEBUG_PERMIT:
+                    print(f'* [OPP] np_all_key         :', np_all_key)
+                # auto filter opp
+                data.update(
+                    {self.KEY_FILTER_OPP_ID_IN_MODEL: from_id}
+                )
+                if np.array_equal(np_all_key, np.array(['1'])):
+                    # only me
                     if self.employee_attr.employee_current_id:
-                        data.update(
-                            {
-                                self.KEY_FILTER_OPP_ID_IN_MODEL: from_id,
-                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL: self.employee_attr.employee_current_id,
-                            }
-                        )
+                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL
+                        value_filter = self.employee_attr.employee_current_id
+                elif np.array_equal(np_all_key, np.array(['4'])):
+                    # all member + exclude me if current user has employee related!
+                    if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'
+                        value_filter = self.employee_attr.employee_current_id
+                elif np.array_equal(np_all_key, np.array(['1', '4'])):
+                    # all member + me | skip because auto filter opp above is enough!
+                    pass
+                else:
+                    print('[Opp] Unbelievable! **Auto filter inherit id in empty list**')
+                data.update({key_filter: value_filter})
             elif from_permit == 'prj':
-                if np.array_equal(np_all_key, np.array(['1', '4'])) or np.array_equal(np_all_key, np.array(['4'])):
-                    data.update(
-                        {self.KEY_FILTER_PRJ_ID_IN_MODEL: from_id}
-                    )
-                elif np.array_equal(np_all_key, np.array(['1'])):
+                if settings.DEBUG_PERMIT:
+                    print(f'* [PRJ] np_all_key         :', np_all_key)
+                # auto filter opp
+                data.update(
+                    {self.KEY_FILTER_PRJ_ID_IN_MODEL: from_id}
+                )
+                if np.array_equal(np_all_key, np.array(['1'])):
+                    # only me
                     if self.employee_attr.employee_current_id:
-                        data.update(
-                            {
-                                self.KEY_FILTER_PRJ_ID_IN_MODEL: from_id,
-                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL: self.employee_attr.employee_current_id,
-                            }
-                        )
+                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL
+                        value_filter = self.employee_attr.employee_current_id
+                elif np.array_equal(np_all_key, np.array(['4'])):
+                    # all member + exclude me if current user has employee related!
+                    if filtering_inheritor is True and self.employee_attr.employee_current_id:
+                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'
+                        value_filter = self.employee_attr.employee_current_id
+                elif np.array_equal(np_all_key, np.array(['1', '4'])):
+                    # all member + me | skip because auto filter opp above is enough!
+                    pass
+                else:
+                    print('[Opp] Unbelievable! **Auto filter inherit id in empty list**')
+                data.update({key_filter: value_filter})
         return data
 
 
@@ -1239,7 +1400,7 @@ class ViewChecking:
         self.employee_attr = EmployeeAttribute(employee_obj=cls_attr.employee_current)
         self.permit_cls = PermissionController(
             cls_employee_attr=self.employee_attr,
-            config_check_permit=self.decor.config_check_permit,
+            cls_decor=cls_decor,
             opp_enabled=self.decor.opp_enabled,
             prj_enabled=self.decor.prj_enabled,
         )

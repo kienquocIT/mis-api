@@ -23,7 +23,7 @@ class LeaveConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="leave Config Detail",
     )
-    @mask_view(login_require=True, auth_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -59,6 +59,10 @@ class LeaveTypeConfigCreate(BaseCreateMixin, BaseRetrieveMixin):
         login_require=True, auth_require=True, allow_admin_company=True
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+        }
         return self.create(request, *args, **kwargs)
 
 

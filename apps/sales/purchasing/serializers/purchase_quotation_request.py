@@ -88,25 +88,27 @@ class PurchaseQuotationRequestDetailSerializer(serializers.ModelSerializer):
         return product_mapped_list
 
 
-def create_pr_map_pqr(pqr, pr_list):
+def create_pr_map_pqr(pqr_obj, pr_list):
     bulk_info = []
     for item in pr_list:
         bulk_info.append(
             PurchaseQuotationRequestPurchaseRequest(
-                purchase_quotation_request=pqr,
+                purchase_quotation_request=pqr_obj,
                 purchase_request_id=item
             )
         )
+    PurchaseQuotationRequestPurchaseRequest.objects.filter(purchase_quotation_request=pqr_obj).delete()
     PurchaseQuotationRequestPurchaseRequest.objects.bulk_create(bulk_info)
     return True
 
 
-def create_pqr_map_products(purchase_quotation_request_obj, product_list):
+def create_pqr_map_products(pqr_obj, product_list):
     bulk_info = []
     for item in product_list:
         bulk_info.append(
-            PurchaseQuotationRequestProduct(**item, purchase_quotation_request=purchase_quotation_request_obj)
+            PurchaseQuotationRequestProduct(**item, purchase_quotation_request=pqr_obj)
         )
+    PurchaseQuotationRequestProduct.objects.filter(purchase_quotation_request=pqr_obj).delete()
     PurchaseQuotationRequestProduct.objects.bulk_create(bulk_info)
     return True
 
@@ -167,6 +169,57 @@ class PurchaseQuotationRequestCreateSerializer(serializers.ModelSerializer):
         create_pr_map_pqr(purchase_quotation_request, self.initial_data.get('purchase_request_list', []))
         create_pqr_map_products(purchase_quotation_request, self.initial_data.get('products_selected', []))
         return purchase_quotation_request
+
+
+class PurchaseQuotationRequestUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PurchaseQuotationRequest
+        fields = (
+            'title',
+            'delivered_date',
+            'note',
+            'pretax_price',
+            'taxes_price',
+            'total_price',
+            'purchase_quotation_request_type'
+        )
+
+    @classmethod
+    def validate_pretax_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_taxes_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'taxes_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_total_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'total_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    def validate(self, validate_data):
+        purchase_request_list = self.initial_data.get('purchase_request_list', [])
+        if len(purchase_request_list) <= 0 and not validate_data.get('purchase_quotation_request_type', None):
+            raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PR_NOT_NULL})
+        products_selected = self.initial_data.get('products_selected', [])
+        if len(products_selected) <= 0:
+            raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+
+        create_pr_map_pqr(instance, self.initial_data.get('purchase_request_list', []))
+        create_pqr_map_products(instance, self.initial_data.get('products_selected', []))
+        return instance
 
 
 class PurchaseQuotationRequestListForPQSerializer(serializers.ModelSerializer):

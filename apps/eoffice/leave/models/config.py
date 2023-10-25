@@ -95,41 +95,42 @@ class WorkingCalendarConfig(MasterDataAbstractModel):
         verbose_name='json working days',
         help_text=json.dumps(
             {
-                'mon': {
-                    'work': True,
-                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                },
-                'tue': {
-                    'work': True,
-                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                },
-                'wed': {
-                    'work': True,
-                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                },
-                'thu': {
-                    'work': True,
-                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                },
-                'fri': {
-                    'work': True,
-                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
-                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                },
-                'sat': {
+
+                0: {
                     'work': False,
                     'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
                     'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
                 },
-                'sun': {
+                1: {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                2: {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                3: {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                4: {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                5: {
+                    'work': True,
+                    'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
+                    'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
+                },
+                6: {
                     'work': False,
                     'mor': {'from': '08:00 AM', 'to': '12:00 AM'},
                     'aft': {'from': '13:30 PM', 'to': '17:30 PM'}
-                }
+                },
             }
         )
     )

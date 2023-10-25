@@ -2,6 +2,7 @@ import json
 from copy import deepcopy
 from functools import wraps
 
+from django.conf import settings
 from django.db import connection
 from django.test.utils import CaptureQueriesContext
 from django.test import TestCase
@@ -11,11 +12,13 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.core.tenant.models import TenantPlan
-from apps.core.hr.models import Employee
-from apps.sharedapp.data.base import FULL_PERMISSIONS_BY_CONFIGURED, FULL_PLAN_ID
+from apps.core.hr.models import Employee, EmployeePermission, PlanEmployee, PlanEmployeeApp
+from apps.sharedapp.data.base import FULL_PLAN_ID, PlanApplication_data
+from apps.sharedapp.data.base.plan_app import FullPermitHandle
+from apps.shared.permissions.util import PermissionController
 
 from .utils import CustomizeEncoder
-from ..permissions import PermissionsUpdateSerializer
+
 
 __all__ = ['AdvanceTestCase', 'count_queries']
 
@@ -28,19 +31,16 @@ def count_queries(func):
             number_of_queries = len(ctx.captured_queries)
             number_of_queries__reduce = number_of_queries - self.start_count_queries
             if number_of_queries__reduce > self.max_queries_allowed:
-                msg_err = " ".join(
-                    [
-                        str(item) for item in [
-                            'Testcase: ', self, '\n',
-                            '- Number of queries: ', number_of_queries, '\n',
-                            '- Start count queries from: ', self.start_count_queries, '\n',
-                            '- End count: ', number_of_queries__reduce, '\n',
-                            'The quantity query is greater than number allowed: %s > %s ' % (
-                                str(number_of_queries__reduce), str(self.max_queries_allowed)
-                            )
-                        ]
-                    ]
-                )
+                err_data = [
+                    'Testcase: ', self, '\n',
+                    '- Number of queries: ', number_of_queries, '\n',
+                    '- Start count queries from: ', self.start_count_queries, '\n',
+                    '- End count: ', number_of_queries__reduce, '\n',
+                    'The quantity query is greater than number allowed: %s > %s ' % (
+                        str(number_of_queries__reduce), str(self.max_queries_allowed)
+                    )
+                ]
+                msg_err = " ".join([str(item) for item in err_data])
                 self.fail(msg_err)
         return data
 
@@ -146,6 +146,8 @@ class AdvanceTestCase(TestCase):
         return result
 
     def authenticated(self, login_data=None):
+        if settings.SHOW_TESTCASE_NAME:
+            print('\n', str(self), ' ')
         login_data = login_data if login_data is not None else self._login()
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + login_data['token']['access_token'])
         self.append_start_count_queries()
@@ -269,10 +271,33 @@ class AdvanceTestCase(TestCase):
                     TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
                 ]
             )
-            PermissionsUpdateSerializer.force_permissions(
-                instance=employee_obj, validated_data={'permission_by_configured': FULL_PERMISSIONS_BY_CONFIGURED}
-            )
+
+            # force admin full permit!
             employee_obj.is_admin_company = True
             employee_obj.save()
+
+            # set full permit!
+            self.__regis_full_permit_for_employee(employee_obj=employee_obj)
+
         self.company_id = response.data['result']['company_current']['id']
         return response.data['result']
+
+    @classmethod
+    def __regis_full_permit_for_employee(cls, employee_obj):
+        # set full plan + app
+        for _idx, config_data in PlanApplication_data.items():
+            plan_id = config_data['plan_id']
+            application_id = config_data['application_id']
+
+            emp_plan_obj, _created = PlanEmployee.objects.get_or_create(plan_id=plan_id, employee=employee_obj)
+            PlanEmployeeApp.objects.get_or_create(plan_employee=emp_plan_obj, application_id=application_id)
+
+        # set full permit
+        employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permit_obj.permission_by_configured = FullPermitHandle.full_permit()
+        employee_permit_obj.permissions_parsed = PermissionController(
+            tenant_id=employee_obj.tenant_id
+        ).get_permission_parsed(instance=employee_permit_obj)
+        employee_permit_obj.save(sync_parsed=True)
+
+        return employee_permit_obj

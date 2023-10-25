@@ -24,6 +24,10 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
     Function support call task with async. Then update args and kwargs of log records by Task ID.
     countdown: seconds
     """
+
+    if settings.DEBUG_BG_TASK:
+        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), args, kwargs)
+
     countdown = kwargs.pop('countdown', 0)
     _id = kwargs.pop('task_id', str(uuid4()))
     if isinstance(my_task, Task):
