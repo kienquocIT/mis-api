@@ -102,10 +102,6 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
     },
-    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": {
-        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
-        "application_id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",  # Good Receipt
-    },
     "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a": {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a",  # Picking

@@ -397,15 +397,6 @@ WAREHOUSE_APP_CONFIG = {
     "is_workflow": False,
 }
 
-GOOD_RECEIPT_APP_CONFIG = {
-    "id": "47e538a8-17e7-43bb-8c7e-dc936ccaf474",
-    "title": "Good receipt",
-    "code": "goodreceipt",
-    "model_code": "goodreceipt",
-    "app_label": "saledata",
-    "is_workflow": True,
-}
-
 PICKING_APP_CONFIG = {
     "id": "3d8ad524-5dd9-4a8b-a7cd-a9a371315a2a",
     "title": "Picking",
@@ -1130,8 +1121,8 @@ GOODS_ISSUE_APP_CONFIG = {
 GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
     "id": "c5de0a7d-bea3-4f39-922f-06a40a060aba",
     "title": "Inventory Adjustment",
-    "code": "goodsissue",
-    "model_code": "goodsissue",
+    "code": "inventoryadjustment",
+    "model_code": "inventoryadjustment",
     "app_label": "inventory",
     "is_workflow": True,
     "app_depend_on": [
@@ -1255,10 +1246,6 @@ Application_crm_data = {
         filtering_inheritor=False,
     ),
     "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": ApplicationConfigFrame(**WAREHOUSE_APP_CONFIG).data(
-        depend_follow_main=False,
-        filtering_inheritor=False,
-    ),
-    "47e538a8-17e7-43bb-8c7e-dc936ccaf474": ApplicationConfigFrame(**GOOD_RECEIPT_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
