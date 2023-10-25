@@ -174,6 +174,7 @@ class ProductWareHouseSerialList(BaseListMixin):
     search_fields = ['vendor_serial_number', 'serial_number']
     filterset_fields = {
         "product_warehouse_id": ["exact"],
+        "is_delete": ["exact"],
     }
     serializer_list = ProductWarehouseSerialListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

@@ -12,6 +12,8 @@ __all__ = [
     'ProductWareHouseStockListSerializer',
     'ProductWareHouseListSerializer',
     'WareHouseListSerializerForInventoryAdjustment',
+    'ProductWarehouseLotListSerializer',
+    'ProductWarehouseSerialListSerializer',
 ]
 
 from apps.shared import TypeCheck, WarehouseMsg

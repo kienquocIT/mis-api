@@ -83,6 +83,7 @@ class WarehouseQuantityHandle:
 class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
     is_not_inventory = serializers.SerializerMethodField()
     product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
 
     @classmethod
     def get_is_not_inventory(cls, obj):
@@ -98,7 +99,16 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
             'title': obj.product.title,
             'code': obj.product.code,
             'general_traceability_method': obj.product.general_traceability_method,
-        }
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio,
+        } if obj.uom else {}
 
     class Meta:
         model = OrderDeliveryProduct

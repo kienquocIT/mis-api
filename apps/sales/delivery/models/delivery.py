@@ -451,7 +451,14 @@ class OrderDeliveryProduct(SimpleAbstractModel):
 
     def update_product_warehouse_lot(self):
         for lot in self.delivery_lot_delivery_product.all():
-            lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery
+            final_ratio = 1
+            uom_delivery_rate = self.uom.ratio if self.uom else 1
+            if lot.product_warehouse_lot.product_warehouse:
+                product_warehouse = lot.product_warehouse_lot.product_warehouse
+                uom_wh_rate = product_warehouse.uom.ratio if product_warehouse.uom else 1
+                if uom_wh_rate and uom_delivery_rate:
+                    final_ratio = uom_delivery_rate / uom_wh_rate
+            lot.product_warehouse_lot.quantity_import -= lot.quantity_delivery * final_ratio
             lot.product_warehouse_lot.save(update_fields=['quantity_import'])
         return True
 

@@ -46,7 +46,8 @@ class OrderDeliverySubDetail(
             Prefetch(
                 'delivery_product_delivery_sub',
                 queryset=OrderDeliveryProduct.objects.select_related(
-                    'product'
+                    'product',
+                    'uom',
                 )
             )
 
