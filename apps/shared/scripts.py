@@ -22,9 +22,10 @@ from apps.masterdata.saledata.models import (
     ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
     ProductWareHouse,
 )
-from . import MediaForceAPI, PermissionController
+from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
+from .permissions.util import PermissionController
 from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
