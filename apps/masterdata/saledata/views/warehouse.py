@@ -150,6 +150,8 @@ class ProductWareHouseLotList(BaseListMixin):
     search_fields = ['lot_number', ]
     filterset_fields = {
         "product_warehouse_id": ["exact"],
+        "product_warehouse__product_id": ["exact"],
+        # "product_warehouse__": ["exact"],
     }
     serializer_list = ProductWarehouseLotListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT

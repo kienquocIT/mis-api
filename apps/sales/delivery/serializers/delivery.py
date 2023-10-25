@@ -103,12 +103,16 @@ class OrderDeliveryProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_uom_data(cls, obj):
-        return {
-            'id': obj.uom_id,
-            'title': obj.uom.title,
-            'code': obj.uom.code,
-            'ratio': obj.uom.ratio,
-        } if obj.uom else {}
+        if obj.product:
+            so_product = obj.product.sale_order_product_product.first()
+            if so_product:
+                return {
+                    'id': so_product.unit_of_measure_id,
+                    'title': so_product.unit_of_measure.title,
+                    'code': so_product.unit_of_measure.code,
+                    'ratio': so_product.unit_of_measure.ratio,
+                } if so_product.unit_of_measure else {}
+        return {}
 
     class Meta:
         model = OrderDeliveryProduct
