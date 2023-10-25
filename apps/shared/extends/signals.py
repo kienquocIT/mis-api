@@ -838,7 +838,7 @@ class ConfigDefaultData:
                         total=0,
                         used=0,
                         available=0,
-                        expiration_date=last_day_year,
+                        expiration_date=last_day_year if l_type.is_check_expiration or l_type.code == 'AN' else None,
                         company=self.company_obj,
                         tenant=self.company_obj.tenant,
                         employee_inherit=item,

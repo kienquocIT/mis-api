@@ -6,6 +6,7 @@ from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
 from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background
 from apps.shared.permissions.util import PermissionController
+from apps.eoffice.leave.leave_util import leave_available_map_employee as available_map_employee
 
 from .common import (
     HasPermPlanAppCreateSerializer,
@@ -15,6 +16,8 @@ from .common import (
 from ..tasks import sync_plan_app_employee
 from ...base.models import Application, PlanApplication
 from ...tenant.models import TenantPlan
+
+
 
 
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
@@ -320,6 +323,9 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
                     )
                 )
             RoleHolder.objects.bulk_create(bulk_info)
+
+        # create new leave available list for employee
+        available_map_employee(employee, self.context.get('company_obj', None))
         return employee
 
 

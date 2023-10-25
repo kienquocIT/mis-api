@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.purchasing.models import PurchaseQuotation, PurchaseQuotationProduct
 from apps.sales.purchasing.serializers import (
     PurchaseQuotationListSerializer, PurchaseQuotationDetailSerializer,
-    PurchaseQuotationCreateSerializer, PurchaseQuotationProductListSerializer
+    PurchaseQuotationCreateSerializer, PurchaseQuotationProductListSerializer,
+    PurchaseQuotationUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -55,6 +56,7 @@ class PurchaseQuotationList(BaseListMixin, BaseCreateMixin):
 class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = PurchaseQuotation.objects
     serializer_detail = PurchaseQuotationDetailSerializer
+    serializer_update = PurchaseQuotationUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -79,6 +81,18 @@ class PurchaseQuotationDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Quotation update",
+        operation_description="Update Purchase Quotation by ID",
+        request_body=PurchaseQuotationUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchasequotation', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class PurchaseQuotationProductList(BaseListMixin):

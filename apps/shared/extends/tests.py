@@ -19,6 +19,7 @@ from apps.shared.permissions.util import PermissionController
 
 from .utils import CustomizeEncoder
 
+
 __all__ = ['AdvanceTestCase', 'count_queries']
 
 
