@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.attachments.models import Files
-from apps.core.base.models import Application
-from apps.shared import GRMsg, BaseMsg
+from apps.shared import GRMsg
 
 from apps.masterdata.saledata.models import (
     GoodReceipt, Account, GoodReceiptProduct, ProductWareHouse, GoodReceiptAttachment
@@ -47,7 +45,7 @@ class ProductListUtil:
                 )
 
 
-def handle_attach_file(user, instance, validated_attach, create_method):
+def handle_attach_file(user, instance, validated_attach, create_method):    # pylint: disable=W0613
     # # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
     # relate_app = Application.objects.get(id="47e538a8-17e7-43bb-8c7e-dc936ccaf474")
     # relate_app_code = 'goodreceipt'
