@@ -154,8 +154,6 @@ class ApplicationConfigFrame:
             "range": ["4"],
             "app_depends_on": {},
             "local_depends_on": {},
-            "opp": {},
-            "prj": {},
         },
         "create": {
             "range": ["4"],
@@ -163,8 +161,6 @@ class ApplicationConfigFrame:
             "local_depends_on": {
                 "view": "==",
             },
-            "opp": {},
-            "prj": {},
         },
         "edit": {
             "range": ["4"],
@@ -172,8 +168,6 @@ class ApplicationConfigFrame:
             "local_depends_on": {
                 "view": "==",
             },
-            "opp": {},
-            "prj": {},
         },
         "delete": {
             "range": ["4"],
@@ -181,8 +175,6 @@ class ApplicationConfigFrame:
             "local_depends_on": {
                 "view": "==",
             },
-            "opp": {},
-            "prj": {},
         },
     }
 
