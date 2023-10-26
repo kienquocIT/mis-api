@@ -169,7 +169,7 @@ class GoodsReceipt(DataAbstractModel):
                 product_id=gr_warehouse.goods_receipt_product.product_id,
                 warehouse_id=gr_warehouse.warehouse_id,
                 uom_id=uom_product_inventory.id,
-                tax_id=gr_warehouse.goods_receipt_product.tax_id,
+                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
                 amount=gr_warehouse.quantity_import * final_ratio,
                 unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
                 lot_data=lot_data,
