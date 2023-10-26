@@ -22,8 +22,8 @@ class PurchaseOrderList(
     serializer_list = PurchaseOrderListSerializer
     serializer_create = PurchaseOrderCreateSerializer
     serializer_detail = PurchaseOrderListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -61,7 +61,8 @@ class PurchaseOrderDetail(
     queryset = PurchaseOrder.objects
     serializer_detail = PurchaseOrderDetailSerializer
     serializer_update = PurchaseOrderUpdateSerializer
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
