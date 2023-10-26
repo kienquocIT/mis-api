@@ -60,6 +60,7 @@ class GoodsReceiptDetail(
     queryset = GoodsReceipt.objects
     serializer_detail = GoodsReceiptDetailSerializer
     serializer_update = GoodsReceiptUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
