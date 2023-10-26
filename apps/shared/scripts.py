@@ -37,7 +37,7 @@ from ..sales.opportunity.models import (
     OpportunitySaleTeamMember, OpportunityDocument,
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
-    PurchaseOrderRequestProduct
+    PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
 
@@ -1223,3 +1223,9 @@ def make_permission_records():
 
     print('Make permission records is successful.')
 
+
+def update_inherit_po():
+    for po in PurchaseOrder.objects.all():
+        po.employee_inherit_id = po.employee_created_id if po.employee_created else None
+        po.save(update_fields=['employee_inherit_id'])
+    print('update_inherit_po done.')
