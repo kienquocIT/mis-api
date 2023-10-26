@@ -656,12 +656,7 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                         'id': item.product.purchase_default_uom_id,
                         'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
                     } if item.product.purchase_default_uom else {},
-                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else '',
-                    'tax_code': {
-                        'id': item.product.purchase_tax_id,
-                        'title': item.product.purchase_tax.title if item.product.purchase_tax else '',
-                        'rate': item.product.purchase_tax.rate if item.product.purchase_tax else ''
-                    },
+                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else ''
                 } if item.product else {},
                 'uom': {
                     'id': item.unit_of_measure_id,
