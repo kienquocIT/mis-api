@@ -1074,12 +1074,16 @@ def update_product_warehouse_receipt_amount():
             lot_data = []
             serial_data = []
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                })
+                if lot.lot:
+                    lot.lot.quantity_import += lot.quantity_import * final_ratio
+                    lot.lot.save(update_fields=['quantity_import'])
+                else:
+                    lot_data.append({
+                        'lot_number': lot.lot_number,
+                        'quantity_import': lot.quantity_import * final_ratio,
+                        'expire_date': lot.expire_date,
+                        'manufacture_date': lot.manufacture_date,
+                    })
             for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
                 serial_data.append({
                     'vendor_serial_number': serial.vendor_serial_number,
