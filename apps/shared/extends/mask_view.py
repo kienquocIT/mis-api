@@ -16,7 +16,7 @@ from rest_framework import status, serializers
 from rest_framework.response import Response
 
 from .controllers import ResponseController
-from .utils import TypeCheck
+from .utils import TypeCheck, ListHandler
 from .models import DisperseModel
 from .exceptions import Empty200, handle_exception_all_view
 from ..permissions import FilterComponent, FilterComponentList
@@ -825,7 +825,9 @@ class PermissionController:
                     tmp = self.config_data__simple_list__item(item_data=role_data)
                     if tmp:
                         config_parse_or += tmp
-            config_parse_or = [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in config_parse_or)]
+
+            config_parse_or = ListHandler.distant_dict_in_list(dict_in_list=config_parse_or)
+
         return config_parse_or
 
     @property

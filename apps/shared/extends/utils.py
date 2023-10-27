@@ -69,6 +69,21 @@ class ListHandler:
         right_split = list(set(arr_b) - set(both_set))
         return left_split, both_set, right_split
 
+    @staticmethod
+    def distant_dict_in_list(dict_in_list):
+        try:
+            return [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in dict_in_list)]
+        except Exception as err:
+            if settings.DEBUG:
+                print('[distant_dict_in_list]', ' | ERR:', err, ' | data: ', dict_in_list)
+
+        dict_in_list__unique = []
+        for item in dict_in_list__unique:
+            tmp = json.dumps(item, cls=CustomizeEncoder)
+            if tmp not in dict_in_list__unique:
+                dict_in_list__unique.append(item)
+        return dict_in_list__unique
+
 
 class CustomizeEncoder(json.JSONEncoder):
     def default(self, obj):
