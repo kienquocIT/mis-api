@@ -228,24 +228,10 @@ class RoleUpdateSerializer(serializers.ModelSerializer):
         instance, validated_data, _permission_data = self.force_permissions(
             instance=instance, validated_data=validated_data, emp_need_sync=emp_need_sync,
         )
-        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(
-            validated_data,
-            instance=instance,
-            employee_or_role='role',
-        )
-        if plan_application_dict:
-            validated_data.update({'plan_application': plan_application_dict})
 
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        # create M2M PlanEmployee + update TenantPlan
-        create_plan_role_update_tenant_plan(
-            role=instance,
-            plan_app_data=plan_app_data,
-            bulk_info=bulk_info
-        )
         return instance
 
 
