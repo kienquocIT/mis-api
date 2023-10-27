@@ -35,20 +35,29 @@ class GoodsReceiptSerialListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptLotSerializer(serializers.ModelSerializer):
+    lot = serializers.UUIDField(required=False, allow_null=True)
+
     class Meta:
         model = GoodsReceiptLot
         fields = (
+            'lot',
             'lot_number',
             'quantity_import',
             'expire_date',
             'manufacture_date',
         )
 
+    @classmethod
+    def validate_lot(cls, value):
+        return GoodsReceiptCommonValidate.validate_lot(value=value)
+
 
 class GoodsReceiptLotListSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = GoodsReceiptLot
         fields = (
+            'lot_id',
             'lot_number',
             'quantity_import',
             'expire_date',
