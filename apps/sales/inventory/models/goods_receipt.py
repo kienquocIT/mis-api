@@ -148,12 +148,16 @@ class GoodsReceipt(DataAbstractModel):
             lot_data = []
             serial_data = []
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-                lot_data.append({
-                    'lot_number': lot.lot_number,
-                    'quantity_import': lot.quantity_import * final_ratio,
-                    'expire_date': lot.expire_date,
-                    'manufacture_date': lot.manufacture_date,
-                })
+                if lot.lot:
+                    lot.lot.quantity_import += lot.quantity_import * final_ratio
+                    lot.lot.save(update_fields=['quantity_import'])
+                else:
+                    lot_data.append({
+                        'lot_number': lot.lot_number,
+                        'quantity_import': lot.quantity_import * final_ratio,
+                        'expire_date': lot.expire_date,
+                        'manufacture_date': lot.manufacture_date,
+                    })
             for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
                 serial_data.append({
                     'vendor_serial_number': serial.vendor_serial_number,
@@ -169,7 +173,7 @@ class GoodsReceipt(DataAbstractModel):
                 product_id=gr_warehouse.goods_receipt_product.product_id,
                 warehouse_id=gr_warehouse.warehouse_id,
                 uom_id=uom_product_inventory.id,
-                tax_id=gr_warehouse.goods_receipt_product.tax_id,
+                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
                 amount=gr_warehouse.quantity_import * final_ratio,
                 unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
                 lot_data=lot_data,
@@ -436,6 +440,13 @@ class GoodsReceiptLot(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="goods receipt warehouse",
         related_name="goods_receipt_lot_gr_warehouse",
+    )
+    lot = models.ForeignKey(
+        'saledata.ProductWareHouseLot',
+        on_delete=models.CASCADE,
+        verbose_name="product warehouse lot",
+        related_name="goods_receipt_lot_lot",
+        null=True,
     )
     lot_number = models.CharField(max_length=100, blank=True, null=True)
     quantity_import = models.FloatField(default=0)

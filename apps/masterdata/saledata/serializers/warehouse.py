@@ -345,6 +345,12 @@ class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
                 'id': obj.product_warehouse.product_id,
                 'title': obj.product_warehouse.product.title,
                 'code': obj.product_warehouse.product.code,
+                'uom_inventory': {
+                    'id': obj.product_warehouse.product.inventory_uom_id,
+                    'title': obj.product_warehouse.product.inventory_uom.title,
+                    'code': obj.product_warehouse.product.inventory_uom.code,
+                    'ratio': obj.product_warehouse.product.inventory_uom.ratio,
+                } if obj.product_warehouse.product.inventory_uom else {},
             } if obj.product_warehouse.product else {},
             'warehouse': {
                 'id': obj.product_warehouse.warehouse_id,

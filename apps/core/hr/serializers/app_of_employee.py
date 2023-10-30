@@ -31,3 +31,15 @@ class AllApplicationOfEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = DistributionApplication
         fields = ('id', 'title', 'code', 'permit_mapping')
+
+
+class AppParsedDetailSerializer(serializers.Serializer):  # noqa
+    id = serializers.UUIDField()
+    title = serializers.CharField()
+    code = serializers.CharField()
+
+
+class SummaryApplicationOfEmployeeSerializer(serializers.Serializer):  # noqa
+    employee = AppParsedDetailSerializer(many=True)
+    roles = AppParsedDetailSerializer(many=True)
+    summary = AppParsedDetailSerializer(many=True)

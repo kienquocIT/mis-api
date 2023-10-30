@@ -25,6 +25,7 @@ class ProductWareHouse(MasterDataAbstractModel):
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
         verbose_name='Unit Of Measure of Product',
+        null=True,
     )
     unit_price = models.FloatField(
         default=0,
@@ -34,6 +35,7 @@ class ProductWareHouse(MasterDataAbstractModel):
         'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name='Tax of Product',
+        null=True,
     )
 
     # stock
