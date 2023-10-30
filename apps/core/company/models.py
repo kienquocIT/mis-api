@@ -1,14 +1,52 @@
 import json
 from typing import Literal, Union
 from uuid import UUID
-
 from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
-
-from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
-
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
 from apps.core.models import CoreAbstractModel
+from apps.masterdata.saledata.models.price import Currency
+from django.utils.translation import gettext_lazy as _
+
+
+DEFINITION_INVENTORY_VALUATION_CHOICES = [
+    (0, _('Perpetual inventory')),
+    (1, _('Periodic inventory')),
+]
+
+DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
+    (0, _('FIFO')),
+    (1, _('Cumulative weighted average')),
+    (2, _('Weighted average')),
+    (3, _('Specific identification method')),
+]
+
+NUMBERING_BY_CHOICES = [
+    (0, _('System')),
+    (1, _('User defined')),
+]
+
+RESET_FREQUENCY_CHOICES = [
+    (0, _('Yearly')),
+    (1, _('Monthly')),
+    (2, _('Weekly')),
+    (3, _('Daily')),
+    (4, _('Never')),
+]
+
+FUNCTION_CHOICES = [
+    (0, _('Opportunity')),
+    (1, _('Sale quotation')),
+    (2, _('Sale order')),
+    (3, _('Picking')),
+    (4, _('Delivery')),
+    (5, _('Task')),
+    (6, _('Advance payment')),
+    (7, _('Payment')),
+    (8, _('Return payment')),
+    (9, _('Purchase request')),
+]
 
 
 class Company(CoreAbstractModel):
@@ -42,6 +80,12 @@ class Company(CoreAbstractModel):
     )
     phone = models.CharField(
         verbose_name='phone',
+        blank=True,
+        null=True,
+        max_length=25
+    )
+    fax = models.CharField(
+        verbose_name='fax',
         blank=True,
         null=True,
         max_length=25
@@ -315,3 +359,36 @@ class CompanyUserEmployee(SimpleAbstractModel):
                 cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
             )
         )
+
+
+class CompanySetting(SimpleAbstractModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_setting')
+    primary_currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
+    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
+    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=0)
+    cost_per_warehouse = models.BooleanField(default=False)
+    cost_per_lot_batch = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = 'Company Setting'
+        verbose_name_plural = 'Company Settings'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+class CompanyFunctionNumber(MasterDataAbstractModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
+    function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
+    numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
+    schema = models.CharField(max_length=500, null=True)
+    first_number = models.IntegerField(null=True)
+    last_number = models.IntegerField(null=True)
+    reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
+
+    class Meta:
+        verbose_name = 'Company Function Number'
+        verbose_name_plural = 'Company Functions Number'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()

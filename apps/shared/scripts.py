@@ -1,5 +1,5 @@
 from datetime import date
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanySetting, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -1229,3 +1229,59 @@ def update_inherit_po():
         po.employee_inherit_id = po.employee_created_id if po.employee_created else None
         po.save(update_fields=['employee_inherit_id'])
     print('update_inherit_po done.')
+
+
+def create_company_setting():
+    company_setting_data = [
+        {
+            'definition_inventory_valuation': 0,
+            'default_inventory_value_method': 0,
+            'cost_per_warehouse': False,
+            'cost_per_lot_batch': False
+        }
+    ]
+    company_list = Company.objects.all()
+    bulk_create_data = []
+    for company_obj in company_list:
+        vnd_currency = Currency.objects.filter(
+            company=company_obj,
+            abbreviation='VND'
+        ).first()
+        if vnd_currency:
+            for cs_item in company_setting_data:
+                bulk_create_data.append(
+                    CompanySetting(
+                        company=company_obj,
+                        primary_currency_id=str(vnd_currency.id),
+                        **cs_item
+                    )
+                )
+    CompanySetting.objects.bulk_create(bulk_create_data)
+    return True
+
+
+def create_company_function_number():
+    company_function_number_data = [
+        {
+            'numbering_by': 0,
+            'schema': None,
+            'first_number': None,
+            'last_number': None,
+            'reset_frequency': None
+        }
+    ]
+    company_list = Company.objects.all()
+    bulk_create_data = []
+    for company_obj in company_list:
+        for function_index in range(10):
+            for cf_item in company_function_number_data:
+                bulk_create_data.append(
+                    CompanyFunctionNumber(
+                        tenant=company_obj.tenant,
+                        company=company_obj,
+                        function=function_index,
+                        **cf_item
+                    )
+                )
+    CompanyFunctionNumber.objects.bulk_create(bulk_create_data)
+    return True

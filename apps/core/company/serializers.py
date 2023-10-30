@@ -3,7 +3,7 @@ from django.conf import settings
 from django.db.models import Count, Subquery
 from rest_framework import serializers
 
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
+from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanySetting, CompanyFunctionNumber
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
@@ -104,8 +104,21 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'email',
             'address',
-            'phone'
+            'phone',
+            'fax'
         )
+
+
+def create_company_setting(company_setting_data):
+    CompanySetting.objects.create(**company_setting_data)
+    return True
+
+
+def create_company_function_number(company_function_number_data):
+    for item in company_function_number_data:
+        CompanyFunctionNumber.objects.filter(funcion=item.get('function', None)).first()
+
+    return True
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
@@ -118,19 +131,24 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
+            'fax'
         )
 
-    def validate(self, attrs):
+    def validate(self, validate_data):
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
             company_quantity_max = user_obj.tenant_current.company_quality_max
             current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
             if current_company_quantity <= company_quantity_max:
-                return attrs
+                return validate_data
             raise serializers.ValidationError(
                 {'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))}
             )
         raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
+
+    def create(self, validated_data):
+        company_obj = Company.objects.create(**validated_data)
+        return company_obj
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
