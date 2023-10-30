@@ -309,6 +309,7 @@ class PlanEmployee(SimpleAbstractModel):
         verbose_name_plural = 'Plan of Employee'
         default_permissions = ()
         permissions = ()
+        ordering = ('plan__title',)
 
 
 class PlanEmployeeApp(SimpleAbstractModel):
@@ -325,6 +326,7 @@ class PlanEmployeeApp(SimpleAbstractModel):
         unique_together = ('plan_employee', 'application')
         default_permissions = ()
         permissions = ()
+        ordering = ('application__title',)
 
 
 class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):

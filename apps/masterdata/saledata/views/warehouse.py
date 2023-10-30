@@ -160,6 +160,7 @@ class ProductWareHouseLotList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'product_warehouse__product',
+            'product_warehouse__product__inventory_uom',
             'product_warehouse__warehouse',
             'product_warehouse__uom',
         )

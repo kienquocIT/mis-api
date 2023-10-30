@@ -118,6 +118,7 @@ class PlanRole(SimpleAbstractModel):
         verbose_name_plural = 'Plan of Role'
         default_permissions = ()
         permissions = ()
+        ordering = ('plan__title',)
 
 
 class PlanRoleApp(SimpleAbstractModel):
@@ -138,6 +139,7 @@ class PlanRoleApp(SimpleAbstractModel):
         unique_together = ('plan_role', 'application')
         default_permissions = ()
         permissions = ()
+        ordering = ('application__title',)
 
 
 class RolePermission(SimpleAbstractModel, PermissionAbstractModel):

@@ -25,6 +25,7 @@ PERMIT_FROM_TYPE = Literal['general', 'ids', 'opp', 'prj']  # pylint: disable=C0
 
 class PermissionController:
     ALLOWED_RANGE_DEFAULT = ['1', '2', '3', '4']
+    ALLOWED_SPACE_DEFAULT = ['0', '1']
 
     @staticmethod
     def application_cls():
@@ -38,7 +39,7 @@ class PermissionController:
         self.tenant_id: uuid4 = tenant_id
 
     @staticmethod
-    def _valid_allow_option(item, app_data_by_id, bastion_from: BASTION_FROM_TYPE = None):  # pylint: disable=R0914
+    def _valid_allow_option(item, app_data_by_id):  # pylint: disable=R0914
         app_id = item['app_id']
         with_range = str(item['range']) if item['range'] is not None else None
 
@@ -60,53 +61,21 @@ class PermissionController:
 
         if is_view is True:
             permit_view = app_config.get('view', {})
-            if bastion_from:
-                bastion_from_data = permit_view.get(bastion_from, {})
-                permit_view.update(
-                    {
-                        **(bastion_from_data if isinstance(bastion_from_data, dict) else {})
-                    }
-                )
-
             permit_view_range = permit_view.get('range', [])
             __check_allow(permit_view_range)
 
         if is_create is True:
             permit_create = app_config.get('create', {})
-            if bastion_from:
-                bastion_from_data = permit_create.get(bastion_from, {})
-                permit_create.update(
-                    {
-                        **(bastion_from_data if isinstance(bastion_from_data, dict) else {})
-                    }
-                )
-
             permit_create_range = permit_create.get('range', [])
             __check_allow(permit_create_range)
 
         if is_edit is True:
             permit_edit = app_config.get('edit', {})
-            if bastion_from:
-                bastion_from_data = permit_edit.get(bastion_from, {})
-                permit_edit.update(
-                    {
-                        **(bastion_from_data if isinstance(bastion_from_data, dict) else {})
-                    }
-                )
-
             permit_edit_range = permit_edit.get('range', [])
             __check_allow(permit_edit_range)
 
         if is_delete is True:
             permit_delete = app_config.get('delete', {})
-            if bastion_from:
-                bastion_from_data = permit_delete.get(bastion_from, {})
-                permit_delete.update(
-                    {
-                        **(bastion_from_data if isinstance(bastion_from_data, dict) else {})
-                    }
-                )
-
             permit_delete_range = permit_delete.get('range', [])
             __check_allow(permit_delete_range)
 
@@ -171,7 +140,7 @@ class PermissionController:
             ),
         }
 
-    def valid_config(self, config_data):  # pylint: disable=R0914
+    def valid_config(self, config_data, has_space):  # pylint: disable=R0914
         app_id_arr = []
         checked_data = []
         if not config_data:
@@ -186,6 +155,7 @@ class PermissionController:
                 allow_edit = item.get('edit', None)
                 allow_delete = item.get('delete', None)
                 allow_range = item.get('range', None)
+                allow_space = item.get('space', None)
 
                 _id_check = (_id or TypeCheck.check_uuid(_id)) or not _id
                 _app_check = app_id and TypeCheck.check_uuid(app_id)
@@ -196,7 +166,13 @@ class PermissionController:
                         and isinstance(allow_delete, bool)
                 )
                 _range_allow_check = allow_range in self.ALLOWED_RANGE_DEFAULT
-                if _id_check and _app_check and _state_allow_check and _range_allow_check:
+                if has_space is True:
+                    _space_allow_check = allow_space in self.ALLOWED_SPACE_DEFAULT
+                else:
+                    allow_space = None
+                    _space_allow_check = True
+
+                if _id_check and _app_check and _state_allow_check and _range_allow_check and _space_allow_check:
                     app_id_arr.append(str(app_id))
                     checked_data.append(
                         {
@@ -207,6 +183,7 @@ class PermissionController:
                             'edit': bool(allow_edit),
                             'delete': bool(allow_delete),
                             'range': allow_range,
+                            'space': allow_space,
                         }
                     )
                 else:
@@ -217,7 +194,7 @@ class PermissionController:
         app_data_by_id = self.app_check_and_get(app_id_arr=app_id_arr)
         return app_data_by_id, checked_data
 
-    def valid(self, attrs, bastion_from: BASTION_FROM_TYPE = None):  # pylint: disable=R0914,R0912
+    def valid(self, attrs, **kwargs):  # pylint: disable=R0914,R0912
         """
         {
             "id": "UUID or None",
@@ -227,6 +204,7 @@ class PermissionController:
             "edit": bool,
             "delete": bool,
             "range": CHOICE("1", "2", "3", "4"),
+            "space": CHOICE("0", "1"), # 0: general, 1: all space
         }
         Returns:
             {
@@ -237,13 +215,15 @@ class PermissionController:
                 "edit": false,
                 "delete": true,
                 "range": "3",
+                "space": "0",
             }
         """
+        has_space = kwargs.get('has_space', True)
         if attrs and isinstance(attrs, list):
-            app_data_by_id, checked_data = self.valid_config(config_data=attrs)
+            app_data_by_id, checked_data = self.valid_config(config_data=attrs, has_space=has_space)
             result_data = []
             for item in checked_data:
-                self._valid_allow_option(item=item, app_data_by_id=app_data_by_id, bastion_from=bastion_from)
+                self._valid_allow_option(item=item, app_data_by_id=app_data_by_id)
                 result_data.append(
                     {
                         **item,
@@ -437,13 +417,16 @@ class PermissionParsedTool:
         return result
 
     @classmethod
-    def push_update_range(cls, result, code_full, range_allowed, main_range=None):
+    def push_update_range(cls, result, code_full, range_allowed, main_range=None, range_data=None):
+        if not range_data:
+            range_data = {}
+
         code_full = code_full.lower()
         range_got = cls.confirm_range(range_check=range_allowed, main_range=main_range if main_range else range_allowed)
         if code_full in result:
-            result[code_full].update({range_got: {}})
+            result[code_full].update({range_got: range_data})
         else:
-            result[code_full] = {range_got: {}}
+            result[code_full] = {range_got: range_data}
 
     @classmethod
     def confirm_range(cls, range_check, main_range):
@@ -458,9 +441,10 @@ class PermissionParsedTool:
         has_allow_edit = bool(item_data.get('edit', False))
         has_allow_delete = bool(item_data.get('delete', False))
         has_allow_range = item_data.get('range', None)
+        view_space_allow = item_data.get('space', None)
 
         config_range_allowed = app_obj.permit_mapping
-        if not (
+        state_permit_allow = (
                 (
                         has_allow_view is True
                         and 'view' in config_range_allowed
@@ -485,7 +469,11 @@ class PermissionParsedTool:
                         and 'range' in config_range_allowed['delete']
                         and has_allow_range in config_range_allowed['delete']['range']
                 )
-        ):
+        )
+        state_spacing_allow = view_space_allow is None or (
+                isinstance(view_space_allow, str) and view_space_allow in app_obj.spacing_allow
+        )
+        if not (state_permit_allow and state_spacing_allow):
             return None
 
         return {
@@ -494,6 +482,7 @@ class PermissionParsedTool:
             'edit': has_allow_edit,
             'delete': has_allow_delete,
             'range': has_allow_range,
+            'view_space_allow': view_space_allow,
         }
 
     @classmethod
@@ -546,6 +535,7 @@ class PermissionParsedTool:
                                 print('=> Skip parse to simple of :', item)
                             continue
 
+                        view_space_allow = parse_item['view_space_allow']
                         for key_check in ['view', 'create', 'edit', 'delete']:
                             if parse_item[key_check] is True:
                                 # append main app
@@ -553,6 +543,9 @@ class PermissionParsedTool:
                                     result=result,
                                     code_full=f"{app_prefix}.{key_check}".lower(),
                                     range_allowed=parse_item['range'],
+                                    range_data={
+                                        'space': view_space_allow
+                                    } if view_space_allow is not None and key_check == 'view' else {},
                                 )
 
                                 # append depend local
@@ -561,7 +554,8 @@ class PermissionParsedTool:
                                     self.push_update_range(
                                         result=result,
                                         code_full=f"{app_prefix}.{permit_code}",
-                                        range_allowed=permit_range, main_range=parse_item['range'],
+                                        range_allowed=permit_range,
+                                        main_range=parse_item['range'],
                                     )
 
                                 # append depend app

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models import WareHouse, ProductWareHouseLot
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
@@ -8,7 +8,7 @@ from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceip
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
     PurchaseOrderRequestProduct
-from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg
+from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
 from apps.shared.translations.sales import InventoryMsg
 
 
@@ -280,7 +280,20 @@ class GoodsReceiptCommonValidate:
                 id=value
             )
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'warehouse': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+
+    @classmethod
+    def validate_lot(cls, value):
+        try:
+            if value is None:
+                return None
+            return ProductWareHouseLot.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except ProductWareHouseLot.DoesNotExist:
+            raise serializers.ValidationError({'lot': WarehouseMsg.LOT_NOT_EXIST})
 
     @classmethod
     def validate_quantity_import(cls, value):

@@ -828,7 +828,7 @@ class ConfigDefaultData:
     def working_calendar_config(self):
         WorkingCalendarConfig.objects.get_or_create(
             company=self.company_obj,
-            defaults={
+            defaults={  # noqa
                 'working_days':
                     {
                         0: {

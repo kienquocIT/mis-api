@@ -18,8 +18,6 @@ from ...base.models import Application, PlanApplication
 from ...tenant.models import TenantPlan
 
 
-
-
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
@@ -139,6 +137,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                         'option_permission': obj_app.option_permission,
                         'option_allowed': obj_app.option_allowed,
                         'permit_mapping': obj_app.permit_mapping,
+                        'spacing_allow': obj_app.spacing_allow,
                     }
                 )
             result.append(item_data)
@@ -496,25 +495,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         instance, validated_data, _permission_data = self.force_permissions(
             instance=instance, validated_data=validated_data, emp_need_sync=[str(instance.id)]
         )
-        plan_application_dict, plan_app_data, bulk_info = set_up_data_plan_app(
-            validated_data,
-            instance=instance
-        )
-        if plan_application_dict:
-            validated_data.update({'plan_application': plan_application_dict})
 
         # update employee
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-
-        # create M2M PlanEmployee + update TenantPlan
-        create_plan_employee_update_tenant_plan(
-            employee=instance,
-            plan_app_data=plan_app_data,
-            bulk_info=bulk_info
-        )
-
         return instance
 
 
