@@ -600,6 +600,7 @@ class ConfigDefaultData:
         for data in IndicatorDefaultData.INDICATOR_DATA:
             bulk_info.append(
                 QuotationIndicatorConfig(
+                    tenant=self.company_obj.tenant,
                     company=self.company_obj,
                     **data,
                 )
@@ -611,6 +612,7 @@ class ConfigDefaultData:
         for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
             bulk_info.append(
                 SaleOrderIndicatorConfig(
+                    tenant=self.company_obj.tenant,
                     company=self.company_obj,
                     **data,
                 )

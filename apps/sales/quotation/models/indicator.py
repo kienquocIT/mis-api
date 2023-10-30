@@ -1,9 +1,9 @@
 from django.db import models
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel, StringHandler
 
 
-class QuotationIndicatorConfig(SimpleAbstractModel):
+class QuotationIndicatorConfig(MasterDataAbstractModel):
     company = models.ForeignKey(
         'company.Company',
         on_delete=models.SET_NULL,
@@ -42,8 +42,43 @@ class QuotationIndicatorConfig(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("IN")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
 
-class QuotationIndicator(SimpleAbstractModel):
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'IN0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'IN{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_code(self.company_id)
+
+        # hit DB
+        super().save(*args, **kwargs)
+
+
+class QuotationIndicator(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         'quotation.Quotation',
         on_delete=models.CASCADE,
@@ -80,6 +115,7 @@ class IndicatorDefaultData:
     INDICATOR_DATA = [
         {
             "title": "Revenue",
+            "code": "IN0001",
             "remark": "Revenue",
             "example": "indicator(Revenue)",
             "application_code": "quotation",
@@ -102,6 +138,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Total cost",
+            "code": "IN0002",
             "remark": "Total cost",
             "example": "indicator(Total cost)",
             "application_code": "quotation",
@@ -124,6 +161,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Gross profit",
+            "code": "IN0003",
             "remark": "Gross profit",
             "example": "indicator(Gross profit)",
             "application_code": "quotation",
@@ -186,6 +224,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Operating expense",
+            "code": "IN0004",
             "remark": "Operating expense",
             "example": "indicator(Operating expense)",
             "application_code": "quotation",
@@ -235,6 +274,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Other expenses",
+            "code": "IN0005",
             "remark": "Other expenses",
             "example": "indicator(Other expenses)",
             "application_code": "quotation",
@@ -312,6 +352,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Net income",
+            "code": "IN0006",
             "remark": "Net income",
             "example": "indicator(Net income)",
             "application_code": "quotation",
@@ -523,6 +564,7 @@ class IndicatorDefaultData:
     ORDER_INDICATOR_DATA = [
         {
             "title": "Revenue",
+            "code": "IN0001",
             "remark": "Revenue",
             "example": "indicator(Revenue)",
             "application_code": "saleorder",
@@ -545,6 +587,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Total cost",
+            "code": "IN0002",
             "remark": "Total cost",
             "example": "indicator(Total cost)",
             "application_code": "saleorder",
@@ -567,6 +610,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Gross profit",
+            "code": "IN0003",
             "remark": "Gross profit",
             "example": "indicator(Gross profit)",
             "application_code": "saleorder",
@@ -631,6 +675,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Operating expense",
+            "code": "IN0004",
             "remark": "Operating expense",
             "example": "indicator(Operating expense)",
             "application_code": "saleorder",
@@ -680,6 +725,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Other expenses",
+            "code": "IN0005",
             "remark": "Other expenses",
             "example": "indicator(Other expenses)",
             "application_code": "saleorder",
@@ -755,6 +801,7 @@ class IndicatorDefaultData:
         },
         {
             "title": "Net income",
+            "code": "IN0006",
             "remark": "Net income",
             "example": "indicator(Net income)",
             "application_code": "saleorder",

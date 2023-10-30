@@ -1,9 +1,9 @@
 from django.db import models
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 
-class SaleOrderIndicatorConfig(SimpleAbstractModel):
+class SaleOrderIndicatorConfig(MasterDataAbstractModel):
     company = models.ForeignKey(
         'company.Company',
         on_delete=models.SET_NULL,
@@ -43,7 +43,7 @@ class SaleOrderIndicatorConfig(SimpleAbstractModel):
         permissions = ()
 
 
-class SaleOrderIndicator(SimpleAbstractModel):
+class SaleOrderIndicator(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
