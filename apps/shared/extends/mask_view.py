@@ -1176,8 +1176,11 @@ class PermissionController:
     def parse_space_from_general_config(cls, allowed_range, group_to_space=False):
         result = {}
         for key, value in allowed_range.items():
-            if value and isinstance(value, dict) and 'space' in value:
-                result[key] = value['space']
+            if isinstance(value, dict):
+                if value and 'space' in value:
+                    result[key] = value['space']
+                else:
+                    result[key] = '0'  # default
 
         if group_to_space is True:
             space_group = {}
