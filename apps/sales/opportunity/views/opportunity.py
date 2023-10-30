@@ -378,6 +378,9 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         return state
 
     def manual_check_obj_destroy(self, instance, **kwargs):
+        if instance.member_id == instance.opportunity.employee_inherit_id:
+            return False
+
         state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
         if not state:
             # special case skip with True if current user is employee_inherit
