@@ -18,8 +18,6 @@ from ...base.models import Application, PlanApplication
 from ...tenant.models import TenantPlan
 
 
-
-
 class RoleOfEmployeeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
