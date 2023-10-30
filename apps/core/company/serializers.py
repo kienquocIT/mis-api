@@ -95,6 +95,9 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
+    company_setting = serializers.SerializerMethodField()
+    company_function_number = serializers.SerializerMethodField()
+
     class Meta:
         model = Company
         fields = (
@@ -105,19 +108,54 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'email',
             'address',
             'phone',
-            'fax'
+            'fax',
+            'company_setting',
+            'company_function_number'
         )
+
+    @classmethod
+    def get_company_setting(cls, obj):
+        company_setting = obj.company_setting.all()[0]
+        return {
+            'primary_currency': {
+                'id': company_setting.primary_currency_id,
+                'title': company_setting.primary_currency.title,
+                'abbreviation': company_setting.primary_currency.abbreviation,
+            } if company_setting.primary_currency else {},
+            'definition_inventory_valuation': company_setting.definition_inventory_valuation,
+            'default_inventory_value_method': company_setting.default_inventory_value_method,
+            'cost_per_warehouse': company_setting.cost_per_warehouse,
+            'cost_per_lot_batch': company_setting.cost_per_lot_batch
+        }
+
+    @classmethod
+    def get_company_function_number(cls, obj):
+        company_function_number = []
+        for item in obj.company_function_number.all():
+            company_function_number.append(
+                {
+                    'function': item.function,
+                    'numbering_by': item.numbering_by,
+                    'schema': item.schema,
+                    'first_number': item.first_number,
+                    'last_number': item.last_number,
+                    'reset_frequency': item.reset_frequency
+                }
+            )
+        return company_function_number
 
 
 def create_company_setting(company_setting_data):
+    CompanySetting.objects.filter().delete()
     CompanySetting.objects.create(**company_setting_data)
     return True
 
 
 def create_company_function_number(company_function_number_data):
     for item in company_function_number_data:
-        CompanyFunctionNumber.objects.filter(funcion=item.get('function', None)).first()
-
+        obj = CompanyFunctionNumber.objects.filter(funcion=item.get('function', None)).first()
+        item.pop('function')
+        obj.objects.update(**item)
     return True
 
 
@@ -147,6 +185,8 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
 
     def create(self, validated_data):
+        create_company_setting(self.initial_data.get('company_setting_data', []))
+        create_company_function_number(self.initial_data.get('company_function_number_data', []))
         company_obj = Company.objects.create(**validated_data)
         return company_obj
 
