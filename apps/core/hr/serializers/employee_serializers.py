@@ -137,6 +137,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
                         'option_permission': obj_app.option_permission,
                         'option_allowed': obj_app.option_allowed,
                         'permit_mapping': obj_app.permit_mapping,
+                        'spacing_allow': obj_app.spacing_allow,
                     }
                 )
             result.append(item_data)

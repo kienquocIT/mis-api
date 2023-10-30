@@ -12,8 +12,11 @@ from apps.sales.opportunity.models import (
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
-__all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
-           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow']
+__all__ = [
+    'OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+    'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow',
+    'OpportunityDetailSimpleSerializer'
+]
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -818,8 +821,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             ]
         return []
 
-    @classmethod
-    def get_members(cls, obj):
+    def get_members(self, obj):
+        allow_get_member = self.context.get('allow_get_member', False)
         return [
             {
                 "id": item.id,
@@ -830,7 +833,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 "avatar": item.avatar,
                 "is_active": item.is_active,
             } for item in obj.members.all()
-        ]
+        ] if allow_get_member else []
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

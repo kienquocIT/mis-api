@@ -10,7 +10,7 @@ from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
     OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer,
-    OpportunityListSerializerForCashOutFlow
+    OpportunityListSerializerForCashOutFlow,
 )
 from apps.sales.opportunity.serializers.opp_members import (
     MemberOfOpportunityDetailSerializer,
@@ -64,6 +64,15 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
                 return item_data['opp'].keys()
         return []
 
+    def get_opp_has_view_this(self):
+        return [
+            str(item) for item in OpportunitySaleTeamMember.objects.filter_current(
+                fill__tenant=True, fill__company=True,
+                member_id=self.cls_check.employee_attr.employee_current_id,
+                permit_view_this_opp=True,
+            ).values_list('opportunity_id', flat=True)
+        ]
+
     @property
     def filter_kwargs_q(self) -> Union[Q, Response]:
         """
@@ -76,9 +85,10 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
                 return self.filter_kwargs_q__from_app(data_from_app)
             return self.list_empty()
         # check permit config exists if from_app not calling...
-        if self.cls_check.permit_cls.config_data__exist:
-            return self.filter_kwargs_q__from_config()
-        return ResponseController.forbidden_403()
+        opp_has_view_ids = self.get_opp_has_view_this()
+        if self.cls_check.permit_cls.config_data__exist or opp_has_view_ids:
+            return self.filter_kwargs_q__from_config() | Q(id__in=opp_has_view_ids)
+        return self.list_empty()
 
     def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
         # permit_data = {"employee": [], "roles": []}
@@ -184,15 +194,79 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "members",
         )
 
-    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
-        if str(instance.employee_inherit_id) == str(
-                self.cls_check.employee_attr.employee_current_id
-        ) or OpportunitySaleTeamMember.objects.filter_current(
-                fill__tenant=True, fill__company=True,
-                opportunity=instance, permit_view_this_opp=True,
-                member_id=self.cls_check.employee_attr.employee_current_id,
-        ).exists():
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:  # pylint: disable=R0911,R0912
+        self.ser_context = {
+            'allow_get_member': False,
+        }
+
+        # owner
+        if str(instance.employee_inherit_id) == str(self.cls_check.employee_attr.employee_current_id):
+            self.ser_context['allow_get_member'] = True
+
+        # is member
+        opp_member = OpportunitySaleTeamMember.objects.filter_current(
+            fill__tenant=True, fill__company=True,
+            opportunity=instance, permit_view_this_opp=True,
+            member_id=self.cls_check.employee_attr.employee_current_id,
+        )
+        if opp_member.exists():
+            self.ser_context['allow_get_member'] = True
             return True
+
+        # has view opp with space all
+        config_data = self.cls_check.permit_cls.config_data
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
+            range_has_space_1 = []
+
+            employee_data = self.cls_check.permit_cls.config_data.get('employee', {})
+            if employee_data and isinstance(employee_data, dict) and 'general' in employee_data:
+                general_data = employee_data.get('general', {})
+                if general_data and isinstance(general_data, dict):
+                    for permit_range, permit_config in general_data.items():
+                        if (
+                                isinstance(permit_config, dict)
+                                and permit_config
+                                and 'space' in permit_config
+                                and permit_config['space'] == '1'
+                        ):
+                            range_has_space_1.append(permit_range)
+
+            roles_data = self.cls_check.permit_cls.config_data.get('roles', [])
+            if roles_data and isinstance(roles_data, list):
+                for role_detail in roles_data:
+                    general_data = role_detail.get('general', {}) if isinstance(role_detail, dict) else {}
+                    if general_data and isinstance(general_data, dict):
+                        for permit_range, permit_config in general_data.items():
+                            if (
+                                    isinstance(permit_config, dict)
+                                    and permit_config
+                                    and 'space' in permit_config
+                                    and permit_config['space'] == '1'
+                            ):
+                                range_has_space_1.append(permit_range)
+
+            if range_has_space_1:
+                self.ser_context['allow_get_member'] = True
+                try:
+                    opp_inherit_id = str(instance.employee_inherit_id)
+                    if '1' in range_has_space_1:
+                        if str(self.cls_check.employee_attr.employee_current_id) == opp_inherit_id:
+                            return True
+
+                    if '2' in range_has_space_1:
+                        if opp_inherit_id in self.cls_check.employee_attr.employee_staff_ids__exclude_me():
+                            return True
+
+                    if '3' in range_has_space_1:
+                        if opp_inherit_id in self.cls_check.employee_attr.employee_same_group_ids__exclude_me():
+                            return True
+
+                    if '4' in range_has_space_1:
+                        if str(instance.company_id) == str(self.cls_check.employee_attr.company_id):
+                            return True
+                except ValueError:
+                    return False
+
         return False
 
     def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
@@ -315,6 +389,9 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         return state
 
     def manual_check_obj_destroy(self, instance, **kwargs):
+        if instance.member_id == instance.opportunity.employee_inherit_id:
+            return False
+
         state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
         if not state:
             # special case skip with True if current user is employee_inherit

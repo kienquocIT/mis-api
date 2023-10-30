@@ -177,6 +177,7 @@ class ApplicationConfigFrame:
             },
         },
     }
+    default__spacing_allow = ["0"]  # allow: general
 
     def __init__(self, **config):
         self._data: dict = {
@@ -185,6 +186,7 @@ class ApplicationConfigFrame:
             "option_allowed": self.default__option_allowed,
             "app_depend_on": self.default__app_depend_on,
             "permit_mapping": self.default__permit_mapping,
+            "spacing_allow": self.default__spacing_allow,
             **config
         }
 
@@ -196,8 +198,12 @@ class ApplicationConfigFrame:
     def data(self, **kwargs):
         depend_follow_main: bool = kwargs.get('depend_follow_main', True)
         filtering_inheritor: bool = kwargs.get('filtering_inheritor', True)
+        spacing_allow: list[str] = kwargs.get('spacing_allow', self.default__spacing_allow)
+        if "0" not in spacing_allow:
+            spacing_allow.append("0")
 
         self._data['depend_follow_main'] = depend_follow_main
         self._data['filtering_inheritor'] = filtering_inheritor
+        self._data['spacing_allow'] = spacing_allow
         self.valid()
         return self._data

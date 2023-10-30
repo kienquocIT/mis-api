@@ -16,6 +16,10 @@ def clear_cache_base_group():
     return True
 
 
+def default_space_allow():
+    return ['0']
+
+
 class SubscriptionPlan(CoreAbstractModel):
     applications = models.ManyToManyField(
         'Application',
@@ -187,6 +191,11 @@ class Application(CoreAbstractModel):
         default=True,
         verbose_name='Allow Filter Inheritor',
         help_text='Apply rule filter employee_inherit_id in mask_view'
+    )
+    spacing_allow = models.JSONField(
+        default=default_space_allow,
+        verbose_name='Code Allow Space',
+        help_text='0: General, 1: All space (not filter opp, prj,... isnull)',
     )
 
     def __repr__(self):

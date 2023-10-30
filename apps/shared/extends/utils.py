@@ -6,6 +6,7 @@ from datetime import datetime, date
 from typing import Union
 from uuid import UUID
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
 __all__ = ['LinkListHandler', 'StringHandler', 'ListHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
@@ -75,7 +76,7 @@ class ListHandler:
             return [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in dict_in_list)]
         except Exception as err:
             if settings.DEBUG:
-                print('[distant_dict_in_list]', ' | ERR:', err, ' | data: ', dict_in_list)
+                print('[SKIP]  [distant_dict_...] :', 'ERR', '=', err, ',', 'data', '=', dict_in_list)
 
         dict_in_list__unique = []
         for item in dict_in_list:
@@ -85,11 +86,11 @@ class ListHandler:
         return dict_in_list__unique
 
 
-class CustomizeEncoder(json.JSONEncoder):
+class CustomizeEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, (UUID, datetime)):
             return str(obj)
-        return json.JSONEncoder.default(self, obj)
+        return super().default(obj)
 
 
 class TypeCheck:

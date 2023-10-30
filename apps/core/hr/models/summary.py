@@ -57,6 +57,7 @@ class DistributionPlan(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
         unique_together = ('tenant', 'company', 'employee', 'plan')
+        ordering = ('plan__title',)
 
 
 class DistributionApplication(SimpleAbstractModel):
@@ -85,3 +86,4 @@ class DistributionApplication(SimpleAbstractModel):
         default_permissions = ()
         permissions = ()
         unique_together = ('tenant', 'company', 'employee', 'app')
+        ordering = ('app__title',)
