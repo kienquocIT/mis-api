@@ -75,7 +75,7 @@ class ListHandler:
             return [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in dict_in_list)]
         except Exception as err:
             if settings.DEBUG:
-                print('[distant_dict_in_list]', ' | ERR:', err, ' | data: ', dict_in_list)
+                print('[SKIP]  [distant_dict_...] :', 'ERR', '=', err, ',', 'data', '=', dict_in_list)
 
         dict_in_list__unique = []
         for item in dict_in_list__unique:

@@ -35,7 +35,7 @@ class MemberOfOpportunityUpdateSerializer(serializers.ModelSerializer):
     )
 
     def validate_permission_by_configured(self, attrs):
-        return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs)
+        return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs, has_space=False)
 
     class Meta:
         model = OpportunitySaleTeamMember
