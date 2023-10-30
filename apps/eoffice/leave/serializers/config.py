@@ -162,6 +162,11 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
+    def validate_no_of_paid(self, value):
+        if self.instance.code == 'AN' and value < 12:
+            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_NO_OF_PAID_ERROR})
+        return value
+
     def validate(self, attrs):
         if not self.instance.is_lt_edit:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_UPDATE_LEAVE_TYPE})
@@ -243,7 +248,7 @@ class WorkingHolidaySerializer(serializers.ModelSerializer):
         fields = ('id', 'holiday_date_to', 'remark', 'year')
 
     def validate(self, validate_data):
-        if not self.instance and WorkingHolidayConfig.objects.filter(
+        if WorkingHolidayConfig.objects.filter(
                 year=validate_data['year'],
                 holiday_date_to=validate_data['holiday_date_to']
         ).exists():

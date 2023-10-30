@@ -742,7 +742,7 @@ class ConfigDefaultData:
                     {
                         'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
                         'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
                     },
                 ]
             temp_leave_type = []

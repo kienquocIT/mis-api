@@ -1019,11 +1019,39 @@ AppProp_SaleData_Delivery_data = {
     },
 }
 
+AppProp_Eoffice_Leave_data = {
+    'c5e70a65-362e-4350-9300-f2d2de4676be': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+    },
+    'e218e34c-80e8-49b5-9fe2-8042c2af65c0': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Date',
+        'code': 'request_date',
+        'type': 2,
+    },
+    '172ba1ae-4692-4613-9145-f633b7dfc397': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Beneficiary',
+        'code': 'employee_inherit',
+        'type': 5,
+    },
+    '98c92a00-4abd-40f6-b354-e2c9141d36cd': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Detail tab',
+        'code': 'detail_data',
+        'type': 1,
+    },
+
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,
     **AppProp_SaleData_Opportunity_data,
     **AppProp_SaleData_SaleOrder_data,
-    # **AppProp_SaleData_Delivery_data,
+    **AppProp_Eoffice_Leave_data,
 }

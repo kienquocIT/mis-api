@@ -2,8 +2,9 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister, LeaveAvailable, LeaveAvailableHistory
-from apps.shared import LeaveMsg
+from apps.shared import LeaveMsg, AbstractDetailSerializerModel
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
            'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer']
@@ -16,12 +17,12 @@ class LeaveRequestListSerializer(serializers.ModelSerializer):
 
 
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):
-    employee_inherit = serializers.SerializerMethodField()
+    employee_inherit_id = serializers.UUIDField()
     detail_data = serializers.JSONField(allow_null=True)
 
     class Meta:
         model = LeaveRequest
-        fields = ('title', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total')
+        fields = ('title', 'employee_inherit_id', 'request_date', 'detail_data', 'start_day', 'total')
 
     @classmethod
     def validate_title(cls, value):
@@ -30,7 +31,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
         return value
 
     @classmethod
-    def validate_employee_inherit(cls, value):
+    def validate_employee_inherit_id(cls, value):
         if not value:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_REQUEST})
         return value
@@ -41,6 +42,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
         return value
 
+    @decorator_run_workflow
     def create(self, validated_data):
         company_id = self.context.get('company_id', None)
         tenant_id = self.context.get('tenant_id', None)
@@ -77,12 +79,13 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
         return False
 
 
-class LeaveRequestDetailSerializer(serializers.ModelSerializer):
+class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
+    # detail_data = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveRequest
-        fields = ('id', 'title', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total',
+        fields = ('id', 'title', 'code', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total',
                   'system_status')
 
     @classmethod

@@ -17,7 +17,10 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     serializer_detail = LeaveRequestListSerializer
     serializer_create = LeaveRequestCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = [
+        'tenant_id', 'company_id',
+        'employee_created_id',
+    ]
     search_fields = ('code', 'title')
 
     @swagger_auto_schema(
