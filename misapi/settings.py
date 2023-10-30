@@ -97,6 +97,7 @@ INSTALLED_APPS = \
         'apps.eoffice.leave',
 
         'apps.sales.project',
+        'django_celery_beat',  # celery crontab
     ]
 
 MIDDLEWARE = [
