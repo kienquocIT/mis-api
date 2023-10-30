@@ -12,8 +12,11 @@ from apps.sales.opportunity.models import (
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
-__all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
-           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow']
+__all__ = [
+    'OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+    'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow',
+    'OpportunityDetailSimpleSerializer'
+]
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):

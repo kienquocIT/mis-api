@@ -1246,6 +1246,7 @@ Application_crm_data = {
     "296a1410-8d72-46a8-a0a1-1821f196e66c": ApplicationConfigFrame(**OPPORTUNITY_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "a8badb2e-54ff-4654-b3fd-0d2d3c777538": ApplicationConfigFrame(**PRODUCT_APP_CONFIG).data(
         depend_follow_main=False,

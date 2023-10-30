@@ -199,6 +199,8 @@ class ApplicationConfigFrame:
         depend_follow_main: bool = kwargs.get('depend_follow_main', True)
         filtering_inheritor: bool = kwargs.get('filtering_inheritor', True)
         spacing_allow: list[str] = kwargs.get('spacing_allow', self.default__spacing_allow)
+        if "0" not in spacing_allow:
+            spacing_allow.append("0")
 
         self._data['depend_follow_main'] = depend_follow_main
         self._data['filtering_inheritor'] = filtering_inheritor
