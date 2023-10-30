@@ -195,15 +195,25 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
         )
 
     def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:  # pylint: disable=R0911,R0912
-        if str(instance.employee_inherit_id) == str(
-                self.cls_check.employee_attr.employee_current_id
-        ) or OpportunitySaleTeamMember.objects.filter_current(
+        self.ser_context = {
+            'allow_get_member': False,
+        }
+
+        # owner
+        if str(instance.employee_inherit_id) == str(self.cls_check.employee_attr.employee_current_id):
+            self.ser_context['allow_get_member'] = True
+
+        # is member
+        opp_member = OpportunitySaleTeamMember.objects.filter_current(
             fill__tenant=True, fill__company=True,
             opportunity=instance, permit_view_this_opp=True,
             member_id=self.cls_check.employee_attr.employee_current_id,
-        ).exists():
+        )
+        if opp_member.exists():
+            self.ser_context['allow_get_member'] = True
             return True
 
+        # has view opp with space all
         config_data = self.cls_check.permit_cls.config_data
         if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             range_has_space_1 = []
@@ -236,6 +246,7 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
                                 range_has_space_1.append(permit_range)
 
             if range_has_space_1:
+                self.ser_context['allow_get_member'] = True
                 try:
                     opp_inherit_id = str(instance.employee_inherit_id)
                     if '1' in range_has_space_1:
