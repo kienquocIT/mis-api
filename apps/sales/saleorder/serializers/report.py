@@ -1,12 +1,6 @@
 from rest_framework import serializers
 
-from apps.core.workflow.tasks import decorator_run_workflow
-# from apps.sales.opportunity.models import Opportunity
-from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
-    SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
-    SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
-from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SYSTEM_STATUS
+from apps.sales.saleorder.models import SaleOrder
 
 
 class RevenueReportListSerializer(serializers.ModelSerializer):
