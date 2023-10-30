@@ -51,13 +51,25 @@ class RevenueReportListSerializer(serializers.ModelSerializer):
             quotation_indicator__title__contains="Revenue"
         ).first()
         if revenue:
-            return revenue
+            return revenue.indicator_value
         return 0
 
     @classmethod
     def get_gross_profit(cls, obj):
-        return 1000000
+        revenue = obj.sale_order_indicator_sale_order.filter(
+            company_id=obj.company_id,
+            quotation_indicator__title__contains="Gross profit"
+        ).first()
+        if revenue:
+            return revenue.indicator_value
+        return 0
 
     @classmethod
     def get_net_income(cls, obj):
-        return 1000000
+        revenue = obj.sale_order_indicator_sale_order.filter(
+            company_id=obj.company_id,
+            quotation_indicator__title__contains="Net income"
+        ).first()
+        if revenue:
+            return revenue.indicator_value
+        return 0
