@@ -113,15 +113,35 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
                   'title', 'code', 'is_lt_system', 'is_lt_edit', 'no_of_paid', 'prev_year')
 
-    @classmethod
-    def update_available_list(cls, l_type):
+    def update_available_list(self, l_type):
         list_available = LeaveAvailable.objects.filter_current(fill__company=True, fill__tenant=True, leave_type=l_type)
-        list_upd = []
-        for available in list_available:
-            available.check_balance = l_type.balance_control
-            list_upd.append(available)
-
-        LeaveAvailable.objects.bulk_update(list_upd, fields=['check_balance'])
+        if list_available.exists():
+            list_upd = []
+            for available in list_available:
+                available.check_balance = l_type.balance_control
+                available.total = 0
+                available.used = 0
+                available.available = 0
+                available.expiration_date = timezone.now().replace(
+                    month=12, day=31
+                ) if l_type.is_check_expiration else None
+                list_upd.append(available)
+            LeaveAvailable.objects.bulk_update(
+                list_upd, fields=['check_balance', 'total', 'used', 'available', 'expiration_date']
+            )
+        else:
+            list_create = []
+            for employee in Employee.objects.filter_current(fill__tenant=True, fill__company=True):
+                list_create.append(LeaveAvailable(
+                    leave_type=l_type,
+                    open_year=timezone.now().year,
+                    expiration_date=timezone.now().replace(month=12, day=31) if l_type.is_check_expiration else None,
+                    check_balance=True,
+                    employee_inherit=employee,
+                    company_id=self.context.get('company_id', None),
+                    tenant_id=self.context.get('tenant_id', None)
+                ))
+            LeaveAvailable.objects.bulk_create(list_create)
 
     @classmethod
     def validate_leave_config(cls, value):
@@ -149,7 +169,7 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         change = False
-        if instance.balance_control != validated_data['balance_control']:
+        if 'balance_control' in validated_data and instance.balance_control != validated_data['balance_control']:
             change = True
         for key, value in validated_data.items():
             setattr(instance, key, value)

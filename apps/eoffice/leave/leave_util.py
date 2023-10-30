@@ -1,9 +1,7 @@
 from copy import deepcopy
 from datetime import date, timedelta
 from uuid import uuid4
-
 from django.utils import timezone
-
 from .models import LeaveType, LeaveAvailable
 
 
@@ -21,9 +19,9 @@ def leave_available_map_employee(employee, company_obj):
                     LeaveAvailable(
                         leave_type=l_type,
                         open_year=current_date.year,
-                        total=0,
+                        total=l_type.no_of_paid if l_type.code == 'AN' else 0,
                         used=0,
-                        available=0,
+                        available=l_type.no_of_paid if l_type.code == 'AN' else 0,
                         expiration_date=last_day_year,
                         company=company_obj,
                         tenant=company_obj.tenant,

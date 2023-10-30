@@ -78,7 +78,7 @@ class ListHandler:
                 print('[SKIP]  [distant_dict_...] :', 'ERR', '=', err, ',', 'data', '=', dict_in_list)
 
         dict_in_list__unique = []
-        for item in dict_in_list__unique:
+        for item in dict_in_list:
             tmp = json.dumps(item, cls=CustomizeEncoder)
             if tmp not in dict_in_list__unique:
                 dict_in_list__unique.append(item)
