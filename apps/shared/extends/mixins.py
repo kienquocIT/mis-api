@@ -1087,5 +1087,5 @@ class BaseDestroyMixin(BaseMixin):
         except serializers.ValidationError as err:
             raise err
         except Exception as err:
-            print(err)
+            print('[perform_destroy] ERR', err)
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})

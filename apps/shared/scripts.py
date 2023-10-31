@@ -40,8 +40,8 @@ from ..sales.opportunity.models import (
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
 def update_sale_default_data_old_company():
@@ -1237,6 +1237,33 @@ def update_inherit_po():
     print('update_inherit_po done.')
 
 
+def update_code_quotation_sale_order_indicator_config():
+    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    print('update_code_quotation_sale_order_indicator_config done.')
+
+
+def update_code_quotation_sale_order_indicator():
+    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
+        indicator.code = indicator.indicator.code
+        indicator.tenant_id = indicator.indicator.tenant_id
+        indicator.company_id = indicator.indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
+        indicator.code = indicator.quotation_indicator.code
+        indicator.tenant_id = indicator.quotation_indicator.tenant_id
+        indicator.company_id = indicator.quotation_indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    print('update_code_quotation_sale_order_indicator done.')
+
+
+
 def create_company_setting():
     company_setting_data = [
         {
@@ -1291,3 +1318,4 @@ def create_company_function_number():
                 )
     CompanyFunctionNumber.objects.bulk_create(bulk_create_data)
     return True
+

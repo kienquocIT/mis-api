@@ -1175,51 +1175,61 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
 #   - Return payment
 # Nhóm 3: Còn lại
 #   - ...
-
+# # # Tự trình bày: Các chức năng ở nhóm 1/2 sẽ có thêm spacing_allow = "1"
 
 Application_crm_data = {
     # Nhóm 1 ^ 2
     "14dbc606-1453-4023-a2cf-35b1cd9e3efd": ApplicationConfigFrame(**CALL_LOG_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "dec012bf-b931-48ba-a746-38b7fd7ca73b": ApplicationConfigFrame(**EMAIL_LOG_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "319356b4-f16c-4ba4-bdcb-e1b0c2a2c124": ApplicationConfigFrame(**DOCUMENT_FOR_CUSTOMER_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "e66cfb5a-b3ce-4694-a4da-47618f53de4c": ApplicationConfigFrame(**TASK_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "31c9c5b0-717d-4134-b3d0-cc4ca174b168": ApplicationConfigFrame(**CONTRACT_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "57725469-8b04-428a-a4b0-578091d0e4f5": ApplicationConfigFrame(**ADVANCE_PAYMENT_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "1010563f-7c94-42f9-ba99-63d5d26a1aca": ApplicationConfigFrame(**PAYMENT_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "65d36757-557e-4534-87ea-5579709457d7": ApplicationConfigFrame(**RETURN_ADVANCE_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
 
     # Nhóm 1
     "a870e392-9ad2-4fe2-9baa-298a38691cf2": ApplicationConfigFrame(**SALEORDER_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "b9650500-aba7-44e3-b6e0-2542622702a3": ApplicationConfigFrame(**QUOTATION_APP_CONFIG).data(
         depend_follow_main=True,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
 
     # Nhóm 2
@@ -1236,6 +1246,7 @@ Application_crm_data = {
     "296a1410-8d72-46a8-a0a1-1821f196e66c": ApplicationConfigFrame(**OPPORTUNITY_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
+        spacing_allow=["0", "1"],
     ),
     "a8badb2e-54ff-4654-b3fd-0d2d3c777538": ApplicationConfigFrame(**PRODUCT_APP_CONFIG).data(
         depend_follow_main=False,

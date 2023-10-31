@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
-    SaleOrderProduct, SaleOrderCost
+    SaleOrderProduct, SaleOrderCost, SaleOrderIndicator
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
     SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer, RevenueReportListSerializer
@@ -205,8 +205,8 @@ class SaleOrderIndicatorList(
     serializer_list = SaleOrderIndicatorListSerializer
     serializer_create = SaleOrderIndicatorCreateSerializer
     serializer_detail = SaleOrderIndicatorListSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', ]
 
     @swagger_auto_schema(
         operation_summary="Sale Order Indicator List",
@@ -233,6 +233,8 @@ class SaleOrderIndicatorDetail(
     queryset = SaleOrderIndicatorConfig.objects
     serializer_detail = SaleOrderIndicatorListSerializer
     serializer_update = SaleOrderIndicatorUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Sale Order Indicator detail",
@@ -324,7 +326,7 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
 # REPORT
 class ReportRevenueList(BaseListMixin):
     queryset = SaleOrder.objects
-    search_fields = ['title', 'code', 'employee__code', 'customer__name']
+    search_fields = ['title', 'code', 'employee_inherit__code']
     serializer_list = RevenueReportListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
@@ -332,7 +334,14 @@ class ReportRevenueList(BaseListMixin):
         return super().get_queryset().select_related(
             "customer",
             "employee_inherit",
-        ).order_by('employee_inherit__code')
+        ).prefetch_related(
+            Prefetch(
+                'sale_order_indicator_sale_order',
+                queryset=SaleOrderIndicator.objects.filter(
+                    code__in=['revenue', 'grossprofit', 'netincome']
+                )
+            )
+        ).filter(system_status__in=[2, 3]).order_by('employee_inherit__code')
 
     @swagger_auto_schema(
         operation_summary="Revenue report List",

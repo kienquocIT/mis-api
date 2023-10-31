@@ -1,8 +1,8 @@
-from rest_framework import serializers
 import re
 import datetime
 import random
 import calendar
+from rest_framework import serializers
 from apps.core.hr.models import Employee
 from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
@@ -16,8 +16,11 @@ from apps.sales.opportunity.models import (
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 
-__all__ = ['OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
-           'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow']
+__all__ = [
+    'OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+    'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow',
+    'OpportunityDetailSimpleSerializer'
+]
 
 
 def generator_code(company_obj_id):
@@ -44,8 +47,7 @@ def generator_code(company_obj_id):
                 result.append(match[1:-1])
         result = '-'.join(result)
         return result
-    else:
-        return None
+    return None
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -853,8 +855,8 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             ]
         return []
 
-    @classmethod
-    def get_members(cls, obj):
+    def get_members(self, obj):
+        allow_get_member = self.context.get('allow_get_member', False)
         return [
             {
                 "id": item.id,
@@ -865,7 +867,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 "avatar": item.avatar,
                 "is_active": item.is_active,
             } for item in obj.members.all()
-        ]
+        ] if allow_get_member else []
 
 
 class OpportunityForSaleListSerializer(serializers.ModelSerializer):

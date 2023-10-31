@@ -24,8 +24,7 @@ from apps.sales.opportunity.models import (
 )
 from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
-    QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig,
-    IndicatorDefaultData,
+    QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
 from apps.core.base.models import Currency as BaseCurrency, Application
 from apps.core.company.models import Company, CompanyConfig, CompanySetting, CompanyFunctionNumber
@@ -35,7 +34,7 @@ from apps.masterdata.saledata.models import (
 from apps.sales.delivery.models import DeliveryConfig
 from apps.sales.saleorder.models import (
     SaleOrderAppConfig, ConfigOrderLongSale, ConfigOrderShortSale,
-    SaleOrderIndicatorConfig,
+    SaleOrderIndicatorConfig, ORIndicatorDefaultData,
 )
 from apps.sales.task.models import OpportunityTaskConfig, OpportunityTaskStatus
 
@@ -650,9 +649,10 @@ class ConfigDefaultData:
 
     def quotation_indicator_config(self):
         bulk_info = []
-        for data in IndicatorDefaultData.INDICATOR_DATA:
+        for data in SQIndicatorDefaultData.INDICATOR_DATA:
             bulk_info.append(
                 QuotationIndicatorConfig(
+                    tenant=self.company_obj.tenant,
                     company=self.company_obj,
                     **data,
                 )
@@ -661,9 +661,10 @@ class ConfigDefaultData:
 
     def sale_order_indicator_config(self):
         bulk_info = []
-        for data in IndicatorDefaultData.ORDER_INDICATOR_DATA:
+        for data in ORIndicatorDefaultData.INDICATOR_DATA:
             bulk_info.append(
                 SaleOrderIndicatorConfig(
+                    tenant=self.company_obj.tenant,
                     company=self.company_obj,
                     **data,
                 )
