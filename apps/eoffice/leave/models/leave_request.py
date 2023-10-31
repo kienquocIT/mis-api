@@ -113,7 +113,8 @@ class LeaveRequest(DataAbstractModel):
         self.create_code()
 
     def save(self, *args, **kwargs):
-        self.before_save()
+        if self.system_status in [2, 3]:
+            self.before_save()
         super().save(*args, **kwargs)
 
     class Meta:
