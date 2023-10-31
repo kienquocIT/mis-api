@@ -168,11 +168,15 @@ class QuotationCommonCreate:
     def create_indicator(cls, validated_data, instance):
         for quotation_indicator in validated_data['quotation_indicators_data']:
             indicator_id = quotation_indicator.get('indicator', {}).get('id')
+            indicator_code = quotation_indicator.get('indicator', {}).get('code')
             if indicator_id:
                 del quotation_indicator['indicator']
                 QuotationIndicator.objects.create(
                     quotation=instance,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     indicator_id=indicator_id,
+                    code=indicator_code,
                     **quotation_indicator
                 )
         return True
@@ -484,6 +488,7 @@ class QuotationCommonValidate:
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
+                'code': indicator.code,
                 'remark': indicator.remark
             }
         except QuotationIndicatorConfig.DoesNotExist:

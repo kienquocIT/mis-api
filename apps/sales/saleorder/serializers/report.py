@@ -6,9 +6,7 @@ from apps.sales.saleorder.models import SaleOrder
 class RevenueReportListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     customer = serializers.SerializerMethodField()
-    revenue = serializers.SerializerMethodField()
-    gross_profit = serializers.SerializerMethodField()
-    net_income = serializers.SerializerMethodField()
+    indicator = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -19,9 +17,7 @@ class RevenueReportListSerializer(serializers.ModelSerializer):
             'employee_inherit',
             'customer',
             'date_created',
-            'revenue',
-            'gross_profit',
-            'net_income',
+            'indicator',
         )
 
     @classmethod
@@ -45,31 +41,11 @@ class RevenueReportListSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
     @classmethod
-    def get_revenue(cls, obj):
-        revenue = obj.sale_order_indicator_sale_order.filter(
-            company_id=obj.company_id,
-            quotation_indicator__title__contains="Revenue"
-        ).first()
-        if revenue:
-            return revenue.indicator_value
-        return 0
-
-    @classmethod
-    def get_gross_profit(cls, obj):
-        revenue = obj.sale_order_indicator_sale_order.filter(
-            company_id=obj.company_id,
-            quotation_indicator__title__contains="Gross profit"
-        ).first()
-        if revenue:
-            return revenue.indicator_value
-        return 0
-
-    @classmethod
-    def get_net_income(cls, obj):
-        revenue = obj.sale_order_indicator_sale_order.filter(
-            company_id=obj.company_id,
-            quotation_indicator__title__contains="Net income"
-        ).first()
-        if revenue:
-            return revenue.indicator_value
-        return 0
+    def get_indicator(cls, obj):
+        return [
+            {
+                'id': so_indicator.id,
+                'code': so_indicator.code,
+                'indicator_value': so_indicator.indicator_value,
+            } for so_indicator in obj.sale_order_indicator_sale_order.all()
+        ]

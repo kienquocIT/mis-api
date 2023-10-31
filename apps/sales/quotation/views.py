@@ -217,8 +217,8 @@ class QuotationIndicatorList(
     serializer_list = IndicatorListSerializer
     serializer_create = IndicatorCreateSerializer
     serializer_detail = IndicatorListSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', ]
 
     @swagger_auto_schema(
         operation_summary="Quotation Indicator List",
@@ -245,6 +245,8 @@ class QuotationIndicatorDetail(
     queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Quotation Indicator detail",
