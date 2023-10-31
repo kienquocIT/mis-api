@@ -11,7 +11,7 @@ from apps.core.company.views import (
 urlpatterns = [
     path('config', CompanyConfigDetail.as_view(), name='CompanyConfigDetail'),
     path('list', CompanyList.as_view(), name='CompanyList'),
-    path('list/<str:pk>', CompanyDetail.as_view(), name='CompanyDetail'),
+    path('<str:pk>', CompanyDetail.as_view(), name='CompanyDetail'),
 
     # overview company page
     path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),

@@ -97,6 +97,7 @@ class SaleDefaultData:
         {
             'numbering_by': 0,
             'schema': None,
+            'schema_text': None,
             'first_number': None,
             'last_number': None,
             'reset_frequency': None

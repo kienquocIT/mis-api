@@ -120,7 +120,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'primary_currency': {
                 'id': company_setting.primary_currency_id,
                 'title': company_setting.primary_currency.title,
-                'abbreviation': company_setting.primary_currency.abbreviation,
+                'abbreviation': company_setting.primary_currency.code,
             } if company_setting.primary_currency else {},
             'definition_inventory_valuation': company_setting.definition_inventory_valuation,
             'default_inventory_value_method': company_setting.default_inventory_value_method,
@@ -132,30 +132,35 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     def get_company_function_number(cls, obj):
         company_function_number = []
         for item in obj.company_function_number.all():
-            company_function_number.append(
-                {
-                    'function': item.function,
-                    'numbering_by': item.numbering_by,
-                    'schema': item.schema,
-                    'first_number': item.first_number,
-                    'last_number': item.last_number,
-                    'reset_frequency': item.reset_frequency
-                }
-            )
+            company_function_number.append({
+                'function': item.function,
+                'numbering_by': item.numbering_by,
+                'schema_text': item.schema_text,
+                'schema': item.schema,
+                'first_number': item.first_number,
+                'last_number': item.last_number,
+                'reset_frequency': item.reset_frequency
+            })
         return company_function_number
 
 
-def create_company_setting(company_setting_data):
-    CompanySetting.objects.filter().delete()
-    CompanySetting.objects.create(**company_setting_data)
+def create_company_setting(company_obj, company_setting_data):
+    CompanySetting.objects.filter(company=company_obj).delete()
+    CompanySetting.objects.create(company=company_obj, **company_setting_data)
     return True
 
 
-def create_company_function_number(company_function_number_data):
+def create_company_function_number(company_obj, company_function_number_data):
     for item in company_function_number_data:
-        obj = CompanyFunctionNumber.objects.filter(funcion=item.get('function', None)).first()
-        item.pop('function')
-        obj.objects.update(**item)
+        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=item['function'])
+        obj.update(
+            numbering_by=item['numbering_by'],
+            schema=item['schema'],
+            schema_text=item['schema_text'],
+            first_number=item['first_number'],
+            last_number=item['last_number'],
+            reset_frequency=item['reset_frequency']
+        )
     return True
 
 
@@ -185,9 +190,10 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
 
     def create(self, validated_data):
-        create_company_setting(self.initial_data.get('company_setting_data', []))
-        create_company_function_number(self.initial_data.get('company_function_number_data', []))
         company_obj = Company.objects.create(**validated_data)
+
+        create_company_setting(company_obj, self.initial_data.get('company_setting_data', {}))
+        create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
         return company_obj
 
 
@@ -201,7 +207,14 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
+            'fax'
         )
+
+    def update(self, instance, validated_data):
+        instance.save()
+        create_company_setting(instance, self.initial_data.get('company_setting_data', {}))
+        create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
+        return instance
 
 
 class CompanyOverviewSerializer(serializers.ModelSerializer):

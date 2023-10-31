@@ -6,7 +6,6 @@ from django.db import models
 from django.conf import settings
 from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
 from apps.core.models import CoreAbstractModel
-from apps.masterdata.saledata.models.price import Currency
 from django.utils.translation import gettext_lazy as _
 
 
@@ -363,7 +362,7 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
 class CompanySetting(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_setting')
-    primary_currency = models.ForeignKey(Currency, on_delete=models.CASCADE, null=True)
+    primary_currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
     definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
     default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=0)
     cost_per_warehouse = models.BooleanField(default=False)
@@ -382,6 +381,7 @@ class CompanyFunctionNumber(MasterDataAbstractModel):
     function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
     numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
     schema = models.CharField(max_length=500, null=True)
+    schema_text = models.CharField(max_length=500, null=True)
     first_number = models.IntegerField(null=True)
     last_number = models.IntegerField(null=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)

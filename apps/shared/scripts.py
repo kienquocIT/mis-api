@@ -10,7 +10,9 @@ from apps.masterdata.saledata.models.price import (
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
 
-from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
+from apps.core.base.models import (
+    PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City, Currency as BaseCurrency
+)
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
@@ -1244,13 +1246,12 @@ def create_company_setting():
             'cost_per_lot_batch': False
         }
     ]
+    vnd_currency = BaseCurrency.objects.filter(
+        code='VND'
+    ).first()
     company_list = Company.objects.all()
     bulk_create_data = []
     for company_obj in company_list:
-        vnd_currency = Currency.objects.filter(
-            company=company_obj,
-            abbreviation='VND'
-        ).first()
         if vnd_currency:
             for cs_item in company_setting_data:
                 bulk_create_data.append(
@@ -1269,6 +1270,7 @@ def create_company_function_number():
         {
             'numbering_by': 0,
             'schema': None,
+            'schema_text': None,
             'first_number': None,
             'last_number': None,
             'reset_frequency': None
