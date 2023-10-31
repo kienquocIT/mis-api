@@ -173,6 +173,11 @@ class PermissionAbstractModel(models.Model):
         default_permissions = ()
         permissions = ()
 
+    def _remove_ids_empty(self):
+        for permit_code, permit_ids in dict(self.permission_by_id).items():
+            if not permit_ids:
+                del self.permission_by_id[permit_code]
+
     def append_permit_by_ids(self, app_label, model_code, perm_code, doc_id, tenant_id):
         if app_label and model_code and perm_code:
             key = f'{app_label}.{model_code}.{perm_code}'.lower()
@@ -180,6 +185,8 @@ class PermissionAbstractModel(models.Model):
             permission_by_id = self.permission_by_id
             if key not in permission_by_id:
                 permission_by_id[key] = {}
+
+            self._remove_ids_empty()
 
             permission_by_id[key] = {**permission_by_id[key], str(doc_id): {}}
 
@@ -191,9 +198,15 @@ class PermissionAbstractModel(models.Model):
             self.call_sync()
         return self
 
+    def _remove_opp_empty(self):
+        for opp_id, permit_opp_data in dict(self.permission_by_opp).items():
+            if not permit_opp_data:
+                del self.permission_by_opp[opp_id]
+
     def append_permit_by_opp(self, tenant_id, opp_id, perm_config):
         if opp_id and tenant_id:
             self.permission_by_opp[str(opp_id)] = perm_config
+            self._remove_opp_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
             self.call_sync()
@@ -202,14 +215,21 @@ class PermissionAbstractModel(models.Model):
     def remove_permit_by_opp(self, tenant_id,  opp_id):
         if opp_id and str(opp_id) in self.permission_by_opp and tenant_id:
             del self.permission_by_opp[opp_id]
+            self._remove_opp_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
             self.call_sync()
         return self
 
+    def _remove_prj_empty(self):
+        for prj_id, permit_prj_data in dict(self.permission_by_project).items():
+            if not permit_prj_data:
+                del self.permission_by_opp[prj_id]
+
     def append_permit_by_prj(self, tenant_id, prj_id, perm_config):
         if prj_id and tenant_id:
             self.permission_by_project[prj_id] = perm_config
+            self._remove_prj_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_project', 'permissions_parsed'])
             self.call_sync()
