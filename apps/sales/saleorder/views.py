@@ -3,10 +3,10 @@ from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
-    SaleOrderProduct, SaleOrderCost, SaleOrderIndicator
+    SaleOrderProduct, SaleOrderCost
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
-    SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer, RevenueReportListSerializer
+    SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
@@ -319,37 +319,5 @@ class SaleOrderPurchasingStaffList(BaseListMixin):
         operation_description="Get Sale Order List For Purchasing Staff"
     )
     @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-# REPORT
-class ReportRevenueList(BaseListMixin):
-    queryset = SaleOrder.objects
-    search_fields = ['title', 'code', 'employee_inherit__code']
-    serializer_list = RevenueReportListSerializer
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            "customer",
-            "employee_inherit",
-        ).prefetch_related(
-            Prefetch(
-                'sale_order_indicator_sale_order',
-                queryset=SaleOrderIndicator.objects.filter(
-                    code__in=['revenue', 'grossprofit', 'netincome']
-                )
-            )
-        ).filter(system_status__in=[2, 3]).order_by('employee_inherit__code')
-
-    @swagger_auto_schema(
-        operation_summary="Revenue report List",
-        operation_description="Get Revenue report List",
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        label_code='saleorder', model_code='saleorder', perm_code='view',
-    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

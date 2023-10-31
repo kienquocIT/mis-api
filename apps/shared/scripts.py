@@ -39,6 +39,7 @@ from ..sales.opportunity.models import (
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.report.models import ReportRevenue
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
@@ -1261,3 +1262,14 @@ def update_code_quotation_sale_order_indicator():
     print('update_code_quotation_sale_order_indicator done.')
 
 
+def update_record_report_revenue():
+    ReportRevenue.objects.all().delete()
+    ReportRevenue.objects.bulk_create([ReportRevenue(
+        tenant_id=so.tenant_id,
+        company_id=so.company_id,
+        sale_order_id=so.id,
+        employee_created_id=so.employee_created_id,
+        employee_inherit_id=so.employee_inherit_id,
+        group_inherit_id=so.employee_inherit.group_id,
+    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    print('update_record_report_revenue done.')
