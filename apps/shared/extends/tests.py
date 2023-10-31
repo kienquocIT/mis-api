@@ -12,7 +12,10 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from apps.core.tenant.models import TenantPlan
-from apps.core.hr.models import Employee, EmployeePermission, PlanEmployee, PlanEmployeeApp
+from apps.core.hr.models import (
+    Employee, EmployeePermission, PlanEmployee, PlanEmployeeApp, DistributionApplication,
+    DistributionPlan,
+)
 from apps.sharedapp.data.base import FULL_PLAN_ID, PlanApplication_data
 from apps.sharedapp.data.base.plan_app import FullPermitHandle
 from apps.shared.permissions.util import PermissionController
@@ -21,6 +24,8 @@ from .utils import CustomizeEncoder
 
 
 __all__ = ['AdvanceTestCase', 'count_queries']
+
+from ...core.base.models import PlanApplication
 
 
 def count_queries(func):
@@ -292,6 +297,29 @@ class AdvanceTestCase(TestCase):
             emp_plan_obj, _created = PlanEmployee.objects.get_or_create(plan_id=plan_id, employee=employee_obj)
             PlanEmployeeApp.objects.get_or_create(plan_employee=emp_plan_obj, application_id=application_id)
 
+        # set full app
+        for obj in PlanApplication.objects.all():
+            tenant_plan, _created = TenantPlan.objects.get_or_create(
+                tenant=employee_obj.tenant,
+                plan=obj.plan,
+                purchase_order='P0001',
+            )
+            dis_plan, _created = DistributionPlan.objects.get_or_create(
+                tenant=employee_obj.tenant,
+                company=employee_obj.company,
+                tenant_plan=tenant_plan,
+                employee=employee_obj,
+                plan=obj.plan,
+
+            )
+            DistributionApplication.objects.get_or_create(
+                distribution_plan=dis_plan,
+                app=obj.application,
+                tenant=employee_obj.tenant,
+                company=employee_obj.company,
+                employee=employee_obj
+            )
+
         # set full permit
         employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
         employee_permit_obj.permission_by_configured = FullPermitHandle.full_permit()
@@ -299,5 +327,4 @@ class AdvanceTestCase(TestCase):
             tenant_id=employee_obj.tenant_id
         ).get_permission_parsed(instance=employee_permit_obj)
         employee_permit_obj.save(sync_parsed=True)
-
         return employee_permit_obj
