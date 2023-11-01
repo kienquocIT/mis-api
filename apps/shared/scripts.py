@@ -38,8 +38,9 @@ from ..sales.opportunity.models import (
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.report.models import ReportRevenue
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
 def update_sale_default_data_old_company():
@@ -1233,3 +1234,43 @@ def update_inherit_po():
         po.employee_inherit_id = po.employee_created_id if po.employee_created else None
         po.save(update_fields=['employee_inherit_id'])
     print('update_inherit_po done.')
+
+
+def update_code_quotation_sale_order_indicator_config():
+    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    print('update_code_quotation_sale_order_indicator_config done.')
+
+
+def update_code_quotation_sale_order_indicator():
+    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
+        indicator.code = indicator.indicator.code
+        indicator.tenant_id = indicator.indicator.tenant_id
+        indicator.company_id = indicator.indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
+        indicator.code = indicator.quotation_indicator.code
+        indicator.tenant_id = indicator.quotation_indicator.tenant_id
+        indicator.company_id = indicator.quotation_indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    print('update_code_quotation_sale_order_indicator done.')
+
+
+def update_record_report_revenue():
+    ReportRevenue.objects.all().delete()
+    ReportRevenue.objects.bulk_create([ReportRevenue(
+        tenant_id=so.tenant_id,
+        company_id=so.company_id,
+        sale_order_id=so.id,
+        employee_created_id=so.employee_created_id,
+        employee_inherit_id=so.employee_inherit_id,
+        group_inherit_id=so.employee_inherit.group_id,
+        date_approved=so.date_created,
+    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    print('update_record_report_revenue done.')
