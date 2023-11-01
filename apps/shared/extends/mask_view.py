@@ -1398,19 +1398,45 @@ class PermissionController:
                 if np.array_equal(np_all_key, np.array(['1'])):
                     # only me
                     if self.employee_attr.employee_current_id:
-                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL
-                        value_filter = self.employee_attr.employee_current_id
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL: self.employee_attr.employee_current_id
+                            }
+                        )
+                    else:
+                        # force query return empty!
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                            }
+                        )
                 elif np.array_equal(np_all_key, np.array(['4'])):
                     # all member + exclude me if current user has employee related!
                     if filtering_inheritor is True and self.employee_attr.employee_current_id:
-                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'
-                        value_filter = self.employee_attr.employee_current_id
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude':
+                                    self.employee_attr.employee_current_id
+                            }
+                        )
+                    else:
+                        # force query return empty!
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                            }
+                        )
                 elif np.array_equal(np_all_key, np.array(['1', '4'])):
                     # all member + me | skip because auto filter opp above is enough!
                     pass
                 else:
+                    # force query return empty!
+                    data.update(
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                        }
+                    )
                     print('[Opp] Unbelievable! **Auto filter inherit id in empty list**')
-                data.update({key_filter: value_filter})
             elif from_permit == 'prj':
                 if settings.DEBUG_PERMIT:
                     print(f'* [PRJ] np_all_key         :', np_all_key)
@@ -1421,19 +1447,45 @@ class PermissionController:
                 if np.array_equal(np_all_key, np.array(['1'])):
                     # only me
                     if self.employee_attr.employee_current_id:
-                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL
-                        value_filter = self.employee_attr.employee_current_id
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL: self.employee_attr.employee_current_id
+                            }
+                        )
+                    else:
+                        # force query return empty!
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                            }
+                        )
                 elif np.array_equal(np_all_key, np.array(['4'])):
                     # all member + exclude me if current user has employee related!
                     if filtering_inheritor is True and self.employee_attr.employee_current_id:
-                        key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'
-                        value_filter = self.employee_attr.employee_current_id
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude':
+                                    self.employee_attr.employee_current_id
+                            }
+                        )
+                    else:
+                        # force query return empty!
+                        data.update(
+                            {
+                                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                            }
+                        )
                 elif np.array_equal(np_all_key, np.array(['1', '4'])):
                     # all member + me | skip because auto filter opp above is enough!
                     pass
                 else:
+                    # force query return empty!
+                    data.update(
+                        {
+                            self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': []
+                        }
+                    )
                     print('[Opp] Unbelievable! **Auto filter inherit id in empty list**')
-                data.update({key_filter: value_filter})
         return data
 
 

@@ -56,7 +56,7 @@ class LeaveTypeConfigCreate(BaseCreateMixin, BaseRetrieveMixin):
         request_body=LeaveTypeConfigCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True
+        login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -107,7 +107,7 @@ class WorkingCalendarConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Working calendar config detail",
     )
-    @mask_view(login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
