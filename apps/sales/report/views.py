@@ -12,6 +12,9 @@ from apps.shared import mask_view, BaseListMixin
 class ReportRevenueList(BaseListMixin):
     queryset = ReportRevenue.objects
     search_fields = ['sale_order__title']
+    filterset_fields = {
+        'group_inherit': ['exact'],
+    }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
@@ -34,7 +37,7 @@ class ReportRevenueList(BaseListMixin):
         operation_description="Get report revenue List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='report', model_code='reportrevenue', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
