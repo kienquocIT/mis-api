@@ -182,12 +182,12 @@ class PermissionAbstractModel(models.Model):
         if app_label and model_code and perm_code:
             key = f'{app_label}.{model_code}.{perm_code}'.lower()
 
-            permission_by_id = self.permission_by_id
-            if key not in permission_by_id:
-                permission_by_id[key] = {}
-
             self._remove_ids_empty()
 
+            permission_by_id = self.permission_by_id
+
+            if key not in permission_by_id:
+                permission_by_id[key] = {}
             permission_by_id[key] = {**permission_by_id[key], str(doc_id): {}}
 
             self.permission_by_id = permission_by_id
