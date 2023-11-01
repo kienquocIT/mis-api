@@ -173,7 +173,7 @@ class LeaveTestCase(AdvanceTestCase):
         time_now = timezone.now().strftime('%Y-%m-%d')
         data = {
             'title': 'xin nghỉ làm việc nhà',
-            'employee_inherit': self.get_employee().data['result'][0]['id'],
+            'employee_inherit_id': self.get_employee().data['result'][0]['id'],
             'request_date': time_now,
             'detail_data': [{
                 "order": 0,
@@ -181,7 +181,12 @@ class LeaveTestCase(AdvanceTestCase):
                 "date_to": time_now,
                 "subtotal": 1,
                 "date_from": time_now,
-                "leave_type": str(leave_type.id),
+                "leave_type": {
+                    "leave_type": {
+                        "id": str(leave_type.id),
+                        "code": str(leave_type.code)
+                    }
+                },
                 "morning_shift_f": True,
                 "morning_shift_t": False
             }],
