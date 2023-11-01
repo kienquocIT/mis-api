@@ -731,6 +731,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 return {
                     'id': obj.sale_order_id,
                     'code': obj.sale_order.code,
+                    'title': obj.sale_order.title,
                     'system_status': obj.sale_order.system_status,
                     'delivery': {
                         'id': delivery.id,
@@ -742,6 +743,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.sale_order_id,
                 'code': obj.sale_order.code,
+                'title': obj.sale_order.title,
                 'system_status': obj.sale_order.system_status,
             }
         return {}
@@ -752,6 +754,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.quotation_id,
                 'code': obj.quotation.code,
+                'title': obj.quotation.title,
                 'system_status': obj.quotation.system_status,
                 'is_customer_confirm': obj.quotation.is_customer_confirm,
             }
@@ -899,6 +902,7 @@ class OpportunityListSerializerForCashOutFlow(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
