@@ -1271,5 +1271,6 @@ def update_record_report_revenue():
         employee_created_id=so.employee_created_id,
         employee_inherit_id=so.employee_inherit_id,
         group_inherit_id=so.employee_inherit.group_id,
+        date_approved=so.date_created,
     ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
     print('update_record_report_revenue done.')
