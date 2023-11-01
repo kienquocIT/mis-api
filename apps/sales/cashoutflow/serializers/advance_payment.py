@@ -4,8 +4,6 @@ from apps.sales.cashoutflow.models import (
     PaymentCostItems,
     ReturnAdvance, ReturnAdvanceCost
 )
-from apps.sales.saleorder.models import SaleOrder
-from apps.sales.quotation.models import Quotation
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg, ProductMsg
 
