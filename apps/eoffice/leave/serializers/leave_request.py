@@ -22,7 +22,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveRequest
-        fields = ('title', 'employee_inherit_id', 'request_date', 'detail_data', 'start_day', 'total')
+        fields = ('title', 'employee_inherit_id', 'request_date', 'detail_data', 'start_day', 'total', 'system_status')
 
     @classmethod
     def validate_title(cls, value):

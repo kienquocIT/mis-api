@@ -7,9 +7,9 @@ __all__ = [
 LEAVE_APP_CONFIG = {
     "id": "baff033a-c416-47e1-89af-b6653534f06e",
     "title": "Leave",
-    "code": "leave",
-    "model_code": "leave",
-    "app_label": "eoffice",
+    "code": "leaverequest",
+    "model_code": "leaverequest",
+    "app_label": "leave",
     "is_workflow": True,
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee
@@ -63,7 +63,7 @@ LEAVE_APP_AVAILABLE = {
     "title": "Leave available",
     "code": "leaveavailable",
     "model_code": "leaveavailable",
-    "app_label": "eoffice",
+    "app_label": "leave",
     "is_workflow": False,
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee

@@ -79,6 +79,7 @@ MAP_FIELD_TITLE = {
     'purchasing.purchaseorder': 'title',
     'inventory.goodsreceipt': 'title',
     'purchasing.purchaserequest': 'title',
+    'leave.leaverequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
