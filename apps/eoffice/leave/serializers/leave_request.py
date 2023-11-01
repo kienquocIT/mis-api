@@ -16,7 +16,6 @@ class LeaveRequestListSerializer(serializers.ModelSerializer):
 
 
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):
-    employee_inherit = serializers.SerializerMethodField()
     detail_data = serializers.JSONField(allow_null=True)
 
     class Meta:

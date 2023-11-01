@@ -109,7 +109,47 @@ class LeaveRequest(DataAbstractModel):
             code = f"{char}{temper:03d}"
             self.code = code
 
+    def temp_for_test(self):
+        # complate phiếu
+        self.system_status = 3
+        # trừ leave available và ghi history
+        type_list = self.detail_data
+        for item in type_list:
+            leave_type = item['leave_type']
+            order_by = 'open_year' if leave_type['leave_type']['code'] == 'ANPY' else '-open_year'
+            get_leave = LeaveAvailable.objects.filter(
+                employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
+                check_balance=True
+            ).order_by(order_by)
+            if not get_leave.exists():
+                return False
+            leave_result = get_leave.first()
+            if not leave_type['leave_type']['code'] == 'ANPY':
+                if item['subtotal'] > leave_result.available:
+                    raise ValueError("Day off large than leave available")
+                leave_result.used += item['subtotal']
+                leave_result.available = leave_result.total - leave_result.used
+            else:
+                if item['subtotal'] > leave_result.available:
+                    leave_result.used += leave_result.available
+                    leave_result.available = 0
+                    leave_result.save(update_fields=['used', 'total', 'available'])
+                    odd = item['subtotal'] - leave_result.available
+                    leave_second = get_leave[1]
+                    if odd > leave_second.available:
+                        raise ValueError("Day off large than leave available")
+                    leave_second.used += odd
+                    leave_second.available = leave_second.total - leave_second.used
+                    leave_second.save(update_fields=['used', 'total', 'available'])
+                    # return True
+                else:
+                    leave_result.used += item['subtotal']
+                    leave_result.available = leave_result.total - leave_result.used
+            leave_result.save(update_fields=['used', 'total', 'available'])
+        return True
+
     def before_save(self):
+        self.temp_for_test()
         self.create_code()
 
     def save(self, *args, **kwargs):
