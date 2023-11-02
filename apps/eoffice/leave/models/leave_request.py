@@ -149,7 +149,7 @@ class LeaveRequest(DataAbstractModel):
         return True
 
     def before_save(self):
-        self.temp_for_test()
+        # self.temp_for_test()
         self.create_code()
 
     def save(self, *args, **kwargs):
