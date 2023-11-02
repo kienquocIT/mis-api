@@ -279,6 +279,14 @@ class Employee(TenantAbstractModel):
             ]
         return []
 
+    def permit_obj(self):
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj
+
+    def permit_obj__permission_by_configured(self) -> list:
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj.permission_by_configured
+
 
 class SpaceEmployee(SimpleAbstractModel):
     space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
