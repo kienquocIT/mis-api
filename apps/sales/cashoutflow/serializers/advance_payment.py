@@ -53,12 +53,16 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     is_close = True
                 return {
                     'id': obj.sale_order_mapped_id,
+                    'code': obj.sale_order_mapped.code,
+                    'title': obj.sale_order_mapped.title,
                     'opportunity_id': obj.sale_order_mapped.opportunity_id,
                     'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_close,
                     'is_close': is_close
                 }
             return {
                 'id': obj.sale_order_mapped_id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
                 'opportunity_id': None,
                 'opportunity_code': None,
                 'is_close': is_close
@@ -74,12 +78,16 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     is_close = True
                 return {
                     'id': obj.quotation_mapped_id,
+                    'code': obj.quotation_mapped.code,
+                    'title': obj.quotation_mapped.title,
                     'opportunity_id': obj.quotation_mapped.opportunity_id,
                     'opportunity_code': obj.quotation_mapped.opportunity.code,
                     'is_close': is_close,
                 }
             return {
                 'id': obj.quotation_mapped_id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
                 'opportunity_id': None,
                 'opportunity_code': None,
                 'is_close': is_close,
@@ -95,6 +103,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.opportunity_mapped_id,
                 'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
                 'is_close': is_close
             }
         return {}
