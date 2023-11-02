@@ -160,12 +160,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         sale_code_list = self.initial_data.get('sale_code_list', None)
-        sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
-        quotation_selected_list = self.initial_data.get('quotation_selected_list', [])
-        opp_selected_list = self.initial_data.get('opportunity_selected_list', [])
         if len(sale_code_list) < 1:
-            if len(sale_order_selected_list) < 1 and len(quotation_selected_list) < 1 and len(opp_selected_list) < 1:
-                raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
+            raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
         if self.initial_data.get('product_valid_list', []):
             for item in self.initial_data['product_valid_list']:
                 if not item.get('product_id', None):
