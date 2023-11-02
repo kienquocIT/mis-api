@@ -198,24 +198,39 @@ class PermissionAbstractModel(models.Model):
             self.call_sync()
         return self
 
-    def _remove_opp_empty(self):
+    def _check_type_and_remove_opp_empty(self):
         for opp_id, permit_opp_data in dict(self.permission_by_opp).items():
             if not permit_opp_data:
                 del self.permission_by_opp[opp_id]
+            # else:
+            #     for item in permit_opp_data:
+            #         if (
+            #                 'range' in item
+            #                 and type(item['range']) == int
+            #                 and item['range'] in [1, 4]
+            #         ):
+            #             item['range'] = str(item['range'])
+            #
+            #         if (
+            #                 'space' in item
+            #                 and type(item['space']) == int
+            #                 and item['space'] in [0, 1]
+            #         ):
+            #             item['space'] = str(item['space'])
 
     def append_permit_by_opp(self, tenant_id, opp_id, perm_config):
         if opp_id and tenant_id:
             self.permission_by_opp[str(opp_id)] = perm_config
-            self._remove_opp_empty()
+            self._check_type_and_remove_opp_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
             self.call_sync()
         return self
 
-    def remove_permit_by_opp(self, tenant_id,  opp_id):
+    def remove_permit_by_opp(self, tenant_id, opp_id):
         if opp_id and str(opp_id) in self.permission_by_opp and tenant_id:
             del self.permission_by_opp[opp_id]
-            self._remove_opp_empty()
+            self._check_type_and_remove_opp_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_opp', 'permissions_parsed'])
             self.call_sync()

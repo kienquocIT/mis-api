@@ -179,8 +179,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 'create': False,
                 'edit': False,
                 'delete': False,
-                'range': 1,
-                'space': 0,
+                'range': '1',
+                'space': '0',
             }
             has_4 = False
             data_tmp_for_4 = {
@@ -190,8 +190,8 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 'create': False,
                 'edit': False,
                 'delete': False,
-                'range': 4,
-                'space': 0,
+                'range': '4',
+                'space': '0',
             }
 
             for key in ['view', 'create', 'edit', 'delete']:
@@ -206,7 +206,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
                 result.append(data_tmp_for_1)
             if has_4 is True:
                 result.append(data_tmp_for_4)
-
         return result
 
     def create(self, validated_data):
