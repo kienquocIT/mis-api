@@ -40,7 +40,7 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveRequest', perm_code='create'
+        label_code='leave', model_code='leaverequest', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -64,7 +64,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveRequest', perm_code="view",
+        label_code='leave', model_code='leaverequest', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -76,7 +76,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveRequest', perm_code="edit",
+        label_code='leave', model_code='leaverequest', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -87,7 +87,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveRequest', perm_code="delete",
+        label_code='leave', model_code='leaverequest', perm_code="delete",
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
@@ -107,7 +107,7 @@ class LeaveAvailableList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveAvailable', perm_code='view',
+        label_code='leave', model_code='leaveavailable', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -125,7 +125,7 @@ class LeaveAvailableUpdate(BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveAvailable', perm_code="view",
+        label_code='leave', model_code='leaveavailable', perm_code="view",
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {
@@ -149,7 +149,7 @@ class LeaveAvailableHistoryList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveAvailable', perm_code='view',
+        label_code='leave', model_code='leaveavailable', perm_code='view',
     )
     def get(self, request, *args, employee_inherit_id, **kwargs):
         return self.list(request, *args, employee_inherit_id, **kwargs)
