@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.report.models import ReportRevenue
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
@@ -273,6 +274,18 @@ class SaleOrder(DataAbstractModel):
                 })
         return True
 
+    @classmethod
+    def create_report_revenue(cls, instance):
+        ReportRevenue.objects.create(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+        )
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -283,6 +296,7 @@ class SaleOrder(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
                 self.update_product_wait_delivery_amount(self)
+                self.create_report_revenue(self)
 
         # hit DB
         super().save(*args, **kwargs)

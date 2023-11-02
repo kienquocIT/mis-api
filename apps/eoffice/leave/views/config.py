@@ -56,7 +56,7 @@ class LeaveTypeConfigCreate(BaseCreateMixin, BaseRetrieveMixin):
         request_body=LeaveTypeConfigCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True
+        login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {

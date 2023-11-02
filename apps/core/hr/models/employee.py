@@ -332,14 +332,8 @@ class PlanEmployeeApp(SimpleAbstractModel):
 class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):
     employee = models.OneToOneField('hr.Employee', on_delete=models.CASCADE)
 
-    def get_app_allowed(self) -> tuple[list[str], list[str]]:
-        app_ids, app_prefix = [], []
-
-        for obj in PlanEmployeeApp.objects.select_related('application').filter(plan_employee__employee=self.employee):
-            app_ids.append(str(obj.application_id))
-            app_prefix.append(obj.application.get_prefix_permit())
-
-        return app_ids, app_prefix
+    def get_app_allowed(self) -> str:
+        return str(self.employee_id)
 
     def sync_parsed_to_main(self):
         self.employee.permissions_parsed = self.permissions_parsed
