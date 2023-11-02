@@ -511,6 +511,9 @@ class OpportunityListForCashOutFlow(BaseListMixin):
             "customer__account_mapped_shipping_address"
         )
 
+    def error_auth_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(
         operation_summary="Opportunity List For Cash Outflow",
         operation_description="Get Opportunity List For Cash Outflow",

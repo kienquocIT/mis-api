@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework.views import exception_handler
 from rest_framework.exceptions import APIException
 from .response import convert_errors
+from .push_notify import TeleBotPushNotify
 
 logger = logging.getLogger()
 
@@ -44,3 +45,17 @@ def handle_exception_all_view(_err, self):
             str(err_msg),
             str(_err),
         )
+    msg = TeleBotPushNotify.generate_msg(
+        idx='500',
+        status='CRITICAL',
+        group_name='SERVER_EXCEPTION',
+        **{
+            'url': str(self.request.path),
+            'user_id': str(get_user_id()),
+            'user': str(self.request.user),
+            'request_method': str(self.request.method),
+            'err_msg': str(err_msg),
+            'err': str(_err),
+        }
+    )
+    TeleBotPushNotify().send_msg(msg=msg)

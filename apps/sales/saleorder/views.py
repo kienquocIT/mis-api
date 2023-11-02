@@ -283,6 +283,9 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related("customer", "sale_person", "opportunity", "quotation")
 
+    def error_auth_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(
         operation_summary="Sale Order List For Cash Outflow",
         operation_description="Get Sale Order List For Cash Outflow",

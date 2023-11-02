@@ -656,23 +656,51 @@ class ViewAttribute:
 
 class PermissionController:
     @classmethod
-    def compare_special_permit_with_range_allowed(
-            cls, data_permit, employee_current_id, employee_inherit_id, hidden_field
-    ):
-        if isinstance(data_permit, dict) and data_permit:
-            if '4' in data_permit or 4 in data_permit:
-                if 'company' in hidden_field or 'company_id' in hidden_field:
-                    # auto filter_current for employee_inherit in serializers!
-                    return True
+    def compare_special_permit_with_range_allowed(cls, data_permit, employee_current_id, employee_inherit_id, **kwargs):
+        """
+        # check for opp or prj
+        """
+        compare_main_id = kwargs.get('compare_main_id', None)
+        has_from = kwargs.get('has_from', None)
+        if compare_main_id and TypeCheck.check_uuid(compare_main_id) and (has_from == 'opp' or has_from == 'prj'):
+            if isinstance(data_permit, dict) and data_permit:
+                if '4' in data_permit and '1' not in data_permit and employee_current_id == employee_inherit_id:
+                    # not '1' -> not create for Themselves
+                    return False
 
-                cls_employee = DisperseModel(app_model='hr.Employee').get_model()
-                return cls_employee.objects.filter_current(
-                    fill__tenant=True, fill__company=True,
-                    pk=employee_inherit_id
-                ).exists()
+                filter_kw_for_member = {
+                    'fill__tenant': True, 'fill__company': True,
+                }
 
-            elif '1' in data_permit or 1 in data_permit:
-                return str(employee_inherit_id) == str(employee_current_id)
+                if has_from == 'opp':
+                    filter_kw_for_member['opportunity_id'] = compare_main_id
+                    filter_kw_for_member['member_id__in'] = [employee_current_id, employee_inherit_id]
+
+                    cls_model = DisperseModel(app_model='opportunity.OpportunitySaleTeamMember').get_model()
+                    cls_objs = cls_model.objects.filter_current(**filter_kw_for_member)
+
+                    if cls_objs.count() == len({str(employee_current_id), str(employee_inherit_id)}):
+                        if '4' in data_permit and '1' in data_permit:
+                            # check member success -> pass with full range by 1 + 4
+                            return True
+                        elif '4' in data_permit:
+                            if str(employee_current_id) == str(employee_inherit_id):
+                                # not allow to create for themselves
+                                return False
+                            # allow to create for opp members
+                            return True
+                        elif '1' in data_permit:
+                            if str(employee_current_id) == str(employee_inherit_id):
+                                # allow to create only for themselves
+                                return True
+                            # not allow to create for opp members
+                            return False
+                    # not belong to one Opp | not support another range | another case
+                    return False
+
+                elif has_from == 'prj':
+                    return False  # upgrade when has project
+
         return False
 
     @classmethod
@@ -691,23 +719,52 @@ class PermissionController:
         return ''
 
     @classmethod
-    def config_data__get_by_config(cls, app_obj, perm_code, permissions_parsed: dict):
+    def config_data__get_by_config(cls, app_obj, perm_code, permissions_parsed: dict, state_depend_on: bool = None):
+        # state_depend_on = None: not check is_depend_on
+
         default_data = {'general': {}, 'ids': {}, 'opp': {}, 'prj': {}, 'app_obj': app_obj}
         key = f'{app_obj.app_label}.{app_obj.model_code}.{perm_code}'.lower()
         if key in permissions_parsed:
             perm = permissions_parsed[key]
             if perm and isinstance(perm, dict):
                 if 'general' in perm and isinstance(perm['general'], dict):
-                    default_data['general'] = perm['general']
+                    if state_depend_on is not None:
+                        result_tmp = {}
+                        for perm_code, perm_config in perm['general'].items():
+                            if isinstance(perm_config, dict):
+                                if perm_config.get('is_depend_on', False) == state_depend_on:
+                                    result_tmp[perm_code] = perm_config
+                                else:
+                                    if settings.DEBUG_PERMIT:
+                                        print(
+                                            '* [GENERAL - depend] skip  :', 'state_depend_on =', state_depend_on,
+                                            ',', 'is_depend_on =', perm_config.get('is_depend_on', False),
+                                            ',', 'perm_config =', perm_config,
+                                        )
+                        default_data['general'] = result_tmp
+                    else:
+                        default_data['general'] = perm['general']
 
                 if 'ids' in perm and isinstance(perm['ids'], dict):
-                    default_data['ids'] = perm['ids']
+                    if state_depend_on in (None, False):
+                        default_data['ids'] = perm['ids']
+                    else:
+                        if settings.DEBUG_PERMIT:
+                            print('* [IDS - depend] skip      :', 'state_depend_on =', state_depend_on)
 
                 if 'opp' in perm and isinstance(perm['opp'], dict):
-                    default_data['opp'] = perm['opp']
+                    if state_depend_on in (None, False):
+                        default_data['opp'] = perm['opp']
+                    else:
+                        if settings.DEBUG_PERMIT:
+                            print('* [OPP - depend] skip      :', 'state_depend_on =', state_depend_on)
 
                 if 'prj' in perm and isinstance(perm['prj'], dict):
-                    default_data['prj'] = perm['prj']
+                    if state_depend_on in (None, False):
+                        default_data['prj'] = perm['prj']
+                    else:
+                        if settings.DEBUG_PERMIT:
+                            print('* [PRJ - depend] skip      :', 'state_depend_on =', state_depend_on)
 
         return default_data
 
@@ -722,7 +779,7 @@ class PermissionController:
     KEY_FILTER_PRJ_ID_IN_MODEL = 'project_id'
     ALLOWED_RANGE___PRJ = ['1', '4']
 
-    def get_config_data(self, config_check_permit, has_roles=True):
+    def get_config_data(self, config_check_permit, has_roles=True, state_depend_on=None):
         config_tmp = {'employee': {}, 'roles': []}
         # get from employee
         if config_check_permit:
@@ -749,6 +806,7 @@ class PermissionController:
                         app_obj=application_obj,
                         perm_code=perm_code,
                         permissions_parsed=permissions_parsed,
+                        state_depend_on=state_depend_on,
                     )
 
                 # get from role
@@ -761,6 +819,7 @@ class PermissionController:
                                     app_obj=application_obj,
                                     perm_code=perm_code,
                                     permissions_parsed=permissions_parsed,
+                                    state_depend_on=state_depend_on,
                                 )
                             )
         return config_tmp
@@ -768,7 +827,9 @@ class PermissionController:
     @property
     def config_data(self):
         if not self._config_data:
-            config_tmp = self.get_config_data(self.config_check_permit)
+            config_tmp = self.get_config_data(
+                self.config_check_permit, state_depend_on=self.state_depend_on
+            )
             code = self.parse_config_permit_check_to_string(self.config_check_permit)
             if code:
                 self._config_data__by_code[code] = config_tmp
@@ -978,12 +1039,7 @@ class PermissionController:
             self._config_data__check_obj = False
         return self._config_data__check_obj
 
-    def config_data__check_by_opp(
-            self,
-            opp_id: Union[str, uuid4],
-            employee_inherit_id: Union[str, uuid4],
-            hidden_field: list[str] = list,
-    ) -> bool:
+    def config_data__check_by_opp(self, opp_id: Union[str, uuid4], employee_inherit_id: Union[str, uuid4]) -> bool:
         if opp_id and self.config_data and employee_inherit_id:
             try:
                 data = self.config_data.get('employee', {}).get('opp', {}).get(str(opp_id), {})
@@ -993,16 +1049,12 @@ class PermissionController:
             return self.compare_special_permit_with_range_allowed(
                 data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
                 employee_inherit_id=employee_inherit_id,
-                hidden_field=hidden_field,
+                compare_main_id=opp_id,
+                has_from='opp',
             )
         return False
 
-    def config_data__check_by_prj(
-            self,
-            prj_id: Union[str, uuid4],
-            employee_inherit_id: Union[str, uuid4],
-            hidden_field: list[str] = list,
-    ) -> bool:
+    def config_data__check_by_prj(self, prj_id: Union[str, uuid4], employee_inherit_id: Union[str, uuid4]) -> bool:
         if prj_id and self.config_data and employee_inherit_id:
             try:
                 data = self.config_data.get('employee', {}).get('prj', {}).get(str(prj_id), {})
@@ -1012,7 +1064,8 @@ class PermissionController:
             return self.compare_special_permit_with_range_allowed(
                 data_permit=data, employee_current_id=self.employee_attr.employee_current_id,
                 employee_inherit_id=employee_inherit_id,
-                hidden_field=hidden_field,
+                compare_main_id=prj_id,
+                has_from='prj',
             )
         return False
 
@@ -1094,6 +1147,8 @@ class PermissionController:
         # opp_enabled: bool = False, prj_enabled: bool = False,
         self.opp_enabled: bool = kwargs.get('opp_enabled', False)
         self.prj_enabled: bool = kwargs.get('prj_enabled', False)
+
+        self.state_depend_on = kwargs.get('state_depend_on', None)
 
     def config_data__simple_list__item(self, item_data) -> list[dict]:
         """
@@ -1516,11 +1571,14 @@ class ViewChecking:
         self.attr = cls_attr
         self.decor = cls_decor
         self.employee_attr = EmployeeAttribute(employee_obj=cls_attr.employee_current)
+
+        state_depend_on = False if self.attr.request_method == 'GET' and self.attr.has_dropdown_list is True else None
         self.permit_cls = PermissionController(
             cls_employee_attr=self.employee_attr,
             cls_decor=cls_decor,
             opp_enabled=self.decor.opp_enabled,
             prj_enabled=self.decor.prj_enabled,
+            state_depend_on=state_depend_on,
         )
 
     def always_check(self) -> Union[True, ResponseController]:
@@ -1641,7 +1699,7 @@ def mask_view(**parent_kwargs):
                         return ResponseController.success_200(data=[])
                     except Exception as err:
                         handle_exception_all_view(err, self)
-                        return ResponseController.internal_server_error_500(msg=str(err))
+                        return ResponseController.internal_server_error_500(msg=str(err) if settings.DEBUG else '')
                     raise ValueError('Return not map happy case.')
 
                 return permit_check
