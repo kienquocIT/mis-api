@@ -229,7 +229,7 @@ class PermissionAbstractModel(models.Model):
 
     def remove_permit_by_opp(self, tenant_id, opp_id):
         if opp_id and str(opp_id) in self.permission_by_opp and tenant_id:
-            del self.permission_by_opp[opp_id]
+            del self.permission_by_opp[str(opp_id)]
             self._check_type_and_remove_opp_empty()
             self.permissions_parsed = PermissionController(tenant_id=tenant_id).get_permission_parsed(instance=self)
             super().save(update_fields=['permission_by_opp', 'permissions_parsed'])

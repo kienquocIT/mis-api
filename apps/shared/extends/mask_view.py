@@ -75,6 +75,21 @@ class HttpReturn:
 
 
 class ViewConfigDecorator:
+    _opp_enabled = False
+    _prj_enabled = False
+    _login_require = True  # require request.user is User Object
+    _auth_require = False  # require setup filter query then add view for MIXIN
+    _employee_require = False  # require request.user.employee is Employee Object
+    _allow_admin_tenant = False  # allow admin tenant skip filter query
+    _allow_admin_company = False  # allow admin company skip filter query
+    _label_code = None  # App code need call for filter query
+    _model_code = None  # Model code need call for filter query
+    _perm_code = None  # Permit code need call from filter query
+    _bastion_field_require = False  #
+    _use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in view)
+    _config_check_permit = {}
+    _has_allow_admin = False
+
     @property
     def has_allow_admin(self):
         if not self._has_allow_admin:
@@ -92,36 +107,20 @@ class ViewConfigDecorator:
         return self._config_check_permit
 
     def __init__(self, parent_kwargs):
-        self.opp_enabled = False
-        self.prj_enabled = False
-        self.login_require = True  # require request.user is User Object
-        self.auth_require = False  # require setup filter query then add view for MIXIN
-        self.employee_require = False  # require request.user.employee is Employee Object
-        self.bastion_field_require = False  #
-        self.use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in
-        # view)
-        self.allow_admin_tenant = False  # allow admin tenant skip filter query
-        self.allow_admin_company = False  # allow admin company skip filter query
-        self.label_code = None  # App code need call for filter query
-        self.model_code = None  # Model code need call for filter query
-        self.perm_code = None  # Permit code need call from filter query
-        self._config_check_permit = {}
-        self._has_allow_admin = False
-
-        self.employee_require = parent_kwargs.get('employee_require', self.employee_require)
-        self.login_require = parent_kwargs.get('login_require', self.login_require)
-        self.auth_require = parent_kwargs.get('auth_require', self.auth_require)
-        self.bastion_field_require = parent_kwargs.get('bastion_field_require', self.bastion_field_require)
+        self.employee_require = parent_kwargs.get('employee_require', self._employee_require)
+        self.login_require = parent_kwargs.get('login_require', self._login_require)
+        self.auth_require = parent_kwargs.get('auth_require', self._auth_require)
+        self.bastion_field_require = parent_kwargs.get('bastion_field_require', self._bastion_field_require)
         self.use_custom_get_filter_auth = parent_kwargs.get(
-            'use_custom_get_filter_auth', self.use_custom_get_filter_auth
+            'use_custom_get_filter_auth', self._use_custom_get_filter_auth
         )
-        self.allow_admin_tenant: bool = parent_kwargs.get('allow_admin_tenant', self.allow_admin_tenant)
-        self.allow_admin_company: bool = parent_kwargs.get('allow_admin_company', self.allow_admin_company)
-        self.label_code: str = parent_kwargs.get('label_code', self.label_code)
-        self.model_code: str = parent_kwargs.get('model_code', self.model_code)
-        self.perm_code: str = parent_kwargs.get('perm_code', self.perm_code)
-        self.opp_enabled: bool = parent_kwargs.get('opp_enabled', self.opp_enabled)
-        self.prj_enabled: bool = parent_kwargs.get('prj_enabled', self.prj_enabled)
+        self.allow_admin_tenant: bool = parent_kwargs.get('allow_admin_tenant', self._allow_admin_tenant)
+        self.allow_admin_company: bool = parent_kwargs.get('allow_admin_company', self._allow_admin_company)
+        self.label_code: str = parent_kwargs.get('label_code', self._label_code)
+        self.model_code: str = parent_kwargs.get('model_code', self._model_code)
+        self.perm_code: str = parent_kwargs.get('perm_code', self._perm_code)
+        self.opp_enabled: bool = parent_kwargs.get('opp_enabled', self._opp_enabled)
+        self.prj_enabled: bool = parent_kwargs.get('prj_enabled', self._prj_enabled)
         self.skip_filter_employee: bool = parent_kwargs.get('skip_filter_employee', False)
 
 
@@ -1224,7 +1223,7 @@ class PermissionController:
                                 result_or += tmp
         else:
             if settings.DEBUG_PERMIT:
-                print('=> skip parse simple            :', 'Application Object is not found', item_data)
+                print('=> skip parse simple       :', 'Application Object is not found', item_data)
         return result_or
 
     @classmethod
@@ -1652,11 +1651,28 @@ def mask_view(**parent_kwargs):
     if not isinstance(parent_kwargs, dict):
         parent_kwargs = {}
 
+    # fake typehint for parent_kwargs
+    decor_kwargs = {
+        **parent_kwargs,
+        'employee_require': parent_kwargs.get('employee_require', False),
+        'login_require': parent_kwargs.get('login_require', True),
+        'auth_require': parent_kwargs.get('auth_require', False),
+        'bastion_field_require': parent_kwargs.get('bastion_field_require', False),
+        'use_custom_get_filter_auth': parent_kwargs.get('use_custom_get_filter_auth', False),
+        'allow_admin_tenant': parent_kwargs.get('allow_admin_tenant', False),
+        'allow_admin_company': parent_kwargs.get('allow_admin_company', False),
+        'label_code': parent_kwargs.get('label_code', None), 'model_code': parent_kwargs.get('model_code', None),
+        'perm_code': parent_kwargs.get('perm_code', None), 'opp_enabled': parent_kwargs.get('opp_enabled', False),
+        'prj_enabled': parent_kwargs.get('prj_enabled', False),
+        'skip_filter_employee': parent_kwargs.get('skip_filter_employee', False),
+    }
+    # -- fake typehint for parent_kwargs
+
     def decorated(func_view):
         def wrapper(self, *args, **kwargs):  # pylint: disable=R0911
             # init cls checking
             _cls_attr = ViewAttribute(view_this=self)
-            _cls_decor = ViewConfigDecorator(parent_kwargs=parent_kwargs)
+            _cls_decor = ViewConfigDecorator(parent_kwargs=decor_kwargs)
             cls_check = ViewChecking(cls_attr=_cls_attr, cls_decor=_cls_decor)
             setattr(self, 'cls_check', cls_check)  # save cls to view for view using it get some data
 

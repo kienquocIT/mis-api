@@ -462,7 +462,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             True: Allow
             False: Deny
         """
-        hidden_field: list[str] = kwargs.get('hidden_field', [])
         auto_check = kwargs.get('auto_check', False)
         if obj or body_data:
             if self.cls_check.skip_because_match_with_admin is True:
