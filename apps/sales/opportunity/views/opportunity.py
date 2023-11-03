@@ -357,11 +357,11 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
 
     def check_has_permit_of_space_all(self, opp_obj):
         config_data = self.cls_check.permit_cls.config_data
-        if config_data and isinstance(config_data, dict):
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
                 general_data = config_data['employee']['general']
                 if general_data and isinstance(general_data, dict):
-                    for permit_code, permit_config in general_data.items():
+                    for _permit_code, permit_config in general_data.items():
                         if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
                             if (
                                     permit_config['space'] == '1'
@@ -372,7 +372,7 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
                 for role_data in config_data['roles']:
                     general_data = role_data['general']
                     if general_data and isinstance(general_data, dict):
-                        for permit_code, permit_config in general_data.items():
+                        for _permit_code, permit_config in general_data.items():
                             if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
                                 if (
                                         permit_config['space'] == '1'
