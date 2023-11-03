@@ -73,7 +73,7 @@ LEAVE_APP_AVAILABLE = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "==",
+                    "view": "4",
                 },
             },
             "local_depends_on": {},

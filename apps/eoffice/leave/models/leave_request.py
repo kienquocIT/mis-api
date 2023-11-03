@@ -3,7 +3,7 @@ from copy import deepcopy
 
 from django.db import models
 
-from apps.shared import DataAbstractModel, LeaveMsg, TYPE_LIST
+from apps.shared import DataAbstractModel, TYPE_LIST
 
 __all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
@@ -135,8 +135,8 @@ class LeaveRequest(DataAbstractModel):
                     raise ValueError("Day off large than leave available")
                 leave_result.used += item['subtotal']
                 leave_result.available = leave_result.total - leave_result.used
-            # nếu là phép dư năm trước
-            else:
+            else:  # pylint: disable=R1724
+                # lỗi ko xài else sau continue này đang logic đúng.
                 if item['subtotal'] > leave_result.available:
                     odd = item['subtotal'] - deepcopy(leave_result.available)
                     leave_result.used += leave_result.available
