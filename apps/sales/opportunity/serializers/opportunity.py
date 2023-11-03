@@ -1,6 +1,9 @@
+# pylint: disable=C0302
+from uuid import uuid4
+
 from rest_framework import serializers
 
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, DistributionApplication
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
@@ -147,6 +150,82 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
 
+    @classmethod
+    def get_alias_permit_from_general(cls, employee_obj):
+        # Le Dieu Hoa - 10/17 11:17 AM
+        #   Task: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       e66cfb5a-b3ce-4694-a4da-47618f53de4c
+        #   Quotation: tạo - xem - sửa - xóa (cho chính nó)
+        #       b9650500-aba7-44e3-b6e0-2542622702a3
+        #   Sales Order: tạo - xem - sửa - xóa (cho chính nó)
+        #       a870e392-9ad2-4fe2-9baa-298a38691cf2
+        #   Contract: tạo - xem - sửa - xóa (cho chính nó)
+        #       31c9c5b0-717d-4134-b3d0-cc4ca174b168
+        #   Advanced Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       57725469-8b04-428a-a4b0-578091d0e4f5
+        #   Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       1010563f-7c94-42f9-ba99-63d5d26a1aca
+        #   Return Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       65d36757-557e-4534-87ea-5579709457d7
+
+        result = []
+        app_id_get = [
+            "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
+            "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
+            "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sales Order
+            "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+            "57725469-8b04-428a-a4b0-578091d0e4f5",  # Advanced Payment
+            "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
+            "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
+        ]
+        for obj in DistributionApplication.objects.select_related('app').filter(
+                employee=employee_obj, app_id__in=app_id_get
+        ):
+            permit_has_1_range = []
+            permit_has_4_range = []
+            for permit_code, permit_config in obj.app.permit_mapping.items():
+                if '1' in permit_config.get('range', []):
+                    permit_has_1_range.append(permit_code)
+                elif '4' in permit_config.get('range', []):
+                    permit_has_4_range.append(permit_code)
+
+            has_1 = False
+            data_tmp_for_1 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '1',
+                'space': '0',
+            }
+            has_4 = False
+            data_tmp_for_4 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '4',
+                'space': '0',
+            }
+
+            for key in ['view', 'create', 'edit', 'delete']:
+                if key in permit_has_1_range:
+                    has_1 = True
+                    data_tmp_for_1[key] = True
+                elif key in permit_has_4_range:
+                    has_4 = True
+                    data_tmp_for_4[key] = True
+
+            if has_1 is True:
+                result.append(data_tmp_for_1)
+            if has_4 is True:
+                result.append(data_tmp_for_4)
+        return result
+
     def create(self, validated_data):
         # get data product_category
         product_categories = validated_data.pop('product_category', [])
@@ -185,6 +264,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             member=employee_inherit,
             permit_view_this_opp=True,
             permit_add_member=True,
+            permission_by_configured=self.get_alias_permit_from_general(employee_obj=employee_inherit)
         )
         return opportunity
 
