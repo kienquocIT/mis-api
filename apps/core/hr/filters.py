@@ -17,6 +17,7 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
     group__first_manager__id = filters.CharFilter(
         method='filter_group__first_manager', field_name='group__first_manager__id'
     )
+    list_from_leave = filters.CharFilter(method='filter_list_from_leave')
 
     class Meta:
         model = Employee
@@ -36,6 +37,10 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
                 filter_kwargs |= Q(**{name: manager})
             return queryset.filter(filter_kwargs)
         raise exceptions.AuthenticationFailed
+
+    @classmethod
+    def filter_list_from_leave(cls, queryset, *args, **kwargs):
+        return queryset
 
 
 class EmployeeStorageAppAllListFilter(django_filters.FilterSet):

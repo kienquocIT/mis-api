@@ -94,20 +94,16 @@ def create_expense_items(instance, payment_expense_valid_list):
 
 
 def create_sale_code_object(payment_obj, initial_data):
-    """
-    1. sale_code_type = 0 (Sale): get 'sale_code_detail', then sub-create Payment map with each SaleCode
-    2. sale_code_type = 3 (MULTI): get 3-'sale_code_selected_list', then sub-create Payment map with each SaleCode
-    """
     sale_code = initial_data.get('sale_code_list', [])
     if initial_data.get('sale_code_type', None) == 0 and len(sale_code) == 1:
         sale_code_id = sale_code[0].get('sale_code_id', None)
         sale_code_detail = sale_code[0].get('sale_code_detail', None)
         if sale_code_detail == 0:
-            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
+            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
         if sale_code_detail == 1:
             PaymentQuotation.objects.create(payment_mapped=payment_obj, quotation_mapped_id=sale_code_id)
         if sale_code_detail == 2:
-            PaymentOpportunity.objects.create(payment_mapped=payment_obj, opportunity_mapped_id=sale_code_id)
+            PaymentSaleOrder.objects.create(payment_mapped=payment_obj, sale_order_mapped_id=sale_code_id)
     if initial_data.get('sale_code_type', None) == 3 and len(sale_code) > 0:
         so_bulk_info = []
         qo_info = []
@@ -164,12 +160,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         sale_code_list = self.initial_data.get('sale_code_list', None)
-        sale_order_selected_list = self.initial_data.get('sale_order_selected_list', [])
-        quotation_selected_list = self.initial_data.get('quotation_selected_list', [])
-        opp_selected_list = self.initial_data.get('opportunity_selected_list', [])
         if len(sale_code_list) < 1:
-            if len(sale_order_selected_list) < 1 and len(quotation_selected_list) < 1 and len(opp_selected_list) < 1:
-                raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
+            raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
         if self.initial_data.get('product_valid_list', []):
             for item in self.initial_data['product_valid_list']:
                 if not item.get('product_id', None):
@@ -178,13 +170,13 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if Payment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'PAYMENT.CODE.0001'
+            new_code = 'PAYMENT.0001'
         else:
             latest_code = Payment.objects.filter_current(
                 fill__tenant=True, fill__company=True
             ).latest('date_created').code
             new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'PAYMENT.CODE.000' + str(new_code)
+            new_code = 'PAYMENT.000' + str(new_code)
 
         payment_obj = Payment.objects.create(code=new_code, **validated_data)
 
@@ -268,9 +260,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
                     'id': str(item.id),
                     'code': item.code,
                     'title': item.title,
-                    'opportunity': {
-                        'id': str(item.id), 'code': item.code, 'title': item.title
-                    }
+                    'customer': item.customer.name,
                 }
             )
         return all_opportunity_mapped
@@ -311,14 +301,18 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     def get_beneficiary(cls, obj):
         return {
             'id': obj.beneficiary_id,
+            'first_name': obj.beneficiary.first_name,
+            'last_name': obj.beneficiary.last_name,
+            'email': obj.beneficiary.email,
+            'full_name': obj.beneficiary.get_full_name(2),
             'code': obj.beneficiary.code,
-            'full_name': obj.beneficiary.get_full_name(),
+            'is_active': obj.beneficiary.is_active,
             'group': {
                 'id': obj.beneficiary.group_id,
                 'title': obj.beneficiary.group.title,
                 'code': obj.beneficiary.group.code
             } if obj.beneficiary.group else {}
-        }
+        } if obj.beneficiary else {}
 
     @classmethod
     def get_expense_items(cls, obj):

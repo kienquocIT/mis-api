@@ -155,7 +155,22 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
         if obj.advance_payment:
             return {
                 'id': obj.advance_payment_id,
-                'title': obj.advance_payment.title
+                'title': obj.advance_payment.title,
+                'opportunity_mapped': {
+                    'id': obj.advance_payment.opportunity_mapped_id,
+                    'code': obj.advance_payment.opportunity_mapped.code,
+                    'title': obj.advance_payment.opportunity_mapped.title,
+                } if obj.advance_payment.opportunity_mapped else {},
+                'quotation_mapped': {
+                    'id': obj.advance_payment.quotation_mapped_id,
+                    'code': obj.advance_payment.quotation_mapped.code,
+                    'title': obj.advance_payment.quotation_mapped.title,
+                } if obj.advance_payment.quotation_mapped else {},
+                'sale_order_mapped': {
+                    'id': obj.advance_payment.sale_order_mapped_id,
+                    'code': obj.advance_payment.sale_order_mapped.code,
+                    'title': obj.advance_payment.sale_order_mapped.title,
+                } if obj.advance_payment.sale_order_mapped else {}
             }
         return {}
 

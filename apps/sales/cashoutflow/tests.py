@@ -51,7 +51,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'sale_code_type',
                 'quotation_mapped',
                 'sale_order_mapped',
-                'sale_code_relate',
                 'opportunity_mapped',
                 'supplier',
                 'method',
@@ -120,7 +119,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'sale_code_type',
                 'quotation_mapped',
                 'sale_order_mapped',
-                'sale_code_relate',
                 'opportunity_mapped',
                 'supplier',
                 'method',
@@ -371,7 +369,7 @@ class PaymentTestCase(AdvanceTestCase):
             'sale_code_list': [
                 {
                     'sale_code_id': self.create_sale_order().data['result']['id'],
-                    'sale_code_detail': 0
+                    'sale_code_detail': 2
                 }
             ],
             'supplier': self.create_new_account().data['result']['id'],
@@ -538,7 +536,6 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'sale_code_type',
                 'quotation_mapped',
                 'sale_order_mapped',
-                'sale_code_relate',
                 'opportunity_mapped',
                 'supplier',
                 'method',

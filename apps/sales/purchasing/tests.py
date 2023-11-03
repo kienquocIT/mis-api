@@ -237,7 +237,7 @@ class TestCasePurchaseRequest(AdvanceTestCase):
                     "sale_order_product": None,
                     "product": product.data['result']['id'],
                     "description": "",
-                    "uom": product.data['result']['sale_information']['default_uom']['uom_id'],
+                    "uom": product.data['result']['sale_information']['default_uom']['id'],
                     "quantity": 1,
                     "unit_price": 20000000,
                     "tax": product.data['result']['sale_information']['tax']['id'],
@@ -580,7 +580,7 @@ class TestCasePurchaseOrder(AdvanceTestCase):
         supplier = account_create.data['result']['id']
         contact = account_create.data['result']['contact_mapped'][0]['id']
         product = product_create.data['result']['id']
-        uom = product_create.data['result']['sale_information']['default_uom']['uom_id']
+        uom = product_create.data['result']['sale_information']['default_uom']['id']
         tax = product_create.data['result']['sale_information']['tax']['id']
 
         data = {
@@ -893,7 +893,7 @@ class TestCasePurchaseQuotationRequest(AdvanceTestCase):
             "note": 'San pham de vo',
             "products_selected": [{
                 'product_id': product['id'],
-                'uom_id': uom['uom_id'],
+                'uom_id': uom['id'],
                 'quantity': 10,
                 'unit_price': 15000000,
                 'tax_id': tax['id'],
@@ -1167,7 +1167,7 @@ class TestCasePurchaseQuotation(AdvanceTestCase):
             "note": 'San pham de vo',
             "products_selected": [{
                 'product_id': product['id'],
-                'uom_id': uom['uom_id'],
+                'uom_id': uom['id'],
                 'quantity': 10,
                 'unit_price': 15000000,
                 'tax_id': tax['id'],

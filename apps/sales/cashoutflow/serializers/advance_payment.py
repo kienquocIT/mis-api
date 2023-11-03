@@ -4,8 +4,6 @@ from apps.sales.cashoutflow.models import (
     PaymentCostItems,
     ReturnAdvance, ReturnAdvanceCost
 )
-from apps.sales.saleorder.models import SaleOrder
-from apps.sales.quotation.models import Quotation
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg, ProductMsg
 
@@ -55,12 +53,16 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     is_close = True
                 return {
                     'id': obj.sale_order_mapped_id,
+                    'code': obj.sale_order_mapped.code,
+                    'title': obj.sale_order_mapped.title,
                     'opportunity_id': obj.sale_order_mapped.opportunity_id,
                     'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_close,
                     'is_close': is_close
                 }
             return {
                 'id': obj.sale_order_mapped_id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
                 'opportunity_id': None,
                 'opportunity_code': None,
                 'is_close': is_close
@@ -76,12 +78,16 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
                     is_close = True
                 return {
                     'id': obj.quotation_mapped_id,
+                    'code': obj.quotation_mapped.code,
+                    'title': obj.quotation_mapped.title,
                     'opportunity_id': obj.quotation_mapped.opportunity_id,
                     'opportunity_code': obj.quotation_mapped.opportunity.code,
                     'is_close': is_close,
                 }
             return {
                 'id': obj.quotation_mapped_id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
                 'opportunity_id': None,
                 'opportunity_code': None,
                 'is_close': is_close,
@@ -97,6 +103,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.opportunity_mapped_id,
                 'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
                 'is_close': is_close
             }
         return {}
@@ -210,7 +217,10 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             'creator_name',
             'beneficiary',
             'return_date',
-            'money_gave'
+            'money_gave',
+            'opportunity_mapped',
+            'quotation_mapped',
+            'sale_order_mapped'
         )
 
     @classmethod
@@ -232,19 +242,6 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
-        if self.initial_data.get('sale_code_type', None) != 2:
-            if 'sale_code' in self.initial_data:
-                sale_code = self.initial_data['sale_code']
-                if sale_code.get('id', None):
-                    if sale_code.get('type', None) == 0:
-                        validate_data['sale_order_mapped_id'] = sale_code.get('id', None)
-                    if sale_code.get('type', None) == 1:
-                        validate_data['quotation_mapped_id'] = sale_code.get('id', None)
-                    if sale_code.get('type', None) == 2:
-                        validate_data['opportunity_mapped_id'] = sale_code.get('id', None)
-            else:
-                raise serializers.ValidationError({'Sale code': AdvancePaymentMsg.SALE_CODE_IS_NOT_NULL})
-
         if self.initial_data.get('expense_valid_list', []):
             for item in self.initial_data['expense_valid_list']:
                 if not item.get('expense_type_id', None):
@@ -253,13 +250,13 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'AP.CODE.0001'
+            new_code = 'AP.0001'
         else:
             latest_code = AdvancePayment.objects.filter_current(
                 fill__tenant=True, fill__company=True
             ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1  # "AP.CODE.00034" > "00034" > 34 > 35 > "AP.CODE.00035"
-            new_code = 'AP.CODE.000' + str(new_code)
+            new_code = int(latest_code.split('.')[-1]) + 1  # "AP.00034" > "00034" > 34 > 35 > "AP.00035"
+            new_code = 'AP.000' + str(new_code)
 
         advance_payment_obj = AdvancePayment.objects.create(**validated_data, code=new_code)
         if self.initial_data.get('expense_valid_list', []):
@@ -312,7 +309,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
     payment_value_list = serializers.SerializerMethodField()
     returned_value_list = serializers.SerializerMethodField()
-    sale_code_relate = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -327,7 +323,6 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'sale_code_type',
             'quotation_mapped',
             'sale_order_mapped',
-            'sale_code_relate',
             'opportunity_mapped',
             'supplier',
             'method',
@@ -371,115 +366,47 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_order_mapped(cls, obj):
-        return [{
+        return {
             'id': obj.sale_order_mapped_id,
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title,
             'customer': obj.sale_order_mapped.customer.name,
-        }] if obj.sale_order_mapped else []
+        } if obj.sale_order_mapped else {}
 
     @classmethod
     def get_quotation_mapped(cls, obj):
-        return [{
+        return {
             'id': obj.quotation_mapped_id,
             'code': obj.quotation_mapped.code,
             'title': obj.quotation_mapped.title,
             'customer': obj.quotation_mapped.customer.name,
-        }] if obj.quotation_mapped else []
+        } if obj.quotation_mapped else {}
 
     @classmethod
     def get_opportunity_mapped(cls, obj):
-        if obj.opportunity_mapped:
-            return [{
-                'id': obj.opportunity_mapped_id,
-                'code': obj.opportunity_mapped.code,
-                'title': obj.opportunity_mapped.title,
-                'customer': obj.opportunity_mapped.customer.name,
-            }]
-        return []
-
-    @classmethod
-    def get_sale_code_relate(cls, obj):
-        if obj.sale_order_mapped:
-            return {
-                'sale_order_linked': {
-                    'id': obj.sale_order_mapped_id,
-                    'code': obj.sale_order_mapped.code,
-                    'title': obj.sale_order_mapped.title,
-                    'customer': obj.sale_order_mapped.customer.name,
-                },
-                'quotation_linked': {
-                    'id': obj.sale_order_mapped.quotation_id,
-                    'code': obj.sale_order_mapped.quotation.code,
-                    'title': obj.sale_order_mapped.quotation.title,
-                    'customer': obj.sale_order_mapped.quotation.customer.name,
-                } if obj.sale_order_mapped.quotation else {},
-                'opportunity_linked':  {
-                    'id': obj.sale_order_mapped.opportunity_id,
-                    'code': obj.sale_order_mapped.opportunity.code,
-                    'title': obj.sale_order_mapped.opportunity.title,
-                    'customer': obj.sale_order_mapped.opportunity.customer.name,
-                } if obj.sale_order_mapped.opportunity else {}
-            }
-        if obj.quotation_mapped:
-            get_so = SaleOrder.objects.filter(quotation_id=obj.quotation_mapped_id)
-            return {
-                'sale_order_linked': {
-                    'id': str(get_so[0].id),
-                    'code': get_so[0].code,
-                    'title': get_so[0].title,
-                    'customer': get_so[0].customer.name,
-                } if get_so.count() == 1 else {},
-                'quotation_linked': {
-                    'id': obj.quotation_mapped_id,
-                    'code': obj.quotation_mapped.code,
-                    'title': obj.quotation_mapped.title,
-                    'customer': obj.quotation_mapped.customer.name,
-                },
-                'opportunity_linked': {
-                    'id': obj.quotation_mapped.opportunity_id,
-                    'code': obj.quotation_mapped.opportunity.code,
-                    'title': obj.quotation_mapped.opportunity.title,
-                    'customer': obj.quotation_mapped.opportunity.customer.name,
-                } if obj.quotation_mapped.opportunity else {}
-            }
-        if obj.opportunity_mapped:
-            get_so = SaleOrder.objects.filter(opportunity_id=obj.opportunity_mapped_id)
-            get_quo = Quotation.objects.filter(opportunity_id=obj.opportunity_mapped_id)
-            return {
-                'sale_order_linked': {
-                    'id': str(get_so[0].id),
-                    'code': get_so[0].code,
-                    'title': get_so[0].title,
-                    'customer': get_so[0].customer.name,
-                } if get_so.count() == 1 else {},
-                'quotation_linked': {
-                    'id': str(get_quo[0].id),
-                    'code': get_quo[0].code,
-                    'title': get_quo[0].title,
-                    'customer': get_quo[0].customer.name,
-                } if get_quo.count() == 1 else {},
-                'opportunity_linked': {
-                    'id': obj.opportunity_mapped_id,
-                    'code': obj.opportunity_mapped.code,
-                    'title': obj.opportunity_mapped.title,
-                    'customer': obj.opportunity_mapped.customer.name,
-                }
-            }
-        return {}
+        return {
+            'id': obj.opportunity_mapped_id,
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title,
+            'customer': obj.opportunity_mapped.customer.name,
+        } if obj.opportunity_mapped else {}
 
     @classmethod
     def get_beneficiary(cls, obj):
         return {
             'id': obj.beneficiary_id,
+            'first_name': obj.beneficiary.first_name,
+            'last_name': obj.beneficiary.last_name,
+            'email': obj.beneficiary.email,
+            'full_name': obj.beneficiary.get_full_name(2),
             'code': obj.beneficiary.code,
-            'full_name': obj.beneficiary.get_full_name(),
+            'is_active': obj.beneficiary.is_active,
             'group': {
                 'id': obj.beneficiary.group_id,
                 'title': obj.beneficiary.group.title,
                 'code': obj.beneficiary.group.code
             } if obj.beneficiary.group else {}
-        }
+        } if obj.beneficiary else {}
 
     @classmethod
     def get_advance_value(cls, obj):
