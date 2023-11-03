@@ -124,6 +124,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         ):
             opp_id = self.get_query_params().get('list_from_opp', None)
             prj_id = self.get_query_params().get('list_from_prj', None)
+            leave_flag = self.get_query_params().get('list_from_leave', None)
             config_by_code_kwargs = {
                 'label_code': arr_from_app[0],
                 'model_code': arr_from_app[1],
@@ -158,6 +159,25 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
                             value_filter = [str(employee_current_id)]
                     if settings.DEBUG_PERMIT:
                         print('=> config_by_prj                :', '[HAS FROM APP][PRJ]', config_by_prj)
+            elif leave_flag and leave_flag == 1:
+                config_by_leave_kwargs = {
+                    'label_code': 'leave',
+                    'model_code': 'leaveavailable',
+                    'perm_code': 'view',
+                }
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_leave_kwargs, has_roles=True)
+                if 'employee' in permit_data:
+                    config_by_prj = self.get_config_from_prj_id_selected(
+                        item_data=permit_data['employee'],
+                        prj_id=prj_id
+                    )
+                    if config_by_prj and isinstance(config_by_prj, dict):
+                        #to do đang làm đến đây
+                        pass
+                    if settings.DEBUG_PERMIT:
+                        print('=> config_by_prj                :', '[HAS FROM APP][PRJ]', config_by_prj)
+                elif 'role' in permit_data:
+                    pass
             else:
                 permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
                 max_range_allowed = 0

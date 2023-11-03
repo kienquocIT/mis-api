@@ -1,5 +1,6 @@
 from django.utils.translation import gettext_lazy as _
-from .translations import WorkflowMsg
+
+from .translations import WorkflowMsg, LeaveMsg
 
 #
 KEY_GET_LIST_FROM_APP = 'list_from_app'
@@ -223,6 +224,12 @@ LEAVE_YEARS_SENIORITY = [
     {'from_range': 25, 'to_range': 29, 'added': 5},
     {'from_range': 30, 'to_range': 34, 'added': 6},
 ]
+
+TYPE_LIST = (
+    (1, LeaveMsg.TYPE_01),
+    (2, LeaveMsg.TYPE_02),
+    (3, LeaveMsg.TYPE_03),
+)
 
 # Warehouse type
 WAREHOUSE_TYPE = (

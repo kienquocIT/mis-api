@@ -28,7 +28,8 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
         operation_description="get leave request list",
     )
     @mask_view(
-        login_require=True, auth_require=True, label_code='leave', model_code='leaverequest', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='leave', model_code='leaverequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
