@@ -63,19 +63,19 @@ LEAVE_APP_AVAILABLE = {
     "title": "Leave available",
     "code": "leaveavailable",
     "model_code": "leaveavailable",
-    "app_label": "eoffice",
+    "app_label": "leave",
     "is_workflow": False,
     "app_depend_on": [
         "50348927-2c4f-4023-b638-445469c66953",  # Employee
     ],
     "permit_mapping": {
         "view": {
-            "range": ["1", "4"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {},
             "local_depends_on": {},
         },
         "edit": {
-            "range": ["1", "4"],
+            "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {
                     "view": "4"

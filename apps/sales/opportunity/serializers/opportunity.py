@@ -982,7 +982,7 @@ class OpportunityListSerializerForCashOutFlow(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
-    quotation = serializers.SerializerMethodField()
+    # quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity

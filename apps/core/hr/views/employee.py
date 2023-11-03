@@ -78,10 +78,13 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         return None
 
     @classmethod
-    def member_opp_ids_from_opp_id_selected(cls, opp_id) -> list:
+    def member_opp_ids_from_opp_id_selected(cls, opp_id, exclude_data: dict = None) -> list:
+        if not exclude_data:
+            exclude_data = {}
+
         return OpportunitySaleTeamMember.objects.filter_current(
             fill__tenant=True, fill__company=True, opportunity_id=opp_id
-        ).values_list('member_id', flat=True)
+        ).exclude(**exclude_data).values_list('member_id', flat=True)
 
     @classmethod
     def get_config_from_prj_id_selected(cls, item_data, prj_id) -> Union[dict, None]:
@@ -91,7 +94,10 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         return None
 
     @classmethod
-    def member_prj_ids_from_prj_id_selected(cls, prj_id) -> list:  # pylint: disable=W0613
+    def member_prj_ids_from_prj_id_selected(cls, prj_id, exclude_data: dict = None) -> list:  # pylint: disable=W0613
+        if not exclude_data:
+            exclude_data = {}
+
         return []
 
     @property
@@ -111,6 +117,52 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
             return self.filter_kwargs_q__from_config()
         return Q(id__in=[])
 
+    def get_filter_by_app_other_allow(self, permit_data, employee_attr):
+        permit_or_list  =[]
+        if 'employee' in permit_data:
+            general_data = permit_data['employee'].get('general', None)
+            if general_data and isinstance(general_data, dict):
+                permit_allow_check = self.cls_check.permit_cls.parse_space_from_general_config(
+                    allowed_range=general_data,
+                    group_to_space=True
+                )
+                if permit_allow_check and '0' in permit_allow_check and isinstance(
+                        permit_allow_check['0'], list
+                ):
+                    tmp = self.cls_check.permit_cls.parse_general_from_custom_key(
+                        permit_of_space=permit_allow_check['0'],
+                        key_inheritor_filter='id',
+                        key_company_filter='company_id',
+                        is_filtering_inheritor=True,
+                        employee_attr=employee_attr,
+                    )
+                    if tmp:
+                        permit_or_list.append(tmp)
+        if 'roles' in permit_data:
+            for item in permit_data['roles']:
+                general_data = item.get('general', None)
+                if general_data and isinstance(general_data, dict):
+                    permit_allow_check = self.cls_check.permit_cls.parse_space_from_general_config(
+                        allowed_range=general_data,
+                        group_to_space=True
+                    )
+                    if permit_allow_check and '0' in permit_allow_check and isinstance(
+                            permit_allow_check['0'], list
+                    ):
+                        tmp = self.cls_check.permit_cls.parse_general_from_custom_key(
+                            permit_of_space=permit_allow_check['0'],
+                            key_inheritor_filter='id',
+                            key_company_filter='company_id',
+                            is_filtering_inheritor=True,
+                            employee_attr=employee_attr,
+                        )
+                        if tmp:
+                            permit_or_list.append(tmp)
+
+        if permit_or_list:
+            return self.cls_check.permit_cls.get_config_data__to_q(permit_or_list)
+        return Q(id__in=[])
+
     def filter_kwargs_q__from_app(self, arr_from_app) -> Q:  # pylint: disable=R0914, R0912, R0915
         # permit_data = {"employee": [], "roles": []}
         key_filter = 'id__in'
@@ -124,6 +176,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         ):
             opp_id = self.get_query_params().get('list_from_opp', None)
             prj_id = self.get_query_params().get('list_from_prj', None)
+            leave_available_flag = self.get_query_params().get('list_from_leave', None)
             config_by_code_kwargs = {
                 'label_code': arr_from_app[0],
                 'model_code': arr_from_app[1],
@@ -138,8 +191,12 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
                         opp_id=opp_id
                     )
                     if config_by_opp and isinstance(config_by_opp, dict):
-                        if '4' in config_by_opp:
+                        if '1' in config_by_opp and '4' in config_by_opp:
                             value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id)
+                        elif '4' in config_by_opp:
+                            value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id, exclude_data={
+                                'member_id': employee_current_id
+                            })
                         elif '1' in config_by_opp:
                             value_filter = [str(employee_current_id)]
                     if settings.DEBUG_PERMIT:
@@ -152,12 +209,22 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
                         prj_id=prj_id
                     )
                     if config_by_prj and isinstance(config_by_prj, dict):
-                        if '4' in config_by_prj:
+                        if '1' in config_by_prj and '4' in config_by_prj:
                             value_filter = self.member_prj_ids_from_prj_id_selected(prj_id=prj_id)
+                        elif '4' in config_by_prj:
+                            value_filter = self.member_prj_ids_from_prj_id_selected(prj_id=prj_id, exclude_data={})
                         elif '1' in config_by_prj:
                             value_filter = [str(employee_current_id)]
                     if settings.DEBUG_PERMIT:
                         print('=> config_by_prj                :', '[HAS FROM APP][PRJ]', config_by_prj)
+            elif leave_available_flag in [1, '1']:
+                leave_available_config = {
+                    'label_code': 'leave',
+                    'model_code': 'LeaveAvailable'.lower(),
+                    'perm_code': 'view',
+                }
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**leave_available_config, has_roles=True)
+                return self.get_filter_by_app_other_allow(permit_data=permit_data, employee_attr=employee_attr)
             else:
                 permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
                 max_range_allowed = 0
