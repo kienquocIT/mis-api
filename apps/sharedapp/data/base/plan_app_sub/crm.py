@@ -563,13 +563,13 @@ ADVANCE_PAYMENT_APP_CONFIG = {
                     "view": "4"
                 },
                 "a870e392-9ad2-4fe2-9baa-298a38691cf2": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "b9650500-aba7-44e3-b6e0-2542622702a3": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {
-                    "view": "4",
+                    "view": "==",
                 },
                 "4e48c863-861b-475a-aa5e-97a4ed26f294": {
                     "view": "==",

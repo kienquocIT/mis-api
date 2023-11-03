@@ -193,6 +193,7 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
     expense_items = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -313,6 +314,23 @@ class PaymentDetailSerializer(serializers.ModelSerializer):
                 'code': obj.beneficiary.group.code
             } if obj.beneficiary.group else {}
         } if obj.beneficiary else {}
+
+    @classmethod
+    def get_creator_name(cls, obj):
+        return {
+            'id': obj.creator_name_id,
+            'first_name': obj.creator_name.first_name,
+            'last_name': obj.creator_name.last_name,
+            'email': obj.creator_name.email,
+            'full_name': obj.creator_name.get_full_name(2),
+            'code': obj.creator_name.code,
+            'is_active': obj.creator_name.is_active,
+            'group': {
+                'id': obj.creator_name.group_id,
+                'title': obj.creator_name.group.title,
+                'code': obj.creator_name.group.code
+            } if obj.creator_name.group else {}
+        } if obj.creator_name else {}
 
     @classmethod
     def get_expense_items(cls, obj):

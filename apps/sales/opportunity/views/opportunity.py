@@ -504,6 +504,8 @@ class OpportunityListForCashOutFlow(BaseListMixin):
         return super().get_queryset().select_related(
             "customer",
             "sale_person",
+            "sale_order",
+            "quotation",
             "employee_inherit",
             "employee_inherit__group"
         ).prefetch_related(

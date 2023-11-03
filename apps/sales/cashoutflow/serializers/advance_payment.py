@@ -304,6 +304,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
     beneficiary = serializers.SerializerMethodField()
     advance_value = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
@@ -326,6 +327,7 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'supplier',
             'method',
+            'creator_name',
             'beneficiary',
             'expense_items',
             'advance_value',
@@ -390,6 +392,23 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'title': obj.opportunity_mapped.title,
             'customer': obj.opportunity_mapped.customer.name,
         } if obj.opportunity_mapped else {}
+
+    @classmethod
+    def get_creator_name(cls, obj):
+        return {
+            'id': obj.creator_name_id,
+            'first_name': obj.creator_name.first_name,
+            'last_name': obj.creator_name.last_name,
+            'email': obj.creator_name.email,
+            'full_name': obj.creator_name.get_full_name(2),
+            'code': obj.creator_name.code,
+            'is_active': obj.creator_name.is_active,
+            'group': {
+                'id': obj.creator_name.group_id,
+                'title': obj.creator_name.group.title,
+                'code': obj.creator_name.group.code
+            } if obj.creator_name.group else {}
+        } if obj.creator_name else {}
 
     @classmethod
     def get_beneficiary(cls, obj):
