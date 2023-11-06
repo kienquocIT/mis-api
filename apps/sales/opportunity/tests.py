@@ -218,8 +218,20 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'close_date', 'stage', 'is_close', 'opportunity_sale_team_datas'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'open_date',
+                'quotation',
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
+            ],
             check_sum_second=True,
         )
 
@@ -228,7 +240,6 @@ class TestCaseOpportunity(AdvanceTestCase):
             "customer": '83de3bab-edc2-4d72-ac11-dfa4540cec88',
             "product_category": [],
             "employee_inherit_id": emp,
-
         }
         response1 = self.client.post(url, data1, format='json')
 
@@ -290,8 +301,20 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'close_date', 'stage', 'is_close', 'opportunity_sale_team_datas'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'open_date',
+                'quotation',
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
+            ],
             check_sum_second=True,
         )
         return response
@@ -314,11 +337,35 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'customer', 'end_customer', 'product_category', 'budget_value', 'open_date',
-             'close_date', 'decision_maker', 'opportunity_product_datas', 'total_product_pretax_amount',
-             'total_product_tax', 'total_product', 'opportunity_competitors_datas', 'opportunity_contact_role_datas',
-             'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person',
-             'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close_lost', 'is_deal_close', 'members'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'end_customer',
+                'product_category',
+                'budget_value',
+                'open_date',
+                'close_date',
+                'decision_maker',
+                'opportunity_product_datas',
+                'total_product_pretax_amount',
+                'total_product_tax',
+                'total_product',
+                'opportunity_competitors_datas',
+                'opportunity_contact_role_datas',
+                'win_rate',
+                'is_input_rate',
+                'customer_decision_factor',
+                'sale_person',
+                'stage',
+                'lost_by_other_reason',
+                'sale_order',
+                'quotation',
+                'is_close_lost',
+                'is_deal_close',
+                'members'
+            ],
             check_sum_second=True,
         )
         if not data_id:
