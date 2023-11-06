@@ -494,4 +494,3 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
         if obj.expense_tax:
             return {'id': obj.expense_tax_id, 'code': obj.expense_tax.code, 'title': obj.expense_tax.title}
         return {}
-
