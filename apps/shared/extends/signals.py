@@ -963,7 +963,7 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
 @receiver(post_save, sender=RuntimeAssignee)
 def event_new_assignee_runtime(sender, instance, created, **kwargs):
     if created:
-        instance.runtime.append_viewer(instance.employee)
+        instance.stage.runtime.append_viewer(instance.employee)
 
 
 @receiver(post_save, sender=Runtime)

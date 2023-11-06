@@ -13,7 +13,8 @@ class ReportRevenueList(BaseListMixin):
     queryset = ReportRevenue.objects
     search_fields = ['sale_order__title']
     filterset_fields = {
-        'group_inherit': ['exact'],
+        'group_inherit_id': ['exact'],
+        'employee_inherit_id': ['exact'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
