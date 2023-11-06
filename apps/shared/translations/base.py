@@ -8,6 +8,7 @@ class BaseMsg:
     PROPERTY_NOT_EXIST = _('Application property does not exist.')
     USER_NOT_MAP_EMPLOYEE = _('User still not map with The employee please contact your Admin')
     UPLOAD_FILE_ERROR = _('Upload file is failure. Please refresh and try again.')
+    SYSTEM_STATUS_INCORRECT = _('The document status is incorrect')
 
 
 class PermissionMsg:

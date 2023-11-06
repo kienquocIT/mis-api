@@ -6,7 +6,7 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
     SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SYSTEM_STATUS, SaleMsg
+from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg
 
 
 # SALE ORDER BEGIN
@@ -434,6 +434,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # status
+            'system_status',
         )
 
     @classmethod
@@ -468,6 +470,14 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
+    def validate_system_status(self, attrs):
+        if attrs in [0, 1]:  # draft or created
+            if self.instance.system_status <= attrs:
+                return attrs
+        raise serializers.ValidationError({
+            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
+        })
+
     def validate(self, validate_data):
         if 'opportunity_id' in validate_data:
             if validate_data['opportunity_id'] is not None:
@@ -481,6 +491,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         # check if change opportunity then update field sale_order in opportunity to None
         if instance.opportunity_id != validated_data.get('opportunity_id', None):

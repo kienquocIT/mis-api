@@ -50,6 +50,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
             "customer",
             "sale_person",
             "employee_inherit",
+            "customer__payment_term_customer_mapped",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
             "customer__account_mapped_shipping_address",
@@ -355,6 +356,32 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
 
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
+    def check_has_permit_of_space_all(self, opp_obj):
+        config_data = self.cls_check.permit_cls.config_data
+        if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
+            if 'employee' in config_data and isinstance(config_data['employee'], dict):
+                general_data = config_data['employee']['general']
+                if general_data and isinstance(general_data, dict):
+                    for _permit_code, permit_config in general_data.items():
+                        if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
+                            if (
+                                    permit_config['space'] == '1'
+                                    and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
+                            ):
+                                return True
+            if 'roles' in config_data and isinstance(config_data['roles'], list):
+                for role_data in config_data['roles']:
+                    general_data = role_data['general']
+                    if general_data and isinstance(general_data, dict):
+                        for _permit_code, permit_config in general_data.items():
+                            if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
+                                if (
+                                        permit_config['space'] == '1'
+                                        and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
+                                ):
+                                    return True
+        return False
+
     def get_opp_member_of_current_user(self, instance):
         return OpportunitySaleTeamMember.objects.filter_current(
             opportunity=instance.opportunity,
@@ -363,7 +390,7 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         ).first()
 
     def manual_check_obj_retrieve(self, instance, **kwargs):
-        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
+        state = self.check_has_permit_of_space_all(opp_obj=instance.opportunity)
         if not state:
             # special case skip with True if current user is employee_inherit
             emp_id = self.cls_check.employee_attr.employee_current_id
@@ -376,39 +403,35 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         return state
 
     def manual_check_obj_update(self, instance, body_data, **kwargs):
-        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
-        if not state:
-            # special case skip with True if current user is employee_inherit
-            emp_id = self.cls_check.employee_attr.employee_current_id
-            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
-                return True
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
+        if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+            return True
 
-            obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
-            if obj_of_current_user:
-                return obj_of_current_user.permit_view_this_opp
-        return state
+        obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
+        if obj_of_current_user:
+            return obj_of_current_user.permit_add_member
+        return False
 
     def manual_check_obj_destroy(self, instance, **kwargs):
         if instance.member_id == instance.opportunity.employee_inherit_id:
             return False
 
-        state = self.check_perm_by_obj_or_body_data(obj=instance.opportunity)
-        if not state:
-            # special case skip with True if current user is employee_inherit
-            emp_id = self.cls_check.employee_attr.employee_current_id
+        # special case skip with True if current user is employee_inherit
+        emp_id = self.cls_check.employee_attr.employee_current_id
 
-            if emp_id == instance.member_id:
-                # deny delete member is owner opp.
-                return False
+        if emp_id == instance.member_id:
+            # deny delete member is owner opp.
+            return False
 
-            if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
-                # owner auto allow in member
-                return True
+        if emp_id and str(instance.opportunity.employee_inherit_id) == str(emp_id):
+            # owner auto allow in member
+            return True
 
-            obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
-            if obj_of_current_user:
-                return obj_of_current_user.permit_view_this_opp
-        return state
+        obj_of_current_user = self.get_opp_member_of_current_user(instance=instance)
+        if obj_of_current_user:
+            return obj_of_current_user.permit_view_this_opp
+        return False
 
     def get_lookup_url_kwarg(self) -> dict:
         return {
@@ -420,7 +443,10 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         operation_summary='Get member detail of OPP',
         operation_description='Check permit by OPP related',
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='opportunity', model_code='opportunity', perm_code="view",
+    )
     def get(self, request, *args, pk_opp, pk_member, **kwargs):
         if TypeCheck.check_uuid(pk_opp) and TypeCheck.check_uuid(pk_member):
             return self.retrieve(request, *args, pk_opp, pk_member, **kwargs)

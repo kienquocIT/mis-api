@@ -75,6 +75,21 @@ class HttpReturn:
 
 
 class ViewConfigDecorator:
+    _opp_enabled = False
+    _prj_enabled = False
+    _login_require = True  # require request.user is User Object
+    _auth_require = False  # require setup filter query then add view for MIXIN
+    _employee_require = False  # require request.user.employee is Employee Object
+    _allow_admin_tenant = False  # allow admin tenant skip filter query
+    _allow_admin_company = False  # allow admin company skip filter query
+    _label_code = None  # App code need call for filter query
+    _model_code = None  # Model code need call for filter query
+    _perm_code = None  # Permit code need call from filter query
+    _bastion_field_require = False  #
+    _use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in view)
+    _config_check_permit = {}
+    _has_allow_admin = False
+
     @property
     def has_allow_admin(self):
         if not self._has_allow_admin:
@@ -92,36 +107,20 @@ class ViewConfigDecorator:
         return self._config_check_permit
 
     def __init__(self, parent_kwargs):
-        self.opp_enabled = False
-        self.prj_enabled = False
-        self.login_require = True  # require request.user is User Object
-        self.auth_require = False  # require setup filter query then add view for MIXIN
-        self.employee_require = False  # require request.user.employee is Employee Object
-        self.bastion_field_require = False  #
-        self.use_custom_get_filter_auth = False  # using function manual filter auth (overrode def get_filter_auth in
-        # view)
-        self.allow_admin_tenant = False  # allow admin tenant skip filter query
-        self.allow_admin_company = False  # allow admin company skip filter query
-        self.label_code = None  # App code need call for filter query
-        self.model_code = None  # Model code need call for filter query
-        self.perm_code = None  # Permit code need call from filter query
-        self._config_check_permit = {}
-        self._has_allow_admin = False
-
-        self.employee_require = parent_kwargs.get('employee_require', self.employee_require)
-        self.login_require = parent_kwargs.get('login_require', self.login_require)
-        self.auth_require = parent_kwargs.get('auth_require', self.auth_require)
-        self.bastion_field_require = parent_kwargs.get('bastion_field_require', self.bastion_field_require)
+        self.employee_require = parent_kwargs.get('employee_require', self._employee_require)
+        self.login_require = parent_kwargs.get('login_require', self._login_require)
+        self.auth_require = parent_kwargs.get('auth_require', self._auth_require)
+        self.bastion_field_require = parent_kwargs.get('bastion_field_require', self._bastion_field_require)
         self.use_custom_get_filter_auth = parent_kwargs.get(
-            'use_custom_get_filter_auth', self.use_custom_get_filter_auth
+            'use_custom_get_filter_auth', self._use_custom_get_filter_auth
         )
-        self.allow_admin_tenant: bool = parent_kwargs.get('allow_admin_tenant', self.allow_admin_tenant)
-        self.allow_admin_company: bool = parent_kwargs.get('allow_admin_company', self.allow_admin_company)
-        self.label_code: str = parent_kwargs.get('label_code', self.label_code)
-        self.model_code: str = parent_kwargs.get('model_code', self.model_code)
-        self.perm_code: str = parent_kwargs.get('perm_code', self.perm_code)
-        self.opp_enabled: bool = parent_kwargs.get('opp_enabled', self.opp_enabled)
-        self.prj_enabled: bool = parent_kwargs.get('prj_enabled', self.prj_enabled)
+        self.allow_admin_tenant: bool = parent_kwargs.get('allow_admin_tenant', self._allow_admin_tenant)
+        self.allow_admin_company: bool = parent_kwargs.get('allow_admin_company', self._allow_admin_company)
+        self.label_code: str = parent_kwargs.get('label_code', self._label_code)
+        self.model_code: str = parent_kwargs.get('model_code', self._model_code)
+        self.perm_code: str = parent_kwargs.get('perm_code', self._perm_code)
+        self.opp_enabled: bool = parent_kwargs.get('opp_enabled', self._opp_enabled)
+        self.prj_enabled: bool = parent_kwargs.get('prj_enabled', self._prj_enabled)
         self.skip_filter_employee: bool = parent_kwargs.get('skip_filter_employee', False)
 
 
@@ -1224,7 +1223,7 @@ class PermissionController:
                                 result_or += tmp
         else:
             if settings.DEBUG_PERMIT:
-                print('=> skip parse simple            :', 'Application Object is not found', item_data)
+                print('=> skip parse simple       :', 'Application Object is not found', item_data)
         return result_or
 
     @classmethod
@@ -1248,120 +1247,241 @@ class PermissionController:
 
         return result
 
-    def parse_general_with_space(self, permit_of_space, space_config_code, filtering_inheritor):
-        # key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in'
-        # value_filter = []
+    @classmethod
+    def parse_general_from_custom_key(cls, permit_of_space: list[str], **kwargs):
+        employee_attr: EmployeeAttribute = kwargs.get('employee_attr')
+        key_inheritor_filter: str = kwargs.get('key_inheritor_filter', 'employee_inherit_id')
+        key_company_filter: str = kwargs.get('key_company_filter', 'company_id')
+        is_filtering_inheritor: bool = kwargs.get('is_filtering_inheritor', True)
 
-        data = {}
         np_all_key = np.array(list(permit_of_space))
-
         if settings.DEBUG_PERMIT:
-            print('* [GENERAL] np_all_key     :', np_all_key, space_config_code, filtering_inheritor)
+            print(
+                '* [custom_key] np_all_key  :',
+                'np_all_key = ', np_all_key,
+                ',', 'key_inheritor_filter =', key_inheritor_filter,
+                ',', 'key_company_filter =', key_company_filter,
+                ',', 'is_filtering_inheritor =', is_filtering_inheritor,
+                ',', 'employee_current_id =', employee_attr.employee_current_id,
+            )
 
         if np.array_equal(np_all_key, np.array([])):
             # empty keep default
             pass
-        elif np.array_equal(np_all_key, np.array(['1'])):
+
+        if np.array_equal(np_all_key, np.array(['1'])):
             # only me | keep default if current user haven't employee related!
-            if self.employee_attr.employee_current_id:
-                data = {
-                    self.KEY_FILTER_INHERITOR_ID_IN_MODEL: str(self.employee_attr.employee_current_id)
-                }
-        elif np.array_equal(np_all_key, np.array(['2'])):
+            if employee_attr.employee_current_id:
+                return {key_inheritor_filter: str(employee_attr.employee_current_id)}
+            return {key_inheritor_filter + '__in': []}
+
+        if np.array_equal(np_all_key, np.array(['2'])):
             # staff + exclude me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_staff_ids__exclude_me()
-            }
-        elif np.array_equal(np_all_key, np.array(['3'])):
+            return {key_inheritor_filter + '__in': employee_attr.employee_staff_ids__exclude_me()}
+
+        if np.array_equal(np_all_key, np.array(['3'])):
             # same group + exclude me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_same_group_ids__exclude_me()
-            }
-        elif np.array_equal(np_all_key, np.array(['4'])):
+            return {key_inheritor_filter + '__in': employee_attr.employee_same_group_ids__exclude_me()}
+
+        if np.array_equal(np_all_key, np.array(['4'])):
             # everybody + exclude me if current user has employee related!
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-            if filtering_inheritor is True and self.employee_attr.employee_current_id:
+            data = {key_company_filter: employee_attr.company_id}
+            if is_filtering_inheritor is True and employee_attr.employee_current_id:
                 # push exclude me to data
-                data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(self.employee_attr.employee_current_id)
-        elif np.array_equal(np_all_key, np.array(['1', '2'])):
+                data[key_inheritor_filter + '___exclude'] = str(employee_attr.employee_current_id)
+            return data
+
+        if np.array_equal(np_all_key, np.array(['1', '2'])):
             # staff + append me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_staff_ids__append_me()
-            }
-        elif np.array_equal(np_all_key, np.array(['1', '3'])):
+            return {key_inheritor_filter + '__in': employee_attr.employee_staff_ids__append_me()}
+
+        if np.array_equal(np_all_key, np.array(['1', '3'])):
             # same group + append me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_same_group_ids__append_me()
-            }
-        elif np.array_equal(np_all_key, np.array(['1', '4'])):
+            return {key_inheritor_filter + '__in': employee_attr.employee_same_group_ids__append_me()}
+
+        if np.array_equal(np_all_key, np.array(['1', '4'])):
             # everybody + append me (append me in here is not append filter exclude me to data)
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-        elif np.array_equal(np_all_key, np.array(['2', '3'])):
+            return {key_company_filter: employee_attr.company_id}
+
+        if np.array_equal(np_all_key, np.array(['2', '3'])):
             # staff + same group + exclude me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': (
-                        self.employee_attr.employee_staff_ids__exclude_me() +
-                        self.employee_attr.employee_same_group_ids__exclude_me()
+            return {
+                key_inheritor_filter + '__in': (
+                        employee_attr.employee_staff_ids__exclude_me() +
+                        employee_attr.employee_same_group_ids__exclude_me()
                 )
             }
-        elif np.array_equal(np_all_key, np.array(['2', '4'])):
+
+        if np.array_equal(np_all_key, np.array(['2', '4'])):
             # everybody + skip staff + exclude me if current user has employee related!
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-            if filtering_inheritor is True and self.employee_attr.employee_current_id:
+            data = {key_company_filter: employee_attr.company_id}
+            if is_filtering_inheritor is True and employee_attr.employee_current_id:
                 # push exclude me to data
-                data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(self.employee_attr.employee_current_id)
-        elif np.array_equal(np_all_key, np.array(['3', '4'])):
+                data[key_inheritor_filter + '___exclude'] = str(employee_attr.employee_current_id)
+            return data
+
+        if np.array_equal(np_all_key, np.array(['3', '4'])):
             # everybody + skip same group + exclude me if current user has employee related!
             data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+                key_company_filter: employee_attr.company_id
             }
-            if filtering_inheritor is True and self.employee_attr.employee_current_id:
+            if is_filtering_inheritor is True and employee_attr.employee_current_id:
                 # push exclude me to data
-                data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(
-                    self.employee_attr.employee_current_id
-                )
-        elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
-            # staff + same group + append me
-            data = {
-                self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': (
-                        self.employee_attr.employee_staff_ids__append_me() +
-                        self.employee_attr.employee_same_group_ids__exclude_me()
-                )
-            }
-        elif np.array_equal(np_all_key, np.array(['1', '2', '4'])):
-            # everybody + skip staff + skip exclude me
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-        elif np.array_equal(np_all_key, np.array(['1', '3', '4'])):
-            # everybody + skip same group + skip exclude me
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-        elif np.array_equal(np_all_key, np.array(['2', '3', '4'])):
-            # everybody + skip staff + skip same group + exclude me
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-            if filtering_inheritor is True and self.employee_attr.employee_current_id:
-                # push exclude me to data
-                data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(
-                    self.employee_attr.employee_current_id
-                )
-        elif np.array_equal(np_all_key, np.array(['1', '2', '3', '4'])):
-            # everybody + skip staff + skip same group + skip exclude me
-            data = {
-                self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
-            }
-        else:
-            print('[General] Unbelievable! **Auto filter inherit id in empty list**')
+                data[key_inheritor_filter + '___exclude'] = str(employee_attr.employee_current_id)
+            return data
 
+        if np.array_equal(np_all_key, np.array(['1', '2', '3'])):
+            # staff + same group + append me
+            return {
+                key_inheritor_filter + '__in': (
+                        employee_attr.employee_staff_ids__append_me() +
+                        employee_attr.employee_same_group_ids__exclude_me()
+                )
+            }
+
+        if np.array_equal(np_all_key, np.array(['1', '2', '4'])):
+            # everybody + skip staff + skip exclude me
+            return {key_company_filter: employee_attr.company_id}
+
+        if np.array_equal(np_all_key, np.array(['1', '3', '4'])):
+            # everybody + skip same group + skip exclude me
+            return {key_company_filter: employee_attr.company_id}
+
+        if np.array_equal(np_all_key, np.array(['2', '3', '4'])):
+            # everybody + skip staff + skip same group + exclude me
+            data = {key_company_filter: employee_attr.company_id}
+            if is_filtering_inheritor is True and employee_attr.employee_current_id:
+                # push exclude me to data
+                data[key_inheritor_filter + '___exclude'] = str(employee_attr.employee_current_id)
+            return data
+
+        if np.array_equal(np_all_key, np.array(['1', '2', '3', '4'])):
+            # everybody + skip staff + skip same group + skip exclude me
+            return {key_company_filter: employee_attr.company_id}
+
+        return {}
+
+    def parse_general_with_space(self, permit_of_space, space_config_code, filtering_inheritor):
+        # key_filter = self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in'
+        # value_filter = []
+
+        # data = {}
+        # np_all_key = np.array(list(permit_of_space))
+        #
+        # if settings.DEBUG_PERMIT:
+        #     print('* [GENERAL] np_all_key     :', np_all_key, space_config_code, filtering_inheritor)
+        #
+        # if np.array_equal(np_all_key, np.array([])):
+        #     # empty keep default
+        #     pass
+        # elif np.array_equal(np_all_key, np.array(['1'])):
+        #     # only me | keep default if current user haven't employee related!
+        #     if self.employee_attr.employee_current_id:
+        #         data = {
+        #             self.KEY_FILTER_INHERITOR_ID_IN_MODEL: str(self.employee_attr.employee_current_id)
+        #         }
+        # elif np.array_equal(np_all_key, np.array(['2'])):
+        #     # staff + exclude me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_staff_ids__exclude_me()
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['3'])):
+        #     # same group + exclude me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_same_group_ids__exclude_me()
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['4'])):
+        #     # everybody + exclude me if current user has employee related!
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        #     if filtering_inheritor is True and self.employee_attr.employee_current_id:
+        #         # push exclude me to data
+        #         data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(self.employee_attr.employee_current_id)
+        # elif np.array_equal(np_all_key, np.array(['1', '2'])):
+        #     # staff + append me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_staff_ids__append_me()
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['1', '3'])):
+        #     # same group + append me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': self.employee_attr.employee_same_group_ids__append_me()
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['1', '4'])):
+        #     # everybody + append me (append me in here is not append filter exclude me to data)
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['2', '3'])):
+        #     # staff + same group + exclude me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': (
+        #                 self.employee_attr.employee_staff_ids__exclude_me() +
+        #                 self.employee_attr.employee_same_group_ids__exclude_me()
+        #         )
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['2', '4'])):
+        #     # everybody + skip staff + exclude me if current user has employee related!
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        #     if filtering_inheritor is True and self.employee_attr.employee_current_id:
+        #         # push exclude me to data
+        #         data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(self.employee_attr.employee_current_id)
+        # elif np.array_equal(np_all_key, np.array(['3', '4'])):
+        #     # everybody + skip same group + exclude me if current user has employee related!
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        #     if filtering_inheritor is True and self.employee_attr.employee_current_id:
+        #         # push exclude me to data
+        #         data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(
+        #             self.employee_attr.employee_current_id
+        #         )
+        # elif np.array_equal(np_all_key, np.array(['1', '2', '3'])):
+        #     # staff + same group + append me
+        #     data = {
+        #         self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '__in': (
+        #                 self.employee_attr.employee_staff_ids__append_me() +
+        #                 self.employee_attr.employee_same_group_ids__exclude_me()
+        #         )
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['1', '2', '4'])):
+        #     # everybody + skip staff + skip exclude me
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['1', '3', '4'])):
+        #     # everybody + skip same group + skip exclude me
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        # elif np.array_equal(np_all_key, np.array(['2', '3', '4'])):
+        #     # everybody + skip staff + skip same group + exclude me
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        #     if filtering_inheritor is True and self.employee_attr.employee_current_id:
+        #         # push exclude me to data
+        #         data[self.KEY_FILTER_INHERITOR_ID_IN_MODEL + '___exclude'] = str(
+        #             self.employee_attr.employee_current_id
+        #         )
+        # elif np.array_equal(np_all_key, np.array(['1', '2', '3', '4'])):
+        #     # everybody + skip staff + skip same group + skip exclude me
+        #     data = {
+        #         self.KEY_FILTER_COMPANY_ID_IN_MODEL: self.employee_attr.company_id
+        #     }
+        # else:
+        #     print('[General] Unbelievable! **Auto filter inherit id in empty list**')
+
+        data = self.parse_general_from_custom_key(
+            permit_of_space=permit_of_space,
+            employee_attr=self.employee_attr,
+            key_inheritor_filter=self.KEY_FILTER_INHERITOR_ID_IN_MODEL,
+            key_company_filter=self.KEY_FILTER_COMPANY_ID_IN_MODEL,
+            is_filtering_inheritor=filtering_inheritor,
+        )
         if data and space_config_code == '0':
             if self.opp_enabled:
                 data.update({self.KEY_FILTER_OPP_ID_IN_MODEL + '__isnull': True})
@@ -1652,11 +1772,28 @@ def mask_view(**parent_kwargs):
     if not isinstance(parent_kwargs, dict):
         parent_kwargs = {}
 
+    # fake typehint for parent_kwargs
+    decor_kwargs = {
+        **parent_kwargs,
+        'employee_require': parent_kwargs.get('employee_require', False),
+        'login_require': parent_kwargs.get('login_require', True),
+        'auth_require': parent_kwargs.get('auth_require', False),
+        'bastion_field_require': parent_kwargs.get('bastion_field_require', False),
+        'use_custom_get_filter_auth': parent_kwargs.get('use_custom_get_filter_auth', False),
+        'allow_admin_tenant': parent_kwargs.get('allow_admin_tenant', False),
+        'allow_admin_company': parent_kwargs.get('allow_admin_company', False),
+        'label_code': parent_kwargs.get('label_code', None), 'model_code': parent_kwargs.get('model_code', None),
+        'perm_code': parent_kwargs.get('perm_code', None), 'opp_enabled': parent_kwargs.get('opp_enabled', False),
+        'prj_enabled': parent_kwargs.get('prj_enabled', False),
+        'skip_filter_employee': parent_kwargs.get('skip_filter_employee', False),
+    }
+    # -- fake typehint for parent_kwargs
+
     def decorated(func_view):
         def wrapper(self, *args, **kwargs):  # pylint: disable=R0911
             # init cls checking
             _cls_attr = ViewAttribute(view_this=self)
-            _cls_decor = ViewConfigDecorator(parent_kwargs=parent_kwargs)
+            _cls_decor = ViewConfigDecorator(parent_kwargs=decor_kwargs)
             cls_check = ViewChecking(cls_attr=_cls_attr, cls_decor=_cls_decor)
             setattr(self, 'cls_check', cls_check)  # save cls to view for view using it get some data
 
