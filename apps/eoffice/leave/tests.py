@@ -226,8 +226,8 @@ class LeaveTestCase(AdvanceTestCase):
         time_now = (timezone.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         data_update = {
             'title': 'xin nghỉ làm việc nhà update',
-            'start_day': time_now
+            'start_day': time_now,
         }
         self.client.put(url, data_update, format='json')
-        response = self.client.get(url, data, format='json')
+        response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, 200)

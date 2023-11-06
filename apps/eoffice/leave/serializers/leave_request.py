@@ -42,7 +42,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
         return value
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         company_id = self.context.get('company_id', None)
         tenant_id = self.context.get('tenant_id', None)
