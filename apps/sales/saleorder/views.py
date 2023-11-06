@@ -34,13 +34,6 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        if self.request.query_params.get('filter_quotation', None):
-            return super().get_queryset().select_related(
-                "customer",
-                "opportunity",
-                "quotation",
-                "employee_inherit",
-            ).filter(quotation_id=self.request.query_params['filter_quotation'])
         return super().get_queryset().select_related(
             "customer",
             "opportunity",
