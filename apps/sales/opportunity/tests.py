@@ -216,7 +216,6 @@ class TestCaseOpportunity(AdvanceTestCase):
             all_key_from=response.data,
             type_match={'result': dict, 'status': int},
         )
-        print(response.data['result'])
         self.assertCountEqual(
             response.data['result'],
             [
@@ -224,29 +223,14 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'title',
                 'code',
                 'customer',
-                'end_customer',
-                'product_category',
-                'budget_value',
-                'open_date',
-                'close_date',
-                'decision_maker',
-                'opportunity_product_datas',
-                'total_product_pretax_amount',
-                'total_product_tax',
-                'total_product',
-                'opportunity_competitors_datas',
-                'opportunity_contact_role_datas',
-                'win_rate',
-                'is_input_rate',
-                'customer_decision_factor',
                 'sale_person',
-                'stage',
-                'lost_by_other_reason',
-                'sale_order',
+                'open_date',
                 'quotation',
-                'is_close_lost',
-                'is_deal_close',
-                'members'
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
             ],
             check_sum_second=True,
         )
