@@ -57,7 +57,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                     'id': str(item.id),
                     'fullname': item.fullname,
                     'email': item.email
-                } for item in obj.customer.contact_account_name.all()]
+                } for item in obj.customer.contact_account_name.all()],
+                'payment_term_customer_mapped': {
+                    'id': obj.customer.payment_term_customer_mapped_id,
+                    'title': obj.customer.payment_term_customer_mapped.title,
+                    'code': obj.customer.payment_term_customer_mapped.code
+                } if obj.customer.payment_term_customer_mapped else {}
             }
         return {}
 

@@ -21,7 +21,8 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
     class Meta:
         model = Employee
         fields = (
-            'group__id', 'id'
+            'group__id', 'id',
+            'group_id'
         )
 
     def filter_group__first_manager(self, queryset, name, value):
