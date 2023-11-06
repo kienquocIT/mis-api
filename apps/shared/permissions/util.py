@@ -417,14 +417,22 @@ class PermissionParsedTool:
         return result
 
     @classmethod
-    def push_update_range(cls, result, code_full, range_allowed, main_range=None, range_data=None):
+    def push_update_range(cls, result, code_full, range_allowed, main_range=None, range_data=None, **kwargs):
+        is_depend_on = kwargs.get('is_depend_on', False)
+
         if not range_data:
             range_data = {}
+
+        if is_depend_on is True:
+            range_data.update({'is_depend_on': is_depend_on})
 
         code_full = code_full.lower()
         range_got = cls.confirm_range(range_check=range_allowed, main_range=main_range if main_range else range_allowed)
         if code_full in result:
-            result[code_full].update({range_got: range_data})
+            if range_got in result[code_full]:
+                result[code_full][range_got].update(range_data)
+            else:
+                result[code_full].update({range_got: range_data})
         else:
             result[code_full] = {range_got: range_data}
 
@@ -573,6 +581,7 @@ class PermissionParsedTool:
                                                 result=result if is_main is True else result_general,
                                                 code_full=f"{depend_app_prefix}.{permit_code}",
                                                 range_allowed=permit_range, main_range=parse_item['range'],
+                                                is_depend_on=True,
                                             )
         return result, result_general
 

@@ -1274,3 +1274,15 @@ def update_record_report_revenue():
         date_approved=so.date_created,
     ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
     print('update_record_report_revenue done.')
+
+
+def update_space_range_opp_member():
+    for obj in OpportunitySaleTeamMember.objects.all():
+        for item in obj.permission_by_configured:
+            print(item)
+            if 'space' in item and isinstance(item['space'], int):
+                item['space'] = str(item['space'])
+            if isinstance(item['range'], int):
+                item['range'] = str(item['range'])
+        obj.save()
+    return True
