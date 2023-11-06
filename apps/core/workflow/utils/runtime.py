@@ -453,6 +453,7 @@ class RuntimeStageHandler:
             employee_ids_zones = {}
             objs = []
             log_objs = []
+            objs_created = []
             for emp_id, zone_and_properties in assignee_and_zone.items():
                 obj_assignee = RuntimeAssignee(
                     stage=stage_obj,
@@ -461,6 +462,13 @@ class RuntimeStageHandler:
                 )
                 obj_assignee.before_save(force_insert=True)
                 objs.append(obj_assignee)
+
+                obj_created = RuntimeAssignee.objects.create(
+                    stage=stage_obj,
+                    employee_id=emp_id,
+                    zone_and_properties=zone_and_properties,
+                )
+                objs_created.append(obj_created)
 
                 # create instance log
                 log_obj_tmp = RuntimeLogHandler(
@@ -479,7 +487,7 @@ class RuntimeStageHandler:
                 employee_ids_zones.update({emp_id: zone_and_properties})
 
             # create runtime assignee
-            objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+            # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
             # active hook push notify
             HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
