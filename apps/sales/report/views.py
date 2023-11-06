@@ -15,6 +15,7 @@ class ReportRevenueList(BaseListMixin):
     filterset_fields = {
         'group_inherit_id': ['exact'],
         'employee_inherit_id': ['exact'],
+        'date_approved': ['lte', 'gte'],
     }
     serializer_list = ReportRevenueListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
