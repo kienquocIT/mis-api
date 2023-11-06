@@ -439,9 +439,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         result = {
             'sale_product_cost': obj.sale_cost,
             'default_uom': {
-                'uom_id': obj.sale_default_uom_id,
-                'uom_title': obj.sale_default_uom.title,
-                'uom_code': obj.sale_default_uom.code
+                'id': obj.sale_default_uom_id,
+                'title': obj.sale_default_uom.title,
+                'code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
                 'id': obj.sale_tax_id,
@@ -462,9 +462,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_inventory_information(cls, obj):
         result = {
             'uom': {
-                'uom_id': obj.inventory_uom_id,
-                'uom_title': obj.inventory_uom.title,
-                'uom_code': obj.inventory_uom.code
+                'id': obj.inventory_uom_id,
+                'title': obj.inventory_uom.title,
+                'code': obj.inventory_uom.code
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
@@ -475,9 +475,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         result = {
             'default_uom': {
-                'uom_id': obj.purchase_default_uom_id,
-                'uom_title': obj.purchase_default_uom.title,
-                'uom_code': obj.purchase_default_uom.code
+                'id': obj.purchase_default_uom_id,
+                'title': obj.purchase_default_uom.title,
+                'code': obj.purchase_default_uom.code
             } if obj.purchase_default_uom else {},
             'tax': {
                 'id': obj.purchase_tax_id,

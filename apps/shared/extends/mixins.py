@@ -419,9 +419,7 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def check_permit_one_time(
-            self, employee_inherit_id, opportunity_id, project_id, hidden_field, obj=None, body_data=None
-    ):
+    def check_permit_one_time(self, employee_inherit_id, opportunity_id, project_id, obj=None, body_data=None):
         if project_id and opportunity_id:
             # Opp and Project can't have together value.
             return False
@@ -431,13 +429,11 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 return self.cls_check.permit_cls.config_data__check_by_opp(
                     opp_id=opportunity_id,
                     employee_inherit_id=employee_inherit_id,
-                    hidden_field=hidden_field,
                 )
             if project_id and TypeCheck.check_uuid(project_id):
                 return self.cls_check.permit_cls.config_data__check_by_prj(
                     prj_id=project_id,
                     employee_inherit_id=employee_inherit_id,
-                    hidden_field=hidden_field,
                 )
         if obj and body_data:
             return self.cls_check.permit_cls.config_data__check_obj_and_body_data(obj=obj, body_data=body_data)
@@ -459,7 +455,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         Check permission with Instance Object was got from views
         Args:
-            hidden_field:
             body_data: Request.body_data
             obj: Instance object
 
@@ -467,7 +462,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             True: Allow
             False: Deny
         """
-        hidden_field: list[str] = kwargs.get('hidden_field', [])
         auto_check = kwargs.get('auto_check', False)
         if obj or body_data:
             if self.cls_check.skip_because_match_with_admin is True:
@@ -486,7 +480,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                             employee_inherit_id=employee_inherit_id__obj,
                             opportunity_id=opportunity_id__obj,
                             project_id=project_id__obj,
-                            hidden_field=hidden_field,
                             obj=obj, body_data=body_data,
                         )
                         if state is True:
@@ -503,7 +496,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                                 employee_inherit_id=employee_inherit_id__body,
                                 opportunity_id=opportunity_id__body,
                                 project_id=project_id__body,
-                                hidden_field=hidden_field,
                                 obj=obj, body_data=body_data,
                             )
                         return state
@@ -519,7 +511,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                             employee_inherit_id=employee_inherit_id,
                             opportunity_id=opportunity_id,
                             project_id=project_id,
-                            hidden_field=hidden_field,
                             obj=obj, body_data=body_data,
                         )
                     elif body_data is not None:
@@ -532,7 +523,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                             employee_inherit_id=employee_inherit_id,
                             opportunity_id=opportunity_id,
                             project_id=project_id,
-                            hidden_field=hidden_field,
                             obj=obj, body_data=body_data,
                         )
                     return False
@@ -766,6 +756,22 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def error_login_require(self):
         return ResponseController.unauthorized_401()
 
+    @staticmethod
+    def replace_skip_exist(data: dict, data_replace: dict, key_force_override: list = None):
+        if isinstance(data, dict) and isinstance(data_replace, dict):
+            if not key_force_override:
+                key_force_override = ['tenant_id', 'company_id', 'employee_created_id']
+
+            result = deepcopy(data)
+            for key, value in data_replace.items():
+                if key not in result or key in key_force_override:
+                    result[key] = value
+
+            return result
+        raise ValueError(
+            '[replace_skip_exist] type data and data_replace is incorrect: %s & %s' % (type(data), type(data_replace))
+            )
+
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
@@ -910,7 +916,7 @@ class BaseCreateMixin(BaseMixin):
 
     def create(self, request, *args, **kwargs):
         field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
-        body_data = {**request.data, **field_hidden}
+        body_data = self.replace_skip_exist(data=request.data, data_replace=field_hidden)
 
         state_check = self.manual_check_obj_create(body_data=body_data)
         if state_check is None:
@@ -1006,10 +1012,7 @@ class BaseUpdateMixin(BaseMixin):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
             field_hidden = self.cls_check.attr.setup_hidden(from_view='update')
-            body_data = {
-                **request.data,
-                **field_hidden
-            }
+            body_data = self.replace_skip_exist(data=request.data, data_replace=field_hidden)
 
             state_check = self.manual_check_obj_update(instance=instance, body_data=body_data)
             if state_check is None:

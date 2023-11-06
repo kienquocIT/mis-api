@@ -1157,6 +1157,44 @@ GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG = {
     },
 }
 
+REPORT_REVENUE_APP_CONFIG = {
+    "id": "c3260940-21ff-4929-94fe-43bc4199d38b",
+    "title": "Report Revenue",
+    "code": "reportrevenue",
+    "model_code": "reportrevenue",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1321,6 +1359,10 @@ Application_crm_data = {
         filtering_inheritor=False,
     ),
     "c5de0a7d-bea3-4f39-922f-06a40a060aba": ApplicationConfigFrame(**GOODS_INVENTORY_ADJUSTMENT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c3260940-21ff-4929-94fe-43bc4199d38b": ApplicationConfigFrame(**REPORT_REVENUE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )

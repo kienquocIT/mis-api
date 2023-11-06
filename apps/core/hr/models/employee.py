@@ -279,6 +279,14 @@ class Employee(TenantAbstractModel):
             ]
         return []
 
+    def permit_obj(self):
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj
+
+    def permit_obj__permission_by_configured(self) -> list:
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj.permission_by_configured
+
 
 class SpaceEmployee(SimpleAbstractModel):
     space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
@@ -332,14 +340,8 @@ class PlanEmployeeApp(SimpleAbstractModel):
 class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):
     employee = models.OneToOneField('hr.Employee', on_delete=models.CASCADE)
 
-    def get_app_allowed(self) -> tuple[list[str], list[str]]:
-        app_ids, app_prefix = [], []
-
-        for obj in PlanEmployeeApp.objects.select_related('application').filter(plan_employee__employee=self.employee):
-            app_ids.append(str(obj.application_id))
-            app_prefix.append(obj.application.get_prefix_permit())
-
-        return app_ids, app_prefix
+    def get_app_allowed(self) -> str:
+        return str(self.employee_id)
 
     def sync_parsed_to_main(self):
         self.employee.permissions_parsed = self.permissions_parsed

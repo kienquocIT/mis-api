@@ -98,6 +98,7 @@ INSTALLED_APPS = \
 
         'apps.sales.project',
         'django_celery_beat',  # celery crontab
+        'apps.sales.report',
     ]
 
 MIDDLEWARE = [

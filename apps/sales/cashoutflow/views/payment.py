@@ -66,7 +66,7 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Payment')
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='cashoutflow', model_code='payment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

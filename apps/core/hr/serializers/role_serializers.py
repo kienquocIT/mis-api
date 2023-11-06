@@ -1,6 +1,11 @@
 from rest_framework import serializers
 
+from apps.core.base.models import Application, PlanApplication
+from apps.core.tenant.models import TenantPlan
+
 from apps.core.hr.models import Role, RoleHolder, PlanRole, Employee, RolePermission, PlanRoleApp
+from apps.core.hr.tasks import sync_plan_app_employee
+
 from apps.shared import HRMsg, TypeCheck, call_task_background
 from apps.shared.permissions.util import PermissionController
 
@@ -9,9 +14,6 @@ from .common import (
     set_up_data_plan_app, validate_license_used,
     create_plan_role_update_tenant_plan, PlanAppUpdateSerializer,
 )
-from ..tasks import sync_plan_app_employee
-from ...base.models import Application, PlanApplication
-from ...tenant.models import TenantPlan
 
 
 class RoleListSerializer(serializers.ModelSerializer):
@@ -274,6 +276,7 @@ class RoleDetailSerializer(serializers.ModelSerializer):
                         'option_permission': obj_app.option_permission,
                         'option_allowed': obj_app.option_allowed,
                         'permit_mapping': obj_app.permit_mapping,
+                        'spacing_allow': obj_app.spacing_allow,
                     }
                 )
             result.append(item_data)

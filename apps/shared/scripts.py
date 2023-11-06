@@ -41,6 +41,7 @@ from ..sales.opportunity.models import (
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.report.models import ReportRevenue
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
@@ -1262,6 +1263,31 @@ def update_code_quotation_sale_order_indicator():
         indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
     print('update_code_quotation_sale_order_indicator done.')
 
+
+def update_record_report_revenue():
+    ReportRevenue.objects.all().delete()
+    ReportRevenue.objects.bulk_create([ReportRevenue(
+        tenant_id=so.tenant_id,
+        company_id=so.company_id,
+        sale_order_id=so.id,
+        employee_created_id=so.employee_created_id,
+        employee_inherit_id=so.employee_inherit_id,
+        group_inherit_id=so.employee_inherit.group_id,
+        date_approved=so.date_created,
+    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    print('update_record_report_revenue done.')
+
+
+def update_space_range_opp_member():
+    for obj in OpportunitySaleTeamMember.objects.all():
+        for item in obj.permission_by_configured:
+            print(item)
+            if 'space' in item and isinstance(item['space'], int):
+                item['space'] = str(item['space'])
+            if isinstance(item['range'], int):
+                item['range'] = str(item['range'])
+        obj.save()
+    return True
 
 
 def create_company_setting():
