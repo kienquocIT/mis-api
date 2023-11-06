@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import (
-    AdvancePayment, AdvancePaymentCost,
-    PaymentCostItems,
-    ReturnAdvance, ReturnAdvanceCost
+    AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg, ProductMsg
@@ -36,7 +34,8 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'return_value',
             'remain_value',
             'money_gave',
-            'beneficiary',
+            'creator_name_id',
+            'employee_inherit_id',
             'sale_order_mapped',
             'quotation_mapped',
             'opportunity_mapped',
@@ -195,7 +194,14 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
     if vnd_currency:
         bulk_info = []
         for item in expense_valid_list:
-            bulk_info.append(AdvancePaymentCost(**item, advance_payment=advance_payment_obj, currency=vnd_currency))
+            bulk_info.append(AdvancePaymentCost(
+                **item,
+                advance_payment=advance_payment_obj,
+                sale_order_mapped=advance_payment_obj.sale_order_mapped,
+                quotation_mapped=advance_payment_obj.quotation_mapped,
+                opportunity_mapped=advance_payment_obj.opportunity_mapped,
+                currency=vnd_currency
+            ))
         if len(bulk_info) > 0:
             AdvancePaymentCost.objects.filter(advance_payment=advance_payment_obj).delete()
             AdvancePaymentCost.objects.bulk_create(bulk_info)
@@ -215,12 +221,13 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             'supplier',
             'method',
             'creator_name',
-            'beneficiary',
+            'employee_inherit',
             'return_date',
             'money_gave',
             'opportunity_mapped',
             'quotation_mapped',
-            'sale_order_mapped'
+            'sale_order_mapped',
+            'status'
         )
 
     @classmethod
@@ -264,51 +271,15 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         return advance_payment_obj
 
 
-def get_sale_code_relate(obj):
-    sale_code_list = []
-    if obj.opportunity_mapped_id:
-        sale_code_list = [
-            obj.opportunity_mapped_id,
-            obj.opportunity_mapped.quotation_id,
-            obj.opportunity_mapped.sale_order_id
-        ]
-    if obj.quotation_mapped_id:
-        so_linked = [item.id for item in obj.quotation_mapped.sale_order_quotation.all()]
-        sale_code_list = [
-            obj.quotation_mapped_id,
-            obj.quotation_mapped.opportunity_id,
-            so_linked[0] if len(so_linked) > 0 else None
-        ]
-    if obj.sale_order_mapped_id:
-        sale_code_list = [
-            obj.sale_order_mapped_id,
-            obj.sale_order_mapped.opportunity_id,
-            obj.sale_order_mapped.quotation_id,
-        ]
-    return sale_code_list
-
-
-def get_advance_payment_relate(obj):
-    sale_code_list = get_sale_code_relate(obj)
-    get_ap_mapped = [
-        AdvancePayment.objects.filter(opportunity_mapped__in=sale_code_list),
-        AdvancePayment.objects.filter(quotation_mapped__in=sale_code_list),
-        AdvancePayment.objects.filter(sale_order_mapped__in=sale_code_list)
-    ]
-    all_ap_mapped = [item[0].id if item.count() == 1 else None for item in get_ap_mapped]
-    return all_ap_mapped
-
-
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
     expense_items = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
-    beneficiary = serializers.SerializerMethodField()
+    creator_name = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     advance_value = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
-    payment_value_list = serializers.SerializerMethodField()
-    returned_value_list = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -316,22 +287,27 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'advance_payment_type',
+            'method',
+            'money_gave',
             'date_created',
             'return_date',
-            'money_gave',
             'sale_code_type',
+            'advance_value',
+            'advance_payment_type',
+            'expense_items',
+            'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'opportunity_mapped',
             'supplier',
-            'method',
-            'beneficiary',
-            'expense_items',
-            'advance_value',
-            'payment_value_list',
-            'returned_value_list'
+            'creator_name',
+            'employee_inherit',
         )
+
+    @classmethod
+    def get_advance_value(cls, obj):
+        all_items = obj.advance_payment.all()
+        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
+        return sum_ap_value
 
     @classmethod
     def get_expense_items(cls, obj):
@@ -365,13 +341,23 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         return expense_items
 
     @classmethod
-    def get_sale_order_mapped(cls, obj):
+    def get_opportunity_mapped(cls, obj):
         return {
-            'id': obj.sale_order_mapped_id,
-            'code': obj.sale_order_mapped.code,
-            'title': obj.sale_order_mapped.title,
-            'customer': obj.sale_order_mapped.customer.name,
-        } if obj.sale_order_mapped else {}
+            'id': obj.opportunity_mapped_id,
+            'code': obj.opportunity_mapped.code,
+            'title': obj.opportunity_mapped.title,
+            'customer': obj.opportunity_mapped.customer.name,
+            'sale_order_mapped': {
+                'id': obj.opportunity_mapped.sale_order_id,
+                'code': obj.opportunity_mapped.sale_order.code,
+                'title': obj.opportunity_mapped.sale_order.title,
+            } if obj.opportunity_mapped.sale_order else {},
+            'quotation_mapped': {
+                'id': obj.opportunity_mapped.quotation_id,
+                'code': obj.opportunity_mapped.quotation.code,
+                'title': obj.opportunity_mapped.quotation.title,
+            } if obj.opportunity_mapped.quotation else {}
+        } if obj.opportunity_mapped else {}
 
     @classmethod
     def get_quotation_mapped(cls, obj):
@@ -383,65 +369,18 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
         } if obj.quotation_mapped else {}
 
     @classmethod
-    def get_opportunity_mapped(cls, obj):
+    def get_sale_order_mapped(cls, obj):
         return {
-            'id': obj.opportunity_mapped_id,
-            'code': obj.opportunity_mapped.code,
-            'title': obj.opportunity_mapped.title,
-            'customer': obj.opportunity_mapped.customer.name,
-        } if obj.opportunity_mapped else {}
-
-    @classmethod
-    def get_beneficiary(cls, obj):
-        return {
-            'id': obj.beneficiary_id,
-            'first_name': obj.beneficiary.first_name,
-            'last_name': obj.beneficiary.last_name,
-            'email': obj.beneficiary.email,
-            'full_name': obj.beneficiary.get_full_name(2),
-            'code': obj.beneficiary.code,
-            'is_active': obj.beneficiary.is_active,
-            'group': {
-                'id': obj.beneficiary.group_id,
-                'title': obj.beneficiary.group.title,
-                'code': obj.beneficiary.group.code
-            } if obj.beneficiary.group else {}
-        } if obj.beneficiary else {}
-
-    @classmethod
-    def get_advance_value(cls, obj):
-        all_items = obj.advance_payment.all()
-        sum_ap_value = sum(item.expense_after_tax_price for item in all_items)
-        return sum_ap_value
-
-    @classmethod
-    def get_payment_value_list(cls, obj):
-        sale_code_list = get_sale_code_relate(obj)
-        all_payment_items = PaymentCostItems.objects.filter(sale_code_mapped__in=sale_code_list).select_related(
-            'payment_cost'
-        )
-        converted_value_list = []
-        for item in all_payment_items:
-            converted_value_list.append({
-                'converted_value': item.converted_value,
-                'real_value': item.real_value,
-                'expense_type_id': item.payment_cost.expense_type_id,
-            })
-        return converted_value_list
-
-    @classmethod
-    def get_returned_value_list(cls, obj):
-        all_ap_relate = get_advance_payment_relate(obj)
-        all_returned_items = ReturnAdvanceCost.objects.filter(
-            return_advance_id__in=[item.id for item in ReturnAdvance.objects.filter(advance_payment__in=all_ap_relate)]
-        )
-        returned_value_list = []
-        for item in all_returned_items:
-            returned_value_list.append({
-                'returned_value': item.return_value,
-                'expense_type_id': item.expense_type_id
-            })
-        return returned_value_list
+            'id': obj.sale_order_mapped_id,
+            'code': obj.sale_order_mapped.code,
+            'title': obj.sale_order_mapped.title,
+            'customer': obj.sale_order_mapped.customer.name,
+            'quotation_mapped': {
+                'id': obj.sale_order_mapped.quotation_id,
+                'code': obj.sale_order_mapped.quotation.code,
+                'title': obj.sale_order_mapped.quotation.title,
+            } if obj.sale_order_mapped.quotation else {}
+        } if obj.sale_order_mapped else {}
 
     @classmethod
     def get_supplier(cls, obj):
@@ -475,6 +414,40 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_creator_name(cls, obj):
+        return {
+            'id': obj.creator_name_id,
+            'first_name': obj.creator_name.first_name,
+            'last_name': obj.creator_name.last_name,
+            'email': obj.creator_name.email,
+            'full_name': obj.creator_name.get_full_name(2),
+            'code': obj.creator_name.code,
+            'is_active': obj.creator_name.is_active,
+            'group': {
+                'id': obj.creator_name.group_id,
+                'title': obj.creator_name.group.title,
+                'code': obj.creator_name.group.code
+            } if obj.creator_name.group else {}
+        } if obj.creator_name else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group': {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title,
+                'code': obj.employee_inherit.group.code
+            } if obj.employee_inherit.group else {}
+        } if obj.employee_inherit else {}
+
 
 class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -487,3 +460,37 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
         instance.money_gave = validated_data.get('money_gave', None)
         instance.save()
         return instance
+
+
+class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
+    expense_type = serializers.SerializerMethodField()
+    expense_tax = serializers.SerializerMethodField()
+
+    class Meta:
+        model = AdvancePaymentCost
+        fields = (
+            'expense_name',
+            'expense_type',
+            'expense_uom_name',
+            'expense_quantity',
+            'expense_unit_price',
+            'expense_tax',
+            'expense_tax_price',
+            'expense_subtotal_price',
+            'expense_after_tax_price',
+            'sum_return_value',
+            'sum_converted_value',
+            'sum_real_value'
+        )
+
+    @classmethod
+    def get_expense_type(cls, obj):
+        if obj.expense_type:
+            return {'id': obj.expense_type_id, 'code': obj.expense_type.code, 'title': obj.expense_type.title}
+        return {}
+
+    @classmethod
+    def get_expense_tax(cls, obj):
+        if obj.expense_tax:
+            return {'id': obj.expense_tax_id, 'code': obj.expense_tax.code, 'title': obj.expense_tax.title}
+        return {}

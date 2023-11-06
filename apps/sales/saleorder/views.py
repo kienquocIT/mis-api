@@ -20,6 +20,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'delivery_call': ['exact'],
         'system_status': ['in'],
+        'quotation_id': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
@@ -156,12 +157,13 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class SaleOrderExpenseList(BaseListMixin):
     queryset = SaleOrderExpense.objects
+    filterset_fields = {
+        'sale_order_id': ['exact'],
+    }
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax", "expense").filter(
-            sale_order_id=self.request.query_params['filter_sale_order']
-        )
+        return super().get_queryset().select_related("tax", "expense")
 
     @swagger_auto_schema(
         operation_summary="SaleOrderExpense List",

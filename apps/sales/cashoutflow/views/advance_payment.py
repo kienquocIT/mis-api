@@ -1,8 +1,9 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.cashoutflow.models import AdvancePayment
+from apps.sales.cashoutflow.models import AdvancePayment, AdvancePaymentCost
 from apps.sales.cashoutflow.serializers import (
     AdvancePaymentListSerializer, AdvancePaymentCreateSerializer,
-    AdvancePaymentDetailSerializer, AdvancePaymentUpdateSerializer
+    AdvancePaymentDetailSerializer, AdvancePaymentUpdateSerializer,
+    AdvancePaymentCostListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -72,7 +73,8 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'opportunity_mapped__customer',
             'supplier__owner',
             'supplier__industry',
-            'beneficiary__group'
+            'employee_inherit__group',
+            'creator_name__group'
         )
 
     @swagger_auto_schema(operation_summary='Detail AdvancePayment')
@@ -91,3 +93,24 @@ class AdvancePaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.serializer_class = AdvancePaymentUpdateSerializer
         return self.update(request, *args, **kwargs)
+
+
+class AdvancePaymentCostList(BaseListMixin):
+    queryset = AdvancePaymentCost.objects
+    filterset_fields = {
+        'opportunity_mapped_id': ['exact'],
+        'quotation_mapped_id': ['exact'],
+        'sale_order_mapped_id': ['exact'],
+    }
+    serializer_list = AdvancePaymentCostListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('expense_type', 'expense_tax')
+
+    @swagger_auto_schema(
+        operation_summary="AdvancePaymentCost List",
+        operation_description="Get AdvancePaymentCost List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

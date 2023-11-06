@@ -165,12 +165,13 @@ class QuotationDetail(
 
 class QuotationExpenseList(BaseListMixin):
     queryset = QuotationExpense.objects
+    filterset_fields = {
+        'quotation_id': ['exact'],
+    }
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax").filter(
-            quotation_id=self.request.query_params['filter_quotation']
-        )
+        return super().get_queryset().select_related("tax")
 
     @swagger_auto_schema(
         operation_summary="QuotationExpense List",

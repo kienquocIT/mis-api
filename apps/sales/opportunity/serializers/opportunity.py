@@ -57,6 +57,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -67,8 +69,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'customer',
             'sale_person',
             'open_date',
-            'quotation_id',
-            'sale_order_id',
+            'quotation',
+            'sale_order',
             'opportunity_sale_team_datas',
             'close_date',
             'stage',
@@ -126,6 +128,22 @@ class OpportunityListSerializer(serializers.ModelSerializer):
         if obj.is_deal_close or obj.is_close_lost:
             return True
         return False
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'code': obj.sale_order.code,
+            'title': obj.sale_order.title,
+        } if obj.sale_order else {}
+
+    @classmethod
+    def get_quotation(cls, obj):
+        return {
+            'id': obj.quotation_id,
+            'code': obj.quotation.code,
+            'title': obj.quotation.title,
+        } if obj.quotation else {}
 
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
@@ -815,7 +833,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'quotation',
             'is_close_lost',
             'is_deal_close',
-            'members',
+            'members'
         )
 
     @classmethod
