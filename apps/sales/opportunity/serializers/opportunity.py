@@ -800,7 +800,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'quotation',
             'is_close_lost',
             'is_deal_close',
-            'members',
+            'members'
         )
 
     @classmethod
