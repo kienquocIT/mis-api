@@ -10,8 +10,8 @@ from django.utils import timezone
 from apps.shared import LEAVE_YEARS_SENIORITY
 
 from apps.core.hr.models import Employee
-from .models import LeaveAvailable, LeaveType
 from apps.core.company.models import Company
+from .models import LeaveAvailable, LeaveType
 
 
 @shared_task
