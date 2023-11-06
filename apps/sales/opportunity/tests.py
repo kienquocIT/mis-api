@@ -301,8 +301,20 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'close_date', 'stage', 'is_close', 'opportunity_sale_team_datas'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'open_date',
+                'quotation',
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
+            ],
             check_sum_second=True,
         )
         return response
