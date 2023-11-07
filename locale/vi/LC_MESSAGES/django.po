@@ -491,8 +491,8 @@ msgid "This type can’t delete"
 msgstr "Loại này không thể xoá"
 
 #
-msgid "This year had available"
-msgstr "Năm này đã tồn tại"
+msgid "This year had available or wrong format"
+msgstr "Năm này đã tồn tại hoặc sai định dạng"
 
 #
 msgid "Employee inherit is empty"
@@ -525,3 +525,7 @@ msgstr "Bởi hệ thống"
 #
 msgid "By employee"
 msgstr "Bởi người dùng"
+
+#
+msgid "Quantity number is wrong format"
+msgstr "Số lượng sai định dạng"
