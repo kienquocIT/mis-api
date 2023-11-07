@@ -20,6 +20,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
     filterset_fields = {
         'delivery_call': ['exact'],
         'system_status': ['in'],
+        'quotation_id': ['exact'],
     }
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
@@ -156,6 +157,9 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class SaleOrderExpenseList(BaseListMixin):
     queryset = SaleOrderExpense.objects
+    filterset_fields = {
+        'sale_order_id': ['exact'],
+    }
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):

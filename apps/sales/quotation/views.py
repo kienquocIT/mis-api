@@ -165,6 +165,9 @@ class QuotationDetail(
 
 class QuotationExpenseList(BaseListMixin):
     queryset = QuotationExpense.objects
+    filterset_fields = {
+        'quotation_id': ['exact'],
+    }
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
