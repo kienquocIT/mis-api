@@ -11,7 +11,7 @@ from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSe
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,\
     QuotationListSerializerForCashOutFlow
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
 
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
@@ -168,9 +168,12 @@ class QuotationExpenseList(BaseListMixin):
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax").filter(
-            quotation_id=self.request.query_params['filter_quotation']
-        )
+        filter_quotation = self.request.query_params.get('filter_quotation', None)
+        if filter_quotation and TypeCheck.check_uuid(filter_quotation):
+            return super().get_queryset().select_related("tax").filter(
+                quotation_id=filter_quotation
+            )
+        return QuotationExpense.objects.none()
 
     @swagger_auto_schema(
         operation_summary="QuotationExpense List",

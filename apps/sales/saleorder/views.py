@@ -11,7 +11,7 @@ from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUp
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
     SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer, SaleOrderIndicatorCreateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
 
 
 class SaleOrderList(BaseListMixin, BaseCreateMixin):
@@ -159,9 +159,12 @@ class SaleOrderExpenseList(BaseListMixin):
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related("tax", "expense").filter(
-            sale_order_id=self.request.query_params['filter_sale_order']
-        )
+        filter_sale_order = self.request.query_params.get('filter_sale_order', None)
+        if filter_sale_order and TypeCheck.check_uuid(filter_sale_order):
+            return super().get_queryset().select_related("tax", "expense").filter(
+                sale_order_id=self.request.query_params['filter_sale_order']
+            )
+        return SaleOrderExpense.objects.none()
 
     @swagger_auto_schema(
         operation_summary="SaleOrderExpense List",

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
@@ -43,15 +44,17 @@ class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
-    search_fields = ('title', 'code')
+    # search_fields = ('title', 'code')
     filterset_fields = ('code', 'title')
 
     def get_queryset(self):
-        return super().get_queryset().filter(
-            id__in=PlanApplication.objects.filter(
-                plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
-            ).values_list('application__id', flat=True)
-        )
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
+            return super().get_queryset().filter(
+                id__in=PlanApplication.objects.filter(
+                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+                ).values_list('application__id', flat=True)
+            )
+        return Application.objects.none()
 
     @swagger_auto_schema(
         operation_summary="Tenant Application list",
