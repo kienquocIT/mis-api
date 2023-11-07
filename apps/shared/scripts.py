@@ -15,7 +15,7 @@ from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
+    Payment, PaymentCost,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
@@ -153,16 +153,6 @@ def update_account_billing_address():
 def delete_all_ap():
     AdvancePayment.objects.all().delete()
     AdvancePaymentCost.objects.all().delete()
-    return True
-
-
-def delete_all_payment():
-    Payment.objects.all().delete()
-    PaymentCost.objects.all().delete()
-    PaymentCostItems.objects.all().delete()
-    PaymentCostItemsDetail.objects.all().delete()
-    PaymentSaleOrder.objects.all().delete()
-    PaymentQuotation.objects.all().delete()
     return True
 
 
