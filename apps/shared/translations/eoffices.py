@@ -14,3 +14,7 @@ class LeaveMsg:
     ERROR_EMP_DAYOFF = _('detail request day off is required')
     ERROR_UPDATE_AVAILABLE_ERROR = _('can not update leave available.')
     ERROR_DUPLICATE_HOLIDAY = _('This holiday had available in this year')
+    ERROR_NO_OF_PAID_ERROR = _('Number of paid annual leave days minimum is 12')
+    TYPE_01 = _('By admin')
+    TYPE_02 = _('By system')
+    TYPE_03 = _('By employee')

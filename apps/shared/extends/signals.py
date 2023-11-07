@@ -704,48 +704,48 @@ class ConfigDefaultData:
                     'code': 'MA', 'title': _('Maternity leave-social insurance'), 'paid_by': 2,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
                     'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
-                        'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
-                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                    {
-                        'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
-                        'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
-                        'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
-                    },
-                ]
+                },
+                {
+                    'code': 'SC', 'title': _('Sick yours child-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'SY', 'title': _('Sick yourself-social insurance'), 'paid_by': 2,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
+                    'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'ANPY', 'title': _('Annual leave-previous year balance'), 'paid_by': 1,
+                    'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                },
+                {
+                    'code': 'AN', 'title': _('Annual leave'), 'paid_by': 1,
+                    'balance_control': True, 'is_lt_system': True, 'is_lt_edit': True,
+                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 12, 'prev_year': 0
+                },
+            ]
             temp_leave_type = []
             for item in default_list:
                 temp_leave_type.append(
@@ -828,8 +828,8 @@ class ConfigDefaultData:
         current_date = timezone.now()
         next_year_date = date(current_date.date().year + 1, 1, 1)
         last_day_year = next_year_date - timedelta(days=1)
-
         leave_type = LeaveType.objects.filter(company=self.company_obj)
+
         for item in Employee.objects.filter(is_active=True, company=self.company_obj):
             for l_type in leave_type:
                 if l_type.code == 'AN' or l_type.code != 'ANPY':

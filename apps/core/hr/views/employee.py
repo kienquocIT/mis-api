@@ -118,7 +118,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         return Q(id__in=[])
 
     def get_filter_by_app_other_allow(self, permit_data, employee_attr):
-        permit_or_list  =[]
+        permit_or_list = []
         if 'employee' in permit_data:
             general_data = permit_data['employee'].get('general', None)
             if general_data and isinstance(general_data, dict):

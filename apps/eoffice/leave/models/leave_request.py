@@ -1,7 +1,9 @@
 import json
+from copy import deepcopy
+
 from django.db import models
 
-from apps.shared import DataAbstractModel
+from apps.shared import DataAbstractModel, TYPE_LIST
 
 __all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
@@ -109,51 +111,100 @@ class LeaveRequest(DataAbstractModel):
             code = f"{char}{temper:03d}"
             self.code = code
 
-    def temp_for_test(self):
-        # complate phiếu
-        self.system_status = 3
+    def minus_available(self):
         # trừ leave available và ghi history
         type_list = self.detail_data
         for item in type_list:
             leave_type = item['leave_type']
-            order_by = 'open_year' if leave_type['leave_type']['code'] == 'ANPY' else '-open_year'
-            get_leave = LeaveAvailable.objects.filter(
-                employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
-                check_balance=True
-            ).order_by(order_by)
+            if leave_type['leave_type']['code'] == 'ANPY':
+                get_leave = LeaveAvailable.objects.filter(
+                    employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
+                    check_balance=True
+                ).order_by('open_year')
+            else:
+                get_leave = LeaveAvailable.objects.get(
+                    employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
+                    check_balance=True
+                )
             if not get_leave.exists():
-                return False
+                continue
             leave_result = get_leave.first()
+            # nếu ko phải là phép dư năm trước
             if not leave_type['leave_type']['code'] == 'ANPY':
                 if item['subtotal'] > leave_result.available:
                     raise ValueError("Day off large than leave available")
                 leave_result.used += item['subtotal']
                 leave_result.available = leave_result.total - leave_result.used
-            else:
+            else:  # pylint: disable=R1724
+                # lỗi ko xài else sau continue này đang logic đúng.
                 if item['subtotal'] > leave_result.available:
+                    odd = item['subtotal'] - deepcopy(leave_result.available)
                     leave_result.used += leave_result.available
                     leave_result.available = 0
                     leave_result.save(update_fields=['used', 'total', 'available'])
-                    odd = item['subtotal'] - leave_result.available
+
+                    # create history log
+                    LeaveAvailableHistory.objects.create(
+                        employee_inherit=leave_result.employee_inherit,
+                        tenant=leave_result.tenant,
+                        company=leave_result.company,
+                        leave_available=leave_result,
+                        total=0,
+                        action=2,
+                        quantity=item['subtotal'] - odd,
+                        adjusted_total=item['subtotal'] - odd,
+                        remark=str(TYPE_LIST[2][1]),
+                        type_arises=3
+                    )
                     leave_second = get_leave[1]
                     if odd > leave_second.available:
                         raise ValueError("Day off large than leave available")
                     leave_second.used += odd
                     leave_second.available = leave_second.total - leave_second.used
                     leave_second.save(update_fields=['used', 'total', 'available'])
-                    # return True
+                    LeaveAvailableHistory.objects.create(
+                        employee_inherit=leave_second.employee_inherit,
+                        tenant=leave_second.tenant,
+                        company=leave_second.company,
+                        leave_available=leave_second,
+                        total=leave_second.total - odd,
+                        action=2,
+                        quantity=odd,
+                        adjusted_total=odd,
+                        remark=str(TYPE_LIST[2][1]),
+                        type_arises=3
+                    )
+                    continue
                 else:
                     leave_result.used += item['subtotal']
                     leave_result.available = leave_result.total - leave_result.used
             leave_result.save(update_fields=['used', 'total', 'available'])
+            LeaveAvailableHistory.objects.create(
+                employee_inherit=leave_result.employee_inherit,
+                tenant=leave_result.tenant,
+                company=leave_result.company,
+                leave_available=leave_result,
+                total=leave_result.total - item['subtotal'],
+                action=2,
+                quantity=item['subtotal'],
+                adjusted_total=item['subtotal'],
+                remark=str(TYPE_LIST[2][1]),
+                type_arises=3
+            )
         return True
 
     def before_save(self):
-        self.temp_for_test()
+        self.minus_available()
         self.create_code()
 
     def save(self, *args, **kwargs):
-        self.before_save()
+        if self.system_status in [2, 3]:
+            self.before_save()
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    kwargs['update_fields'].append('code')
+            else:
+                kwargs.update({'update_fields': ['code']})
         super().save(*args, **kwargs)
 
     class Meta:
@@ -236,6 +287,11 @@ class LeaveAvailableHistory(DataAbstractModel):
         verbose_name='Descriptions',
         max_length=500,
         null=True,
+    )
+    type_arises = models.IntegerField(
+        verbose_name="paid by",
+        help_text="Choose paid of leave type",
+        choices=TYPE_LIST,
     )
 
     class Meta:
