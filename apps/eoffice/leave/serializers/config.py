@@ -258,7 +258,8 @@ class WorkingYearSerializer(serializers.ModelSerializer):
         fields = ('id', 'working_calendar', 'config_year')
 
     def validate_config_year(self, value):
-        if WorkingYearConfig.objects.filter(
+
+        if value <= 0 or WorkingYearConfig.objects.filter(
                 working_calendar_id=str(self.initial_data['working_calendar']),
                 config_year=value
         ).exists():

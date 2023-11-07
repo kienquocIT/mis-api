@@ -218,12 +218,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
                     if settings.DEBUG_PERMIT:
                         print('=> config_by_prj                :', '[HAS FROM APP][PRJ]', config_by_prj)
             elif leave_available_flag in [1, '1']:
-                leave_available_config = {
-                    'label_code': 'leave',
-                    'model_code': 'LeaveAvailable'.lower(),
-                    'perm_code': 'view',
-                }
-                permit_data = self.cls_check.permit_cls.config_data__by_code(**leave_available_config, has_roles=True)
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
                 return self.get_filter_by_app_other_allow(permit_data=permit_data, employee_attr=employee_attr)
             else:
                 permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
