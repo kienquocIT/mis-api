@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django.utils import timezone
+from dateutil.relativedelta import relativedelta
 
 from rest_framework import serializers
 
@@ -107,7 +108,6 @@ class LeaveTypeConfigCreateSerializer(serializers.ModelSerializer):
 
 
 class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = LeaveType
         fields = ('leave_config', 'paid_by', 'remark', 'balance_control', 'is_check_expiration', 'no_of_paid',
@@ -130,18 +130,39 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
                 list_upd, fields=['check_balance', 'total', 'used', 'available', 'expiration_date']
             )
         else:
+            # trường hợp else là case khi leave type đó từ ko check thành check quản lý số dư và leave available đó chưa
+            # tạo record cho leave type này
             list_create = []
             for employee in Employee.objects.filter_current(fill__tenant=True, fill__company=True):
-                list_create.append(LeaveAvailable(
-                    leave_type=l_type,
-                    open_year=timezone.now().year,
-                    expiration_date=timezone.now().replace(month=12, day=31) if l_type.is_check_expiration else None,
-                    check_balance=True,
-                    employee_inherit=employee,
-                    company_id=self.context.get('company_id', None),
-                    tenant_id=self.context.get('tenant_id', None)
-                ))
+                list_create.append(
+                    LeaveAvailable(
+                        leave_type=l_type,
+                        open_year=timezone.now().year,
+                        expiration_date=timezone.now().replace(
+                            month=12, day=31
+                        ) if l_type.is_check_expiration else None,
+                        check_balance=True,
+                        employee_inherit=employee,
+                        company_id=self.context.get('company_id', None),
+                        tenant_id=self.context.get('tenant_id', None)
+                    )
+                )
             LeaveAvailable.objects.bulk_create(list_create)
+
+    @classmethod
+    def update_expiration_date(cls, l_type):
+        list_available = LeaveAvailable.objects.filter_current(
+            fill__company=True, fill__tenant=True, leave_type=l_type, leave_type__code='ANPY'
+        )
+        if list_available.exists():
+            list_upd = []
+            for available in list_available:
+                date_current = timezone.now().replace(year=available.open_year, month=12, day=31)
+                available.expiration_date = date_current + relativedelta(months=l_type.prev_year)
+                list_upd.append(available)
+            LeaveAvailable.objects.bulk_update(
+                list_upd, fields=['expiration_date']
+            )
 
     @classmethod
     def validate_leave_config(cls, value):
@@ -162,6 +183,11 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_LEAVE_TITLE})
         return value
 
+    def validate_no_of_paid(self, value):
+        if self.instance.code == 'AN' and value < 12:
+            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_NO_OF_PAID_ERROR})
+        return value
+
     def validate(self, attrs):
         if not self.instance.is_lt_edit:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_UPDATE_LEAVE_TYPE})
@@ -174,6 +200,8 @@ class LeaveTypeConfigUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
+        if instance.code == 'ANPY':
+            self.update_expiration_date(instance)
         if change:
             self.update_available_list(instance)
         return instance
@@ -210,7 +238,8 @@ class WorkingCalendarConfigListSerializer(serializers.ModelSerializer):
                     'config_year': item[1],
                     'list_holiday': WorkingHolidaySerializer(
                         WorkingHolidayConfig.objects.filter(year_id=item[0]).order_by('holiday_date_to')
-                        , many=True).data
+                        , many=True
+                    ).data
                 } for item in filter_list.values_list('id', 'config_year')
             ]
             return list_year
@@ -243,7 +272,7 @@ class WorkingHolidaySerializer(serializers.ModelSerializer):
         fields = ('id', 'holiday_date_to', 'remark', 'year')
 
     def validate(self, validate_data):
-        if not self.instance and WorkingHolidayConfig.objects.filter(
+        if WorkingHolidayConfig.objects.filter(
                 year=validate_data['year'],
                 holiday_date_to=validate_data['holiday_date_to']
         ).exists():

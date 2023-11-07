@@ -77,7 +77,7 @@ class LeaveTypeConfigUpdate(BaseUpdateMixin, LeaveDestroyMixin):
         request_body=LeaveTypeConfigUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True
+        login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {
@@ -91,7 +91,7 @@ class LeaveTypeConfigUpdate(BaseUpdateMixin, LeaveDestroyMixin):
         serializer_delete=LeaveTypeConfigDeleteSerializer
     )
     @mask_view(
-        login_require=True, auth_require=True, allow_admin_company=True
+        login_require=True, auth_require=True, allow_admin_company=True, allow_admin_tenant=True
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)

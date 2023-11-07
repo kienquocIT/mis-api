@@ -184,7 +184,7 @@ class LeaveTestCase(AdvanceTestCase):
                 "leave_type": {
                     "leave_type": {
                         "id": str(leave_type.id),
-                        "code": str(leave_type.code),
+                        "code": str(leave_type.code)
                     }
                 },
                 "morning_shift_f": True,
@@ -226,8 +226,8 @@ class LeaveTestCase(AdvanceTestCase):
         time_now = (timezone.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         data_update = {
             'title': 'xin nghỉ làm việc nhà update',
-            'start_day': time_now
+            'start_day': time_now,
         }
         self.client.put(url, data_update, format='json')
-        response = self.client.get(url, data, format='json')
+        response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, 200)
