@@ -417,7 +417,6 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
     purchase_order_products_data = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -502,12 +501,6 @@ class PurchaseOrderDetailSerializer(serializers.ModelSerializer):
     def get_receipt_status(cls, obj):
         if obj.receipt_status or obj.receipt_status == 0:
             return dict(RECEIPT_STATUS).get(obj.receipt_status)
-        return None
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
         return None
 
 

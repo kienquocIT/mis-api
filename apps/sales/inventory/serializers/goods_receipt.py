@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial
+from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
@@ -232,23 +232,20 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         lot_number_list = []
         serial_number_list = []
         for warehouse in warehouse_data:
-            warehouse_obj = warehouse.get('warehouse', None)
             for lot in warehouse.get('lot_data', []):
                 lot_number_list.append(lot.get('lot_number', None))
             for serial in warehouse.get('serial_data', []):
                 serial_number_list.append(serial.get('serial_number', None))
-            # if ProductWareHouseLot.objects.filter_current(
-            #         fill__tenant=True,
-            #         fill__company=True,
-            #         product_warehouse__warehouse=warehouse_obj,
-            #         product_warehouse__product=product_obj,
-            #         lot_number__in=lot_number_list
-            # ).exists():
-            #     raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+            if ProductWareHouseLot.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    product_warehouse__product=product_obj,
+                    lot_number__in=lot_number_list
+            ).exists():
+                raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
             if ProductWareHouseSerial.objects.filter_current(
                     fill__tenant=True,
                     fill__company=True,
-                    product_warehouse__warehouse=warehouse_obj,
                     product_warehouse__product=product_obj,
                     serial_number__in=serial_number_list
             ).exists():
@@ -414,7 +411,6 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -474,12 +470,6 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             obj.goods_receipt_product_goods_receipt.all(),
             many=True
         ).data
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
 
 class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
