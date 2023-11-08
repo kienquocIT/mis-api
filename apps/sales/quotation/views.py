@@ -11,7 +11,7 @@ from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSe
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,\
     QuotationListSerializerForCashOutFlow
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class QuotationList(BaseListMixin, BaseCreateMixin):

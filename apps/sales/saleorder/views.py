@@ -11,7 +11,7 @@ from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUp
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
     SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer, SaleOrderIndicatorCreateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class SaleOrderList(BaseListMixin, BaseCreateMixin):
