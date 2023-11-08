@@ -1,13 +1,10 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.report.models import ReportRevenue
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer
-from apps.sales.saleorder.models import SaleOrderIndicator
 from apps.shared import mask_view, BaseListMixin
 
 
-# Create your views here.
 # REPORT
 class ReportRevenueList(BaseListMixin):
     queryset = ReportRevenue.objects
@@ -25,13 +22,6 @@ class ReportRevenueList(BaseListMixin):
             "sale_order",
             "sale_order__customer",
             "sale_order__employee_inherit",
-        ).prefetch_related(
-            Prefetch(
-                'sale_order__sale_order_indicator_sale_order',
-                queryset=SaleOrderIndicator.objects.filter(
-                    code__in=['IN0001', 'IN0003', 'IN0005']
-                )
-            )
         )
 
     @swagger_auto_schema(

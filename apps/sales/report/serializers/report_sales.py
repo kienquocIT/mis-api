@@ -5,7 +5,6 @@ from apps.sales.report.models import ReportRevenue
 
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
-    indicator = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportRevenue
@@ -13,7 +12,9 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
             'id',
             'sale_order',
             'date_approved',
-            'indicator',
+            'revenue',
+            'gross_profit',
+            'net_income',
         )
 
     @classmethod
@@ -37,13 +38,3 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
                 'is_active': obj.sale_order.employee_inherit.is_active,
             } if obj.sale_order.employee_inherit else {},
         } if obj.sale_order else {}
-
-    @classmethod
-    def get_indicator(cls, obj):
-        return [
-            {
-                'id': so_indicator.id,
-                'code': so_indicator.code,
-                'indicator_value': so_indicator.indicator_value,
-            } for so_indicator in obj.sale_order.sale_order_indicator_sale_order.all()
-        ]
