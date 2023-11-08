@@ -126,7 +126,7 @@ class LeaveAvailableUpdate(BaseUpdateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveavailable', perm_code="view",
+        label_code='leave', model_code='leaveavailable', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
         self.ser_context = {

@@ -1,3 +1,4 @@
+from django.contrib.auth.models import AnonymousUser
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus
@@ -138,9 +139,12 @@ class OpportunityTaskStatusList(BaseListMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        task_config = self.request.user.company_current.opportunity_task_config_company
-        if task_config:
-            return super().get_queryset().filter(task_config_id=task_config.id)
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'company_current', None):
+            company_current_obj = self.request.user.company_current
+            if company_current_obj and hasattr(company_current_obj, 'opportunity_task_config_company'):
+                task_config = company_current_obj.opportunity_task_config_company
+                if task_config:
+                    return super().get_queryset().filter(task_config_id=task_config.id)
         return super().get_queryset().none()
 
     @swagger_auto_schema(

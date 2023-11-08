@@ -132,7 +132,7 @@ class EmployeeStorageAppAllList(BaseListMixin):
 
 class EmployeeStorageAppSummaryList(BaseMixin):
     queryset = DistributionApplication.objects
-    serializer_class = SummaryApplicationOfEmployeeSerializer
+    serializer_list = SummaryApplicationOfEmployeeSerializer
 
     @staticmethod
     def parse_app_data(obj, key='application'):
