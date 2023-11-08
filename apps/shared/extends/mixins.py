@@ -1,10 +1,16 @@
 from copy import deepcopy
 from typing import Union
+
 from uuid import UUID
+
 from django.conf import settings
+from django.core.exceptions import EmptyResultSet
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
+
 from django_filters import rest_framework as filters
+
 from rest_framework import serializers, exceptions
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
@@ -14,6 +20,8 @@ from apps.core.workflow.tasks_not_use_import import call_log_update_at_zone
 
 from .controllers import ResponseController
 from .utils import TypeCheck
+from .mask_view import ViewChecking
+from .. import KEY_GET_LIST_FROM_APP, SPLIT_CODE_FROM_APP
 from ..translations.server import ServerMsg
 from ..translations import HttpMsg
 from .tasks import call_task_background
@@ -209,11 +217,15 @@ class DataFilterHandler:
 
 
 class BaseMixin(GenericAPIView):  # pylint: disable=R0904
+    # decorator
+    cls_check: ViewChecking = None
+
     cls_auth_check = None  # cls authenticate of mask_view
     ser_context: dict[str, any] = {}
     search_fields: list
     filterset_fields: dict
     filterset_class: filters.FilterSet
+
     # for log
     log_doc_app: str = ''
     log_msg: str = ''
@@ -229,6 +241,174 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     custom_filter_dict: dict = None  # data of get_filter_auth()  ### for function "get_filter_auth" at view class
     state_skip_is_admin: bool = False  # true/false skip auth parse ### for is_admin skip
 
+    # **************************************
+    # Serializers
+    # **************************************
+
+    # --- Serializer Class for GET LIST | has minimal
+    serializer_list: serializers.Serializer = None
+    serializer_list_minimal: serializers.Serializer = None
+
+    def get_serializer_list(self, *args, **kwargs):
+        """
+        Get serializer class for list. Flexible with config view.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        is_minimal = kwargs.pop('is_minimal', None)
+        if is_minimal is True:
+            tmp = getattr(self, 'serializer_list_minimal', None)
+        else:
+            tmp = getattr(self, 'serializer_list', None)
+
+        if tmp and callable(tmp):
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
+        raise ValueError('Serializer list attribute in view must be implement.')
+
+    # --- // Serializer Class for GET LIST | has minimal
+
+    # --- Serializer Class for POST CREATE
+    serializer_create: serializers.Serializer = None
+
+    def get_serializer_create(self, *args, **kwargs):
+        """
+        Get serializer class for create
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        tmp = getattr(self, 'serializer_create', None)
+        if tmp and callable(tmp):
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
+        raise ValueError('Serializer create attribute in view must be implement.')
+
+    # --- // Serializer Class for POST CREATE
+
+    # --- Serializer Class for return data after call POST CREATE (object just created)
+    serializer_detail: serializers.Serializer = None
+
+    def get_serializer_detail(self, *args, **kwargs):
+        """
+        Get serializer class for retrieve.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        tmp = getattr(self, 'serializer_detail', None)
+        if tmp and callable(tmp):
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
+        raise ValueError('Serializer detail attribute in view must be implement.')
+
+    # --- // Serializer Class for return data after call POST CREATE (object just created)
+
+    # --- Serializer Class for PUT data
+    serializer_update: serializers.Serializer = None
+
+    def get_serializer_update(self, *args, **kwargs):
+        """
+        Get serializer class for retrieve.
+        Args:
+            *args:
+            **kwargs:
+
+        Returns:
+
+        """
+        tmp = getattr(self, 'serializer_update', None)
+        if tmp and callable(tmp):
+            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
+        raise ValueError('Serializer update attribute in view must be implement.')
+
+    # --- // Serializer Class for PUT data
+
+    # **************************************
+    # // Serializers
+    # **************************************
+
+    # **************************************
+    # Function customize
+    # **************************************
+
+    # --- Field list auto append to filter of current user request
+    list_hidden_field: list[str] = []
+    list_hidden_field_mapping: dict[str, any] = {}
+
+    def list_hidden_field_manual_before(self) -> dict[str, any]:
+        return {}
+
+    def list_hidden_field_manual_after(self) -> dict[str, any]:
+        return {}
+
+    # --- // Field list auto append to filter of current user request
+
+    # --- Field list was autofill data when POST CREATE
+    create_hidden_field: list[str] = []
+    create_hidden_field_mapping: dict[str, any] = {}
+
+    def create_hidden_field_manual_before(self) -> dict[str, any]:
+        """
+        Autofill return value to create_hidden_fields after generate it to dict
+        """
+        return {}
+
+    def create_hidden_field_manual_after(self) -> dict[str, any]:
+        """
+        Autofill return value to create_hidden_fields after generate it to dict
+        """
+        return {}
+
+    # --- // Field list was autofill data when POST CREATE
+
+    # --- Field list auto append to filtering of current user request
+    retrieve_hidden_field: list[str] = []
+    retrieve_hidden_field_mapping: dict[str, any] = {}
+
+    def retrieve_hidden_field_manual_before(self) -> dict[str, any]:
+        """
+        Autofill return value to retrieve_hidden_fields after generate it to dict
+        """
+        return {}
+
+    def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
+        """
+        Autofill return value to retrieve_hidden_fields after generate it to dict
+        """
+        return {}
+
+    # --- // Field list auto append to filtering of current user request
+
+    # --- Field list was autofill data when PUT UPDATE
+    update_hidden_field: list[str] = []
+    update_hidden_field_mapping: dict[str, any] = {}
+
+    def update_hidden_field_manual_before(self) -> dict[str, any]:
+        """
+        Autofill return value to update_hidden_fields after generate it to dict
+        """
+        return {}
+
+    def update_hidden_field_manual_after(self) -> dict[str, any]:
+        """
+        Autofill return value to update_hidden_fields after generate it to dict
+        """
+        return {}
+
+    # --- // Field list was autofill data when PUT UPDATE
+
+    # **************************************
+    # // Function customize
+    # **************************************
+
     def get_filter_auth(self) -> dict:
         """
         Function customize get_filter (self.filter_dict) in view for special case
@@ -239,100 +419,116 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         return {}
 
-    def check_perm_for_list(self, main_filter: dict) -> dict:
-        """
-        Check permission for get list data
-        Args:
-            main_filter: Filter was appended from config view list_hidden_field
+    def check_permit_one_time(self, employee_inherit_id, opportunity_id, project_id, obj=None, body_data=None):
+        if project_id and opportunity_id:
+            # Opp and Project can't have together value.
+            return False
 
-        Returns:
-            Dict: Filter was converted
-        """
-        really_filter = {}
-        if self.custom_filter_dict:
-            really_filter = self.custom_filter_dict
-        elif self.perm_filter_dict:
-            really_filter = self.perm_filter_dict
-
-        return {
-            **main_filter,
-            **really_filter,
-        }
-
-    def check_perm_for_create(self, body_data: dict, employee_obj=None) -> bool:
-        """
-        Check permission when call create new records
-        Args:
-            body_data: Data was sent from client
-            employee_obj: Employee object | None was auto full from self.request.user.employee_current
-
-        Returns:
-            True: Allow
-            False: Deny
-        """
-        # auto_fill_inherit is turn on when 'employee_inherit_id' in self.create_hidden_field
-        auto_fill_inherit = False
-        if self.create_hidden_field:
-            auto_fill_inherit = (
-                    'employee_inherit_id' in self.create_hidden_field or
-                    'employee_inherit' in self.create_hidden_field
-            )
-
-        if self.state_skip_is_admin is True:
-            return True
-
-        if self.auth_required is True:
-            if not employee_obj:
-                if hasattr(self.request.user, 'employee_current'):
-                    employee_obj = self.request.user.employee_current
-                else:
-                    return False
-
-            if employee_obj and hasattr(employee_obj, 'id') and self.perm_config_mapped:
-                employee_inherit_id = DataFilterHandler.get_employee_inherit_from_body_data(body_data=body_data)
-                if not employee_inherit_id and auto_fill_inherit is True:
-                    employee_inherit_id = employee_obj.id
-                return DataFilterHandler.parse_left_and_compare_check_create(
-                    employee_obj, self.perm_filter_dict,
+        if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
+            if opportunity_id and TypeCheck.check_uuid(opportunity_id):
+                return self.cls_check.permit_cls.config_data__check_by_opp(
+                    opp_id=opportunity_id,
                     employee_inherit_id=employee_inherit_id,
                 )
-            return False
-        return True  # always allow when view has auth_required = False
+            if project_id and TypeCheck.check_uuid(project_id):
+                return self.cls_check.permit_cls.config_data__check_by_prj(
+                    prj_id=project_id,
+                    employee_inherit_id=employee_inherit_id,
+                )
+        if obj and body_data:
+            return self.cls_check.permit_cls.config_data__check_obj_and_body_data(obj=obj, body_data=body_data)
+        elif obj:
+            return self.cls_check.permit_cls.config_data__check_obj(obj=obj)
+        elif body_data:
+            return self.cls_check.permit_cls.config_data__check_body_data(body_data=body_data)
+        return False
 
-    def check_perm_by_obj(self, obj, employee_obj=None) -> bool:
+    def simple_check_state_perm_by_list(self) -> bool:
+        if self.cls_check.skip_because_match_with_admin is True:
+            # allow when flag is_admin skip turn on
+            return True
+        if self.cls_check.permit_cls.config_data__exist:
+            return True
+        return False
+
+    def check_perm_by_obj_or_body_data(self, obj=None, body_data=None, **kwargs) -> bool:  # pylint: disable=R0911
         """
         Check permission with Instance Object was got from views
         Args:
+            body_data: Request.body_data
             obj: Instance object
-            employee_obj: Employee object | None was auto full from self.request.user.employee_current
 
         Returns:
             True: Allow
             False: Deny
         """
-        if self.state_skip_is_admin is True:
-            # allow when flag is_admin skip turn on
-            return True
+        auto_check = kwargs.get('auto_check', False)
+        if obj or body_data:
+            if self.cls_check.skip_because_match_with_admin is True:
+                # allow when flag is_admin skip turn on
+                return True
 
-        if self.auth_required is True:
-            # get required employee_obj when check obj --> for get tenant_id, company_id,... in employee_obj
-            if not employee_obj:
-                if hasattr(self.request.user, 'employee_current'):
-                    employee_obj = self.request.user.employee_current
-                else:
+            if self.cls_check.decor.auth_require is True or auto_check is True:
+                if self.cls_check.permit_cls.config_data__exist:
+                    if obj is not None and body_data is not None:
+                        opportunity_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id__obj = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id__obj = getattr(
+                            obj, self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None,
+                        )
+                        state = self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id__obj,
+                            opportunity_id=opportunity_id__obj,
+                            project_id=project_id__obj,
+                            obj=obj, body_data=body_data,
+                        )
+                        if state is True:
+                            opportunity_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, opportunity_id__obj
+                            )
+                            project_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, project_id__obj
+                            )
+                            employee_inherit_id__body = body_data.get(
+                                self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, employee_inherit_id__obj
+                            )
+                            state = self.check_permit_one_time(
+                                employee_inherit_id=employee_inherit_id__body,
+                                opportunity_id=opportunity_id__body,
+                                project_id=project_id__body,
+                                obj=obj, body_data=body_data,
+                            )
+                        return state
+                    elif obj is not None:
+                        opportunity_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = getattr(obj, self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = getattr(
+                            obj,
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL,
+                            None,
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            obj=obj, body_data=body_data,
+                        )
+                    elif body_data is not None:
+                        opportunity_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_OPP_ID_IN_MODEL, None)
+                        project_id = body_data.get(self.cls_check.permit_cls.KEY_FILTER_PRJ_ID_IN_MODEL, None)
+                        employee_inherit_id = body_data.get(
+                            self.cls_check.permit_cls.KEY_FILTER_INHERITOR_ID_IN_MODEL, None
+                        )
+                        return self.check_permit_one_time(
+                            employee_inherit_id=employee_inherit_id,
+                            opportunity_id=opportunity_id,
+                            project_id=project_id,
+                            obj=obj, body_data=body_data,
+                        )
                     return False
-
-            # check permission when has perm configured or perm by ids | else auto False
-            if employee_obj and hasattr(employee_obj, 'id') and (self.perm_config_mapped or self.perm_by_ids_mapped):
-                return DataFilterHandler.parse_left_and_compare_has_obj(
-                    instance_obj=obj,
-                    employee_obj=employee_obj,
-                    perm_filter_dict=self.perm_filter_dict,
-                    perm_filter_by_ids=self.perm_filter_ids,
-                    employee_inherit_id=getattr(obj, 'employee_inherit_id', None),
-                )
-            return False
-        return True  # always allow when view has auth_required = False
+                return False
+            return True
+        return False
 
     class Meta:
         abstract = True
@@ -419,74 +615,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
         return minimal, skip_auth
 
-    def setup_create_field_hidden(self, user) -> dict:
-        """
-        Fill data of hidden fields when create
-        Args:
-            user:
-
-        Returns:
-
-        """
-        return self.setup_hidden(self.create_hidden_field, user)
-
-    def setup_update_field_hidden(self, user) -> dict:
-        """
-        Fill data of hidden fields when create
-        Args:
-            user:
-
-        Returns:
-
-        """
-        return self.setup_hidden(self.update_hidden_field, user)
-
-    def setup_list_field_hidden(self, user) -> dict:
-        """
-        Fill data of hidden fields when list data
-        Args:
-            user:
-
-        Returns:
-
-        """
-        return {
-            **self.check_perm_for_list(self.setup_hidden(self.list_hidden_field, user)),
-            **self.filter_append_manual(),  # manual filter override function filter_append_manual() : dict
-        }
-
-    def setup_retrieve_field_hidden(self, user) -> dict:
-        """
-        Fill data of hidden fields when retrieve data
-        Args:
-            user:
-
-        Returns:
-
-        """
-        return {
-            **self.setup_hidden(self.retrieve_hidden_field, user),
-            **self.filter_append_manual(),  # manual filter override function filter_append_manual() : dict
-        }
-
-    # Serializer Class for GET LIST
-    serializer_list: serializers.Serializer = None
-    # Serializer Class for GET LIST with MINIMAL DATA **NOT APPLY FOR CASE HAD RELATE**
-    serializer_list_minimal: serializers.Serializer = None
-    # Serializer Class for POST CREATE
-    serializer_create: serializers.Serializer = None
-    # Serializer Class for return data after call POST CREATE (object just created)
-    serializer_detail: serializers.Serializer = None
-    # Serializer Class for PUT data
-    serializer_update: serializers.Serializer = None
-    # Field list auto append to filter of current user request
-    list_hidden_field: list[str] = []
-    # Field list was autofill data when POST CREATE
-    create_hidden_field: list[str] = []
-    # Field list was autofill data when PUT UPDATE
-    update_hidden_field: list[str] = []
-    # Field list auto append to filtering of current user request
-    retrieve_hidden_field: list[str] = []
     # Flag is enable cache queryset of view
     use_cache_queryset: bool = False
     # Flag is enable cache queryset minimal view **NOT APPLY FOR CASE HAD RELATE**
@@ -499,73 +627,24 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             kwargs['context'] = self.ser_context
         return kwargs
 
-    def get_serializer_list(self, *args, **kwargs):
-        """
-        Get serializer class for list. Flexible with config view.
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        is_minimal = kwargs.pop('is_minimal', None)
-        if is_minimal is True:
-            tmp = getattr(self, 'serializer_list_minimal', None)
-        else:
-            tmp = getattr(self, 'serializer_list', None)
-
-        if tmp and callable(tmp):
-            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
-        raise ValueError('Serializer list attribute in view must be implement.')
-
-    def get_serializer_create(self, *args, **kwargs):
-        """
-        Get serializer class for create
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        tmp = getattr(self, 'serializer_create', None)
-        if tmp and callable(tmp):
-            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
-        raise ValueError('Serializer create attribute in view must be implement.')
-
-    def get_serializer_detail(self, *args, **kwargs):
-        """
-        Get serializer class for retrieve.
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        tmp = getattr(self, 'serializer_detail', None)
-        if tmp and callable(tmp):
-            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
-        raise ValueError('Serializer detail attribute in view must be implement.')
-
-    def get_serializer_update(self, *args, **kwargs):
-        """
-        Get serializer class for retrieve.
-        Args:
-            *args:
-            **kwargs:
-
-        Returns:
-
-        """
-        tmp = getattr(self, 'serializer_update', None)
-        if tmp and callable(tmp):
-            return tmp(*args, **self.parse_ser_kwargs(kwargs))  # pylint: disable=E1102
-        raise ValueError('Serializer update attribute in view must be implement.')
-
     def filter_append_manual(self) -> dict:
         return {}
+
+    @property
+    def get_object__field_hidden(self):
+        return self.cls_check.attr.setup_hidden(from_view='retrieve')
+
+    def get_lookup_url_kwarg(self) -> dict:
+        # Perform the lookup filtering.
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+
+        assert lookup_url_kwarg in self.kwargs, (
+            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
+            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.'
+        )
+
+        return {self.lookup_field: self.kwargs[lookup_url_kwarg]}
 
     def get_object(self):
         """
@@ -578,15 +657,6 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
         """
         queryset = self.filter_queryset(self.get_queryset())
 
-        # Perform the lookup filtering.
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-
-        assert lookup_url_kwarg in self.kwargs, (
-            f'Expected view {self.__class__.__name__} to be called with a URL keyword argument '
-            f'named "{lookup_url_kwarg}". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.'
-        )
-
         if not hasattr(queryset, "get"):
             klass__name = (
                 queryset.__name__ if isinstance(queryset, type) else queryset.__class__.__name__
@@ -596,17 +666,18 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
                 f"or QuerySet, not '{klass__name}'."
             )
         try:
-            filter_kwargs = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
+            field_hidden = self.get_object__field_hidden
+            filter_kwargs = self.get_lookup_url_kwarg()
             if self.query_extend_base_model:
                 obj = queryset.get(
                     **filter_kwargs,
-                    **self.setup_retrieve_field_hidden(user=self.request.user),
+                    **field_hidden,
                     force_cache=self.use_cache_object
                 )
             else:
                 obj = queryset.get(
                     **filter_kwargs,
-                    **self.setup_retrieve_field_hidden(user=self.request.user),
+                    **field_hidden,
                 )
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
@@ -685,6 +756,22 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
     def error_login_require(self):
         return ResponseController.unauthorized_401()
 
+    @staticmethod
+    def replace_skip_exist(data: dict, data_replace: dict, key_force_override: list = None):
+        if isinstance(data, dict) and isinstance(data_replace, dict):
+            if not key_force_override:
+                key_force_override = ['tenant_id', 'company_id', 'employee_created_id']
+
+            result = deepcopy(data)
+            for key, value in data_replace.items():
+                if key not in result or key in key_force_override:
+                    result[key] = value
+
+            return result
+        raise ValueError(
+            '[replace_skip_exist] type data and data_replace is incorrect: %s & %s' % (type(data), type(data_replace))
+            )
+
 
 class BaseListMixin(BaseMixin):
     LIST_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id']  # DataAbstract
@@ -697,34 +784,75 @@ class BaseListMixin(BaseMixin):
     def get_object(self):
         raise TypeError("Not allow use get_object() for List Mixin.")
 
-    def setup_filter_queryset(self, user, filter_kwargs, is_minial_queryset):
-        """
-        Get queryset switch any case of minimal and caching.
-        Args:
-            user: User Obj
-            filter_kwargs: kwargs of view mixin
-            is_minial_queryset: boolean | enable minimal queryset
+    def get_query_params(self) -> dict:
+        return self.request.query_params.dict()
 
-        Returns:
-            QuerySet, PageQuerySet
+    def has_get_list_from_app(self) -> (bool, Union[list[str], None]):
         """
-        filter_kwargs.update(self.setup_list_field_hidden(user))
+        Return state from_app and data if exist
+        """
+        query_params = self.get_query_params()
+        if KEY_GET_LIST_FROM_APP in query_params:
+            from_app = query_params.get(KEY_GET_LIST_FROM_APP, None)
+            if from_app and isinstance(from_app, str) and SPLIT_CODE_FROM_APP in from_app and len(from_app) > 3:
+                arr_from_app = [ite.strip() for ite in from_app.split(SPLIT_CODE_FROM_APP)]
+                if len(arr_from_app) == 3:
+                    return True, arr_from_app
+            return True, None
+        return False, None
 
-        if is_minial_queryset is True:
+    def filter_kwargs_q__from_config(self) -> Q:
+        """
+        Parse config mapped with view to Q() (use for filter in queryset)
+        """
+        return self.cls_check.permit_cls.config_data__to_q
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:
+        """
+        Parse config mapped from_app to Q() (use for filter in queryset - for DD another feature)
+        """
+        return Q(id__in=[])
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+        return self.filter_kwargs_q__from_config()
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            **self.kwargs,
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
+
+    def get_queryset_and_filter_queryset(self, is_minimal, filter_kwargs, filter_kwargs_q):
+        if is_minimal is True:
             if self.use_cache_minimal and self.query_extend_base_model:
-                queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs)).cache()
+                queryset = self.filter_queryset(
+                    self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
+                ).cache()
             else:
-                queryset = self.filter_queryset(self.queryset.filter(**filter_kwargs))
+                queryset = self.filter_queryset(
+                    self.queryset.filter(**filter_kwargs).filter(filter_kwargs_q)
+                )
         else:
             if self.use_cache_queryset and self.query_extend_base_model:
-                queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs)).cache()
+                queryset = self.filter_queryset(
+                    self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
+                ).cache()
             else:
-                queryset = self.filter_queryset(self.get_queryset().filter(**filter_kwargs))
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            return None, page
-        return queryset, None
+                queryset = self.filter_queryset(
+                    self.get_queryset().filter(**filter_kwargs).filter(filter_kwargs_q)
+                )
+        return queryset
 
     def list(self, request, *args, **kwargs):
         """
@@ -738,11 +866,29 @@ class BaseListMixin(BaseMixin):
 
         """
         is_minimal, _is_skip_auth = self.parse_header(request)
-        queryset, page = self.setup_filter_queryset(
-            user=request.user,
-            filter_kwargs=kwargs,
-            is_minial_queryset=is_minimal
+
+        filter_kwargs_q = self.filter_kwargs_q
+        if isinstance(filter_kwargs_q, Response):
+            return filter_kwargs_q
+
+        filter_kwargs = self.filter_kwargs
+        if settings.DEBUG_PERMIT:
+            print('# MIXINS.LIST              :', request.path)
+            print('#  - filter_kwargs_q       :', filter_kwargs_q)
+            print('#  - filter_kwargs         :', filter_kwargs)
+        queryset = self.get_queryset_and_filter_queryset(
+            is_minimal=is_minimal,
+            filter_kwargs=filter_kwargs,
+            filter_kwargs_q=filter_kwargs_q
         )
+        if settings.DEBUG_PERMIT:
+            try:
+                if str(queryset.query):
+                    print('#  - SQL                   :', queryset.query)
+            except EmptyResultSet:
+                print('#  - SQL                   :', 'EMPTY')
+
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer_list(page, many=True, is_minimal=is_minimal)
             return self.get_paginated_response(serializer.data)
@@ -759,15 +905,31 @@ class BaseCreateMixin(BaseMixin):
     ]  # DataAbstract
     CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']  # MasterData
 
+    def manual_check_obj_create(self, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
+    def get_serializer_detail_return(self, obj):
+        return self.get_serializer_detail(obj).data
+
     def create(self, request, *args, **kwargs):
-        if self.check_perm_for_create(body_data=request.data):
+        field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
+        body_data = self.replace_skip_exist(data=request.data, data_replace=field_hidden)
+
+        state_check = self.manual_check_obj_create(body_data=body_data)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(
+                body_data=body_data, hidden_field=self.create_hidden_field
+            )
+        if state_check is True:
             log_data = deepcopy(request.data)
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
-            field_hidden = self.setup_create_field_hidden(request.user)
             obj = self.perform_create(serializer, extras=field_hidden)
             self.write_log(doc_obj=obj, request_data=log_data)
-            return ResponseController.created_201(data=self.get_serializer_detail(obj).data)
+            return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
 
     @staticmethod
@@ -790,9 +952,18 @@ class BaseRetrieveMixin(BaseMixin):
     def retrieve_empty(cls) -> Response:
         return ResponseController.success_200(data={}, key_data='result')
 
+    def manual_check_obj_retrieve(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self.check_perm_by_obj(obj=instance):
+        state_check = self.manual_check_obj_retrieve(instance=instance)
+        if state_check is None:
+            state_check = self.check_perm_by_obj_or_body_data(obj=instance, hidden_field=self.retrieve_hidden_field)
+        if state_check is True:
             serializer = self.get_serializer_detail(instance)
             return ResponseController.success_200(data=serializer.data, key_data='result')
         return ResponseController.forbidden_403()
@@ -831,16 +1002,31 @@ class BaseUpdateMixin(BaseMixin):
                 # check permission default | wait implement so it is True
         return request_data, False, None
 
+    def manual_check_obj_update(self, instance, body_data, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            if self.check_perm_by_obj(obj=instance):
+            field_hidden = self.cls_check.attr.setup_hidden(from_view='update')
+            body_data = self.replace_skip_exist(data=request.data, data_replace=field_hidden)
+
+            state_check = self.manual_check_obj_update(instance=instance, body_data=body_data)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    body_data=body_data,
+                    hidden_field=self.update_hidden_field,
+                )
+            if state_check is True:
                 body_data, partial, task_id = self.parsed_body(
                     instance=instance, request_data=request.data, user=request.user
                 )
                 serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
                 serializer.is_valid(raise_exception=True)
-                field_hidden = self.setup_create_field_hidden(request.user)
                 self.perform_update(serializer, extras=field_hidden)
                 # request force write log
                 self.write_log(doc_obj=instance, request_data=body_data, change_partial=partial, task_id=task_id)
@@ -872,11 +1058,23 @@ class BaseUpdateMixin(BaseMixin):
 
 
 class BaseDestroyMixin(BaseMixin):
+    def manual_check_obj_destroy(self, instance, **kwargs) -> Union[None, bool]:
+        """
+        Manual check object | None: continue auto check, Bool: Return by state
+        """
+        return None
+
     def destroy(self, request, *args, **kwargs):
         is_purge = kwargs.pop('is_purge', False)
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
-            if self.check_perm_by_obj(obj=instance):
+            state_check = self.manual_check_obj_destroy(instance=instance)
+            if state_check is None:
+                state_check = self.check_perm_by_obj_or_body_data(
+                    obj=instance,
+                    hidden_field=self.retrieve_hidden_field,
+                )
+            if state_check is True:
                 self.perform_destroy(instance, is_purge)
                 return ResponseController.no_content_204()
             return ResponseController.forbidden_403()
@@ -892,5 +1090,5 @@ class BaseDestroyMixin(BaseMixin):
         except serializers.ValidationError as err:
             raise err
         except Exception as err:
-            print(err)
+            print('[perform_destroy] ERR', err)
         raise serializers.ValidationError({'detail': ServerMsg.UNDEFINED_ERR})

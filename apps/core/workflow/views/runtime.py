@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
@@ -54,10 +55,9 @@ class RuntimeMeListView(BaseListMixin):
             'stage_currents__assignee_of_runtime_stage'
         )
 
-    def get_filter_auth(self) -> dict:
-        return {
-            'doc_employee_created_id': self.request.user.employee_current_id
-        }
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(doc_employee_created_id=self.request.user.employee_current_id)
 
     @swagger_auto_schema(operation_summary='Runtime of me')
     @mask_view(login_require=True, auth_require=False, employee_require=True, use_custom_get_filter_auth=True)
@@ -122,10 +122,9 @@ class RuntimeAssigneeList(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related('stage', 'stage__runtime', 'employee')
 
-    def get_filter_auth(self) -> dict:
-        return {
-            'employee_id': self.request.user.employee_current_id
-        }
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(employee_id=self.request.user.employee_current_id)
 
     def error_employee_require(self):
         return self.list_empty()

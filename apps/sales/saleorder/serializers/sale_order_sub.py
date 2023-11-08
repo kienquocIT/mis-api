@@ -147,14 +147,18 @@ class SaleOrderCommonCreate:
         for sale_order_indicator in validated_data['sale_order_indicators_data']:
             # indicator_id = sale_order_indicator.get('indicator', {}).get('id')
             quotation_indicator_id = sale_order_indicator.get('quotation_indicator', {}).get('id')
+            quotation_indicator_code = sale_order_indicator.get('quotation_indicator', {}).get('code')
             # if indicator_id:
             if quotation_indicator_id:
                 # del sale_order_indicator['indicator']
                 del sale_order_indicator['quotation_indicator']
                 SaleOrderIndicator.objects.create(
                     sale_order=instance,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     # indicator_id=indicator_id,
                     quotation_indicator_id=quotation_indicator_id,
+                    code=quotation_indicator_code,
                     **sale_order_indicator
                 )
         return True
@@ -257,7 +261,7 @@ class SaleOrderCommonValidate:
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 

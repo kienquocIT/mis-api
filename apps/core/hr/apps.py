@@ -8,3 +8,5 @@ class HrConfig(AppConfig):
     def ready(self):
         # pylint: disable=import-outside-toplevel / C0415, unused-import / W0611
         from apps.shared.cache_destroy import destroy_cache
+        from apps.shared.extends.signals import destroy_employee_or_role
+        from apps.shared.extends.signals import new_employee_or_role

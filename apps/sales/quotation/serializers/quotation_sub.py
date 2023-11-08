@@ -168,11 +168,15 @@ class QuotationCommonCreate:
     def create_indicator(cls, validated_data, instance):
         for quotation_indicator in validated_data['quotation_indicators_data']:
             indicator_id = quotation_indicator.get('indicator', {}).get('id')
+            indicator_code = quotation_indicator.get('indicator', {}).get('code')
             if indicator_id:
                 del quotation_indicator['indicator']
                 QuotationIndicator.objects.create(
                     quotation=instance,
+                    tenant_id=instance.tenant_id,
+                    company_id=instance.company_id,
                     indicator_id=indicator_id,
+                    code=indicator_code,
                     **quotation_indicator
                 )
         return True
@@ -295,7 +299,7 @@ class QuotationCommonValidate:
                 fill__tenant=True,
                 fill__company=True,
                 id=value
-            )
+            ).id
         except Opportunity.DoesNotExist:
             raise serializers.ValidationError({'opportunity': SaleMsg.OPPORTUNITY_NOT_EXIST})
 
@@ -484,6 +488,7 @@ class QuotationCommonValidate:
             return {
                 'id': str(indicator.id),
                 'title': indicator.title,
+                'code': indicator.code,
                 'remark': indicator.remark
             }
         except QuotationIndicatorConfig.DoesNotExist:
@@ -648,7 +653,32 @@ class QuotationProductsListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.promotion_id,
             'title': obj.promotion.title,
-            'code': obj.promotion.code
+            'code': obj.promotion.code,
+            'valid_date_start': obj.promotion.valid_date_start,
+            'valid_date_end': obj.promotion.valid_date_end,
+            'remark': obj.promotion.remark,
+            'currency': {
+                'id': obj.promotion.currency_id,
+                'title': obj.promotion.currency.title,
+                'abbreviation': obj.promotion.currency.abbreviation,
+            } if obj.promotion.currency else {},
+            'customer_type': obj.promotion.customer_type,
+            'customer_by_list': obj.promotion.customer_by_list,
+            'customer_by_condition': obj.promotion.customer_by_condition,
+            'customer_remark': obj.promotion.customer_remark,
+            'is_discount': obj.promotion.is_discount,
+            'is_gift': obj.promotion.is_gift,
+            'discount_method': obj.promotion.discount_method,
+            'gift_method': obj.promotion.gift_method,
+            'sale_order_used': [
+                {
+                    'customer_id': order_used[0],
+                    'date_created': order_used[1],
+                } for order_used in obj.promotion.sale_order_product_promotion.values_list(
+                    'sale_order__customer_id',
+                    'sale_order__date_created'
+                )
+            ]
         } if obj.promotion else {}
 
     @classmethod

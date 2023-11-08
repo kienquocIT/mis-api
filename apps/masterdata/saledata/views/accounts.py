@@ -191,7 +191,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
         return super().get_queryset().select_related(
             'industry', 'owner', 'payment_term_customer_mapped', 'payment_term_supplier_mapped'
         ).prefetch_related(
-            'contact_account_name'
+            'contact_account_name', 'account_banks_mapped'
         )
 
     @swagger_auto_schema(
@@ -226,7 +226,7 @@ class AccountDetail(BaseRetrieveMixin, BaseUpdateMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('industry', 'owner')
+        return super().get_queryset().select_related('industry', 'owner', 'payment_term_supplier_mapped')
 
     @swagger_auto_schema(operation_summary='Detail Account')
     @mask_view(
@@ -274,6 +274,7 @@ class AccountsMapEmployeesList(BaseListMixin):
 # Account List use for Sale Apps
 class AccountForSaleList(BaseListMixin):
     queryset = Account.objects
+    search_fields = ['name']
     serializer_list = AccountForSaleListSerializer
     serializer_detail = AccountDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-# from apps.core.workflow.tasks import decorator_run_workflow
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSerial, ProductWareHouseLot
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
@@ -34,20 +35,29 @@ class GoodsReceiptSerialListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptLotSerializer(serializers.ModelSerializer):
+    lot = serializers.UUIDField(required=False, allow_null=True)
+
     class Meta:
         model = GoodsReceiptLot
         fields = (
+            'lot',
             'lot_number',
             'quantity_import',
             'expire_date',
             'manufacture_date',
         )
 
+    @classmethod
+    def validate_lot(cls, value):
+        return GoodsReceiptCommonValidate.validate_lot(value=value)
+
 
 class GoodsReceiptLotListSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = GoodsReceiptLot
         fields = (
+            'lot_id',
             'lot_number',
             'quantity_import',
             'expire_date',
@@ -106,16 +116,23 @@ class GoodsReceiptWarehouseListSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptRequestProductSerializer(serializers.ModelSerializer):
-    purchase_request_product = serializers.UUIDField()
+    purchase_order_request_product = serializers.UUIDField()
+    purchase_request_product = serializers.UUIDField(required=False, allow_null=True)
     warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceiptRequestProduct
         fields = (
+            'purchase_order_request_product',
             'purchase_request_product',
             'quantity_import',
             'warehouse_data',
+            'is_stock',
         )
+
+    @classmethod
+    def validate_purchase_order_request_product(cls, value):
+        return GoodsReceiptCommonValidate.validate_purchase_order_request_product(value=value)
 
     @classmethod
     def validate_purchase_request_product(cls, value):
@@ -160,7 +177,11 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField(required=False)
     uom = serializers.UUIDField(required=False)
     tax = serializers.UUIDField(required=False)
+    warehouse = serializers.UUIDField(required=False)
+    product_unit_price = serializers.FloatField()
+    quantity_import = serializers.FloatField()
     purchase_request_products_data = GoodsReceiptRequestProductSerializer(many=True, required=False)
+    warehouse_data = GoodsReceiptWarehouseSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceiptProduct
@@ -169,6 +190,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'tax',
+            'warehouse',
             'quantity_import',
             'product_title',
             'product_code',
@@ -178,6 +200,7 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
+            'warehouse_data'
         )
 
     @classmethod
@@ -196,12 +219,60 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
     def validate_tax(cls, value):
         return GoodsReceiptCommonValidate.validate_tax(value=value)
 
+    @classmethod
+    def validate_warehouse(cls, value):
+        return GoodsReceiptCommonValidate.validate_warehouse(value=value)
+
+    @classmethod
+    def validate_quantity_import(cls, value):
+        return GoodsReceiptCommonValidate.validate_quantity_import(value=value)
+
+    @classmethod
+    def check_lot_serial_exist(cls, warehouse_data, product_obj):
+        lot_number_list = []
+        serial_number_list = []
+        for warehouse in warehouse_data:
+            for lot in warehouse.get('lot_data', []):
+                lot_number_list.append(lot.get('lot_number', None))
+            for serial in warehouse.get('serial_data', []):
+                serial_number_list.append(serial.get('serial_number', None))
+            if ProductWareHouseLot.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    product_warehouse__product=product_obj,
+                    lot_number__in=lot_number_list
+            ).exists():
+                raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+            if ProductWareHouseSerial.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    product_warehouse__product=product_obj,
+                    serial_number__in=serial_number_list
+            ).exists():
+                raise serializers.ValidationError({'serial_number': 'Serial number is exist.'})
+        return True
+
+    def validate(self, validate_data):
+        if 'product' in validate_data:
+            warehouse_data = []
+            if 'warehouse_data' in validate_data:
+                warehouse_data = validate_data['warehouse_data']
+            if 'purchase_request_products_data' in validate_data:
+                for pr_product in validate_data['purchase_request_products_data']:
+                    if 'warehouse_data' in pr_product:
+                        warehouse_data = pr_product['warehouse_data']
+                        self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
+            self.check_lot_serial_exist(warehouse_data=warehouse_data, product_obj=validate_data['product'])
+        return validate_data
+
 
 class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     tax = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
     purchase_request_products_data = serializers.SerializerMethodField()
+    warehouse_data = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceiptProduct
@@ -211,6 +282,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'tax',
+            'warehouse',
             'quantity_import',
             'product_title',
             'product_code',
@@ -220,6 +292,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
             'product_subtotal_price_after_tax',
             'order',
             'purchase_request_products_data',
+            'warehouse_data',
         )
 
     @classmethod
@@ -248,7 +321,7 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
                     'ratio': obj.uom.group.uom_reference.ratio,
                     'rounding': obj.uom.group.uom_reference.rounding,
                 } if obj.uom.group.uom_reference else {},
-            },
+            } if obj.uom.group else {},
             'ratio': obj.uom.ratio,
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
@@ -264,16 +337,29 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
         } if obj.tax else {}
 
     @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
     def get_purchase_request_products_data(cls, obj):
         return GoodsReceiptRequestProductListSerializer(
             obj.goods_receipt_request_product_gr_product.all(),
             many=True
         ).data
 
+    @classmethod
+    def get_warehouse_data(cls, obj):
+        return GoodsReceiptWarehouseListSerializer(obj.goods_receipt_warehouse_gr_product.all(), many=True).data
+
 
 # GOODS RECEIPT BEGIN
 class GoodsReceiptListSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
+    inventory_adjustment = serializers.SerializerMethodField()
     goods_receipt_type = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
 
@@ -285,6 +371,7 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'code',
             'goods_receipt_type',
             'purchase_order',
+            'inventory_adjustment',
             'date_received',
             'system_status',
         )
@@ -304,6 +391,14 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
         } if obj.purchase_order else {}
 
     @classmethod
+    def get_inventory_adjustment(cls, obj):
+        return {
+            'id': obj.inventory_adjustment_id,
+            'title': obj.inventory_adjustment.title,
+            'code': obj.inventory_adjustment.code,
+        } if obj.inventory_adjustment else {}
+
+    @classmethod
     def get_system_status(cls, obj):
         if obj.system_status or obj.system_status == 0:
             return dict(SYSTEM_STATUS).get(obj.system_status)
@@ -312,10 +407,10 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
 
 class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
+    inventory_adjustment = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
     purchase_requests = serializers.SerializerMethodField()
     goods_receipt_product = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -325,6 +420,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'code',
             'goods_receipt_type',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -334,6 +430,7 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             # system
             'system_status',
             'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod
@@ -343,6 +440,14 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             'title': obj.purchase_order.title,
             'code': obj.purchase_order.code,
         } if obj.purchase_order else {}
+
+    @classmethod
+    def get_inventory_adjustment(cls, obj):
+        return {
+            'id': obj.inventory_adjustment_id,
+            'title': obj.inventory_adjustment.title,
+            'code': obj.inventory_adjustment.code,
+        } if obj.inventory_adjustment else {}
 
     @classmethod
     def get_supplier(cls, obj):
@@ -366,25 +471,22 @@ class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
             many=True
         ).data
 
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
-
 
 class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    purchase_order = serializers.UUIDField(required=False)
-    supplier = serializers.UUIDField(required=False)
+    purchase_order = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
+    supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceipt
         fields = (
+            'goods_receipt_type',
             'title',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -400,6 +502,10 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
         return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
 
     @classmethod
+    def validate_inventory_adjustment(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
+
+    @classmethod
     def validate_supplier(cls, value):
         return GoodsReceiptCommonValidate.validate_supplier(value=value)
 
@@ -407,7 +513,7 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
     def validate_purchase_requests(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_requests(value=value)
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         purchase_requests = []
         goods_receipt_product = []
@@ -429,16 +535,19 @@ class GoodsReceiptCreateSerializer(serializers.ModelSerializer):
 
 
 class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
-    purchase_order = serializers.UUIDField(required=False)
-    supplier = serializers.UUIDField(required=False)
+    purchase_order = serializers.UUIDField(required=False, allow_null=True)
+    inventory_adjustment = serializers.UUIDField(required=False, allow_null=True)
+    supplier = serializers.UUIDField(required=False, allow_null=True)
     purchase_requests = serializers.ListField(child=serializers.UUIDField(required=False), required=False)
     goods_receipt_product = GoodsReceiptProductSerializer(many=True, required=False)
 
     class Meta:
         model = GoodsReceipt
         fields = (
+            'goods_receipt_type',
             'title',
             'purchase_order',
+            'inventory_adjustment',
             'supplier',
             'purchase_requests',
             'remarks',
@@ -452,6 +561,10 @@ class GoodsReceiptUpdateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_purchase_order(cls, value):
         return GoodsReceiptCommonValidate.validate_purchase_order(value=value)
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        return GoodsReceiptCommonValidate.validate_inventory_adjustment(value=value)
 
     @classmethod
     def validate_supplier(cls, value):

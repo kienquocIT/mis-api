@@ -3,7 +3,7 @@ from rest_framework import status
 
 from apps.masterdata.saledata.tests import ProductTestCase, TaxAndTaxCategoryTestCase, SalutationTestCase, \
     AccountGroupTestCase, IndustryTestCase, AccountTypeTestCase
-from apps.shared.extends.tests import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase, count_queries
 from rest_framework.test import APIClient
 
 
@@ -108,7 +108,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -121,7 +121,7 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -203,7 +203,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": customer,
             "product_category": [],
-            "employee_inherit": emp
+            "employee_inherit_id": emp
         }
         url = reverse("OpportunityList")
         response = self.client.post(url, data, format='json')
@@ -218,8 +218,20 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'open_date',
+                'quotation',
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
+            ],
             check_sum_second=True,
         )
 
@@ -227,8 +239,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": '83de3bab-edc2-4d72-ac11-dfa4540cec88',
             "product_category": [],
-            "employee_inherit": emp,
-
+            "employee_inherit_id": emp,
         }
         response1 = self.client.post(url, data1, format='json')
 
@@ -250,7 +261,7 @@ class TestCaseOpportunity(AdvanceTestCase):
             "title": "Dự Án Của Nam nè",
             "customer": customer,
             "product_category": [],
-            "employee_inherit": '83de3bab-edc2-4d72-ac11-dfa4540cec88'
+            "employee_inherit_id": '83de3bab-edc2-4d72-ac11-dfa4540cec88'
         }
         response2 = self.client.post(url, data2, format='json')
 
@@ -270,8 +281,11 @@ class TestCaseOpportunity(AdvanceTestCase):
 
         return response
 
+    @count_queries
     def test_get_list_opportunity(self):
         self.test_create_opportunity()
+        self.max_queries_allowed = 10  # force 10 queries
+        self.set_start_count_queries()
         url = reverse('OpportunityList')
         response = self.client.get(url, format='json')
         self.assertResponseList(  # noqa
@@ -287,8 +301,20 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'][0],
-            ['id', 'title', 'code', 'customer', 'sale_person', 'open_date', 'quotation_id', 'sale_order_id',
-             'opportunity_sale_team_datas', 'close_date', 'stage', 'is_close'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'open_date',
+                'quotation',
+                'sale_order',
+                'opportunity_sale_team_datas',
+                'close_date',
+                'stage',
+                'is_close'
+            ],
             check_sum_second=True,
         )
         return response
@@ -311,11 +337,35 @@ class TestCaseOpportunity(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'customer', 'end_customer', 'product_category', 'budget_value', 'open_date',
-             'close_date', 'decision_maker', 'opportunity_product_datas', 'total_product_pretax_amount',
-             'total_product_tax', 'total_product', 'opportunity_competitors_datas', 'opportunity_contact_role_datas',
-             'win_rate', 'is_input_rate', 'customer_decision_factor', 'sale_person', 'opportunity_sale_team_datas',
-             'stage', 'lost_by_other_reason', 'sale_order', 'quotation', 'is_close_lost', 'is_deal_close'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'end_customer',
+                'product_category',
+                'budget_value',
+                'open_date',
+                'close_date',
+                'decision_maker',
+                'opportunity_product_datas',
+                'total_product_pretax_amount',
+                'total_product_tax',
+                'total_product',
+                'opportunity_competitors_datas',
+                'opportunity_contact_role_datas',
+                'win_rate',
+                'is_input_rate',
+                'customer_decision_factor',
+                'sale_person',
+                'stage',
+                'lost_by_other_reason',
+                'sale_order',
+                'quotation',
+                'is_close_lost',
+                'is_deal_close',
+                'members'
+            ],
             check_sum_second=True,
         )
         if not data_id:

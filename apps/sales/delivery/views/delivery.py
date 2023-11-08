@@ -1,18 +1,22 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
-from apps.sales.delivery.models import OrderDelivery, OrderDeliverySub
-from apps.sales.delivery.serializers import OrderDeliveryListSerializer, OrderDeliverySubDetailSerializer, \
-    OrderDeliverySubUpdateSerializer
+from apps.sales.delivery.models import OrderDeliverySub, OrderDeliveryProduct
+from apps.sales.delivery.serializers import OrderDeliverySubDetailSerializer, \
+    OrderDeliverySubUpdateSerializer, OrderDeliverySubListSerializer
 
-__all__ = ['OrderDeliveryList', 'OrderDeliverySubDetail']
+__all__ = ['OrderDeliverySubList', 'OrderDeliverySubDetail']
 
 
-class OrderDeliveryList(BaseListMixin):
-    queryset = OrderDelivery.objects
-    serializer_list = OrderDeliveryListSerializer
+class OrderDeliverySubList(BaseListMixin):
+    queryset = OrderDeliverySub.objects
+    serializer_list = OrderDeliverySubListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
 
     @swagger_auto_schema(
         operation_summary='Order Delivery List',
@@ -22,6 +26,8 @@ class OrderDeliveryList(BaseListMixin):
         label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        self.lookup_field = 'company_id'
+        self.kwargs['company_id'] = request.user.company_current_id
         return self.list(request, *args, **kwargs)
 
 
@@ -36,14 +42,24 @@ class OrderDeliverySubDetail(
     update_hidden_field = ['tenant_id', 'company_id', 'employee_modified_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related('orderdeliveryproduct_set')
+        return super().get_queryset().select_related('employee_inherit').prefetch_related(
+            Prefetch(
+                'delivery_product_delivery_sub',
+                queryset=OrderDeliveryProduct.objects.select_related(
+                    'product',
+                    'uom',
+                )
+            )
+
+        )
 
     @swagger_auto_schema(
         operation_summary='Order Delivery Sub Detail',
         operation_description="Get delivery Sub detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False
+        login_require=True, auth_require=True,
+        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -54,7 +70,7 @@ class OrderDeliverySubDetail(
         serializer_update=OrderDeliverySubUpdateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='delivery', model_code='orderDeliverySub', perm_code='edit', )
     def put(self, request, *args, pk, **kwargs):
         self.ser_context = {

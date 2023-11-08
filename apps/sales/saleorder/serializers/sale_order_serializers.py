@@ -1,14 +1,12 @@
-from django.db.models import Prefetch
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.masterdata.saledata.models import ProductPriceList
-# from apps.core.workflow.tasks import decorator_run_workflow
+from apps.sales.opportunity.models import Opportunity
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
     SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, SYSTEM_STATUS
+from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg
 
 
 # SALE ORDER BEGIN
@@ -47,8 +45,12 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     def get_sale_person(cls, obj):
         return {
             'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
     @classmethod
@@ -81,7 +83,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     payment_term = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     sale_order_products_data = serializers.SerializerMethodField()
     sale_order_costs_data = serializers.SerializerMethodField()
 
@@ -126,6 +127,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'sale_order_indicators_data',
             # system
             'workflow_runtime_id',
+            'is_active',
         )
 
     @classmethod
@@ -165,8 +167,12 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     def get_sale_person(cls, obj):
         return {
             'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
             'full_name': obj.employee_inherit.get_full_name(2),
             'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
 
     @classmethod
@@ -186,60 +192,32 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
         } if obj.quotation else {}
 
     @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
-
-    @classmethod
     def get_sale_order_products_data(cls, obj):
         return SaleOrderProductsListSerializer(
-            obj.sale_order_product_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_product_sale_order.all(),
             many=True
         ).data
 
     @classmethod
     def get_sale_order_costs_data(cls, obj):
         return SaleOrderCostsListSerializer(
-            obj.sale_order_cost_sale_order.prefetch_related(
-                'product__general_product_types_mapped',
-                Prefetch(
-                    'product__product_price_product',
-                    queryset=ProductPriceList.objects.select_related('price_list'),
-                ),
-            ),
+            obj.sale_order_cost_sale_order.all(),
             many=True
         ).data
 
 
 class SaleOrderCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
-    opportunity = serializers.CharField(
-        max_length=550,
+    opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    customer = serializers.CharField(
-        max_length=550
-    )
-    contact = serializers.CharField(
-        max_length=550
-    )
-    employee_inherit_id = serializers.UUIDField(
-        required=False,
+    customer = serializers.UUIDField()
+    contact = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
+    payment_term = serializers.UUIDField()
+    quotation = serializers.UUIDField(
         allow_null=True,
-    )
-    payment_term = serializers.CharField(
-        max_length=550
-    )
-    quotation = serializers.CharField(
-        max_length=550,
         required=False
     )
     # sale order tabs
@@ -268,7 +246,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         model = SaleOrder
         fields = (
             'title',
-            'opportunity',
+            'opportunity_id',
             'customer',
             'contact',
             'employee_inherit_id',
@@ -307,7 +285,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_customer(value=value)
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         return SaleOrderCommonValidate().validate_opportunity(value=value)
 
     @classmethod
@@ -335,12 +313,18 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
     def validate(self, validate_data):
-        if 'opportunity' in validate_data:
-            if validate_data['opportunity'] is not None:
-                if validate_data['opportunity'].sale_order_opportunity.exists():
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
-                if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if 'opportunity_id' in validate_data:
+            if validate_data['opportunity_id'] is not None:
+                opportunity = Opportunity.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=validate_data['opportunity_id']
+                ).first()
+                if opportunity:
+                    if opportunity.sale_order_opportunity.exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+                    if opportunity.is_close_lost is True or opportunity.is_deal_close:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
     @decorator_run_workflow
@@ -363,30 +347,29 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderUpdateSerializer(serializers.ModelSerializer):
-    opportunity = serializers.CharField(
-        max_length=550,
+    opportunity_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    customer = serializers.CharField(
-        max_length=550,
-        required=False
+    customer = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
-    contact = serializers.CharField(
-        max_length=550,
-        required=False
+    contact = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     employee_inherit_id = serializers.UUIDField(
         required=False,
         allow_null=True,
     )
-    payment_term = serializers.CharField(
-        max_length=550,
-        required=False
+    payment_term = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
-    quotation = serializers.CharField(
-        max_length=550,
-        required=False
+    quotation = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     # sale order tabs
     sale_order_products_data = SaleOrderProductSerializer(
@@ -414,7 +397,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         model = SaleOrder
         fields = (
             'title',
-            'opportunity',
+            'opportunity_id',
             'customer',
             'contact',
             'employee_inherit_id',
@@ -444,6 +427,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # status
+            'system_status',
         )
 
     @classmethod
@@ -451,7 +436,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         return SaleOrderCommonValidate().validate_customer(value=value)
 
     @classmethod
-    def validate_opportunity(cls, value):
+    def validate_opportunity_id(cls, value):
         return SaleOrderCommonValidate().validate_opportunity(value=value)
 
     @classmethod
@@ -478,16 +463,31 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
     def validate_customer_billing(cls, value):
         return SaleOrderCommonValidate().validate_customer_billing(value=value)
 
+    def validate_system_status(self, attrs):
+        if attrs in [0, 1]:  # draft or created
+            if self.instance.system_status <= attrs:
+                return attrs
+        raise serializers.ValidationError({
+            'system_status': BaseMsg.SYSTEM_STATUS_INCORRECT,
+        })
+
     def validate(self, validate_data):
-        if 'opportunity' in validate_data:
-            if validate_data['opportunity'] is not None:
-                if validate_data['opportunity'].sale_order_opportunity.exclude(id=self.instance.id).exists():
-                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
+        if 'opportunity_id' in validate_data:
+            if validate_data['opportunity_id'] is not None:
+                opportunity = Opportunity.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=validate_data['opportunity_id']
+                ).first()
+                if opportunity:
+                    if opportunity.sale_order_opportunity.exclude(id=self.instance.id).exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
         return validate_data
 
+    @decorator_run_workflow
     def update(self, instance, validated_data):
         # check if change opportunity then update field sale_order in opportunity to None
-        if instance.opportunity != validated_data.get('opportunity', None):
+        if instance.opportunity_id != validated_data.get('opportunity_id', None):
             instance.opportunity.sale_order = None
             instance.opportunity.save(update_fields=['sale_order'])
         # update sale order
@@ -514,18 +514,16 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
 class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
     tax = serializers.SerializerMethodField()
     plan_after_tax = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrderExpense
         fields = (
             'id',
             'expense_title',
-            'expense_id',
+            'expense_item',
             'tax',
             'plan_after_tax',
-            'product_title',
-            'product_id',
-            'is_product'
         )
 
     @classmethod
@@ -537,6 +535,12 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_plan_after_tax(cls, obj):
         return obj.expense_subtotal_price + obj.expense_tax_amount
+
+    @classmethod
+    def get_expense_item(cls, obj):
+        if obj.expense_item:
+            return {'id': obj.expense_item_id, 'code': obj.expense_item.code, 'title': obj.expense_item.title}
+        return {}
 
 
 class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
@@ -579,6 +583,11 @@ class SaleOrderListSerializerForCashOutFlow(serializers.ModelSerializer):
                 'id': obj.employee_inherit_id,
                 'full_name': obj.employee_inherit.get_full_name(2),
                 'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title,
+                    'code': obj.employee_inherit.group.code,
+                } if obj.employee_inherit.group else {}
             }
         return {}
 
@@ -627,9 +636,11 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_data(cls, obj):
         so_product = SaleOrderProduct.objects.select_related(
-            'product__sale_default_uom',
-            'product__sale_tax',
+            'product__purchase_default_uom',
+            'product__purchase_tax',
             'product__general_uom_group',
+            'unit_of_measure',
+            'tax'
         ).filter(
             sale_order=obj,
             product__isnull=False
@@ -643,18 +654,44 @@ class SaleOrderProductListSerializer(serializers.ModelSerializer):
                     'id': item.product_id,
                     'title': item.product.title,
                     'code': item.product.code,
+                    'description': item.product.description,
                     'product_choice': item.product.product_choice,
                     'uom': {
-                        'id': item.product.sale_default_uom.id,
-                        'title': item.product.sale_default_uom.title
-                    },
-                    'uom_group': item.product.general_uom_group.title,
-                    'tax_code': {
-                        'id': item.product.sale_tax_id,
-                        'title': item.product.sale_tax.title,
-                        'rate': item.product.sale_tax.rate
-                    },
-                }
+                        'id': item.product.purchase_default_uom_id,
+                        'title': item.product.purchase_default_uom.title if item.product.purchase_default_uom else ''
+                    } if item.product.purchase_default_uom else {},
+                    'uom_group': item.product.general_uom_group.title if item.product.general_uom_group else ''
+                } if item.product else {},
+                'uom': {
+                    'id': item.unit_of_measure_id,
+                    'title': item.unit_of_measure.title,
+                    'code': item.unit_of_measure.code,
+                    'ratio': item.unit_of_measure.ratio
+                } if item.unit_of_measure else {},
+                'tax': {
+                    'id': item.tax_id,
+                    'title': item.tax.title,
+                    'rate': item.tax.rate
+                } if item.tax else {},
             }
             for item in so_product
         ]
+
+
+class SaleOrderPurchasingStaffListSerializer(serializers.ModelSerializer):
+    is_create_purchase_request = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SaleOrder
+        fields = (
+            'id',
+            'code',
+            'title',
+            'employee_inherit',
+            'is_create_purchase_request',
+        )
+
+    @classmethod
+    def get_is_create_purchase_request(cls, obj):
+        so_product = obj.sale_order_product_sale_order.all()
+        return any(item.remain_for_purchase_request > 0 and item.product_id is not None for item in so_product)

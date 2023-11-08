@@ -6,15 +6,23 @@ from .views import (
     OpportunityCallLogList, OpportunityCallLogDetail, OpportunityCallLogDelete,
     OpportunityEmailList, OpportunityEmailDetail, OpportunityEmailDelete,
     OpportunityMeetingList, OpportunityMeetingDetail, OpportunityMeetingDelete, OpportunityDocumentList,
-    OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList, OpportunityMemberDetail,
-    OpportunityAddMember, OpportunityDeleteMember, MemberPermissionUpdateSerializer
+    OpportunityDocumentDetail, OpportunityActivityLogList, OpportunityForSaleList,
+    OpportunityListForCashOutFlow,
+    MemberOfOpportunityDetail, MemberOfOpportunityDetailAdd, OpportunityDetailGetByCreateFromOpp,
 )
 
 urlpatterns = [
     path('config', OpportunityConfigDetail.as_view(), name='OpportunityConfigDetail'),
     path('lists', OpportunityList.as_view(), name='OpportunityList'),
+    path('list-for-cash-outflow', OpportunityListForCashOutFlow.as_view(), name='OpportunityListForCashOutFlow'),
     path('lists-sale', OpportunityForSaleList.as_view(), name='OpportunityForSaleList'),
+    path(
+        '<str:pk>/create-from-opp',
+        OpportunityDetailGetByCreateFromOpp.as_view(), name='OpportunityDetailGetByCreateFromOpp'
+    ),
     path('<str:pk>', OpportunityDetail.as_view(), name='OpportunityDetail'),
+    path('<str:pk_opp>/member/add', MemberOfOpportunityDetailAdd.as_view(), name='MemberOfOpportunityDetailAdd'),
+    path('<str:pk_opp>/member/<str:pk_member>', MemberOfOpportunityDetail.as_view(), name='MemberOfOpportunityDetail'),
 
     path('config/decision-factors', CustomerDecisionFactorList.as_view(), name='CustomerDecisionFactorList'),
     path(
@@ -39,13 +47,4 @@ urlpatterns = [
     path('document/<str:pk>', OpportunityDocumentDetail.as_view(), name='OpportunityDocumentDetail'),
 ] + [  # opportunity activity log
     path('activity-log/lists', OpportunityActivityLogList.as_view(), name='OpportunityActivityLogList'),
-] + [  # member detail
-    path('member/detail/<str:pk>', OpportunityMemberDetail.as_view(), name='OpportunityMemberDetail'),
-    path('add-member/<str:pk>', OpportunityAddMember.as_view(), name='OpportunityAddMember'),
-    path('member/delete/<str:pk>', OpportunityDeleteMember.as_view(), name='OpportunityDeleteMember'),
-    path(
-        'member/set/permission/<str:pk>',
-        MemberPermissionUpdateSerializer.as_view(),
-        name='MemberPermissionUpdateSerializer'
-    )
 ]

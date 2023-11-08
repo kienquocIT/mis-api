@@ -1,8 +1,8 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import generics
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.opportunity.models import OpportunityMemberPermitData
-from apps.shared import ResponseController, BaseListMixin, mask_view
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
     Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
@@ -12,7 +12,7 @@ from apps.core.base.serializers import (
     PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
     PermissionApplicationListSerializer,
     CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
-    BaseItemUnitListSerializer, IndicatorParamListSerializer, ApplicationForPermitOpportunityListSerializer
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
 )
 
 
@@ -44,15 +44,17 @@ class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
-    search_fields = ('title', 'code')
+    # search_fields = ('title', 'code')
     filterset_fields = ('code', 'title')
 
     def get_queryset(self):
-        return super().get_queryset().filter(
-            id__in=PlanApplication.objects.filter(
-                plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
-            ).values_list('application__id', flat=True)
-        )
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
+            return super().get_queryset().filter(
+                id__in=PlanApplication.objects.filter(
+                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+                ).values_list('application__id', flat=True)
+            )
+        return Application.objects.none()
 
     @swagger_auto_schema(
         operation_summary="Tenant Application list",
@@ -62,6 +64,18 @@ class TenantApplicationList(BaseListMixin):
     def get(self, request, *args, **kwargs):
         kwargs['is_workflow'] = True
         return self.list(request, *args, **kwargs)
+
+
+class ApplicationDetail(BaseRetrieveMixin):
+    queryset = Application.objects
+    serializer_detail = ApplicationListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Tenant Application detail",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class ApplicationPropertyList(BaseListMixin):
@@ -261,28 +275,6 @@ class ApplicationPropertyOpportunityList(BaseListMixin):
     @swagger_auto_schema(
         operation_summary="Property list have Opportunity config stage data",
         operation_description="Property list have Opportunity config stage data",
-    )
-    @mask_view(
-        login_require=True,
-        auth_require=False
-    )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class ApplicationForPermitOpportunity(BaseListMixin):
-    queryset = Application.objects
-    serializer_list = ApplicationForPermitOpportunityListSerializer
-    list_hidden_field = []
-
-    def get_queryset(self):
-        return super().get_queryset().filter(
-            id__in=OpportunityMemberPermitData.LIST_ID_PERMIT_APP
-        )
-
-    @swagger_auto_schema(
-        operation_summary="Application list for permission in Opportunity",
-        operation_description="Application list for permission in Opportunity",
     )
     @mask_view(
         login_require=True,

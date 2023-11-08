@@ -1,3 +1,4 @@
+from urllib.parse import urlencode
 from uuid import uuid4
 from django.urls import reverse
 from rest_framework import status
@@ -28,14 +29,15 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             'phone': '0983875345',
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
+        self.company = company_req
         config = DeliveryConfig.objects.get_or_create(
             company_id=company_req.data['result']['id'],
             defaults={
                 'is_picking': False,
                 'is_partial_ship': False,
-            },
+            }
         )
-        self.config = config[0]
+        self.config = config
 
     def get_employee(self):
         url = reverse("EmployeeList")
@@ -69,7 +71,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -82,7 +84,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -152,6 +154,26 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         return response, data_uom_gr
+
+    def get_city(self):
+        url = reverse("CityList")
+        response = self.client.get(url, format='json')
+        return response
+
+    def get_district(self, city_id):
+        params = {
+            'city_id': city_id
+        }
+        url = reverse("DistrictList")
+        query_string = urlencode(params)
+        url_with_query_string = f"{url}?{query_string}"
+        response = self.client.get(url_with_query_string, format='json')
+        return response
+
+    def get_ward(self):
+        url = reverse("WardList")
+        response = self.client.get(url, format='json')
+        return response
 
     def create_new_tax_category(self):
         url_tax_category = reverse("TaxCategoryList")
@@ -242,7 +264,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             "opportunity": opportunity,
             "customer": customer,
             "contact": contact,
-            "sale_person": employee,
+            "employee_inherit_id": employee,
             "payment_term": payment_term,
         }
         url = reverse("SaleOrderList")
@@ -295,7 +317,9 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # system
                 'workflow_runtime_id',
+                'is_active',
             ],
             check_sum_second=True,
         )
@@ -313,7 +337,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
                 {
                     'product': prod_detail['id'],
                     'warehouse': warehouse.data['result']['id'],
-                    'uom': prod_detail['inventory_information']['uom']['uom_id'],
+                    'uom': prod_detail['inventory_information']['uom']['id'],
                     'quantity': 100,
                     'unit_price': 10000,
                     'tax': prod_detail['sale_information']['tax']['id'],
@@ -358,6 +382,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         sale_order = self.create_sale_order().data['result']
         sale_order_id = sale_order['id']
         delivery = OrderDelivery.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             sale_order_id=sale_order_id,
             from_picking_area='',
             customer_id=sale_order['customer']['id'],
@@ -371,12 +397,15 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             remaining_quantity=1,
             ready_quantity=0,
             delivery_data=[],
-            date_created=timezone.now()
+            date_created=timezone.now(),
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_delivery = delivery[0]
         self.assertTrue(OrderDelivery.objects.filter(id=obj_delivery.id).exists())
 
         sub = OrderDeliverySub.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             code=obj_delivery.code,
             id=uuid4(),
             order_delivery_id=obj_delivery.id,
@@ -397,7 +426,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             config_at_that_point={
                 "is_picking": self.config['is_picking'],
                 "is_partial_ship": self.config['is_partial_ship']
-            }
+            },
+            employee_inherit_id=obj_delivery.employee_inherit_id
         )
         obj_sub = sub[0]
         self.assertTrue(OrderDeliverySub.objects.filter(id=obj_sub.id).exists())
@@ -452,6 +482,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         sale_order_id = sale_order['id']
         warehouse = self.warehouse.data['result']
         picking = OrderPicking.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             sale_order_id=sale_order_id,
             ware_house_id=warehouse['id'],
             state=0,
@@ -462,12 +494,15 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             picked_quantity_before=0,
             remaining_quantity=1,
             picked_quantity=0,
-            date_created=timezone.now()
+            date_created=timezone.now(),
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_picking = picking[0]
         self.assertTrue(OrderPicking.objects.filter(id=obj_picking.id).exists())
 
         sub = OrderPickingSub.objects.get_or_create(
+            tenant_id=self.tenant_id,
+            company_id=self.company_id,
             code=obj_picking.code,
             id=uuid4(),
             order_picking_id=obj_picking.id,
@@ -485,7 +520,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             config_at_that_point={
                 "is_picking": self.config['is_picking'],
                 "is_partial_ship": self.config['is_partial_ship']
-            }
+            },
+            employee_inherit_id=self.get_employee().data['result'][0]['id']
         )
         obj_sub = sub[0]
         self.assertTrue(OrderPickingSub.objects.filter(id=obj_sub.id).exists())
@@ -537,7 +573,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         picking, picking_sub = self.create_picking()
         # complete picking
         picking_prod = OrderPickingProduct.objects.filter(picking_sub_id=picking_sub.id).first()
-        url_update = reverse('OrderPickingSubDetail', args=[picking_sub.id])
+        url_update = reverse('OrderPickingSubDetail', kwargs={'pk': picking_sub.id})
         data_picking_update = {
             "order_picking": picking.id,
             "sale_order_id": self.sale_order.data['result']['id'],
@@ -573,6 +609,8 @@ class PickingDeliveryTestCase(AdvanceTestCase):
         delivery_prod = OrderDeliveryProduct.objects.filter(delivery_sub=delivery_sub).first()
         url_update = reverse('OrderDeliverySubDetail', args=[delivery_sub.id])
         data_delivery_update = {
+            "tenant_id": self.tenant_id,
+            "company_id": self.company_id,
             "order_delivery": delivery.id,
             "estimated_delivery_date": "2023-07-31",
             "actual_delivery_date": "2023-08-30",

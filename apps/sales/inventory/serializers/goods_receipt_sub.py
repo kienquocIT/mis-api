@@ -1,13 +1,15 @@
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import WareHouse
+from apps.masterdata.saledata.models import WareHouse, ProductWareHouseLot
 from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.inventory.models import GoodsReceiptPurchaseRequest, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
-    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
-from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder
-from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg
+    GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial, InventoryAdjustment
+from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseRequest, PurchaseOrder, \
+    PurchaseOrderRequestProduct
+from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, PurchasingMsg, WarehouseMsg
+from apps.shared.translations.sales import InventoryMsg
 
 
 class GoodsReceiptCommonCreate:
@@ -27,12 +29,17 @@ class GoodsReceiptCommonCreate:
             if 'purchase_request_products_data' in gr_product:
                 purchase_request_products_data = gr_product['purchase_request_products_data']
                 del gr_product['purchase_request_products_data']
+            warehouse_gr_data = []
+            if 'warehouse_data' in gr_product:
+                warehouse_gr_data = gr_product['warehouse_data']
+                del gr_product['warehouse_data']
             new_gr_product = GoodsReceiptProduct.objects.create(goods_receipt=instance, **gr_product)
+            # If PO have PR
             # create sub model GoodsReceiptRequestProduct mapping goods_receipt_product
             for pr_product in purchase_request_products_data:
-                warehouse_data = []
+                warehouse_pr_data = []
                 if 'warehouse_data' in pr_product:
-                    warehouse_data = pr_product['warehouse_data']
+                    warehouse_pr_data = pr_product['warehouse_data']
                     del pr_product['warehouse_data']
                 new_pr_product = GoodsReceiptRequestProduct.objects.create(
                     goods_receipt=instance,
@@ -40,34 +47,51 @@ class GoodsReceiptCommonCreate:
                     **pr_product
                 )
                 # create sub model GoodsReceiptWarehouse mapping goods_receipt_request_product
-                for warehouse in warehouse_data:
-                    lot_data = []
-                    serial_data = []
-                    if 'lot_data' in warehouse:
-                        lot_data = warehouse['lot_data']
-                        del warehouse['lot_data']
-                    if 'serial_data' in warehouse:
-                        serial_data = warehouse['serial_data']
-                        del warehouse['serial_data']
-                    new_warehouse = GoodsReceiptWarehouse.objects.create(
-                        goods_receipt=instance,
-                        goods_receipt_request_product=new_pr_product,
-                        **warehouse
-                    )
-                    # create sub model GoodsReceiptLot + GoodsReceiptSerial mapping goods_receipt_warehouse
-                    for lot in lot_data:
-                        GoodsReceiptLot.objects.create(
-                            goods_receipt=instance,
-                            goods_receipt_warehouse=new_warehouse,
-                            **lot
-                        )
-                    for serial in serial_data:
-                        GoodsReceiptSerial.objects.create(
-                            goods_receipt=instance,
-                            goods_receipt_warehouse=new_warehouse,
-                            **serial
-                        )
+                cls.create_gr_warehouse_lot_serial(
+                    warehouse_data=warehouse_pr_data,
+                    instance=instance,
+                    pr_product=new_pr_product,
+                    gr_product=new_gr_product,
+                )
+            # If PO doesn't have PR
+            # create sub model GoodsReceiptWarehouse mapping goods_receipt_product
+            cls.create_gr_warehouse_lot_serial(
+                warehouse_data=warehouse_gr_data,
+                instance=instance,
+                gr_product=new_gr_product
+            )
         return True
+
+    @classmethod
+    def create_gr_warehouse_lot_serial(cls, warehouse_data, instance, pr_product=None, gr_product=None):
+        for warehouse in warehouse_data:
+            lot_data = []
+            serial_data = []
+            if 'lot_data' in warehouse:
+                lot_data = warehouse['lot_data']
+                del warehouse['lot_data']
+            if 'serial_data' in warehouse:
+                serial_data = warehouse['serial_data']
+                del warehouse['serial_data']
+            new_warehouse = GoodsReceiptWarehouse.objects.create(
+                goods_receipt=instance,
+                goods_receipt_request_product=pr_product,
+                goods_receipt_product=gr_product,
+                **warehouse
+            )
+            # create sub model GoodsReceiptLot + GoodsReceiptSerial mapping goods_receipt_warehouse
+            for lot in lot_data:
+                GoodsReceiptLot.objects.create(
+                    goods_receipt=instance,
+                    goods_receipt_warehouse=new_warehouse,
+                    **lot
+                )
+            for serial in serial_data:
+                GoodsReceiptSerial.objects.create(
+                    goods_receipt=instance,
+                    goods_receipt_warehouse=new_warehouse,
+                    **serial
+                )
 
     @classmethod
     def delete_old_m2m_goods_receipt_pr(cls, instance):
@@ -130,6 +154,8 @@ class GoodsReceiptCommonValidate:
 
     @classmethod
     def validate_purchase_order(cls, value):
+        if value is None:
+            return value
         try:
             return PurchaseOrder.objects.get_current(
                 fill__tenant=True,
@@ -137,10 +163,25 @@ class GoodsReceiptCommonValidate:
                 id=value
             )
         except PurchaseOrder.DoesNotExist:
-            raise serializers.ValidationError({'purchase_order': AccountsMsg.ACCOUNT_NOT_EXIST})
+            raise serializers.ValidationError({'purchase_order': PurchasingMsg.PURCHASE_ORDER_NOT_EXIST})
+
+    @classmethod
+    def validate_inventory_adjustment(cls, value):
+        if value is None:
+            return value
+        try:
+            return InventoryAdjustment.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except InventoryAdjustment.DoesNotExist:
+            raise serializers.ValidationError({'inventory_adjustment': InventoryMsg.INVENTORY_ADJUSTMENT_NOT_EXIST})
 
     @classmethod
     def validate_supplier(cls, value):
+        if value is None:
+            return value
         try:
             return Account.objects.get_current(
                 fill__tenant=True,
@@ -172,8 +213,21 @@ class GoodsReceiptCommonValidate:
             })
 
     @classmethod
+    def validate_purchase_order_request_product(cls, value):
+        try:
+            if value is None:
+                return value
+            return PurchaseOrderRequestProduct.objects.get(id=value)
+        except PurchaseOrderRequestProduct.DoesNotExist:
+            raise serializers.ValidationError({
+                'purchase_order_request_product': PurchaseRequestMsg.PURCHASE_REQUEST_NOT_EXIST
+            })
+
+    @classmethod
     def validate_purchase_request_product(cls, value):
         try:
+            if value is None:
+                return value
             return PurchaseRequestProduct.objects.get(id=value)
         except PurchaseRequestProduct.DoesNotExist:
             raise serializers.ValidationError({
@@ -226,4 +280,23 @@ class GoodsReceiptCommonValidate:
                 id=value
             )
         except WareHouse.DoesNotExist:
-            raise serializers.ValidationError({'warehouse': ProductMsg.TAX_DOES_NOT_EXIST})
+            raise serializers.ValidationError({'warehouse': WarehouseMsg.WAREHOUSE_NOT_EXIST})
+
+    @classmethod
+    def validate_lot(cls, value):
+        try:
+            if value is None:
+                return None
+            return ProductWareHouseLot.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except ProductWareHouseLot.DoesNotExist:
+            raise serializers.ValidationError({'lot': WarehouseMsg.LOT_NOT_EXIST})
+
+    @classmethod
+    def validate_quantity_import(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'quantity_import': InventoryMsg.GOODS_RECEIPT_QUANTITY})
+        return value

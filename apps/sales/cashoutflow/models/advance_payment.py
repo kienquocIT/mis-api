@@ -64,13 +64,9 @@ class AdvancePayment(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='advance_creator_name'
     )
-    beneficiary = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='advance_beneficiary'
-    )
     return_date = models.DateTimeField()
     money_gave = models.BooleanField(default=False)
+    status = models.BooleanField(default=0)
 
     class Meta:
         verbose_name = 'Advance Payment'
@@ -82,6 +78,21 @@ class AdvancePayment(DataAbstractModel):
 
 class AdvancePaymentCost(SimpleAbstractModel):
     advance_payment = models.ForeignKey(AdvancePayment, on_delete=models.CASCADE, related_name='advance_payment')
+    sale_order_mapped = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE, null=True,
+        related_name="ap_cost_sale_order_mapped"
+    )
+    quotation_mapped = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE, null=True,
+        related_name="ap_cost_quotation_mapped"
+    )
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="ap_cost_opportunity_mapped"
+    )
     expense_name = models.CharField(max_length=150, null=True)
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_uom_name = models.CharField(max_length=150, null=True)
@@ -94,6 +105,7 @@ class AdvancePaymentCost(SimpleAbstractModel):
 
     sum_return_value = models.FloatField(default=0)
     sum_converted_value = models.FloatField(default=0)
+    sum_real_value = models.FloatField(default=0)
 
     currency = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
     date_created = models.DateTimeField(

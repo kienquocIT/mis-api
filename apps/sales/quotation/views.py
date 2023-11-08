@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
     QuotationProduct, QuotationCost
 from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
@@ -10,14 +11,12 @@ from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSe
 from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
     QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,\
     QuotationListSerializerForCashOutFlow
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
 
 
-class QuotationList(
-    BaseListMixin,
-    BaseCreateMixin
-):
+class QuotationList(BaseListMixin, BaseCreateMixin):
     queryset = Quotation.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'opportunity': ['exact', 'isnull'],
         'employee_inherit': ['exact'],
@@ -51,6 +50,7 @@ class QuotationList(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='view',
+        opp_enabled=True, prj_enabled=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -63,7 +63,8 @@ class QuotationList(
     @mask_view(
         login_require=True, auth_require=True,
         employee_require=True,
-        label_code='quotation', model_code='quotation', perm_code='create'
+        label_code='quotation', model_code='quotation', perm_code='create',
+        opp_enabled=True, prj_enabled=True,
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -98,10 +99,18 @@ class QuotationDetail(
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "promotion",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
             Prefetch(
@@ -113,9 +122,17 @@ class QuotationDetail(
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
         )
@@ -127,6 +144,7 @@ class QuotationDetail(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='view',
+        opp_enabled=True, prj_enabled=True,
     )
     def get(self, request, *args, pk, **kwargs):
         return self.retrieve(request, *args, pk, **kwargs)
@@ -139,6 +157,7 @@ class QuotationDetail(
     @mask_view(
         login_require=True, auth_require=True,
         label_code='quotation', model_code='quotation', perm_code='edit',
+        opp_enabled=True, prj_enabled=True,
     )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
@@ -146,12 +165,18 @@ class QuotationDetail(
 
 class QuotationExpenseList(BaseListMixin):
     queryset = QuotationExpense.objects
+    filterset_fields = {
+        'quotation_id': ['exact'],
+    }
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "tax"
-        )
+        filter_quotation = self.request.query_params.get('filter_quotation', None)
+        if filter_quotation and TypeCheck.check_uuid(filter_quotation):
+            return super().get_queryset().select_related("tax").filter(
+                quotation_id=filter_quotation
+            )
+        return QuotationExpense.objects.none()
 
     @swagger_auto_schema(
         operation_summary="QuotationExpense List",
@@ -159,7 +184,6 @@ class QuotationExpenseList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        kwargs.update({'quotation_id': request.query_params['filter_quotation']})
         return self.list(request, *args, **kwargs)
 
 
@@ -199,8 +223,8 @@ class QuotationIndicatorList(
     serializer_list = IndicatorListSerializer
     serializer_create = IndicatorCreateSerializer
     serializer_detail = IndicatorListSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', ]
 
     @swagger_auto_schema(
         operation_summary="Quotation Indicator List",
@@ -227,6 +251,8 @@ class QuotationIndicatorDetail(
     queryset = QuotationIndicatorConfig.objects
     serializer_detail = IndicatorListSerializer
     serializer_update = IndicatorUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Quotation Indicator detail",
@@ -278,4 +304,5 @@ class QuotationListForCashOutFlow(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        self.paginator.page_size = -1
         return self.list(request, *args, **kwargs)

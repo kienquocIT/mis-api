@@ -1,6 +1,7 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.sales.report.models import ReportRevenue
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
 # CONFIG
@@ -229,19 +230,73 @@ class SaleOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("OR")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'OR0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'OR{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def update_product_wait_delivery_amount(cls, instance):
+        for product_order in instance.sale_order_product_sale_order.all():
+            if product_order.product:
+                uom_product_inventory = product_order.product.inventory_uom
+                uom_product_so = product_order.unit_of_measure
+                final_ratio = 1
+                if uom_product_inventory and uom_product_so:
+                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                product_order.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_order': product_order.product_quantity * final_ratio,
+                    'update_fields': ['wait_delivery_amount', 'available_amount']
+                })
+        return True
+
+    @classmethod
+    def create_report_revenue(cls, instance):
+        ReportRevenue.objects.create(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+        )
+        return True
+
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        # if self.system_status in [2, 3]:
-        sale_order = SaleOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "OR"
-        if not self.code:
-            temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+                self.update_product_wait_delivery_amount(self)
+                self.create_report_revenue(self)
 
         # hit DB
         super().save(*args, **kwargs)

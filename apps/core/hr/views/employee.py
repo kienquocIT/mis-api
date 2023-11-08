@@ -1,24 +1,32 @@
 from datetime import timedelta
+from typing import Union
 
+from django.conf import settings
+from django.db.models import Q
 from django.utils import timezone
 
 from drf_yasg.utils import swagger_auto_schema
 
-from rest_framework import generics, serializers
+from rest_framework import generics, serializers, exceptions
 from rest_framework.parsers import MultiPartParser
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
+# special import
+from apps.sales.opportunity.models import OpportunitySaleTeamMember
+# -- special import
+
 from apps.core.hr.filters import EmployeeListFilter
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, PlanEmployeeApp
 from apps.core.hr.serializers.employee_serializers import (
     EmployeeListSerializer, EmployeeCreateSerializer,
     EmployeeDetailSerializer, EmployeeUpdateSerializer,
     EmployeeListByOverviewTenantSerializer, EmployeeListMinimalByOverviewTenantSerializer,
-    EmployeeUploadAvatarSerializer,
+    EmployeeUploadAvatarSerializer, ApplicationOfEmployeeSerializer,
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
-    ResponseController, HttpMsg,
+    ResponseController, HttpMsg, TypeCheck,
 )
 from apps.shared.media_cloud_apis import APIUtil, MediaForceAPI
 
@@ -53,16 +61,214 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
     serializer_create = EmployeeCreateSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id']
+    list_hidden_field = ('tenant_id', 'company_id')
+    create_hidden_field = ('tenant_id', 'company_id')
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'group',
-        ).prefetch_related('role')
+        return super().get_queryset().select_related('group').prefetch_related('role')
 
     def error_auth_require(self):
         return self.list_empty()
+
+    @classmethod
+    def get_config_from_opp_id_selected(cls, item_data, opp_id) -> Union[dict, None]:
+        if item_data and isinstance(item_data, dict) and 'opp' in item_data and isinstance(item_data['opp'], dict):
+            if str(opp_id) in item_data['opp']:
+                return item_data['opp'][str(opp_id)]
+        return None
+
+    @classmethod
+    def member_opp_ids_from_opp_id_selected(cls, opp_id, exclude_data: dict = None) -> list:
+        if not exclude_data:
+            exclude_data = {}
+
+        return OpportunitySaleTeamMember.objects.filter_current(
+            fill__tenant=True, fill__company=True, opportunity_id=opp_id
+        ).exclude(**exclude_data).values_list('member_id', flat=True)
+
+    @classmethod
+    def get_config_from_prj_id_selected(cls, item_data, prj_id) -> Union[dict, None]:
+        if item_data and isinstance(item_data, dict) and 'prj' in item_data and isinstance(item_data['prj'], dict):
+            if str(prj_id) in item_data['prj']:
+                return item_data['prj'][str(prj_id)]
+        return None
+
+    @classmethod
+    def member_prj_ids_from_prj_id_selected(cls, prj_id, exclude_data: dict = None) -> list:  # pylint: disable=W0613
+        if not exclude_data:
+            exclude_data = {}
+
+        return []
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        """
+        Check case get list opp for feature or list by configured.
+        query_params: from_app=app_label-model_code
+        """
+        state_from_app, data_from_app = self.has_get_list_from_app()
+        if state_from_app is True:
+            if data_from_app and isinstance(data_from_app, list) and len(data_from_app) == 3:
+                return self.filter_kwargs_q__from_app(data_from_app)
+            return self.list_empty()
+
+        # check permit config exists if from_app not calling...
+        if self.simple_check_state_perm_by_list():  # simple check: 1. skip admin, 2: permit_config has data, 3: deny!
+            return self.filter_kwargs_q__from_config()
+        return Q(id__in=[])
+
+    def get_filter_by_app_other_allow(self, permit_data, employee_attr):
+        permit_or_list = []
+        if 'employee' in permit_data:
+            general_data = permit_data['employee'].get('general', None)
+            if general_data and isinstance(general_data, dict):
+                permit_allow_check = self.cls_check.permit_cls.parse_space_from_general_config(
+                    allowed_range=general_data,
+                    group_to_space=True
+                )
+                if permit_allow_check and '0' in permit_allow_check and isinstance(
+                        permit_allow_check['0'], list
+                ):
+                    tmp = self.cls_check.permit_cls.parse_general_from_custom_key(
+                        permit_of_space=permit_allow_check['0'],
+                        key_inheritor_filter='id',
+                        key_company_filter='company_id',
+                        is_filtering_inheritor=True,
+                        employee_attr=employee_attr,
+                    )
+                    if tmp:
+                        permit_or_list.append(tmp)
+        if 'roles' in permit_data:
+            for item in permit_data['roles']:
+                general_data = item.get('general', None)
+                if general_data and isinstance(general_data, dict):
+                    permit_allow_check = self.cls_check.permit_cls.parse_space_from_general_config(
+                        allowed_range=general_data,
+                        group_to_space=True
+                    )
+                    if permit_allow_check and '0' in permit_allow_check and isinstance(
+                            permit_allow_check['0'], list
+                    ):
+                        tmp = self.cls_check.permit_cls.parse_general_from_custom_key(
+                            permit_of_space=permit_allow_check['0'],
+                            key_inheritor_filter='id',
+                            key_company_filter='company_id',
+                            is_filtering_inheritor=True,
+                            employee_attr=employee_attr,
+                        )
+                        if tmp:
+                            permit_or_list.append(tmp)
+
+        if permit_or_list:
+            return self.cls_check.permit_cls.get_config_data__to_q(permit_or_list)
+        return Q(id__in=[])
+
+    def filter_kwargs_q__from_app(self, arr_from_app) -> Q:  # pylint: disable=R0914, R0912, R0915
+        # permit_data = {"employee": [], "roles": []}
+        key_filter = 'id__in'
+        value_filter = []
+        employee_attr = self.cls_check.employee_attr
+        employee_current_id = employee_attr.employee_current_id if employee_attr else None
+
+        if (  # pylint: disable=R1702
+                isinstance(arr_from_app, list) and len(arr_from_app) == 3
+                and employee_attr and employee_current_id
+        ):
+            opp_id = self.get_query_params().get('list_from_opp', None)
+            prj_id = self.get_query_params().get('list_from_prj', None)
+            leave_available_flag = self.get_query_params().get('list_from_leave', None)
+            config_by_code_kwargs = {
+                'label_code': arr_from_app[0],
+                'model_code': arr_from_app[1],
+                'perm_code': arr_from_app[2],
+            }
+
+            if opp_id and TypeCheck.check_uuid(opp_id):
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=False)
+                if 'employee' in permit_data:
+                    config_by_opp = self.get_config_from_opp_id_selected(
+                        item_data=permit_data['employee'],
+                        opp_id=opp_id
+                    )
+                    if config_by_opp and isinstance(config_by_opp, dict):
+                        if '1' in config_by_opp and '4' in config_by_opp:
+                            value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id)
+                        elif '4' in config_by_opp:
+                            value_filter = self.member_opp_ids_from_opp_id_selected(opp_id=opp_id, exclude_data={
+                                'member_id': employee_current_id
+                            })
+                        elif '1' in config_by_opp:
+                            value_filter = [str(employee_current_id)]
+                    if settings.DEBUG_PERMIT:
+                        print('=> config_by_opp                :', '[HAS FROM APP][OPP]', config_by_opp)
+            elif prj_id and TypeCheck.check_uuid(prj_id):
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=False)
+                if 'employee' in permit_data:
+                    config_by_prj = self.get_config_from_prj_id_selected(
+                        item_data=permit_data['employee'],
+                        prj_id=prj_id
+                    )
+                    if config_by_prj and isinstance(config_by_prj, dict):
+                        if '1' in config_by_prj and '4' in config_by_prj:
+                            value_filter = self.member_prj_ids_from_prj_id_selected(prj_id=prj_id)
+                        elif '4' in config_by_prj:
+                            value_filter = self.member_prj_ids_from_prj_id_selected(prj_id=prj_id, exclude_data={})
+                        elif '1' in config_by_prj:
+                            value_filter = [str(employee_current_id)]
+                    if settings.DEBUG_PERMIT:
+                        print('=> config_by_prj                :', '[HAS FROM APP][PRJ]', config_by_prj)
+            elif leave_available_flag in [1, '1']:
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
+                return self.get_filter_by_app_other_allow(permit_data=permit_data, employee_attr=employee_attr)
+            else:
+                permit_data = self.cls_check.permit_cls.config_data__by_code(**config_by_code_kwargs, has_roles=True)
+                max_range_allowed = 0
+                if 'employee' in permit_data:
+                    if 'general' in permit_data['employee']:
+                        general_data = permit_data['employee']['general']
+                        if general_data and isinstance(general_data, dict):
+                            try:
+                                max_tmp = max(int(idx) for idx in general_data.keys())
+                                if max_tmp > max_range_allowed:
+                                    max_range_allowed = max_tmp
+                            except ValueError:
+                                pass
+                if max_range_allowed < 4:
+                    if 'roles' in permit_data:
+                        roles_data = permit_data['roles']
+                        if roles_data and isinstance(roles_data, list):
+                            for role_item in roles_data:
+                                if max_range_allowed == 4:  # break with is the highest level
+                                    break
+
+                                if 'general' in role_item:
+                                    general_data = role_item['general']
+                                    if general_data and isinstance(general_data, dict):
+                                        try:
+                                            max_tmp = max(int(idx) for idx in general_data.keys())
+                                            if max_tmp > max_range_allowed:
+                                                max_range_allowed = max_tmp
+                                        except ValueError:
+                                            pass
+                if settings.DEBUG_PERMIT:
+                    print('=> max_range_allowed            :', '[HAS FROM APP][general]', max_range_allowed)
+
+                if max_range_allowed == 1:
+                    value_filter = [str(employee_current_id)]
+                elif max_range_allowed == 2:
+                    value_filter = employee_attr.employee_staff_ids
+                elif max_range_allowed == 3:
+                    value_filter = employee_attr.employee_same_group_ids
+                elif max_range_allowed == 4:
+                    key_filter = 'company_id'
+                    value_filter = employee_attr.company_id
+
+            if settings.DEBUG_PERMIT:
+                print('=> value_filter:                :', '[HAS FROM APP]', value_filter)
+
+        if isinstance(value_filter, list):
+            value_filter = list(set(value_filter))
+        return Q(**{key_filter: value_filter})
 
     @swagger_auto_schema(
         operation_summary="Employee list",
@@ -72,6 +278,7 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
         label_code='hr', model_code='employee', perm_code='view',
+        skip_filter_employee=True,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -86,6 +293,9 @@ class EmployeeList(BaseListMixin, BaseCreateMixin):
         label_code='hr', model_code='employee', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_obj': request.user.company_current
+        }
         return self.create(request, *args, **kwargs)
 
 
@@ -104,9 +314,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
                 self.kwargs.get('pk', None) == str(self.request.user.employee_current_id)
         ):
             self.state_skip_is_admin = True
-            result_filter = {
-                'id': self.request.user.employee_current_id
-            }
+            result_filter = {'id': self.request.user.employee_current_id}
             self.cls_auth_check.set_perm_filter_dict(result_filter)
             return result_filter
         return ResponseController.forbidden_403()
@@ -139,16 +347,14 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     queryset = Employee.objects
+    filterset_fields = {'company_id': ['exact']}
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
     list_hidden_field = ['tenant_id']
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            'group',
-            'user'
-        )
+        return super().get_queryset().select_related('group').prefetch_related('role')
 
     @swagger_auto_schema(
         operation_summary="Employee Company list",
@@ -188,6 +394,7 @@ class EmployeeTenantList(BaseListMixin, generics.GenericAPIView):
         login_require=True, auth_require=True,
         allow_admin_tenant=True, allow_admin_company=True,
         label_code='hr', model_code='employee', perm_code='view',
+        skip_filter_employee=True,
     )
     def get(self, request, *args, **kwargs):
         if request.query_params.get('company_id', None) or request.query_params.get('company_id__in', None):
@@ -235,3 +442,40 @@ class EmployeeMediaToken(APIView):
                 )
 
         return ResponseController.forbidden_403()
+
+
+class EmployeeAppList(BaseListMixin):
+    queryset = PlanEmployeeApp.objects
+    search_fields = ["application__title"]
+    serializer_list = ApplicationOfEmployeeSerializer
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            'plan_employee__employee_id': self.kwargs['pk'],
+        }
+
+    @property
+    def filter_kwargs_q(self) -> Union[Q, Response]:
+        employee_id = self.kwargs['pk']
+        try:
+            employee_obj = Employee.objects.get(pk=employee_id)
+        except Employee.DoesNotExist:
+            raise exceptions.NotFound
+
+        state = self.check_perm_by_obj_or_body_data(obj=employee_obj, auto_check=True)
+        if state is True:
+            return Q()
+        return self.list_empty()
+
+    @swagger_auto_schema(
+        operation_summary="Application List of Employee",
+        operation_description="Application List of Employee",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='hr', model_code='employee', perm_code='view',
+    )
+    def get(self, request, *args, pk, **kwargs):
+        return self.list(request, *args, pk, **kwargs)

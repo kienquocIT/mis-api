@@ -498,9 +498,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.get_full_name(2)
-            }
-        return {}
+        return {
+            'id': obj.owner_id,
+            'fullname': obj.owner.get_full_name(2)
+        } if obj.owner else {}

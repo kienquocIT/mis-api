@@ -5,7 +5,7 @@ from apps.sales.purchasing.models import PurchaseOrder, PurchaseOrderQuotation, 
     PurchaseOrderRequestProduct
 from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer, \
     PurchaseOrderListSerializer, PurchaseOrderUpdateSerializer, PurchaseOrderDetailSerializer, \
-    PurchaseOrderProductListSerializer, PurchaseOrderSaleListSerializer
+    PurchaseOrderSaleListSerializer, PurchaseOrderProductGRListSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -14,6 +14,7 @@ class PurchaseOrderList(
     BaseCreateMixin
 ):
     queryset = PurchaseOrder.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
@@ -21,8 +22,8 @@ class PurchaseOrderList(
     serializer_list = PurchaseOrderListSerializer
     serializer_create = PurchaseOrderCreateSerializer
     serializer_detail = PurchaseOrderListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -60,7 +61,8 @@ class PurchaseOrderDetail(
     queryset = PurchaseOrder.objects
     serializer_detail = PurchaseOrderDetailSerializer
     serializer_update = PurchaseOrderUpdateSerializer
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -133,7 +135,7 @@ class PurchaseOrderProductList(BaseListMixin):
     filterset_fields = {
         'purchase_order_id': ['in', 'exact'],
     }
-    serializer_list = PurchaseOrderProductListSerializer
+    serializer_list = PurchaseOrderProductGRListSerializer
     list_hidden_field = []
 
     def get_queryset(self):
@@ -159,9 +161,12 @@ class PurchaseOrderSaleList(
     BaseCreateMixin
 ):
     queryset = PurchaseOrder.objects
+    search_fields = ['title']
     filterset_fields = {
         'supplier_id': ['exact'],
         'contact_id': ['exact'],
+        'is_all_receipted': ['exact'],
+        'system_status': ['exact'],
     }
     serializer_list = PurchaseOrderSaleListSerializer
     serializer_detail = PurchaseOrderSaleListSerializer
@@ -170,6 +175,8 @@ class PurchaseOrderSaleList(
     def get_queryset(self):
         return super().get_queryset().select_related(
             "supplier",
+        ).prefetch_related(
+            'purchase_requests'
         )
 
     @swagger_auto_schema(

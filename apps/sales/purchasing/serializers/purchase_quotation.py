@@ -32,17 +32,15 @@ class PurchaseQuotationListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_supplier_mapped(cls, obj):
-        if obj.supplier_mapped:
-            return {
-                'id': obj.supplier_mapped_id,
-                'code': obj.supplier_mapped.code,
-                'name': obj.supplier_mapped.name,
-                'owner': {
-                    'id': obj.supplier_mapped.owner_id,
-                    'fullname': obj.supplier_mapped.owner.fullname
-                } if obj.supplier_mapped.owner else {}
-            }
-        return {}
+        return {
+            'id': obj.supplier_mapped_id,
+            'code': obj.supplier_mapped.code,
+            'name': obj.supplier_mapped.name,
+            'owner': {
+                'id': obj.supplier_mapped.owner_id,
+                'fullname': obj.supplier_mapped.owner.fullname
+            } if obj.supplier_mapped.owner else {}
+        } if obj.supplier_mapped else {}
 
 
 class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
@@ -77,7 +75,8 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.supplier_mapped_id,
                 'code': obj.supplier_mapped.code,
-                'name': obj.supplier_mapped.name
+                'name': obj.supplier_mapped.name,
+                'contact_mapped': [str(item.id) for item in obj.supplier_mapped.contact_account_name.all()]
             }
         return {}
 
@@ -105,7 +104,7 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
     def get_products_mapped(cls, obj):
         product_mapped_list = []
         index = 1
-        for item in obj.purchase_quotation.all().select_related('product', 'uom', 'tax'):
+        for item in obj.purchase_quotation.all():
             product_mapped_list.append(
                 {
                     'index': index,
@@ -113,14 +112,21 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
                         'id': item.product_id,
                         'code': item.product.code,
                         'title': item.product.title,
+                        'description': item.product.description,
                         'uom': {
-                            'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title
+                            'id': item.uom_id, 'code': item.uom.code, 'title': item.uom.title,
+                            'uom_group': {
+                                'id': item.uom.group_id,
+                                'title': item.uom.group.title
+                            } if item.uom.group else {}
                         } if item.uom else {},
+                        'uom_group': {
+                            'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
+                        } if item.uom.group else {},
                         'tax': {
                             'id': item.tax_id, 'code': item.tax.code, 'title': item.tax.title, 'rate': item.tax.rate
                         } if item.tax else {}
                     },
-                    'description': item.description,
                     'quantity': item.quantity,
                     'unit_price': item.unit_price,
                     'subtotal_price': item.subtotal_price
@@ -133,18 +139,8 @@ class PurchaseQuotationDetailSerializer(serializers.ModelSerializer):
 def create_pq_map_products(purchase_quotation_obj, product_list):
     bulk_info = []
     for item in product_list:
-        bulk_info.append(
-            PurchaseQuotationProduct(
-                purchase_quotation=purchase_quotation_obj,
-                product_id=item.get('product_id', None),
-                description=item.get('product_description', None),
-                uom_id=item.get('product_uom_id', None),
-                quantity=item.get('product_quantity', None),
-                unit_price=item.get('product_unit_price', None),
-                tax_id=item.get('product_taxes', None),
-                subtotal_price=item.get('product_subtotal_price', None),
-            )
-        )
+        bulk_info.append(PurchaseQuotationProduct(purchase_quotation=purchase_quotation_obj, **item))
+    PurchaseQuotationProduct.objects.filter(purchase_quotation=purchase_quotation_obj).delete()
     PurchaseQuotationProduct.objects.bulk_create(bulk_info)
     return True
 
@@ -207,8 +203,60 @@ class PurchaseQuotationCreateSerializer(serializers.ModelSerializer):
         return purchase_quotation
 
 
+class PurchaseQuotationUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = PurchaseQuotation
+        fields = (
+            'title',
+            'expiration_date',
+            'note',
+            'pretax_price',
+            'taxes_price',
+            'total_price',
+            'lead_time_from',
+            'lead_time_to',
+            'lead_time_type',
+            'supplier_mapped',
+            'contact_mapped',
+            'purchase_quotation_request_mapped'
+        )
+
+    @classmethod
+    def validate_pretax_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_taxes_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'taxes_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_total_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'total_price': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    def validate(self, validate_data):
+        products_selected = self.initial_data.get('products_selected', [])
+        if len(products_selected) <= 0:
+            raise serializers.ValidationError({'purchase_request': PurchaseRequestMsg.PRODUCT_NOT_NULL})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        create_pq_map_products(instance, self.initial_data.get('products_selected', []))
+        return instance
+
+
 class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
     purchase_quotation = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseQuotationProduct
@@ -216,7 +264,8 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
             'id',
             'purchase_quotation',
             'product_id',
-            'unit_price'
+            'uom',
+            'unit_price',
         )
 
     @classmethod
@@ -226,3 +275,17 @@ class PurchaseQuotationProductListSerializer(serializers.ModelSerializer):
             'title': obj.purchase_quotation.title,
             'code': obj.purchase_quotation.code,
         } if obj.purchase_quotation else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio,
+            'uom_group': {
+                'id': obj.uom.group_id,
+                'title': obj.uom.group.title,
+                'code': obj.uom.group.code,
+            } if obj.uom.group else {}
+        } if obj.uom else {}

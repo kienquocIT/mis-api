@@ -1,5 +1,6 @@
 from typing import Union
 
+from django.contrib.auth.models import AnonymousUser
 from django.db import models
 from django.utils import translation
 from drf_yasg.utils import swagger_auto_schema
@@ -12,7 +13,7 @@ from apps.core.account.models import User
 from apps.core.company.models import CompanyUserEmployee
 from apps.core.auths.serializers import (
     AuthLoginSerializer, MyTokenObtainPairSerializer, SwitchCompanySerializer,
-    AuthValidAccessCodeSerializer,
+    AuthValidAccessCodeSerializer, MyLanguageUpdateSerializer,
 )
 from apps.shared import mask_view, ResponseController, AuthMsg, HttpMsg, DisperseModel, MediaForceAPI, TypeCheck
 
@@ -196,4 +197,22 @@ class SwitchCompanyView(APIView):
                 {'detail': f'{HttpMsg.SUCCESSFULLY}. {HttpMsg.GOTO_LOGIN}'},
                 key_data='result'
             )
+        return ResponseController.unauthorized_401()
+
+
+class MyLanguageView(APIView):
+    @swagger_auto_schema(operation_summary='Change my language', request_body=MyLanguageUpdateSerializer)
+    @mask_view(login_require=True)
+    def put(self, request, *args, **kwargs):
+        user_obj = request.user
+        if user_obj and hasattr(user_obj, 'id') and not isinstance(user_obj, AnonymousUser):
+            language = request.data.get('language', None)
+            ser = MyLanguageUpdateSerializer(data={
+                'language': language
+            }, partial=True)
+            ser.is_valid(raise_exception=True)
+
+            user_obj.language = language
+            user_obj.save()
+            return ResponseController.success_200({'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
         return ResponseController.unauthorized_401()

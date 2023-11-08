@@ -4,7 +4,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.masterdata.saledata.models import ProductPriceList
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from apps.masterdata.saledata.models.product import (
-    ProductType, ProductCategory, ExpenseType, UnitOfMeasureGroup, UnitOfMeasure, Product,
+    ProductType, ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product,
 )
 from apps.masterdata.saledata.serializers.product import (
     ProductListSerializer, ProductCreateSerializer, ProductDetailSerializer, ProductUpdateSerializer,
@@ -15,8 +15,6 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
 
     ProductCategoryListSerializer, ProductCategoryCreateSerializer,
     ProductCategoryDetailSerializer, ProductCategoryUpdateSerializer,
-
-    ExpenseTypeListSerializer, ExpenseTypeCreateSerializer, ExpenseTypeDetailSerializer, ExpenseTypeUpdateSerializer,
 
     UnitOfMeasureGroupListSerializer, UnitOfMeasureGroupCreateSerializer,
     UnitOfMeasureGroupDetailSerializer, UnitOfMeasureUpdateSerializer,
@@ -29,6 +27,7 @@ from apps.masterdata.saledata.serializers.product_masterdata import (
 # Create your views here.
 class ProductTypeList(BaseListMixin, BaseCreateMixin):
     queryset = ProductType.objects
+    search_fields = ['title']
     serializer_list = ProductTypeListSerializer
     serializer_create = ProductTypeCreateSerializer
     serializer_detail = ProductTypeDetailSerializer
@@ -85,6 +84,7 @@ class ProductTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class ProductCategoryList(BaseListMixin, BaseCreateMixin):
     queryset = ProductCategory.objects
+    search_fields = ['title']
     serializer_list = ProductCategoryListSerializer
     serializer_create = ProductCategoryCreateSerializer
     serializer_detail = ProductCategoryDetailSerializer
@@ -139,60 +139,9 @@ class ProductCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return self.update(request, *args, pk, **kwargs)
 
 
-class ExpenseTypeList(BaseListMixin, BaseCreateMixin):
-    queryset = ExpenseType.objects
-    serializer_list = ExpenseTypeListSerializer
-    serializer_create = ExpenseTypeCreateSerializer
-    serializer_detail = ExpenseTypeDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-
-    @swagger_auto_schema(
-        operation_summary="ExpenseType list",
-        operation_description="ExpenseType list",
-    )
-    @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    @swagger_auto_schema(
-        operation_summary="Create ExpenseType",
-        operation_description="Create new ExpenseType",
-        request_body=ProductCategoryCreateSerializer,
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-    )
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-
-class ExpenseTypeDetail(BaseRetrieveMixin, BaseUpdateMixin):
-    queryset = ExpenseType.objects
-    serializer_list = ExpenseTypeListSerializer
-    serializer_create = ExpenseTypeCreateSerializer
-    serializer_detail = ExpenseTypeDetailSerializer
-    serializer_update = ExpenseTypeUpdateSerializer
-    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-
-    @swagger_auto_schema(operation_summary='Detail ExpenseType')
-    @mask_view(login_require=True, auth_require=False, )
-    def get(self, request, *args, pk, **kwargs):
-        return self.retrieve(request, *args, pk, **kwargs)
-
-    @swagger_auto_schema(operation_summary="Update ExpenseType", request_body=ExpenseTypeUpdateSerializer)
-    @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-    )
-    def put(self, request, *args, pk, **kwargs):
-        return self.update(request, *args, pk, **kwargs)
-
-
 class UnitOfMeasureGroupList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasureGroup.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureGroupListSerializer
     serializer_create = UnitOfMeasureGroupCreateSerializer
     serializer_detail = UnitOfMeasureGroupDetailSerializer
@@ -248,6 +197,7 @@ class UnitOfMeasureGroupDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class UnitOfMeasureList(BaseListMixin, BaseCreateMixin):
     queryset = UnitOfMeasure.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureListSerializer
     serializer_create = UnitOfMeasureCreateSerializer
     serializer_detail = UnitOfMeasureDetailSerializer
@@ -314,10 +264,21 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     serializer_detail = ProductDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    search_fields = ['title']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             'general_product_category',
+            'general_uom_group',
+            'sale_tax',
+            'sale_default_uom',
+            'inventory_uom',
+        ).prefetch_related(
+            'general_product_types_mapped',
+            Prefetch(
+                'product_price_product',
+                queryset=ProductPriceList.objects.select_related('price_list'),
+            ),
         )
 
     @swagger_auto_schema(
@@ -325,7 +286,7 @@ class ProductList(BaseListMixin, BaseCreateMixin):
         operation_description="Product list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='saledata', model_code='product', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -370,7 +331,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail Product')
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='saledata', model_code='product', perm_code='view',
     )
     def get(self, request, *args, pk, **kwargs):
@@ -388,6 +349,7 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
 # Products use for sale applications
 class ProductForSaleList(BaseListMixin):
     queryset = Product.objects
+    search_fields = ['title']
     serializer_list = ProductForSaleListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
@@ -398,6 +360,8 @@ class ProductForSaleList(BaseListMixin):
             "sale_default_uom",
             "sale_tax",
             "sale_currency_using",
+            "purchase_default_uom",
+            "purchase_tax",
         ).prefetch_related(
             'general_product_types_mapped',
             Prefetch(
@@ -417,6 +381,7 @@ class ProductForSaleList(BaseListMixin):
 
 class UnitOfMeasureOfGroupLaborList(BaseListMixin):
     queryset = UnitOfMeasure.objects
+    search_fields = ['title']
     serializer_list = UnitOfMeasureOfGroupLaborListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 

@@ -12,9 +12,8 @@ from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, E
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
-    ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail, ProductForSaleList,
-    UnitOfMeasureOfGroupLaborList,
+    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
+    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
@@ -25,6 +24,7 @@ from apps.masterdata.saledata.views import (
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
     WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail
 )
+from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -55,9 +55,6 @@ urlpatterns += [
     path('product-type/<str:pk>', ProductTypeDetail.as_view(), name='ProductTypeDetail'),
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
-
-    path('expense-types', ExpenseTypeList.as_view(), name='ExpenseTypeList'),
-    path('expense-type/<str:pk>', ExpenseTypeDetail.as_view(), name='ExpenseTypeDetail'),
 
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
@@ -128,6 +125,8 @@ urlpatterns += [
     ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
+    path('warehouses-lots', ProductWareHouseLotList.as_view(), name='ProductWareHouseLotList'),
+    path('warehouses-serials', ProductWareHouseSerialList.as_view(), name='ProductWareHouseSerialList'),
     path(
         'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
         name='WareHouseCheckAvailableProductList'

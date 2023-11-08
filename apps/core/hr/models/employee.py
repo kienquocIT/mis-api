@@ -1,90 +1,20 @@
-from typing import Union, TypedDict
-from uuid import UUID
-
 from django.conf import settings
 from django.db import models
 
+from apps.core.hr.models.private_extends import PermissionAbstractModel
 from apps.core.models import TenantAbstractModel
-from apps.shared import (
-    SimpleAbstractModel,
-    DisperseModel,
-    GENDER_CHOICE, TypeCheck, MediaForceAPI, StringHandler,
-)
+from apps.shared import SimpleAbstractModel, GENDER_CHOICE, StringHandler, MediaForceAPI, TypeCheck, DisperseModel
+
+__all__ = [
+    'Employee',
+    'SpaceEmployee',
+    'EmployeePermission',
+    'PlanEmployee',
+    'PlanEmployeeApp',
+]
 
 
-class PermOption(TypedDict, total=False):
-    option: int
-
-
-class PermissionAbstractModel(models.Model):
-    # by ID
-    permission_by_id_sample = {
-        'hr.employee.view': [],
-        'hr.employee.edit': [],
-        '{app_label}.{model_code}.{perm_code}': ['{doc_id}'],
-    }
-    permission_by_id = models.JSONField(default=dict, verbose_name='Special Permissions with ID Doc')
-
-    # by be configured
-    permission_by_configured_sample = [
-        {
-            "id": "e388f95e-457b-4cf6-8689-0171e71fa58f",
-            "app_id": "50348927-2c4f-4023-b638-445469c66953",
-            "app_data": {
-                "id": "50348927-2c4f-4023-b638-445469c66953",
-                "title": "Employee",
-                "code": "employee",
-            },
-            "plan_id": "395eb68e-266f-45b9-b667-bd2086325522",
-            "plan_data": {
-                "id": "395eb68e-266f-45b9-b667-bd2086325522",
-                "title": "HRM",
-                "code": "hrm",
-            },
-            "create": True, "view": True, "edit": False, "delete": False, "range": "4",
-        }
-    ]
-    permission_by_configured = models.JSONField(
-        default=list, verbose_name='Permissions was configured by Administrator'
-    )
-
-    # as sum data permissions
-    permissions_parsed_sample = {
-        'hr.employee.view': {
-                '4': {},
-        },
-        'hr.employee.edit': {'4': {}},
-        '{app_label}.{model_code}.{perm_code}': {'{range_code}': {}},
-    }
-    permissions_parsed = models.JSONField(default=dict, verbose_name='Data was parsed')
-
-    # summary keys
-    permission_keys = ('permission_by_id', 'permission_by_configured')
-
-    class Meta:
-        abstract = True
-        default_permissions = ()
-        permissions = ()
-
-    def append_permit_by_ids(self, app_label, model_code, perm_code, doc_id):
-        if app_label and model_code and perm_code:
-            key = f'{app_label}.{model_code}.{perm_code}'.lower()
-
-            permission_by_id = self.permission_by_id
-            if key not in permission_by_id:
-                permission_by_id[key] = []
-
-            permission_by_id[key] = list(set(permission_by_id[key] + [str(doc_id)]))
-
-            self.permission_by_id = permission_by_id
-            super().save(update_fields=['permission_by_id'])
-        return self
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-
-class Employee(TenantAbstractModel, PermissionAbstractModel):
+class Employee(TenantAbstractModel):
     code = models.CharField(max_length=25, blank=True)
 
     first_name = models.CharField(max_length=100)
@@ -156,6 +86,31 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
         verbose_name='Is Admin Company',
     )
 
+    # as sum data permissions
+    permissions_parsed_sample = {
+        'hr.employee.view': {
+            '4': {},
+            'ids': {
+                '{doc_id}': {},
+            },
+            'opp': {
+                '{opp_id}': {
+                    'me': {},
+                    'all': {},
+                },
+            },
+            'prj': {
+                '{project_id}': {
+                    'me': {},
+                    'all': {},
+                },
+            },
+        },
+        'hr.employee.edit': {'4': {}},
+        '{app_label}.{model_code}.{perm_code}': {'{range_code}': {}},
+    }
+    permissions_parsed = models.JSONField(default=dict, verbose_name='Data was parsed')
+
     class Meta:
         verbose_name = 'Employee'
         verbose_name_plural = 'Employee'
@@ -217,6 +172,12 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             self.code = f"EMP{temper}"
             return True
         return False
+
+    def append_permit_by_ids(self, app_label, model_code, perm_code, doc_id, tenant_id):
+        employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return employee_permit_obj.append_permit_by_ids(
+            app_label=app_label, model_code=model_code, perm_code=perm_code, doc_id=doc_id, tenant_id=tenant_id
+        )
 
     @classmethod
     def generate_code(cls, company_id):
@@ -318,6 +279,14 @@ class Employee(TenantAbstractModel, PermissionAbstractModel):
             ]
         return []
 
+    def permit_obj(self):
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj
+
+    def permit_obj__permission_by_configured(self) -> list:
+        obj, _created = EmployeePermission.objects.get_or_create(employee=self)
+        return obj.permission_by_configured
+
 
 class SpaceEmployee(SimpleAbstractModel):
     space = models.ForeignKey('space.Space', on_delete=models.CASCADE)
@@ -332,232 +301,60 @@ class SpaceEmployee(SimpleAbstractModel):
 
 
 class PlanEmployee(SimpleAbstractModel):
-    plan = models.ForeignKey(
-        'base.SubscriptionPlan',
-        on_delete=models.CASCADE
-    )
-    employee = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE
-    )
+    plan = models.ForeignKey('base.SubscriptionPlan', on_delete=models.CASCADE)
+    employee = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
     application = models.JSONField(default=list)
+    application_m2m = models.ManyToManyField(
+        'base.Application',
+        through='PlanEmployeeApp',
+        related_name='employee_apps',
+        symmetrical=False,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = 'Plan of Employee'
         verbose_name_plural = 'Plan of Employee'
         default_permissions = ()
         permissions = ()
+        ordering = ('plan__title',)
 
 
-# role | job position
-class Role(TenantAbstractModel, PermissionAbstractModel):
-    abbreviation = models.CharField(
-        verbose_name='abbreviation of role (Business analysis -> BA)',
-        max_length=10,
-        blank=True,
-        null=True
-    )
-    employee = models.ManyToManyField(
-        'hr.Employee',
-        through="RoleHolder",
-        symmetrical=False,
-        blank=True,
-        related_name='role_map_employee'
-    )
-    plan = models.ManyToManyField(
-        'base.SubscriptionPlan',
-        through="PlanRole",
-        symmetrical=False,
-        blank=True,
-        related_name='role_map_plan',
-    )
-
-    def sync_plan_app(self, plan_app_data_dict):
-        ids_valid = []
-        for obj in PlanRole.objects.filter(plan_id__in=plan_app_data_dict.keys(), role=self):
-            data = plan_app_data_dict.get(str(obj.plan_id), None)
-            if data:
-                ids_valid.append(str(obj.plan_id))
-                obj.application = data['application']
-                obj.application_m2m.clear()
-                for app_id in data['application']:
-                    PlanRoleApp.objects.create(plan_role=obj, application_id=app_id)
-
-        if len(ids_valid) < len(plan_app_data_dict.keys()):
-            for plan_id, data in plan_app_data_dict.items():
-                if plan_id not in ids_valid:
-                    obj = PlanRole.objects.create(plan_id=plan_id, role=self, application=data['application'])
-                    for app_id in data['application']:
-                        PlanRoleApp.objects.create(plan_role=obj, application_id=app_id)
-        return super().save()
-
-    class Meta:
-        verbose_name = 'Role'
-        verbose_name_plural = 'Roles'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class RoleHolder(SimpleAbstractModel):
-    employee = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        null=True,
-    )
-
-    role = models.ForeignKey(
-        'hr.Role',
-        on_delete=models.CASCADE,
-        null=True,
-    )
-
-
-class PlanRole(SimpleAbstractModel):
-    plan = models.ForeignKey(
-        'base.SubscriptionPlan',
-        on_delete=models.CASCADE,
-        related_name='role_plans',
-    )
-    role = models.ForeignKey(
-        'hr.Role',
-        on_delete=models.CASCADE,
-        related_name='role_plan_app',
-    )
-    application = models.JSONField(default=list)
-    application_m2m = models.ManyToManyField(
-        'base.Application',
-        through='PlanRoleApp',
-        related_name='role_apps',
-        symmetrical=False,
-        blank=True,
-    )
-
-    class Meta:
-        verbose_name = 'Plan of Role'
-        verbose_name_plural = 'Plan of Role'
-        default_permissions = ()
-        permissions = ()
-
-
-class PlanRoleApp(SimpleAbstractModel):
-    plan_role = models.ForeignKey(
-        'hr.PlanRole',
-        on_delete=models.CASCADE,
-        related_name='app_of_plan_role',
-    )
+class PlanEmployeeApp(SimpleAbstractModel):
+    plan_employee = models.ForeignKey('hr.PlanEmployee', on_delete=models.CASCADE, related_name='app_of_plan_employee')
     application = models.ForeignKey(
         'base.Application',
         on_delete=models.CASCADE,
-        related_name='app_use_by_plan_role',
+        related_name='app_use_by_plan_employee',
     )
 
     class Meta:
         verbose_name = 'App of Plan Role'
         verbose_name_plural = 'App of Plan Role'
-        unique_together = ('plan_role', 'application')
+        unique_together = ('plan_employee', 'application')
         default_permissions = ()
         permissions = ()
+        ordering = ('application__title',)
 
 
-# Group Level
-class GroupLevel(TenantAbstractModel):
-    level = models.IntegerField(
-        verbose_name='group level',
-        null=True
-    )
-    description = models.CharField(
-        verbose_name='group level description',
-        max_length=500,
-        blank=True,
-        null=True
-    )
-    first_manager_description = models.CharField(
-        verbose_name='first manager description',
-        max_length=500,
-        blank=True,
-        null=True
-    )
-    second_manager_description = models.CharField(
-        verbose_name='second manager description',
-        max_length=500,
-        blank=True,
-        null=True
-    )
+class EmployeePermission(SimpleAbstractModel, PermissionAbstractModel):
+    employee = models.OneToOneField('hr.Employee', on_delete=models.CASCADE)
+
+    def get_app_allowed(self) -> str:
+        return str(self.employee_id)
+
+    def sync_parsed_to_main(self):
+        self.employee.permissions_parsed = self.permissions_parsed
+        self.employee.save(update_fields=['permissions_parsed'])
+
+    def save(self, *args, **kwargs):
+        sync_parsed = kwargs.pop('sync_parsed', False)
+        super().save(*args, **kwargs)
+        if sync_parsed is True:
+            self.sync_parsed_to_main()
 
     class Meta:
-        verbose_name = 'Group Level'
-        verbose_name_plural = 'Group Levels'
-        ordering = ('level',)
+        verbose_name = 'Permission of Employee'
+        verbose_name_plural = 'Permission of Employee'
         default_permissions = ()
         permissions = ()
-
-
-# group | department
-class Group(TenantAbstractModel):
-    group_level = models.ForeignKey(
-        'hr.GroupLevel',
-        on_delete=models.CASCADE,
-        null=True
-    )
-    parent_n = models.ForeignKey(
-        "self",
-        on_delete=models.CASCADE,
-        related_name="group_parent_n",
-        verbose_name="parent group",
-        null=True,
-    )
-    description = models.CharField(
-        verbose_name='group description',
-        max_length=600,
-        blank=True,
-        null=True
-    )
-    group_employee = models.JSONField(
-        verbose_name="group employee",
-        null=True,
-        default=list
-    )
-    first_manager = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name="group_first_manager",
-        null=True
-    )
-    first_manager_title = models.CharField(
-        verbose_name='first manager title',
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    second_manager = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name="group_second_manager",
-        null=True
-    )
-    second_manager_title = models.CharField(
-        verbose_name='second manager title',
-        max_length=100,
-        blank=True,
-        null=True
-    )
-    is_active = models.BooleanField(
-        verbose_name='active status',
-        default=True
-    )
-    is_delete = models.BooleanField(
-        verbose_name='delete',
-        default=False
-    )
-
-    class Meta:
-        verbose_name = 'Group'
-        verbose_name_plural = 'Groups'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-    @classmethod
-    def groups_my_manager(cls, employee_id: Union[UUID, str]) -> list[str]:
-        return [str(x) for x in cls.objects.filter(first_manager_id=employee_id).values_list('id', flat=True)]

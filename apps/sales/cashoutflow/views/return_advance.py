@@ -10,6 +10,7 @@ from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveM
 # Create your views here.
 class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     queryset = ReturnAdvance.objects
+    search_fields = ['title']
     serializer_list = ReturnAdvanceListSerializer
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
@@ -56,7 +57,7 @@ class ReturnAdvanceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'advance_payment', 'beneficiary'
+            'advance_payment', 'employee_inherit'
         )
 
     @swagger_auto_schema(operation_summary='Detail Return Advance')

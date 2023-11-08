@@ -197,8 +197,10 @@ class ContactDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class ContactListNotMapAccount(BaseListMixin):
     queryset = Contact.objects
     serializer_list = ContactListNotMapAccountSerializer
-    serializer_detail = ContactDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().filter(account_name=None)
 
     @swagger_auto_schema(
         operation_summary="Contact list not map account",
@@ -209,5 +211,4 @@ class ContactListNotMapAccount(BaseListMixin):
         label_code='saledata', model_code='contact', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
-        kwargs.update({'account_name': None})
         return self.list(request, *args, **kwargs)

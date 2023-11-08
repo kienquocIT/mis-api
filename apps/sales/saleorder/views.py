@@ -1,21 +1,27 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
     SaleOrderProduct, SaleOrderCost
 from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
     SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
-    SaleOrderProductListSerializer
+    SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
 from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
     SaleOrderConfigDetailSerializer
 from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
     SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer, SaleOrderIndicatorCreateSerializer
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
 
 
 class SaleOrderList(BaseListMixin, BaseCreateMixin):
     queryset = SaleOrder.objects
-    filterset_fields = []
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'delivery_call': ['exact'],
+        'system_status': ['in'],
+        'quotation_id': ['exact'],
+    }
     serializer_list = SaleOrderListSerializer
     serializer_create = SaleOrderCreateSerializer
     serializer_detail = SaleOrderDetailSerializer
@@ -87,10 +93,18 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "promotion",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
             Prefetch(
@@ -102,9 +116,17 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
                     "product__sale_default_uom",
                     "product__sale_tax",
                     "product__sale_currency_using",
+                    "product__purchase_default_uom",
+                    "product__purchase_tax",
                     "unit_of_measure",
                     "tax",
                     "shipping",
+                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
+                    Prefetch(
+                        'product__product_price_product',
+                        queryset=ProductPriceList.objects.select_related('price_list'),
+                    ),
+                    'product__general_product_types_mapped',
                 ),
             ),
         )
@@ -135,13 +157,18 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class SaleOrderExpenseList(BaseListMixin):
     queryset = SaleOrderExpense.objects
+    filterset_fields = {
+        'sale_order_id': ['exact'],
+    }
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related(
-            "tax",
-            "expense"
-        )
+        filter_sale_order = self.request.query_params.get('filter_sale_order', None)
+        if filter_sale_order and TypeCheck.check_uuid(filter_sale_order):
+            return super().get_queryset().select_related("tax", "expense").filter(
+                sale_order_id=self.request.query_params['filter_sale_order']
+            )
+        return SaleOrderExpense.objects.none()
 
     @swagger_auto_schema(
         operation_summary="SaleOrderExpense List",
@@ -149,11 +176,6 @@ class SaleOrderExpenseList(BaseListMixin):
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        kwargs.update(
-            {
-                'sale_order_id': request.query_params['filter_sale_order'],
-            }
-        )
         return self.list(request, *args, **kwargs)
 
 
@@ -193,8 +215,8 @@ class SaleOrderIndicatorList(
     serializer_list = SaleOrderIndicatorListSerializer
     serializer_create = SaleOrderIndicatorCreateSerializer
     serializer_detail = SaleOrderIndicatorListSerializer
-    list_hidden_field = ['company_id']
-    create_hidden_field = ['company_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', ]
 
     @swagger_auto_schema(
         operation_summary="Sale Order Indicator List",
@@ -221,6 +243,8 @@ class SaleOrderIndicatorDetail(
     queryset = SaleOrderIndicatorConfig.objects
     serializer_detail = SaleOrderIndicatorListSerializer
     serializer_update = SaleOrderIndicatorUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     @swagger_auto_schema(
         operation_summary="Sale Order Indicator detail",
@@ -266,36 +290,17 @@ class SaleOrderListForCashOutFlow(BaseListMixin):
     def get_queryset(self):
         return super().get_queryset().select_related("customer", "sale_person", "opportunity", "quotation")
 
+    def error_auth_require(self):
+        return self.list_empty()
+
     @swagger_auto_schema(
         operation_summary="Sale Order List For Cash Outflow",
         operation_description="Get Sale Order List For Cash Outflow",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
+        self.paginator.page_size = -1
         return self.list(request, *args, **kwargs)
-
-
-# class SaleOrderProductList(BaseListMixin):
-#     queryset = SaleOrderProduct.objects
-#     filterset_fields = {
-#         'sale_order_id': ['exact', 'in']
-#     }
-#     serializer_list = SaleOrderProductListSerializer
-#
-#     def get_queryset(self):
-#         return super().get_queryset().select_related(
-#             "product"
-#         ).filter(
-#             product__isnull=False
-#         )
-#
-#     @swagger_auto_schema(
-#         operation_summary="SaleOrderProduct List",
-#         operation_description="Get SaleOrderProduct List",
-#     )
-#     @mask_view(login_require=True, auth_require=False)
-#     def get(self, request, *args, **kwargs):
-#         return self.list(request, *args, **kwargs)
 
 
 class ProductListSaleOrder(BaseRetrieveMixin):
@@ -309,3 +314,23 @@ class ProductListSaleOrder(BaseRetrieveMixin):
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+
+class SaleOrderPurchasingStaffList(BaseListMixin):
+    queryset = SaleOrder.objects
+    serializer_list = SaleOrderPurchasingStaffListSerializer
+    filterset_fields = {
+        'employee_inherit': ['exact', 'in'],
+    }
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('sale_order_product_sale_order')
+
+    @swagger_auto_schema(
+        operation_summary="Sale Order List For Purchasing Staff",
+        operation_description="Get Sale Order List For Purchasing Staff"
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

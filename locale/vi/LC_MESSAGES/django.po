@@ -328,7 +328,7 @@ msgstr "Số lượng lấy hàng phải nhỏ hơn hoặc bằng số lượng 
 
 #
 msgid "Can not update when status is Done!"
-msgstr "Không thể lưu khi phiếu đã hoàn tất"
+msgstr "Không thể lưu khi phiếu đã hoàn tất!"
 
 #
 msgid "Done quantity not equal remain quantity!"
@@ -363,6 +363,10 @@ msgid "Permission format is incorrect"
 msgstr "Thiết lập quyền không đúng"
 
 #
+msgid "Some subscription is expired or not found"
+msgstr "Một số gói đăng ký đã hết hạn hoặc không được tìm thấy"
+
+#
 msgid "Don't permit edit, the flow have {} process using. Go to instructions page for the way apply new flow or reconfigure old flow."
 msgstr "Không cho phép chỉnh sửa khi quy trình này đang có {} đang thực thi. Đi tới trang hướng dẫn để dđược hướng dẫn cách áp dụng quy trình mới hoặc cấu hình lại quy trình cũ."
 
@@ -377,3 +381,151 @@ msgstr "Ứng dụng không tồn tại hoặc hết hạn"
 #
 msgid "Approved"
 msgstr "Đã Phê Duyệt"
+
+#
+msgid "Please setup Leader of Picking/Delivery in config page before create request"
+msgstr "Vui lòng chọn quản lý cho chức năng Lấy hàng/Giao hàng trong trang cấu hình trước khi tạo yêu cầu"
+
+#
+msgid "Estimated Delivery date is required!"
+msgstr "Ngày giao hàng dự kiến là bắt buộc!"
+
+#
+msgid "Maternity leave-social insurance"
+msgstr "Nghỉ thai sản"
+
+#
+msgid "Sick yours child-social insurance"
+msgstr "Con cái bị bệnh"
+
+#
+msgid "Sick yourself-social insurance"
+msgstr "Bản thân bị bệnh"
+
+#
+msgid "Funeral your family (max 3 days)"
+msgstr "Nghỉ ma chay trong gia đình (nhiều nhất 3 ngày)"
+
+#
+msgid "Marriage your child (max 1 days)"
+msgstr "Nghỉ đám cưới của con cái (nhiều nhất 1 ngày)"
+
+#
+msgid "Marriage yourself (max 3 days)"
+msgstr "Nghỉ đám cưới của tôi (nhiều nhất 3 ngày)"
+
+#
+msgid "Unpaid leave"
+msgstr "Nghỉ không lương"
+
+#
+msgid "Annual leave-previous year balance"
+msgstr "Phép dư năm trước"
+
+#
+msgid "Annual leave"
+msgstr "Nghỉ phép năm"
+
+#
+msgid "View config is enable authenticated checking but not provide value of permit"
+msgstr "Cấu hình lớp xử lý yêu cầu HTTP yêu cầu kiểm tra xác thực quyền nhưng không cung cấp giá trị quyền"
+
+#
+msgid "You can not delete member because you do not have permission"
+msgstr "Bạn không quyền xoá thành viên"
+
+#
+msgid "You can not add member because you do not have permission"
+msgstr "Bạn không có quyền thêm thành viên"
+
+#
+msgid "You can not delete or add member because you not in sale team"
+msgstr "Bạn không có quyền xoá hoặc thêm thành viên"
+
+#
+msgid "Member does not exist in sale team"
+msgstr "Thành viên không tồn tại"
+
+#
+msgid "Members must be required"
+msgstr "Danh sách thành viên là bắt buộc"
+
+#
+msgid "Plan not found"
+msgstr "Không tìm thấy gói"
+
+#
+msgid "Some app is not found"
+msgstr "Không tìm thấy một số ứng dụng"
+
+#
+msgid "Some app not match with plan"
+msgstr "Một số ứng dụng không liên kết đúng với gói"
+
+#
+msgid "Plan Type is incorrect"
+msgstr "Kiểu gói không đúng"
+
+#
+msgid "Some member not found"
+msgstr "Một số thành viên không tìm thấy"
+
+#
+msgid "Some leave type can not edit please verify again"
+msgstr "Một số loại nghỉ phép không thể chỉnh sửa vui lòng thử lại"
+
+#
+msgid "Can not find config of your company please contact Admin maintain this feature."
+msgstr "Không tìm thấy cấu hình của công ty, vui lòng liên hệ bộ phận chăm sóc khách hàng"
+
+#
+msgid "This code is available."
+msgstr "Mã này đã tồn tại"
+
+#
+msgid "Title is required."
+msgstr "Trường tiêu đề là bắt buộc."
+
+#
+msgid "This type can’t delete"
+msgstr "Loại này không thể xoá"
+
+#
+msgid "This year had available or wrong format"
+msgstr "Năm này đã tồn tại hoặc sai định dạng"
+
+#
+msgid "Employee inherit is empty"
+msgstr "Người thụ hưởng đang trống"
+
+#
+msgid "Detail request day off is required"
+msgstr "Chi tiết ngày nghỉ đang trống"
+
+#
+msgid "Can not update leave available"
+msgstr "Không thể update danh sách số dư nghỉ phép."
+
+#
+msgid "This holiday had available in this year"
+msgstr "Ngày nghỉ đã tồn tại"
+
+#
+msgid "Number of paid annual leave days minimum is 12"
+msgstr "Số ngày phép được trả lương tối thiểu là 12"
+
+#
+msgid "By admin"
+msgstr "Bởi quản trị viên"
+
+#
+msgid "By system"
+msgstr "Bởi hệ thống"
+
+#
+msgid "By employee"
+msgstr "Bởi người dùng"
+
+#
+msgid "Quantity number is wrong format"
+msgstr "Số lượng sai định dạng"

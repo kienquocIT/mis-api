@@ -106,7 +106,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -119,7 +119,7 @@ class TestCaseQuotation(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -306,7 +306,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "opportunity": opportunity,
             "customer": customer,
             "contact": contact,
-            "sale_person": employee,
+            "employee_inherit_id": employee,
             "payment_term": payment_term,
         }
         url = reverse("QuotationList")
@@ -387,7 +387,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "opportunity": opportunity,
             "customer": customer,
             "contact": contact,
-            "sale_person": employee,
+            "employee_inherit_id": employee,
             "payment_term": payment_term,
             "total_product_pretax_amount": 34012280.95,
             "total_product_discount_rate": 0,

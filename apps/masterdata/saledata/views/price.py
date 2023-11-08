@@ -17,6 +17,7 @@ from apps.masterdata.saledata.serializers.price import (
 # Create your views here.
 class TaxCategoryList(BaseListMixin, BaseCreateMixin):
     queryset = TaxCategory.objects
+    search_fields = ['title']
     serializer_list = TaxCategoryListSerializer
     serializer_create = TaxCategoryCreateSerializer
     serializer_detail = TaxCategoryDetailSerializer
@@ -72,6 +73,7 @@ class TaxCategoryDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
 class TaxList(BaseListMixin, BaseCreateMixin):
     queryset = Tax.objects
+    search_fields = ['title']
     serializer_list = TaxListSerializer
     serializer_create = TaxCreateSerializer
     serializer_detail = TaxDetailSerializer
@@ -138,6 +140,7 @@ class CurrencyList(BaseListMixin, BaseCreateMixin):
     serializer_detail = CurrencyDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    search_fields = ['title']
     filterset_fields = {
         "currency__code": ["exact"],
     }
@@ -208,6 +211,7 @@ class SyncWithVCB(BaseUpdateMixin):
 
 class PriceList(BaseListMixin, BaseCreateMixin):
     queryset = Price.objects
+    search_fields = ['title']
     serializer_list = PriceListSerializer
     serializer_create = PriceCreateSerializer
     serializer_detail = PriceDetailSerializer

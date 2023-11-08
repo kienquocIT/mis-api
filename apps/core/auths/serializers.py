@@ -122,3 +122,23 @@ class AuthValidAccessCodeSerializer(serializers.Serializer): # noqa
     access_id = serializers.UUIDField()
     user_agent = serializers.CharField()
     public_ip = serializers.CharField()
+
+
+class MyLanguageUpdateSerializer(serializers.ModelSerializer):
+    @classmethod
+    def validate_language(cls, attrs):
+        if attrs and attrs in dict(settings.LANGUAGE_CHOICE):
+            return attrs
+        raise serializers.ValidationError({
+            'language': AuthMsg.LANGUAGE_NOT_SUPPORT,
+        })
+
+    def update(self, instance, validated_data):
+        language = validated_data['language']
+        instance.language = language
+        instance.save()
+        return instance
+
+    class Meta:
+        model = User
+        fields = ('language',)

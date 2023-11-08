@@ -37,7 +37,11 @@ SECRET_KEY = 'django-insecure-z+!6=0b0sdkx!#su_z1$+6(*_8&5lo5&%jy8n76c5l1b1um&%t
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG_PERMIT = False
+DEBUG_BG_TASK = False
 DEBUG_SIGNAL_CHANGE = False
+SHOW_TESTCASE_NAME = False
+SHOW_SYSTEM_DATA = False
 
 ALLOWED_HOSTS = []
 ALLOWED_CIDR_NETS = []  # whitelist range IP
@@ -63,6 +67,7 @@ INSTALLED_APPS = \
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
+        'django_extensions',  # some tool for command | https://github.com/django-extensions/django-extensions
     ] + [  # integrate some service management or tracing
         'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
@@ -89,6 +94,11 @@ INSTALLED_APPS = \
         'apps.sales.task',
         'apps.sales.purchasing',
         'apps.sales.inventory',
+        'apps.eoffice.leave',
+
+        'apps.sales.project',
+        'django_celery_beat',  # celery crontab
+        'apps.sales.report',
     ]
 
 MIDDLEWARE = [
@@ -265,6 +275,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # test runner override | runner for command: python manage.py test
 TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+TEST_ARGS = ['--keepdb']
+DJANGO_TEST_ARGS = ['--keepdb']
 # -- test runner override | runner for command: python manage.py test
 
 # REST API & JWT
@@ -525,9 +537,15 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
     JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
 # -- Tracing
 
+# debug permit working
+SHOW_SYSTEM_DATA = True if os.environ.get('SHOW_SYSTEM_DATA', '0') in [1, '1'] else False
+SHOW_TESTCASE_NAME = True if os.environ.get('SHOW_TESTCASE_NAME', '0') in [1, '1'] else False
+DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
+DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
+
 # Display config about DB, Cache, CELERY,...
-OS_DEBUG = os.environ.get('DEBUG', DEBUG)
-if OS_DEBUG is True or OS_DEBUG in [1, '1']:
+DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
+if DEBUG is True:
     # debug toolbar IP Internal
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]

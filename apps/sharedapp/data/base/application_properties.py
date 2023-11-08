@@ -966,11 +966,92 @@ AppProp_SaleData_SaleOrder_data = {
     },
 }
 
+AppProp_SaleData_Delivery_data = {
+    # 1373e903-909c-4b77-9957-8bcf97e8d6d3 # sales.OrderDelivery
+    # General fields
+    '3fef3ac1-685f-45a0-ab78-a925945569c9': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Estimated delivery date',
+        'code': 'estimated_delivery_date',
+        'type': 2,
+    },
+    '97528d8d-6afb-478b-aca3-c19707e86d0d': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Actual delivery date',
+        'code': 'actual_delivery_date',
+        'type': 2,
+    },
+    '90f5c396-9536-48bf-b39c-e5d9c7628163': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Descriptions',
+        'code': 'remarks',
+        'type': 1,
+    },
+    '2773759d-6a10-4421-825a-1c9a0391eb84': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Employee inherit',
+        'code': 'employee_inherit',
+        'type': 5,
+    },
+    '987f4ff4-9b89-41a7-b05f-3589b9807861': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'attachment file',
+        'code': 'attachments',
+        'type': 5,
+    },
+    '5f4d7b52-5805-411f-9d6d-d6f7ce91ff3c': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Shipping address',
+        'code': 'shipping_address',
+        'type': 1,
+    },
+    '0cd3a273-cc60-4634-b11d-fb4346f72572': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Billing address',
+        'code': 'billing_address',
+        'type': 1,
+    },
+    '0255377b-e1e7-4b96-907e-60f4bb0d0a73': {
+        'application_id': '1373e903-909c-4b77-9957-8bcf97e8d6d3',
+        'title': 'Product quantity',
+        'code': 'ready_quantity',
+        'type': 1,
+    },
+}
+
+AppProp_Eoffice_Leave_data = {
+    'c5e70a65-362e-4350-9300-f2d2de4676be': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+    },
+    'e218e34c-80e8-49b5-9fe2-8042c2af65c0': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Date',
+        'code': 'request_date',
+        'type': 2,
+    },
+    '172ba1ae-4692-4613-9145-f633b7dfc397': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Beneficiary',
+        'code': 'employee_inherit',
+        'type': 5,
+    },
+    '98c92a00-4abd-40f6-b354-e2c9141d36cd': {
+        'application_id': 'baff033a-c416-47e1-89af-b6653534f06e',
+        'title': 'Detail tab',
+        'code': 'detail_data',
+        'type': 1,
+    },
+
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
     **AppProp_SaleData_Quotation_data,
     **AppProp_SaleData_Opportunity_data,
     **AppProp_SaleData_SaleOrder_data,
-    # **AppProp_SaleData_Delivery_data,
+    **AppProp_Eoffice_Leave_data,
 }

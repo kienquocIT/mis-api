@@ -5,7 +5,6 @@ from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, Goods
     GoodsReceiptWarehouse
 from apps.sales.inventory.serializers.goods_receipt import GoodsReceiptListSerializer, GoodsReceiptCreateSerializer, \
     GoodsReceiptUpdateSerializer, GoodsReceiptDetailSerializer
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderCreateSerializer
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -14,18 +13,20 @@ class GoodsReceiptList(
     BaseCreateMixin
 ):
     queryset = GoodsReceipt.objects
+    search_fields = ['title', 'code']
     filterset_fields = {
         'purchase_order_id': ['exact'],
     }
     serializer_list = GoodsReceiptListSerializer
     serializer_create = GoodsReceiptCreateSerializer
     serializer_detail = GoodsReceiptListSerializer
-    list_hidden_field = ['tenant_id', 'company_id']
-    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id', 'employee_modified_id']
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
             "purchase_order",
+            "inventory_adjustment",
         )
 
     @swagger_auto_schema(
@@ -33,8 +34,8 @@ class GoodsReceiptList(
         operation_description="Get Goods receipt List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -42,11 +43,11 @@ class GoodsReceiptList(
     @swagger_auto_schema(
         operation_summary="Create Goods receipt",
         operation_description="Create new Goods receipt",
-        request_body=PurchaseOrderCreateSerializer,
+        request_body=GoodsReceiptCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -59,7 +60,8 @@ class GoodsReceiptDetail(
     queryset = GoodsReceipt.objects
     serializer_detail = GoodsReceiptDetailSerializer
     serializer_update = GoodsReceiptUpdateSerializer
-    update_hidden_field = ['employee_modified_id']
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -72,6 +74,8 @@ class GoodsReceiptDetail(
                 queryset=GoodsReceiptProduct.objects.select_related(
                     'product',
                     'uom',
+                    'uom__group',
+                    'uom__group__uom_reference',
                     'tax',
                 ).prefetch_related(
                     Prefetch(
@@ -97,12 +101,12 @@ class GoodsReceiptDetail(
         )
 
     @swagger_auto_schema(
-        operation_summary="Goods receipt order detail",
+        operation_summary="Goods receipt detail",
         operation_description="Get Goods receipt detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -113,8 +117,8 @@ class GoodsReceiptDetail(
         request_body=GoodsReceiptUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='purchasing', model_code='purchaseorder', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

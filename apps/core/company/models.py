@@ -58,6 +58,14 @@ class Company(CoreAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @property
+    def config(self) -> Union[None, models.Model]:
+        try:
+            return CompanyConfig.objects.get(company=self)
+        except CompanyConfig.DoesNotExist:
+            pass
+        return None
+
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         # update total company of tenant
@@ -302,6 +310,8 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
     @classmethod
     def all_user_of_company(cls, company_id: Union[UUID, str]):
-        return list(set(
-            cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
-        ))
+        return list(
+            set(
+                cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
+            )
+        )

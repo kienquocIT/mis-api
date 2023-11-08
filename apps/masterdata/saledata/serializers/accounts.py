@@ -67,8 +67,8 @@ class AccountListSerializer(serializers.ModelSerializer):
         contact_mapped = obj.contact_account_name.all()
         if contact_mapped.count() > 0:
             list_contact_mapped = []
-            for i in contact_mapped:
-                list_contact_mapped.append(str(i.id))
+            for item in contact_mapped:
+                list_contact_mapped.append(str(item.id))
             return list_contact_mapped
         return []
 
@@ -434,35 +434,35 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
         )
         if contact_mapped.count() > 0:
             list_contact_mapped = []
-            for i in contact_mapped:
-                if i.is_primary:
+            for item in contact_mapped:
+                if item.is_primary:
                     list_contact_mapped.insert(
                         0, (
                             {
-                                'id': i.id,
-                                'fullname': i.fullname,
-                                'job_title': i.job_title,
-                                'email': i.email,
-                                'mobile': i.mobile,
-                                'is_account_owner': i.is_primary,
+                                'id': item.id,
+                                'fullname': item.fullname,
+                                'job_title': item.job_title,
+                                'email': item.email,
+                                'mobile': item.mobile,
+                                'is_account_owner': item.is_primary,
                                 'owner': {
-                                    'id': i.owner_id,
-                                    'fullname': i.owner.get_full_name(2)
+                                    'id': item.owner_id,
+                                    'fullname': item.owner.get_full_name(2)
                                 }
                             })
                     )
                 else:
                     list_contact_mapped.append(
                         {
-                            'id': i.id,
-                            'fullname': i.fullname,
-                            'job_title': i.job_title,
-                            'email': i.email,
-                            'mobile': i.mobile,
-                            'is_account_owner': i.is_primary,
+                            'id': item.id,
+                            'fullname': item.fullname,
+                            'job_title': item.job_title,
+                            'email': item.email,
+                            'mobile': item.mobile,
+                            'is_account_owner': item.is_primary,
                             'owner': {
-                                'id': i.owner_id,
-                                'fullname': i.owner.get_full_name(2)
+                                'id': item.owner_id,
+                                'fullname': item.owner.get_full_name(2)
                             }
                         }
                     )
@@ -774,7 +774,13 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        return {'id': obj.owner_id, 'fullname': obj.owner.fullname} if obj.owner else {}
+        return {
+            'id': obj.owner_id,
+            'fullname': obj.owner.fullname,
+            'email': obj.owner.email,
+            'mobile': obj.owner.mobile,
+            'job_title': obj.owner.job_title,
+        } if obj.owner else {}
 
     @classmethod
     def get_industry(cls, obj):

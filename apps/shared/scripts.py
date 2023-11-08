@@ -2,10 +2,10 @@ from datetime import date
 from apps.core.company.models import Company
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
-    Expense, ProductProductType
+    Expense,
 )
 from apps.masterdata.saledata.models.price import (
-    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
@@ -15,7 +15,7 @@ from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
+    Payment, PaymentCost,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
@@ -25,12 +25,22 @@ from apps.masterdata.saledata.models import (
 from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.hr.models import Employee, Role
-from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder
+from .permissions.util import PermissionController
+from ..core.hr.models import (
+    Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
+    PlanRole, PlanRoleApp,
+)
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
+    GoodsReceiptWarehouse
+from ..sales.opportunity.models import (
+    Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
+    OpportunitySaleTeamMember, OpportunityDocument,
+)
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
+    PurchaseOrderRequestProduct, PurchaseOrder
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.report.models import ReportRevenue
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
 def update_sale_default_data_old_company():
@@ -143,16 +153,6 @@ def update_account_billing_address():
 def delete_all_ap():
     AdvancePayment.objects.all().delete()
     AdvancePaymentCost.objects.all().delete()
-    return True
-
-
-def delete_all_payment():
-    Payment.objects.all().delete()
-    PaymentCost.objects.all().delete()
-    PaymentCostItems.objects.all().delete()
-    PaymentCostItemsDetail.objects.all().delete()
-    PaymentSaleOrder.objects.all().delete()
-    PaymentQuotation.objects.all().delete()
     return True
 
 
@@ -301,24 +301,6 @@ def make_sure_sale_order_indicator_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).sale_order_indicator_config()
     print('Make sure sale order indicator config is done!')
-
-
-def delete_delivery_picking():
-    # delete delivery
-    order_delivery = OrderDelivery.objects.all()
-    order_delivery.update(sub=None)
-    OrderDeliverySub.objects.all().delete()
-    order_delivery.delete()
-
-    # delete picking
-    order_picking = OrderPicking.objects.all()
-    order_picking.update(sub=None)
-    OrderPickingSub.objects.all().delete()
-    order_picking.delete()
-
-    # reset warehouse
-    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
-    print("delete done.")
 
 
 def update_stage_for_opportunity():
@@ -712,15 +694,17 @@ def update_opportunity_contact_role_datas():
         list_data = []
         for data in opp.opportunity_contact_role_datas:
             obj_contact = Contact.objects.get(id=data['contact']['id'])
-            list_data.append({
-                'type_customer': data['type_customer'],
-                'role': data['role'],
-                'job_title': data['job_title'],
-                'contact': {
-                    'id': str(obj_contact.id),
-                    'fullname': obj_contact.fullname,
+            list_data.append(
+                {
+                    'type_customer': data['type_customer'],
+                    'role': data['role'],
+                    'job_title': data['job_title'],
+                    'contact': {
+                        'id': str(obj_contact.id),
+                        'fullname': obj_contact.fullname,
+                    }
                 }
-            })
+            )
         opp.opportunity_contact_role_datas = list_data
         opp.save()
 
@@ -759,3 +743,536 @@ def update_employee_inherit_return_advance():
         advance_return.employee_created = advance_return.creator
         advance_return.save()
     print('Update done')
+
+
+def make_sure_leave_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_config(None)
+        ConfigDefaultData(obj).working_calendar_config()
+    print('Leave config is done!')
+
+
+def make_sure_function_purchase_request_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).purchase_request_config()
+    print('Make sure function purchase_request_config is done!')
+
+
+def update_sale_person_opportunity():
+    opps = Opportunity.objects.filter(sale_person=None)
+    for opp in opps:
+        opp.sale_person_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_inherit_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_created_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.save(update_fields=['sale_person_id', 'employee_inherit_id', 'employee_created_id'])
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_opp():
+    members = OpportunitySaleTeamMember.objects.all()
+    for member in members:
+        member.company = member.opportunity.company
+        member.tenant = member.opportunity.tenant
+        member.save()
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_inventory_adjustment():
+    objs = InventoryAdjustmentItem.objects.all()
+    for obj in objs:
+        obj.company = obj.inventory_adjustment_mapped.company
+        obj.tenant = obj.inventory_adjustment_mapped.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_quantity_remain_pr_product():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save(update_fields=['remain_for_purchase_order'])
+    print('update done.')
+
+
+def update_tenant_for_sub_table_purchase_request():
+    objs = PurchaseRequestProduct.objects.all()
+    for obj in objs:
+        obj.company = obj.purchase_request.company
+        obj.tenant = obj.purchase_request.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_and_created_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for obj in objs:
+        obj.employee_inherit = obj.beneficiary
+        obj.employee_created = obj.creator
+        obj.save()
+    print('Update Done!')
+
+
+def new_permit_parsed():
+    print('New permit parsed is starting...')
+    for obj in Employee.objects.all():
+        if str(obj.id) in ['9afa6107-a1f9-4d06-b855-aa60b25a70aa', 'ad2fd817-2878-40d0-b05d-4d87a0189de7']:
+            obj.permission_by_configured = []
+        print('Employee: ', obj.id, obj.get_full_name())
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        if str(obj.id) in ['88caae0f-c53a-44d4-b4d8-c9d3856eca66', '54233b73-a4ee-4c2e-8729-8dd33bcaa303']:
+            obj.permission_by_configured = []
+        print('Role: ', obj.id, obj.title)
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit parsed is successfully!')
+
+
+def update_backup_data_purchase_request():
+    for pr in PurchaseRequest.objects.all():
+        data = []
+
+        for item in pr.purchase_request_product_datas:
+            product_obj = Product.objects.get(id=item['product']['id'])
+            data_product = {
+                'id': str(product_obj.id),
+                'title': product_obj.title,
+                'code': product_obj.code,
+                'uom_group': str(product_obj.general_uom_group_id),
+            }
+
+            tax_obj = Tax.objects.get(id=item['tax']['id'])
+            data_tax = {
+                'id': str(tax_obj.id),
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            }
+            data.append(
+                {
+                    'tax': data_tax,
+                    'product': data_product,
+                    'uom': item['uom'],
+                    'description': item['description'],
+                    'unit_price': item['unit_price'],
+                    'sale_order_product': item['sale_order_product'],
+                    'quantity': item['quantity'],
+                    'sub_total_price': item['unit_price'] * item['quantity'],
+                }
+            )
+
+        pr.purchase_request_product_datas = data
+        pr.save(update_fields=['purchase_request_product_datas'])
+    print('Update Done !')
+
+
+def leave_available_create():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_setup()
+    print('create leave available list successfully')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
+
+
+def make_unique_together_opp_member():
+    from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+
+    print('Destroy duplicated opp member starting...')
+    list_filter = []
+    for opp in Opportunity.objects.all():
+        for opp_member in OpportunitySaleTeamMember.objects.filter(opportunity=opp):
+            tmp = {}
+            if opp_member.tenant_id:
+                tmp['tenant_id'] = opp_member.tenant_id
+            else:
+                tmp['tenant_id__isnull'] = True
+
+            if opp_member.company_id:
+                tmp['company_id'] = opp_member.company_id
+            else:
+                tmp['company_id__isnull'] = True
+
+            if opp_member.member_id:
+                tmp['member_id'] = opp_member.member_id
+            else:
+                tmp['member_id__isnull'] = True
+
+            list_filter.append(tmp)
+
+    for dict_filter in list_filter:
+        objs = OpportunitySaleTeamMember.objects.filter(**dict_filter)
+        print(objs.count(), dict_filter)
+        if objs.count() >= 2:
+            for obj in objs[1:]:
+                obj.delete()
+    print('Destroy duplicated opp member successfully!')
+
+
+# BEGIN PRODUCT TRANSACTION INFORMATION
+def update_product_stock_amount(product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if product:
+        product_stock_amount = 0
+        for product_warehouse in product.product_warehouse_product.all():
+            product_stock_amount += product_warehouse.stock_amount
+        product.stock_amount = product_stock_amount
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['available_amount', 'stock_amount'])
+    print('update product stock amount done.')
+
+
+def update_product_wait_delivery_amount(product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if product:
+        product_ordered_quantity = 0
+        for product_ordered in product.sale_order_product_product.filter(
+            sale_order__system_status__in=[2, 3]
+        ):
+            if product_ordered.product:
+                uom_product_inventory = product_ordered.product.inventory_uom
+                uom_product_so = product_ordered.unit_of_measure
+                final_ratio = 1
+                if uom_product_inventory and uom_product_so:
+                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                product_ordered_quantity += product_ordered.product_quantity * final_ratio
+        product.wait_delivery_amount = product_ordered_quantity
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_delivery_amount', 'available_amount'])
+    print('update_product_wait_delivery_amount done.')
+
+
+def update_product_wait_receipt_amount(product_id):
+    product = Product.objects.filter(id=product_id).first()
+    if product:
+        product_purchased_quantity = 0
+        product_receipted_quantity = 0
+        for product_purchased in product.purchase_order_product_product.filter(
+                purchase_order__system_status__in=[2, 3]
+        ):
+            uom_product_inventory = product_purchased.product.inventory_uom
+            uom_product_po = product_purchased.uom_order_actual
+            if product_purchased.uom_order_request:
+                uom_product_po = product_purchased.uom_order_request
+            final_ratio = 1
+            if uom_product_inventory and uom_product_po:
+                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
+            product_quantity_order_request_final = product_purchased.product_quantity_order_actual * final_ratio
+            if product_purchased.purchase_order.purchase_requests.exists():
+                product_quantity_order_request_final = product_purchased.product_quantity_order_request * final_ratio
+            stock_final = product_purchased.stock * final_ratio
+            product_purchased_quantity += product_quantity_order_request_final + stock_final
+        for product_receipted in product.goods_receipt_product_product.filter(
+                goods_receipt__system_status__in=[2, 3],
+                goods_receipt__purchase_order__isnull=False,
+        ):
+            uom_product_inventory = product_receipted.product.inventory_uom
+            uom_product_gr = product_receipted.uom
+            final_ratio = 1
+            if uom_product_inventory and uom_product_gr:
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+            product_receipted_quantity += product_receipted.quantity_import * final_ratio
+        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
+    print('update product wait_receipt_amount done.')
+
+
+def update_product_warehouse_amounts():
+    # update ProductWarehouse
+    for product_warehouse in ProductWareHouse.objects.all():
+        product_warehouse.receipt_amount = product_warehouse.stock_amount
+        product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
+        product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
+    print('update product warehouse done.')
+
+
+def update_product_transaction_information():
+    for product in Product.objects.all():
+        update_product_stock_amount(product_id=product.id)
+        update_product_wait_delivery_amount(product_id=product.id)
+        update_product_wait_receipt_amount(product_id=product.id)
+        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
+        product.save(update_fields=['available_amount'])
+    print('update_product_transaction_information done.')
+
+
+def update_product_warehouse_receipt_amount():
+    for product_warehouse in ProductWareHouse.objects.all():
+        product_warehouse.receipt_amount = 0
+        product_warehouse.sold_amount = 0
+        product_warehouse.stock_amount = 0
+        product_warehouse.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=gr):
+            uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
+            uom_product_gr = gr_warehouse.goods_receipt_product.uom
+            if gr_warehouse.goods_receipt_request_product:  # Case has PR
+                if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
+                    pr_product = gr_warehouse.goods_receipt_request_product.purchase_order_request_product
+                    if pr_product.is_stock is False:  # Case PR is Product
+                        if pr_product.purchase_request_product:
+                            uom_product_gr = pr_product.purchase_request_product.uom
+                    else:  # Case PR is Stock
+                        uom_product_gr = pr_product.uom_stock
+            final_ratio = 1
+            if uom_product_inventory and uom_product_gr:
+                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
+            lot_data = []
+            serial_data = []
+            for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
+                if lot.lot:
+                    lot.lot.quantity_import += lot.quantity_import * final_ratio
+                    lot.lot.save(update_fields=['quantity_import'])
+                else:
+                    lot_data.append({
+                        'lot_number': lot.lot_number,
+                        'quantity_import': lot.quantity_import * final_ratio,
+                        'expire_date': lot.expire_date,
+                        'manufacture_date': lot.manufacture_date,
+                    })
+            for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
+                serial_data.append({
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number,
+                    'expire_date': serial.expire_date,
+                    'manufacture_date': serial.manufacture_date,
+                    'warranty_start': serial.warranty_start,
+                    'warranty_end': serial.warranty_end,
+                })
+            ProductWareHouse.push_from_receipt(
+                tenant_id=gr.tenant_id,
+                company_id=gr.company_id,
+                product_id=gr_warehouse.goods_receipt_product.product_id,
+                warehouse_id=gr_warehouse.warehouse_id,
+                uom_id=uom_product_inventory.id,
+                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
+                amount=gr_warehouse.quantity_import * final_ratio,
+                unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
+                lot_data=lot_data,
+                serial_data=serial_data,
+            )
+    print('update product warehouse done.')
+# END PRODUCT TRANSACTION INFORMATION
+
+
+# BEGIN INVENTORY
+def update_po_request_product_for_gr_request_product():
+    for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
+        po_id = gr_request_product.goods_receipt.purchase_order_id
+        for item in gr_request_product.purchase_request_product.purchase_order_request_request_product.all():
+            if item.purchase_order_id == po_id:
+                gr_request_product.purchase_order_request_product_id = item.id
+                gr_request_product.save()
+                break
+    print('update_po_request_product_for_gr_request_product done.')
+# END INVENTORY
+
+
+# BEGIN PURCHASING
+def update_is_all_ordered_pr():
+    for pr in PurchaseRequest.objects.all():
+        pr_product = pr.purchase_request.all()
+        pr_product_done = pr.purchase_request.filter(remain_for_purchase_order=0)
+        if pr_product.count() == pr_product_done.count():
+            pr.purchase_status = 2
+            pr.is_all_ordered = True
+            pr.save(update_fields=['purchase_status', 'is_all_ordered'])
+        else:
+            pr.purchase_status = 1
+            pr.save(update_fields=['purchase_status'])
+    print('update_is_all_ordered_pr done.')
+
+
+def restart_po_gr_remain_quantity():
+    # Restart gr_remain_quantity
+    for po_product in PurchaseOrderProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
+        po_product.gr_remain_quantity = po_product.product_quantity_order_actual
+        po_product.gr_completed_quantity = 0
+        po_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
+    for po_pr_product in PurchaseOrderRequestProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
+        po_pr_product.gr_remain_quantity = po_pr_product.quantity_order
+        po_pr_product.gr_completed_quantity = 0
+        po_pr_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
+    print('restart_po_gr_remain_quantity done.')
+
+
+def update_gr_info_for_po():
+    # update_gr_info_for_po
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        for gr_po_product in gr.goods_receipt_product_goods_receipt.all():
+            if gr_po_product.purchase_order_product:
+                gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_completed_quantity = round(
+                    gr_po_product.purchase_order_product.gr_completed_quantity,
+                    2
+                )
+                gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_remain_quantity = round(
+                    gr_po_product.purchase_order_product.gr_remain_quantity,
+                    2
+                )
+                gr_po_product.purchase_order_product.save(update_fields=[
+                    'gr_completed_quantity',
+                    'gr_remain_quantity'
+                ])
+        for gr_pr_product in gr.goods_receipt_request_product_goods_receipt.all():
+            if gr_pr_product.purchase_order_request_product:
+                gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_completed_quantity,
+                    2
+                )
+                gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_remain_quantity,
+                    2
+                )
+                gr_pr_product.purchase_order_request_product.save(update_fields=[
+                    'gr_completed_quantity',
+                    'gr_remain_quantity'
+                ])
+    #
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        if gr.purchase_order:
+            po_product = gr.purchase_order.purchase_order_product_order.all()
+            po_product_done = gr.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
+            if po_product.count() == po_product_done.count():
+                gr.purchase_order.receipt_status = 3
+                gr.purchase_order.is_all_receipted = True
+                gr.purchase_order.save(update_fields=['receipt_status', 'is_all_receipted'])
+            else:
+                gr.purchase_order.receipt_status = 2
+                gr.purchase_order.save(update_fields=['receipt_status'])
+    print('update_gr_info_for_po done.')
+# END PURCHASING
+
+
+def make_permission_records():
+    for obj in Employee.objects.all():
+        print('Employee:', obj)
+        obj_permit, _created = EmployeePermission.objects.get_or_create(employee=obj)
+        obj_permit.call_sync()
+
+
+
+
+
+
+
+
+
+    for obj in Role.objects.all():
+        print('Role:', obj)
+        obj_permit, _created = RolePermission.objects.get_or_create(role=obj)
+        obj_permit.call_sync()
+
+    for obj in OpportunitySaleTeamMember.objects.all():
+        print('Opp-Member:', obj)
+        obj.permission_by_configured = []
+        obj.save()
+
+    print('Make permission records is successful.')
+
+
+def update_inherit_po():
+    for po in PurchaseOrder.objects.all():
+        po.employee_inherit_id = po.employee_created_id if po.employee_created else None
+        po.save(update_fields=['employee_inherit_id'])
+    print('update_inherit_po done.')
+
+
+def update_code_quotation_sale_order_indicator_config():
+    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    print('update_code_quotation_sale_order_indicator_config done.')
+
+
+def update_code_quotation_sale_order_indicator():
+    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
+        indicator.code = indicator.indicator.code
+        indicator.tenant_id = indicator.indicator.tenant_id
+        indicator.company_id = indicator.indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
+        indicator.code = indicator.quotation_indicator.code
+        indicator.tenant_id = indicator.quotation_indicator.tenant_id
+        indicator.company_id = indicator.quotation_indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    print('update_code_quotation_sale_order_indicator done.')
+
+
+def update_record_report_revenue():
+    ReportRevenue.objects.all().delete()
+    ReportRevenue.objects.bulk_create([ReportRevenue(
+        tenant_id=so.tenant_id,
+        company_id=so.company_id,
+        sale_order_id=so.id,
+        employee_created_id=so.employee_created_id,
+        employee_inherit_id=so.employee_inherit_id,
+        group_inherit_id=so.employee_inherit.group_id,
+        date_approved=so.date_created,
+    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    print('update_record_report_revenue done.')
+
+
+def update_space_range_opp_member():
+    for obj in OpportunitySaleTeamMember.objects.all():
+        for item in obj.permission_by_configured:
+            print(item)
+            if 'space' in item and isinstance(item['space'], int):
+                item['space'] = str(item['space'])
+            if isinstance(item['range'], int):
+                item['range'] = str(item['range'])
+        obj.save()
+    return True

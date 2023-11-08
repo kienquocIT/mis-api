@@ -2,7 +2,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
-from apps.shared import SimpleAbstractModel
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'OpportunityMeetingEmployeeAttended',
            'OpportunityMeetingCustomerMember', 'OpportunityActivityLogTask', 'OpportunityActivityLogs',
@@ -46,7 +46,7 @@ class OpportunityEmail(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     email_to_list = models.JSONField(default=list)
     email_cc_list = models.JSONField(default=list)
-    content = models.CharField(max_length=500, null=True)
+    content = models.CharField(max_length=1000, null=True)
     date_created = models.DateTimeField(
         default=timezone.now, editable=False,
         help_text='The record created at value',
@@ -103,7 +103,7 @@ class OpportunityMeetingCustomerMember(SimpleAbstractModel):
     customer_member_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE)
 
 
-class OpportunityDocument(SimpleAbstractModel):
+class OpportunityDocument(MasterDataAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -111,7 +111,7 @@ class OpportunityDocument(SimpleAbstractModel):
         related_name="opportunity_document",
     )
     request_completed_date = models.DateTimeField()
-    kind_of_product = models.CharField(max_length=250)
+    description = models.CharField(max_length=250)
     person_in_charge = models.ManyToManyField(
         'hr.Employee',
         through='OpportunityDocumentPersonInCharge',
@@ -120,6 +120,9 @@ class OpportunityDocument(SimpleAbstractModel):
     )
     data_documents = models.JSONField(
         default=list,
+    )
+    date_modified = models.DateTimeField(
+        default=timezone.now
     )
 
     class Meta:

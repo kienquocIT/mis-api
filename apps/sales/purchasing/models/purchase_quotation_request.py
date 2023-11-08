@@ -89,12 +89,6 @@ class PurchaseQuotationRequestProduct(SimpleAbstractModel):
         related_name="purchase_quotation_request_product",
     )
 
-    description = models.CharField(
-        null=True,
-        blank=True,
-        max_length=500,
-    )
-
     uom = models.ForeignKey(
         'saledata.UnitOfMeasure',
         on_delete=models.CASCADE,
@@ -108,6 +102,7 @@ class PurchaseQuotationRequestProduct(SimpleAbstractModel):
     tax = models.ForeignKey(
         'saledata.Tax',
         on_delete=models.CASCADE,
+        null=True,
         related_name="purchase_quotation_request_product_tax",
     )
 

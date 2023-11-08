@@ -8,4 +8,5 @@ python manage.py init_data
 python manage.py init_system_data
 echo "yes" | python manage.py collectstatic
 celery -A misapi worker -l info &
+celery -A misapi beat -l info -S django &
 gunicorn misapi.wsgi:application --bind 0.0.0.0:8000

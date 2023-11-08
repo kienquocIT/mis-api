@@ -3,7 +3,7 @@ from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 __all__ = [
-    'ProductType', 'ProductCategory', 'ExpenseType', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
+    'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
     'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType'
 ]
 
@@ -34,18 +34,6 @@ class ProductCategory(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'ProductCategory'
         verbose_name_plural = 'ProductCategories'
-        ordering = ('date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class ExpenseType(MasterDataAbstractModel):
-    description = models.CharField(blank=True, max_length=200)
-    is_default = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'ExpenseType'
-        verbose_name_plural = 'ExpenseTypes'
         ordering = ('date_created',)
         default_permissions = ()
         permissions = ()
@@ -96,7 +84,7 @@ class Product(DataAbstractModel):
         help_text='product for sale: 0, inventory: 1, purchase:2'
     )
     avatar = models.TextField(null=True, verbose_name='avatar path')
-    description = models.CharField(blank=True, max_length=200)
+    description = models.CharField(blank=True, max_length=500)
 
     warehouses = models.ManyToManyField(
         'saledata.WareHouse',
@@ -185,6 +173,27 @@ class Product(DataAbstractModel):
         related_name='purchase_tax',
         default=None
     )
+    # Transaction information
+    stock_amount = models.FloatField(
+        default=0,
+        verbose_name="Stock Amount",
+        help_text="Total physical amount product in all warehouse",
+    )
+    wait_delivery_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Delivery Amount',
+        help_text='Amount product that ordered but not delivered, update when delivery for sale order'
+    )
+    wait_receipt_amount = models.FloatField(
+        default=0,
+        verbose_name='Wait Receipt Amount',
+        help_text='Amount product that purchased but not receipted, update when goods receipt for purchase order'
+    )
+    available_amount = models.FloatField(
+        default=0,
+        verbose_name='Available Stock',
+        help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
+    )
 
     class Meta:
         verbose_name = 'Product'
@@ -193,16 +202,40 @@ class Product(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def update_transaction_information(cls, instance, **kwargs):
+        del kwargs['update_transaction_info']
+        if 'quantity_purchase' in kwargs:
+            instance.wait_receipt_amount += kwargs['quantity_purchase']
+            del kwargs['quantity_purchase']
+        if 'quantity_receipt_po' in kwargs:
+            instance.wait_receipt_amount -= kwargs['quantity_receipt_po']
+            instance.stock_amount += kwargs['quantity_receipt_po']
+            del kwargs['quantity_receipt_po']
+        if 'quantity_receipt_ia' in kwargs:
+            instance.stock_amount += kwargs['quantity_receipt_ia']
+            del kwargs['quantity_receipt_ia']
+        if 'quantity_order' in kwargs:
+            instance.wait_delivery_amount += kwargs['quantity_order']
+            del kwargs['quantity_order']
+        if 'quantity_delivery' in kwargs:
+            instance.wait_delivery_amount -= kwargs['quantity_delivery']
+            instance.stock_amount -= kwargs['quantity_delivery']
+            del kwargs['quantity_delivery']
+        instance.available_amount = (
+                instance.stock_amount - instance.wait_delivery_amount + instance.wait_receipt_amount
+        )
+        return kwargs
+
+    def save(self, *args, **kwargs):
+        if 'update_transaction_info' in kwargs:
+            result = self.update_transaction_information(self, **kwargs)
+            kwargs = result
+        # hit DB
+        super().save(*args, **kwargs)
+
 
 class Expense(MasterDataAbstractModel):
-    expense_type = models.ForeignKey(
-        ExpenseType,
-        verbose_name='Type of Expense',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='expense_type',
-        default=None,
-    )
     uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         verbose_name='Unit of Measure Group apply for expense',

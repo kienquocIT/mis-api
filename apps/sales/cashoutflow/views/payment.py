@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.cashoutflow.models import Payment, PaymentCostItems, PaymentConfig
+from apps.sales.cashoutflow.models import Payment, PaymentConfig
 from apps.sales.cashoutflow.serializers import (
-    PaymentListSerializer, PaymentCreateSerializer, PaymentDetailSerializer, PaymentCostItemsListSerializer,
+    PaymentListSerializer, PaymentCreateSerializer, PaymentDetailSerializer,
     PaymentConfigListSerializer, PaymentConfigUpdateSerializer, PaymentConfigDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -14,7 +14,7 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
@@ -26,8 +26,8 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         operation_description="Payment list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='payment', model_code='payment', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='cashoutflow', model_code='payment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -38,8 +38,8 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
         request_body=PaymentCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='payment', model_code='payment', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='cashoutflow', model_code='payment', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -55,40 +55,26 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'payment'
+            'payment__currency',
+            'payment__expense_type',
+            'payment__expense_tax',
+        ).select_related(
+            'sale_order_mapped__customer',
+            'quotation_mapped__customer',
+            'opportunity_mapped__customer',
+            'supplier__owner',
+            'supplier__industry',
+            'employee_inherit__group',
+            'creator_name__group'
         )
 
     @swagger_auto_schema(operation_summary='Detail Payment')
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='payment', model_code='payment', perm_code='view',
+        label_code='cashoutflow', model_code='payment', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
-
-    # @swagger_auto_schema(operation_summary="Update AdvancePayment", request_body=PaymentUpdateSerializer)
-    # @mask_view(login_require=True, auth_require=False)
-    # def put(self, request, *args, **kwargs):
-    #     self.serializer_class = PaymentUpdateSerializer
-    #     return self.update(request, *args, **kwargs)
-
-
-class PaymentCostItemsList(BaseListMixin):
-    queryset = PaymentCostItems.objects
-    serializer_list = PaymentCostItemsListSerializer
-
-    def get_queryset(self):
-        return super().get_queryset().prefetch_related(
-            'payment_cost'
-        )
-
-    @swagger_auto_schema(
-        operation_summary="Payment Cost Items list",
-        operation_description="Payment Cost Items list",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
 
 
 class PaymentConfigList(BaseListMixin, BaseCreateMixin):

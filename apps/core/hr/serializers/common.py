@@ -12,6 +12,7 @@ __all__ = [
     'validate_license_used',
     'create_plan_employee_update_tenant_plan',
     'create_plan_role_update_tenant_plan',
+    'PlanAppUpdateSerializer',
 ]
 
 
@@ -70,6 +71,14 @@ class HasPermPlanAppUpdateSerializer(serializers.Serializer):  # noqa
                 return app_list
             raise serializers.ValidationError({"application": BaseMsg.APPLICATIONS_NOT_EXIST})
         raise serializers.ValidationError({"application": BaseMsg.APPLICATION_IS_ARRAY})
+
+
+class PlanAppUpdateSerializer(serializers.Serializer):  # noqa
+    plan = serializers.UUIDField(required=False)
+    application = serializers.ListSerializer(
+        child=serializers.UUIDField(required=False),
+        required=False
+    )
 
 
 def set_up_data_plan_app(validated_data, instance=None, employee_or_role='employee'):

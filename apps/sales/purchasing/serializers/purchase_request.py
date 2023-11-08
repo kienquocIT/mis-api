@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models import Account, Contact, Product, UnitOfMeasure, Tax
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.saleorder.models import SaleOrder, SaleOrderProduct
@@ -51,7 +53,7 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_system_status(cls, obj):
-        return str(dict(SYSTEM_STATUS).get(obj.request_for))
+        return str(dict(SYSTEM_STATUS).get(obj.system_status))
 
     @classmethod
     def get_purchase_status(cls, obj):
@@ -61,7 +63,6 @@ class PurchaseRequestListSerializer(serializers.ModelSerializer):
 class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
-    request_for = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
     purchase_status = serializers.SerializerMethodField()
     contact = serializers.SerializerMethodField()
@@ -76,7 +77,6 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             'supplier',
             'contact',
             'delivered_date',
-            'system_status',
             'purchase_status',
             'note',
             'sale_order',
@@ -84,11 +84,11 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             'pretax_amount',
             'taxes',
             'total_price',
+            # system
+            'system_status',
+            'workflow_runtime_id',
+            'is_active',
         )
-
-    @classmethod
-    def get_request_for(cls, obj):
-        return str(dict(REQUEST_FOR).get(obj.request_for))
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -106,6 +106,7 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.supplier_id,
                 'name': obj.supplier.name,
+                'code': obj.supplier.code,
             }
         return None
 
@@ -114,7 +115,10 @@ class PurchaseRequestDetailSerializer(serializers.ModelSerializer):
         if obj.supplier:
             return {
                 'id': obj.contact_id,
-                'name': obj.contact.fullname,
+                'fullname': obj.contact.fullname,
+                'job_title': obj.contact.job_title,
+                'email': obj.contact.email,
+                'mobile': obj.contact.mobile,
             }
         return None
 
@@ -170,6 +174,8 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(product.id),
                 'title': product.title,
+                'code': product.code,
+                'uom_group': str(product.general_uom_group_id),
             }
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': PurchaseRequestMsg.DOES_NOT_EXIST})
@@ -185,6 +191,7 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
             return {
                 'id': str(tax.id),
                 'title': tax.title,
+                'rate': tax.rate,
             }
         except Tax.DoesNotExist:
             raise serializers.ValidationError({'tax': PurchaseRequestMsg.DOES_NOT_EXIST})
@@ -236,15 +243,22 @@ class PurchaseRequestProductSerializer(serializers.ModelSerializer):
                 quantity=data['quantity'],
                 remain_for_purchase_order=data['quantity'],
                 unit_price=data['unit_price'],
-                sub_total_price=data['sub_total_price']
+                sub_total_price=data['sub_total_price'],
+                tenant=purchase_request.tenant,
+                company=purchase_request.company,
             )
-            if pr_product.sale_order_product:
-                pr_product.sale_order_product.remain_for_purchase_request -= pr_product.quantity
-                pr_product.sale_order_product.save()
             bulk_data.append(pr_product)
         return bulk_data
 
+    @classmethod
+    def delete_product_datas(cls, instance):
+        objs = PurchaseRequestProduct.objects.select_related('sale_order_product').filter(purchase_request=instance)
+        if objs:
+            objs.delete()
+        return True
 
+
+# BEGIN PURCHASE REQUEST
 class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
     sale_order = serializers.UUIDField(required=False, allow_null=True)
     supplier = serializers.UUIDField(required=True)
@@ -267,6 +281,8 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             'pretax_amount',
             'taxes',
             'total_price',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -322,6 +338,7 @@ class PurchaseRequestCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
         return value
 
+    @decorator_run_workflow
     def create(self, validated_data):
         purchase_request = PurchaseRequest.objects.create(**validated_data)
         if len(validated_data['purchase_request_product_datas']) > 0:
@@ -349,18 +366,23 @@ class PurchaseRequestListForPQRSerializer(serializers.ModelSerializer):
     def get_product_list(cls, obj):
         product_list = []
         for item in obj.purchase_request.all().select_related('product', 'uom', 'tax'):
-            product_list.append({
-                'id': item.product_id,
-                'title': item.product.title,
-                'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
-                'quantity': item.quantity,
-                'purchase_request_id': item.purchase_request_id,
-                'purchase_request_code': item.purchase_request.code,
-                'product_unit_price': item.unit_price,
-                'product_subtotal_price': item.sub_total_price,
-                'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
-                'description': item.description
-            })
+            product_list.append(
+                {
+                    'id': item.product_id,
+                    'title': item.product.title,
+                    'description': item.product.description,
+                    'uom': {'id': item.uom_id, 'title': item.uom.title, 'ratio': item.uom.ratio},
+                    'uom_group': {
+                        'id': item.uom.group_id, 'code': item.uom.group.code, 'title': item.uom.group.title
+                    } if item.uom.group else {},
+                    'quantity': item.quantity,
+                    'purchase_request_id': item.purchase_request_id,
+                    'purchase_request_code': item.purchase_request.code,
+                    'product_unit_price': item.unit_price,
+                    'product_subtotal_price': item.sub_total_price,
+                    'tax': {'id': item.tax_id, 'title': item.tax.title, 'code': item.tax.code, 'value': item.tax.rate},
+                }
+            )
         return product_list
 
 
@@ -438,6 +460,23 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                 'width': obj.product.width,
                 'height': obj.product.height,
             },
+            'purchase_information': {
+                'uom': {
+                    'id': obj.product.purchase_default_uom_id,
+                    'title': obj.product.purchase_default_uom.title,
+                    'code': obj.product.purchase_default_uom.code,
+                    'ratio': obj.product.purchase_default_uom.ratio,
+                    'rounding': obj.product.purchase_default_uom.rounding,
+                    'is_referenced_unit': obj.product.purchase_default_uom.is_referenced_unit,
+                } if obj.product.purchase_default_uom else {},
+                'tax': {
+                    'id': obj.product.purchase_tax_id,
+                    'title': obj.product.purchase_tax.title,
+                    'code': obj.product.purchase_tax.code,
+                    'rate': obj.product.purchase_tax.rate
+                } if obj.product.purchase_tax else {},
+            },
+            'description': obj.product.description,
             'product_choice': obj.product.product_choice,
             'sale_cost': obj.product.sale_cost,
         }
@@ -459,7 +498,7 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
                     'ratio': obj.uom.group.uom_reference.ratio,
                     'rounding': obj.uom.group.uom_reference.rounding,
                 } if obj.uom.group.uom_reference else {},
-            },
+            } if obj.uom.group else {},
             'ratio': obj.uom.ratio,
             'rounding': obj.uom.rounding,
             'is_referenced_unit': obj.uom.is_referenced_unit,
@@ -473,3 +512,103 @@ class PurchaseRequestProductListSerializer(serializers.ModelSerializer):
             'code': obj.tax.code,
             'rate': obj.tax.rate,
         } if obj.tax else {}
+
+
+class PurchaseRequestUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(required=False)
+    sale_order = serializers.UUIDField(required=False, allow_null=True)
+    request_for = serializers.IntegerField(required=False)
+    supplier = serializers.UUIDField(required=False)
+    contact = serializers.UUIDField(required=False)
+    delivered_date = serializers.DateTimeField(required=False)
+    purchase_status = serializers.IntegerField(required=False)
+    purchase_request_product_datas = PurchaseRequestProductSerializer(many=True, required=False)
+    note = serializers.CharField(allow_blank=True, required=False)
+    pretax_amount = serializers.FloatField(required=False)
+    taxes = serializers.FloatField(required=False)
+    total_price = serializers.FloatField(required=False)
+
+    class Meta:
+        model = PurchaseRequest
+        fields = (
+            'title',
+            'supplier',
+            'contact',
+            'request_for',
+            'sale_order',
+            'delivered_date',
+            'purchase_status',
+            'note',
+            'purchase_request_product_datas',
+            'pretax_amount',
+            'taxes',
+            'total_price',
+        )
+
+    @classmethod
+    def validate_supplier(cls, value):
+        try:
+            return Account.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Account.DoesNotExist:
+            raise serializers.ValidationError({'supplier': PurchaseRequestMsg.DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_contact(cls, value):
+        try:
+            return Contact.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            )
+        except Contact.DoesNotExist:
+            raise serializers.ValidationError({'contact': PurchaseRequestMsg.DOES_NOT_EXIST})
+
+    @classmethod
+    def validate_sale_order(cls, value):
+        if value:
+            try:
+                return SaleOrder.objects.get_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    id=value
+                )
+            except SaleOrder.DoesNotExist:
+                raise serializers.ValidationError({'sale_order': PurchaseRequestMsg.DOES_NOT_EXIST})
+        return None
+
+    @classmethod
+    def validate_pretax_amount(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_taxes(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    @classmethod
+    def validate_total_price(cls, value):
+        if value < 0:
+            raise serializers.ValidationError({'pretax_amount': PurchaseRequestMsg.GREATER_THAN_ZERO})
+        return value
+
+    def update(self, instance, validated_data):
+        if 'purchase_request_product_datas' in validated_data:
+            PurchaseRequestProductSerializer.delete_product_datas(instance)
+            if len(validated_data['purchase_request_product_datas']) > 0:
+                bulk_data = PurchaseRequestProductSerializer.create_product_datas(
+                    instance,
+                    validated_data['purchase_request_product_datas']
+                )
+                PurchaseRequestProduct.objects.bulk_create(bulk_data)
+
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        return instance

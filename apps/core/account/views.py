@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import exceptions
@@ -32,11 +33,14 @@ class UserList(AccountListMixin, AccountCreateMixin):
     search_fields = ('full_name_search', 'email', 'username')
     filterset_fields = ('email', 'username', 'first_name', 'last_name')
 
-    def filter_append_manual(self):
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q()
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
         if self.request.user.company_current_id:
-            return {
-                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
-            }
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
         raise exceptions_more.Empty200
 
     @swagger_auto_schema(
@@ -73,11 +77,9 @@ class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
     serializer_detail = UserDetailSerializer
     serializer_update = UserUpdateSerializer
 
-    def filter_append_manual(self):
+    def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
         if self.request.user.company_current_id:
-            return {
-                'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)
-            }
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
         raise exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Detail User')
@@ -173,6 +175,16 @@ class UserOfTenantList(AccountListMixin):
 
     def get_queryset(self):
         return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')
+
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q()
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        if self.request.user.company_current_id:
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        raise exceptions_more.Empty200
 
     @swagger_auto_schema()
     @mask_view(

@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, StringHandler
 
 
 class PurchaseOrder(DataAbstractModel):
@@ -25,10 +25,6 @@ class PurchaseOrder(DataAbstractModel):
     purchase_quotations_data = models.JSONField(
         default=list,
         help_text="read data purchase quotations, use for get list or detail"
-    )
-    purchase_request_products_data = models.JSONField(
-        default=list,
-        help_text="read data purchase request products not map any PO, use for get list or detail"
     )
     supplier = models.ForeignKey(
         'saledata.Account',
@@ -76,6 +72,10 @@ class PurchaseOrder(DataAbstractModel):
         default=0,
         help_text="total revenue before tax of tab product (after discount on total, apply promotion,...)"
     )
+    is_all_receipted = models.BooleanField(
+        default=False,
+        help_text="True if all products are receipted by Goods Receipt"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order'
@@ -84,24 +84,89 @@ class PurchaseOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
-    def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        purchase_order = PurchaseOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "PO"
-        if not self.code:
-            temper = "%04d" % (purchase_order + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("PO")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
 
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'PO0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'PO{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def update_remain_and_status_purchase_request(cls, instance):
         # update quantity remain on purchase request product
+        for po_request in instance.purchase_order_request_product_order.filter(is_stock=False):
+            po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
+            po_request.purchase_request_product.save(update_fields=['remain_for_purchase_order'])
+        return True
+
+    @classmethod
+    def update_is_all_ordered_purchase_request(cls, instance):
+        for pr_obj in instance.purchase_requests.all():
+            pr_product = pr_obj.purchase_request.all()
+            pr_product_done = pr_obj.purchase_request.filter(remain_for_purchase_order=0)
+            if pr_product.count() == pr_product_done.count():  # All PR products ordered
+                pr_obj.purchase_status = 2
+                pr_obj.is_all_ordered = True
+                pr_obj.save(update_fields=['purchase_status', 'is_all_ordered'])
+            else:  # Partial PR products ordered
+                pr_obj.purchase_status = 1
+                pr_obj.save(update_fields=['purchase_status'])
+        return True
+
+    @classmethod
+    def update_product_wait_receipt_amount(cls, instance):
+        for product_purchase in instance.purchase_order_product_order.all():
+            uom_product_inventory = product_purchase.product.inventory_uom
+            uom_product_po = product_purchase.uom_order_actual
+            if product_purchase.uom_order_request:
+                uom_product_po = product_purchase.uom_order_request
+            final_ratio = 1
+            if uom_product_inventory and uom_product_po:
+                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
+            product_quantity_order_request_final = product_purchase.product_quantity_order_actual* final_ratio
+            if instance.purchase_requests.exists():
+                product_quantity_order_request_final = product_purchase.product_quantity_order_request * final_ratio
+            stock_final = product_purchase.stock * final_ratio
+            product_purchase.product.save(**{
+                'update_transaction_info': True,
+                'quantity_purchase': product_quantity_order_request_final + stock_final,
+                'update_fields': ['wait_receipt_amount', 'available_amount']
+            })
+        return True
+
+    def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
-            for po_request in PurchaseOrderRequestProduct.objects.filter(purchase_order=self):
-                po_request.purchase_request_product.remain_for_purchase_order -= po_request.quantity_order
-                po_request.purchase_request_product.save()
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+                self.update_remain_and_status_purchase_request(self)
+                self.update_is_all_ordered_purchase_request(self)
+                self.update_product_wait_receipt_amount(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -234,6 +299,15 @@ class PurchaseOrderProduct(SimpleAbstractModel):
     order = models.IntegerField(
         default=1
     )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order Product'
@@ -256,6 +330,7 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="purchase request product",
         related_name="purchase_order_request_request_product",
+        null=True,
     )
     purchase_order_product = models.ForeignKey(
         PurchaseOrderProduct,
@@ -274,10 +349,26 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         default=0,
         help_text='quantity order',
     )
-    # quantity_remain = models.FloatField(
-    #     default=0,
-    #     help_text='quantity remain to order',
-    # )
+    uom_stock = models.ForeignKey(
+        'saledata.UnitOfMeasure',
+        on_delete=models.CASCADE,
+        verbose_name="unit of measure",
+        related_name="purchase_order_request_uom_stock",
+        null=True
+    )
+    is_stock = models.BooleanField(
+        default=False,
+        help_text="True if quantity order > quantity request => create quantity stock"
+    )
+    # goods receipt information
+    gr_completed_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is goods receipted, update when GR finish"
+    )
+    gr_remain_quantity = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not goods receipted yet, update when GR finish"
+    )
 
     class Meta:
         verbose_name = 'Purchase Order Request Product'

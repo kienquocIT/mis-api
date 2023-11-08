@@ -6,9 +6,10 @@ from datetime import datetime, date
 from typing import Union
 from uuid import UUID
 
+from django.core.serializers.json import DjangoJSONEncoder
 from django.conf import settings
 
-__all__ = ['LinkListHandler', 'StringHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
+__all__ = ['LinkListHandler', 'StringHandler', 'ListHandler', 'CustomizeEncoder', 'TypeCheck', 'FORMATTING']
 
 
 class LinkListHandler:
@@ -54,11 +55,42 @@ class StringHandler:
         return text.translate(str.maketrans('', '', string.punctuation)).replace(' ', '')
 
 
-class CustomizeEncoder(json.JSONEncoder):
+class ListHandler:
+    @staticmethod
+    def diff_two_list(arr_a: list[str], arr_b: list[str]) -> (list[str], list[str], list[str]):
+        """
+        Returns:
+            0: letters in "a" but not in "b"
+            1: letters in both "a" and "b"
+            2: letters in "b" but not in "a"
+        """
+        # best performance by set: https://docs.python.org/3/tutorial/datastructures.html#sets
+        both_set = list(set(arr_a) & set(arr_b))
+        left_split = list(set(arr_a) - set(both_set))
+        right_split = list(set(arr_b) - set(both_set))
+        return left_split, both_set, right_split
+
+    @staticmethod
+    def distant_dict_in_list(dict_in_list):
+        try:
+            return [dict(strJSON) for strJSON in set(frozenset(data.items()) for data in dict_in_list)]
+        except Exception as err:
+            if settings.DEBUG:
+                print('[SKIP]  [distant_dict_...] :', 'ERR', '=', err, ',', 'data', '=', dict_in_list)
+
+        dict_in_list__unique = []
+        for item in dict_in_list:
+            tmp = json.dumps(item, cls=CustomizeEncoder)
+            if tmp not in dict_in_list__unique:
+                dict_in_list__unique.append(item)
+        return dict_in_list__unique
+
+
+class CustomizeEncoder(DjangoJSONEncoder):
     def default(self, obj):
         if isinstance(obj, (UUID, datetime)):
             return str(obj)
-        return json.JSONEncoder.default(self, obj)
+        return super().default(obj)
 
 
 class TypeCheck:

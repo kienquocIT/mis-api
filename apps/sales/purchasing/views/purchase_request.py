@@ -3,7 +3,7 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.purchasing.models import PurchaseRequest, PurchaseRequestProduct
 from apps.sales.purchasing.serializers import (
     PurchaseRequestListSerializer, PurchaseRequestCreateSerializer, PurchaseRequestDetailSerializer,
-    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer
+    PurchaseRequestListForPQRSerializer, PurchaseRequestProductListSerializer, PurchaseRequestUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -13,7 +13,15 @@ class PurchaseRequestList(
     BaseCreateMixin
 ):
     queryset = PurchaseRequest.objects
-
+    filterset_fields = {
+        'is_all_ordered': ['exact'],
+        'system_status': ['exact'],
+    }
+    search_fields = [
+        'title',
+        'sale_order__title',
+        'supplier__name',
+    ]
     serializer_list = PurchaseRequestListSerializer
     serializer_detail = PurchaseRequestDetailSerializer
     serializer_create = PurchaseRequestCreateSerializer
@@ -24,7 +32,7 @@ class PurchaseRequestList(
         return super().get_queryset().select_related(
             'supplier',
             'sale_order',
-        )
+        ).order_by('purchase_status')
 
     @swagger_auto_schema(
         operation_summary="Purchase Request List",
@@ -56,7 +64,7 @@ class PurchaseRequestDetail(
 ):
     queryset = PurchaseRequest.objects
     serializer_detail = PurchaseRequestDetailSerializer
-    serializer_update = PurchaseRequestDetailSerializer
+    serializer_update = PurchaseRequestUpdateSerializer
 
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
@@ -78,6 +86,18 @@ class PurchaseRequestDetail(
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_summary="Purchase Request update",
+        operation_description="Update Purchase Request by ID",
+        request_body=PurchaseRequestUpdateSerializer,
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='purchasing', model_code='purchaserequest', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class PurchaseRequestListForPQR(BaseListMixin):
@@ -115,6 +135,8 @@ class PurchaseRequestProductList(BaseListMixin):
             'product__sale_default_uom',
             'product__sale_tax',
             'product__sale_currency_using',
+            'product__purchase_default_uom',
+            'product__purchase_tax',
             'uom',
             'uom__group',
             'uom__group__uom_reference',

@@ -12,6 +12,7 @@ class OpportunityMsg:
     CAN_NOT_SEND_EMAIL = _('Can not send email')
 
     MEMBER_NOT_EXIST = _('Member does not exist in sale team')
+    MEMBER_REQUIRED = _('Members must be required')
 
     EMPLOYEE_DELETE_NOT_EXIST = _('Employee delete does not exist in sale team')
 
@@ -23,3 +24,5 @@ class OpportunityMsg:
 
     APPLICATION_NOT_EXIST = _('Application not exist')
     NOT_EDIT_PERM_MEMBER = _('Only Sale Person can update member permissions')
+
+    NOT_DELETE_SALE_PERSON = _('Can not delete sale person in sale team')

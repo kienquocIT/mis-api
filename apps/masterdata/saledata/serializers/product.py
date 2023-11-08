@@ -22,7 +22,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     general_uom_group = serializers.SerializerMethodField()
     sale_tax = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
-    price_list_mapped = serializers.SerializerMethodField()
+    general_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -30,13 +30,19 @@ class ProductListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'description',
             'general_product_types_mapped',
             'general_product_category',
             'general_uom_group',
             'sale_tax',
             'sale_default_uom',
-            'price_list_mapped',
-            'product_choice'
+            'product_choice',
+            'general_price',
+            # Transaction information
+            'stock_amount',
+            'wait_delivery_amount',
+            'wait_receipt_amount',
+            'available_amount'
         )
 
     @classmethod
@@ -81,16 +87,11 @@ class ProductListSerializer(serializers.ModelSerializer):
         } if obj.sale_default_uom else {}
 
     @classmethod
-    def get_price_list_mapped(cls, obj):
-        result = []
-        for item in obj.product_price_product.all():
-            result.append({
-                'id': item.price_list_id,
-                'title': item.price_list.title,
-                'price': item.price,
-                'currency_abbreviation': item.currency_using.abbreviation
-            })
-        return result
+    def get_general_price(cls, obj):
+        general_product_price = obj.product_price_product.filter(price_list__is_default=1).first()
+        if general_product_price:
+            return general_product_price.price
+        return None
 
 
 def sub_validate_volume_obj(initial_data, validate_data):
@@ -358,6 +359,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     sale_information = serializers.SerializerMethodField()
     inventory_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
+    product_warehouse_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -371,6 +373,12 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'sale_information',
             'purchase_information',
             'product_choice',
+            'product_warehouse_detail',
+            # Transaction information
+            'stock_amount',
+            'wait_delivery_amount',
+            'wait_receipt_amount',
+            'available_amount'
         )
 
     @classmethod
@@ -431,9 +439,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         result = {
             'sale_product_cost': obj.sale_cost,
             'default_uom': {
-                'uom_id': obj.sale_default_uom_id,
-                'uom_title': obj.sale_default_uom.title,
-                'uom_code': obj.sale_default_uom.code
+                'id': obj.sale_default_uom_id,
+                'title': obj.sale_default_uom.title,
+                'code': obj.sale_default_uom.code
             } if obj.sale_default_uom else {},
             'tax': {
                 'id': obj.sale_tax_id,
@@ -454,9 +462,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_inventory_information(cls, obj):
         result = {
             'uom': {
-                'uom_id': obj.inventory_uom_id,
-                'uom_title': obj.inventory_uom.title,
-                'uom_code': obj.inventory_uom.code
+                'id': obj.inventory_uom_id,
+                'title': obj.inventory_uom.title,
+                'code': obj.inventory_uom.code
             } if obj.inventory_uom else {},
             'inventory_level_min': obj.inventory_level_min,
             'inventory_level_max': obj.inventory_level_max,
@@ -467,9 +475,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         result = {
             'default_uom': {
-                'uom_id': obj.purchase_default_uom_id,
-                'uom_title': obj.purchase_default_uom.title,
-                'uom_code': obj.purchase_default_uom.code
+                'id': obj.purchase_default_uom_id,
+                'title': obj.purchase_default_uom.title,
+                'code': obj.purchase_default_uom.code
             } if obj.purchase_default_uom else {},
             'tax': {
                 'id': obj.purchase_tax_id,
@@ -477,6 +485,25 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'code': obj.purchase_tax.code
             } if obj.purchase_tax else {},
         }
+        return result
+
+    @classmethod
+    def get_product_warehouse_detail(cls, obj):
+        result = []
+        product_warehouse = obj.product_warehouse_product.all().select_related('warehouse', 'uom')
+        for item in product_warehouse:
+            uom_ratio_src = obj.inventory_uom.ratio if obj.inventory_uom else 0
+            uom_ratio_des = item.uom.ratio if item.uom else 0
+            if uom_ratio_src and uom_ratio_des:
+                ratio_convert = float(uom_ratio_src / uom_ratio_des)
+                result.append({
+                    'warehouse': {
+                        'id': item.warehouse_id,
+                        'title': item.warehouse.title,
+                        'code': item.warehouse.code,
+                    } if item.warehouse else {},
+                    'stock_amount': ratio_convert * item.stock_amount,
+                })
         return result
 
 
@@ -695,6 +722,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     product_choice = serializers.JSONField()
     general_information = serializers.SerializerMethodField()
     sale_information = serializers.SerializerMethodField()
+    purchase_information = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -702,8 +730,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
+            'description',
             'general_information',
+            'description',
+            'purchase_information',
             'sale_information',
+            'purchase_information',
             'price_list',
             'product_choice',
             'sale_cost',
@@ -782,6 +814,25 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
             'length': obj.length,
             'width': obj.width,
             'height': obj.height,
+        }
+
+    @classmethod
+    def get_purchase_information(cls, obj):
+        return {
+            'uom': {
+                'id': obj.purchase_default_uom_id,
+                'title': obj.purchase_default_uom.title,
+                'code': obj.purchase_default_uom.code,
+                'ratio': obj.purchase_default_uom.ratio,
+                'rounding': obj.purchase_default_uom.rounding,
+                'is_referenced_unit': obj.purchase_default_uom.is_referenced_unit,
+            } if obj.purchase_default_uom else {},
+            'tax': {
+                'id': obj.purchase_tax_id,
+                'title': obj.purchase_tax.title,
+                'code': obj.purchase_tax.code,
+                'rate': obj.purchase_tax.rate
+            } if obj.purchase_tax else {},
         }
 
 

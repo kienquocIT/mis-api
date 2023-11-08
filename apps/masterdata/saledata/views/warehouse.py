@@ -1,10 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 
+from apps.masterdata.saledata.serializers.warehouse import ProductWarehouseLotListSerializer, \
+    ProductWarehouseSerialListSerializer
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
 from apps.masterdata.saledata.models import (
-    WareHouse, ProductWareHouse
+    WareHouse, ProductWareHouse, ProductWareHouseLot, ProductWareHouseSerial
 )
 from apps.masterdata.saledata.serializers import (
     WareHouseListSerializer, WareHouseCreateSerializer, WareHouseListSerializerForInventoryAdjustment,
@@ -82,6 +84,12 @@ class WareHouseCheckAvailableProductList(BaseListMixin):
     serializer_list = ProductWareHouseStockListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        return {
+            **self.cls_check.attr.setup_hidden(from_view='list'),
+        }
+
     @swagger_auto_schema()
     @mask_view(
         login_require=True, auth_require=False,
@@ -100,9 +108,17 @@ class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    filterset_fields = {
+        "product_id": ["exact"],
+        "warehouse_id": ["exact"],
+    }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product', 'warehouse')
+        return super().get_queryset().select_related(
+            'product',
+            'warehouse',
+            'uom',
+        )
 
     @swagger_auto_schema(operation_summary='Product WareHouse')
     @mask_view(
@@ -122,6 +138,60 @@ class WareHouseListForInventoryAdjustment(BaseListMixin):
     }
 
     @swagger_auto_schema(operation_summary='WareHouse List')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseLotList(BaseListMixin):
+    queryset = ProductWareHouseLot.objects
+    search_fields = ['lot_number', ]
+    filterset_fields = {
+        "product_warehouse_id": ["exact"],
+        "product_warehouse__product_id": ["exact"],
+        "product_warehouse__warehouse_id": ["exact"],
+        "lot_number": ["exact"],
+    }
+    serializer_list = ProductWarehouseLotListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product_warehouse__product',
+            'product_warehouse__product__inventory_uom',
+            'product_warehouse__warehouse',
+            'product_warehouse__uom',
+        )
+
+    @swagger_auto_schema(operation_summary='Product WareHouse Lot')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseSerialList(BaseListMixin):
+    queryset = ProductWareHouseSerial.objects
+    search_fields = ['vendor_serial_number', 'serial_number']
+    filterset_fields = {
+        "product_warehouse_id": ["exact"],
+        "product_warehouse__product_id": ["exact"],
+        "serial_number": ["exact"],
+        "is_delete": ["exact"],
+    }
+    serializer_list = ProductWarehouseSerialListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product_warehouse__product',
+            'product_warehouse__warehouse',
+        )
+
+    @swagger_auto_schema(operation_summary='Product WareHouse Serial')
     @mask_view(
         login_require=True, auth_require=False,
     )
