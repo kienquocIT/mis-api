@@ -163,12 +163,7 @@ class SaleOrderExpenseList(BaseListMixin):
     serializer_list = SaleOrderExpenseListSerializer
 
     def get_queryset(self):
-        filter_sale_order = self.request.query_params.get('filter_sale_order', None)
-        if filter_sale_order and TypeCheck.check_uuid(filter_sale_order):
-            return super().get_queryset().select_related("tax", "expense").filter(
-                sale_order_id=self.request.query_params['filter_sale_order']
-            )
-        return SaleOrderExpense.objects.none()
+        return super().get_queryset().select_related("tax", "expense")
 
     @swagger_auto_schema(
         operation_summary="SaleOrderExpense List",
