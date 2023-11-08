@@ -1,12 +1,7 @@
 # pylint: disable=C0302
 from uuid import uuid4
-import re
-import datetime
-import random
-import calendar
 from rest_framework import serializers
 from apps.core.hr.models import Employee, DistributionApplication
-from apps.core.company.models import CompanyFunctionNumber
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
 from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
@@ -23,33 +18,6 @@ __all__ = [
     'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityListSerializerForCashOutFlow',
     'OpportunityDetailSimpleSerializer'
 ]
-
-
-def generator_code(company_obj_id):
-    schema_item_list = [
-        random.randint(0, 999),
-        datetime.datetime.now().year,
-        datetime.datetime.now().year % 100,
-        calendar.month_name[datetime.datetime.now().month][0:3],
-        calendar.month_name[datetime.datetime.now().month],
-        datetime.datetime.now().month,
-        datetime.date.today().isocalendar()[1],
-        datetime.date.today().timetuple().tm_yday,
-        datetime.date.today().day,
-        datetime.date.today().isocalendar()[2]
-    ]
-    obj = CompanyFunctionNumber.objects.filter(company_id=company_obj_id, function=0).first()
-    result = []
-    if obj and obj.schema is not None:
-        pattern = r'(\[[A-Z]+\]|[0-9])'
-        for match in re.findall(pattern, obj.schema):
-            if match.isdigit():
-                result.append(str(schema_item_list[int(match)]))
-            else:
-                result.append(match[1:-1])
-        result = '-'.join(result)
-        return result
-    return None
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -281,9 +249,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             }
         ]
 
-        code_gen = generator_code(validated_data['company_id'])
-        if code_gen is not None:
-            validated_data['code'] = code_gen
         opportunity = Opportunity.objects.create(
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,

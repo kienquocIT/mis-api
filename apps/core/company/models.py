@@ -387,6 +387,11 @@ class CompanyFunctionNumber(MasterDataAbstractModel):
     first_number = models.IntegerField(null=True)
     last_number = models.IntegerField(null=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
+    latest_number = models.IntegerField(null=True)
+    year_reset = models.IntegerField(null=True)
+    month_reset = models.IntegerField(null=True)
+    week_reset = models.IntegerField(null=True)
+    day_reset = models.IntegerField(null=True)
 
     class Meta:
         verbose_name = 'Company Function Number'

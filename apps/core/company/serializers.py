@@ -1,3 +1,4 @@
+import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
@@ -115,18 +116,21 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_company_setting(cls, obj):
-        company_setting = obj.company_setting.all()[0]
-        return {
-            'primary_currency': {
-                'id': company_setting.primary_currency_id,
-                'title': company_setting.primary_currency.title,
-                'abbreviation': company_setting.primary_currency.code,
-            } if company_setting.primary_currency else {},
-            'definition_inventory_valuation': company_setting.definition_inventory_valuation,
-            'default_inventory_value_method': company_setting.default_inventory_value_method,
-            'cost_per_warehouse': company_setting.cost_per_warehouse,
-            'cost_per_lot_batch': company_setting.cost_per_lot_batch
-        }
+        company_setting = obj.company_setting.all()
+        if company_setting.count() > 0:
+            company_setting = company_setting.first()
+            return {
+                'primary_currency': {
+                    'id': company_setting.primary_currency_id,
+                    'title': company_setting.primary_currency.title,
+                    'abbreviation': company_setting.primary_currency.code,
+                } if company_setting.primary_currency else {},
+                'definition_inventory_valuation': company_setting.definition_inventory_valuation,
+                'default_inventory_value_method': company_setting.default_inventory_value_method,
+                'cost_per_warehouse': company_setting.cost_per_warehouse,
+                'cost_per_lot_batch': company_setting.cost_per_lot_batch
+            }
+        return {}
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -145,22 +149,51 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
 
 def create_company_setting(company_obj, company_setting_data):
-    CompanySetting.objects.filter(company=company_obj).delete()
+    CompanySetting.objects.filter_current(company=company_obj).delete()
     CompanySetting.objects.create(company=company_obj, **company_setting_data)
     return True
 
 
-def create_company_function_number(company_obj, company_function_number_data):
+def create_company_function_number(company_function_number_data):
+    date_now = datetime.datetime.now()
+    data_calendar = datetime.date.today().isocalendar()
+    updated_function = []
     for item in company_function_number_data:
-        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=item['function'])
-        obj.update(
-            numbering_by=item['numbering_by'],
-            schema=item['schema'],
-            schema_text=item['schema_text'],
-            first_number=item['first_number'],
-            last_number=item['last_number'],
-            reset_frequency=item['reset_frequency']
+        obj = CompanyFunctionNumber.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            function=item.get('function', None)
         )
+        if obj.count() == 1:
+            updated_function.append(item.get('function', None))
+            updated_fields = {
+                **item,
+                'latest_number': int(item.get('last_number', None)) - 1,
+                'year_reset': date_now.year,
+                'month_reset': int(f"{date_now.year}{date_now.month:02}"),
+                'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
+                'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            }
+            if obj.first().schema == item.get('schema', None):
+                for key in ['latest_number', 'year_reset', 'month_reset', 'week_reset', 'day_reset']:
+                    updated_fields.pop(key, None)
+            obj.update(**updated_fields)
+
+    CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True).exclude(
+        function__in=updated_function
+    ).update(
+        numbering_by=0,
+        schema=None,
+        schema_text=None,
+        first_number=None,
+        last_number=None,
+        reset_frequency=None,
+        latest_number=None,
+        year_reset=None,
+        month_reset=None,
+        week_reset=None,
+        day_reset=None
+    )
     return True
 
 
@@ -193,7 +226,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         company_obj = Company.objects.create(**validated_data)
 
         create_company_setting(company_obj, self.initial_data.get('company_setting_data', {}))
-        create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
+        create_company_function_number(self.initial_data.get('company_function_number_data', []))
         return company_obj
 
 
@@ -213,7 +246,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         instance.save()
         create_company_setting(instance, self.initial_data.get('company_setting_data', {}))
-        create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
+        create_company_function_number(self.initial_data.get('company_function_number_data', []))
         return instance
 
 

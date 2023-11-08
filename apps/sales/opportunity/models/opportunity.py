@@ -1,5 +1,8 @@
 import json
-
+import re
+import datetime
+import calendar
+from apps.core.company.models import CompanyFunctionNumber
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -494,18 +497,72 @@ class Opportunity(DataAbstractModel):
             return False
         return True
 
+    @classmethod
+    def check_reset_frequency(cls, obj):
+        current_year = datetime.datetime.now().year
+        current_month = datetime.datetime.now().month
+        data_calendar = datetime.date.today().isocalendar()
+        flag = False
+        if obj.reset_frequency == 0:
+            if obj.year_reset != current_year:
+                obj.year_reset = current_year
+                flag = True
+        elif obj.reset_frequency == 1:
+            year_month_now = int(f"{current_year}{current_month:02}")
+            if obj.month_reset < year_month_now:
+                obj.month_reset = year_month_now
+                flag = True
+        elif obj.reset_frequency == 2:
+            year_week_now = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+            if obj.week_reset < year_week_now:
+                obj.week_reset = year_week_now
+                flag = True
+        elif obj.reset_frequency == 3:
+            year_week_weekday_now = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            if obj.day_reset < year_week_weekday_now:
+                obj.day_reset = year_week_weekday_now
+                flag = True
+        if flag:
+            obj.latest_number = obj.first_number - 1
+            obj.save()
+            return True
+        return False
+
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        opportunity = Opportunity.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "OPP"
-        if not self.code:
-            temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        obj = CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True, function=0).first()
+        result = []
+        if obj and obj.schema is not None:
+            self.check_reset_frequency(obj)
+            number = obj.latest_number + 1
+            schema_item_list = [
+                number,
+                datetime.datetime.now().year,
+                datetime.datetime.now().year % 100,
+                calendar.month_name[datetime.datetime.now().month][0:3],
+                calendar.month_name[datetime.datetime.now().month],
+                datetime.datetime.now().month,
+                datetime.date.today().isocalendar()[1],
+                datetime.date.today().timetuple().tm_yday,
+                datetime.date.today().day,
+                datetime.date.today().isocalendar()[2]
+            ]
+            for match in re.findall(r'\[.*?\]|\d', obj.schema):
+                result.append(str(schema_item_list[int(match)])) if match.isdigit() else result.append(match[1:-1])
+            obj.latest_number = number
+            obj.save()
+            self.code = '-'.join(result)
+        else:
+            # auto create code (temporary)
+            opportunity = Opportunity.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                is_delete=False
+            ).count()
+            char = "OPP"
+            if not self.code:
+                temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
+                code = f"{char}{temper}"
+                self.code = code
 
         if 'quotation_confirm' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
@@ -515,7 +572,6 @@ class Opportunity(DataAbstractModel):
                 )
             kwargs['update_fields'].append('win_rate')
             del kwargs['quotation_confirm']
-
         elif 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(
@@ -524,7 +580,6 @@ class Opportunity(DataAbstractModel):
                 )
             kwargs['update_fields'].append('win_rate')
             del kwargs['sale_order_status']
-
         elif 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(
