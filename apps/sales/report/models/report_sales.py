@@ -47,9 +47,6 @@ class ReportRevenue(DataAbstractModel):
             )
         return True
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
     class Meta:
         verbose_name = 'Report Revenue'
         verbose_name_plural = 'Report Revenues'
@@ -107,9 +104,6 @@ class ReportProduct(DataAbstractModel):
         obj.save(update_fields=['revenue', 'gross_profit', 'net_income'])
         return True
 
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
     class Meta:
         verbose_name = 'Report Product'
         verbose_name_plural = 'Report Products'
@@ -166,9 +160,6 @@ class ReportCustomer(DataAbstractModel):
         obj.net_income += net_income
         obj.save(update_fields=['revenue', 'gross_profit', 'net_income'])
         return True
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Report Customer'
