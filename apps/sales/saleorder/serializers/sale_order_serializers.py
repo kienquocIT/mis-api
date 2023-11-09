@@ -83,7 +83,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     payment_term = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     sale_order_products_data = serializers.SerializerMethodField()
     sale_order_costs_data = serializers.SerializerMethodField()
 
@@ -191,12 +190,6 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'title': obj.quotation.title,
             'code': obj.quotation.code,
         } if obj.quotation else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
     @classmethod
     def get_sale_order_products_data(cls, obj):

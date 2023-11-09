@@ -11,7 +11,7 @@ from apps.shared import LEAVE_YEARS_SENIORITY
 
 from apps.core.hr.models import Employee
 from apps.core.company.models import Company
-from .models import LeaveAvailable, LeaveType
+from .models import LeaveAvailable, LeaveType, LeaveAvailableHistory
 
 
 @shared_task
@@ -38,7 +38,7 @@ def create_new_available_end_year():
                     date_current = timezone.now().replace(year=item.open_year, month=12, day=31)
                     item.expiration_date = datetime.strftime(
                         date_current + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
-                        )
+                    )
                     list_update.append(item)
                 else:
                     item.open_year = deepcopy(current_year) - 2
@@ -115,6 +115,20 @@ def leave_months_calc(dt_now, dt_begin, an_number):
     return final
 
 
+def update_history(leave, total, quantity):
+    LeaveAvailableHistory.objects.create(
+        employee_inherit=leave.employee_inherit,
+        tenant=leave.tenant,
+        company=leave.company,
+        leave_available=leave,
+        total=total,
+        action=1,
+        quantity=quantity,
+        adjusted_total=total + quantity,
+        type_arises=3
+    )
+
+
 @shared_task
 def update_annual_leave_each_month():
     dt_crt = timezone.now()
@@ -132,7 +146,9 @@ def update_annual_leave_each_month():
                 past_added = leave_months_calc(dt_crt.replace(month=minus_1_month), emp_date_join, an_config.no_of_paid)
                 crt_added -= past_added
             leave = LeaveAvailable.objects.get(employee_inherit=employee, leave_type__code='AN')
+            clone_total = deepcopy(leave.total)
             leave.total += crt_added
             leave.available = leave.total - leave.used
             leave.save(update_fields=['total', 'available', 'used'])
+            update_history(leave, clone_total, crt_added)
     return {'apps.eoffice.leave.tasks.update_annual_leave_each_month': 'run task finished!'}

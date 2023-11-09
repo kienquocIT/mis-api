@@ -72,7 +72,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     payment_term = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     quotation_products_data = serializers.SerializerMethodField()
     quotation_costs_data = serializers.SerializerMethodField()
 
@@ -176,12 +175,6 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'title': obj.payment_term.title,
             'code': obj.payment_term.code,
         } if obj.payment_term else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
     @classmethod
     def get_quotation_products_data(cls, obj):

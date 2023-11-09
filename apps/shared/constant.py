@@ -226,9 +226,9 @@ LEAVE_YEARS_SENIORITY = [
 ]
 
 TYPE_LIST = (
-    (1, LeaveMsg.TYPE_01),
-    (2, LeaveMsg.TYPE_02),
-    (3, LeaveMsg.TYPE_03),
+    (1, LeaveMsg.TYPE_AD),
+    (2, LeaveMsg.TYPE_SYS),
+    (3, LeaveMsg.TYPE_EM),
 )
 
 # Warehouse type

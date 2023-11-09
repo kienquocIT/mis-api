@@ -166,8 +166,9 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
         model = LeaveAvailable
         fields = ('employee_inherit', 'total', 'action', 'quantity', 'adjusted_total', 'remark', 'expiration_date')
 
-    def create_history(self, instance, validated_data, init_data):
+    def create_history(self, instance, validated_data):
         employee_id = self.context.get('employee_id', None)
+        init_data = self.initial_data
         history = LeaveAvailableHistory.objects.create(
             company_id=self.context.get('company_id', None),
             tenant_id=self.context.get('tenant_id', None),
@@ -176,14 +177,21 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
             total=validated_data['total'],
             action=init_data['action'],
             quantity=init_data['quantity'],
-            adjusted_total=init_data['adjusted_total'],
-            remark=init_data['remark'],
+            adjusted_total=init_data.get('adjusted_total', 0),
+            remark=init_data.get('remark', ''),
             date_modified=timezone.now(),
-            employee_modified_id=employee_id
+            employee_modified_id=employee_id,
+            type_arises=init_data.get('type_arises', 1)
         )
         if history:
             return True
         return False
+
+    def validate(self, validate_date):
+        initial_data = self.initial_data
+        if 'quantity' in initial_data and float(initial_data.get('quantity')) <= 0:
+            raise serializers.ValidationError({"Detail": LeaveMsg.ERROR_QUANTITY})
+        return validate_date
 
     def update(self, instance, validated_data):
         try:
@@ -198,7 +206,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
                 instance.available = instance.total - instance.used
                 instance.save()
                 if instance:
-                    self.create_history(instance, validated_data, initial_data)
+                    self.create_history(instance, validated_data)
                 return instance
         except Exception as create_error:
             print('error save leave available', create_error)
