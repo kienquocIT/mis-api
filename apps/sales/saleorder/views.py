@@ -1,16 +1,20 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import ProductPriceList
-from apps.sales.saleorder.models import SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, \
-    SaleOrderProduct, SaleOrderCost
-from apps.sales.saleorder.serializers import SaleOrderListSerializer, SaleOrderListSerializerForCashOutFlow, \
-    SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer, SaleOrderExpenseListSerializer, \
-    SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
-from apps.sales.saleorder.serializers.sale_order_config import SaleOrderConfigUpdateSerializer, \
-    SaleOrderConfigDetailSerializer
-from apps.sales.saleorder.serializers.sale_order_indicator import SaleOrderIndicatorCompanyRestoreSerializer, \
-    SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer, SaleOrderIndicatorCreateSerializer
+from apps.sales.saleorder.models import (
+    SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrderCost
+)
+from apps.sales.saleorder.serializers import (
+    SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
+    SaleOrderExpenseListSerializer, SaleOrderProductListSerializer, SaleOrderPurchasingStaffListSerializer
+)
+from apps.sales.saleorder.serializers.sale_order_config import (
+    SaleOrderConfigUpdateSerializer, SaleOrderConfigDetailSerializer
+)
+from apps.sales.saleorder.serializers.sale_order_indicator import (
+    SaleOrderIndicatorCompanyRestoreSerializer,SaleOrderIndicatorListSerializer, SaleOrderIndicatorUpdateSerializer,
+    SaleOrderIndicatorCreateSerializer
+)
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -274,28 +278,6 @@ class SaleOrderIndicatorCompanyRestore(
     @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
-
-class SaleOrderListForCashOutFlow(BaseListMixin):
-    queryset = SaleOrder.objects
-    filterset_fields = []
-    serializer_list = SaleOrderListSerializerForCashOutFlow
-    list_hidden_field = ['tenant_id', 'company_id']
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("customer", "sale_person", "opportunity", "quotation")
-
-    def error_auth_require(self):
-        return self.list_empty()
-
-    @swagger_auto_schema(
-        operation_summary="Sale Order List For Cash Outflow",
-        operation_description="Get Sale Order List For Cash Outflow",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        self.paginator.page_size = -1
-        return self.list(request, *args, **kwargs)
 
 
 class ProductListSaleOrder(BaseRetrieveMixin):

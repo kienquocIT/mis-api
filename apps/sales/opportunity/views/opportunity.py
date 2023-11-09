@@ -9,8 +9,7 @@ from apps.sales.opportunity.filters import OpportunityListFilters
 from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
 from apps.sales.opportunity.serializers import (
     OpportunityListSerializer, OpportunityUpdateSerializer,
-    OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer,
-    OpportunityListSerializerForCashOutFlow,
+    OpportunityCreateSerializer, OpportunityDetailSerializer, OpportunityForSaleListSerializer
 )
 from apps.sales.opportunity.serializers.opp_members import (
     MemberOfOpportunityDetailSerializer,
@@ -509,47 +508,4 @@ class OpportunityForSaleList(BaseListMixin):
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-
-class OpportunityListForCashOutFlow(BaseListMixin):
-    queryset = Opportunity.objects
-    filterset_fields = {
-        'employee_inherit': ['exact'],
-        'quotation': ['exact', 'isnull'],
-        'sale_order': ['exact', 'isnull'],
-        'is_close_lost': ['exact'],
-        'is_deal_close': ['exact'],
-        'id': ['in'],
-    }
-    serializer_list = OpportunityListSerializerForCashOutFlow
-    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
-
-    def get_queryset(self):
-        return super().get_queryset().select_related(
-            "customer",
-            "sale_person",
-            "sale_order",
-            "quotation",
-            "employee_inherit",
-            "employee_inherit__group"
-        ).prefetch_related(
-            "opportunity_stage_opportunity__stage",
-            "customer__account_mapped_shipping_address"
-        )
-
-    def error_auth_require(self):
-        return self.list_empty()
-
-    @swagger_auto_schema(
-        operation_summary="Opportunity List For Cash Outflow",
-        operation_description="Get Opportunity List For Cash Outflow",
-    )
-    @mask_view(
-        login_require=True, auth_require=True,
-        label_code='opportunity', model_code='opportunity', perm_code="view",
-    )
-    def get(self, request, *args, **kwargs):
-        self.paginator.page_size = -1
         return self.list(request, *args, **kwargs)
