@@ -50,10 +50,14 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
             "sale_person",
             "employee_inherit",
             "customer__payment_term_customer_mapped",
+            "customer__price_list_mapped",
+            "quotation",
+            "sale_order",
         ).prefetch_related(
             "opportunity_stage_opportunity__stage",
             "customer__account_mapped_shipping_address",
-            "customer__contact_account_name"
+            "customer__contact_account_name",
+            "customer__account_mapped_billing_address",
         )
 
     @classmethod
