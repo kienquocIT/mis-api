@@ -11,8 +11,8 @@ class ReportRevenueList(BaseListMixin):
     queryset = ReportRevenue.objects
     search_fields = ['sale_order__title']
     filterset_fields = {
-        'group_inherit_id': ['exact'],
-        'employee_inherit_id': ['exact'],
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
     }
     serializer_list = ReportRevenueListSerializer
@@ -41,8 +41,8 @@ class ReportProductList(BaseListMixin):
     queryset = ReportProduct.objects
     search_fields = ['product__title']
     filterset_fields = {
-        'group_inherit_id': ['exact'],
-        'employee_inherit_id': ['exact'],
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
     }
     serializer_list = ReportProductListSerializer
@@ -70,8 +70,8 @@ class ReportCustomerList(BaseListMixin):
     queryset = ReportCustomer.objects
     search_fields = ['customer__name']
     filterset_fields = {
-        'group_inherit_id': ['exact'],
-        'employee_inherit_id': ['exact'],
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
     }
     serializer_list = ReportCustomerListSerializer
