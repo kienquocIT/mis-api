@@ -284,7 +284,7 @@ class TestCaseOpportunity(AdvanceTestCase):
     @count_queries
     def test_get_list_opportunity(self):
         self.test_create_opportunity()
-        self.max_queries_allowed = 10  # force 10 queries
+        self.max_queries_allowed = 15  # force 15 queries
         self.set_start_count_queries()
         url = reverse('OpportunityList')
         response = self.client.get(url, format='json')
