@@ -32,9 +32,10 @@ class TaskTestCase(AdvanceTestCase):
         response = self.client.get(reverse("EmployeeList"), format='json')
         return response
 
-    def test_create_task_config(self):
-        company = TaskTestCase.create_company(self)
-        ConfigDefaultData(company).task_config()
+    def test_create_task_config(self, is_create_company=True):
+        if is_create_company:
+            company = TaskTestCase.create_company(self)
+            ConfigDefaultData(company).task_config()
         task_status_res = self.client.get(reverse("OpportunityTaskStatusList"), format='json')
         self.assertEqual(task_status_res.status_code, status.HTTP_200_OK)
         return task_status_res
@@ -85,7 +86,9 @@ class TaskTestCase(AdvanceTestCase):
 
     def test_update_task(self):
         task = TaskTestCase.test_create_task(self).data['result']
-        task['task_status'] = TaskTestCase.test_create_task_config(self).data['result'][1]['id']
+        task['task_status'] = TaskTestCase.test_create_task_config(
+            self, is_create_company=False
+        ).data['result'][1]['id']
         del [task['parent_n'], task['attach']]
         url = reverse('OpportunityTaskDetail', args=[task.get('id', '')])
         self.client.put(url, task, format='json')
@@ -95,7 +98,9 @@ class TaskTestCase(AdvanceTestCase):
     def test_update_stt_task(self):
         task = TaskTestCase.test_create_task(self).data['result']
         data = {
-            "task_status": TaskTestCase.test_create_task_config(self).data['result'][2]['id']
+            "task_status": TaskTestCase.test_create_task_config(
+                self, is_create_company=False
+            ).data['result'][2]['id']
         }
         url = reverse('OpportunityTaskSwitchSTT', args=[task.get('id', '')])
         self.client.put(url, data, format='json')
