@@ -706,7 +706,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "create": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -716,7 +716,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "edit": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
