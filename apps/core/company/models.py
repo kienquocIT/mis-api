@@ -80,7 +80,7 @@ class Company(CoreAbstractModel):
 
     def generate_sub_domain(self):
         if not self.sub_domain:
-            self.sub_domain = f'{self.code}.{self.tenant.code}'.lower()
+            self.sub_domain = f'{self.code}-{self.tenant.code}'.lower()
 
     def save(self, *args, **kwargs):
         self.generate_sub_domain()
