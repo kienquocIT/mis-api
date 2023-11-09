@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import (
-    QuotationList, QuotationDetail, QuotationExpenseList, QuotationConfigDetail, QuotationListForCashOutFlow,
+    QuotationList, QuotationDetail, QuotationExpenseList, QuotationConfigDetail,
     QuotationIndicatorList, QuotationIndicatorDetail, QuotationIndicatorCompanyRestore
 )
 
@@ -13,7 +13,6 @@ urlpatterns = [
          name='QuotationIndicatorCompanyRestore'),
 
     path('list', QuotationList.as_view(), name='QuotationList'),
-    path('list-for-cashoutflow', QuotationListForCashOutFlow.as_view(), name='QuotationListForCashOutFlow'),
     path('<str:pk>', QuotationDetail.as_view(), name='QuotationDetail'),
     path('quotation-expense-list/lists', QuotationExpenseList.as_view(), name='QuotationExpenseList'),
 ]
