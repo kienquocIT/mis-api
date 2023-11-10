@@ -1008,6 +1008,9 @@ class BaseUpdateMixin(BaseMixin):
         """
         return None
 
+    def resolve_partial(self, partial_parsed: bool):
+        return partial_parsed
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         if self.check_obj_change_or_delete(instance):
@@ -1022,9 +1025,10 @@ class BaseUpdateMixin(BaseMixin):
                     hidden_field=self.update_hidden_field,
                 )
             if state_check is True:
-                body_data, partial, task_id = self.parsed_body(
+                body_data, partial_parsed, task_id = self.parsed_body(
                     instance=instance, request_data=request.data, user=request.user
                 )
+                partial = self.resolve_partial(partial_parsed)
                 serializer = self.get_serializer_update(instance, data=body_data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer, extras=field_hidden)

@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.sales.report.models import ReportRevenue
+from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
@@ -276,13 +276,59 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def create_report_revenue(cls, instance):
-        ReportRevenue.objects.create(
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        ReportRevenue.create_report_revenue_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             sale_order_id=instance.id,
             employee_created_id=instance.employee_created_id,
             employee_inherit_id=instance.employee_inherit_id,
             group_inherit_id=instance.employee_inherit.group_id,
+            date_approved=instance.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+        )
+        return True
+
+    @classmethod
+    def update_report_product(cls, instance):
+        for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
+            revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
+            gross_profit = 0
+            net_income = 0
+            ReportProduct.update_report_product_from_so(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=so_product.product_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                group_inherit_id=instance.employee_inherit.group_id,
+                date_approved=instance.date_approved,
+                revenue=revenue,
+                gross_profit=gross_profit,
+                net_income=net_income,
+            )
+        return True
+
+    @classmethod
+    def update_report_customer(cls, instance):
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        ReportCustomer.update_report_customer_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            customer_id=instance.customer_id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+            date_approved=instance.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
         )
         return True
 
@@ -297,6 +343,8 @@ class SaleOrder(DataAbstractModel):
                     kwargs.update({'update_fields': ['code']})
                 self.update_product_wait_delivery_amount(self)
                 self.create_report_revenue(self)
+                self.update_report_product(self)
+                self.update_report_customer(self)
 
         # hit DB
         super().save(*args, **kwargs)

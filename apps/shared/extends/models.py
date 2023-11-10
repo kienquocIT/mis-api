@@ -267,6 +267,7 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='The process claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
+    # workflow information
     system_status = models.SmallIntegerField(
         # choices=SYSTEM_STATUS,
         default=0,
@@ -279,6 +280,23 @@ class DataAbstractModel(SimpleAbstractModel):
         verbose_name='Runtime Obj of Doc',
         help_text='Relate to Runtime Model is running flow of doc',
     )
+    date_approved = models.DateTimeField(
+        null=True,
+        help_text='The record created when WF of document is finished'
+    )
+    current_stage = models.ForeignKey(
+        'workflow.RuntimeStage',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Current WF stage of Doc',
+        help_text='Relate to RuntimeStage Model is running WF of doc',
+    )
+    current_stage_title = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Title of WF current stage of document'
+    )
+    # active, delete status
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)
