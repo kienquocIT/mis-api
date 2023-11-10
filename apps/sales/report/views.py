@@ -59,7 +59,7 @@ class ReportProductList(BaseListMixin):
         operation_description="Get report product List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='report', model_code='reportproduct', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -88,7 +88,7 @@ class ReportCustomerList(BaseListMixin):
         operation_description="Get report customer List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='report', model_code='reportcustomer', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
