@@ -4,14 +4,14 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import SimpleAbstractModel, TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND
+from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND
 from apps.sales.opportunity.models import Opportunity
 from .config import OpportunityTaskConfig
 
 __all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
 
 
-class OpportunityTaskStatus(SimpleAbstractModel):
+class OpportunityTaskStatus(MasterDataAbstractModel):
     title = models.CharField(verbose_name='Title Status', max_length=100)
     translate_name = models.CharField(verbose_name='Title Status translated', max_length=100)
     task_config = models.ForeignKey(
@@ -120,6 +120,11 @@ class OpportunityTask(MasterDataAbstractModel):
             ["uuid4", "uuid4"]
         )
     )
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='tasks_opportunitytasks_employee_inherit',
+    )
 
     def create_code_task(self):
         # auto create code (temporary)
@@ -142,6 +147,8 @@ class OpportunityTask(MasterDataAbstractModel):
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
             }
+        if self.assign_to and not self.employee_inherit:
+            self.employee_inherit = self.assign_to
 
     def save(self, *args, **kwargs):
         self.before_save()
@@ -155,7 +162,7 @@ class OpportunityTask(MasterDataAbstractModel):
         permissions = ()
 
 
-class OpportunityLogWork(SimpleAbstractModel):
+class OpportunityLogWork(MasterDataAbstractModel):
     start_date = models.DateTimeField(
         verbose_name='Start Date'
     )
@@ -188,7 +195,7 @@ class OpportunityLogWork(SimpleAbstractModel):
         permissions = ()
 
 
-class TaskAttachmentFile(SimpleAbstractModel):
+class TaskAttachmentFile(MasterDataAbstractModel):
     attachment = models.OneToOneField(
         'attachments.Files',
         on_delete=models.CASCADE,

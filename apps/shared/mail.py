@@ -187,32 +187,56 @@ class GmailController:
     @classmethod
     def authorized_user_info(cls):
         obj = MailServerConfig.objects.get(pk=settings.MAIL_CONFIG_OBJ_PK)
-        creds = Credentials.from_authorized_user_info(obj.tokens, cls.SCOPES)
-        return creds
-
-    @classmethod
-    def authorized_file(cls):
-        token_path = os.path.join(settings.BASE_DIR, 'gmail', 'token._offline.json')
-        cred_path = os.path.join(settings.BASE_DIR, 'gmail', 'credentials.json')
-
         creds = None
-        # The file token.json stores the user's access and refresh tokens, and is
-        # created automatically when the authorization flow completes for the first
-        # time.
-        if os.path.exists(token_path):
-            creds = Credentials.from_authorized_user_file(token_path, cls.SCOPES)
+        if obj.token_data:
+            creds = Credentials.from_authorized_user_info(obj.token_data, cls.SCOPES)
+
         # If there are no (valid) credentials available, let the user log in.
         if not creds or not creds.valid:
             if creds and creds.expired and creds.refresh_token:
                 creds.refresh(Request())
             else:
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    cred_path, cls.SCOPES,
+                flow = InstalledAppFlow.from_client_config(
+                    obj.creds_data, cls.SCOPES
                 )
                 creds = flow.run_local_server(port=0)
+
+            obj.token_data = creds.to_json()
+            obj.save()
+
+        return creds
+
+    @classmethod
+    def authorized_manual(cls, creds_data):
+        flow = InstalledAppFlow.from_client_config(creds_data, cls.SCOPES)
+        creds = flow.run_local_server(port=0)
+        print(creds.to_json())
+        return creds
+
+    @classmethod
+    def authorized_file(cls, creds_data: dict = None):
+        obj = MailServerConfig.objects.get(pk=settings.MAIL_CONFIG_OBJ_PK)
+        creds = None
+        # The file token.json stores the user's access and refresh tokens, and is
+        # created automatically when the authorization flow completes for the first
+        # time.
+        if obj.token_data:
+            creds = Credentials.from_authorized_user_info(obj.token_data, cls.SCOPES)
+        # If there are no (valid) credentials available, let the user log in.
+        if not creds or not creds.valid:
+            if creds and creds.expired and creds.refresh_token:
+                creds.refresh(Request())
+            else:
+                if creds_data:
+                    flow = InstalledAppFlow.from_client_config(creds_data, cls.SCOPES)
+                elif obj.creds_data:
+                    flow = InstalledAppFlow.from_client_config(creds_data, cls.SCOPES)
+                else:
+                    raise ValueError('Credentials data must be required')
+                creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
-            with open(token_path, 'w') as token:
-                token.write(creds.to_json())
+            obj.token_data = creds.to_json()
+            obj.save()
         return creds
 
     def __init__(
@@ -275,6 +299,7 @@ class GmailController:
         return draft
 
     def send(self):
+        send_message = None
         try:
             send_message = self.service.users().messages().send(
                 userId="me", body={

@@ -1,18 +1,71 @@
 import json
 from copy import deepcopy
+from functools import wraps
 
+from django.conf import settings
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 
 from rest_framework.test import APIClient
 
+from apps.core.tenant.models import TenantPlan
+from apps.core.hr.models import (
+    Employee, EmployeePermission, PlanEmployee, PlanEmployeeApp, DistributionApplication,
+    DistributionPlan,
+)
+from apps.sharedapp.data.base import FULL_PLAN_ID, PlanApplication_data
+from apps.sharedapp.data.base.plan_app import FullPermitHandle
+from apps.shared.permissions.util import PermissionController
+
 from .utils import CustomizeEncoder
 
-__all__ = ['AdvanceTestCase']
+
+__all__ = ['AdvanceTestCase', 'count_queries']
+
+from ...core.base.models import PlanApplication
+
+
+def count_queries(func):
+    def wrapper(self, *args, **kwargs):
+        with CaptureQueriesContext(connection) as ctx:
+            self.ctx__of_counter_queries = ctx
+            data = func(self, *args, **kwargs)
+            number_of_queries = len(ctx.captured_queries)
+            number_of_queries__reduce = number_of_queries - self.start_count_queries
+            if number_of_queries__reduce > self.max_queries_allowed:
+                err_data = [
+                    'Testcase: ', self, '\n',
+                    '- Number of queries: ', number_of_queries, '\n',
+                    '- Start count queries from: ', self.start_count_queries, '\n',
+                    '- End count: ', number_of_queries__reduce, '\n',
+                    'The quantity query is greater than number allowed: %s > %s ' % (
+                        str(number_of_queries__reduce), str(self.max_queries_allowed)
+                    )
+                ]
+                msg_err = " ".join([str(item) for item in err_data])
+                self.fail(msg_err)
+        return data
+
+    return wraps(func)(wrapper)
 
 
 class AdvanceTestCase(TestCase):
+    def append_start_count_queries(self):
+        if self.ctx__of_counter_queries:
+            self.start_count_queries += len(self.ctx__of_counter_queries.captured_queries)
+
+    def set_start_count_queries(self):
+        if self.ctx__of_counter_queries:
+            self.start_count_queries = len(self.ctx__of_counter_queries.captured_queries)
+
+    ctx__of_counter_queries = None
+    number_queries_pass_auth = 924  # change it if change code in core
+    start_count_queries = 0
+    max_queries_allowed = 5
+
     tenant_code = 'MiS'
     admin_username = 'queptl'
     admin_password = 'queptl@1234'
@@ -98,8 +151,12 @@ class AdvanceTestCase(TestCase):
         return result
 
     def authenticated(self, login_data=None):
+        if settings.SHOW_TESTCASE_NAME:
+            print('\n', str(self), ' ')
         login_data = login_data if login_data is not None else self._login()
         self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + login_data['token']['access_token'])
+        self.append_start_count_queries()
+        self.max_queries_allowed = 5
 
     def _new_tenant(self):
         url = reverse('NewTenant')
@@ -173,6 +230,7 @@ class AdvanceTestCase(TestCase):
             resp_data['result'].items(),
             check_sum_second=False,
         )
+        self.tenant_id = resp_data['result']['id']
         return resp_data['result']
 
     def _login(self):
@@ -208,4 +266,65 @@ class AdvanceTestCase(TestCase):
             ['access_token', 'refresh_token'],
             list(response.data['result']['token'].keys())
         )
+
+        employee_current_id = response.data['result']['employee_current']['id']
+        employee_obj = Employee.objects.get(pk=employee_current_id)
+        tenant_current_id = response.data['result']['tenant_current']['id']
+        if employee_current_id and tenant_current_id:
+            TenantPlan.objects.bulk_create(
+                [
+                    TenantPlan(tenant_id=tenant_current_id, plan_id=x) for x in FULL_PLAN_ID
+                ]
+            )
+
+            # force admin full permit!
+            employee_obj.is_admin_company = True
+            employee_obj.save()
+
+            # set full permit!
+            self.__regis_full_permit_for_employee(employee_obj=employee_obj)
+
+        self.company_id = response.data['result']['company_current']['id']
         return response.data['result']
+
+    @classmethod
+    def __regis_full_permit_for_employee(cls, employee_obj):
+        # set full plan + app
+        for _idx, config_data in PlanApplication_data.items():
+            plan_id = config_data['plan_id']
+            application_id = config_data['application_id']
+
+            emp_plan_obj, _created = PlanEmployee.objects.get_or_create(plan_id=plan_id, employee=employee_obj)
+            PlanEmployeeApp.objects.get_or_create(plan_employee=emp_plan_obj, application_id=application_id)
+
+        # set full app
+        for obj in PlanApplication.objects.all():
+            tenant_plan, _created = TenantPlan.objects.get_or_create(
+                tenant=employee_obj.tenant,
+                plan=obj.plan,
+                purchase_order='P0001',
+            )
+            dis_plan, _created = DistributionPlan.objects.get_or_create(
+                tenant=employee_obj.tenant,
+                company=employee_obj.company,
+                tenant_plan=tenant_plan,
+                employee=employee_obj,
+                plan=obj.plan,
+
+            )
+            DistributionApplication.objects.get_or_create(
+                distribution_plan=dis_plan,
+                app=obj.application,
+                tenant=employee_obj.tenant,
+                company=employee_obj.company,
+                employee=employee_obj
+            )
+
+        # set full permit
+        employee_permit_obj, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
+        employee_permit_obj.permission_by_configured = FullPermitHandle.full_permit()
+        employee_permit_obj.permissions_parsed = PermissionController(
+            tenant_id=employee_obj.tenant_id
+        ).get_permission_parsed(instance=employee_permit_obj)
+        employee_permit_obj.save(sync_parsed=True)
+        return employee_permit_obj

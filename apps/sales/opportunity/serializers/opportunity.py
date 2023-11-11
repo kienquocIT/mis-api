@@ -1,13 +1,22 @@
+# pylint: disable=C0302
+from uuid import uuid4
 from rest_framework import serializers
-
-from apps.core.hr.models import Employee
+from apps.core.hr.models import Employee, DistributionApplication
 from apps.masterdata.saledata.models import Product, ProductCategory, UnitOfMeasure, Tax, Contact
 from apps.masterdata.saledata.models import Account
-from apps.sales.opportunity.models import Opportunity, OpportunityProductCategory, OpportunityProduct, \
-    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember, \
-    OpportunityConfigStage, OpportunityStage
+from apps.masterdata.saledata.serializers import AccountForSaleListSerializer
+from apps.sales.opportunity.models import (
+    Opportunity, OpportunityProductCategory, OpportunityProduct,
+    OpportunityCompetitor, OpportunityContactRole, OpportunityCustomerDecisionFactor, OpportunitySaleTeamMember,
+    OpportunityConfigStage, OpportunityStage,
+)
 from apps.shared import AccountsMsg, HRMsg
 from apps.shared.translations.opportunity import OpportunityMsg
+
+__all__ = [
+    'OpportunityListSerializer', 'OpportunityCreateSerializer', 'OpportunityUpdateSerializer',
+    'OpportunityDetailSerializer', 'OpportunityForSaleListSerializer', 'OpportunityDetailSimpleSerializer'
+]
 
 
 class OpportunityListSerializer(serializers.ModelSerializer):
@@ -15,6 +24,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
     is_close = serializers.SerializerMethodField()
+    sale_order = serializers.SerializerMethodField()
+    quotation = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -25,8 +36,8 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             'customer',
             'sale_person',
             'open_date',
-            'quotation_id',
-            'sale_order_id',
+            'quotation',
+            'sale_order',
             'opportunity_sale_team_datas',
             'close_date',
             'stage',
@@ -40,17 +51,39 @@ class OpportunityListSerializer(serializers.ModelSerializer):
                 'id': obj.customer_id,
                 'title': obj.customer.name,
                 'code': obj.customer.code,
-                'shipping_address': obj.customer.shipping_address
+                'shipping_address': [
+                    {'id': shipping.id, 'full_address': shipping.full_address}
+                    for shipping in obj.customer.account_mapped_shipping_address.all()
+                ],
+                'billing_address': [
+                    {'id': billing.id, 'full_address': billing.full_address}
+                    for billing in obj.customer.account_mapped_billing_address.all()
+                ],
+                'contact_mapped': [{
+                    'id': str(item.id),
+                    'fullname': item.fullname,
+                    'email': item.email
+                } for item in obj.customer.contact_account_name.all()],
+                'payment_term_customer_mapped': {
+                    'id': obj.customer.payment_term_customer_mapped_id,
+                    'title': obj.customer.payment_term_customer_mapped.title,
+                    'code': obj.customer.payment_term_customer_mapped.code
+                } if obj.customer.payment_term_customer_mapped else {},
+                'price_list_mapped': {
+                    'id': obj.customer.price_list_mapped_id,
+                    'title': obj.customer.price_list_mapped.title,
+                    'code': obj.customer.price_list_mapped.code
+                } if obj.customer.price_list_mapped else {},
             }
         return {}
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
             }
         return {}
 
@@ -72,12 +105,28 @@ class OpportunityListSerializer(serializers.ModelSerializer):
             return True
         return False
 
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'code': obj.sale_order.code,
+            'title': obj.sale_order.title,
+        } if obj.sale_order else {}
+
+    @classmethod
+    def get_quotation(cls, obj):
+        return {
+            'id': obj.quotation_id,
+            'code': obj.quotation.code,
+            'title': obj.quotation.title,
+        } if obj.quotation else {}
+
 
 class OpportunityCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     customer = serializers.UUIDField()
     product_category = serializers.ListField(child=serializers.UUIDField(), required=False)
-    sale_person = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
 
     class Meta:
         model = Opportunity
@@ -85,7 +134,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
-            'sale_person',
+            'employee_inherit_id',
             'open_date',
         )
 
@@ -101,15 +150,92 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': AccountsMsg.ACCOUNT_NOT_EXIST})
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_employee_inherit_id(cls, value):
         try:
-            return Employee.objects.get_current(
+            emp = Employee.objects.get_current(
                 fill__tenant=True,
                 fill__company=True,
                 id=value
             )
+            return emp.id
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    @classmethod
+    def get_alias_permit_from_general(cls, employee_obj):
+        # Le Dieu Hoa - 10/17 11:17 AM
+        #   Task: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       e66cfb5a-b3ce-4694-a4da-47618f53de4c
+        #   Quotation: tạo - xem - sửa - xóa (cho chính nó)
+        #       b9650500-aba7-44e3-b6e0-2542622702a3
+        #   Sales Order: tạo - xem - sửa - xóa (cho chính nó)
+        #       a870e392-9ad2-4fe2-9baa-298a38691cf2
+        #   Contract: tạo - xem - sửa - xóa (cho chính nó)
+        #       31c9c5b0-717d-4134-b3d0-cc4ca174b168
+        #   Advanced Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       57725469-8b04-428a-a4b0-578091d0e4f5
+        #   Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       1010563f-7c94-42f9-ba99-63d5d26a1aca
+        #   Return Payment: tạo - xem - sửa - xóa (cho chính nó / mọi người)
+        #       65d36757-557e-4534-87ea-5579709457d7
+
+        result = []
+        app_id_get = [
+            "e66cfb5a-b3ce-4694-a4da-47618f53de4c",  # Task
+            "b9650500-aba7-44e3-b6e0-2542622702a3",  # Quotation
+            "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sales Order
+            "31c9c5b0-717d-4134-b3d0-cc4ca174b168",  # Contract
+            "57725469-8b04-428a-a4b0-578091d0e4f5",  # Advanced Payment
+            "1010563f-7c94-42f9-ba99-63d5d26a1aca",  # Payment
+            "65d36757-557e-4534-87ea-5579709457d7",  # Return Payment
+        ]
+        for obj in DistributionApplication.objects.select_related('app').filter(
+                employee=employee_obj, app_id__in=app_id_get
+        ):
+            permit_has_1_range = []
+            permit_has_4_range = []
+            for permit_code, permit_config in obj.app.permit_mapping.items():
+                if '1' in permit_config.get('range', []):
+                    permit_has_1_range.append(permit_code)
+                elif '4' in permit_config.get('range', []):
+                    permit_has_4_range.append(permit_code)
+
+            has_1 = False
+            data_tmp_for_1 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '1',
+                'space': '0',
+            }
+            has_4 = False
+            data_tmp_for_4 = {
+                'id': str(uuid4()),
+                'app_id': str(obj.app_id),
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False,
+                'range': '4',
+                'space': '0',
+            }
+
+            for key in ['view', 'create', 'edit', 'delete']:
+                if key in permit_has_1_range:
+                    has_1 = True
+                    data_tmp_for_1[key] = True
+                elif key in permit_has_4_range:
+                    has_4 = True
+                    data_tmp_for_4[key] = True
+
+            if has_1 is True:
+                result.append(data_tmp_for_1)
+            if has_4 is True:
+                result.append(data_tmp_for_4)
+        return result
 
     def create(self, validated_data):
         # get data product_category
@@ -119,9 +245,38 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
         stage = OpportunityConfigStage.objects.get_current(fill__company=True, indicator='Qualification')
         win_rate = stage.win_rate
 
-        opportunity = Opportunity.objects.create(**validated_data, win_rate=win_rate)
+        employee_inherit = Employee.objects.get(id=validated_data['employee_inherit_id'])
+        sale_team_data = [
+            {
+                'member': {
+                    'id': str(employee_inherit.id),
+                    'full_name': employee_inherit.get_full_name(),
+                    'code': employee_inherit.code,
+                    'email': employee_inherit.email,
+                }
+            }
+        ]
+
+        opportunity = Opportunity.objects.create(
+            **validated_data,
+            opportunity_sale_team_datas=sale_team_data,
+            win_rate=win_rate,
+        )
+
+        # create M2M Opportunity and Product Category
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
+        # create stage default for Opportunity
         OpportunityStage.objects.create(stage=stage, opportunity=opportunity, is_current=True)
+        # set sale_person in sale team
+        OpportunitySaleTeamMember.objects.create(
+            tenant_id=opportunity.tenant_id,
+            company_id=opportunity.company_id,
+            opportunity=opportunity,
+            member=employee_inherit,
+            permit_view_this_opp=True,
+            permit_add_member=True,
+            permission_by_configured=self.get_alias_permit_from_general(employee_obj=employee_inherit)
+        )
         return opportunity
 
 
@@ -129,7 +284,7 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
     product = serializers.UUIDField(allow_null=True)
     product_category = serializers.UUIDField(allow_null=False, required=True)
     uom = serializers.UUIDField(allow_null=False)
-    tax = serializers.UUIDField(allow_null=False)
+    tax = serializers.UUIDField(allow_null=False, required=False)
 
     class Meta:
         model = OpportunityProduct
@@ -253,7 +408,7 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                     product_id=product_id,
                     product_category_id=item['product_category']['id'],
                     uom_id=item['uom']['id'],
-                    tax_id=item['tax']['id'],
+                    tax_id=item['tax']['id'] if 'tax' in item else None,
                     product_name=item['product_name'],
                     product_quantity=item['product_quantity'],
                     product_unit_price=item['product_unit_price'],
@@ -324,22 +479,6 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def update_opportunity_sale_team(cls, data, instance):
-        # delete old record
-        OpportunitySaleTeamMember.objects.filter(opportunity=instance).delete()
-        # create new
-        bulk_data = []
-        for item in data:
-            bulk_data.append(
-                OpportunitySaleTeamMember(
-                    opportunity=instance,
-                    member_id=item['member']['id']
-                )
-            )
-        OpportunitySaleTeamMember.objects.bulk_create(bulk_data)
-        return True
-
-    @classmethod
     def update_opportunity_stage(cls, data, instance):
         OpportunityStage.objects.filter(opportunity=instance).delete()
 
@@ -405,36 +544,10 @@ class OpportunityContactRoleCreateSerializer(serializers.ModelSerializer):
                 )
                 return {
                     'id': str(obj.id),
-                    'title': obj.title,
+                    'fullname': obj.fullname,
                 }
         except Contact.DoesNotExist:
             raise serializers.ValidationError({'contact': OpportunityMsg.NOT_EXIST})
-        return None
-
-
-class OpportunitySaleTeamMemberCreateSerializer(serializers.ModelSerializer):
-    member = serializers.UUIDField(allow_null=False)
-
-    class Meta:
-        model = OpportunitySaleTeamMember
-        fields = (
-            'member',
-        )
-
-    @classmethod
-    def validate_member(cls, value):
-        try:  # noqa
-            if value is not None:
-                obj = Employee.objects.get(
-                    id=value
-                )
-                return {
-                    'id': str(obj.id),
-                    'name': obj.get_full_name(),
-                    'email': obj.email,
-                }
-        except Employee.DoesNotExist:
-            raise serializers.ValidationError({'employee': OpportunityMsg.NOT_EXIST})
         return None
 
 
@@ -480,8 +593,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
     opportunity_contact_role_datas = OpportunityContactRoleCreateSerializer(many=True, required=False)
     title = serializers.CharField(required=False)
     is_input_rate = serializers.BooleanField(required=False)
-    sale_person = serializers.UUIDField(required=False)
-    opportunity_sale_team_datas = OpportunitySaleTeamMemberCreateSerializer(required=False, many=True)
+    employee_inherit = serializers.UUIDField(required=False)
     stage = serializers.UUIDField(required=False)
     lost_by_other_reason = serializers.BooleanField(required=False)
     list_stage = OpportunityStageUpdateSerializer(required=False, many=True)
@@ -492,7 +604,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'title',
             'customer',
             'product_category',
-            'sale_person',
+            'employee_inherit',
             'budget_value',
             'open_date',
             'is_input_rate',
@@ -507,7 +619,6 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'opportunity_competitors_datas',
             'opportunity_contact_role_datas',
             'customer_decision_factor',
-            'opportunity_sale_team_datas',
             'stage',
             'lost_by_other_reason',
             'list_stage',
@@ -588,7 +699,7 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         return value
 
     @classmethod
-    def validate_sale_person(cls, value):
+    def validate_employee_inherit(cls, value):
         try:
             return Employee.objects.get_current(
                 fill__tenant=True,
@@ -631,12 +742,6 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
                 instance
             )
 
-        if 'opportunity_sale_team_datas' in validated_data:
-            CommonOpportunityUpdate.update_opportunity_sale_team(
-                validated_data['opportunity_sale_team_datas'],
-                instance
-            )
-
         if 'list_stage' in validated_data:
             list_stage = validated_data.pop('list_stage', [])
             CommonOpportunityUpdate.update_opportunity_stage(
@@ -650,12 +755,27 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class OpportunityDetailSimpleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'title',
+            'code',
+        )
+
+
 class OpportunityDetailSerializer(serializers.ModelSerializer):
     decision_maker = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
     stage = serializers.SerializerMethodField()
+    customer = serializers.SerializerMethodField()
+    end_customer = serializers.SerializerMethodField()
+    product_category = serializers.SerializerMethodField()
+    customer_decision_factor = serializers.SerializerMethodField()
+    members = serializers.SerializerMethodField()
 
     class Meta:
         model = Opportunity
@@ -680,13 +800,13 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'is_input_rate',
             'customer_decision_factor',
             'sale_person',
-            'opportunity_sale_team_datas',
             'stage',
             'lost_by_other_reason',
             'sale_order',
             'quotation',
             'is_close_lost',
             'is_deal_close',
+            'members'
         )
 
     @classmethod
@@ -700,11 +820,15 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_sale_person(cls, obj):
-        if obj.sale_person:
+        if obj.employee_inherit:
             return {
-                'id': obj.sale_person_id,
-                'name': obj.sale_person.get_full_name(),
-                'code': obj.sale_person.code,
+                'id': obj.employee_inherit_id,
+                'full_name': obj.employee_inherit.get_full_name(),
+                'code': obj.employee_inherit.code,
+                'group': {
+                    'id': obj.employee_inherit.group_id,
+                    'title': obj.employee_inherit.group.title
+                } if obj.employee_inherit.group else {}
             }
         return {}
 
@@ -716,6 +840,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 return {
                     'id': obj.sale_order_id,
                     'code': obj.sale_order.code,
+                    'title': obj.sale_order.title,
                     'system_status': obj.sale_order.system_status,
                     'delivery': {
                         'id': delivery.id,
@@ -727,6 +852,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.sale_order_id,
                 'code': obj.sale_order.code,
+                'title': obj.sale_order.title,
                 'system_status': obj.sale_order.system_status,
             }
         return {}
@@ -737,6 +863,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             return {
                 'id': obj.quotation_id,
                 'code': obj.quotation.code,
+                'title': obj.quotation.title,
                 'system_status': obj.quotation.system_status,
                 'is_customer_confirm': obj.quotation.is_customer_confirm,
             }
@@ -754,3 +881,126 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
                 } for item in stage
             ]
         return []
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return {
+                'id': obj.customer_id,
+                'code': obj.code,
+                'name': obj.customer.name,
+                'annual_revenue': obj.customer.annual_revenue,
+                'shipping_address': [{
+                    'full_address': item.full_address,
+                    'is_default': item.is_default
+                } for item in obj.customer.account_mapped_shipping_address.all()],
+                'contact_mapped': [{
+                    'id': str(item.id),
+                    'fullname': item.fullname,
+                    'email': item.email
+                } for item in obj.customer.contact_account_name.all()]
+            }
+        return {}
+
+    @classmethod
+    def get_end_customer(cls, obj):
+        if obj.end_customer:
+            return {
+                'id': obj.end_customer_id,
+                'name': obj.end_customer.name,
+            }
+        return {}
+
+    @classmethod
+    def get_product_category(cls, obj):
+        if obj.product_category:
+            categories = obj.product_category.all()
+            return [{
+                'id': category.id,
+                'title': category.title,
+            } for category in categories]
+        return []
+
+    @classmethod
+    def get_customer_decision_factor(cls, obj):
+        factor = obj.customer_decision_factor.all()
+        if factor:
+            return [
+                {
+                    'id': item.id,
+                    'title': item.title,
+                } for item in factor
+            ]
+        return []
+
+    def get_members(self, obj):
+        allow_get_member = self.context.get('allow_get_member', False)
+        return [
+            {
+                "id": item.id,
+                "first_name": item.first_name,
+                "last_name": item.last_name,
+                "full_name": item.get_full_name(),
+                "email": item.email,
+                "avatar": item.avatar,
+                "is_active": item.is_active,
+            } for item in obj.members.all()
+        ] if allow_get_member else []
+
+
+class OpportunityForSaleListSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+    sale_person = serializers.SerializerMethodField()
+    stage = serializers.SerializerMethodField()
+    is_close = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Opportunity
+        fields = (
+            'id',
+            'title',
+            'code',
+            'customer',
+            'sale_person',
+            'open_date',
+            'quotation_id',
+            'sale_order_id',
+            'opportunity_sale_team_datas',
+            'close_date',
+            'stage',
+            'is_close'
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        if obj.customer:
+            return AccountForSaleListSerializer(obj.customer).data
+        return {}
+
+    @classmethod
+    def get_sale_person(cls, obj):
+        if obj.sale_person:
+            return {
+                'id': obj.sale_person_id,
+                'full_name': obj.sale_person.get_full_name(),
+                'code': obj.sale_person.code,
+            }
+        return {}
+
+    @classmethod
+    def get_stage(cls, obj):
+        if obj.opportunity_stage_opportunity:
+            stages = obj.opportunity_stage_opportunity.all()
+            return [
+                {
+                    'id': stage.stage.id,
+                    'is_current': stage.is_current,
+                    'indicator': stage.stage.indicator
+                } for stage in stages]
+        return []
+
+    @classmethod
+    def get_is_close(cls, obj):
+        if obj.is_deal_close or obj.is_close_lost:
+            return True
+        return False

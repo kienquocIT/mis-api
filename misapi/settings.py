@@ -18,7 +18,7 @@ from colorama import Fore
 from datetime import timedelta
 from pathlib import Path
 
-from dotenv import load_dotenv
+from .load_env import load_env
 
 # override recursion limit
 sys.setrecursionlimit(10000)
@@ -27,7 +27,7 @@ sys.setrecursionlimit(10000)
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # load environment from .env file
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_env(BASE_DIR)
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
@@ -37,7 +37,11 @@ SECRET_KEY = 'django-insecure-z+!6=0b0sdkx!#su_z1$+6(*_8&5lo5&%jy8n76c5l1b1um&%t
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+DEBUG_PERMIT = False
+DEBUG_BG_TASK = False
 DEBUG_SIGNAL_CHANGE = False
+SHOW_TESTCASE_NAME = False
+SHOW_SYSTEM_DATA = False
 
 ALLOWED_HOSTS = []
 ALLOWED_CIDR_NETS = []  # whitelist range IP
@@ -63,6 +67,8 @@ INSTALLED_APPS = \
         'rest_framework_simplejwt',  # Authenticate Token with JSON WEB TOKEN
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
+        'django_extensions',  # some tool for command | https://github.com/django-extensions/django-extensions
+        'django_celery_beat',  # celery crontab
     ] + [  # integrate some service management or tracing
         'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
@@ -87,6 +93,14 @@ INSTALLED_APPS = \
         'apps.sales.cashoutflow',
         'apps.sales.delivery',
         'apps.sales.task',
+        'apps.sales.purchasing',
+        'apps.sales.inventory',
+        'apps.eoffice.leave',
+
+        'apps.sales.project',
+        'apps.sales.report',
+    ] + [  # Tools improvement from dev team
+        'apps.core.web_builder',
     ]
 
 MIDDLEWARE = [
@@ -223,6 +237,7 @@ MEDIA_HOST = os.environ.get('MEDIA_HOST', '127.0.0.1')
 MEDIA_PORT = os.environ.get('MEDIA_PORT', '8881')
 MEDIA_SUFFIX = 'api'
 MEDIA_DOMAIN = f'{MEDIA_PROTOCOL}://{MEDIA_HOST}:{MEDIA_PORT}/{(MEDIA_SUFFIX + "/") if MEDIA_SUFFIX else ""}'
+MEDIA_ENABLED = False
 
 # Media key and data private
 MEDIA_KEY_FLAG = os.environ.get('MEDIA_KEY_FLAG', 'MEDIA-APIRequest')
@@ -262,6 +277,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # test runner override | runner for command: python manage.py test
 TEST_RUNNER = 'misapi.testrunner.CustomTestRunner'
+TEST_ARGS = ['--keepdb']
+DJANGO_TEST_ARGS = ['--keepdb']
 # -- test runner override | runner for command: python manage.py test
 
 # REST API & JWT
@@ -349,6 +366,11 @@ SWAGGER_SETTINGS = {
             'name': 'DATAISSKIPAUTH',
             'in': 'header',
         },
+        f'Dropdown List: "true"': {
+            'type': 'apiKey',
+            'name': 'DATAISDD',
+            'in': 'header',
+        },
     },
     'SUPPORTED_SUBMIT_METHODS': ['get', 'post', 'put', 'delete', 'patch'],
     'APIS_SORTER': 'alpha',
@@ -361,12 +383,14 @@ FORCE_SCRIPT_NAME = None  # SWAGGER_URL.replace('/api', '')
 # -- page API documentations
 
 # Cache
+CACHE_ENABLED = False
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
     }
 }
 CACHE_KEY_PREFIX = 'MiS'
+CACHE_EXPIRES_DEFAULT = 15 * 60  # 15 minutes
 # -- Cache
 
 # option account user create
@@ -479,6 +503,30 @@ if ENABLE_PROD is True:
 
     # media domain
     MEDIA_DOMAIN = os.environ.get('MEDIA_DOMAIN', MEDIA_DOMAIN)
+    MEDIA_ENABLED = True if os.environ.get('MEDIA_ENABLED', '0') in [1, '1'] else False
+
+    # caching
+    CACHE_ENABLED = True if os.environ.get("CACHE_ENABLED", '0') in [1, '1'] else False
+    if CACHE_ENABLED is True:
+        CACHE_KEY_PREFIX = os.environ.get('CACHE_KEY_PREFIX', CACHE_KEY_PREFIX)
+        CACHE_HOST = os.environ.get('CACHE_HOST', '127.0.0.1')
+        CACHE_PORT = os.environ.get('CACHE_PORT', '11211')
+        CACHE_OPTION = json.loads(os.environ.get('CACHE_OPTION', '{}'))
+        CACHE_EXPIRES_DEFAULT = int(os.environ.get('CACHE_EXPIRES_DEFAULT', CACHE_EXPIRES_DEFAULT))
+        CACHES = {
+            'default': {
+                'BACKEND': 'django.core.cache.backends.memcached.PyMemcacheCache',
+                'LOCATION': f'{CACHE_HOST}:{CACHE_PORT}',
+                'OPTIONS': {
+                    # 'TIMEOUT': 60 * 15,  # default 5 minutes, current 15 minutes
+                    # 'MAX_ENTRIES': 300,  # default 300, current 300
+                    # 'KEY_PREFIX': CACHE_KEY_PREFIX,
+                    # 'KEY_FUNCTION': 'apps.shared.extends.caching.make_key_global',
+                    # **CACHE_OPTION,  # relate to: https://docs.djangoproject.com/en/4.2/topics/cache/#cache-arguments
+                }
+            }
+        }
+
 # -- PROD configurations
 
 # Tracing
@@ -491,9 +539,15 @@ if JAEGER_TRACING_ENABLE in [1, '1']:
     JAEGER_TRACING_EXCLUDE_LOG_PATH = '/__'
 # -- Tracing
 
+# debug permit working
+SHOW_SYSTEM_DATA = True if os.environ.get('SHOW_SYSTEM_DATA', '0') in [1, '1'] else False
+SHOW_TESTCASE_NAME = True if os.environ.get('SHOW_TESTCASE_NAME', '0') in [1, '1'] else False
+DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
+DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
+
 # Display config about DB, Cache, CELERY,...
-OS_DEBUG = os.environ.get('DEBUG', DEBUG)
-if OS_DEBUG is True or OS_DEBUG in [1, '1']:
+DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
+if DEBUG is True:
     # debug toolbar IP Internal
     hostname, _, ips = socket.gethostbyname_ex(socket.gethostname())
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
@@ -504,7 +558,6 @@ if OS_DEBUG is True or OS_DEBUG in [1, '1']:
     print(Fore.GREEN, f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)} \033[0m')
     print(Fore.RED, f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)} \033[0m')
     print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
-    print(Fore.CYAN, '----------------------------------------------------------------------------------', '\033[0m')
+    print(Fore.LIGHTMAGENTA_EX, f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED} \033[0m')
+    print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
-
-CELERY_TASK_ALWAYS_EAGER = True

@@ -13,10 +13,14 @@ class HRMsg:
     EMPLOYEE_IS_ARRAY = _('Employee must be array.')
     ROLE_CODE_EXIST = _('Role code is exist.')
     ROLE_DATA_VALID = _('Data is not valid')
-
     PERMISSIONS_BY_CONFIGURED_INCORRECT = _("Permissions is incorrect.")
     PERMISSIONS_BY_CONFIGURED_CHILD_INCORRECT = _("Permission item is incorrect.")
-
     FILTER_COMPANY_ID_REQUIRED = _('The data must be filter by company.')
-
     GROUP_LEVEL_OUT_OF_RANGE = _('Level is out of range')
+    ACCOUNT_TYPE_NOT_EXIST = _('Account type does not exist.')
+    ACCOUNT_TYPE_IS_ARRAY = _('Account type must be array.')
+    PLAN_NOT_FOUND = _('Plan not found')
+    APP_NOT_FOUND = _('Some app is not found')
+    APP_NOT_MATCH_PLAN = _('Some app not match with plan')
+    PLAN_TYPE_INCORRECT = _('Plan Type is incorrect')
+    MEMBER_NOT_FOUND = _('Some member not found')

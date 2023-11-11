@@ -4,7 +4,7 @@ from .http import HttpMsg
 from .provisioning import ProvisioningMsg
 from .api import APIMsg
 from .hr import HRMsg
-from .base import BaseMsg
+from .base import BaseMsg, PermissionMsg
 from .account import AccountMsg
 from .workflow import WorkflowMsg
 from .core import *
@@ -12,9 +12,11 @@ from .company import *
 from .accounts import AccountsMsg
 from .product import ProductMsg
 from .price import PriceMsg
-from .sales import SaleMsg
+from .sales import SaleMsg, PurchaseRequestMsg, PurchasingMsg
 from .promotion import PromoMsg
 from .advancepayment import AdvancePaymentMsg
 from .good_receipt import GRMsg
 from .shipping import ShippingMsg
 from .inventory import WarehouseMsg
+from .eoffices import *
+from .warehouse import *

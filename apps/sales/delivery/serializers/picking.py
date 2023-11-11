@@ -1,12 +1,13 @@
 from django.utils import timezone
 from django.db import transaction
 from rest_framework import serializers
-import django.utils.translation
 
-from apps.masterdata.saledata.models import ProductWareHouse
+from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
 from apps.sales.delivery.models import (
-    OrderDeliveryProduct, OrderPicking, OrderPickingProduct, OrderPickingSub, OrderDelivery
+    OrderDeliveryProduct, OrderPickingProduct, OrderPickingSub, OrderDelivery
 )
+from apps.shared.translations.sales import DeliverMsg
+from ..utils import CommonFunc
 
 __all__ = [
     'OrderPickingListSerializer',
@@ -18,6 +19,9 @@ __all__ = [
 
 
 class OrderPickingProductListSerializer(serializers.ModelSerializer):
+    product_data = serializers.SerializerMethodField()
+    uom_data = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderPickingProduct
         fields = (
@@ -32,16 +36,42 @@ class OrderPickingProductListSerializer(serializers.ModelSerializer):
             'picked_quantity',
         )
 
-
-class OrderPickingSubListSerializer(serializers.ModelSerializer):
-    products = serializers.SerializerMethodField()
+    @classmethod
+    def get_uom_data(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
 
     @classmethod
-    def get_products(cls, obj):
-        return OrderPickingProductListSerializer(
-            obj.orderpickingproduct_set.all(),
-            many=True,
-        ).data
+    def get_product_data(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'remarks': obj.product.description,
+            'uom_inventory': {
+                'id': obj.product.inventory_uom_id,
+                'title': obj.product.inventory_uom.title,
+                'code': obj.product.inventory_uom.code,
+                'ratio': obj.product.inventory_uom.ratio,
+            } if obj.product.inventory_uom else {}
+        } if obj.product else {}
+
+
+class OrderPickingSubListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderPickingSub
@@ -52,49 +82,43 @@ class OrderPickingSubListSerializer(serializers.ModelSerializer):
             'date_created',
             'state',
             'estimated_delivery_date',
-            'products',
+            'employee_inherit'
         )
 
 
 class OrderPickingListSerializer(serializers.ModelSerializer):
-    sub_list = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_sub_list(cls, obj):
-        sub_list = []
-        query_sub_list = OrderPickingSub.objects.filter(
-            tenant_id=obj.tenant_id, company_id=obj.company_id,
-            order_picking=obj
-        )
-        if query_sub_list:
-            for query_sub in query_sub_list:
-                serializer = OrderPickingSubListSerializer(query_sub)
-                sub_list.append(serializer.data)
-
-        return sub_list
 
     class Meta:
-        model = OrderPicking
+        model = OrderPickingSub
         fields = (
+            'code',
             'sale_order_data',
-            'ware_house_data',
-            'estimated_delivery_date',
-            'state',
-            'sub',
-            'sub_list',
             'date_created',
+            'estimated_delivery_date',
+            'employee_inherit',
+            'state',
         )
 
 
 class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
     products = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
         return OrderPickingProductListSerializer(
-            obj.orderpickingproduct_set.all(),
+            obj.picking_product_picking_sub.all(),
             many=True,
         ).data
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": str(obj.employee_inherit_id),
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            }
+        return {}
 
     class Meta:
         model = OrderPickingSub
@@ -114,6 +138,7 @@ class OrderPickingSubDetailSerializer(serializers.ModelSerializer):
             'remaining_quantity',
             'picked_quantity',
             'delivery_option',
+            'employee_inherit'
         )
 
 
@@ -127,6 +152,7 @@ class ProductPickingUpdateSerializer(serializers.Serializer):  # noqa
 class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
     products = ProductPickingUpdateSerializer(many=True)
     sale_order_id = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
     delivery_option = serializers.IntegerField(min_value=0)
 
     @classmethod
@@ -134,7 +160,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
         if value == 1:
             raise serializers.ValidationError(
                 {
-                    'state': django.utils.translation.gettext_lazy('Can not update when status is Done!')
+                    'state': DeliverMsg.ERROR_STATE
                 }
             )
         return value
@@ -150,26 +176,29 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
                 prod_id_temp[key_prod] = value['stock']
             else:
                 prod_id_temp[key_prod] += value['stock']
+            picked_uom = UnitOfMeasure.objects.get(id=delivery_data['uom'])
+            picked_unit = prod_id_temp[key_prod] * picked_uom.ratio
             product_warehouse = ProductWareHouse.objects.filter(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 product_id=key_prod,
-                warehouse_id=delivery_data['warehouse'],
-                uom_id=delivery_data['uom']
+                warehouse_id=delivery_data['warehouse']
             )
             if product_warehouse.exists():
+                final_ratio = 1
                 prod_warehouse = product_warehouse.first()
-                avail_stock = prod_warehouse.stock_amount - prod_warehouse.sold_amount
-                avail_stock = avail_stock - prod_warehouse.picked_ready
-                if avail_stock > 0 and avail_stock >= prod_id_temp[key_prod]:
-                    prod_warehouse.picked_ready += prod_id_temp[key_prod]
+                if picked_uom.ratio and prod_warehouse.uom.ratio:
+                    final_ratio = picked_uom.ratio / prod_warehouse.uom.ratio
+                in_stock = prod_warehouse.stock_amount
+                in_stock = (in_stock - prod_warehouse.picked_ready)*prod_warehouse.uom.ratio
+                if in_stock > 0 and in_stock >= picked_unit:
+                    # prod_warehouse.picked_ready += picked_unit / prod_warehouse.uom.ratio
+                    prod_warehouse.picked_ready += prod_id_temp[key_prod] * final_ratio
                     prod_update.append(prod_warehouse)
                 else:
                     raise serializers.ValidationError(
                         {
-                            'products': django.utils.translation.gettext_lazy(
-                                'out of stock'
-                            )
+                            'products': DeliverMsg.ERROR_OUT_STOCK
                         }
                     )
         ProductWareHouse.objects.bulk_update(prod_update, fields=['picked_ready'])
@@ -238,7 +267,7 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
 
         if total_picked > instance.remaining_quantity:
             raise serializers.ValidationError(
-                {'products': django.utils.translation.gettext_lazy('Done quantity not equal remain quantity!')}
+                {'products': DeliverMsg.ERROR_QUANTITY}
             )
         return pickup_data_temp
 
@@ -260,7 +289,8 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             pickup_data=instance.pickup_data,
             sale_order_data=picking.sale_order_data,
             delivery_option=instance.delivery_option,
-            config_at_that_point=instance.config_at_that_point
+            config_at_that_point=instance.config_at_that_point,
+            employee_inherit=instance.employee_inherit
         )
 
         picking.sub = new_sub
@@ -308,32 +338,53 @@ class OrderPickingSubUpdateSerializer(serializers.ModelSerializer):
             picking.state = 1
             picking.save(update_fields=['state'])
 
+    def validate(self, validate_data):
+        if len(validate_data['products']) > 0 and 'estimated_delivery_date' not in validate_data:
+            raise serializers.ValidationError(
+                {
+                    'detail': DeliverMsg.ERROR_ESTIMATED_DATE
+                }
+            )
+        return validate_data
+
     def update(self, instance, validated_data):
         # convert prod to dict
         product_done = {}
         picked_quantity_total = 0
-        for item in validated_data['products']:
-            item_key = str(item['product_id']) + "___" + str(item['order'])
-            picked_quantity_total += item['done']
-            product_done[item_key] = {
-                'stock': item['done'],
-                'delivery_data': item['delivery_data']
-            }
-        instance.estimated_delivery_date = validated_data['estimated_delivery_date']
-        instance.remarks = validated_data['remarks']
-        instance.to_location = validated_data['to_location']
-        instance.ware_house = validated_data['ware_house']
-        try:
-            with transaction.atomic():
-                # update picking prod và delivery prod trừ vào warehouse stock
-                pickup_data = self.update_prod_current(instance, product_done, picked_quantity_total)
-                self.update_current_sub(instance, pickup_data, picked_quantity_total)
-        except Exception as err:
-            print(err)
-            raise err
+        CommonFunc.check_update_prod_and_emp(instance, validated_data)
+        print('check update pass')
+
+        if 'products' in validated_data and len(validated_data['products']) > 0:
+            for item in validated_data['products']:
+                item_key = str(item['product_id']) + "___" + str(item['order'])
+                picked_quantity_total += item['done']
+                product_done[item_key] = {
+                    'stock': item['done'],
+                    'delivery_data': item['delivery_data']
+                }
+            instance.estimated_delivery_date = validated_data['estimated_delivery_date']
+            instance.remarks = validated_data['remarks']
+            instance.to_location = validated_data['to_location']
+            instance.ware_house = validated_data['ware_house']
+            try:
+                with transaction.atomic():
+                    # update picking prod và delivery prod trừ vào warehouse stock
+                    pickup_data = self.update_prod_current(instance, product_done, picked_quantity_total)
+                    self.update_current_sub(instance, pickup_data, picked_quantity_total)
+            except Exception as err:
+                print(err)
+                raise err
+        else:
+            del validated_data['products']
+            del validated_data['state']
+            for key, value in validated_data.items():
+                setattr(instance, key, value)
+            instance.save()
+            instance.order_picking.employee_inherit = instance.employee_inherit
+            instance.order_picking.save()
         return instance
 
     class Meta:
         model = OrderPickingSub
         fields = ('products', 'sale_order_id', 'order_picking', 'state', 'estimated_delivery_date', 'ware_house',
-                  'to_location', 'remarks', 'delivery_option')
+                  'to_location', 'remarks', 'delivery_option', 'employee_inherit_id')

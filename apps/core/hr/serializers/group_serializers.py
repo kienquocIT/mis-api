@@ -183,6 +183,7 @@ class GroupListSerializer(serializers.ModelSerializer):
     group_level = serializers.SerializerMethodField()
     first_manager = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
+    level = serializers.SerializerMethodField()
 
     class Meta:
         model = Group
@@ -198,38 +199,37 @@ class GroupListSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
+            'level',
         )
 
     @classmethod
     def get_group_level(cls, obj):
-        if obj.group_level:
-            return {
-                'id': obj.group_level_id,
-                'code': obj.group_level.code,
-                'level': obj.group_level.level,
-                'description': obj.group_level.description,
-            }
-        return {}
+        return {
+            'id': obj.group_level_id,
+            'code': obj.group_level.code,
+            'level': obj.group_level.level,
+            'description': obj.group_level.description,
+        } if obj.group_level else {}
 
     @classmethod
     def get_first_manager(cls, obj):
-        if obj.first_manager:
-            return {
-                'id': obj.first_manager_id,
-                'full_name': obj.first_manager.get_full_name(2),
-                'code': obj.first_manager.code
-            }
-        return {}
+        return {
+            'id': obj.first_manager_id,
+            'full_name': obj.first_manager.get_full_name(2),
+            'code': obj.first_manager.code
+        } if obj.first_manager else {}
 
     @classmethod
     def get_parent_n(cls, obj):
-        if obj.parent_n:
-            return {
-                'id': obj.parent_n_id,
-                'title': obj.parent_n.title,
-                'code': obj.parent_n.code
-            }
-        return {}
+        return {
+            'id': obj.parent_n_id,
+            'title': obj.parent_n.title,
+            'code': obj.parent_n.code
+        } if obj.parent_n else {}
+
+    @classmethod
+    def get_level(cls, obj):
+        return obj.group_level.level if obj.group_level else None
 
 
 class GroupDetailSerializer(serializers.ModelSerializer):
@@ -253,50 +253,56 @@ class GroupDetailSerializer(serializers.ModelSerializer):
             'first_manager_title',
             'second_manager',
             'second_manager_title',
+            'is_active',
         )
 
     @classmethod
     def get_group_level(cls, obj):
-        if obj.group_level:
-            return {
-                'id': obj.group_level_id,
-                'code': obj.group_level.code,
-                'level': obj.group_level.level,
-                'description': obj.group_level.description,
-                'first_manager_description': obj.group_level.first_manager_description,
-                'second_manager_description': obj.group_level.second_manager_description,
-            }
-        return {}
+        return {
+            'id': obj.group_level_id,
+            'code': obj.group_level.code,
+            'level': obj.group_level.level,
+            'description': obj.group_level.description,
+            'first_manager_description': obj.group_level.first_manager_description,
+            'second_manager_description': obj.group_level.second_manager_description,
+        } if obj.group_level else {}
 
     @classmethod
     def get_first_manager(cls, obj):
-        if obj.first_manager:
-            return {
-                'id': obj.first_manager_id,
-                'full_name': obj.first_manager.get_full_name(2),
-                'code': obj.first_manager.code
-            }
-        return {}
+        return {
+            'id': obj.first_manager_id,
+            'full_name': obj.first_manager.get_full_name(2),
+            'code': obj.first_manager.code,
+            'group': {
+                'id': obj.first_manager.group_id,
+                'title': obj.first_manager.group.title,
+                'code': obj.first_manager.group.code,
+            } if obj.first_manager.group else {},
+            'is_active': obj.first_manager.is_active,
+        } if obj.first_manager else {}
 
     @classmethod
     def get_second_manager(cls, obj):
-        if obj.second_manager:
-            return {
-                'id': obj.second_manager_id,
-                'full_name': obj.second_manager.get_full_name(2),
-                'code': obj.second_manager.code
-            }
-        return {}
+        return {
+            'id': obj.second_manager_id,
+            'full_name': obj.second_manager.get_full_name(2),
+            'code': obj.second_manager.code,
+            'group': {
+                'id': obj.second_manager.group_id,
+                'title': obj.second_manager.group.title,
+                'code': obj.second_manager.group.code,
+            } if obj.second_manager.group else {},
+            'is_active': obj.second_manager.is_active,
+        } if obj.second_manager else {}
 
     @classmethod
     def get_parent_n(cls, obj):
-        if obj.parent_n:
-            return {
-                'id': obj.parent_n_id,
-                'title': obj.parent_n.title,
-                'code': obj.parent_n.code
-            }
-        return {}
+        return {
+            'id': obj.parent_n_id,
+            'title': obj.parent_n.title,
+            'code': obj.parent_n.code,
+            'level': obj.parent_n.group_level.level if obj.parent_n.group_level else None,
+        } if obj.parent_n else {}
 
     @classmethod
     def get_group_employee(cls, obj):
@@ -330,21 +336,20 @@ def validate_employee_for_group(value):
             id__in=value
         ).count()
         if employee_list == len(value):
-            return value
+            return [str(item) for item in value]
         raise serializers.ValidationError({'detail': HRMsg.EMPLOYEES_NOT_EXIST})
     raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_IS_ARRAY})
 
 
 class GroupCreateSerializer(serializers.ModelSerializer):
     group_level = serializers.UUIDField()
-    parent_n = serializers.UUIDField(required=False)
+    parent_n = serializers.UUIDField(required=False, allow_null=True)
     group_employee = serializers.ListField(
         child=serializers.UUIDField(required=False),
         required=False
     )
-    first_manager = serializers.UUIDField()
-    second_manager = serializers.UUIDField(required=False)
-    first_manager_title = serializers.CharField(max_length=100)
+    first_manager = serializers.UUIDField(required=False, allow_null=True)
+    second_manager = serializers.UUIDField(required=False, allow_null=True)
     title = serializers.CharField(max_length=100)
     code = serializers.CharField(max_length=100)
 
@@ -428,8 +433,8 @@ class GroupUpdateSerializer(serializers.ModelSerializer):
         child=serializers.UUIDField(required=False),
         required=False
     )
-    first_manager = serializers.UUIDField(required=False)
-    second_manager = serializers.UUIDField(required=False)
+    first_manager = serializers.UUIDField(required=False, allow_null=True)
+    second_manager = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = Group

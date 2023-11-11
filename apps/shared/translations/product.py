@@ -2,7 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ProductMsg:
-    DOES_NOT_EXIST = _('Does not exist')
+    DOES_NOT_EXIST = _('Product does not exist')
     PRODUCT_TYPE_EXIST = _('Product type is already exist.')
     PRODUCT_TYPE_DOES_NOT_EXIST = _('Product type does not exist.')
     PRODUCT_DOES_NOT_EXIST = _('Product does not exist.')
@@ -33,3 +33,7 @@ class ProductMsg:
     NOT_SAVE = _('Not save value in database')
     EXPENSE_DOES_NOT_EXIST = _('Expense does not exist.')
     INDICATOR_NOT_EXIST = _('Indicator does not exist.')
+    PRODUCT_SIZE_IS_WRONG = _('Product size is wrong.')
+    PRICE_LIST_NOT_EXIST = _('Product price list is not exist.')
+    PRODUCT_SIZE_NOT_NULL = _('Product size must not null when Inventory Tab is selected.')
+    VALUE_INVALID = _("Invalid Value")

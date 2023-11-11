@@ -1,12 +1,11 @@
+from django.contrib.auth.models import AnonymousUser
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.core.base.mixins import ApplicationListMixin
-from apps.shared import ResponseController, BaseListMixin, mask_view
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
 from apps.core.base.models import (
     SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
-    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
 )
 
 from apps.core.base.serializers import (
@@ -18,7 +17,6 @@ from apps.core.base.serializers import (
 
 
 class PlanList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = SubscriptionPlan.objects
     search_fields = ['title', 'code']
     filterset_fields = {
@@ -35,38 +33,54 @@ class PlanList(generics.GenericAPIView):
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
 
-class TenantApplicationList(
-    ApplicationListMixin,
-    generics.GenericAPIView
-):
-    permission_classes = [IsAuthenticated]
+class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
-
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
+    # search_fields = ('title', 'code')
+    filterset_fields = ('code', 'title')
+
+    def get_queryset(self):
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
+            return super().get_queryset().filter(
+                id__in=PlanApplication.objects.filter(
+                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+                ).values_list('application__id', flat=True)
+            )
+        return Application.objects.none()
 
     @swagger_auto_schema(
         operation_summary="Tenant Application list",
         operation_description="Get tenant application list",
     )
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         kwargs['is_workflow'] = True
-        return self.tenant_application_list(request, *args, **kwargs)
+        return self.list(request, *args, **kwargs)
 
 
-class ApplicationPropertyList(
-    BaseListMixin,
-):
-    permission_classes = [IsAuthenticated]
+class ApplicationDetail(BaseRetrieveMixin):
+    queryset = Application.objects
+    serializer_detail = ApplicationListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Tenant Application detail",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+
+class ApplicationPropertyList(BaseListMixin):
     queryset = ApplicationProperty.objects
-    search_fields = []
+    search_fields = ['title', 'code']
     filterset_fields = {
         'application': ['exact'],
         'type': ['exact'],
@@ -82,20 +96,18 @@ class ApplicationPropertyList(
     )
     @mask_view(
         login_require=True,
-        auth_require=True,
-        code_perm=''
+        auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
-class ApplicationPropertyEmployeeList(
-    BaseListMixin,
-):
-    permission_classes = [IsAuthenticated]
+class ApplicationPropertyEmployeeList(BaseListMixin):
     queryset = ApplicationProperty.objects
     serializer_list = ApplicationPropertyListSerializer
     list_hidden_field = []
+    search_fields = ('title', 'code')
+    filterset_fields = ('code', 'title')
 
     def get_queryset(self):
         return super().get_queryset().filter(
@@ -108,29 +120,26 @@ class ApplicationPropertyEmployeeList(
     )
     @mask_view(
         login_require=True,
-        auth_require=True,
-        code_perm=''
+        auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
 class ApplicationList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = Application.objects
     search_fields = ('title', 'code',)
     serializer_class = ApplicationListSerializer
 
     @swagger_auto_schema()
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
 
 class PermissionApplicationList(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
     queryset = PermissionApplication.objects
     search_fields = ('permission', 'app__title', 'app__code',)
     filterset_fields = {
@@ -146,9 +155,9 @@ class PermissionApplicationList(generics.GenericAPIView):
         operation_summary="Plan list",
         operation_description="Get plan list",
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=60 * 60 * 1)  # cache 1 days
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
         ser = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(ser.data, key_data='result')
 
@@ -171,6 +180,7 @@ class CityList(BaseListMixin):
     search_fields = ('title',)
     filterset_fields = {
         "country_id": ["exact", "in"],
+        "id": ["exact", "in"],
     }
     use_cache_queryset = True
     serializer_list = CityListSerializer
@@ -183,9 +193,10 @@ class CityList(BaseListMixin):
 
 class DistrictList(BaseListMixin):
     queryset = District.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'code')
     filterset_fields = {
         "city_id": ["exact", "in"],
+        "id": ["exact", "in"],
     }
     use_cache_queryset = True
     serializer_list = DistrictListSerializer
@@ -213,7 +224,7 @@ class WardList(BaseListMixin):
 
 class BaseCurrencyList(BaseListMixin):
     queryset = BaseCurrency.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'code')
     use_cache_queryset = True
     serializer_list = BaseCurrencyListSerializer
 
@@ -225,7 +236,8 @@ class BaseCurrencyList(BaseListMixin):
 
 class BaseItemUnitList(BaseListMixin):
     queryset = BaseItemUnit.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'measure')
+    filterset_fields = ('title', 'measure')
     use_cache_queryset = True
     serializer_list = BaseItemUnitListSerializer
 
@@ -250,10 +262,7 @@ class IndicatorParamList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
-class ApplicationPropertyOpportunityList(
-    BaseListMixin,
-):
-    permission_classes = [IsAuthenticated]
+class ApplicationPropertyOpportunityList(BaseListMixin):
     queryset = ApplicationProperty.objects
     serializer_list = ApplicationPropertyListSerializer
     list_hidden_field = []
@@ -269,8 +278,7 @@ class ApplicationPropertyOpportunityList(
     )
     @mask_view(
         login_require=True,
-        auth_require=True,
-        code_perm=''
+        auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

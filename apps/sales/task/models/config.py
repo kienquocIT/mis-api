@@ -2,12 +2,12 @@ import json
 
 from django.db import models
 
-from apps.shared import SimpleAbstractModel, TASK_IN_OPTION, TASK_OUT_OPTION
+from apps.shared import MasterDataAbstractModel, TASK_IN_OPTION, TASK_OUT_OPTION
 
 __all__ = ['OpportunityTaskConfig']
 
 
-class OpportunityTaskConfig(SimpleAbstractModel):
+class OpportunityTaskConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company', on_delete=models.CASCADE,
         related_name='opportunity_task_config_company',

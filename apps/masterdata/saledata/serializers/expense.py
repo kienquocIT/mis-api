@@ -1,14 +1,15 @@
+from django.utils import timezone
 from rest_framework import serializers
 from apps.masterdata.saledata.models.product import (
     Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice, ExpenseRole
 )
 from apps.masterdata.saledata.models.price import Currency
-from apps.masterdata.saledata.models.product import ExpenseType
 from apps.shared.translations.expense import ExpenseMsg
 
 
 class ExpenseListSerializer(serializers.ModelSerializer):
-    expense_type = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -16,25 +17,31 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'id',
             'code',
             'title',
-            'expense_type',
             'uom_group',
             'uom',
         )
 
     @classmethod
-    def get_expense_type(cls, obj):
-        if obj.expense_type:
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
             return {
-                'id': obj.expense_type_id,
-                'title': obj.expense_type.title,
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
             }
         return {}
 
 
 class ExpenseCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
-
-    expense_type = serializers.UUIDField(required=True, allow_null=False)
     uom_group = serializers.UUIDField(allow_null=False, required=True)
     uom = serializers.UUIDField(allow_null=False, required=True)
     data_price_list = serializers.ListField()
@@ -45,25 +52,12 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
         model = Expense
         fields = (
             'title',
-            'expense_type',
             'uom_group',
             'uom',
             'data_price_list',
             'currency_using',
             'role'
         )
-
-    @classmethod
-    def validate_expense_type(cls, value):
-        try:
-            if value is not None:
-                expense_type = ExpenseType.objects.get(
-                    id=value
-                )
-                return expense_type
-        except ExpenseType.DoesNotExist:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
-        return None
 
     @classmethod
     def validate_uom_group(cls, value):
@@ -98,18 +92,16 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
                 )
                 return currency.id
         except Currency.DoesNotExist:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
+            raise serializers.ValidationError({'currency': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
     def create(self, validated_data):
-        if Expense.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'EXPENSE.CODE.0001'
-        else:
-            latest_code = Expense.objects.filter_current(
-                fill__tenant=True, fill__company=True
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'EXPENSE.CODE.000' + str(new_code)
+
+        char = 'S'
+        no_expense = Expense.objects.filter_current(fill__tenant=True, fill__company=True).count()
+        temper = "%04d" % (no_expense + 1)  # pylint: disable=C0209
+        new_code = f"{char}{temper}"
+
         data_price_list = validated_data.pop('data_price_list')
         currency_using = validated_data.pop('currency_using')
         data_role = validated_data.pop('role', [])
@@ -150,13 +142,26 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
 
 class ExpenseDetailSerializer(serializers.ModelSerializer):
     price_list = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    uom_group = serializers.SerializerMethodField()
+    role = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'price_list',
+            'uom',
+            'uom_group',
+            'role',
+        )
 
     @classmethod
     def get_price_list(cls, obj):
+        price_obj = ExpensePrice.objects.filter(expense=obj).select_related('price', 'currency')
+
         price_list = [
             {
                 'id': item.price_id,
@@ -166,14 +171,48 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 'currency': item.currency_id,
                 'is_primary': item.currency.is_primary,
                 'abbreviation': item.currency.abbreviation
-            } for item in obj.expense.all()
+            } for item in price_obj
         ]
         return price_list
+
+    @classmethod
+    def get_uom(cls, obj):
+        if obj.uom:
+            return {
+                'id': obj.uom_id,
+                'title': obj.uom.title,
+            }
+        return {}
+
+    @classmethod
+    def get_uom_group(cls, obj):
+        if obj.uom_group:
+            return {
+                'id': obj.uom_group_id,
+                'title': obj.uom_group.title,
+            }
+        return {}
+
+    @classmethod
+    def get_role(cls, obj):
+        result = []
+        role_list = obj.role.all().values(
+            'id',
+            'title'
+        )
+        if role_list:
+            for role in role_list:
+                result.append(
+                    {
+                        'id': role['id'],
+                        'title': role['title'],
+                    }
+                )
+        return result
 
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False, allow_blank=False, allow_null=False)
-    expense_type = serializers.UUIDField(required=False)
     uom = serializers.UUIDField(required=False)
     uom_group = serializers.UUIDField(required=False)
     data_price_list = serializers.ListField(required=False)
@@ -184,25 +223,12 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
         model = Expense
         fields = (
             'title',
-            'expense_type',
             'uom_group',
             'uom',
             'data_price_list',
             'currency_using',
             'role'
         )
-
-    @classmethod
-    def validate_expense_type(cls, value):
-        try:
-            if value is not None:
-                expense_type = ExpenseType.objects.get(
-                    id=value
-                )
-                return expense_type
-        except ExpenseType.DoesNotExist:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.EXPENSE_TYPE_NOT_EXIST})
-        return None
 
     @classmethod
     def validate_uom_group(cls, value):
@@ -237,7 +263,7 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
                 )
                 return currency.id
         except Currency.DoesNotExist:
-            raise serializers.ValidationError({'expense_type': ExpenseMsg.CURRENCY_NOT_EXIST})
+            raise serializers.ValidationError({'currency': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
     def update(self, instance, validated_data):
@@ -288,6 +314,7 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
     expense_type = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     uom_group = serializers.SerializerMethodField()
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -297,7 +324,8 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
             'title',
             'expense_type',
             'uom',
-            'uom_group'
+            'uom_group',
+            'price_list',
         )
 
     @classmethod
@@ -329,3 +357,39 @@ class ExpenseForSaleListSerializer(serializers.ModelSerializer):
                 'code': obj.uom_group.code,
             }
         return {}
+
+    @classmethod
+    def check_status_price(cls, valid_time_start, valid_time_end):
+        current_time = timezone.now()
+        if (not valid_time_start >= current_time) and (valid_time_end >= current_time):
+            return 'Valid'
+        if valid_time_end < current_time:
+            return 'Expired'
+        if valid_time_start >= current_time:
+            return 'Invalid'
+        return 'Undefined'
+
+    @classmethod
+    def get_price_list(cls, obj):
+        price_list = obj.expense.all().values_list(
+            'price__id',
+            'price__title',
+            'price_value',
+            'price__is_default',
+            'price__valid_time_start',
+            'price__valid_time_end',
+            'price__price_list_type',
+        )
+        if price_list:
+            return [
+                {
+                    'id': price[0],
+                    'title': price[1],
+                    'value': price[2],
+                    'is_default': price[3],
+                    'price_status': cls.check_status_price(price[4], price[5]),
+                    'price_type': price[6],
+                }
+                for price in price_list
+            ]
+        return []

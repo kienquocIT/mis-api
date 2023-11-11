@@ -1,7 +1,11 @@
+import json
+
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.core.hr.models import PermissionAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
@@ -167,6 +171,14 @@ class Opportunity(DataAbstractModel):
         null=True,
         help_text="Delivery use this opportunity",
         related_name="opportunity_map_delivery"
+    )
+    members = models.ManyToManyField(
+        'hr.Employee',
+        through='OpportunitySaleTeamMember',
+        symmetrical=False,
+        through_fields=('opportunity', 'member'),
+        blank=True,
+        related_name='member_of_opp'
     )
 
     class Meta:
@@ -489,7 +501,7 @@ class Opportunity(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "OPP.CODE."
+        char = "OPP"
         if not self.code:
             temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
@@ -705,24 +717,86 @@ class OpportunityCustomerDecisionFactor(SimpleAbstractModel):
         permissions = ()
 
 
-class OpportunitySaleTeamMember(SimpleAbstractModel):
+class OpportunitySaleTeamMember(MasterDataAbstractModel, PermissionAbstractModel):
     opportunity = models.ForeignKey(
         Opportunity,
         on_delete=models.CASCADE,
         related_name="opportunity_sale_team_member_opportunity",
     )
-
     member = models.ForeignKey(
         'hr.Employee',
         on_delete=models.CASCADE,
         verbose_name='Member of Sale Team of Opportunity',
         related_name='opportunity_sale_team_member_member',
     )
+    date_modified = models.DateTimeField(
+        help_text='Date modified this record in last',
+        default=timezone.now,
+    )
+
+    permit_view_this_opp = models.BooleanField(
+        default=False,
+        verbose_name='member can view this Opportunity'
+    )
+    permit_add_member = models.BooleanField(
+        default=False,
+        verbose_name='member can add other member but can not set permission for member'
+    )
+    permit_app = models.JSONField(
+        default=dict,
+        help_text=json.dumps(
+            {
+                'app_id': {
+                    'is_create': False,
+                    'is_edit': False,
+                    'is_view': False,
+                    'is_delete': False,
+                    'all': False,
+                    'belong_to': 0  # 0: user , 1: opportunity member
+                }
+            }
+        ),
+        verbose_name='permission for member in Tenant App'
+    )
+    plan = models.ManyToManyField(
+        'base.SubscriptionPlan',
+        through="PlanMemberOpportunity",
+        through_fields=('opportunity_member', 'plan'),
+        symmetrical=False,
+        blank=True,
+        related_name='member_opp_map_plan'
+    )
+
+    def get_app_allowed(self) -> str:
+        return str(self.member_id)
+
+    def sync_parsed_to_main(self):
+        ...
 
     class Meta:
         verbose_name = 'Opportunity Sale Team Member'
         verbose_name_plural = 'Opportunity Sale Team Members'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+        unique_together = ('tenant', 'company', 'opportunity', 'member')
+
+
+class PlanMemberOpportunity(SimpleAbstractModel):
+    opportunity_member = models.ForeignKey(
+        OpportunitySaleTeamMember,
+        on_delete=models.CASCADE,
+        related_name='member_opp_plan'
+    )
+    plan = models.ForeignKey(
+        'base.SubscriptionPlan',
+        on_delete=models.CASCADE
+    )
+    application = models.JSONField(default=list)
+
+    class Meta:
+        verbose_name = 'Plan of Employee At Opportunity'
+        verbose_name_plural = 'Plan of Employee At Opportunity'
         default_permissions = ()
         permissions = ()
 
@@ -743,7 +817,7 @@ class OpportunityStage(SimpleAbstractModel):
     )
 
     is_current = models.BooleanField(
-        default=False
+        default=False,
     )
 
     class Meta:

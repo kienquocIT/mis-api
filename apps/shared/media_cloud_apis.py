@@ -680,85 +680,94 @@ class MediaForceAPI:
 
     @classmethod
     def parsed_employee_code_to_media_username(cls, employee_obj):
-        email_arr = employee_obj.email.split("@")
-        if len(email_arr) >= 2:
-            person_name = email_arr[0]
-        else:
-            person_name = StringHandler.random_str(6)
         return slugify(
-            f'{settings.MEDIA_PREFIX_SITE}_{employee_obj.company.code}_{person_name}_'
+            f'{settings.MEDIA_PREFIX_SITE}_{employee_obj.company.code}_{employee_obj.code}_'
             f'{StringHandler.random_str(6)}'
         )
 
     @classmethod
     def call_sync_company(cls, company_obj):
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.COMPANY_SYNC,
-            is_secret_api=True,
-        ).post(
-            data={
-                "name": company_obj.title,
-                "code": cls.parsed_company_code_to_media_tenant_code(company_obj=company_obj),
-                "company_api": str(company_obj.id),
-            }
-        )
-        company_obj.media_company_id = resp.result['id']
-        company_obj.media_company_code = resp.result['code']
-        company_obj.save(
-            update_fields=['media_company_id', 'media_company_code'],
-        )
+        if settings.MEDIA_ENABLED is True:
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.COMPANY_SYNC,
+                is_secret_api=True,
+            ).post(
+                data={
+                    "name": company_obj.title,
+                    "code": cls.parsed_company_code_to_media_tenant_code(company_obj=company_obj),
+                    "company_api": str(company_obj.id),
+                }
+            )
+            company_obj.media_company_id = resp.result['id']
+            company_obj.media_company_code = resp.result['code']
+            company_obj.save(
+                update_fields=['media_company_id', 'media_company_code'],
+            )
+            return True
+        if settings.DEBUG is True:
+            print('[Media] Skip sync company: ', str(company_obj))
+        return False
 
     @classmethod
     def call_sync_employee(cls, employee_obj):
-        company_obj = employee_obj.company
-        username = cls.parsed_employee_code_to_media_username(employee_obj=employee_obj)
-        passwd = StringHandler.random_str(32)
+        if settings.MEDIA_ENABLED is True:
+            company_obj = employee_obj.company
+            username = cls.parsed_employee_code_to_media_username(employee_obj=employee_obj)
+            passwd = StringHandler.random_str(32)
 
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.EMPLOYEE_SYNC,
-            is_secret_api=True,
-        ).post(
-            data={
-                "company": str(company_obj.media_company_id),
-                "username": username,
-                "password": passwd,
-            }
-        )
-        employee_obj.media_username = username
-        employee_obj.media_password = passwd
-        employee_obj.media_user_id = resp.result['id']
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.EMPLOYEE_SYNC,
+                is_secret_api=True,
+            ).post(
+                data={
+                    "company": str(company_obj.media_company_id),
+                    "username": username,
+                    "password": passwd,
+                }
+            )
+            employee_obj.media_username = username
+            employee_obj.media_password = passwd
+            employee_obj.media_user_id = resp.result['id']
 
-        employee_obj.media_refresh_token = resp.result['token']['access_token']
-        employee_obj.media_refresh_token_expired = FORMATTING.parse_to_datetime(
-            resp.result['token']['access_token_expired']
-        )
+            employee_obj.media_refresh_token = resp.result['token']['access_token']
+            employee_obj.media_refresh_token_expired = FORMATTING.parse_to_datetime(
+                resp.result['token']['access_token_expired']
+            )
 
-        employee_obj.media_access_token = resp.result['token']['refresh_token']
-        employee_obj.media_access_token_expired = FORMATTING.parse_to_datetime(
-            resp.result['token']['refresh_token_expired']
-        )
+            employee_obj.media_access_token = resp.result['token']['refresh_token']
+            employee_obj.media_access_token_expired = FORMATTING.parse_to_datetime(
+                resp.result['token']['refresh_token_expired']
+            )
 
-        employee_obj.media_avatar_hash = resp.result['media_avatar_hash']
+            employee_obj.media_avatar_hash = resp.result['media_avatar_hash']
 
-        employee_obj.save(
-            update_fields=[
-                'media_username', 'media_password', 'media_user_id',
-                'media_refresh_token', 'media_access_token',
-                'media_avatar_hash',
-            ],
-        )
+            employee_obj.save(
+                update_fields=[
+                    'media_username', 'media_password', 'media_user_id',
+                    'media_refresh_token', 'media_access_token',
+                    'media_avatar_hash',
+                ],
+            )
+            return True
+        if settings.DEBUG is True:
+            print('[Media] Skip sync employee: ', str(employee_obj))
+        return False
 
     @classmethod
     def call_upload_avatar(cls, employee_obj, f_img):
-        m_data = MultipartEncoder(
-            fields={'file': (f_img.name, f_img, f_img.content_type), 'owner': str(employee_obj.media_user_id)}
-        )
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.EMPLOYEE_UPLOAD_AVATAR,
-            is_secret_api=True,
-            content_type=m_data.content_type,
-        ).post(data=m_data)
-        return resp
+        if settings.MEDIA_ENABLED is True:
+            m_data = MultipartEncoder(
+                fields={'file': (f_img.name, f_img, f_img.content_type), 'owner': str(employee_obj.media_user_id)}
+            )
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.EMPLOYEE_UPLOAD_AVATAR,
+                is_secret_api=True,
+                content_type=m_data.content_type,
+            ).post(data=m_data)
+            return resp
+        if settings.DEBUG is True:
+            print('[Media] Skip upload avatar: ', str(employee_obj), str(f_img))
+        return RespData(_state=False)
 
     @classmethod
     def get_file_check(cls, media_file_id, media_user_id) -> (bool, dict):
@@ -767,18 +776,23 @@ class MediaForceAPI:
         #     "media_file_id": "4a713342-a123-4a26-bcd9-f2abb659790e",
         #     "owner_id": "f21e2cda-4d6f-4142-bcb2-e3f985385c8f"
         # }
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.FILE_CHECK,
-            is_secret_api=True,
-        ).post(
-            data={
-                'media_file_id': media_file_id,
-                'owner_id': media_user_id,
-            }
-        )
-        if resp.state:
-            return True, resp.result
-        return False, resp.errors
+        if settings.MEDIA_ENABLED is True:
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.FILE_CHECK,
+                is_secret_api=True,
+            ).post(
+                data={
+                    'media_file_id': media_file_id,
+                    'owner_id': media_user_id,
+                }
+            )
+            print(resp, resp.status, resp.result)
+            if resp.state:
+                return True, resp.result
+            return False, resp.errors
+        if settings.DEBUG is True:
+            print('[Media] Skip get file check: ', str(media_file_id), str(media_user_id))
+        return False, RespData(_errors={'detail': 'Skipp get file check'}).errors
 
     @classmethod
     def regis_link_to_file(cls, media_file_id, api_file_id, api_app_code, media_user_id) -> (bool, dict):
@@ -789,20 +803,27 @@ class MediaForceAPI:
         #     "api_app_code": "string",
         #     "owner_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         # }
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.LINK_MEDIA,
-            is_secret_api=True,
-        ).post(
-            data={
-                'media_file_id': str(media_file_id),
-                'api_file_id': str(api_file_id),
-                'api_app_code': str(api_app_code),
-                'owner_id': str(media_user_id),
-            }
-        )
-        if resp.state:
-            return True, resp.result
-        return False, resp.errors
+        if settings.MEDIA_ENABLED is True:
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.LINK_MEDIA,
+                is_secret_api=True,
+            ).post(
+                data={
+                    'media_file_id': str(media_file_id),
+                    'api_file_id': str(api_file_id),
+                    'api_app_code': str(api_app_code),
+                    'owner_id': str(media_user_id),
+                }
+            )
+            if resp.state:
+                return True, resp.result
+            return False, resp.errors
+        if settings.DEBUG is True:
+            print(
+                '[Media] Skip regis link to file: ', str(media_file_id), str(api_file_id), str(api_app_code),
+                str(media_user_id)
+            )
+        return False, RespData(_errors={'detail': 'Skipp regis link to file'}).errors
 
     @classmethod
     def destroy_link_to_file(cls, media_file_id, api_file_id, api_app_code, media_user_id) -> (bool, dict):
@@ -813,20 +834,27 @@ class MediaForceAPI:
         #     "api_app_code": "string",
         #     "owner_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         # }
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.UNLINK_MEDIA,
-            is_secret_api=True,
-        ).post(
-            data={
-                'media_file_id': str(media_file_id),
-                'api_file_id': str(api_file_id),
-                'api_app_code': str(api_app_code),
-                'owner_id': str(media_user_id),
-            }
-        )
-        if resp.state:
-            return True, resp.result
-        return False, resp.errors
+        if settings.MEDIA_ENABLED is True:
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.UNLINK_MEDIA,
+                is_secret_api=True,
+            ).post(
+                data={
+                    'media_file_id': str(media_file_id),
+                    'api_file_id': str(api_file_id),
+                    'api_app_code': str(api_app_code),
+                    'owner_id': str(media_user_id),
+                }
+            )
+            if resp.state:
+                return True, resp.result
+            return False, resp.errors
+        if settings.DEBUG is True:
+            print(
+                '[Media] Skip destroy link to file: ', str(media_file_id), str(api_file_id), str(api_app_code),
+                str(media_user_id)
+            )
+        return False, RespData(_errors={'detail': 'Skipp destroy link to file'}).errors
 
     @classmethod
     def valid_access_code_login(cls, employee_media_id, company_media_id, user_agent, public_ip, access_id):
@@ -837,18 +865,26 @@ class MediaForceAPI:
         #   "public_ip": "string",
         #   "access_id": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
         # }
-        resp = ServerMediaAPI(
-            url=MediaApiUrls.LOGIN_ACCESS_CODE,
-            is_secret_api=True,
-        ).post(
-            data={
-                'employee_media_id': str(employee_media_id),
-                'company_media_id': str(company_media_id),
-                'user_agent': str(user_agent),
-                'public_ip': str(public_ip),
-                'access_id': str(access_id),
-            }
-        )
-        if resp.state:
-            return True, resp.result
-        return False, resp.errors
+        if settings.MEDIA_ENABLED is True:
+            resp = ServerMediaAPI(
+                url=MediaApiUrls.LOGIN_ACCESS_CODE,
+                is_secret_api=True,
+            ).post(
+                data={
+                    'employee_media_id': str(employee_media_id),
+                    'company_media_id': str(company_media_id),
+                    'user_agent': str(user_agent),
+                    'public_ip': str(public_ip),
+                    'access_id': str(access_id),
+                }
+            )
+            if resp.state:
+                return True, resp.result
+            return False, resp.errors
+        if settings.DEBUG is True:
+            print(
+                '[Media] Skip valid access code login: ', str(employee_media_id), str(company_media_id),
+                str(user_agent),
+                str(public_ip), str(access_id)
+            )
+        return False, RespData(_errors={'detail': 'Skip valid access code login'}).errors

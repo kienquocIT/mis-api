@@ -1,5 +1,4 @@
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from apps.core.company.models import CompanyUserEmployee, CompanyConfig
@@ -26,7 +25,7 @@ class CompanyConfigDetail(APIView):
     @swagger_auto_schema(
         operation_summary='Get config of Company',
     )
-    @mask_view(login_require=True)
+    @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         try:
             obj = CompanyConfig.objects.select_related('currency').get(
@@ -41,7 +40,10 @@ class CompanyConfigDetail(APIView):
     @swagger_auto_schema(
         operation_summary='Update config of Company',
     )
-    @mask_view(login_require=True)
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         try:
             obj = CompanyConfig.objects.select_related('currency').get(company_id=request.user.company_current_id)
@@ -66,6 +68,8 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
     serializer_detail = CompanyDetailSerializer
     list_hidden_field = ['tenant_id']
     create_hidden_field = ['tenant_id']
+    search_fields = ('title', 'code')
+    filterset_fields = ('title', 'code')
 
     def get_queryset(self):
         return super().get_queryset().select_related('tenant')
@@ -74,7 +78,9 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
         operation_summary="Company list",
         operation_description="Company list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -83,13 +89,15 @@ class CompanyList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Company",
         request_body=CompanyCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
 class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects
     serializer_detail = CompanyDetailSerializer
     serializer_update = CompanyUpdateSerializer
@@ -98,17 +106,26 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
         return super().get_queryset().select_related('tenant')
 
     @swagger_auto_schema(operation_summary='Detail Company')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete Company")
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True,
+        label_code='company', model_code='company', perm_code='delete',
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -129,7 +146,7 @@ class CompanyListOverview(BaseListMixin):
         operation_summary="Company list",
         operation_description="Company list"
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -137,30 +154,40 @@ class CompanyListOverview(BaseListMixin):
 class CompanyUserNotMapEmployeeList(BaseListMixin):
     queryset = CompanyUserEmployee.objects
     serializer_list = CompanyUserNotMapEmployeeSerializer
-    ordering = ['-employee']
     list_hidden_field = ['company']
+    search_fields = ('user__first_name', 'employee__first_name', 'user__last_name', 'employee__last_name', )
+    ordering = ['-employee']
 
     def get_queryset(self):
-        return super().get_queryset().select_related('user').filter(employee__isnull=True)
+        return super().get_queryset().select_related('user').filter(user__isnull=False, employee__isnull=True)
+
+    def get_filter_auth(self) -> dict:
+        return {}
 
     @swagger_auto_schema(
         operation_summary="Company User Not Map Employee list",
         operation_description="Company User Not Map Employee list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='view',
+        use_custom_get_filter_auth=True,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
 
 class CompanyOverviewDetail(BaseRetrieveMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects.all()
     serializer_detail = CompanyOverviewDetailSerializer
 
     @swagger_auto_schema(
         operation_summary='Detail Company Overview (0: All, 1: Employee Connected)'
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True,
+        label_code='company', model_code='company', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         if 'option' in kwargs:
             if kwargs['option'] == 1:
@@ -169,14 +196,12 @@ class CompanyOverviewDetail(BaseRetrieveMixin):
 
 
 class RestoreDefaultOpportunityConfigStage(BaseUpdateMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Company.objects
     serializer_update = RestoreDefaultOpportunityConfigStageSerializer
-
 
     @swagger_auto_schema(
         operation_summary='Restore Default Opportunity Config Stage'
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=True, allow_admin_tenant=True, allow_admin_company=True)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

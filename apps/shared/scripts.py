@@ -1,27 +1,46 @@
+from datetime import date
 from apps.core.company.models import Company
-from apps.masterdata.saledata.models.product import ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure
-from apps.masterdata.saledata.models.price import TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax
+from apps.masterdata.saledata.models.product import (
+    ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
+    Expense,
+)
+from apps.masterdata.saledata.models.price import (
+    TaxCategory, Currency, Price, UnitOfMeasureGroup, Tax, ProductPriceList, PriceListCurrency,
+)
 from apps.masterdata.saledata.models.contacts import Contact
-from apps.masterdata.saledata.models.accounts import AccountType, Account
+from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
 
-from apps.core.base.models import PlanApplication, ApplicationProperty, Application
+from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost, PaymentCostItems, PaymentCostItemsDetail, PaymentQuotation, PaymentSaleOrder,
+    Payment, PaymentCost,
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
-from apps.masterdata.saledata.models import ConditionLocation, FormulaCondition, ShippingCondition, Shipping, \
-    ProductWareHouse
+from apps.masterdata.saledata.models import (
+    ConditionLocation, FormulaCondition, ShippingCondition, Shipping,
+    ProductWareHouse,
+)
 from . import MediaForceAPI
 
 from .extends.signals import SaleDefaultData, ConfigDefaultData
-from ..core.hr.models import Employee
-from ..sales.delivery.models import OrderDelivery, OrderDeliverySub, OrderPicking, OrderPickingSub
-from ..sales.opportunity.models import Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog
-from ..sales.quotation.models import QuotationIndicatorConfig
-from ..sales.saleorder.models import SaleOrderIndicatorConfig
+from .permissions.util import PermissionController
+from ..core.hr.models import (
+    Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
+    PlanRole, PlanRoleApp,
+)
+from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
+    GoodsReceiptWarehouse
+from ..sales.opportunity.models import (
+    Opportunity, OpportunityConfigStage, OpportunityStage, OpportunityCallLog,
+    OpportunitySaleTeamMember, OpportunityDocument,
+)
+from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
+    PurchaseOrderRequestProduct, PurchaseOrder
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.report.models import ReportRevenue
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
 
 
 def update_sale_default_data_old_company():
@@ -134,16 +153,6 @@ def update_account_billing_address():
 def delete_all_ap():
     AdvancePayment.objects.all().delete()
     AdvancePaymentCost.objects.all().delete()
-    return True
-
-
-def delete_all_payment():
-    Payment.objects.all().delete()
-    PaymentCost.objects.all().delete()
-    PaymentCostItems.objects.all().delete()
-    PaymentCostItemsDetail.objects.all().delete()
-    PaymentSaleOrder.objects.all().delete()
-    PaymentQuotation.objects.all().delete()
     return True
 
 
@@ -294,24 +303,6 @@ def make_sure_sale_order_indicator_config():
     print('Make sure sale order indicator config is done!')
 
 
-def delete_delivery_picking():
-    # delete delivery
-    order_delivery = OrderDelivery.objects.all()
-    order_delivery.update(sub=None)
-    OrderDeliverySub.objects.all().delete()
-    order_delivery.delete()
-
-    # delete picking
-    order_picking = OrderPicking.objects.all()
-    order_picking.update(sub=None)
-    OrderPickingSub.objects.all().delete()
-    order_picking.delete()
-
-    # reset warehouse
-    ProductWareHouse.objects.all().update(sold_amount=0, picked_ready=0)
-    print("delete done.")
-
-
 def update_stage_for_opportunity():
     opp = Opportunity.objects.filter(stage=None)
     bulk_data = []
@@ -357,6 +348,9 @@ def update_fk_expense_price_expense_general():
 def edit_uom_group_field_to_default():
     UnitOfMeasureGroup.objects.filter(title='Labor').update(is_default=1)
     UnitOfMeasureGroup.objects.filter(title='Nhân công').update(is_default=1)
+    for item in UnitOfMeasure.objects.filter(rounding=0):
+        item.rounding = 4
+        item.save()
     return True
 
 
@@ -511,3 +505,560 @@ def update_data_product():
         product.save()
 
     print('Done !')
+
+
+def make_full_plan():
+    TenantPlan.objects.all().delete()
+    plan_objs = SubscriptionPlan.objects.all()
+    for tenant in Tenant.objects.all():
+        for plan in plan_objs:
+            TenantPlan.objects.create(tenant=tenant, plan=plan, is_limited=False)
+    print('Make full plan is successfully!')
+
+
+def update_data_sale_order_product():
+    objs = SaleOrderProduct.objects.all()
+    for obj in objs:
+        obj.remain_for_purchase_request = obj.product_quantity
+        obj.save()
+    print('Done!')
+
+
+def check_employee_code_unique():
+    for com_obj in Company.objects.filter():
+        dict_data = {}
+        for obj in Employee.objects.filter(company=com_obj):
+            if obj.code in dict_data:
+                dict_data[obj.code].append(obj)
+            else:
+                dict_data[obj.code] = [obj]
+
+        for code, objs in dict_data.items():
+            if len(objs) > 1:
+                counter = 0
+                for obj in objs:
+                    obj.code = f'{code}-{counter}'
+                    print(f'change from: {code} to {obj.code}')
+                    obj.save(update_fields=['code'])
+                    counter += 1
+    print('Make sure code employee is successfully.')
+
+
+def update_data_product_of_purchase_request():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_quotation_sale_order():
+    for quotation in Quotation.objects.all():
+        if quotation.sale_person:
+            quotation.employee_inherit = quotation.sale_person
+            quotation.save(update_fields=['employee_inherit'])
+    for sale_order in SaleOrder.objects.all():
+        if sale_order.sale_person:
+            sale_order.employee_inherit = sale_order.sale_person
+            sale_order.save(update_fields=['employee_inherit'])
+    print('Update done.')
+
+
+def make_sure_function_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_function_config()
+    print('Make sure function process config is done!')
+
+
+def make_sure_process_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).process_config()
+    print('Make sure process config is done!')
+
+
+def reset_permissions_after_remove_space_plan():
+    for obj in Employee.objects.all():
+        obj.permission_by_id = {}
+        obj.permissions_parsed = {}
+        obj.permission_by_configured = []
+        obj.save()
+
+    for obj in Role.objects.all():
+        obj.permission_by_id = {}
+        obj.permissions_parsed = {}
+        obj.permission_by_configured = []
+        obj.save()
+
+    print('Reset permissions after remove space and plan: done!')
+
+
+def update_data_shipping():
+    for obj in Shipping.objects.all():
+        conditions = obj.formula_condition
+        list_condition = []
+        for condition in conditions:
+            list_location = []
+            for location in condition['location']:
+                loc = City.objects.get(id=location)
+                list_location.append(
+                    {
+                        'id': location,
+                        'title': loc.title
+                    }
+                )
+            list_condition.append(
+                {
+                    'location': list_location,
+                    'formula': condition['formula']
+                }
+            )
+        obj.formula_condition = list_condition
+        obj.save()
+    print('Done')
+
+
+def update_employee_inherit_opportunity():
+    opps = Opportunity.objects.all()
+    for opp in opps:
+        opp.employee_inherit = opp.sale_person
+        opp.save()
+    print('!Done')
+
+
+def update_uom_group_uom_reference():
+    for uom in UnitOfMeasure.objects.filter(is_referenced_unit=True):
+        uom.group.uom_reference = uom
+        uom.group.save(update_fields=['uom_reference'])
+    print('update done.')
+
+
+def update_product_size_for_inventory():
+    for obj in Product.objects.all():
+        if 1 in obj.product_choice:
+            obj.height = 10
+            obj.length = 10
+            obj.width = 10
+            obj.volume = {
+                "id": "68305048-03e2-4936-8f4b-f876fcc6b14e",
+                "title": "volume",
+                "value": 1000.0,
+                "measure": "cm³"
+            }
+            obj.weight = {
+                "id": "4db94461-ba4b-4d5e-b9b1-1481ea38591d",
+                "title": "weight",
+                "value": 10.0,
+                "measure": "gram"
+
+            }
+            obj.save()
+        else:
+            obj.height = None
+            obj.length = None
+            obj.width = None
+            obj.volume = {}
+            obj.weight = {}
+            obj.save()
+        return True
+
+
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
+def update_currency_price_list():
+    prices = Price.objects.all()
+    bulk_data = []
+    for price in prices:
+        for currency in price.currency:
+            obj = PriceListCurrency(
+                currency_id=currency,
+                price=price
+            )
+            bulk_data.append(obj)
+
+    PriceListCurrency.objects.bulk_create(bulk_data)
+    print('Update Done')
+
+
+def update_employee_created_purchase_request():
+    PurchaseRequest.objects.all().update(employee_created='c559833d-ccb8-40dc-a7bb-84ef047beb36')
+    print('Update Done')
+
+
+def update_opportunity_contact_role_datas():
+    opps = Opportunity.objects.all()
+
+    for opp in opps:
+        list_data = []
+        for data in opp.opportunity_contact_role_datas:
+            obj_contact = Contact.objects.get(id=data['contact']['id'])
+            list_data.append(
+                {
+                    'type_customer': data['type_customer'],
+                    'role': data['role'],
+                    'job_title': data['job_title'],
+                    'contact': {
+                        'id': str(obj_contact.id),
+                        'fullname': obj_contact.fullname,
+                    }
+                }
+            )
+        opp.opportunity_contact_role_datas = list_data
+        opp.save()
+
+    print('Update Done')
+
+
+def delete_old_m2m_data_price_list_product():
+    today = date.today()
+    ProductPriceList.objects.filter(date_created__lt=today).delete()
+    return True
+
+
+def update_parent_account():
+    for obj in Account.objects.all():
+        old_value = obj.parent_account
+        if old_value:
+            obj.parent_account_mapped_id = str(old_value).replace('-', '')
+            obj.save()
+    return True
+
+
+def update_credit_card_type():
+    AccountCreditCards.objects.all().update(credit_card_type=1)
+    return True
+
+
+def clear_data_expense():
+    Expense.objects.all().delete()
+    print('Delete Done')
+
+
+def update_employee_inherit_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for advance_return in objs:
+        advance_return.employee_inherit = advance_return.creator
+        advance_return.employee_created = advance_return.creator
+        advance_return.save()
+    print('Update done')
+
+
+def make_sure_leave_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_config(None)
+        ConfigDefaultData(obj).working_calendar_config()
+    print('Leave config is done!')
+
+
+def make_sure_function_purchase_request_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).purchase_request_config()
+    print('Make sure function purchase_request_config is done!')
+
+
+def update_sale_person_opportunity():
+    opps = Opportunity.objects.filter(sale_person=None)
+    for opp in opps:
+        opp.sale_person_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_inherit_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.employee_created_id = 'c559833dccb840dca7bb84ef047beb36'
+        opp.save(update_fields=['sale_person_id', 'employee_inherit_id', 'employee_created_id'])
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_opp():
+    members = OpportunitySaleTeamMember.objects.all()
+    for member in members:
+        member.company = member.opportunity.company
+        member.tenant = member.opportunity.tenant
+        member.save()
+    print('Update Done!')
+
+
+def update_tenant_for_sub_table_inventory_adjustment():
+    objs = InventoryAdjustmentItem.objects.all()
+    for obj in objs:
+        obj.company = obj.inventory_adjustment_mapped.company
+        obj.tenant = obj.inventory_adjustment_mapped.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_quantity_remain_pr_product():
+    for pr_product in PurchaseRequestProduct.objects.all():
+        pr_product.remain_for_purchase_order = pr_product.quantity
+        pr_product.save(update_fields=['remain_for_purchase_order'])
+    print('update done.')
+
+
+def update_tenant_for_sub_table_purchase_request():
+    objs = PurchaseRequestProduct.objects.all()
+    for obj in objs:
+        obj.company = obj.purchase_request.company
+        obj.tenant = obj.purchase_request.tenant
+        obj.save()
+    print('Update Done!')
+
+
+def update_employee_inherit_and_created_return_advance():
+    objs = ReturnAdvance.objects.all()
+    for obj in objs:
+        obj.employee_inherit = obj.beneficiary
+        obj.employee_created = obj.creator
+        obj.save()
+    print('Update Done!')
+
+
+def new_permit_parsed():
+    print('New permit parsed is starting...')
+    for obj in Employee.objects.all():
+        if str(obj.id) in ['9afa6107-a1f9-4d06-b855-aa60b25a70aa', 'ad2fd817-2878-40d0-b05d-4d87a0189de7']:
+            obj.permission_by_configured = []
+        print('Employee: ', obj.id, obj.get_full_name())
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        if str(obj.id) in ['88caae0f-c53a-44d4-b4d8-c9d3856eca66', '54233b73-a4ee-4c2e-8729-8dd33bcaa303']:
+            obj.permission_by_configured = []
+        print('Role: ', obj.id, obj.title)
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit parsed is successfully!')
+
+
+def update_backup_data_purchase_request():
+    for pr in PurchaseRequest.objects.all():
+        data = []
+
+        for item in pr.purchase_request_product_datas:
+            product_obj = Product.objects.get(id=item['product']['id'])
+            data_product = {
+                'id': str(product_obj.id),
+                'title': product_obj.title,
+                'code': product_obj.code,
+                'uom_group': str(product_obj.general_uom_group_id),
+            }
+
+            tax_obj = Tax.objects.get(id=item['tax']['id'])
+            data_tax = {
+                'id': str(tax_obj.id),
+                'title': tax_obj.title,
+                'rate': tax_obj.rate,
+            }
+            data.append(
+                {
+                    'tax': data_tax,
+                    'product': data_product,
+                    'uom': item['uom'],
+                    'description': item['description'],
+                    'unit_price': item['unit_price'],
+                    'sale_order_product': item['sale_order_product'],
+                    'quantity': item['quantity'],
+                    'sub_total_price': item['unit_price'] * item['quantity'],
+                }
+            )
+
+        pr.purchase_request_product_datas = data
+        pr.save(update_fields=['purchase_request_product_datas'])
+    print('Update Done !')
+
+
+def leave_available_create():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_setup()
+    print('create leave available list successfully')
+
+
+def update_title_opportunity_document():
+    for item in OpportunityDocument.objects.all():
+        item.title = item.subject
+        item.tenant = item.opportunity.tenant
+        item.company = item.opportunity.company
+        item.save(update_fields=['title', 'tenant', 'company'])
+    print('Update Done !')
+
+
+def convert_permit_ids():
+    print('New permit IDS is starting...')
+    for obj in Employee.objects.all():
+        print('Employee: ', obj.id, obj.get_full_name())
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+
+    for obj in Role.objects.all():
+        print('Role: ', obj.id, obj.title)
+        ids = obj.permission_by_id
+        result = {}
+        if ids and isinstance(ids, dict):
+            for perm_code, data in ids.items():
+                if data:
+                    if isinstance(data, list):
+                        result[perm_code] = {
+                            id_item: {} for id_item in data
+                        }
+                    elif isinstance(data, dict):
+                        result[perm_code] = data
+        obj.permission_by_id = result
+        obj.permissions_parsed = PermissionController(tenant_id=obj.tenant_id).get_permission_parsed(instance=obj)
+        obj.save()
+    print('New permit IDS is successfully!')
+
+
+def make_unique_together_opp_member():
+    from apps.sales.opportunity.models import Opportunity, OpportunitySaleTeamMember
+
+    print('Destroy duplicated opp member starting...')
+    list_filter = []
+    for opp in Opportunity.objects.all():
+        for opp_member in OpportunitySaleTeamMember.objects.filter(opportunity=opp):
+            tmp = {}
+            if opp_member.tenant_id:
+                tmp['tenant_id'] = opp_member.tenant_id
+            else:
+                tmp['tenant_id__isnull'] = True
+
+            if opp_member.company_id:
+                tmp['company_id'] = opp_member.company_id
+            else:
+                tmp['company_id__isnull'] = True
+
+            if opp_member.member_id:
+                tmp['member_id'] = opp_member.member_id
+            else:
+                tmp['member_id__isnull'] = True
+
+            list_filter.append(tmp)
+
+    for dict_filter in list_filter:
+        objs = OpportunitySaleTeamMember.objects.filter(**dict_filter)
+        print(objs.count(), dict_filter)
+        if objs.count() >= 2:
+            for obj in objs[1:]:
+                obj.delete()
+    print('Destroy duplicated opp member successfully!')
+
+
+def make_permission_records():
+    for obj in Employee.objects.all():
+        print('Employee:', obj)
+        obj_permit, _created = EmployeePermission.objects.get_or_create(employee=obj)
+        obj_permit.call_sync()
+
+
+
+
+
+
+
+
+
+    for obj in Role.objects.all():
+        print('Role:', obj)
+        obj_permit, _created = RolePermission.objects.get_or_create(role=obj)
+        obj_permit.call_sync()
+
+    for obj in OpportunitySaleTeamMember.objects.all():
+        print('Opp-Member:', obj)
+        obj.permission_by_configured = []
+        obj.save()
+
+    print('Make permission records is successful.')
+
+
+def update_inherit_po():
+    for po in PurchaseOrder.objects.all():
+        po.employee_inherit_id = po.employee_created_id if po.employee_created else None
+        po.save(update_fields=['employee_inherit_id'])
+    print('update_inherit_po done.')
+
+
+def update_code_quotation_sale_order_indicator_config():
+    for indicator in QuotationIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    for indicator in SaleOrderIndicatorConfig.objects.filter(company__isnull=False):
+        indicator.code = "IN000" + str(indicator.order)
+        indicator.tenant_id = indicator.company.tenant_id
+        indicator.save(update_fields=['code', 'tenant_id'])
+    print('update_code_quotation_sale_order_indicator_config done.')
+
+
+def update_code_quotation_sale_order_indicator():
+    for indicator in QuotationIndicator.objects.filter(indicator__isnull=False):
+        indicator.code = indicator.indicator.code
+        indicator.tenant_id = indicator.indicator.tenant_id
+        indicator.company_id = indicator.indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    for indicator in SaleOrderIndicator.objects.filter(quotation_indicator__isnull=False):
+        indicator.code = indicator.quotation_indicator.code
+        indicator.tenant_id = indicator.quotation_indicator.tenant_id
+        indicator.company_id = indicator.quotation_indicator.company_id
+        indicator.save(update_fields=['code', 'tenant_id', 'company_id'])
+    print('update_code_quotation_sale_order_indicator done.')
+
+
+def update_record_report_revenue():
+    ReportRevenue.objects.all().delete()
+    bulk_info = []
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False):
+        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        bulk_info.append(ReportRevenue(
+            tenant_id=so.tenant_id,
+            company_id=so.company_id,
+            sale_order_id=so.id,
+            employee_created_id=so.employee_created_id,
+            employee_inherit_id=so.employee_inherit_id,
+            group_inherit_id=so.employee_inherit.group_id,
+            date_approved=so.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+        ))
+    ReportRevenue.objects.bulk_create(bulk_info)
+    print('update_record_report_revenue done.')
+
+
+def update_space_range_opp_member():
+    for obj in OpportunitySaleTeamMember.objects.all():
+        for item in obj.permission_by_configured:
+            print(item)
+            if 'space' in item and isinstance(item['space'], int):
+                item['space'] = str(item['space'])
+            if isinstance(item['range'], int):
+                item['range'] = str(item['range'])
+        obj.save()
+    return True
+
+
+def update_date_approved_sales_apps():
+    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
+        quotation.date_approved = quotation.date_created
+        quotation.save(update_fields=['date_approved'])
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        so.date_approved = so.date_created
+        so.save(update_fields=['date_approved'])
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        po.date_approved = po.date_created
+        po.save(update_fields=['date_approved'])
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        gr.date_approved = gr.date_created
+        gr.save(update_fields=['date_approved'])
+    print('update_date_approved_sales_apps done.')

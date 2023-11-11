@@ -1,5 +1,11 @@
 from django.utils.translation import gettext_lazy as _
-from .translations import WorkflowMsg
+
+from .translations import WorkflowMsg, LeaveMsg
+
+#
+KEY_GET_LIST_FROM_APP = 'list_from_app'
+KEY_GET_LIST_FROM_OPP = 'filter_list_from_opp'
+SPLIT_CODE_FROM_APP = '.'
 
 # Core
 GENDER_CHOICE = (
@@ -70,6 +76,11 @@ MAP_FIELD_TITLE = {
     'saledata.account': 'name',
     'quotation.quotation': 'title',
     'saleorder.saleorder': 'title',
+    'delivery.orderdeliverysub': 'title',
+    'purchasing.purchaseorder': 'title',
+    'inventory.goodsreceipt': 'title',
+    'purchasing.purchaserequest': 'title',
+    'leave.leaverequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -164,4 +175,92 @@ TASK_OUT_OPTION = (
     (1, 'only member in dept'),
     (2, 'only staff in dept'),
     (3, 'both 1 & 2'),
+)
+
+# permissions
+PERMISSION_OPTION_RANGE = (
+    (0, 'All option range'),
+    (1, 'Only company range'),
+)
+
+# Purchase request
+REQUEST_FOR = [
+    (0, _('For Sale Order')),
+    (1, _('For Stock')),
+    (2, _('For Other')),
+]
+
+PURCHASE_STATUS = [
+    (0, _('Wait')),
+    (1, _('Partially ordered')),
+    (2, _('Ordered')),
+]
+
+# Purchase order
+RECEIPT_STATUS = (
+    (0, 'None'),
+    (1, 'Wait'),
+    (2, 'Partially received'),
+    (3, 'Received'),
+)
+
+RETURN_ADVANCE_STATUS = [
+    (0, _('Approved')),
+]
+
+# Good receipt
+GOODS_RECEIPT_TYPE = (
+    (0, 'For purchase order'),
+    (1, 'For inventory adjustment'),
+    (2, 'For production'),
+)
+
+# e-office Leave
+LEAVE_YEARS_SENIORITY = [
+    {'from_range': 5, 'to_range': 9, 'added': 1},
+    {'from_range': 10, 'to_range': 14, 'added': 2},
+    {'from_range': 15, 'to_range': 19, 'added': 3},
+    {'from_range': 20, 'to_range': 24, 'added': 4},
+    {'from_range': 25, 'to_range': 29, 'added': 5},
+    {'from_range': 30, 'to_range': 34, 'added': 6},
+]
+
+TYPE_LIST = (
+    (1, LeaveMsg.TYPE_AD),
+    (2, LeaveMsg.TYPE_SYS),
+    (3, LeaveMsg.TYPE_EM),
+)
+
+# Warehouse type
+WAREHOUSE_TYPE = (
+    (0, 'None'),
+    (1, _('Drop Ship')),
+    (2, _('Bin Location')),
+    (3, _('Agency / Partner Location')),
+)
+
+# Goods transfer
+GOODS_TRANSFER_TYPE = (
+    (0, _('Goods transfer')),
+    (1, _('Send/return consigned goods')),
+)
+
+# Inventory Adjustment Item action type
+
+IA_ITEM_ACTION_TYPE = (
+    (0, _('Equal')),
+    (1, _('Decreasing')),
+    (2, _('Increasing')),
+)
+
+# Goods issue type
+
+GOODS_ISSUE_TYPE = (
+    (0, _('For Inventory Adjustment')),
+    (1, _('Liquidation')),
+)
+
+RETURN_ADVANCE_MONEY_RECEIVED = (
+    (True, _('Received')),
+    (False, _('Waiting')),
 )

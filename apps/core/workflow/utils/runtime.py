@@ -72,7 +72,8 @@ class DocHandler:
     @classmethod
     def force_finish(cls, obj):
         setattr(obj, 'system_status', 3)  # finish
-        obj.save(update_fields=['system_status'])
+        setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
+        obj.save(update_fields=['system_status', 'date_approved'])
         return True
 
     @classmethod
@@ -87,7 +88,8 @@ class DocHandler:
             match approved_or_rejected:
                 case 'approved':
                     setattr(obj, 'system_status', 3)  # finish
-                    obj.save(update_fields=['system_status'])
+                    setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
+                    obj.save(update_fields=['system_status', 'date_approved'])
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
@@ -151,10 +153,12 @@ class RuntimeHandler:
         return None
 
     @classmethod
-    def create_runtime_obj(cls, tenant_id, company_id, doc_id, app_code) -> Runtime:
+    def create_runtime_obj(cls, tenant_id, company_id, doc_id, app_code, employee_created, employee_inherit) -> Runtime:
         """
         Call create runtime for Doc ID + App Code
         Args:
+            employee_inherit:
+            employee_created:
             tenant_id:
             company_id:
             doc_id:
@@ -171,7 +175,7 @@ class RuntimeHandler:
                 app_obj = application_model.objects.get(app_label=arr[0], code=arr[1])
                 if Runtime.objects.filter(
                         tenant_id=tenant_id, company_id=company_id,
-                        doc_id=doc_id, app=app_obj
+                        doc_id=doc_id, app=app_obj,
                 ).exists():
                     raise ValueError('Runtime Obj is exist')
 
@@ -191,7 +195,8 @@ class RuntimeHandler:
                     doc_params={},
                     flow=None,  # default don't use WF then check apply WF
                     stage_currents=None,
-                    doc_employee_created=cls.employee_created_obj(doc_obj=doc_obj),
+                    doc_employee_created=employee_created,
+                    doc_employee_inherit=employee_inherit,
                 )
                 # update runtime to doc
                 doc_obj.workflow_runtime = runtime_obj
@@ -450,6 +455,7 @@ class RuntimeStageHandler:
             employee_ids_zones = {}
             objs = []
             log_objs = []
+            objs_created = []
             for emp_id, zone_and_properties in assignee_and_zone.items():
                 obj_assignee = RuntimeAssignee(
                     stage=stage_obj,
@@ -458,6 +464,13 @@ class RuntimeStageHandler:
                 )
                 obj_assignee.before_save(force_insert=True)
                 objs.append(obj_assignee)
+
+                obj_created = RuntimeAssignee.objects.create(
+                    stage=stage_obj,
+                    employee_id=emp_id,
+                    zone_and_properties=zone_and_properties,
+                )
+                objs_created.append(obj_created)
 
                 # create instance log
                 log_obj_tmp = RuntimeLogHandler(
@@ -476,7 +489,7 @@ class RuntimeStageHandler:
                 employee_ids_zones.update({emp_id: zone_and_properties})
 
             # create runtime assignee
-            objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+            # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
             # active hook push notify
             HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
@@ -506,6 +519,11 @@ class RuntimeStageHandler:
                 self.runtime_obj.save()
                 stage_obj_currently.to_stage = next_stage
                 stage_obj_currently.save()
+
+                # check if stage is approved then auto added
+                if next_stage.code == 'approved':
+                    # call added doc obj
+                    DocHandler.force_added_with_runtime(self.runtime_obj)
             if is_next_stage:
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
@@ -577,6 +595,20 @@ class RuntimeStageHandler:
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
                 ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
+
+        # update current_stage for document
+        if stage_obj:
+            obj = DocHandler(self.runtime_obj.doc_id, self.runtime_obj.app_code).get_obj(
+                default_filter={
+                    'tenant_id': self.runtime_obj.tenant_id,
+                    'company_id': self.runtime_obj.company_id,
+                }
+            )
+            if obj:
+                setattr(obj, 'current_stage', stage_obj)
+                setattr(obj, 'current_stage_title', stage_obj.title)
+                obj.save(update_fields=['current_stage', 'current_stage_title'])
+
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
         if len(assignee_created) == 0:
@@ -930,26 +962,30 @@ class HookEventHandler:
         self.is_return = is_return
 
     def push_base_notify(self, runtime_assignee_obj: list[RuntimeAssignee]):
-        args_arr = []
-        for obj in runtime_assignee_obj:
-            if obj.is_done is False:
-                args_arr.append(
-                    {
-                        'tenant_id': self.runtime_obj.tenant_id,
-                        'company_id': self.runtime_obj.company_id,
-                        'title': self.runtime_obj.doc_title,
-                        'msg': WorkflowMsgNotify.was_return_begin if self.is_return else WorkflowMsgNotify.new_task,
-                        'date_created': timezone.now(),
-                        'doc_id': self.runtime_obj.doc_id,
-                        'doc_app': self.runtime_obj.app_code,
-                        'user_id': None,
-                        'employee_id': obj.employee_id,
-                        'employee_sender_id': None,
-                    }
+        try:
+            args_arr = []
+            for obj in runtime_assignee_obj:
+                if obj.is_done is False:
+                    args_arr.append(
+                        {
+                            'tenant_id': self.runtime_obj.tenant_id,
+                            'company_id': self.runtime_obj.company_id,
+                            'title': self.runtime_obj.doc_title,
+                            'msg': WorkflowMsgNotify.was_return_begin if self.is_return else WorkflowMsgNotify.new_task,
+                            'date_created': timezone.now(),
+                            'doc_id': self.runtime_obj.doc_id,
+                            'doc_app': self.runtime_obj.app_code,
+                            'user_id': None,
+                            'employee_id': obj.employee_id,
+                            'employee_sender_id': None,
+                        }
+                    )
+            if len(args_arr) > 0:
+                call_task_background(
+                    force_new_notify_many,
+                    *[args_arr],
                 )
-        if len(args_arr) > 0:
-            call_task_background(
-                force_new_notify_many,
-                *[args_arr],
-            )
-        return True
+            return True
+        except Exception as err:
+            print('push_base_notify: ', str(err))
+        return False

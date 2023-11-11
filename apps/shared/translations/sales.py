@@ -10,6 +10,7 @@ class SaleMsg:
     OPPORTUNITY_SALE_ORDER_USED = _('Opportunity is already used for sale order')
     OPPORTUNITY_CLOSED = _('Opportunity is closed')
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
+    SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')
 
 
 class SaleTask:
@@ -20,3 +21,42 @@ class SaleTask:
     ERROR_NOT_IN_DEPARTMENT = _('Assignee not in department')
     ERROR_1_OR_2_OPT = _('Assignee not in department or not in team member')
     ERROR_NOT_STAFF = _('Assignee is not staff of the assigner')
+    VALID_PARENT_N = _('Can not create another sub-task form sub-task')
+    ERROR_COMPLETE_SUB_TASK = _('Please complete Sub-task before')
+    ERROR_UPDATE_SUB_TASK = _('Data request is missing please reload and try again.')
+    ERROR_LOGTIME_BEFORE_COMPLETE = _('Please Log time before complete task')
+    ERROR_TIME_SPENT = _('Time spent is wrong format.')
+    ERROR_NOT_PERMISSION = _('You do not permission to log time this task')
+
+
+class PurchaseRequestMsg:
+    DOES_NOT_EXIST = _('Object does not exist')
+    PR_NOT_NULL = _('Purchase Request must not null.')
+    PRODUCT_NOT_NULL = _('Products must not null.')
+    GREATER_THAN_ZERO = _('Value must be greater than zero')
+    NOT_PURCHASE = _('Has not been configured for purchase')
+    NOT_IN_SALE_ORDER = _('Not in Sale Order')
+    PURCHASE_REQUEST_NOT_EXIST = _('Purchase request does not exist')
+    PURCHASE_REQUEST_IS_ARRAY = _('Purchase request must be array')
+    EMPLOYEE_DOES_NOT_EXIST = _('Employee does not exist')
+
+
+class PurchasingMsg:
+    PURCHASE_QUOTATION_NOT_EXIST = _('Purchase quotation does not exist')
+    PURCHASE_ORDER_NOT_EXIST = _('Purchase order does not exist')
+    PURCHASE_ORDER_QUANTITY = _('Quantity order must be greater than 0')
+
+
+class DeliverMsg:
+    ERROR_STATE = _('Can not update when status is Done!')
+    ERROR_CONFIG = _('Please setup Leader of Picking/Delivery in config page before create request')
+    ERROR_ESTIMATED_DATE = _('Estimated Delivery date is required!')
+    ERROR_OUT_STOCK = _('out of stock')
+    ERROR_QUANTITY = _('Done quantity not equal remain quantity!')
+    ERROR_UPDATE_RULE = _('You can\'t update employee inherit and products stock ready together')
+
+
+class InventoryMsg:
+    GOODS_RECEIPT_NOT_EXIST = _('Goods receipt does not exist')
+    INVENTORY_ADJUSTMENT_NOT_EXIST = _('Inventory adjustment does not exist')
+    GOODS_RECEIPT_QUANTITY = _('Quantity import must be greater than 0')

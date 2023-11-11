@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, UnitOfMeasureGroup
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
@@ -10,8 +11,16 @@ __all__ = [
     'Price',
     'ProductPriceList',
     'Discount',
-    'UnitOfMeasureGroup'
+    'UnitOfMeasureGroup',
+    'PriceListCurrency'
 ]
+
+PRICE_LIST_TYPE = [
+    (0, _('For Sale')),
+    (1, _('For Purchase')),
+    (2, _('For Expense')),
+]
+
 
 # Create your models here.
 class TaxCategory(MasterDataAbstractModel):  # noqa
@@ -38,7 +47,7 @@ class Tax(MasterDataAbstractModel):
     # type = 0 is 'Sale'
     # type = 1 is 'Purchase'
     # type = 2 is both 'Sale' and 'Purchase'
-    type = models.IntegerField()
+    tax_type = models.IntegerField()
 
     class Meta:
         verbose_name = 'Tax'
@@ -73,9 +82,15 @@ class Price(DataAbstractModel):
     #     ...
     # ]
     currency = models.JSONField(default=list)
-    # price_list_type = 0 is 'For Sale'
-    # price_list_type = 1 is 'For Purchase'
-    # price_list_type = 2 is 'For Expense'
+
+    currency_current = models.ManyToManyField(
+        'saledata.Currency',
+        through='PriceListCurrency',
+        symmetrical=False,
+        blank=True,
+        related_name='opportunity_mapped'
+    )
+
     valid_time_start = models.DateTimeField(
         verbose_name='price list will be apply since valid_time_start',
         default=timezone.now,
@@ -86,8 +101,14 @@ class Price(DataAbstractModel):
         default='9999-01-01 00:00:00.00',
         null=True
     )
-    price_list_type = models.IntegerField()
-    price_list_mapped = models.UUIDField(null=True)
+    price_list_type = models.SmallIntegerField(choices=PRICE_LIST_TYPE)
+    price_list_mapped = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        null=True,
+        default=None,
+        related_name='price_parent'
+    )
     product = models.ManyToManyField(
         Product,
         through='ProductPriceList',
@@ -101,6 +122,28 @@ class Price(DataAbstractModel):
         verbose_name = 'Price'
         verbose_name_plural = 'Prices'
         ordering = ('date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PriceListCurrency(SimpleAbstractModel):
+    price = models.ForeignKey(
+        Price,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='price_list'
+    )
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='price_currency'
+    )
+
+    class Meta:
+        verbose_name = 'PriceCurrency'
+        verbose_name_plural = 'PriceCurrencies'
+        ordering = ()
         default_permissions = ()
         permissions = ()
 

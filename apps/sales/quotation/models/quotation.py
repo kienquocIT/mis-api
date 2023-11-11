@@ -1,7 +1,8 @@
 from django.db import models
 
-from apps.sales.opportunity.models import Opportunity
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import (
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel, StringHandler,
+)
 
 
 # CONFIG
@@ -86,9 +87,9 @@ class ConfigLongSale(SimpleAbstractModel):
 
 
 # BEGIN QUOTATION
-class Quotation(DataAbstractModel):
+class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     opportunity = models.ForeignKey(
-        Opportunity,
+        'opportunity.Opportunity',
         on_delete=models.CASCADE,
         verbose_name="opportunity",
         related_name="quotation_opportunity",
@@ -135,6 +136,20 @@ class Quotation(DataAbstractModel):
     quotation_logistic_data = models.JSONField(
         default=dict,
         help_text="read data logistics, use for get list or detail quotation"
+    )
+    customer_shipping = models.ForeignKey(
+        'saledata.AccountShippingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer shipping",
+        related_name="quotation_customer_shipping",
+        null=True
+    )
+    customer_billing = models.ForeignKey(
+        'saledata.AccountBillingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="customer billing",
+        related_name="quotation_customer_billing",
+        null=True
     )
     quotation_costs_data = models.JSONField(
         default=list,
@@ -212,18 +227,43 @@ class Quotation(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("SQ")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'SQ0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'SQ{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        quotation = Quotation.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "QUO"
-        if not self.code:
-            temper = "%04d" % (quotation + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
 
         # hit DB
         super().save(*args, **kwargs)
@@ -449,48 +489,6 @@ class QuotationLogistic(SimpleAbstractModel):
         permissions = ()
 
 
-# class QuotationLogisticShipping(SimpleAbstractModel):
-#     quotation_logistic = models.ForeignKey(
-#         QuotationLogistic,
-#         on_delete=models.CASCADE,
-#     )
-#     shipping_address = models.ForeignKey(
-#         # 'saledata.AccountShipping',
-#         'saledata.Account',
-#         on_delete=models.CASCADE,
-#         verbose_name="shipping address",
-#         related_name="quotation_logistic_shipping",
-#         null=True
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Quotation Logistic Shipping'
-#         verbose_name_plural = 'Quotation Logistic Shipping'
-#         default_permissions = ()
-#         permissions = ()
-
-
-# class QuotationLogisticBilling(SimpleAbstractModel):
-#     quotation_logistic = models.ForeignKey(
-#         QuotationLogistic,
-#         on_delete=models.CASCADE,
-#     )
-#     billing_address = models.ForeignKey(
-#         # 'saledata.AccountBilling',
-#         'saledata.Account',
-#         on_delete=models.CASCADE,
-#         verbose_name="billing address",
-#         related_name="quotation_logistic_billing",
-#         null=True
-#     )
-#
-#     class Meta:
-#         verbose_name = 'Quotation Logistic Billing'
-#         verbose_name_plural = 'Quotation Logistic Billing'
-#         default_permissions = ()
-#         permissions = ()
-
-
 # SUPPORT COST
 class QuotationCost(SimpleAbstractModel):
     quotation = models.ForeignKey(
@@ -589,7 +587,7 @@ class QuotationCost(SimpleAbstractModel):
 
 
 # SUPPORT EXPENSE
-class QuotationExpense(SimpleAbstractModel):
+class QuotationExpense(MasterDataAbstractModel):
     quotation = models.ForeignKey(
         Quotation,
         on_delete=models.CASCADE,
@@ -600,8 +598,22 @@ class QuotationExpense(SimpleAbstractModel):
     expense = models.ForeignKey(
         'saledata.Expense',
         on_delete=models.CASCADE,
-        verbose_name="quotation",
+        verbose_name="expense",
         related_name="quotation_expense_expense",
+        null=True
+    )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="quotation_expense_expense_item",
+        null=True
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="quotation_expense_product",
         null=True
     )
     unit_of_measure = models.ForeignKey(
@@ -625,6 +637,16 @@ class QuotationExpense(SimpleAbstractModel):
         null=True
     )
     expense_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
         max_length=100,
         blank=True,
         null=True
@@ -669,6 +691,10 @@ class QuotationExpense(SimpleAbstractModel):
     )
     order = models.IntegerField(
         default=1
+    )
+    is_product = models.BooleanField(
+        default=False,
+        help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
 
     class Meta:

@@ -10,3 +10,6 @@ class ExpenseMsg:
     CURRENCY_NOT_EXIST = _('Currency not exist')
     UOM_NOT_MAP_UOM_GROUP = _('unit of measure not in unit of measure group')
     IS_REQUIRED = _('must be required')
+
+    PARENT_NOT_EXIST = _('Expense parent does not exist.')
+    EXPENSE_ITEM_NOT_EXIST = _('Expense item not exist.')

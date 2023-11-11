@@ -1,3 +1,4 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.views import APIView
 
@@ -45,7 +46,7 @@ class ActivityLogList(BaseListMixin):
     }
 
     @swagger_auto_schema(operation_summary='Activity Log')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -54,7 +55,11 @@ class MyNotifyNoDoneCount(APIView):
     queryset = Notifications.objects
 
     @swagger_auto_schema(operation_summary='My Notify No Done Count')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True,
+        employee_require=False,
+        auth_require=False
+    )
     def get(self, request, *args, **kwargs):
         count = 0
         if request.user.employee_current_id:
@@ -86,7 +91,7 @@ class MyNotifySeenAll(APIView):
     queryset = Notifications.objects
 
     @swagger_auto_schema(operation_summary='My Notify Seen All')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, employee_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         if request.user.employee_current_id:
             Notifications.call_seen_all(
@@ -101,7 +106,7 @@ class MyNotifyCleanAll(APIView):
     queryset = Notifications.objects
 
     @swagger_auto_schema(operation_summary='My Notify Clean All')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, employee_require=True, auth_require=False)
     def delete(self, request, *args, **kwargs):
         if request.user.employee_current_id:
             Notifications.call_clean_all_seen(
@@ -123,7 +128,7 @@ class MyNotifyList(BaseListMixin):
     }
 
     @swagger_auto_schema(operation_summary='My Notify List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, employee_require=False, auth_require=False, )
     def get(self, request, *args, **kwargs):
         if request.user.employee_current_id:
             kwargs['employee_id'] = request.user.employee_current_id
@@ -138,7 +143,7 @@ class MyNotifyDetail(BaseUpdateMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id', 'employee_id', ]
 
     @swagger_auto_schema(operation_summary='Update done my notify', request_body=NotifyUpdateDoneSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, employee_require=True, auth_require=False, )
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
@@ -153,13 +158,20 @@ class BookMarkList(BaseListMixin, BaseCreateMixin):
     serializer_detail = BookMarkListSerializer
     serializer_create = BookMarkCreateSerializer
 
+    def error_employee_require(self):
+        return self.list_empty()
+
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(employee_id=self.request.user.employee_current_id)
+
     @swagger_auto_schema(operation_summary='BookMark List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='BookMark Create')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -172,12 +184,12 @@ class BookMarkDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     serializer_update = BookMarkUpdateSerializer
 
     @swagger_auto_schema(operation_summary='BookMark Update')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def put(self, request, *args, pk, **kwargs):
         return self.update(request, *args, pk, **kwargs)
 
     @swagger_auto_schema(operation_summary='BookMark Destroy')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
 
@@ -199,13 +211,17 @@ class DocPinedList(BaseListMixin, BaseCreateMixin):
             'runtime__stage_currents__assignee_of_runtime_stage'
         )
 
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q(employee_id=self.request.user.employee_current_id)
+
     @swagger_auto_schema(operation_summary='Doc Pined List')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Doc Pined Create', request_body=DocPinedCreateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -217,7 +233,7 @@ class DocPinedDetail(BaseDestroyMixin):
     retrieve_hidden_field = ['tenant_id', 'company_id', 'employee_id']
 
     @swagger_auto_schema(operation_summary='Doc Pined Destroy')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def delete(self, request, *args, pk, **kwargs):
         return self.destroy(request, *args, pk, **kwargs)
 

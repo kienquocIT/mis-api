@@ -1,7 +1,10 @@
+from django.db.models import Q
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
-from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, ResponseController
+from rest_framework import exceptions
+
+from apps.shared import mask_view, TypeCheck, BaseUpdateMixin, BaseRetrieveMixin, exceptions_more
+from apps.core.company.models import CompanyUserEmployee
 
 from .mixins import AccountCreateMixin, AccountDestroyMixin, AccountListMixin
 from .serializers import (
@@ -10,7 +13,6 @@ from .serializers import (
     CompanyUserEmployeeUpdateSerializer, UserResetPasswordSerializer,
 )
 from .models import User
-from apps.core.company.models import CompanyUserEmployee
 
 
 class UserList(AccountListMixin, AccountCreateMixin):
@@ -28,21 +30,36 @@ class UserList(AccountListMixin, AccountCreateMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+    search_fields = ('full_name_search', 'email', 'username')
+    filterset_fields = ('email', 'username', 'first_name', 'last_name')
 
-    def setup_list_field_hidden(self, user, **kwargs):
-        data = super().setup_list_field_hidden(user)
-        data['id__in'] = CompanyUserEmployee.all_user_of_company(user.company_current_id)
-        return data
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q()
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        if self.request.user.company_current_id:
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        raise exceptions_more.Empty200
 
     @swagger_auto_schema(
         operation_summary="User list",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary='Create New User', request_body=UserCreateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='create',
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
@@ -55,28 +72,40 @@ class UserList(AccountListMixin, AccountCreateMixin):
 
 
 class UserDetail(BaseRetrieveMixin, BaseUpdateMixin, AccountDestroyMixin):
-
-    permission_classes = [IsAuthenticated]
     queryset = User.objects
     serializer_class = UserUpdateSerializer
     serializer_detail = UserDetailSerializer
     serializer_update = UserUpdateSerializer
 
-    def get_queryset(self):
-        return super().get_queryset().select_related('tenant_current', 'company_current').prefetch_related('companies')
+    def retrieve_hidden_field_manual_after(self) -> dict[str, any]:
+        if self.request.user.company_current_id:
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        raise exceptions.NotFound
 
     @swagger_auto_schema(operation_summary='Detail User')
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='view',
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update User", request_body=UserUpdateSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Delete User")
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='delete',
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -87,12 +116,18 @@ class UserDetailResetPassword(BaseUpdateMixin):
     serializer_update = UserResetPasswordSerializer
 
     def get_queryset(self):
-        return super().get_queryset().filter_current(fill__tenant=True, fill__map_key={
-            'fill__tenant': 'tenant_current_id',
-        })
+        return super().get_queryset().filter_current(
+            fill__tenant=True, fill__map_key={
+                'fill__tenant': 'tenant_current_id',
+            }
+        )
 
     @swagger_auto_schema(operation_summary="Reset password of User", request_body=UserResetPasswordSerializer)
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='account', model_code='user', perm_code='edit',
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -106,7 +141,10 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_summary="User's Companies",
         operation_description="User's Companies",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
@@ -115,7 +153,10 @@ class CompanyUserDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Add Or Delete User For Company",
         request_body=CompanyUserEmployeeUpdateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
@@ -130,10 +171,25 @@ class UserOfTenantList(AccountListMixin):
     serializer_detail = UserDetailSerializer
     list_hidden_field = ['tenant_current_id']
     create_hidden_field = ['tenant_current_id']
+    search_fields = ('username', 'first_name', 'last_name')
 
     def get_queryset(self):
         return self.queryset.prefetch_related('company_user_employee_set_user').order_by('first_name')
 
+    @property
+    def filter_kwargs_q(self) -> Q():
+        return Q()
+
+    @property
+    def filter_kwargs(self) -> dict[str, any]:
+        if self.request.user.company_current_id:
+            return {'id__in': CompanyUserEmployee.all_user_of_company(self.request.user.company_current_id)}
+        raise exceptions_more.Empty200
+
     @swagger_auto_schema()
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -1,11 +1,9 @@
-from copy import deepcopy
-
 from django.urls import reverse
 from rest_framework import status
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.saledata.tests import ProductTestCase
-from apps.shared import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
 
@@ -39,13 +37,11 @@ class PromotionTestCase(AdvanceTestCase):
         product_category = ProductTestCase.create_product_category(self).data['result']
         unit_of_measure, uom_group = ProductTestCase.create_uom(self)
         data1 = {
-            "code": "P01",
             "title": "Laptop HP 6R",
             "product_choice": [],
-            'product_type': product_type['id'],
-            'product_category': product_category['id'],
-            'uom_group': uom_group.data['result']['id']
-
+            'product_types_mapped_list': [product_type['id']],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id']
         }
         product = self.client.post(reverse("ProductList"), data1, format='json')
         data = {

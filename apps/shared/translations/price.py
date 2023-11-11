@@ -2,6 +2,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class PriceMsg:
+    PRICE_SOURCE_NOT_EXIST = _('Price list source does not exist')
     TITLE_EXIST = _('Name is already exist.')
     CODE_EXIST = _('Code is already exist.')
     ABBREVIATION_EXIST = _('Abbreviation is already exist.')
@@ -22,3 +23,5 @@ class PriceMsg:
     NON_EMPTY_PRICE_LIST_CANT_BE_DELETE = _('Non-empty Price List can not be deleted.')
     PRICE_LIST_EXPIRED = _('Price List is expired.')
     ITEM_EXIST = _('Item already exists')
+    AUTO_UPDATE_CONFLICT_CAN_DELETE = _('When auto_update is False, can_delete must not be True')
+    AUTO_UPDATE_CAN_DELETE_ARE_FALSE = _('If not map with another price list, auto_update and can_delete are False')

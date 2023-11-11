@@ -3,8 +3,7 @@ import json
 from django.db import models
 
 from apps.shared import (
-    SimpleAbstractModel, MasterDataAbstractModel,
-    PICKING_STATE, DELIVERY_OPTION,
+    SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION,
 )
 
 __all__ = [
@@ -14,7 +13,7 @@ __all__ = [
 ]
 
 
-class OrderPicking(MasterDataAbstractModel):
+class OrderPicking(DataAbstractModel):
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
@@ -151,7 +150,7 @@ class OrderPicking(MasterDataAbstractModel):
         permissions = ()
 
 
-class OrderPickingSub(MasterDataAbstractModel):
+class OrderPickingSub(DataAbstractModel):
     order_picking = models.ForeignKey(
         'OrderPicking',
         on_delete=models.CASCADE,
@@ -306,6 +305,7 @@ class OrderPickingProduct(SimpleAbstractModel):
         'OrderPickingSub',
         on_delete=models.CASCADE,
         verbose_name='Order Picking Sub of Product',
+        related_name='picking_product_picking_sub',
     )
     product = models.ForeignKey(
         'saledata.Product',

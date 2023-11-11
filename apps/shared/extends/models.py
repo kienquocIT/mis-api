@@ -12,7 +12,7 @@ from .managers import NormalManager
 from ..constant import SYSTEM_STATUS
 
 __all__ = [
-    'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel',
+    'SimpleAbstractModel', 'DataAbstractModel', 'MasterDataAbstractModel', 'BastionFieldAbstractModel',
     'DisperseModel',
     'SignalRegisterMetaClass', 'CoreSignalRegisterMetaClass',
 ]
@@ -113,10 +113,41 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         super().save(*args, **kwargs)
 
 
+class BastionFieldAbstractModel(SimpleAbstractModel):
+    employee_inherit = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='',
+        related_name='%(app_label)s_%(class)s_employee_inherit',
+    )
+    opportunity = models.ForeignKey(
+        'opportunity.Opportunity',
+        null=True, on_delete=models.SET_NULL,
+        help_text='Relate to Opportunity',
+        related_name='%(app_label)s_%(class)s_opp',
+    )
+    project = models.ForeignKey(
+        'project.Project',
+        null=True, on_delete=models.SET_NULL,
+        help_text='Relate to Project',
+        related_name='%(app_label)s_%(class)s_prj',
+    )
+
+    class Meta:
+        abstract = True
+        verbose_name = 'Bastion Field Abstract'
+        verbose_name_plural = 'Bastion Field Abstract'
+
+
 class MasterDataAbstractModel(SimpleAbstractModel):
     """
     Abstract model for table data that had used by all user of company
     """
+
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
+    def __str__(self):
+        return f'{self.title} - {self.code}'
 
     # object_data = MasterDataManager()
 
@@ -168,6 +199,12 @@ class DataAbstractModel(SimpleAbstractModel):
     """
     Abstract model for table data that have a lot flag for all case.
     """
+
+    def __repr__(self):
+        return f'{self.title} - {self.code}'
+
+    def __str__(self):
+        return f'{self.title} - {self.code}'
 
     @classmethod
     def get_model_code(cls):
@@ -230,9 +267,11 @@ class DataAbstractModel(SimpleAbstractModel):
         help_text='The process claims that this record belongs to them',
         related_name='%(app_label)s_%(class)s_process',
     )
+    # workflow information
     system_status = models.SmallIntegerField(
-        choices=SYSTEM_STATUS,
-        default=0
+        # choices=SYSTEM_STATUS,
+        default=0,
+        help_text='choices= ' + str(SYSTEM_STATUS),
     )
     workflow_runtime = models.ForeignKey(
         'workflow.Runtime',
@@ -241,6 +280,23 @@ class DataAbstractModel(SimpleAbstractModel):
         verbose_name='Runtime Obj of Doc',
         help_text='Relate to Runtime Model is running flow of doc',
     )
+    date_approved = models.DateTimeField(
+        null=True,
+        help_text='The record created when WF of document is finished'
+    )
+    current_stage = models.ForeignKey(
+        'workflow.RuntimeStage',
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Current WF stage of Doc',
+        help_text='Relate to RuntimeStage Model is running WF of doc',
+    )
+    current_stage_title = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='Title of WF current stage of document'
+    )
+    # active, delete status
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)
     is_delete = models.BooleanField(default=False)

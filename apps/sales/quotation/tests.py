@@ -1,8 +1,8 @@
 from django.urls import reverse
 from rest_framework import status
 
-from apps.masterdata.saledata.tests import ProductTestCase, TaxAndTaxCategoryTestCase, IndustryTestCase
-from apps.shared import AdvanceTestCase
+from apps.masterdata.saledata.tests import IndustryTestCase
+from apps.shared.extends.tests import AdvanceTestCase
 from rest_framework.test import APIClient
 
 
@@ -106,7 +106,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "code": "VAT-10",
             "rate": 10,
             "category": tax_category.data['result']['id'],
-            "type": 0
+            "tax_type": 0
         }
         response = self.client.post(url_tax, data, format='json')
         self.assertResponseList(
@@ -119,7 +119,7 @@ class TestCaseQuotation(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'rate', 'category', 'type'],
+            ['id', 'title', 'code', 'rate', 'category', 'tax_type'],
             check_sum_second=True,
         )
         return response
@@ -133,11 +133,6 @@ class TestCaseQuotation(AdvanceTestCase):
         url = reverse('CurrencyList')
         response = self.client.get(url, format='json')
         return response
-
-    def test_create_product(self):
-        self.url = reverse("ProductList")
-        product = ProductTestCase.test_create_product(self)
-        return product
 
     def get_employee(self):
         url = reverse("EmployeeList")
@@ -153,7 +148,7 @@ class TestCaseQuotation(AdvanceTestCase):
         response = self.client.get(url, format='json')
         return response
 
-    def test_create_config_payment_term(self):
+    def create_config_payment_term(self):
         data = {
             'title': 'config payment term 01',
             'apply_for': 1,
@@ -171,6 +166,77 @@ class TestCaseQuotation(AdvanceTestCase):
         url = reverse('ConfigPaymentTermList')
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, 201)
+        return response
+
+    def create_product(self):
+        price_list = self.get_price_list().data['result'][0]
+        tax_code = self.create_new_tax()
+        base_item_unit = self.get_base_unit_measure()
+        weight_unit = base_item_unit.data['result'][3]
+        volume_unit = base_item_unit.data['result'][2]
+        currency = self.get_currency().data['result'][3]
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "title": "Laptop HP HLVVL6R",
+            'product_choice': [0, 1, 2],
+            # general
+            'product_types_mapped_list': [product_type['id']],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id'],
+            'length': 50,
+            'width': 30,
+            'height': 10,
+            'volume': 15000,
+            'weight': 200,
+            # sale
+            'sale_default_uom': unit_of_measure.data['result']['id'],
+            'sale_tax': tax_code.data['result']['id'],
+            'sale_currency_using': currency['id'],
+            'sale_product_price_list': [
+                {
+                    'price_list_id': price_list['id'],
+                    'price_value': 20000000,
+                    'is_auto_update': False,
+                }
+            ],
+            # inventory
+            'inventory_uom': unit_of_measure.data['result']['id'],
+            'inventory_level_min': 5,
+            'inventory_level_max': 20,
+            # purchase
+            'purchase_default_uom': unit_of_measure.data['result']['id'],
+            'purchase_tax': tax_code.data['result']['id'],
+        }
+        response = self.client.post(
+            reverse("ProductList"),
+            data,
+            format='json'
+        )
+        self.assertResponseList(
+            response,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response.data['result'],
+            [
+                'id',
+                'code',
+                'title',
+                'description',
+                'general_information',
+                'inventory_information',
+                'sale_information',
+                'purchase_information',
+                'product_choice'
+            ],
+            check_sum_second=True,
+        )
         return response
 
     def test_create_quotation(self):
@@ -218,7 +284,7 @@ class TestCaseQuotation(AdvanceTestCase):
             "account_type": [account_type],
             "owner": contact,
             "manager": {employee},
-            "parent_account": None,
+            "parent_account_mapped": None,
             "account_group": account_group,
             "tax_code": "string",
             "industry": industry,
@@ -226,12 +292,6 @@ class TestCaseQuotation(AdvanceTestCase):
             "total_employees": 1,
             "phone": "string",
             "email": "string",
-            "shipping_address": {},
-            "billing_address": {},
-            "contact_select_list": [
-                contact
-            ],
-            "contact_primary": contact,
             "account_type_selection": 0,
             "system_status": 0
         }
@@ -240,17 +300,17 @@ class TestCaseQuotation(AdvanceTestCase):
         opportunity = None
         customer = response_account.data['result']['id']
         employee = self.get_employee().data['result'][0]['id']
-        payment_term = self.test_create_config_payment_term().data['result']['id']
-        data = {
+        payment_term = self.create_config_payment_term().data['result']['id']
+        data1 = {
             "title": "Báo giá test",
             "opportunity": opportunity,
             "customer": customer,
             "contact": contact,
-            "sale_person": employee,
+            "employee_inherit_id": employee,
             "payment_term": payment_term,
         }
         url = reverse("QuotationList")
-        response = self.client.post(url, data, format='json')
+        response = self.client.post(url, data1, format='json')
 
         self.assertResponseList(
             response,
@@ -262,6 +322,259 @@ class TestCaseQuotation(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'date_created',
+                'total_product',
+                'system_status',
+                'opportunity'
+            ],
+            check_sum_second=True,
+        )
+
+        price_list = self.get_price_list().data['result'][0]
+        tax_code = self.create_new_tax()
+        base_item_unit = self.get_base_unit_measure()
+        weight_unit = base_item_unit.data['result'][3]
+        volume_unit = base_item_unit.data['result'][2]
+        currency = self.get_currency().data['result'][3]
+        product_type = self.create_product_type().data['result']  # noqa
+        product_category = self.create_product_category().data['result']
+        unit_of_measure, uom_group = self.create_uom()
+        data = {
+            "title": "Laptop HP HLVVL6R",
+            'product_choice': [0, 1, 2],
+            # general
+            'product_types_mapped_list': [product_type['id']],
+            'general_product_category': product_category['id'],
+            'general_uom_group': uom_group.data['result']['id'],
+            'length': 50,
+            'width': 30,
+            'height': 10,
+            'volume': 15000,
+            'weight': 200,
+            # sale
+            'sale_default_uom': unit_of_measure.data['result']['id'],
+            'sale_tax': tax_code.data['result']['id'],
+            'sale_currency_using': currency['id'],
+            'sale_product_price_list': [
+                {
+                    'price_list_id': price_list['id'],
+                    'price_value': 20000000,
+                    'is_auto_update': False,
+                }
+            ],
+            # inventory
+            'inventory_uom': unit_of_measure.data['result']['id'],
+            'inventory_level_min': 5,
+            'inventory_level_max': 20,
+            # purchase
+            'purchase_default_uom': unit_of_measure.data['result']['id'],
+            'purchase_tax': tax_code.data['result']['id'],
+        }
+        response_product = self.client.post(
+            reverse("ProductList"),
+            data,
+            format='json'
+        )
+        product_id = response_product.data['result']['id']
+        data2 = {
+            "title": "Báo giá test",
+            "opportunity": opportunity,
+            "customer": customer,
+            "contact": contact,
+            "employee_inherit_id": employee,
+            "payment_term": payment_term,
+            "total_product_pretax_amount": 34012280.95,
+            "total_product_discount_rate": 0,
+            "total_product_discount": 0,
+            "total_product_tax": 3166661.467,
+            "total_product": 37178942.417,
+            "total_product_revenue_before_tax": 34012280.95,
+            "total_cost_pretax_amount": 200000,
+            "total_cost_tax": 18000,
+            "total_cost": 218000,
+            "total_expense_pretax_amount": 200000,
+            "total_expense_tax": 0,
+            "total_expense": 200000,
+            "is_customer_confirm": True,
+            "quotation_products_data": [
+                {
+                    "product": product_id,
+                    "product_title": "Máy in HP (trắng đen)",
+                    "product_code": "002",
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "product_uom_title": "Cái",
+                    "product_uom_code": "001",
+                    "tax": tax_code.data['result']['id'],
+                    "product_tax_title": "VAT-8",
+                    "product_tax_value": 8,
+                    "product_tax_amount": 938266.512,
+                    "product_description": "",
+                    "product_quantity": 1,
+                    "product_unit_price": 11728331.4,
+                    "product_discount_value": 0,
+                    "product_discount_amount": 0,
+                    "product_subtotal_price": 11728331.4,
+                    "product_subtotal_price_after_tax": 12666597.912,
+                    "order": 1,
+                    "promotion": None,
+                    "shipping": None
+                },
+                {
+                    "product": product_id,
+                    "product_title": "Máy tính core I5",
+                    "product_code": "001",
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "product_uom_title": "Cái",
+                    "product_uom_code": "001",
+                    "tax": tax_code.data['result']['id'],
+                    "product_tax_title": "VAT-10",
+                    "product_tax_value": 10,
+                    "product_tax_amount": 2228394.955,
+                    "product_description": "",
+                    "product_quantity": 1,
+                    "product_unit_price": 22283949.55,
+                    "product_discount_value": 0,
+                    "product_discount_amount": 0,
+                    "product_subtotal_price": 22283949.55,
+                    "product_subtotal_price_after_tax": 24512344.505000003,
+                    "order": 2,
+                    "promotion": None,
+                    "shipping": None
+                }
+            ],
+            "quotation_costs_data": [
+                {
+                    "product": product_id,
+                    "product_title": "Máy in HP (trắng đen)",
+                    "product_code": "002",
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "product_uom_title": "Cái",
+                    "product_uom_code": "001",
+                    "tax": tax_code.data['result']['id'],
+                    "product_tax_title": "VAT-8",
+                    "product_tax_value": 8,
+                    "product_tax_amount": 8000,
+                    "product_quantity": 1,
+                    "product_cost_price": 100000,
+                    "product_subtotal_price": 100000,
+                    "product_subtotal_price_after_tax": 108000,
+                    "order": 1,
+                    "shipping": None
+                },
+                {
+                    "product": product_id,
+                    "product_title": "Máy tính core I5",
+                    "product_code": "001",
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "product_uom_title": "Cái",
+                    "product_uom_code": "001",
+                    "tax": tax_code.data['result']['id'],
+                    "product_tax_title": "VAT-10",
+                    "product_tax_value": 10,
+                    "product_tax_amount": 10000,
+                    "product_quantity": 1,
+                    "product_cost_price": 100000,
+                    "product_subtotal_price": 100000,
+                    "product_subtotal_price_after_tax": 110000,
+                    "order": 2,
+                    "shipping": None
+                }
+            ],
+            "quotation_expenses_data": [
+                {
+                    "expense": None,
+                    "expense_item": None,
+                    "product": product_id,
+                    "expense_title": "Chi phí tiếp khách",
+                    "expense_code": "010",
+                    "expense_type_title": "Chi phí tiếp khách",
+                    "is_product": True,
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "expense_uom_title": "lần",
+                    "expense_uom_code": "019",
+                    "expense_tax_value": 0,
+                    "expense_tax_amount": 0,
+                    "expense_quantity": 1,
+                    "expense_price": 100000,
+                    "expense_subtotal_price": 100000,
+                    "expense_subtotal_price_after_tax": 100000,
+                    "order": 1
+                },
+                {
+                    "expense": None,
+                    "expense_item": None,
+                    "product": product_id,
+                    "expense_title": "Chi phí quản lý",
+                    "expense_code": "005",
+                    "expense_type_title": "Chi phí triển khai",
+                    "is_product": True,
+                    "unit_of_measure": unit_of_measure.data['result']['id'],
+                    "expense_uom_title": "manhour",
+                    "expense_uom_code": "011",
+                    "expense_tax_value": 0,
+                    "expense_tax_amount": 0,
+                    "expense_quantity": 1,
+                    "expense_price": 100000,
+                    "expense_subtotal_price": 100000,
+                    "expense_subtotal_price_after_tax": 100000,
+                    "order": 2
+                }
+            ],
+            "quotation_logistic_data": {
+                "shipping_address": "",
+                "billing_address": ""
+            },
+        }
+        response2 = self.client.post(url, data2, format='json')
+
+        self.assertResponseList(
+            response2,
+            status_code=status.HTTP_201_CREATED,
+            key_required=['result', 'status'],
+            all_key=['result', 'status'],
+            all_key_from=response2.data,
+            type_match={'result': dict, 'status': int},
+        )
+        self.assertCountEqual(
+            response2.data['result'],
+            [
+                'id',
+                'title',
+                'code',
+                'customer',
+                'sale_person',
+                'date_created',
+                'total_product',
+                'system_status',
+                'opportunity'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_list_quotation(self):
+        self.test_create_quotation()
+        url = reverse('QuotationList')
+        response = self.client.get(url, format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int},
+        )
+        self.assertEqual(
+            len(response.data['result']), 2
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
             [
                 'id',
                 'title',

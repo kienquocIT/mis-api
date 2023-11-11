@@ -13,6 +13,7 @@ from apps.core.models import CoreAbstractModel
 
 class Company(CoreAbstractModel):
     tenant = models.ForeignKey('tenant.Tenant', on_delete=models.CASCADE)
+    code = models.CharField(max_length=25, blank=True)
 
     # license used
     # {
@@ -50,14 +51,39 @@ class Company(CoreAbstractModel):
     media_company_id = models.UUIDField(null=True)
     media_company_code = models.TextField(null=True, blank=True)
 
+    # web builder | tenant_code : 10 + company_code : 25 = 35
+    sub_domain = models.CharField(max_length=35, unique=True)
+
+    def get_detail(self, excludes=None):
+        return {
+            'id': str(self.id),
+            'title': str(self.title) if self.title else None,
+            'code': str(self.code) if self.code else None,
+            'sub_domain': self.sub_domain,
+        }
+
     class Meta:
         verbose_name = 'Company'
         verbose_name_plural = 'Company'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+        unique_together = ('tenant', 'code',)
+
+    @property
+    def config(self) -> Union[None, models.Model]:
+        try:
+            return CompanyConfig.objects.get(company=self)
+        except CompanyConfig.DoesNotExist:
+            pass
+        return None
+
+    def generate_sub_domain(self):
+        if not self.sub_domain:
+            self.sub_domain = f'{self.code}-{self.tenant.code}'.lower()
 
     def save(self, *args, **kwargs):
+        self.generate_sub_domain()
         super().save(*args, **kwargs)
         # update total company of tenant
         if self.tenant:
@@ -301,4 +327,8 @@ class CompanyUserEmployee(SimpleAbstractModel):
 
     @classmethod
     def all_user_of_company(cls, company_id: Union[UUID, str]):
-        return list(set(cls.objects.filter(company_id=company_id).cache().values_list('user_id', flat=True)))
+        return list(
+            set(
+                cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
+            )
+        )

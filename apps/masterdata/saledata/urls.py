@@ -12,18 +12,19 @@ from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, E
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
-    ExpenseTypeList, ExpenseTypeDetail, UnitOfMeasureGroupList, UnitOfMeasureGroupDetail,
-    UnitOfMeasureList, UnitOfMeasureDetail, ProductList, ProductDetail, ProductForSaleList,
+    UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
+    ProductDetail, ProductForSaleList, UnitOfMeasureOfGroupLaborList,
 )
 from apps.masterdata.saledata.views.price import (
     TaxCategoryList, TaxCategoryDetail, TaxList, TaxDetail, CurrencyList, CurrencyDetail, SyncWithVCB,
     PriceList, PriceDetail, PriceDelete, UpdateItemsForPriceList, DeleteItemForPriceList, ItemAddFromPriceList,
 )
 from apps.masterdata.saledata.views import (
-    ShippingList, ShippingDetail,
+    ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
-    WareHouseCheckAvailableProductList,
+    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail
 )
+from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList
 
 urlpatterns = [
     path('salutations', SalutationList.as_view(), name='SalutationList'),
@@ -55,13 +56,11 @@ urlpatterns += [
     path('product-categories', ProductCategoryList.as_view(), name='ProductCategoryList'),
     path('product-category/<str:pk>', ProductCategoryDetail.as_view(), name='ProductCategoryDetail'),
 
-    path('expense-types', ExpenseTypeList.as_view(), name='ExpenseTypeList'),
-    path('expense-type/<str:pk>', ExpenseTypeDetail.as_view(), name='ExpenseTypeDetail'),
-
     path('units-of-measure-group', UnitOfMeasureGroupList.as_view(), name='UnitOfMeasureGroupList'),
     path('unit-of-measure-group/<str:pk>', UnitOfMeasureGroupDetail.as_view(), name='UnitOfMeasureGroupDetail'),
     path('units-of-measure', UnitOfMeasureList.as_view(), name='UnitOfMeasureList'),
     path('unit-of-measure/<str:pk>', UnitOfMeasureDetail.as_view(), name='UnitOfMeasureDetail'),
+    path('uom-group-labor', UnitOfMeasureOfGroupLaborList.as_view(), name='UnitOfMeasureOfGroupLaborList'),
 ]
 
 urlpatterns += [
@@ -119,8 +118,15 @@ urlpatterns += [
 # warehouse
 urlpatterns += [
     path('warehouses', WareHouseList.as_view(), name='WareHouseList'),
+    path(
+        'warehouses-for-inventory-adjustment',
+        WareHouseListForInventoryAdjustment.as_view(),
+        name='WareHouseListForInventoryAdjustment'
+    ),
     path('warehouse/<str:pk>', WareHouseDetail.as_view(), name='WareHouseDetail'),
     path('warehouses-products', ProductWareHouseList.as_view(), name='ProductWareHouseList'),
+    path('warehouses-lots', ProductWareHouseLotList.as_view(), name='ProductWareHouseLotList'),
+    path('warehouses-serials', ProductWareHouseSerialList.as_view(), name='ProductWareHouseSerialList'),
     path(
         'warehouses/check/<str:product_id>/<str:uom_id>', WareHouseCheckAvailableProductList.as_view(),
         name='WareHouseCheckAvailableProductList'
@@ -135,3 +141,10 @@ urlpatterns += [
     path('good-receipt/<str:pk>', GoodReceiptDetail.as_view(), name='GoodReceiptDetail'),
 ]
 # // end good receipt
+
+# expense item
+
+urlpatterns += [
+    path('expense-items', ExpenseItemList.as_view(), name='ExpenseItemList'),
+    path('expense-item/<str:pk>', ExpenseItemDetail.as_view(), name='ExpenseItemDetail'),
+]

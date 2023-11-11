@@ -10,3 +10,5 @@ class AuthMsg:
 
     TENANT_NOT_FOUND = _('The tenant "{}" not found.')
     TENANT_RETURN_MULTIPLE = _('The tenant "{}" was found return more than one records.')
+
+    LANGUAGE_NOT_SUPPORT = _('The language is not support')

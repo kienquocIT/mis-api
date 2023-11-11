@@ -1,6 +1,7 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
 
 
 # CONFIG
@@ -138,6 +139,20 @@ class SaleOrder(DataAbstractModel):
         default=dict,
         help_text="read data logistics, use for get list or detail sale order"
     )
+    customer_shipping = models.ForeignKey(
+        'saledata.AccountShippingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="sale order shipping",
+        related_name="sale_order_customer_shipping",
+        null=True
+    )
+    customer_billing = models.ForeignKey(
+        'saledata.AccountBillingAddress',
+        on_delete=models.CASCADE,
+        verbose_name="sale order billing",
+        related_name="sale_order_customer_billing",
+        null=True
+    )
     sale_order_costs_data = models.JSONField(
         default=list,
         help_text="read data cost, use for get list or detail sale order"
@@ -215,18 +230,121 @@ class SaleOrder(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("OR")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'OR0001-' + StringHandler.random_str(17)
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'OR{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    @classmethod
+    def update_product_wait_delivery_amount(cls, instance):
+        for product_order in instance.sale_order_product_sale_order.all():
+            if product_order.product:
+                uom_product_inventory = product_order.product.inventory_uom
+                uom_product_so = product_order.unit_of_measure
+                final_ratio = 1
+                if uom_product_inventory and uom_product_so:
+                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
+                product_order.product.save(**{
+                    'update_transaction_info': True,
+                    'quantity_order': product_order.product_quantity * final_ratio,
+                    'update_fields': ['wait_delivery_amount', 'available_amount']
+                })
+        return True
+
+    @classmethod
+    def create_report_revenue(cls, instance):
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        ReportRevenue.create_report_revenue_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+            date_approved=instance.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+        )
+        return True
+
+    @classmethod
+    def update_report_product(cls, instance):
+        for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
+            revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
+            gross_profit = 0
+            net_income = 0
+            ReportProduct.update_report_product_from_so(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=so_product.product_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                group_inherit_id=instance.employee_inherit.group_id,
+                date_approved=instance.date_approved,
+                revenue=revenue,
+                gross_profit=gross_profit,
+                net_income=net_income,
+            )
+        return True
+
+    @classmethod
+    def update_report_customer(cls, instance):
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        ReportCustomer.update_report_customer_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            customer_id=instance.customer_id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+            date_approved=instance.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+        )
+        return True
+
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        sale_order = SaleOrder.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "SO"
-        if not self.code:
-            temper = "%04d" % (sale_order + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+        if self.system_status in [2, 3]:
+            if not self.code:
+                self.code = self.generate_code(self.company_id)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+                self.update_product_wait_delivery_amount(self)
+                self.create_report_revenue(self)
+                self.update_report_product(self)
+                self.update_report_customer(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -340,6 +458,14 @@ class SaleOrderProduct(SimpleAbstractModel):
         verbose_name="shipping",
         related_name="sale_order_product_shipping",
         null=True
+    )
+
+    remain_for_purchase_request = models.FloatField(
+        default=0,
+    )
+    remain_for_purchase_order = models.FloatField(
+        default=0,
+        help_text="this is quantity of product which is not purchased order yet, update when PO finish"
     )
 
     class Meta:
@@ -470,7 +596,7 @@ class SaleOrderCost(SimpleAbstractModel):
 
 
 # SUPPORT EXPENSE
-class SaleOrderExpense(SimpleAbstractModel):
+class SaleOrderExpense(MasterDataAbstractModel):
     sale_order = models.ForeignKey(
         SaleOrder,
         on_delete=models.CASCADE,
@@ -483,6 +609,20 @@ class SaleOrderExpense(SimpleAbstractModel):
         on_delete=models.CASCADE,
         verbose_name="expense",
         related_name="sale_order_expense_expense",
+        null=True
+    )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="sale_order_expense_expense_item",
+        null=True
+    )
+    product = models.ForeignKey(
+        'saledata.Product',
+        on_delete=models.CASCADE,
+        verbose_name="product",
+        related_name="sale_order_expense_product",
         null=True
     )
     unit_of_measure = models.ForeignKey(
@@ -506,6 +646,16 @@ class SaleOrderExpense(SimpleAbstractModel):
         null=True
     )
     expense_code = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_title = models.CharField(
+        max_length=100,
+        blank=True,
+        null=True
+    )
+    product_code = models.CharField(
         max_length=100,
         blank=True,
         null=True
@@ -550,6 +700,10 @@ class SaleOrderExpense(SimpleAbstractModel):
     )
     order = models.IntegerField(
         default=1
+    )
+    is_product = models.BooleanField(
+        default=False,
+        help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
 
     class Meta:

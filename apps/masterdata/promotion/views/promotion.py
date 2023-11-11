@@ -1,7 +1,6 @@
 from django.db.models import Q
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework.permissions import IsAuthenticated
 
 from apps.masterdata.promotion.models import Promotion
 from apps.masterdata.promotion.serializers.promotion import PromotionListSerializer, PromotionCreateSerializer, \
@@ -24,7 +23,9 @@ class PromotionList(BaseListMixin, BaseCreateMixin):
         operation_summary="Promotion list",
         operation_description="Master data promotion list, all about setup discount, coupons, gift",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -33,13 +34,15 @@ class PromotionList(BaseListMixin, BaseCreateMixin):
         operation_description="Create new Promotion",
         request_body=PromotionCreateSerializer,
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
 
 class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
-    permission_classes = [IsAuthenticated]
     queryset = Promotion.objects
     serializer_detail = PromotionDetailSerializer
     serializer_update = PromotionUpdateSerializer
@@ -50,15 +53,23 @@ class PromotionDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
         operation_summary="Promotion detail",
         operation_description="get detail, update and delete promotion by ID",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
 
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
 
@@ -92,13 +103,23 @@ class PromotionCheckList(BaseListMixin):
                         filter_q |= Q(customers_map_promotion__id=val_of_key)
         # return query filter
         if len(filter_q) > 0:
-            return super().get_queryset().filter(**filter_expires).filter(filter_q)
-        return super().get_queryset().filter(**filter_expires)
+            return super().get_queryset().select_related(
+                'currency'
+            ).prefetch_related(
+                'sale_order_product_promotion'
+            ).filter(**filter_expires).filter(filter_q)
+        return super().get_queryset().select_related(
+            'currency'
+        ).prefetch_related(
+            'sale_order_product_promotion'
+        ).filter(**filter_expires)
 
     @swagger_auto_schema(
         operation_summary="Promotion list",
         operation_description="Master data promotion list use for check sale's app: quotation, sale-order,...",
     )
-    @mask_view(login_require=True, auth_require=True, code_perm='')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

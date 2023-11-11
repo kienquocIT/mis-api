@@ -13,8 +13,8 @@ ignore=
     migrations,builder,locale,statics,routers,misapi,logs,build.sh,manage.py,
     .pylintrc,tests.py,tests,admin.py,
     mockup_data.py,crawl_vietnam_address.py,vietnam_info,
-    mail.py
-ignore-paths: apps\core\account\views.py
+    mail.py,scripts.py,signals.py,sharedapp,mask_view.py,mixins.py
+ignore-patterns=z_testing_.*?py
 disable=
     C0114, # missing-module-docstring
     C0115, # missing-class-docstring
@@ -29,3 +29,4 @@ disable=
     W0237, # arguments-renamed
     R0801, # duplicate-code
     F0002, # astroid-error
+good-names=id

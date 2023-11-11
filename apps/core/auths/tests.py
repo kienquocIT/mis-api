@@ -3,8 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 
-from apps.core.provisioning.tests import TestCaseProvisioning
-from apps.shared import AdvanceTestCase
+from apps.shared.extends.tests import AdvanceTestCase, count_queries
 
 
 class TestCaseAuth(AdvanceTestCase):
@@ -15,6 +14,7 @@ class TestCaseAuth(AdvanceTestCase):
     def test_login(self):
         return self._login()
 
+    @count_queries
     def test_my_profile(self):
         self.authenticated()
         url = reverse('MyProfile')
@@ -35,6 +35,7 @@ class TestCaseAuth(AdvanceTestCase):
         )
         return response.data['result']['data']
 
+    @count_queries
     def test_alive_check(self):
         self.authenticated()
         url = reverse('AliveCheck')
@@ -53,6 +54,7 @@ class TestCaseAuth(AdvanceTestCase):
         self.assertEqual(response.data['result']['state'], 'You are still alive.')
         return response.data
 
+    @count_queries
     def test_refresh_token(self):
         login_data = self.test_login()
         self.authenticated(login_data)
@@ -72,6 +74,7 @@ class TestCaseAuth(AdvanceTestCase):
         )
         return response.data['result']
 
+    @count_queries
     def test_switch_company(self):
         # call login
         # call add to another company, in tenant.

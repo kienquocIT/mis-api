@@ -12,7 +12,7 @@ from apps.core.company.models import Company, CompanyConfig
 from apps.sharedapp.data.base import (
     SubscriptionPlan_data, Application_data, PlanApplication_data, PermissionApplication_data,
     Currency_data, BaseItemUnit_data,
-    ApplicationProperty_data, IndicatorParam_data,
+    ApplicationProperty_data, IndicatorParam_data, check_app_depends_and_mapping,
 )
 from apps.sharedapp.data.vietnam_info import (
     Country_data, Cities_VN_data, Districts_VN_data, Wards_VN_data,
@@ -36,17 +36,20 @@ class Command(BaseCommand):
         #     f'{sys.style.WARNING(str(item[0]))}: {self.style.SUCCESS(str(item[1]))} loaded, '
         #     f'{sys.style.ERROR(str(item[2]))} diff'
         # )
-        is_limit_wards = options.get('limit_wards', False)
-        text_destroy_diff = options.get('destroy_diff', '')
-        arr_destroy_diff = []
-        if text_destroy_diff:
-            arr_destroy_diff = [x.strip().lower() for x in options.get('destroy_diff', '').split(",")]
+        if check_app_depends_and_mapping():
+            is_limit_wards = options.get('limit_wards', False)
+            text_destroy_diff = options.get('destroy_diff', '')
+            arr_destroy_diff = []
+            if text_destroy_diff:
+                arr_destroy_diff = [x.strip().lower() for x in options.get('destroy_diff', '').split(",")]
 
-        InitialsData().loads(
-            is_limit_wards=is_limit_wards,
-            arr_destroy_diff=arr_destroy_diff,
-        )
-        self.stdout.write(self.style.SUCCESS('Successfully initials data.'))
+            InitialsData().loads(
+                is_limit_wards=is_limit_wards,
+                arr_destroy_diff=arr_destroy_diff,
+            )
+            self.stdout.write(self.style.SUCCESS('Successfully initials data.'))
+        else:
+            self.stdout.write(self.style.ERROR('Initials data is incorrect format.'))
 
 
 class InitialsData:
@@ -115,6 +118,11 @@ class InitialsData:
 
     @classmethod
     def active_loads(cls, cls_model: Model, data: dict, is_destroy_diff: bool) -> any:
+        if isinstance(cls_model, PlanApplication):
+            tmp = PlanApplication.objects.all().delete()
+            if tmp:
+                tmp.delete()
+
         for idx, more_fields in data.items():
             obj, _created = cls_model.objects.get_or_create(pk=idx, defaults=more_fields)
             if _created is False:

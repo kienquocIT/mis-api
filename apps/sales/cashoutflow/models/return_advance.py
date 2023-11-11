@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RETURN_ADVANCE_STATUS
 from .advance_payment import AdvancePaymentCost
 
 
@@ -10,9 +10,6 @@ __all__ = ['ReturnAdvance', 'ReturnAdvanceCost']
 RETURN_ADVANCE_METHOD = [
     (0, _('Cash')),
     (1, _('Bank Transfer')),
-]
-RETURN_ADVANCE_STATUS = [
-    (0, _('Approved')),
 ]
 
 
@@ -28,16 +25,6 @@ class ReturnAdvance(DataAbstractModel):
         verbose_name='method return',
         help_text='0 is Cash, 1 is Bank Transfer',
         default=0
-    )
-    creator = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='creator_name'
-    )
-    beneficiary = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        related_name='beneficiary'
     )
     status = models.SmallIntegerField(
         choices=RETURN_ADVANCE_STATUS,
@@ -62,7 +49,7 @@ class ReturnAdvance(DataAbstractModel):
             fill__company=True,
             is_delete=False
         ).count()
-        char = "RA.CODE."
+        char = "RP"
         if not self.code:
             temper = "%04d" % (return_advance + 1)  # pylint: disable=C0209
             code = f"{char}{temper}"
@@ -84,6 +71,17 @@ class ReturnAdvanceCost(SimpleAbstractModel):
         null=True,
         related_name='advance_payment_cost',
     )
+    expense_type = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        null=True,
+        related_name='return_advance_expense'
+    )
+    expense_name = models.CharField(
+        max_length=150,
+        null=True
+    )
+
     remain_value = models.FloatField(
         default=0,
     )

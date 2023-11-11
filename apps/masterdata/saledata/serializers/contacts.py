@@ -173,7 +173,6 @@ class ContactListSerializer(AbstractListSerializerModel):
 
 
 class ContactCreateSerializer(AbstractCreateSerializerModel):
-
     class Meta:
         model = Contact
         fields = (
@@ -190,6 +189,16 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
             "address_information",
             "additional_information",
             'account_name',
+            'work_detail_address',
+            'work_country',
+            'work_city',
+            'work_district',
+            'work_ward',
+            'home_detail_address',
+            'home_country',
+            'home_city',
+            'home_district',
+            'home_ward',
             'system_status',
         )
 
@@ -217,25 +226,6 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
             return attrs
         return None
 
-    def validate(self, validate_data):
-        home_address_dict = self.initial_data.get('home_address_dict', [])
-        work_address_dict = self.initial_data.get('work_address_dict', [])
-        if len(home_address_dict) > 0:
-            home_address_dict = home_address_dict[0]
-            for key, _ in home_address_dict.items():
-                if key not in ['home_detail_address']:
-                    validate_data[key] = home_address_dict.get(key, None)
-                else:
-                    validate_data[key] = home_address_dict.get(key, '')
-        if len(work_address_dict) > 0:
-            work_address_dict = work_address_dict[0]
-            for key, _ in work_address_dict.items():
-                if key not in ['work_detail_address']:
-                    validate_data[key] = work_address_dict.get(key, None)
-                else:
-                    validate_data[key] = work_address_dict.get(key, '')
-        return validate_data
-
     @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
@@ -246,6 +236,15 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
 
 
 class ContactDetailSerializer(AbstractDetailSerializerModel):
+    work_country = serializers.SerializerMethodField()
+    work_city = serializers.SerializerMethodField()
+    work_district = serializers.SerializerMethodField()
+    work_ward = serializers.SerializerMethodField()
+    home_country = serializers.SerializerMethodField()
+    home_city = serializers.SerializerMethodField()
+    home_district = serializers.SerializerMethodField()
+    home_ward = serializers.SerializerMethodField()
+
     salutation = serializers.SerializerMethodField()
     owner = serializers.SerializerMethodField()
     report_to = serializers.SerializerMethodField()
@@ -269,7 +268,73 @@ class ContactDetailSerializer(AbstractDetailSerializerModel):
             "address_information",
             "additional_information",
             "account_name",
+            'work_detail_address',
+            'work_country',
+            'work_city',
+            'work_district',
+            'work_ward',
+            'home_detail_address',
+            'home_country',
+            'home_city',
+            'home_district',
+            'home_ward',
         )
+
+    @classmethod
+    def get_work_ward(cls, obj):
+        return {
+            'id': obj.work_ward.id,
+            'title': obj.work_ward.title
+        } if obj.work_ward else {}
+
+    @classmethod
+    def get_home_ward(cls, obj):
+        return {
+            'id': obj.home_ward.id,
+            'title': obj.home_ward.title
+        } if obj.home_ward else {}
+
+    @classmethod
+    def get_work_district(cls, obj):
+        return {
+            'id': obj.work_district.id,
+            'title': obj.work_district.title,
+        } if obj.work_district else {}
+
+    @classmethod
+    def get_home_district(cls, obj):
+        return {
+            'id': obj.home_district.id,
+            'title': obj.home_district.title,
+        } if obj.home_district else {}
+
+    @classmethod
+    def get_work_city(cls, obj):
+        return {
+            'id': obj.work_city.id,
+            'title': obj.work_city.title,
+        } if obj.work_city else {}
+
+    @classmethod
+    def get_home_city(cls, obj):
+        return {
+            'id': obj.home_city.id,
+            'title': obj.home_city.title,
+        } if obj.home_city else {}
+
+    @classmethod
+    def get_work_country(cls, obj):
+        return {
+            'id': obj.work_country.id,
+            'title': obj.work_country.title,
+        } if obj.work_country else {}
+
+    @classmethod
+    def get_home_country(cls, obj):
+        return {
+            'id': obj.home_country.id,
+            'title': obj.home_country.title,
+        } if obj.home_country else {}
 
     @classmethod
     def get_salutation(cls, obj):
@@ -433,9 +498,7 @@ class ContactListNotMapAccountSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_owner(cls, obj):
-        if obj.owner:
-            return {
-                'id': obj.owner_id,
-                'fullname': obj.owner.get_full_name(2)
-            }
-        return {}
+        return {
+            'id': obj.owner_id,
+            'fullname': obj.owner.get_full_name(2)
+        } if obj.owner else {}

@@ -11,6 +11,9 @@ from django_celery_results.models import TaskResult
 
 from misapi import celery_app
 
+from .utils import CustomizeEncoder
+
+
 logger = get_task_logger(__name__)
 
 __all__ = ['call_task_background', 'check_active_celery_worker']
@@ -21,6 +24,10 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
     Function support call task with async. Then update args and kwargs of log records by Task ID.
     countdown: seconds
     """
+
+    if settings.DEBUG_BG_TASK:
+        print('[T] call_task_background   : ', getattr(my_task, 'name', '**TASK_NAME_FAIL**'), args, kwargs)
+
     countdown = kwargs.pop('countdown', 0)
     _id = kwargs.pop('task_id', str(uuid4()))
     if isinstance(my_task, Task):
@@ -30,7 +37,10 @@ def call_task_background(my_task: callable, *args, **kwargs) -> Union[Exception,
             args=args, kwargs=kwargs,
             task_id=_id,
             link=my_task_result.s(
-                _id, task_path=str(f'{my_task.__module__}.{my_task.__name__}'), task_args=args, task_kwargs=kwargs
+                _id,
+                task_path=str(f'{my_task.__module__}.{my_task.__name__}'),
+                task_args=json.dumps(args, cls=CustomizeEncoder),
+                task_kwargs=json.dumps(kwargs, cls=CustomizeEncoder),
             ),
             countdown=countdown,
         )
@@ -53,9 +63,9 @@ def my_task_result(sender, task_id, task_path, task_args, task_kwargs):  # pylin
     """
     try:
         task_result = TaskResult.objects.get(task_id=task_id)
-        task_result.task_name = task_path
-        task_result.task_args = json.dumps(task_args)
-        task_result.task_kwargs = json.dumps(task_kwargs)
+        task_result.task_name = str(task_path)
+        task_result.task_args = str(task_args)
+        task_result.task_kwargs = str(task_kwargs)
         task_result.save()
         return True
     except Exception as err:
