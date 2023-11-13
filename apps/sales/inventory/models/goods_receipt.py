@@ -167,21 +167,18 @@ class GoodsReceipt(DataAbstractModel):
                     'warranty_start': serial.warranty_start,
                     'warranty_end': serial.warranty_end,
                 })
-            # Check if product and product has inventory choice
-            if gr_warehouse.goods_receipt_product.product:
-                if 1 in gr_warehouse.goods_receipt_product.product.product_choice:
-                    ProductWareHouse.push_from_receipt(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product_id=gr_warehouse.goods_receipt_product.product_id,
-                        warehouse_id=gr_warehouse.warehouse_id,
-                        uom_id=uom_product_inventory.id,
-                        tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                        amount=gr_warehouse.quantity_import * final_ratio,
-                        unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                        lot_data=lot_data,
-                        serial_data=serial_data,
-                    )
+            ProductWareHouse.push_from_receipt(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=gr_warehouse.goods_receipt_product.product_id,
+                warehouse_id=gr_warehouse.warehouse_id,
+                uom_id=uom_product_inventory.id,
+                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
+                amount=gr_warehouse.quantity_import * final_ratio,
+                unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
+                lot_data=lot_data,
+                serial_data=serial_data,
+            )
         return True
 
     @classmethod
