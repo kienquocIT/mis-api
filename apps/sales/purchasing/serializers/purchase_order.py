@@ -312,6 +312,7 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
             'code': obj.product.code,
             'general_traceability_method': obj.product.general_traceability_method,
             'description': obj.product.description,
+            'product_choice': obj.product.product_choice,
         } if obj.product else {}
 
     @classmethod
