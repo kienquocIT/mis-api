@@ -15,7 +15,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     serializer_create = ReturnAdvanceCreateSerializer
     serializer_detail = ReturnAdvanceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
         return super().get_queryset().select_related(

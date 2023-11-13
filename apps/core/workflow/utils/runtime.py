@@ -72,7 +72,8 @@ class DocHandler:
     @classmethod
     def force_finish(cls, obj):
         setattr(obj, 'system_status', 3)  # finish
-        obj.save(update_fields=['system_status'])
+        setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
+        obj.save(update_fields=['system_status', 'date_approved'])
         return True
 
     @classmethod
@@ -87,7 +88,8 @@ class DocHandler:
             match approved_or_rejected:
                 case 'approved':
                     setattr(obj, 'system_status', 3)  # finish
-                    obj.save(update_fields=['system_status'])
+                    setattr(obj, 'date_approved', timezone.now())  # date finish (approved)
+                    obj.save(update_fields=['system_status', 'date_approved'])
                 case 'rejected':
                     setattr(obj, 'system_status', 4)  # cancel with reject
                     obj.save(update_fields=['system_status'])
@@ -593,6 +595,20 @@ class RuntimeStageHandler:
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
                 ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
+
+        # update current_stage for document
+        if stage_obj:
+            obj = DocHandler(self.runtime_obj.doc_id, self.runtime_obj.app_code).get_obj(
+                default_filter={
+                    'tenant_id': self.runtime_obj.tenant_id,
+                    'company_id': self.runtime_obj.company_id,
+                }
+            )
+            if obj:
+                setattr(obj, 'current_stage', stage_obj)
+                setattr(obj, 'current_stage_title', stage_obj.title)
+                obj.save(update_fields=['current_stage', 'current_stage_title'])
+
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
         if len(assignee_created) == 0:

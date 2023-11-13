@@ -1,17 +1,21 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-
 from apps.masterdata.saledata.models import ProductPriceList
-from apps.sales.quotation.models import Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, \
-    QuotationProduct, QuotationCost
-from apps.sales.quotation.serializers.quotation_config import QuotationConfigDetailSerializer, \
-    QuotationConfigUpdateSerializer
-from apps.sales.quotation.serializers.quotation_indicator import IndicatorListSerializer, IndicatorCreateSerializer, \
+from apps.sales.quotation.models import (
+    Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, QuotationProduct, QuotationCost
+)
+from apps.sales.quotation.serializers.quotation_config import (
+    QuotationConfigDetailSerializer, QuotationConfigUpdateSerializer
+)
+from apps.sales.quotation.serializers.quotation_indicator import (
+    IndicatorListSerializer, IndicatorCreateSerializer,
     IndicatorUpdateSerializer, IndicatorCompanyRestoreSerializer
-from apps.sales.quotation.serializers.quotation_serializers import QuotationListSerializer, QuotationCreateSerializer, \
-    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer,\
-    QuotationListSerializerForCashOutFlow
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, TypeCheck
+)
+from apps.sales.quotation.serializers.quotation_serializers import (
+    QuotationListSerializer, QuotationCreateSerializer,
+    QuotationDetailSerializer, QuotationUpdateSerializer, QuotationExpenseListSerializer
+)
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class QuotationList(BaseListMixin, BaseCreateMixin):
@@ -171,12 +175,7 @@ class QuotationExpenseList(BaseListMixin):
     serializer_list = QuotationExpenseListSerializer
 
     def get_queryset(self):
-        filter_quotation = self.request.query_params.get('filter_quotation', None)
-        if filter_quotation and TypeCheck.check_uuid(filter_quotation):
-            return super().get_queryset().select_related("tax").filter(
-                quotation_id=filter_quotation
-            )
-        return QuotationExpense.objects.none()
+        return super().get_queryset().select_related("tax")
 
     @swagger_auto_schema(
         operation_summary="QuotationExpense List",
@@ -287,22 +286,3 @@ class QuotationIndicatorCompanyRestore(
     @mask_view(login_require=True, auth_require=False)
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
-
-
-class QuotationListForCashOutFlow(BaseListMixin):
-    queryset = Quotation.objects
-    filterset_fields = ['opportunity', 'sale_person']
-    serializer_list = QuotationListSerializerForCashOutFlow
-    list_hidden_field = ['tenant_id', 'company_id']
-
-    def get_queryset(self):
-        return super().get_queryset().select_related("customer", "sale_person", "opportunity")
-
-    @swagger_auto_schema(
-        operation_summary="Quotation List For Cash OutFlow",
-        operation_description="Get Quotation List For Cash OutFlow",
-    )
-    @mask_view(login_require=True, auth_require=False)
-    def get(self, request, *args, **kwargs):
-        self.paginator.page_size = -1
-        return self.list(request, *args, **kwargs)

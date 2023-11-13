@@ -1,11 +1,10 @@
 from rest_framework import serializers
 
-from apps.sales.report.models import ReportRevenue
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 
 
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
-    indicator = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportRevenue
@@ -13,7 +12,9 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
             'id',
             'sale_order',
             'date_approved',
-            'indicator',
+            'revenue',
+            'gross_profit',
+            'net_income',
         )
 
     @classmethod
@@ -38,12 +39,60 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
             } if obj.sale_order.employee_inherit else {},
         } if obj.sale_order else {}
 
+
+class ReportProductListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportProduct
+        fields = (
+            'id',
+            'product',
+            'date_approved',
+            'revenue',
+            'gross_profit',
+            'net_income',
+        )
+
     @classmethod
-    def get_indicator(cls, obj):
-        return [
-            {
-                'id': so_indicator.id,
-                'code': so_indicator.code,
-                'indicator_value': so_indicator.indicator_value,
-            } for so_indicator in obj.sale_order.sale_order_indicator_sale_order.all()
-        ]
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_product_category': {
+                'id': obj.product.general_product_category_id,
+                'title': obj.product.general_product_category.title,
+                'code': obj.product.general_product_category.code,
+                'description': obj.product.general_product_category.description,
+            } if obj.product.general_product_category else {}
+        } if obj.product else {}
+
+
+class ReportCustomerListSerializer(serializers.ModelSerializer):
+    customer = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportCustomer
+        fields = (
+            'id',
+            'customer',
+            'date_approved',
+            'revenue',
+            'gross_profit',
+            'net_income',
+        )
+
+    @classmethod
+    def get_customer(cls, obj):
+        return {
+            'id': obj.customer_id,
+            'title': obj.customer.name,
+            'code': obj.customer.code,
+            'industry': {
+                'id': obj.customer.industry_id,
+                'title': obj.customer.industry.title,
+                'code': obj.customer.industry.code,
+                'description': obj.customer.industry.description,
+            } if obj.customer.industry else {}
+        } if obj.customer else {}

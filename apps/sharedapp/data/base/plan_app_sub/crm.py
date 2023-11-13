@@ -706,7 +706,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "create": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -716,7 +716,7 @@ RETURN_ADVANCE_APP_CONFIG = {
         "edit": {
             "range": ["1", "4"],
             "app_depends_on": {
-                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "==", },
+                "57725469-8b04-428a-a4b0-578091d0e4f5": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
             "local_depends_on": {
@@ -1195,6 +1195,82 @@ REPORT_REVENUE_APP_CONFIG = {
     },
 }
 
+REPORT_PRODUCT_APP_CONFIG = {
+    "id": "2a709d75-35a7-49c8-84bf-c350164405bc",
+    "title": "Report Product",
+    "code": "reportproduct",
+    "model_code": "reportproduct",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
+REPORT_CUSTOMER_APP_CONFIG = {
+    "id": "d633036a-8937-4f9d-a227-420e061496fc",
+    "title": "Report Customer",
+    "code": "reportcustomer",
+    "model_code": "reportcustomer",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1363,6 +1439,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "c3260940-21ff-4929-94fe-43bc4199d38b": ApplicationConfigFrame(**REPORT_REVENUE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "2a709d75-35a7-49c8-84bf-c350164405bc": ApplicationConfigFrame(**REPORT_PRODUCT_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "d633036a-8937-4f9d-a227-420e061496fc": ApplicationConfigFrame(**REPORT_CUSTOMER_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )
