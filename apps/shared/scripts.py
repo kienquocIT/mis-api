@@ -971,7 +971,7 @@ def update_product_wait_delivery_amount(product_id):
     if product:
         product_ordered_quantity = 0
         for product_ordered in product.sale_order_product_product.filter(
-            sale_order__system_status__in=[2, 3]
+                sale_order__system_status__in=[2, 3]
         ):
             if product_ordered.product:
                 uom_product_inventory = product_ordered.product.inventory_uom
@@ -1069,21 +1069,25 @@ def update_product_warehouse_receipt_amount():
                     lot.lot.quantity_import += lot.quantity_import * final_ratio
                     lot.lot.save(update_fields=['quantity_import'])
                 else:
-                    lot_data.append({
-                        'lot_number': lot.lot_number,
-                        'quantity_import': lot.quantity_import * final_ratio,
-                        'expire_date': lot.expire_date,
-                        'manufacture_date': lot.manufacture_date,
-                    })
+                    lot_data.append(
+                        {
+                            'lot_number': lot.lot_number,
+                            'quantity_import': lot.quantity_import * final_ratio,
+                            'expire_date': lot.expire_date,
+                            'manufacture_date': lot.manufacture_date,
+                        }
+                    )
             for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
-                serial_data.append({
-                    'vendor_serial_number': serial.vendor_serial_number,
-                    'serial_number': serial.serial_number,
-                    'expire_date': serial.expire_date,
-                    'manufacture_date': serial.manufacture_date,
-                    'warranty_start': serial.warranty_start,
-                    'warranty_end': serial.warranty_end,
-                })
+                serial_data.append(
+                    {
+                        'vendor_serial_number': serial.vendor_serial_number,
+                        'serial_number': serial.serial_number,
+                        'expire_date': serial.expire_date,
+                        'manufacture_date': serial.manufacture_date,
+                        'warranty_start': serial.warranty_start,
+                        'warranty_end': serial.warranty_end,
+                    }
+                )
             ProductWareHouse.push_from_receipt(
                 tenant_id=gr.tenant_id,
                 company_id=gr.company_id,
@@ -1097,6 +1101,8 @@ def update_product_warehouse_receipt_amount():
                 serial_data=serial_data,
             )
     print('update product warehouse done.')
+
+
 # END PRODUCT TRANSACTION INFORMATION
 
 
@@ -1110,6 +1116,8 @@ def update_po_request_product_for_gr_request_product():
                 gr_request_product.save()
                 break
     print('update_po_request_product_for_gr_request_product done.')
+
+
 # END INVENTORY
 
 
@@ -1156,10 +1164,12 @@ def update_gr_info_for_po():
                     gr_po_product.purchase_order_product.gr_remain_quantity,
                     2
                 )
-                gr_po_product.purchase_order_product.save(update_fields=[
-                    'gr_completed_quantity',
-                    'gr_remain_quantity'
-                ])
+                gr_po_product.purchase_order_product.save(
+                    update_fields=[
+                        'gr_completed_quantity',
+                        'gr_remain_quantity'
+                    ]
+                )
         for gr_pr_product in gr.goods_receipt_request_product_goods_receipt.all():
             if gr_pr_product.purchase_order_request_product:
                 gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
@@ -1172,10 +1182,12 @@ def update_gr_info_for_po():
                     gr_pr_product.purchase_order_request_product.gr_remain_quantity,
                     2
                 )
-                gr_pr_product.purchase_order_request_product.save(update_fields=[
-                    'gr_completed_quantity',
-                    'gr_remain_quantity'
-                ])
+                gr_pr_product.purchase_order_request_product.save(
+                    update_fields=[
+                        'gr_completed_quantity',
+                        'gr_remain_quantity'
+                    ]
+                )
     #
     for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
         if gr.purchase_order:
@@ -1189,6 +1201,8 @@ def update_gr_info_for_po():
                 gr.purchase_order.receipt_status = 2
                 gr.purchase_order.save(update_fields=['receipt_status'])
     print('update_gr_info_for_po done.')
+
+
 # END PURCHASING
 
 
@@ -1197,14 +1211,6 @@ def make_permission_records():
         print('Employee:', obj)
         obj_permit, _created = EmployeePermission.objects.get_or_create(employee=obj)
         obj_permit.call_sync()
-
-
-
-
-
-
-
-
 
     for obj in Role.objects.all():
         print('Role:', obj)
@@ -1254,15 +1260,17 @@ def update_code_quotation_sale_order_indicator():
 
 def update_record_report_revenue():
     ReportRevenue.objects.all().delete()
-    ReportRevenue.objects.bulk_create([ReportRevenue(
-        tenant_id=so.tenant_id,
-        company_id=so.company_id,
-        sale_order_id=so.id,
-        employee_created_id=so.employee_created_id,
-        employee_inherit_id=so.employee_inherit_id,
-        group_inherit_id=so.employee_inherit.group_id,
-        date_approved=so.date_created,
-    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    ReportRevenue.objects.bulk_create(
+        [ReportRevenue(
+            tenant_id=so.tenant_id,
+            company_id=so.company_id,
+            sale_order_id=so.id,
+            employee_created_id=so.employee_created_id,
+            employee_inherit_id=so.employee_inherit_id,
+            group_inherit_id=so.employee_inherit.group_id,
+            date_approved=so.date_created,
+        ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)]
+    )
     print('update_record_report_revenue done.')
 
 
@@ -1276,3 +1284,9 @@ def update_space_range_opp_member():
                 item['range'] = str(item['range'])
         obj.save()
     return True
+
+
+def update_available():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_update()
+    print('update leave available done')
