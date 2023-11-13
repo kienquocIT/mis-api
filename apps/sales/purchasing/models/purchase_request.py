@@ -78,7 +78,8 @@ class PurchaseRequest(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            code = 'PR0001-' + StringHandler.random_str(17)
+            # code = 'PR0001-' + StringHandler.random_str(17)
+            code = 'PR0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
             code = f'PR{num_str}'
