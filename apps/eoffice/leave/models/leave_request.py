@@ -120,7 +120,7 @@ class LeaveRequest(DataAbstractModel):
                 employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['id'], is_delete=False
             )
             # nếu ko có quản lý số dư và code ko phài là FF, MY, MC thì ko trừ available
-            if not get_leave.exists():
+            if not get_leave.exists():  # pylint: disable=R1724
                 continue
             else:
                 get_leave = get_leave.first()
