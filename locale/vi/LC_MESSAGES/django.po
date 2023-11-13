@@ -529,3 +529,11 @@ msgstr "Bởi người dùng"
 #
 msgid "Quantity number is wrong format"
 msgstr "Số lượng sai định dạng"
+
+#
+msgid "Day off large than leave available"
+msgstr "Ngày nghỉ lớn hơn ngày phép đang có"
+
+#
+msgid "Leave available had expired"
+msgstr "Ngày nghỉ đã hết hạn"

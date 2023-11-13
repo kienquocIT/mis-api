@@ -19,3 +19,5 @@ class LeaveMsg:
     TYPE_SYS = _('By system')
     TYPE_EM = _('By employee')
     ERROR_QUANTITY = _('Quantity number is wrong format')
+    EMPTY_AVAILABLE_NUMBER = _('Day off large than leave available')
+    EMPTY_DATE_EXPIRED = _('Leave available had expired')
