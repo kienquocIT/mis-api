@@ -119,18 +119,18 @@ class LeaveRequest(DataAbstractModel):
             get_leave = LeaveAvailable.objects.filter(
                 employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['id'], is_delete=False
             )
-            # nếu ko có quản lý số dư và code ko phài là FF, MY, MC thì ko trừ available
+            # nếu ko có quản lý số dư thì ko trừ available
             if not get_leave.exists():  # pylint: disable=R1724
                 continue
             else:
                 get_leave = get_leave.first()
-                if not get_leave.check_balance and get_leave.leave_type.code not in ['FF', 'MY', 'MC']:
+                if not get_leave.check_balance:
                     continue
-            # các leave có quản lý số dư leave ANPY, AN, FF, MY, MC dc phép trừ stock
+            # các leave có quản lý số dư dc phép trừ stock
             # nếu số dư ko đủ raise lỗi
             if item['subtotal'] > get_leave.available:
                 raise ValueError(LeaveMsg.EMPTY_AVAILABLE_NUMBER)
-            if leave_type['code'] in ['ANPY', 'AN', 'FF', 'MY', 'MC'] or get_leave.check_balance:
+            if get_leave.check_balance:
                 crt_time = timezone.now().date()
                 leave_exp = get_leave.expiration_date
                 if crt_time > leave_exp:
