@@ -27,6 +27,7 @@ class CurrencyRuleDetail(serializers.Serializer):  # noqa
 class CompanyConfigDetailSerializer(serializers.ModelSerializer):
     currency = serializers.SerializerMethodField()
     currency_rule = CurrencyRuleDetail()
+    sub_domain = serializers.SerializerMethodField()
 
     @classmethod
     def get_currency(cls, obj):
@@ -37,9 +38,13 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
             "symbol": obj.currency.symbol
         } if obj.currency else {}
 
+    @classmethod
+    def get_sub_domain(cls, obj):
+        return obj.company.sub_domain if obj.company else ''
+
     class Meta:
         model = CompanyConfig
-        fields = ('language', 'currency', 'currency_rule',)
+        fields = ('language', 'currency', 'currency_rule', 'sub_domain')
 
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
