@@ -1,9 +1,9 @@
 import json
-from copy import deepcopy
 
 from django.db import models
+from django.utils import timezone
 
-from apps.shared import DataAbstractModel, TYPE_LIST
+from apps.shared import DataAbstractModel, TYPE_LIST, LeaveMsg
 
 __all__ = ['LeaveRequestDateListRegister', 'LeaveRequest', 'LeaveAvailable', 'LeaveAvailableHistory']
 
@@ -115,90 +115,49 @@ class LeaveRequest(DataAbstractModel):
         # trừ leave available và ghi history
         type_list = self.detail_data
         for item in type_list:
-            leave_type = item['leave_type']
-            if leave_type['leave_type']['code'] == 'ANPY':
-                get_leave = LeaveAvailable.objects.filter(
-                    employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
-                    check_balance=True
-                ).order_by('open_year')
-            else:
-                get_leave = LeaveAvailable.objects.get(
-                    employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['leave_type']['id'],
-                    check_balance=True
-                )
-            if not get_leave.exists():
+            leave_type = item['leave_type']['leave_type']
+            get_leave = LeaveAvailable.objects.filter(
+                employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['id'], is_delete=False
+            )
+            # nếu ko có quản lý số dư và code ko phài là FF, MY, MC thì ko trừ available
+            if not get_leave.exists():  # pylint: disable=R1724
                 continue
-            leave_result = get_leave.first()
-            # nếu ko phải là phép dư năm trước
-            if not leave_type['leave_type']['code'] == 'ANPY':
-                if item['subtotal'] > leave_result.available:
-                    raise ValueError("Day off large than leave available")
-                leave_result.used += item['subtotal']
-                leave_result.available = leave_result.total - leave_result.used
-            else:  # pylint: disable=R1724
-                # lỗi ko xài else sau continue này đang logic đúng.
-                if item['subtotal'] > leave_result.available:
-                    odd = item['subtotal'] - deepcopy(leave_result.available)
-                    leave_result.used += leave_result.available
-                    leave_result.available = 0
-                    leave_result.save(update_fields=['used', 'total', 'available'])
-
-                    # create history log
-                    LeaveAvailableHistory.objects.create(
-                        employee_inherit=leave_result.employee_inherit,
-                        tenant=leave_result.tenant,
-                        company=leave_result.company,
-                        leave_available=leave_result,
-                        total=0,
-                        action=2,
-                        quantity=item['subtotal'] - odd,
-                        adjusted_total=item['subtotal'] - odd,
-                        remark=str(TYPE_LIST[2][1]),
-                        type_arises=3
-                    )
-                    leave_second = get_leave[1]
-                    if odd > leave_second.available:
-                        raise ValueError("Day off large than leave available")
-                    leave_second.used += odd
-                    leave_second.available = leave_second.total - leave_second.used
-                    leave_second.save(update_fields=['used', 'total', 'available'])
-                    LeaveAvailableHistory.objects.create(
-                        employee_inherit=leave_second.employee_inherit,
-                        tenant=leave_second.tenant,
-                        company=leave_second.company,
-                        leave_available=leave_second,
-                        total=leave_second.total - odd,
-                        action=2,
-                        quantity=odd,
-                        adjusted_total=odd,
-                        remark=str(TYPE_LIST[2][1]),
-                        type_arises=3
-                    )
+            else:
+                get_leave = get_leave.first()
+                if not get_leave.check_balance and get_leave.leave_type.code not in ['FF', 'MY', 'MC']:
                     continue
-                else:
-                    leave_result.used += item['subtotal']
-                    leave_result.available = leave_result.total - leave_result.used
-            leave_result.save(update_fields=['used', 'total', 'available'])
+            # các leave có quản lý số dư leave ANPY, AN, FF, MY, MC dc phép trừ stock
+            # nếu số dư ko đủ raise lỗi
+            if item['subtotal'] > get_leave.available:
+                raise ValueError(LeaveMsg.EMPTY_AVAILABLE_NUMBER)
+            if leave_type['code'] in ['ANPY', 'AN', 'FF', 'MY', 'MC'] or get_leave.check_balance:
+                crt_time = timezone.now().date()
+                leave_exp = get_leave.expiration_date
+                if crt_time > leave_exp:
+                    raise ValueError(LeaveMsg.EMPTY_DATE_EXPIRED)
+            get_leave.used += item['subtotal']
+            get_leave.available = get_leave.total - get_leave.used
+            get_leave.save(update_fields=['used', 'available'])
+
             LeaveAvailableHistory.objects.create(
-                employee_inherit=leave_result.employee_inherit,
-                tenant=leave_result.tenant,
-                company=leave_result.company,
-                leave_available=leave_result,
-                total=leave_result.total - item['subtotal'],
+                employee_inherit=get_leave.employee_inherit,
+                tenant=get_leave.tenant,
+                company=get_leave.company,
+                leave_available=get_leave,
+                total=get_leave.total - item['subtotal'],
                 action=2,
                 quantity=item['subtotal'],
                 adjusted_total=item['subtotal'],
                 remark=str(TYPE_LIST[2][1]),
                 type_arises=3
             )
-        return True
 
     def before_save(self):
         self.minus_available()
         self.create_code()
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        if self.system_status == 3:
             self.before_save()
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):

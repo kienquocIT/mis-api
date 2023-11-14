@@ -1062,3 +1062,8 @@ def update_date_approved_sales_apps():
         gr.date_approved = gr.date_created
         gr.save(update_fields=['date_approved'])
     print('update_date_approved_sales_apps done.')
+
+def update_available():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_update()
+    print('update leave available done')

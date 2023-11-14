@@ -41,7 +41,7 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaverequest', perm_code='create'
+        label_code='leave', model_code='leaveRequest', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -65,7 +65,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaverequest', perm_code="view",
+        label_code='leave', model_code='leaveRequest', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -108,7 +108,7 @@ class LeaveAvailableList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaveavailable', perm_code='view',
+        label_code='leave', model_code='leaveAvailable', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

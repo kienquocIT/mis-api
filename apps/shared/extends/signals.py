@@ -718,17 +718,20 @@ class ConfigDefaultData:
                 {
                     'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'no_of_paid': 0, 'prev_year': 0
                 },
                 {
                     'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'no_of_paid': 0, 'prev_year': 0
                 },
                 {
                     'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': None, 'no_of_paid': 0, 'prev_year': 0
+                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'no_of_paid': 0, 'prev_year': 0
                 },
                 {
                     'code': 'UP', 'title': _('Unpaid leave'), 'paid_by': 3,
@@ -782,8 +785,8 @@ class ConfigDefaultData:
                     {
                         0: {
                             'work': False,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                            'mor': {'from': '', 'to': ''},
+                            'aft': {'from': '', 'to': ''}
                         },
                         1: {
                             'work': True,
@@ -812,8 +815,8 @@ class ConfigDefaultData:
                         },
                         6: {
                             'work': False,
-                            'mor': {'from': '8:00 AM', 'to': '12:00 AM'},
-                            'aft': {'from': '1:30 PM', 'to': '5:30 PM'}
+                            'mor': {'from': '', 'to': ''},
+                            'aft': {'from': '', 'to': ''}
                         },
 
                     }
@@ -833,18 +836,30 @@ class ConfigDefaultData:
         for item in Employee.objects.filter(is_active=True, company=self.company_obj):
             for l_type in leave_type:
                 if l_type.code == 'AN' or l_type.code != 'ANPY':
-                    list_avai.append(LeaveAvailable(
-                        leave_type=l_type,
-                        open_year=current_date.year,
-                        total=0,
-                        used=0,
-                        available=0,
-                        expiration_date=last_day_year if l_type.is_check_expiration or l_type.code == 'AN' else None,
-                        company=self.company_obj,
-                        tenant=self.company_obj.tenant,
-                        employee_inherit=item,
-                        check_balance=l_type.balance_control
-                    ))
+                    exp_date = None
+                    total = 0
+                    if l_type.is_check_expiration or l_type.code == 'AN':
+                        exp_date = last_day_year
+                    elif l_type.code == 'FF' or l_type.code == 'MC' or l_type.code == 'MY':
+                        exp_date = current_date.replace(month=12, day=31)
+                        if l_type.code == 'FF' or l_type.code == 'MY':
+                            total = 3
+                        else:
+                            total = 1
+                    list_avai.append(
+                        LeaveAvailable(
+                            leave_type=l_type,
+                            open_year=current_date.year,
+                            total=total,
+                            used=0,
+                            available=total,
+                            expiration_date=exp_date,
+                            company=self.company_obj,
+                            tenant=self.company_obj.tenant,
+                            employee_inherit=item,
+                            check_balance=l_type.balance_control
+                        )
+                    )
                 if l_type.code == 'ANPY':
                     prev_current = date(current_date.date().year, 1, 1)
                     last_prev_day = prev_current - timedelta(days=1)
@@ -871,6 +886,18 @@ class ConfigDefaultData:
 
         if len(list_avai):
             LeaveAvailable.objects.bulk_create(list_avai)
+
+    def leave_available_update(self):
+        list_update = []
+        for leave in LeaveAvailable.objects.filter(
+                company=self.company_obj, leave_type__code__in=['MY', 'FF', 'MC']
+        ):
+            l_date = timezone.now().replace(year=leave.open_year, month=12, day=31)
+            leave.total = 1 if leave.leave_type.code == 'MC' else 3
+            leave.available = 1 if leave.leave_type.code == 'MC' else 3
+            leave.expiration_date = l_date
+            list_update.append(leave)
+        LeaveAvailable.objects.bulk_update(list_update, fields=['expiration_date', 'total', 'available'])
 
     def call_new(self):
         config = self.company_config()
@@ -990,7 +1017,9 @@ def opp_member_event_destroy(sender, instance, **kwargs):
     employee_obj = instance.member
     if employee_obj and hasattr(employee_obj, 'id'):
         employee_permission, _created = EmployeePermission.objects.get_or_create(employee=employee_obj)
-        employee_permission.remove_permit_by_opp(tenant_id=instance.opportunity.tenant_id, opp_id=instance.opportunity_id)
+        employee_permission.remove_permit_by_opp(
+            tenant_id=instance.opportunity.tenant_id, opp_id=instance.opportunity_id
+        )
 
 
 @receiver(pre_delete, sender=Role)
