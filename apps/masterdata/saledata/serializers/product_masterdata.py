@@ -226,7 +226,7 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
                 fill__tenant=True,
                 fill__company=True,
                 code=value
-        ).count() > 0:
+        ).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
