@@ -780,7 +780,7 @@ class UoMTestCase(AdvanceTestCase):
             ['group'],
             check_sum_second=True,
         )
-        return response
+        return response1, response2
 
     def test_get_list(self):
         self.test_create_new_uom()
