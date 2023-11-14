@@ -49,6 +49,7 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     currency = serializers.CharField()
+    sub_domain = serializers.CharField(max_length=35, required=False)
 
     @classmethod
     def validate_currency(cls, attrs):
@@ -66,16 +67,27 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             return attrs
         raise serializers.ValidationError({'language': CompanyMsg.LANGUAGE_NOT_SUPPORT})
 
+    def validate_sub_domain(self, attrs):
+        if Company.objects.filter(sub_domain=attrs).exclude(pk=self.instance.company_id).exists():
+            raise serializers.ValidationError({'sub_domain': CompanyMsg.SUB_DOMAIN_EXIST})
+        return attrs
+
     class Meta:
         model = CompanyConfig
-        fields = ('language', 'currency', 'currency_rule',)
+        fields = ('language', 'currency', 'currency_rule', 'sub_domain')
 
     def update(self, instance, validated_data):
+        sub_domain = validated_data.pop('sub_domain', None)
         currency_rule = validated_data.pop('currency_rule', {})
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.currency_rule.update(currency_rule)
         instance.save(update_fields=['language', 'currency', 'currency_rule'])
+
+        if sub_domain:
+            instance.company.sub_domain = sub_domain
+            instance.company.save(update_fields=['sub_domain'])
+
         return instance
 
 

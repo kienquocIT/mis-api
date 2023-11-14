@@ -8,3 +8,4 @@ class CompanyMsg:
     MAXIMUM_COMPANY_LIMITED = _('Maximum company is {} companies.')
     CURRENCY_NOT_EXIST = _("Currency isn't support for company.")
     LANGUAGE_NOT_SUPPORT = _("Language isn't support.")
+    SUB_DOMAIN_EXIST = _("Sub domain already exists. Please choose another name.")

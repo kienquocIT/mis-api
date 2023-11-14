@@ -553,3 +553,7 @@ msgstr "Đường dẫn đã tồn tại"
 #
 msgid "Filtering is incorrect"
 msgstr "Bộ lọc không chính xác"
+
+#
+msgid "Sub domain already exists. Please choose another name."
+msgstr "Tên miền này đã được sử dụng. Vui lòng chọn tên khác."
