@@ -12,8 +12,6 @@ LEAVE_APP_CONFIG = {
     "app_label": "leave",
     "is_workflow": True,
     "app_depend_on": [
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
-        "7738935a-0442-4fd4-a7ff-d06a22aaeccf",  # Leave available
     ],
     "permit_mapping": {
         "view": {
@@ -23,38 +21,18 @@ LEAVE_APP_CONFIG = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4"
-                },
-                "7738935a-0442-4fd4-a7ff-d06a22aaeccf": {
-                    "view": "4",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4"
-                },
-                "7738935a-0442-4fd4-a7ff-d06a22aaeccf": {
-                    "view": "4",
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {},
-            "local_depends_on": {
-                "view": "==",
-            },
+            "local_depends_on": {},
         },
     },
 }
@@ -66,28 +44,17 @@ LEAVE_APP_AVAILABLE = {
     "app_label": "leave",
     "is_workflow": False,
     "app_depend_on": [
-        "50348927-2c4f-4023-b638-445469c66953",  # Employee
     ],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4",
-                },
-            },
+            "app_depends_on": {},
             "local_depends_on": {},
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {
-                "50348927-2c4f-4023-b638-445469c66953": {
-                    "view": "4"
-                },
-            },
-            "local_depends_on": {
-                "view": "==",
-            },
+            "app_depends_on": {},
+            "local_depends_on": {},
         },
     },
 }
