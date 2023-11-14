@@ -214,7 +214,6 @@ class UnitOfMeasureListSerializer(serializers.ModelSerializer):
 
 class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
     group = serializers.UUIDField(required=True, allow_null=False)
-    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
 
     class Meta:
@@ -227,19 +226,9 @@ class UnitOfMeasureCreateSerializer(serializers.ModelSerializer):
                 fill__tenant=True,
                 fill__company=True,
                 code=value
-        ).exists():
+        ).count() > 0:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
-
-    # @classmethod
-    # def validate_title(cls, value):
-    #     if UnitOfMeasure.objects.filter_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             title=value
-    #     ).exists():
-    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
@@ -318,7 +307,7 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UnitOfMeasure
-        fields = ('title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
+        fields = ('code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
 
     @classmethod
     def validate_code(cls, value):
@@ -326,18 +315,9 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
                 fill__tenant=True,
                 fill__company=True,
                 code=value
-        ).exists():
+        ).count() > 1:
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
-
-    # def validate_title(self, value):
-    #     if value != self.instance.title and UnitOfMeasure.objects.filter_current(
-    #             fill__tenant=True,
-    #             fill__company=True,
-    #             title=value
-    #     ).exists():
-    #         raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_EXIST)
-    #     return value
 
     @classmethod
     def validate_group(cls, attrs):
