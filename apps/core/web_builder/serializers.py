@@ -76,7 +76,7 @@ class PageBuilderUpdateSerializer(serializers.ModelSerializer):
             'company_id': company_current_id,
             'page_path': attrs,
         }
-        if PageBuilder.objects.filter(page_builder_kw).exclude(pk=self.instance.id).exists():
+        if PageBuilder.objects.filter(**page_builder_kw).exclude(pk=self.instance.id).exists():
             raise serializers.ValidationError({'page_path': WebBuilderMsg.PATH_EXIST})
 
         return attrs
