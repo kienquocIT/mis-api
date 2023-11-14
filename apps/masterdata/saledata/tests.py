@@ -760,7 +760,6 @@ class UoMTestCase(AdvanceTestCase):
 
         data1 = {
             "code": "U01",
-            "title": "",
             "group": uom_group.data['result']['id'],
             "ratio": 1,
             "rounding": 5,
@@ -784,7 +783,6 @@ class UoMTestCase(AdvanceTestCase):
         data2 = {
             "code": "U01",
             "title": "Unit",
-            "group": "",
             "ratio": 1,
             "rounding": 5,
             "is_referenced_unit": False
