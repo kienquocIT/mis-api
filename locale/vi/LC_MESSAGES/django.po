@@ -537,3 +537,19 @@ msgstr "Ngày nghỉ lớn hơn ngày phép đang có"
 #
 msgid "Leave available had expired"
 msgstr "Ngày nghỉ đã hết hạn"
+
+#
+msgid "Path must start with \"/\""
+msgstr "Đường dẫn bắt buộc bắt đầu bằng dấu \"/\""
+
+#
+msgid "Can't use this path"
+msgstr "Không thể sử dụng đường dẫn này"
+
+#
+msgid "Path is exist"
+msgstr "Đường dẫn đã tồn tại"
+
+#
+msgid "Filtering is incorrect"
+msgstr "Bộ lọc không chính xác"
