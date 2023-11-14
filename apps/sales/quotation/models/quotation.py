@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.shared import (
-    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel, StringHandler,
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 )
 
 

@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 # CONFIG

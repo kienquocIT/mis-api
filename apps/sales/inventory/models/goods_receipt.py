@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, StringHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
 
 class GoodsReceipt(DataAbstractModel):

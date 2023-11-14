@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS, StringHandler
+from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
 class PurchaseRequest(DataAbstractModel):

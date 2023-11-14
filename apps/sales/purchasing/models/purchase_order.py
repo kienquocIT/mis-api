@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, StringHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
 
 
 class PurchaseOrder(DataAbstractModel):
