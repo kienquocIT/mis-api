@@ -68,7 +68,7 @@ class PageBuilderUpdateSerializer(serializers.ModelSerializer):
         if not attrs.startswith('/'):
             raise serializers.ValidationError({'page_path': WebBuilderMsg.PATH_START_WITH_FORWARD_SLASH})
 
-        company_current_id = self.context.get('company_current_id1', None)
+        company_current_id = self.context.get('company_current_id', None)
         if not company_current_id:
             raise serializers.ValidationError({'base': WebBuilderMsg.FILTER_COMPANY_NOT_EXIST})
 
