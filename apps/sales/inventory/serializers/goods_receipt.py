@@ -236,20 +236,25 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
                 lot_number_list.append(lot.get('lot_number', None))
             for serial in warehouse.get('serial_data', []):
                 serial_number_list.append(serial.get('serial_number', None))
-            if ProductWareHouseLot.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    product_warehouse__product=product_obj,
-                    lot_number__in=lot_number_list
-            ).exists():
-                raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
-            if ProductWareHouseSerial.objects.filter_current(
-                    fill__tenant=True,
-                    fill__company=True,
-                    product_warehouse__product=product_obj,
-                    serial_number__in=serial_number_list
-            ).exists():
-                raise serializers.ValidationError({'serial_number': 'Serial number is exist.'})
+        # Check lot & serial
+        if len(lot_number_list) != len(set(lot_number_list)):
+            raise serializers.ValidationError({'lot_number': 'Lot number must be different.'})
+        if len(serial_number_list) != len(set(serial_number_list)):
+            raise serializers.ValidationError({'serial_number': 'Serial number must be different.'})
+        if ProductWareHouseLot.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                product_warehouse__product=product_obj,
+                lot_number__in=lot_number_list
+        ).exists():
+            raise serializers.ValidationError({'lot_number': 'Lot number is exist.'})
+        if ProductWareHouseSerial.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                product_warehouse__product=product_obj,
+                serial_number__in=serial_number_list
+        ).exists():
+            raise serializers.ValidationError({'serial_number': 'Serial number is exist.'})
         return True
 
     def validate(self, validate_data):
