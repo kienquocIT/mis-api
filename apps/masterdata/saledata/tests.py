@@ -736,7 +736,6 @@ class UoMTestCase(AdvanceTestCase):
     def test_create_uom_missing_data(self):
         uom_group = self.test_create_new_uom_group()
         data = {
-            "code": "",
             "title": "Unit",
             "group": uom_group.data['result']['id'],
             "ratio": 1,
@@ -861,7 +860,7 @@ class UoMTestCase(AdvanceTestCase):
         url = reverse("UnitOfMeasureDetail", kwargs={'pk': data_created.data['result']['id']})
         title_change = 'Dozen'
         data = {
-            "code": "U01",
+            "code": "U00",
             "title": title_change,
             "group": data_created.data['result']['group']['id'],
             "ratio": 1,

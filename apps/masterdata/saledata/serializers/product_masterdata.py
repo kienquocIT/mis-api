@@ -309,13 +309,12 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
         model = UnitOfMeasure
         fields = ('code', 'title', 'group', 'ratio', 'rounding', 'is_referenced_unit')
 
-    @classmethod
-    def validate_code(cls, value):
+    def validate_code(self, value):
         if UnitOfMeasure.objects.filter_current(
                 fill__tenant=True,
                 fill__company=True,
                 code=value
-        ).count() > 1:
+        ).exclude(id=self.instance.id).exists():
             raise serializers.ValidationError(ProductMsg.UNIT_OF_MEASURE_CODE_EXIST)
         return value
 
