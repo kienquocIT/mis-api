@@ -194,9 +194,6 @@ def create_company_function_number(company_function_number_data):
                 'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
                 'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
             }
-            if obj.first().schema == item.get('schema', None):
-                for key in ['latest_number', 'year_reset', 'month_reset', 'week_reset', 'day_reset']:
-                    updated_fields.pop(key, None)
             obj.update(**updated_fields)
 
     CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True).exclude(
