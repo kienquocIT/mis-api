@@ -8,7 +8,7 @@ from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
-from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
+from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage, Opportunity
 from apps.shared import DisperseModel
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg

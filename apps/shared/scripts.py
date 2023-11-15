@@ -1102,6 +1102,7 @@ def create_company_setting():
                         **cs_item
                     )
                 )
+    CompanySetting.objects.all().delete()
     CompanySetting.objects.bulk_create(bulk_create_data)
     return True
 
@@ -1130,6 +1131,7 @@ def create_company_function_number():
                         **cf_item
                     )
                 )
+    CompanyFunctionNumber.objects.all().delete()
     CompanyFunctionNumber.objects.bulk_create(bulk_create_data)
     return True
 
