@@ -2,13 +2,14 @@ import json
 import re
 import datetime
 import calendar
-from apps.core.company.models import CompanyFunctionNumber
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.hr.models import PermissionAbstractModel
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.core.company.models import CompanyFunctionNumber
+from apps.shared import (
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+)
 from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
@@ -546,8 +547,12 @@ class Opportunity(DataAbstractModel):
                 datetime.date.today().day,
                 datetime.date.today().isocalendar()[2]
             ]
-            for match in re.findall(r'\[.*?\]|\d', obj.schema):
-                result.append(str(schema_item_list[int(match)])) if match.isdigit() else result.append(match[1:-1])
+            pattern = r'\[.*?\]|\d'
+            for match in re.findall(pattern, obj.schema):
+                if match.isdigit():
+                    result.append(str(schema_item_list[int(match)]))
+                else:
+                    result.append(match[1:-1])
             obj.latest_number = number
             obj.save()
             self.code = '-'.join(result)
