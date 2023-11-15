@@ -1,6 +1,7 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel, WORKFLOW_CONFIG_MODE
+from apps.shared import MasterDataAbstractModel, OPTION_COLLABORATOR, SimpleAbstractModel, WORKFLOW_CONFIG_MODE, \
+    WORKFLOW_IN_WF_OPTION, WORKFLOW_IN_WF_POSITION
 
 
 class WorkflowConfigOfApp(MasterDataAbstractModel):
@@ -461,9 +462,23 @@ class CollabInWorkflow(MasterDataAbstractModel):
         Node,
         on_delete=models.CASCADE,
     )
+    in_wf_option = models.SmallIntegerField(
+        choices=WORKFLOW_IN_WF_OPTION,
+        verbose_name='in wf option',
+        help_text='option to select collab in WF (by position/ by employee/...)',
+    )
+    position_choice = models.SmallIntegerField(
+        choices=WORKFLOW_IN_WF_POSITION,
+        null=True,
+        verbose_name='position choice (in_wf_option==1)',
+        help_text='position choice (1st manager, 2nd manager,...) help to get exact employee of Node when Runtime',
+    )
     employee = models.ForeignKey(
         'hr.Employee',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True,
+        verbose_name='employee (in_wf_option==2)',
+        help_text='exact employee of Node when Runtime',
     )
     zone = models.ManyToManyField(
         Zone,

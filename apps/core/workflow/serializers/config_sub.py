@@ -70,7 +70,7 @@ class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
 # COLLAB OUT FORM
 class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
     employee_list = serializers.ListField(
-        child=serializers.CharField(required=False),
+        child=serializers.UUIDField(required=False),
         required=False
     )
     zone = serializers.ListField(
@@ -137,8 +137,10 @@ class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
 
 # COLLAB IN WORKFLOW
 class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
-    employee = serializers.CharField(
-        required=False
+    in_wf_option = serializers.IntegerField()
+    employee = serializers.UUIDField(
+        required=False,
+        allow_null=True,
     )
     zone = serializers.ListField(
         child=serializers.IntegerField(required=False),
@@ -149,6 +151,8 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
         model = CollabInWorkflow
         fields = (
             'id',
+            'in_wf_option',
+            'position_choice',
             'employee',
             'zone',
         )
@@ -156,6 +160,8 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
     @classmethod
     def validate_employee(cls, value):
         try:
+            if value is None:
+                return {}
             employee = Employee.objects.prefetch_related('role').get(id=value)
             return {
                 'id': str(employee.id),
@@ -180,6 +186,8 @@ class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
         model = CollabInWorkflow
         fields = (
             'id',
+            'in_wf_option',
+            'position_choice',
             'employee',
             'zone',
         )

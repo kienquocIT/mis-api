@@ -398,8 +398,30 @@ class RuntimeStageHandler:
         return result
 
     @classmethod
+    def parse_in_wf_collab(cls, node, doc_employee_inherit):
+        collab_in_wf = {}
+        for collab in CollabInWorkflow.objects.filter(node=node):
+            zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
+            if collab.in_wf_option == 1 and doc_employee_inherit:
+                if not doc_employee_inherit.group:
+                    raise ValueError('Employee inherit does not have group')
+                if collab.position_choice == 1:
+                    if not doc_employee_inherit.group.first_manager_id:
+                        raise ValueError('1st manager is not defined')
+                    collab_in_wf[str(doc_employee_inherit.group.first_manager_id)] = zone_and_properties
+                elif collab.position_choice == 2:
+                    if not doc_employee_inherit.group.second_manager_id:
+                        raise ValueError('2nd manager is not defined')
+                    collab_in_wf[str(doc_employee_inherit.group.second_manager_id)] = zone_and_properties
+            elif collab.in_wf_option == 2:
+                collab_in_wf[str(collab.employee_id)] = zone_and_properties
+
+        return collab_in_wf
+
+    @classmethod
     def __parse_collaboration(
-            cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None
+            cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None,
+            doc_employee_inherit=None
     ) -> dict:
         # OPTION_COLLABORATOR = (
         #     (0, WorkflowMsg.COLLABORATOR_IN),
@@ -432,10 +454,12 @@ class RuntimeStageHandler:
                         str(_id): zones for _id in out_form_obj.employees.all().values_list('id', flat=True)
                     }
                 case 2:
-                    return {
-                        str(collab.employee_id): cls.__get_zone_and_properties(collab.zone.all())
-                        for collab in CollabInWorkflow.objects.filter(node=node)
-                    }
+                    # return {
+                    #     str(collab.employee_id): cls.__get_zone_and_properties(collab.zone.all())
+                    #     for collab in CollabInWorkflow.objects.filter(node=node)
+                    # }
+
+                    return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
         except CollaborationInForm.DoesNotExist:
             pass
         except CollaborationOutForm.DoesNotExist:
@@ -449,6 +473,7 @@ class RuntimeStageHandler:
                 node=stage_obj.node,
                 doc_params=self.runtime_obj.doc_params,
                 employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
+                doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
             )
 
             # convert assignee and zone to simple data
