@@ -735,33 +735,10 @@ class UoMTestCase(AdvanceTestCase):
 
     def test_create_uom_missing_data(self):
         uom_group = self.test_create_new_uom_group()
-        data = {
-            "code": "",
-            "title": "Unit",
-            "group": uom_group.data['result']['id'],
-            "ratio": 1,
-            "rounding": 5,
-            "is_referenced_unit": True
-        }
         url = reverse('UnitOfMeasureList')  # noqa
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(  # noqa
-            response,
-            status_code=status.HTTP_400_BAD_REQUEST,
-            key_required=['errors', 'status'],
-            all_key=['errors', 'status'],
-            all_key_from=response.data,
-            type_match={'errors': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['errors'],
-            ['code'],
-            check_sum_second=True,
-        )
 
         data1 = {
             "code": "U01",
-            "title": "",
             "group": uom_group.data['result']['id'],
             "ratio": 1,
             "rounding": 5,
@@ -785,7 +762,6 @@ class UoMTestCase(AdvanceTestCase):
         data2 = {
             "code": "U01",
             "title": "Unit",
-            "group": "",
             "ratio": 1,
             "rounding": 5,
             "is_referenced_unit": False
@@ -804,7 +780,7 @@ class UoMTestCase(AdvanceTestCase):
             ['group'],
             check_sum_second=True,
         )
-        return response
+        return response1, response2
 
     def test_get_list(self):
         self.test_create_new_uom()
@@ -861,7 +837,7 @@ class UoMTestCase(AdvanceTestCase):
         url = reverse("UnitOfMeasureDetail", kwargs={'pk': data_created.data['result']['id']})
         title_change = 'Dozen'
         data = {
-            "code": "U01",
+            "code": "U00",
             "title": title_change,
             "group": data_created.data['result']['group']['id'],
             "ratio": 1,

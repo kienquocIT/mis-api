@@ -70,6 +70,7 @@ class Tenant(CoreAbstractModel):
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
+        unique_together = ('code',)
 
     def parse_obj(self):
         return {

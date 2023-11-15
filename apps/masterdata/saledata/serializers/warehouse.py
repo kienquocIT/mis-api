@@ -33,7 +33,7 @@ class WareHouseListSerializer(serializers.ModelSerializer):
 
 
 class WareHouseCreateSerializer(serializers.ModelSerializer):
-    agency = serializers.UUIDField(required=False)
+    agency = serializers.UUIDField(required=False, allow_null=True)
 
     class Meta:
         model = WareHouse

@@ -83,7 +83,7 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             'advance_payment',
             'method',
             'employee_created_id',
-            'employee_inherit_id',
+            'employee_inherit',
             'status',
             'money_received',
             'cost',

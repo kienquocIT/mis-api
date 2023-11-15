@@ -205,6 +205,10 @@ class Product(DataAbstractModel):
     @classmethod
     def update_transaction_information(cls, instance, **kwargs):
         del kwargs['update_transaction_info']
+        # If product doesn't have inventory choice
+        if 1 not in instance.product_choice:
+            return {}
+        # If product have inventory choice
         if 'quantity_purchase' in kwargs:
             instance.wait_receipt_amount += kwargs['quantity_purchase']
             del kwargs['quantity_purchase']

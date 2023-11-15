@@ -335,7 +335,7 @@ class PermissionParsedTool:
             for key_perm, value_perm in data.items():
                 # key_perm:     'hr.employee.view'
                 # value_perm:   ['id', 'id', 'id']
-                if isinstance(value_perm, list):
+                if isinstance(value_perm, dict):
                     for doc_id in value_perm:
                         cls.push_range_to_key(
                             result=result,

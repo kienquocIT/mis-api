@@ -961,245 +961,6 @@ def make_unique_together_opp_member():
     print('Destroy duplicated opp member successfully!')
 
 
-# BEGIN PRODUCT TRANSACTION INFORMATION
-def update_product_stock_amount(product_id):
-    product = Product.objects.filter(id=product_id).first()
-    if product:
-        product_stock_amount = 0
-        for product_warehouse in product.product_warehouse_product.all():
-            product_stock_amount += product_warehouse.stock_amount
-        product.stock_amount = product_stock_amount
-        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
-        product.save(update_fields=['available_amount', 'stock_amount'])
-    print('update product stock amount done.')
-
-
-def update_product_wait_delivery_amount(product_id):
-    product = Product.objects.filter(id=product_id).first()
-    if product:
-        product_ordered_quantity = 0
-        for product_ordered in product.sale_order_product_product.filter(
-            sale_order__system_status__in=[2, 3]
-        ):
-            if product_ordered.product:
-                uom_product_inventory = product_ordered.product.inventory_uom
-                uom_product_so = product_ordered.unit_of_measure
-                final_ratio = 1
-                if uom_product_inventory and uom_product_so:
-                    final_ratio = uom_product_so.ratio / uom_product_inventory.ratio
-                product_ordered_quantity += product_ordered.product_quantity * final_ratio
-        product.wait_delivery_amount = product_ordered_quantity
-        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
-        product.save(update_fields=['wait_delivery_amount', 'available_amount'])
-    print('update_product_wait_delivery_amount done.')
-
-
-def update_product_wait_receipt_amount(product_id):
-    product = Product.objects.filter(id=product_id).first()
-    if product:
-        product_purchased_quantity = 0
-        product_receipted_quantity = 0
-        for product_purchased in product.purchase_order_product_product.filter(
-                purchase_order__system_status__in=[2, 3]
-        ):
-            uom_product_inventory = product_purchased.product.inventory_uom
-            uom_product_po = product_purchased.uom_order_actual
-            if product_purchased.uom_order_request:
-                uom_product_po = product_purchased.uom_order_request
-            final_ratio = 1
-            if uom_product_inventory and uom_product_po:
-                final_ratio = uom_product_po.ratio / uom_product_inventory.ratio
-            product_quantity_order_request_final = product_purchased.product_quantity_order_actual * final_ratio
-            if product_purchased.purchase_order.purchase_requests.exists():
-                product_quantity_order_request_final = product_purchased.product_quantity_order_request * final_ratio
-            stock_final = product_purchased.stock * final_ratio
-            product_purchased_quantity += product_quantity_order_request_final + stock_final
-        for product_receipted in product.goods_receipt_product_product.filter(
-                goods_receipt__system_status__in=[2, 3],
-                goods_receipt__purchase_order__isnull=False,
-        ):
-            uom_product_inventory = product_receipted.product.inventory_uom
-            uom_product_gr = product_receipted.uom
-            final_ratio = 1
-            if uom_product_inventory and uom_product_gr:
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-            product_receipted_quantity += product_receipted.quantity_import * final_ratio
-        product.wait_receipt_amount = (product_purchased_quantity - product_receipted_quantity)
-        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
-        product.save(update_fields=['wait_receipt_amount', 'available_amount'])
-    print('update product wait_receipt_amount done.')
-
-
-def update_product_warehouse_amounts():
-    # update ProductWarehouse
-    for product_warehouse in ProductWareHouse.objects.all():
-        product_warehouse.receipt_amount = product_warehouse.stock_amount
-        product_warehouse.stock_amount = product_warehouse.receipt_amount - product_warehouse.sold_amount
-        product_warehouse.save(update_fields=['receipt_amount', 'stock_amount'])
-    print('update product warehouse done.')
-
-
-def update_product_transaction_information():
-    for product in Product.objects.all():
-        update_product_stock_amount(product_id=product.id)
-        update_product_wait_delivery_amount(product_id=product.id)
-        update_product_wait_receipt_amount(product_id=product.id)
-        product.available_amount = (product.stock_amount - product.wait_delivery_amount + product.wait_receipt_amount)
-        product.save(update_fields=['available_amount'])
-    print('update_product_transaction_information done.')
-
-
-def update_product_warehouse_receipt_amount():
-    for product_warehouse in ProductWareHouse.objects.all():
-        product_warehouse.receipt_amount = 0
-        product_warehouse.sold_amount = 0
-        product_warehouse.stock_amount = 0
-        product_warehouse.save(update_fields=['receipt_amount', 'sold_amount', 'stock_amount'])
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        for gr_warehouse in GoodsReceiptWarehouse.objects.filter(goods_receipt=gr):
-            uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
-            uom_product_gr = gr_warehouse.goods_receipt_product.uom
-            if gr_warehouse.goods_receipt_request_product:  # Case has PR
-                if gr_warehouse.goods_receipt_request_product.purchase_order_request_product:
-                    pr_product = gr_warehouse.goods_receipt_request_product.purchase_order_request_product
-                    if pr_product.is_stock is False:  # Case PR is Product
-                        if pr_product.purchase_request_product:
-                            uom_product_gr = pr_product.purchase_request_product.uom
-                    else:  # Case PR is Stock
-                        uom_product_gr = pr_product.uom_stock
-            final_ratio = 1
-            if uom_product_inventory and uom_product_gr:
-                final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-            lot_data = []
-            serial_data = []
-            for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-                if lot.lot:
-                    lot.lot.quantity_import += lot.quantity_import * final_ratio
-                    lot.lot.save(update_fields=['quantity_import'])
-                else:
-                    lot_data.append({
-                        'lot_number': lot.lot_number,
-                        'quantity_import': lot.quantity_import * final_ratio,
-                        'expire_date': lot.expire_date,
-                        'manufacture_date': lot.manufacture_date,
-                    })
-            for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
-                serial_data.append({
-                    'vendor_serial_number': serial.vendor_serial_number,
-                    'serial_number': serial.serial_number,
-                    'expire_date': serial.expire_date,
-                    'manufacture_date': serial.manufacture_date,
-                    'warranty_start': serial.warranty_start,
-                    'warranty_end': serial.warranty_end,
-                })
-            ProductWareHouse.push_from_receipt(
-                tenant_id=gr.tenant_id,
-                company_id=gr.company_id,
-                product_id=gr_warehouse.goods_receipt_product.product_id,
-                warehouse_id=gr_warehouse.warehouse_id,
-                uom_id=uom_product_inventory.id,
-                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
-                amount=gr_warehouse.quantity_import * final_ratio,
-                unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
-                lot_data=lot_data,
-                serial_data=serial_data,
-            )
-    print('update product warehouse done.')
-# END PRODUCT TRANSACTION INFORMATION
-
-
-# BEGIN INVENTORY
-def update_po_request_product_for_gr_request_product():
-    for gr_request_product in GoodsReceiptRequestProduct.objects.filter(is_stock=False):
-        po_id = gr_request_product.goods_receipt.purchase_order_id
-        for item in gr_request_product.purchase_request_product.purchase_order_request_request_product.all():
-            if item.purchase_order_id == po_id:
-                gr_request_product.purchase_order_request_product_id = item.id
-                gr_request_product.save()
-                break
-    print('update_po_request_product_for_gr_request_product done.')
-# END INVENTORY
-
-
-# BEGIN PURCHASING
-def update_is_all_ordered_pr():
-    for pr in PurchaseRequest.objects.all():
-        pr_product = pr.purchase_request.all()
-        pr_product_done = pr.purchase_request.filter(remain_for_purchase_order=0)
-        if pr_product.count() == pr_product_done.count():
-            pr.purchase_status = 2
-            pr.is_all_ordered = True
-            pr.save(update_fields=['purchase_status', 'is_all_ordered'])
-        else:
-            pr.purchase_status = 1
-            pr.save(update_fields=['purchase_status'])
-    print('update_is_all_ordered_pr done.')
-
-
-def restart_po_gr_remain_quantity():
-    # Restart gr_remain_quantity
-    for po_product in PurchaseOrderProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
-        po_product.gr_remain_quantity = po_product.product_quantity_order_actual
-        po_product.gr_completed_quantity = 0
-        po_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
-    for po_pr_product in PurchaseOrderRequestProduct.objects.filter(purchase_order__system_status__in=[2, 3]):
-        po_pr_product.gr_remain_quantity = po_pr_product.quantity_order
-        po_pr_product.gr_completed_quantity = 0
-        po_pr_product.save(update_fields=['gr_remain_quantity', 'gr_completed_quantity'])
-    print('restart_po_gr_remain_quantity done.')
-
-
-def update_gr_info_for_po():
-    # update_gr_info_for_po
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        for gr_po_product in gr.goods_receipt_product_goods_receipt.all():
-            if gr_po_product.purchase_order_product:
-                gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
-                gr_po_product.purchase_order_product.gr_completed_quantity = round(
-                    gr_po_product.purchase_order_product.gr_completed_quantity,
-                    2
-                )
-                gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
-                gr_po_product.purchase_order_product.gr_remain_quantity = round(
-                    gr_po_product.purchase_order_product.gr_remain_quantity,
-                    2
-                )
-                gr_po_product.purchase_order_product.save(update_fields=[
-                    'gr_completed_quantity',
-                    'gr_remain_quantity'
-                ])
-        for gr_pr_product in gr.goods_receipt_request_product_goods_receipt.all():
-            if gr_pr_product.purchase_order_request_product:
-                gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
-                gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
-                    gr_pr_product.purchase_order_request_product.gr_completed_quantity,
-                    2
-                )
-                gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
-                gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
-                    gr_pr_product.purchase_order_request_product.gr_remain_quantity,
-                    2
-                )
-                gr_pr_product.purchase_order_request_product.save(update_fields=[
-                    'gr_completed_quantity',
-                    'gr_remain_quantity'
-                ])
-    #
-    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
-        if gr.purchase_order:
-            po_product = gr.purchase_order.purchase_order_product_order.all()
-            po_product_done = gr.purchase_order.purchase_order_product_order.filter(gr_remain_quantity=0)
-            if po_product.count() == po_product_done.count():
-                gr.purchase_order.receipt_status = 3
-                gr.purchase_order.is_all_receipted = True
-                gr.purchase_order.save(update_fields=['receipt_status', 'is_all_receipted'])
-            else:
-                gr.purchase_order.receipt_status = 2
-                gr.purchase_order.save(update_fields=['receipt_status'])
-    print('update_gr_info_for_po done.')
-# END PURCHASING
-
-
 def make_permission_records():
     for obj in Employee.objects.all():
         print('Employee:', obj)
@@ -1262,15 +1023,24 @@ def update_code_quotation_sale_order_indicator():
 
 def update_record_report_revenue():
     ReportRevenue.objects.all().delete()
-    ReportRevenue.objects.bulk_create([ReportRevenue(
-        tenant_id=so.tenant_id,
-        company_id=so.company_id,
-        sale_order_id=so.id,
-        employee_created_id=so.employee_created_id,
-        employee_inherit_id=so.employee_inherit_id,
-        group_inherit_id=so.employee_inherit.group_id,
-        date_approved=so.date_created,
-    ) for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False)])
+    bulk_info = []
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3], employee_inherit__isnull=False):
+        revenue_obj = so.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = so.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = so.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        bulk_info.append(ReportRevenue(
+            tenant_id=so.tenant_id,
+            company_id=so.company_id,
+            sale_order_id=so.id,
+            employee_created_id=so.employee_created_id,
+            employee_inherit_id=so.employee_inherit_id,
+            group_inherit_id=so.employee_inherit.group_id,
+            date_approved=so.date_approved,
+            revenue=revenue_obj.indicator_value if revenue_obj else 0,
+            gross_profit=gross_profit_obj.indicator_value if gross_profit_obj else 0,
+            net_income=net_income_obj.indicator_value if net_income_obj else 0,
+        ))
+    ReportRevenue.objects.bulk_create(bulk_info)
     print('update_record_report_revenue done.')
 
 
@@ -1284,6 +1054,29 @@ def update_space_range_opp_member():
                 item['range'] = str(item['range'])
         obj.save()
     return True
+
+
+def update_date_approved_sales_apps():
+    for quotation in Quotation.objects.filter(system_status__in=[2, 3]):
+        quotation.date_approved = quotation.date_created
+        quotation.save(update_fields=['date_approved'])
+    for so in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        so.date_approved = so.date_created
+        so.save(update_fields=['date_approved'])
+    for po in PurchaseOrder.objects.filter(system_status__in=[2, 3]):
+        po.date_approved = po.date_created
+        po.save(update_fields=['date_approved'])
+    for gr in GoodsReceipt.objects.filter(system_status__in=[2, 3]):
+        gr.date_approved = gr.date_created
+        gr.save(update_fields=['date_approved'])
+    print('update_date_approved_sales_apps done.')
+
+
+def update_available():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).leave_available_update()
+    print('update leave available done')
+
 
 
 def create_company_setting():

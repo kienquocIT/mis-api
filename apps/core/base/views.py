@@ -42,10 +42,14 @@ class PlanList(generics.GenericAPIView):
 
 class TenantApplicationList(BaseListMixin):
     queryset = Application.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'code': ['exact'],
+        'title': ['exact'],
+        'is_workflow': ['exact'],
+    }
     serializer_list = ApplicationListSerializer
     list_hidden_field = []
-    # search_fields = ('title', 'code')
-    filterset_fields = ('code', 'title')
 
     def get_queryset(self):
         if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):

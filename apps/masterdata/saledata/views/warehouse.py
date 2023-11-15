@@ -179,6 +179,7 @@ class ProductWareHouseSerialList(BaseListMixin):
     filterset_fields = {
         "product_warehouse_id": ["exact"],
         "product_warehouse__product_id": ["exact"],
+        "product_warehouse__warehouse_id": ["exact"],
         "serial_number": ["exact"],
         "is_delete": ["exact"],
     }

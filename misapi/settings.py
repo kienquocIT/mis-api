@@ -68,6 +68,7 @@ INSTALLED_APPS = \
         'django_celery_results',  # Listen celery task and record it to database.
         'debug_toolbar',  # debug toolbar support check API
         'django_extensions',  # some tool for command | https://github.com/django-extensions/django-extensions
+        'django_celery_beat',  # celery crontab
     ] + [  # integrate some service management or tracing
         'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
@@ -97,8 +98,9 @@ INSTALLED_APPS = \
         'apps.eoffice.leave',
 
         'apps.sales.project',
-        'django_celery_beat',  # celery crontab
         'apps.sales.report',
+    ] + [  # Tools improvement from dev team
+        'apps.core.web_builder',
     ]
 
 MIDDLEWARE = [
