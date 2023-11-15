@@ -20,3 +20,4 @@ from .shipping import ShippingMsg
 from .inventory import WarehouseMsg
 from .eoffices import *
 from .warehouse import *
+from .web_builder import *
