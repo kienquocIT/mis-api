@@ -6,6 +6,7 @@ from rest_framework import serializers
 
 from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanySetting, CompanyFunctionNumber
 from apps.core.account.models import User
+from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
@@ -216,6 +217,26 @@ def create_company_function_number(company_function_number_data):
     return True
 
 
+def validate_company_setting_data(company_setting_data, company_function_number_data):
+    company_setting_data_keys = [
+        'primary_currency_id', 'definition_inventory_valuation', 'default_inventory_value_method',
+        'cost_per_warehouse', 'cost_per_lot_batch'
+    ]
+    if set(company_setting_data.keys()) != set(company_setting_data_keys):
+        raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_SETTING_DATA})
+
+    base_currency_id = company_setting_data['primary_currency_id']
+    if not BaseCurrency.objects.filter(id=base_currency_id).exists():
+        raise serializers.ValidationError({'detail': CompanyMsg.INVALID_BASE_CURRENCY})
+
+    company_function_number_data_keys = [
+        'function', 'numbering_by', 'schema_text', 'schema', 'first_number', 'last_number', 'reset_frequency'
+    ]
+    for item in company_function_number_data:
+        if set(item.keys()) != set(company_function_number_data_keys):
+            raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
+
+
 class CompanyCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
@@ -230,20 +251,24 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        validate_company_setting_data(
+            self.initial_data.get('company_setting_data', {}),
+            self.initial_data.get('company_function_number_data', {})
+        )
+
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
             company_quantity_max = user_obj.tenant_current.company_quality_max
             current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
             if current_company_quantity <= company_quantity_max:
                 return validate_data
-            raise serializers.ValidationError(
-                {'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))}
-            )
+            raise serializers.ValidationError({
+                'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))
+            })
         raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
 
     def create(self, validated_data):
         company_obj = Company.objects.create(**validated_data)
-
         create_company_setting(company_obj, self.initial_data.get('company_setting_data', {}))
         create_company_function_number(self.initial_data.get('company_function_number_data', []))
         return company_obj
@@ -262,7 +287,16 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'fax'
         )
 
+    def validate(self, validate_data):
+        validate_company_setting_data(
+            self.initial_data.get('company_setting_data', {}),
+            self.initial_data.get('company_function_number_data', {})
+        )
+        return validate_data
+
     def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
         instance.save()
         create_company_setting(instance, self.initial_data.get('company_setting_data', {}))
         create_company_function_number(self.initial_data.get('company_function_number_data', []))
