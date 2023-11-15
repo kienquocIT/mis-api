@@ -531,7 +531,9 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            obj = CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True, function=0).first()
+            obj = CompanyFunctionNumber.objects.filter_current(
+                fill__tenant=True, fill__company=True, function=0
+            ).first()
             result = []
             if obj and obj.schema is not None:
                 self.check_reset_frequency(obj)
