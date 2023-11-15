@@ -218,22 +218,13 @@ def create_company_function_number(company_function_number_data):
 
 
 def validate_company_setting_data(company_setting_data, company_function_number_data):
-    company_setting_data_keys = [
-        'primary_currency_id', 'definition_inventory_valuation', 'default_inventory_value_method',
-        'cost_per_warehouse', 'cost_per_lot_batch'
-    ]
-    if set(company_setting_data.keys()) != set(company_setting_data_keys):
-        raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_SETTING_DATA})
+    base_currency_id = company_setting_data.get('primary_currency_id', None)
+    if base_currency_id:
+        if not BaseCurrency.objects.filter(id=base_currency_id).exists():
+            raise serializers.ValidationError({'detail': CompanyMsg.INVALID_BASE_CURRENCY})
 
-    base_currency_id = company_setting_data['primary_currency_id']
-    if not BaseCurrency.objects.filter(id=base_currency_id).exists():
-        raise serializers.ValidationError({'detail': CompanyMsg.INVALID_BASE_CURRENCY})
-
-    company_function_number_data_keys = [
-        'function', 'numbering_by', 'schema_text', 'schema', 'first_number', 'last_number', 'reset_frequency'
-    ]
     for item in company_function_number_data:
-        if set(item.keys()) != set(company_function_number_data_keys):
+        if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
             raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
 
 
@@ -253,7 +244,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         validate_company_setting_data(
             self.initial_data.get('company_setting_data', {}),
-            self.initial_data.get('company_function_number_data', {})
+            self.initial_data.get('company_function_number_data', [])
         )
 
         user_obj = get_current_user()
@@ -290,7 +281,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         validate_company_setting_data(
             self.initial_data.get('company_setting_data', {}),
-            self.initial_data.get('company_function_number_data', {})
+            self.initial_data.get('company_function_number_data', [])
         )
         return validate_data
 

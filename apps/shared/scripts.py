@@ -1078,7 +1078,6 @@ def update_available():
     print('update leave available done')
 
 
-
 def create_company_setting():
     company_setting_data = [
         {

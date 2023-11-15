@@ -90,7 +90,7 @@ class SaleDefaultData:
             'default_inventory_value_method': 0,
             'cost_per_warehouse': False,
             'cost_per_lot_batch': False
-         }
+        }
     ]
     CompanyFunctionNumber_data = [
         {
@@ -203,9 +203,8 @@ class SaleDefaultData:
         return True
 
     def create_company_setting(self):
-        vnd_currency = Currency.objects.filter(
-            company=self.company_obj,
-            abbreviation='VND'
+        vnd_currency = BaseCurrency.objects.filter(
+            code='VND'
         ).first()
         if vnd_currency:
             objs = [

@@ -21,7 +21,7 @@ class LeaveTestCase(AdvanceTestCase):
             'representative_fullname': 'Mike Nguyen',
             'address': '7826 avenue, Victoria Street, California, American',
             'email': 'mike.nguyen.7826@gmail.com',
-            'phone': '0983875345',
+            'phone': '0983875345'
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         leave_cf = LeaveConfig.objects.get_or_create(
