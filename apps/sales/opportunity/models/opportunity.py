@@ -533,38 +533,39 @@ class Opportunity(DataAbstractModel):
         obj = CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True, function=0).first()
         result = []
         if obj and obj.schema is not None:
-            self.check_reset_frequency(obj)
-            number = obj.latest_number + 1
-            schema_item_list = [
-                number,
-                datetime.datetime.now().year,
-                datetime.datetime.now().year % 100,
-                calendar.month_name[datetime.datetime.now().month][0:3],
-                calendar.month_name[datetime.datetime.now().month],
-                datetime.datetime.now().month,
-                datetime.date.today().isocalendar()[1],
-                datetime.date.today().timetuple().tm_yday,
-                datetime.date.today().day,
-                datetime.date.today().isocalendar()[2]
-            ]
-            pattern = r'\[.*?\]|\d'
-            for match in re.findall(pattern, obj.schema):
-                if match.isdigit():
-                    result.append(str(schema_item_list[int(match)]))
-                else:
-                    result.append(match[1:-1])
-            obj.latest_number = number
-            obj.save()
-            self.code = '-'.join(result)
-        else:
-            # auto create code (temporary)
-            opportunity = Opportunity.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                is_delete=False
-            ).count()
-            char = "OPP"
             if not self.code:
+                self.check_reset_frequency(obj)
+                number = obj.latest_number + 1
+                schema_item_list = [
+                    number,
+                    datetime.datetime.now().year,
+                    datetime.datetime.now().year % 100,
+                    calendar.month_name[datetime.datetime.now().month][0:3],
+                    calendar.month_name[datetime.datetime.now().month],
+                    datetime.datetime.now().month,
+                    datetime.date.today().isocalendar()[1],
+                    datetime.date.today().timetuple().tm_yday,
+                    datetime.date.today().day,
+                    datetime.date.today().isocalendar()[2]
+                ]
+                pattern = r'\[.*?\]|\d'
+                for match in re.findall(pattern, obj.schema):
+                    if match.isdigit():
+                        result.append(str(schema_item_list[int(match)]))
+                    else:
+                        result.append(match[1:-1])
+                obj.latest_number = number
+                obj.save()
+                self.code = '-'.join(result)
+        else:
+            if not self.code:
+                # auto create code (temporary)
+                opportunity = Opportunity.objects.filter_current(
+                    fill__tenant=True,
+                    fill__company=True,
+                    is_delete=False
+                ).count()
+                char = "OPP"
                 temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
                 code = f"{char}{temper}"
                 self.code = code
