@@ -105,7 +105,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'date_created',
             'representative_fullname',
             'tenant_auto_create_company',
-            'sub_domain',
+            'sub_domain'
         )
 
     @classmethod
