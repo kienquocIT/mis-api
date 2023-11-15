@@ -530,10 +530,10 @@ class Opportunity(DataAbstractModel):
         return False
 
     def save(self, *args, **kwargs):
-        obj = CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True, function=0).first()
-        result = []
-        if obj and obj.schema is not None:
-            if not self.code:
+        if not self.code:
+            obj = CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True, function=0).first()
+            result = []
+            if obj and obj.schema is not None:
                 self.check_reset_frequency(obj)
                 number = obj.latest_number + 1
                 schema_item_list = [
@@ -557,8 +557,7 @@ class Opportunity(DataAbstractModel):
                 obj.latest_number = number
                 obj.save()
                 self.code = '-'.join(result)
-        else:
-            if not self.code:
+            else:
                 # auto create code (temporary)
                 opportunity = Opportunity.objects.filter_current(
                     fill__tenant=True,
