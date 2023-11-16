@@ -1,5 +1,5 @@
 from datetime import date
-from apps.core.company.models import Company, CompanySetting, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -1078,32 +1078,22 @@ def update_available():
     print('update leave available done')
 
 
-def create_company_setting():
-    company_setting_data = [
-        {
-            'definition_inventory_valuation': 0,
-            'default_inventory_value_method': 0,
-            'cost_per_warehouse': False,
-            'cost_per_lot_batch': False
-        }
-    ]
-    vnd_currency = BaseCurrency.objects.filter(
-        code='VND'
-    ).first()
-    company_list = Company.objects.all()
-    bulk_create_data = []
-    for company_obj in company_list:
+def update_company_setting():
+    vnd_currency = BaseCurrency.objects.filter(code='VND').first()
+    for company_obj in Company.objects.all():
         if vnd_currency:
-            for cs_item in company_setting_data:
-                bulk_create_data.append(
-                    CompanySetting(
-                        company=company_obj,
-                        primary_currency_id=str(vnd_currency.id),
-                        **cs_item
-                    )
-                )
-    CompanySetting.objects.all().delete()
-    CompanySetting.objects.bulk_create(bulk_create_data)
+            company_obj.definition_inventory_valuation = 0
+            company_obj.default_inventory_value_method = 0
+            company_obj.cost_per_warehouse = False
+            company_obj.cost_per_lot_batch = False
+            company_obj.primary_currency_id = str(vnd_currency.id)
+            company_obj.save(update_fields=[
+                'definition_inventory_valuation',
+                'default_inventory_value_method',
+                'cost_per_warehouse',
+                'cost_per_lot_batch',
+                'primary_currency_id'
+            ])
     return True
 
 

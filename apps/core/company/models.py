@@ -100,6 +100,13 @@ class Company(CoreAbstractModel):
     # web builder | tenant_code : 10 + company_code : 25 = 35
     sub_domain = models.CharField(max_length=35, unique=True)
 
+    # Company Setting
+    primary_currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
+    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
+    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
+    cost_per_warehouse = models.BooleanField(default=True)
+    cost_per_lot_batch = models.BooleanField(default=False)
+
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),
@@ -378,22 +385,6 @@ class CompanyUserEmployee(SimpleAbstractModel):
                 cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
             )
         )
-
-
-class CompanySetting(SimpleAbstractModel):
-    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_setting')
-    primary_currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
-    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
-    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=0)
-    cost_per_warehouse = models.BooleanField(default=False)
-    cost_per_lot_batch = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Company Setting'
-        verbose_name_plural = 'Company Settings'
-        ordering = ()
-        default_permissions = ()
-        permissions = ()
 
 
 class CompanyFunctionNumber(SimpleAbstractModel):

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db.models import Count, Subquery
 from rest_framework import serializers
 
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanySetting, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
 from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
@@ -168,12 +168,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         return company_function_number
 
 
-def create_company_setting(company_obj, company_setting_data):
-    CompanySetting.objects.filter(company=company_obj).delete()
-    CompanySetting.objects.create(company=company_obj, **company_setting_data)
-    return True
-
-
 def create_company_function_number(company_obj, company_function_number_data):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
@@ -213,18 +207,9 @@ def create_company_function_number(company_obj, company_function_number_data):
     return True
 
 
-def validate_company_setting_data(company_setting_data, company_function_number_data):
-    base_currency_id = company_setting_data.get('primary_currency_id', None)
-    if base_currency_id:
-        if not BaseCurrency.objects.filter(id=base_currency_id).exists():
-            raise serializers.ValidationError({'detail': CompanyMsg.INVALID_BASE_CURRENCY})
-
-    for item in company_function_number_data:
-        if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
-            raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
-
-
 class CompanyCreateSerializer(serializers.ModelSerializer):
+    primary_currency_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Company
         fields = (
@@ -234,15 +219,26 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax'
+            'fax',
+            'primary_currency_id',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
         )
+
+    @classmethod
+    def validate_primary_currency_id(cls, attrs):
+        if attrs:
+            if not BaseCurrency.objects.filter(id=attrs).exists():
+                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
+            return attrs
+        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
 
     def validate(self, validate_data):
-        validate_company_setting_data(
-            self.initial_data.get('company_setting_data', {}),
-            self.initial_data.get('company_function_number_data', [])
-        )
-
+        for item in self.initial_data.get('company_function_number_data', []):
+            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
+                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
             company_quantity_max = user_obj.tenant_current.company_quality_max
@@ -256,12 +252,13 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         company_obj = Company.objects.create(**validated_data)
-        create_company_setting(company_obj, self.initial_data.get('company_setting_data', {}))
         create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
         return company_obj
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
+    primary_currency_id = serializers.SerializerMethodField()
+
     class Meta:
         model = Company
         fields = (
@@ -271,21 +268,32 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax'
+            'fax',
+            'primary_currency_id',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
         )
 
+    @classmethod
+    def validate_primary_currency_id(cls, attrs):
+        if attrs:
+            if not BaseCurrency.objects.filter(id=attrs).exists():
+                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
+            return attrs
+        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
+
     def validate(self, validate_data):
-        validate_company_setting_data(
-            self.initial_data.get('company_setting_data', {}),
-            self.initial_data.get('company_function_number_data', [])
-        )
+        for item in self.initial_data.get('company_function_number_data', []):
+            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
+                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         return validate_data
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_company_setting(instance, self.initial_data.get('company_setting_data', {}))
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance
 

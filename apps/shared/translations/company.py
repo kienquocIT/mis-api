@@ -12,3 +12,4 @@ class CompanyMsg:
     INVALID_COMPANY_SETTING_DATA = _("Invalid company setting data.")
     INVALID_COMPANY_FUNCTION_NUMBER_DATA = _("Invalid company function number data.")
     INVALID_BASE_CURRENCY = _("Invalid currency.")
+    PRIMARY_CURRENCY_IS_NOT_NULL = _("Primary currency is not NULL.")

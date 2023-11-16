@@ -27,7 +27,7 @@ from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
 from apps.core.base.models import Currency as BaseCurrency, Application
-from apps.core.company.models import Company, CompanyConfig, CompanySetting, CompanyFunctionNumber
+from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
 )
@@ -84,14 +84,6 @@ class SaleDefaultData:
     UoM_Group_data = [
         {'title': 'Labor', 'is_default': 1},
     ]
-    CompanySetting_data = [
-        {
-            'definition_inventory_valuation': 0,
-            'default_inventory_value_method': 0,
-            'cost_per_warehouse': False,
-            'cost_per_lot_batch': False
-        }
-    ]
     CompanyFunctionNumber_data = [
         {
             'numbering_by': 0,
@@ -115,7 +107,6 @@ class SaleDefaultData:
                 self.create_price_default()
                 self.create_account_types()
                 self.create_uom_group()
-                self.create_company_setting()
                 self.create_company_function_number()
             return True
         except Exception as err:
@@ -201,23 +192,6 @@ class SaleDefaultData:
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
         return True
-
-    def create_company_setting(self):
-        vnd_currency = BaseCurrency.objects.filter(
-            code='VND'
-        ).first()
-        if vnd_currency:
-            objs = [
-                CompanySetting(
-                    company=self.company_obj,
-                    primary_currency_id=str(vnd_currency.id),
-                    **cs_item
-                )
-                for cs_item in self.CompanySetting_data
-            ]
-            CompanySetting.objects.bulk_create(objs)
-            return True
-        return False
 
     def create_company_function_number(self):
         for function_index in range(10):
