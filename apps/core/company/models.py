@@ -425,28 +425,20 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             result = []
 
             # check_reset_frequency
-            current_year = datetime.datetime.now().year
-            current_month = datetime.datetime.now().month
-            data_calendar = datetime.date.today().isocalendar()
+            current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
+            data_cld = datetime.date.today().isocalendar()
             flag = False
-            if obj.reset_frequency == 0 and obj.year_reset != current_year:
-                obj.year_reset = current_year
-                flag = True
-            elif obj.reset_frequency == 1:
-                year_month_now = int(f"{current_year}{current_month:02}")
-                if obj.month_reset < year_month_now:
-                    obj.month_reset = year_month_now
+            conditions = [
+                (0, obj.year_reset, current_year),
+                (1, obj.month_reset, f"{current_year}{current_month:02}"),
+                (2, obj.week_reset, f"{data_cld[0]}{data_cld[1]:02}"),
+                (3, obj.day_reset, f"{data_cld[0]}{data_cld[1]:02}{data_cld[2]}")
+            ]
+            for reset_frequency, reset_value, new_value in conditions:
+                if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
+                    setattr(obj, f"{obj.get_reset_field_name(reset_frequency)}", int(new_value))
                     flag = True
-            elif obj.reset_frequency == 2:
-                year_week_now = int(f"{data_calendar[0]}{data_calendar[1]:02}")
-                if obj.week_reset < year_week_now:
-                    obj.week_reset = year_week_now
-                    flag = True
-            elif obj.reset_frequency == 3:
-                year_week_weekday_now = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-                if obj.day_reset < year_week_weekday_now:
-                    obj.day_reset = year_week_weekday_now
-                    flag = True
+                    break
             if flag:
                 obj.latest_number = obj.first_number - 1
                 obj.save()
@@ -459,10 +451,10 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 calendar.month_name[current_month][0:3],
                 calendar.month_name[current_month],
                 current_month,
-                data_calendar[1],
+                data_cld[1],
                 datetime.date.today().timetuple().tm_yday,
                 datetime.date.today().day,
-                data_calendar[2]
+                data_cld[2]
             ]
             pattern = r'\[.*?\]|\d'
             for match in re.findall(pattern, obj.schema):
