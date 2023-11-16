@@ -2,7 +2,7 @@ import json
 
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, TASK_IN_OPTION, TASK_OUT_OPTION
+from apps.shared import MasterDataAbstractModel
 
 __all__ = ['OpportunityTaskConfig']
 
@@ -31,24 +31,6 @@ class OpportunityTaskConfig(MasterDataAbstractModel):
     is_edit_est = models.BooleanField(
         default=False,
         verbose_name='Assignee can edit Estimate'
-    )
-    is_in_assign = models.BooleanField(
-        default=True,
-        verbose_name='Assigner can assign task to everyone'
-    )
-    in_assign_opt = models.IntegerField(
-        default=0,
-        verbose_name='option assign in opp/pro',
-        choices=TASK_IN_OPTION
-    )
-    is_out_assign = models.BooleanField(
-        default=True,
-        verbose_name='Assigner can assign task to everyone'
-    )
-    out_assign_opt = models.IntegerField(
-        default=0,
-        verbose_name='option assign out opp/pro',
-        choices=TASK_OUT_OPTION
     )
 
     class Meta:

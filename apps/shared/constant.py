@@ -164,19 +164,6 @@ TASK_KIND = (
     (3, 'Pending')
 )
 
-TASK_IN_OPTION = (
-    (0, 'None'),
-    (1, 'only member in'),
-    (2, 'only staff in dept'),
-    (3, '1 & 2 both')
-)
-TASK_OUT_OPTION = (
-    (0, 'None'),
-    (1, 'only member in dept'),
-    (2, 'only staff in dept'),
-    (3, 'both 1 & 2'),
-)
-
 # permissions
 PERMISSION_OPTION_RANGE = (
     (0, 'All option range'),

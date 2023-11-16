@@ -7,108 +7,17 @@ import django.utils.translation
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.hr.models import Employee
-from apps.sales.opportunity.models import Opportunity
 from apps.sales.task.models import OpportunityTask, OpportunityLogWork, OpportunityTaskStatus, OpportunityTaskConfig, \
     TaskAttachmentFile
 
 from apps.sales.task.utils import task_create_opportunity_activity_log
 
 from apps.shared import HRMsg, BaseMsg, call_task_background
-from apps.shared.translations.sales import SaleTask, SaleMsg
+from apps.shared.translations.sales import SaleTask
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
            'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer',
            'OpportunityTaskStatusListSerializer', 'OpportunityTaskUpdateSerializer']
-
-
-class ValidAssignTask:
-
-    @classmethod
-    def check_opp_and_return(cls, opp_id):
-        is_opp = False
-        data = Opportunity.objects.get(id=opp_id)
-        if data:
-            is_opp = True
-        return data, is_opp
-
-    @classmethod
-    def check_staffs_in_dept(cls, attrs):
-        self_employee = attrs['employee_created']
-        assignee = attrs['assign_to']
-        if self_employee.group.id == assignee.group.id or str(self_employee.id) == str(assignee.id):
-            return True
-        return False
-
-    @classmethod
-    def check_in_dept_member(cls, attrs):
-        assigner = attrs['employee_created']
-        assignee = attrs['assign_to']
-        employee_group = assigner.group.employee_group.all()
-        if employee_group and employee_group.count():
-            for emp in employee_group:
-                if emp.id == assignee.id:
-                    return True
-        if str(assigner.id) == str(assignee.id):
-            return True
-        return False
-
-    @classmethod
-    def check_in_opp_member(cls, opp_data, attrs):
-        obj_assignee = attrs['assign_to']
-        datas = None
-        if hasattr(opp_data, 'opportunity_sale_team_datas'):
-            datas = opp_data.opportunity_sale_team_datas
-        # check user có trong team
-        for data in datas:
-            member = data.get('member')  # member: dict => {}
-            if member['id'] == str(obj_assignee.id):
-                return True
-        # check user là người tạo
-        if str(opp_data.employee_inherit_id) == str(obj_assignee.id):
-            return True
-        return False
-
-    @classmethod
-    def is_in_opp_check(cls, opt, valid_data):
-        obj_opp = valid_data['opportunity']
-        opp_data, opp_check = cls.check_opp_and_return(obj_opp.id)
-        if not opp_check:
-            raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_NOT_EXIST})
-        if opt == 1:
-            # assign user in opp team
-            # if len(opp_data.opportunity_sale_team_datas):
-            check_in_mem = cls.check_in_opp_member(opp_data, valid_data)
-            if not check_in_mem:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_MEMBER})
-        elif opt == 2:
-            # assign user staff in dept
-            if not cls.check_in_dept_member(valid_data):
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_DEPARTMENT})
-        elif opt == 3:
-            is_check = cls.check_in_opp_member(opp_data, valid_data)
-            if not cls.check_in_dept_member(valid_data) and not is_check:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_1_OR_2_OPT})
-
-    @classmethod
-    def is_out_opp_check(cls, opt, attrs):
-        if opt == 1 and hasattr(attrs, 'assign_to'):
-            is_check = cls.check_in_dept_member(attrs)
-            if not is_check:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_IN_MEMBER})
-        if opt == 2 and hasattr(attrs, 'assign_to'):
-            is_check = cls.check_staffs_in_dept(attrs)
-            if not is_check:
-                raise serializers.ValidationError({'detail': SaleTask.ERROR_NOT_STAFF})
-
-    @classmethod
-    def check_config(cls, config, validate):
-        opp = validate.get('opportunity', None)
-        # nếu có opps check tiếp in_assign_opt
-        # nếu ko có opps check out_assign_opt
-        if opp and config.in_assign_opt > 0:
-            cls.is_in_opp_check(config.in_assign_opt, validate)
-        elif not opp and config.out_assign_opt > 0:
-            cls.is_out_opp_check(config.out_assign_opt, validate)
 
 
 def handle_attachment(user, instance, attachments, create_method):
@@ -161,7 +70,7 @@ def handle_attachment(user, instance, attachments, create_method):
 
 
 class OpportunityTaskListSerializer(serializers.ModelSerializer):
-    assign_to = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     checklist = serializers.SerializerMethodField()
     parent_n = serializers.SerializerMethodField()
     task_status = serializers.SerializerMethodField()
@@ -175,18 +84,18 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
                 'avatar': obj.employee_created.avatar,
                 'first_name': obj.employee_created.first_name,
                 'last_name': obj.employee_created.last_name,
-                'full_name':  f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
+                'full_name': f'{obj.employee_created.last_name} {obj.employee_created.first_name}'
             }
         return {}
 
     @classmethod
-    def get_assign_to(cls, obj):
-        if obj.assign_to:
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
             return {
-                'avatar': obj.assign_to.avatar,
-                'first_name': obj.assign_to.first_name,
-                'last_name': obj.assign_to.last_name,
-                'full_name': f'{obj.assign_to.last_name} {obj.assign_to.first_name}'
+                'avatar': obj.employee_inherit.avatar,
+                'first_name': obj.employee_inherit.first_name,
+                'last_name': obj.employee_inherit.last_name,
+                'full_name': f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
             }
         return {}
 
@@ -236,7 +145,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'priority',
-            'assign_to',
+            'employee_inherit',
             'checklist',
             'parent_n',
             'employee_created',
@@ -250,8 +159,8 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTask
         fields = ('title', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity', 'opportunity_data',
-                  'priority', 'label', 'assign_to', 'checklist', 'parent_n', 'remark', 'employee_created', 'log_time',
-                  'attach')
+                  'priority', 'label', 'employee_inherit_id', 'checklist', 'parent_n', 'remark', 'employee_created',
+                  'log_time', 'attach')
 
     @classmethod
     def validate_title(cls, attrs):
@@ -290,16 +199,6 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
-    def validate(self, attrs):
-        get_config = OpportunityTaskConfig.objects.filter_current(
-            fill__company=True
-        )
-        if get_config.exists():
-            config = get_config.first()
-            ValidAssignTask.check_config(config, attrs)
-            return attrs
-        raise serializers.ValidationError({'detail': SaleTask.ERROR_CONFIG_NOT_FOUND})
-
     def create(self, validated_data):
         user = self.context.get('user', None)
         task = OpportunityTask.objects.create(**validated_data)
@@ -326,7 +225,7 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
 
 
 class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
-    assign_to = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
     checklist = serializers.JSONField()
     parent_n = serializers.SerializerMethodField()
     task_status = serializers.SerializerMethodField()
@@ -335,13 +234,14 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     attach = serializers.SerializerMethodField()
 
     @classmethod
-    def get_assign_to(cls, obj):
-        if obj.assign_to:
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
             return {
-                'id': obj.assign_to.id,
-                'avatar': obj.assign_to.avatar,
-                'first_name': obj.assign_to.first_name,
-                'last_name': obj.assign_to.last_name
+                'id': obj.employee_inherit.id,
+                'avatar': obj.employee_inherit.avatar,
+                'first_name': obj.employee_inherit.first_name,
+                'last_name': obj.employee_inherit.last_name,
+                'full_name': f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
             }
         return {}
 
@@ -444,23 +344,25 @@ class OpportunityTaskDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
-                  'priority', 'label', 'assign_to', 'remark', 'checklist', 'parent_n', 'employee_created',
+                  'priority', 'label', 'employee_inherit', 'remark', 'checklist', 'parent_n', 'employee_created',
                   'task_log_work', 'attach')
 
 
 class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
+    employee_inherit_id = serializers.UUIDField()
+
     class Meta:
         model = OpportunityTask
         fields = ('id', 'title', 'code', 'task_status', 'start_date', 'end_date', 'estimate', 'opportunity_data',
-                  'priority', 'label', 'assign_to', 'remark', 'checklist', 'parent_n', 'employee_created', 'attach',
-                  'opportunity')
+                  'priority', 'label', 'employee_inherit_id', 'remark', 'checklist', 'parent_n', 'employee_created',
+                  'attach', 'opportunity')
 
     @classmethod
     def validate_title(cls, attrs):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': django.utils.translation.gettext_lazy("Title is required.")}
+            {'title': SaleTask.TITLE_REQUIRED}
         )
 
     @classmethod
@@ -468,17 +370,16 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if attrs:
             return attrs
         raise serializers.ValidationError(
-            {'title': django.utils.translation.gettext_lazy("Status is required.")}
+            {'status': SaleTask.STT_REQUIRED}
         )
 
     def validate_opportunity(self, attrs):
         before_opp = self.instance.opportunity
         request_emp = self.context.get('employee')
-        assign_to = self.initial_data.get('assign_to', None)
+        assign_to = self.initial_data.get('employee_inherit', None)
         if not before_opp and assign_to and request_emp and str(request_emp) == assign_to:
             raise serializers.ValidationError(
-                {'title': django.utils.translation.gettext_lazy(
-                    "You do not permission to change Opportunity or Project")}
+                {'title': SaleTask.ERROR_NOT_CHANGE}
             )
         return attrs
 
@@ -488,35 +389,29 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         config = OpportunityTaskConfig.objects.filter_current(
             fill__company=True,
         )
-        assignee = update_data['assign_to']
+        assignee = update_data['employee_inherit_id']
         if config.exists():
             config = config.first()
-            # check if request user is assignee and not is create task/sub-task
-            if employee_request == assignee and not employee_request == current_data.employee_created:
-                # assignee can not update time
+            # nếu người gửi là người thụ hưởng và ko phải là người tạo
+            if employee_request.id == assignee and not employee_request == current_data.employee_created:
+                # cấu hình ko cho update time
                 if not config.is_edit_date and (
                         current_data.start_date != update_data['start_date']
                         or current_data.end_date != update_data['end_date']
                 ):
                     raise serializers.ValidationError(
                         {
-                            'system': django.utils.translation.gettext_lazy(
-                                "You do not permission to change start/end date"
-                            )
+                            'system': SaleTask.ERROR_NOT_LOGWORK
                         }
                     )
-                # assignee can not update estimate
+                # cấu hình ko cho update estimate
                 if not config.is_edit_est and current_data.estimate != update_data['estimate']:
                     raise serializers.ValidationError(
-                        {'system': django.utils.translation.gettext_lazy("You do not permission to change estimate")}
+                        {'system': SaleTask.NOT_CHANGE_ESTIMATE}
                     )
-
-            # validate follow by config
-            if current_data.employee_created == employee_request and update_data['assign_to']:
-                ValidAssignTask.check_config(config, update_data)
             return True
         raise serializers.ValidationError(
-            {'system': django.utils.translation.gettext_lazy("Missing default info please contact with admin.")}
+            {'system': SaleTask.NOT_CONFIG}
         )
 
     def update(self, instance, validated_data):
@@ -570,9 +465,11 @@ class OpportunityTaskUpdateSTTSerializer(serializers.ModelSerializer):
     def check_task_complete(cls, instance):
         if OpportunityLogWork.objects.filter(task=instance).count():
             return True
-        raise serializers.ValidationError({
-            'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE
-        })
+        raise serializers.ValidationError(
+            {
+                'log time': SaleTask.ERROR_LOGTIME_BEFORE_COMPLETE
+            }
+        )
 
     def update(self, instance, validated_data):
         # if task status is COMPLETED
@@ -619,7 +516,7 @@ class OpportunityTaskLogWorkSerializer(serializers.ModelSerializer):
     @classmethod
     def valid_employee_log_work(cls, employee, task):
         if employee and task:
-            assign_employee = task.assign_to
+            assign_employee = task.employee_inherit
             if employee == assign_employee:
                 return employee
         raise serializers.ValidationError(

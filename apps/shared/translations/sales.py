@@ -14,18 +14,19 @@ class SaleMsg:
 
 
 class SaleTask:
+    TITLE_REQUIRED = _('Title is required.')
+    STT_REQUIRED = _('Status is required')
     ERROR_ASSIGNER = _('Assigner not found')
-    ERROR_CONFIG_NOT_FOUND = _('Config not found please contact admin')
-    ERROR_NOT_IN_MEMBER = _('Assignee not in team member')
-    ERROR_NOT_IN_DEPARTMENT = _('Assignee not in department')
-    ERROR_1_OR_2_OPT = _('Assignee not in department or not in team member')
-    ERROR_NOT_STAFF = _('Assignee is not staff of the assigner')
     VALID_PARENT_N = _('Can not create another sub-task form sub-task')
     ERROR_COMPLETE_SUB_TASK = _('Please complete Sub-task before')
     ERROR_UPDATE_SUB_TASK = _('Data request is missing please reload and try again.')
     ERROR_LOGTIME_BEFORE_COMPLETE = _('Please Log time before complete task')
     ERROR_TIME_SPENT = _('Time spent is wrong format.')
     ERROR_NOT_PERMISSION = _('You do not permission to log time this task')
+    ERROR_NOT_CHANGE = _('You do not permission to change Opportunity or Project')
+    ERROR_NOT_LOGWORK = _('You do not permission to change start/end date')
+    NOT_CHANGE_ESTIMATE = _('You do not permission to change estimate')
+    NOT_CONFIG = _('Missing default info please contact with admin')
 
 
 class PurchaseRequestMsg:

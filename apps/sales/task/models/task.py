@@ -76,12 +76,6 @@ class OpportunityTask(DataAbstractModel):
         verbose_name='Tag label',
         null=True
     )
-    assign_to = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='opportunity_task_assign_to',
-    )
     remark = models.TextField(blank=True)
 
     checklist = models.JSONField(
@@ -142,8 +136,6 @@ class OpportunityTask(DataAbstractModel):
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
             }
-        if self.assign_to and not self.employee_inherit:
-            self.employee_inherit = self.assign_to
 
     def save(self, *args, **kwargs):
         self.before_save()

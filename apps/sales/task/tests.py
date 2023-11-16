@@ -52,7 +52,7 @@ class TaskTestCase(AdvanceTestCase):
             "opportunity": opps.data['result']['id'],
             "priority": 0,
             "label": ["lorem", "ipsum", "dolor"],
-            "assign_to": employee[0]['id'],
+            "employee_inherit_id": employee[0]['id'],
             "checklist": [
                 {"name": "checklist 01", "done": False}
             ],
