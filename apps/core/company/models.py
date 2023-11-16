@@ -426,6 +426,7 @@ def check_reset_frequency(obj):
         return True
     return False
 
+
 class CompanyFunctionNumber(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
     function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
