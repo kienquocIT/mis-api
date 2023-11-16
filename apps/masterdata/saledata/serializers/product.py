@@ -497,6 +497,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             if uom_ratio_src and uom_ratio_des:
                 ratio_convert = float(uom_ratio_src / uom_ratio_des)
                 result.append({
+                    'id': item.id,
                     'warehouse': {
                         'id': item.warehouse_id,
                         'title': item.warehouse.title,

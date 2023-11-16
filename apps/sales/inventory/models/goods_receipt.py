@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE, StringHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel, GOODS_RECEIPT_TYPE
 
 
 class GoodsReceipt(DataAbstractModel):
@@ -74,7 +74,8 @@ class GoodsReceipt(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            code = 'GR0001-' + StringHandler.random_str(17)
+            # code = 'GR0001-' + StringHandler.random_str(17)
+            code = 'GR0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
             code = f'GR{num_str}'
@@ -189,16 +190,20 @@ class GoodsReceipt(DataAbstractModel):
             final_ratio = 1
             if uom_product_inventory and uom_product_gr:
                 final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-            ProductWareHouse.push_from_receipt(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                product_id=product_receipt.product_id,
-                warehouse_id=product_receipt.warehouse_id,
-                uom_id=product_receipt.product.inventory_uom_id,
-                tax_id=product_receipt.tax_id,
-                amount=product_receipt.quantity_import * final_ratio,
-                unit_price=product_receipt.product_unit_price,
-            )
+
+            # Check if product and product has inventory choice
+            if product_receipt.product:
+                if 1 in product_receipt.product.product_choice:
+                    ProductWareHouse.push_from_receipt(
+                        tenant_id=instance.tenant_id,
+                        company_id=instance.company_id,
+                        product_id=product_receipt.product_id,
+                        warehouse_id=product_receipt.warehouse_id,
+                        uom_id=product_receipt.product.inventory_uom_id,
+                        tax_id=product_receipt.tax_id,
+                        amount=product_receipt.quantity_import * final_ratio,
+                        unit_price=product_receipt.product_unit_price,
+                    )
         return True
 
     @classmethod

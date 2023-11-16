@@ -48,6 +48,14 @@ WORKFLOW_ACTION = (
     (4, WorkflowMsg.ACTION_RECEIVE),
     (5, WorkflowMsg.ACTION_TODO),
 )
+WORKFLOW_IN_WF_OPTION = (
+    (1, 'Position title'),
+    (2, 'Employee'),
+)
+WORKFLOW_IN_WF_POSITION = (
+    (1, '1st manager'),
+    (2, '2nd manager'),
+)
 
 
 # translate attribute value of above class

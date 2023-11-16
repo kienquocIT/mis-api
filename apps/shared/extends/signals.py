@@ -509,7 +509,7 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={
                 'is_picking': False,
-                'is_partial_ship': False,
+                'is_partial_ship': True,
             },
         )
 
@@ -714,19 +714,19 @@ class ConfigDefaultData:
                 {
                     'code': 'FF', 'title': _('Funeral your family (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0
                 },
                 {
                     'code': 'MC', 'title': _('Marriage your child (max 1 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0
                 },
                 {
                     'code': 'MY', 'title': _('Marriage yourself (max 3 days)'), 'paid_by': 1,
                     'balance_control': False, 'is_lt_system': True, 'is_lt_edit': False,
-                    'is_check_expiration': False, 'data_expired': timezone.now().replace(month=12, day=31),
+                    'is_check_expiration': False, 'data_expired': None,
                     'no_of_paid': 0, 'prev_year': 0
                 },
                 {
@@ -829,7 +829,7 @@ class ConfigDefaultData:
         last_day_year = next_year_date - timedelta(days=1)
         leave_type = LeaveType.objects.filter(company=self.company_obj)
 
-        for item in Employee.objects.filter(is_active=True, company=self.company_obj):
+        for item in Employee.objects.filter(company=self.company_obj):
             for l_type in leave_type:
                 if l_type.code == 'AN' or l_type.code != 'ANPY':
                     exp_date = None
@@ -882,18 +882,6 @@ class ConfigDefaultData:
 
         if len(list_avai):
             LeaveAvailable.objects.bulk_create(list_avai)
-
-    def leave_available_update(self):
-        list_update = []
-        for leave in LeaveAvailable.objects.filter(
-                company=self.company_obj, leave_type__code__in=['MY', 'FF', 'MC']
-        ):
-            l_date = timezone.now().replace(year=leave.open_year, month=12, day=31)
-            leave.total = 1 if leave.leave_type.code == 'MC' else 3
-            leave.available = 1 if leave.leave_type.code == 'MC' else 3
-            leave.expiration_date = l_date
-            list_update.append(leave)
-        LeaveAvailable.objects.bulk_update(list_update, fields=['expiration_date', 'total', 'available'])
 
     def call_new(self):
         config = self.company_config()

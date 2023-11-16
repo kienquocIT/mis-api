@@ -1,7 +1,7 @@
 from django.db import models
 
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, StringHandler
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
 # CONFIG
@@ -248,7 +248,8 @@ class SaleOrder(DataAbstractModel):
         existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
         num_max = cls.find_max_number(existing_codes)
         if num_max is None:
-            code = 'OR0001-' + StringHandler.random_str(17)
+            # code = 'OR0001-' + StringHandler.random_str(17)
+            code = 'OR0001'
         elif num_max < 10000:
             num_str = str(num_max + 1).zfill(4)
             code = f'OR{num_str}'
@@ -298,7 +299,10 @@ class SaleOrder(DataAbstractModel):
         for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
             gross_profit = 0
-            net_income = 0
+            so_product_cost = instance.sale_order_cost_sale_order.filter(product_id=so_product.product_id).first()
+            if so_product_cost:
+                gross_profit = revenue - so_product_cost.product_subtotal_price
+            net_income = gross_profit - instance.total_expense_pretax_amount
             ReportProduct.update_report_product_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,

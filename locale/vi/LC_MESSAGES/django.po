@@ -539,6 +539,26 @@ msgid "Leave available had expired"
 msgstr "Ngày nghỉ đã hết hạn"
 
 #
+msgid "Path must start with \"/\""
+msgstr "Đường dẫn bắt buộc bắt đầu bằng dấu \"/\""
+
+#
+msgid "Can't use this path"
+msgstr "Không thể sử dụng đường dẫn này"
+
+#
+msgid "Path is exist"
+msgstr "Đường dẫn đã tồn tại"
+
+#
+msgid "Filtering is incorrect"
+msgstr "Bộ lọc không chính xác"
+
+#
+msgid "Sub domain already exists. Please choose another name."
+msgstr "Tên miền này đã được sử dụng. Vui lòng chọn tên khác."
+
+#
 msgid "Status is required"
 msgstr "Vui lòng chọn một trạng thái cho công việc này"
 
@@ -584,4 +604,4 @@ msgstr "Bạn không có quyền thay đổi thời gian đã ước tính"
 
 #
 msgid "Missing default info please contact with admin"
-msgstr "Thiếu thông tin vui lòng liên hệ admin"
+msgstr "Thiếu thông tin vui lòng liên hệ quản trị viên"
