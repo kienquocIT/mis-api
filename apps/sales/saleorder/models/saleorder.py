@@ -340,7 +340,7 @@ class SaleOrder(DataAbstractModel):
                 function_number = self.company.company_function_number.filter(function=2).first()
                 if function_number:
                     self.code = function_number.gen_code(company_obj=self.company, func=2)
-                else:
+                if not self.code:
                     records = SaleOrder.objects.filter_current(
                         fill__tenant=True, fill__company=True, is_delete=False
                     )
