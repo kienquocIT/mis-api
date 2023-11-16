@@ -8,9 +8,7 @@ from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from apps.shared import (
-    SimpleAbstractModel, MasterDataAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
-)
+from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
 from apps.core.models import CoreAbstractModel
 
 
