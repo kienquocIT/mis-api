@@ -1125,7 +1125,6 @@ def create_company_function_number():
             for cf_item in company_function_number_data:
                 bulk_create_data.append(
                     CompanyFunctionNumber(
-                        tenant=company_obj.tenant,
                         company=company_obj,
                         function=function_index,
                         **cf_item

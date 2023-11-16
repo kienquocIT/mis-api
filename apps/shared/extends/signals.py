@@ -223,7 +223,6 @@ class SaleDefaultData:
         for function_index in range(10):
             objs = [
                 CompanyFunctionNumber(
-                    tenant=self.company_obj.tenant,
                     company=self.company_obj,
                     function=function_index,
                     **cf_item
