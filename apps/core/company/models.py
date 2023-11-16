@@ -396,37 +396,6 @@ class CompanySetting(SimpleAbstractModel):
         permissions = ()
 
 
-def check_reset_frequency(obj):
-    current_year = datetime.datetime.now().year
-    current_month = datetime.datetime.now().month
-    data_calendar = datetime.date.today().isocalendar()
-    flag = False
-    if obj.reset_frequency == 0:
-        if obj.year_reset != current_year:
-            obj.year_reset = current_year
-            flag = True
-    elif obj.reset_frequency == 1:
-        year_month_now = int(f"{current_year}{current_month:02}")
-        if obj.month_reset < year_month_now:
-            obj.month_reset = year_month_now
-            flag = True
-    elif obj.reset_frequency == 2:
-        year_week_now = int(f"{data_calendar[0]}{data_calendar[1]:02}")
-        if obj.week_reset < year_week_now:
-            obj.week_reset = year_week_now
-            flag = True
-    elif obj.reset_frequency == 3:
-        year_week_weekday_now = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-        if obj.day_reset < year_week_weekday_now:
-            obj.day_reset = year_week_weekday_now
-            flag = True
-    if flag:
-        obj.latest_number = obj.first_number - 1
-        obj.save()
-        return True
-    return False
-
-
 class CompanyFunctionNumber(SimpleAbstractModel):
     company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
     function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
@@ -454,7 +423,35 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         obj = cls.objects.filter(company=company_obj, function=func).first()
         if obj and obj.schema is not None:
             result = []
-            check_reset_frequency(obj)
+
+            # check_reset_frequency
+            current_year = datetime.datetime.now().year
+            current_month = datetime.datetime.now().month
+            data_calendar = datetime.date.today().isocalendar()
+            flag = False
+            if obj.reset_frequency == 0:
+                if obj.year_reset != current_year:
+                    obj.year_reset = current_year
+                    flag = True
+            elif obj.reset_frequency == 1:
+                year_month_now = int(f"{current_year}{current_month:02}")
+                if obj.month_reset < year_month_now:
+                    obj.month_reset = year_month_now
+                    flag = True
+            elif obj.reset_frequency == 2:
+                year_week_now = int(f"{data_calendar[0]}{data_calendar[1]:02}")
+                if obj.week_reset < year_week_now:
+                    obj.week_reset = year_week_now
+                    flag = True
+            elif obj.reset_frequency == 3:
+                year_week_weekday_now = int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+                if obj.day_reset < year_week_weekday_now:
+                    obj.day_reset = year_week_weekday_now
+                    flag = True
+            if flag:
+                obj.latest_number = obj.first_number - 1
+                obj.save()
+
             number = obj.latest_number + 1
             schema_item_list = [
                 number,
