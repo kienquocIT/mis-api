@@ -136,21 +136,17 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_company_setting(cls, obj):
-        company_setting = obj.company_setting.all()
-        if company_setting.count() > 0:
-            company_setting = company_setting.first()
-            return {
-                'primary_currency': {
-                    'id': company_setting.primary_currency_id,
-                    'title': company_setting.primary_currency.title,
-                    'abbreviation': company_setting.primary_currency.code,
-                } if company_setting.primary_currency else {},
-                'definition_inventory_valuation': company_setting.definition_inventory_valuation,
-                'default_inventory_value_method': company_setting.default_inventory_value_method,
-                'cost_per_warehouse': company_setting.cost_per_warehouse,
-                'cost_per_lot_batch': company_setting.cost_per_lot_batch
-            }
-        return {}
+        return {
+            'primary_currency': {
+                'id': obj.primary_currency_id,
+                'title': obj.primary_currency.title,
+                'abbreviation': obj.primary_currency.code,
+            } if obj.primary_currency else {},
+            'definition_inventory_valuation': obj.definition_inventory_valuation,
+            'default_inventory_value_method': obj.default_inventory_value_method,
+            'cost_per_warehouse': obj.cost_per_warehouse,
+            'cost_per_lot_batch': obj.cost_per_lot_batch
+        }
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -208,7 +204,10 @@ def create_company_function_number(company_obj, company_function_number_data):
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
-    primary_currency_id = serializers.SerializerMethodField()
+    email = serializers.CharField(max_length=150, required=True)
+    address = serializers.CharField(max_length=150, required=True)
+    phone = serializers.CharField(max_length=25, required=True)
+    primary_currency = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -220,7 +219,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'fax',
-            'primary_currency_id',
+            'primary_currency',
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
@@ -228,11 +227,12 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_primary_currency_id(cls, attrs):
+    def validate_primary_currency(cls, attrs):
         if attrs:
-            if not BaseCurrency.objects.filter(id=attrs).exists():
+            obj = BaseCurrency.objects.filter(id=attrs).first()
+            if not obj:
                 raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
-            return attrs
+            return obj
         raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
 
     def validate(self, validate_data):
@@ -257,7 +257,10 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
-    primary_currency_id = serializers.SerializerMethodField()
+    email = serializers.CharField(max_length=150, required=True)
+    address = serializers.CharField(max_length=150, required=True)
+    phone = serializers.CharField(max_length=25, required=True)
+    primary_currency = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -269,7 +272,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'email',
             'phone',
             'fax',
-            'primary_currency_id',
+            'primary_currency',
             'definition_inventory_valuation',
             'default_inventory_value_method',
             'cost_per_warehouse',
@@ -277,11 +280,12 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         )
 
     @classmethod
-    def validate_primary_currency_id(cls, attrs):
+    def validate_primary_currency(cls, attrs):
         if attrs:
-            if not BaseCurrency.objects.filter(id=attrs).exists():
+            obj = BaseCurrency.objects.filter(id=attrs).first()
+            if not obj:
                 raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
-            return attrs
+            return obj
         raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
 
     def validate(self, validate_data):
