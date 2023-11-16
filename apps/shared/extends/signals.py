@@ -509,7 +509,7 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={
                 'is_picking': False,
-                'is_partial_ship': False,
+                'is_partial_ship': True,
             },
         )
 
