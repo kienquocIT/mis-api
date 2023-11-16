@@ -429,10 +429,9 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             current_month = datetime.datetime.now().month
             data_calendar = datetime.date.today().isocalendar()
             flag = False
-            if obj.reset_frequency == 0:
-                if obj.year_reset != current_year:
-                    obj.year_reset = current_year
-                    flag = True
+            if obj.reset_frequency == 0 and obj.year_reset != current_year:
+                obj.year_reset = current_year
+                flag = True
             elif obj.reset_frequency == 1:
                 year_month_now = int(f"{current_year}{current_month:02}")
                 if obj.month_reset < year_month_now:
@@ -455,15 +454,15 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             number = obj.latest_number + 1
             schema_item_list = [
                 number,
-                datetime.datetime.now().year % 100,
-                datetime.datetime.now().year,
-                calendar.month_name[datetime.datetime.now().month][0:3],
-                calendar.month_name[datetime.datetime.now().month],
-                datetime.datetime.now().month,
-                datetime.date.today().isocalendar()[1],
+                current_year % 100,
+                current_year,
+                calendar.month_name[current_month][0:3],
+                calendar.month_name[current_month],
+                current_month,
+                data_calendar[1],
                 datetime.date.today().timetuple().tm_yday,
                 datetime.date.today().day,
-                datetime.date.today().isocalendar()[2]
+                data_calendar[2]
             ]
             pattern = r'\[.*?\]|\d'
             for match in re.findall(pattern, obj.schema):
