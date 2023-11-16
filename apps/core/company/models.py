@@ -426,13 +426,13 @@ class CompanyFunctionNumber(SimpleAbstractModel):
 
             # check_reset_frequency
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
-            data_cld = datetime.date.today().isocalendar()
+            data_calendar = datetime.date.today().isocalendar()
             flag = False
             conditions = [
                 (0, obj.year_reset, current_year),
                 (1, obj.month_reset, f"{current_year}{current_month:02}"),
-                (2, obj.week_reset, f"{data_cld[0]}{data_cld[1]:02}"),
-                (3, obj.day_reset, f"{data_cld[0]}{data_cld[1]:02}{data_cld[2]}")
+                (2, obj.week_reset, f"{data_calendar[0]}{data_calendar[1]:02}"),
+                (3, obj.day_reset, f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
             ]
             for reset_frequency, reset_value, new_value in conditions:
                 if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
@@ -443,26 +443,24 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 obj.latest_number = obj.first_number - 1
                 obj.save()
 
-            number = obj.latest_number + 1
             schema_item_list = [
-                number,
+                obj.latest_number + 1,
                 current_year % 100,
                 current_year,
                 calendar.month_name[current_month][0:3],
                 calendar.month_name[current_month],
                 current_month,
-                data_cld[1],
+                data_calendar[1],
                 datetime.date.today().timetuple().tm_yday,
                 datetime.date.today().day,
-                data_cld[2]
+                data_calendar[2]
             ]
-            pattern = r'\[.*?\]|\d'
-            for match in re.findall(pattern, obj.schema):
+            for match in re.findall(r"\[.*?\]|\d", obj.schema):
                 if match.isdigit():
                     result.append(str(schema_item_list[int(match)]))
                 else:
                     result.append(match[1:-1])
-            obj.latest_number = number
+            obj.latest_number = obj.latest_number + 1
             obj.save()
             return '-'.join(result)
         return None
