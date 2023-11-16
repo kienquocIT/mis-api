@@ -44,18 +44,13 @@ class ReturnAdvance(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        return_advance = ReturnAdvance.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "RP"
         if not self.code:
-            temper = "%04d" % (return_advance + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
-
-        # hit DB
+            function_number = self.company.company_function_number.filter(function=8).first()
+            if function_number:
+                self.code = function_number.gen_code(company_obj=self.company, func=8)
+            else:
+                records = ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                self.code = 'RP.00' + str(records.count() + 1)
         super().save(*args, **kwargs)
 
 

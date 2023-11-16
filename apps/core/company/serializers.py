@@ -169,19 +169,18 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
 
 def create_company_setting(company_obj, company_setting_data):
-    CompanySetting.objects.filter_current(company=company_obj).delete()
+    CompanySetting.objects.filter(company=company_obj).delete()
     CompanySetting.objects.create(company=company_obj, **company_setting_data)
     return True
 
 
-def create_company_function_number(company_function_number_data):
+def create_company_function_number(company_obj, company_function_number_data):
     date_now = datetime.datetime.now()
     data_calendar = datetime.date.today().isocalendar()
     updated_function = []
     for item in company_function_number_data:
-        obj = CompanyFunctionNumber.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
+        obj = CompanyFunctionNumber.objects.filter(
+            company=company_obj,
             function=item.get('function', None)
         )
         if obj.count() == 1:
@@ -196,7 +195,7 @@ def create_company_function_number(company_function_number_data):
             }
             obj.update(**updated_fields)
 
-    CompanyFunctionNumber.objects.filter_current(fill__tenant=True, fill__company=True).exclude(
+    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(
         function__in=updated_function
     ).update(
         numbering_by=0,
@@ -258,7 +257,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         company_obj = Company.objects.create(**validated_data)
         create_company_setting(company_obj, self.initial_data.get('company_setting_data', {}))
-        create_company_function_number(self.initial_data.get('company_function_number_data', []))
+        create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
         return company_obj
 
 
@@ -287,7 +286,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         create_company_setting(instance, self.initial_data.get('company_setting_data', {}))
-        create_company_function_number(self.initial_data.get('company_function_number_data', []))
+        create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance
 
 

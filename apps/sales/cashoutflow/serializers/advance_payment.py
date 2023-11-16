@@ -256,18 +256,8 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'AP.0001'
-        else:
-            latest_code = AdvancePayment.objects.filter_current(
-                fill__tenant=True, fill__company=True
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1  # "AP.00034" > "00034" > 34 > 35 > "AP.00035"
-            new_code = 'AP.000' + str(new_code)
-
-        advance_payment_obj = AdvancePayment.objects.create(**validated_data, code=new_code)
-        if self.initial_data.get('expense_valid_list', []):
-            create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', []))
+        advance_payment_obj = AdvancePayment.objects.create(**validated_data)
+        create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', []))
         return advance_payment_obj
 
 
