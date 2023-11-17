@@ -557,3 +557,51 @@ msgstr "Bộ lọc không chính xác"
 #
 msgid "Sub domain already exists. Please choose another name."
 msgstr "Tên miền này đã được sử dụng. Vui lòng chọn tên khác."
+
+#
+msgid "Status is required"
+msgstr "Vui lòng chọn một trạng thái cho công việc này"
+
+#
+msgid "Assigner not found"
+msgstr "Người tạo không tồn tại"
+
+#
+msgid "Can not create another sub-task form sub-task"
+msgstr "Không thể tạo thêm công việc phụ từ công việc hiện tại"
+
+#
+msgid "Please complete Sub-task before"
+msgstr "Vui lòng hoàn thành công việc phụ trước"
+
+#
+msgid "Data request is missing please reload and try again."
+msgstr "Thiếu dữ liệu"
+
+#
+msgid "Please Log time before complete task"
+msgstr "Vui lòng ghi nhận giờ làm việc cho công việc này"
+
+#
+msgid "Time spent is wrong format."
+msgstr "Lỗi định dạng ngày tháng"
+
+#
+msgid "You do not permission to log time this task"
+msgstr "Bạn không có quyền ghi nhận giờ làm của công việc này"
+
+#
+msgid "You do not permission to change Opportunity or Project"
+msgstr "Bạn không có quyền thay đổi Cơ hội kinh doanh/Dự án"
+
+#
+msgid "You do not permission to change start/end date"
+msgstr "Bạn không có quyền thay đổi ngày của công việc này"
+
+#
+msgid "You do not permission to change estimate"
+msgstr "Bạn không có quyền thay đổi thời gian đã ước tính"
+
+#
+msgid "Missing default info please contact with admin"
+msgstr "Thiếu thông tin vui lòng liên hệ quản trị viên"

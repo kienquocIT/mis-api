@@ -302,6 +302,23 @@ class DataAbstractModel(SimpleAbstractModel):
     is_delete = models.BooleanField(default=False)
 
 
+class ExtendsDataAbstractModel(SimpleAbstractModel):
+    class Meta:
+        abstract = True
+        default_permissions = ()
+        permissions = ()
+
+    opps_related = models.ForeignKey(
+        'Opportunity',
+        default=None,
+        null=True,
+        on_delete=models.SET_NULL,
+        verbose_name='Opportunity related to',
+        related_name='%(app_label)s_%(class)s_opportunity_related',
+        help_text='Relate to Opportunity',
+    )
+
+
 # Forwarder class model
 class DisperseModel:
     """

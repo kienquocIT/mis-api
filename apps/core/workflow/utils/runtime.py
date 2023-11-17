@@ -239,7 +239,6 @@ class RuntimeHandler:
     ) -> bool:
         if rt_assignee.is_done is False:
             runtime_obj = rt_assignee.stage.runtime
-
             # WORKFLOW_ACTION = {
             #     0: WorkflowMsg.ACTION_CREATE,
             #     1: WorkflowMsg.ACTION_APPROVED,
@@ -263,7 +262,6 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next
@@ -335,7 +333,6 @@ class RuntimeStageHandler:
             actor_obj=self.runtime_obj.doc_employee_created,
             is_system=False,
         ).log_return_task()  # return
-
         config_cls = WFConfigSupport(workflow=self.runtime_obj.flow)
         initial_node = config_cls.get_initial_node()
         if initial_node:
@@ -398,8 +395,30 @@ class RuntimeStageHandler:
         return result
 
     @classmethod
+    def parse_in_wf_collab(cls, node, doc_employee_inherit):
+        collab_in_wf = {}
+        for collab in CollabInWorkflow.objects.filter(node=node):
+            zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
+            if collab.in_wf_option == 1 and doc_employee_inherit:
+                if not doc_employee_inherit.group:
+                    raise ValueError('Employee inherit does not have group')
+                if collab.position_choice == 1:
+                    if not doc_employee_inherit.group.first_manager_id:
+                        raise ValueError('1st manager is not defined')
+                    collab_in_wf[str(doc_employee_inherit.group.first_manager_id)] = zone_and_properties
+                elif collab.position_choice == 2:
+                    if not doc_employee_inherit.group.second_manager_id:
+                        raise ValueError('2nd manager is not defined')
+                    collab_in_wf[str(doc_employee_inherit.group.second_manager_id)] = zone_and_properties
+            elif collab.in_wf_option == 2:
+                collab_in_wf[str(collab.employee_id)] = zone_and_properties
+
+        return collab_in_wf
+
+    @classmethod
     def __parse_collaboration(
-            cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None
+            cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None,
+            doc_employee_inherit=None
     ) -> dict:
         # OPTION_COLLABORATOR = (
         #     (0, WorkflowMsg.COLLABORATOR_IN),
@@ -432,10 +451,7 @@ class RuntimeStageHandler:
                         str(_id): zones for _id in out_form_obj.employees.all().values_list('id', flat=True)
                     }
                 case 2:
-                    return {
-                        str(collab.employee_id): cls.__get_zone_and_properties(collab.zone.all())
-                        for collab in CollabInWorkflow.objects.filter(node=node)
-                    }
+                    return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
         except CollaborationInForm.DoesNotExist:
             pass
         except CollaborationOutForm.DoesNotExist:
@@ -449,8 +465,8 @@ class RuntimeStageHandler:
                 node=stage_obj.node,
                 doc_params=self.runtime_obj.doc_params,
                 employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
+                doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
             )
-
             # convert assignee and zone to simple data
             employee_ids_zones = {}
             objs = []
@@ -471,7 +487,6 @@ class RuntimeStageHandler:
                     zone_and_properties=zone_and_properties,
                 )
                 objs_created.append(obj_created)
-
                 # create instance log
                 log_obj_tmp = RuntimeLogHandler(
                     stage_obj=stage_obj,
@@ -487,7 +502,6 @@ class RuntimeStageHandler:
                 log_objs.append(log_obj_tmp)
                 # push employee to stages.assignees
                 employee_ids_zones.update({emp_id: zone_and_properties})
-
             # create runtime assignee
             # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
@@ -495,11 +509,9 @@ class RuntimeStageHandler:
             HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
                 runtime_assignee_obj=objs_created,
             )
-
             # update assignee and zone to Stage
             stage_obj.assignee_and_zone_data = employee_ids_zones
             stage_obj.save(update_fields=['assignee_and_zone_data'])
-
             # create log
             RuntimeLogHandler.perform_create(log_objs)
             return objs_created
@@ -519,7 +531,6 @@ class RuntimeStageHandler:
                 self.runtime_obj.save()
                 stage_obj_currently.to_stage = next_stage
                 stage_obj_currently.save()
-
                 # check if stage is approved then auto added
                 if next_stage.code == 'approved':
                     # call added doc obj
@@ -528,7 +539,6 @@ class RuntimeStageHandler:
                 return self.run_next(workflow=workflow, stage_obj_currently=next_stage)
             self.set_state_task_bg('SUCCESS')
             return next_stage
-
         # update some field when go to completed
         if stage_obj_currently.code == 'completed':
             self.runtime_obj.status = 1
@@ -595,7 +605,6 @@ class RuntimeStageHandler:
                     actor_obj=self.runtime_obj.doc_employee_created,
                     is_system=True,
                 ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
-
         # update current_stage for document
         if stage_obj:
             obj = DocHandler(self.runtime_obj.doc_id, self.runtime_obj.app_code).get_obj(
@@ -608,7 +617,6 @@ class RuntimeStageHandler:
                 setattr(obj, 'current_stage', stage_obj)
                 setattr(obj, 'current_stage_title', stage_obj.title)
                 obj.save(update_fields=['current_stage', 'current_stage_title'])
-
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
         if len(assignee_created) == 0:

@@ -534,7 +534,7 @@ class ConfigDefaultData:
             company=self.company_obj,
             defaults={
                 'is_picking': False,
-                'is_partial_ship': False,
+                'is_partial_ship': True,
             },
         )
 
@@ -669,11 +669,7 @@ class ConfigDefaultData:
                     },
                 ],
                 'is_edit_date': False,
-                'is_edit_est': False,
-                'is_in_assign': True,
-                'in_assign_opt': 0,
-                'is_out_assign': True,
-                'out_assign_opt': 0
+                'is_edit_est': False
             },
         )
         if created:
@@ -689,7 +685,7 @@ class ConfigDefaultData:
                         order=item['order'],
                         is_edit=item['is_edit'],
                         task_kind=item['task_kind'],
-                        task_color=None,
+                        task_color=item['task_color'],
                     )
                 )
             OpportunityTaskStatus.objects.bulk_create(temp_stt)

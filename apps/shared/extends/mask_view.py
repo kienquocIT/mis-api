@@ -1693,6 +1693,7 @@ class ViewChecking:
         self.employee_attr = EmployeeAttribute(employee_obj=cls_attr.employee_current)
 
         state_depend_on = False if self.attr.request_method == 'GET' and self.attr.has_dropdown_list is True else None
+
         self.permit_cls = PermissionController(
             cls_employee_attr=self.employee_attr,
             cls_decor=cls_decor,

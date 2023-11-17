@@ -4,7 +4,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND
+from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
 from apps.sales.opportunity.models import Opportunity
 from .config import OpportunityTaskConfig
 
@@ -40,7 +40,7 @@ class OpportunityTaskStatus(MasterDataAbstractModel):
         permissions = ()
 
 
-class OpportunityTask(MasterDataAbstractModel):
+class OpportunityTask(DataAbstractModel):
     task_status = models.ForeignKey(
         OpportunityTaskStatus,
         on_delete=models.CASCADE,
@@ -75,12 +75,6 @@ class OpportunityTask(MasterDataAbstractModel):
         default=list,
         verbose_name='Tag label',
         null=True
-    )
-    assign_to = models.ForeignKey(
-        'hr.Employee',
-        on_delete=models.CASCADE,
-        null=True,
-        related_name='opportunity_task_assign_to',
     )
     remark = models.TextField(blank=True)
 
@@ -120,11 +114,6 @@ class OpportunityTask(MasterDataAbstractModel):
             ["uuid4", "uuid4"]
         )
     )
-    employee_inherit = models.ForeignKey(
-        'hr.Employee', null=True, on_delete=models.SET_NULL,
-        help_text='',
-        related_name='tasks_opportunitytasks_employee_inherit',
-    )
 
     def create_code_task(self):
         # auto create code (temporary)
@@ -147,8 +136,6 @@ class OpportunityTask(MasterDataAbstractModel):
                 "title": str(self.opportunity.title),
                 "code": str(self.opportunity.code),
             }
-        if self.assign_to and not self.employee_inherit:
-            self.employee_inherit = self.assign_to
 
     def save(self, *args, **kwargs):
         self.before_save()

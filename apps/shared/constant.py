@@ -48,6 +48,14 @@ WORKFLOW_ACTION = (
     (4, WorkflowMsg.ACTION_RECEIVE),
     (5, WorkflowMsg.ACTION_TODO),
 )
+WORKFLOW_IN_WF_OPTION = (
+    (1, 'Position title'),
+    (2, 'Employee'),
+)
+WORKFLOW_IN_WF_POSITION = (
+    (1, '1st manager'),
+    (2, '2nd manager'),
+)
 
 
 # translate attribute value of above class
@@ -162,19 +170,6 @@ TASK_KIND = (
     (1, 'To do'),
     (2, 'Completed'),
     (3, 'Pending')
-)
-
-TASK_IN_OPTION = (
-    (0, 'None'),
-    (1, 'only member in'),
-    (2, 'only staff in dept'),
-    (3, '1 & 2 both')
-)
-TASK_OUT_OPTION = (
-    (0, 'None'),
-    (1, 'only member in dept'),
-    (2, 'only staff in dept'),
-    (3, 'both 1 & 2'),
 )
 
 # permissions

@@ -21,13 +21,13 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     serializer_create = OpportunityTaskCreateSerializer
     serializer_detail = OpportunityTaskDetailSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
         'parent_n': ['exact'],
     }
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'assign_to', 'opportunity', 'employee_created')
+        return self.queryset.select_related('parent_n', 'employee_inherit', 'opportunity', 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task List",
@@ -35,7 +35,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='view')
+        label_code='task', model_code='opportunityTask', perm_code='view')
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -46,7 +46,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='task', model_code='OpportunityTask', perm_code='create', )
+        label_code='task', model_code='opportunityTask', perm_code='create', )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
             'user': request.user
@@ -62,13 +62,15 @@ class OpportunityTaskDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
     def get_queryset(self):
-        return self.queryset.select_related('parent_n', 'assign_to', 'employee_created')
+        return self.queryset.select_related('parent_n', 'employee_inherit', 'employee_created')
 
     @swagger_auto_schema(
         operation_summary="Opportunity Task Detail",
         operation_description="Detail opportunity task",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='task', model_code='opportunityTask', perm_code='view', )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 

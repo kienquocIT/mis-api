@@ -34,15 +34,13 @@ class TaskConfigDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('id', 'list_status', 'is_edit_date', 'is_edit_est', 'is_in_assign', 'in_assign_opt', 'is_out_assign',
-                  'out_assign_opt')
+        fields = ('id', 'list_status', 'is_edit_date', 'is_edit_est')
 
 
 class TaskConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = OpportunityTaskConfig
-        fields = ('list_status', 'is_edit_date', 'is_edit_est', 'is_in_assign', 'in_assign_opt', 'is_out_assign',
-                  'out_assign_opt')
+        fields = ('list_status', 'is_edit_date', 'is_edit_est')
 
     @classmethod
     def handle_task_before(cls, obj_status, instance):

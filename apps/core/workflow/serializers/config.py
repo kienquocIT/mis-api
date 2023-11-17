@@ -497,7 +497,9 @@ class CommonCreateUpdate:
         for data_in_workflow in collab_in_workflow:
             collab_in_workflows = CollabInWorkflow.objects.create(
                 node=node_create,
-                employee_id=data_in_workflow.get('employee', {}).get('id', None)
+                in_wf_option=data_in_workflow.get('in_wf_option'),
+                position_choice=data_in_workflow.get('position_choice', None),
+                employee_id=data_in_workflow.get('employee', {}).get('id', None),
             )
             if collab_in_workflows:
                 CollabInWorkflowZone.objects.bulk_create(
