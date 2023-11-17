@@ -128,7 +128,7 @@ COMPANY_APP_CONFIG = {
     "title": "Company",
     "code": "company",
     "model_code": "company",
-    "app_label": "hr",
+    "app_label": "company",
     "is_workflow": False,
     "option_permission": 1,
     "option_allowed": [4],
