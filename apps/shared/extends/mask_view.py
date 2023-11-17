@@ -935,8 +935,10 @@ class PermissionController:
         def get_value_special_key_for_obj(_key1):
             if _key1 in ['employee_inherit', 'opportunity', 'project']:
                 return getattr(obj_or_dict, _key1 + '_id', None)
-            elif _key1 == 'company_id':
-                return getattr(obj_or_dict, 'id', None)
+            if _key1 == 'company_id':
+                company_model = DisperseModel(app_model='company.company').get_model()
+                if isinstance(obj_or_dict, company_model):  # noqa
+                    return getattr(obj_or_dict, 'id', None)
             return getattr(obj_or_dict, _key1, None)
 
         def get_value_special_key_for_dict(_key2):
