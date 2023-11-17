@@ -66,6 +66,16 @@ class Payment(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    def save(self, *args, **kwargs):
+        if not self.code:
+            function_number = self.company.company_function_number.filter(function=7).first()
+            if function_number:
+                self.code = function_number.gen_code(company_obj=self.company, func=7)
+            if not self.code:
+                records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                self.code = 'PAYMENT.00' + str(records.count() + 1)
+        super().save(*args, **kwargs)
+
 
 class PaymentCost(SimpleAbstractModel):
     payment = models.ForeignKey(

@@ -263,6 +263,9 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             win_rate=win_rate,
         )
 
+        if Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, code=opportunity.code).count() > 1:
+            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
+
         # create M2M Opportunity and Product Category
         CommonOpportunityUpdate.create_product_category(product_categories, opportunity)
         # create stage default for Opportunity

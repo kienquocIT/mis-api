@@ -103,7 +103,7 @@ class WardListSerializer(serializers.ModelSerializer):
 class BaseCurrencyListSerializer(serializers.ModelSerializer):
     class Meta:
         model = BaseCurrency
-        fields = ('id', 'title', 'code', 'title')
+        fields = ('id', 'title', 'code')
 
 
 class BaseItemUnitListSerializer(serializers.ModelSerializer):

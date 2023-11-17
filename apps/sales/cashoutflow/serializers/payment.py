@@ -108,19 +108,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        if Payment.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'PAYMENT.0001'
-        else:
-            latest_code = Payment.objects.filter_current(
-                fill__tenant=True, fill__company=True
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'PAYMENT.000' + str(new_code)
-
-        payment_obj = Payment.objects.create(code=new_code, **validated_data)
-
-        if len(self.initial_data.get('payment_expense_valid_list', [])) > 0:
-            create_payment_cost_items(payment_obj, self.initial_data.get('payment_expense_valid_list', []))
+        payment_obj = Payment.objects.create(**validated_data)
+        create_payment_cost_items(payment_obj, self.initial_data.get('payment_expense_valid_list', []))
         return payment_obj
 
 

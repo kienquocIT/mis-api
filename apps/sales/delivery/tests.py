@@ -15,6 +15,11 @@ from apps.shared.extends.tests import AdvanceTestCase
 
 
 class PickingDeliveryTestCase(AdvanceTestCase):
+    def get_base_currency(self):
+        response = self.client.get(reverse("BaseCurrencyList"), format='json')
+        self.assertEqual(response.status_code, 200)
+        return response
+
     def setUp(self):
         self.maxDiff = None
         self.client = APIClient()
@@ -27,6 +32,7 @@ class PickingDeliveryTestCase(AdvanceTestCase):
             'address': '7826 avenue, Victoria Street, California, American',
             'email': 'mike.nguyen.7826@gmail.com',
             'phone': '0983875345',
+            'primary_currency': self.get_base_currency().data['result'][0]['id']
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         self.company = company_req

@@ -26,8 +26,8 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency
-from apps.core.company.models import Company, CompanyConfig
+from apps.core.base.models import Currency as BaseCurrency, Application
+from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
 )
@@ -84,6 +84,16 @@ class SaleDefaultData:
     UoM_Group_data = [
         {'title': 'Labor', 'is_default': 1},
     ]
+    CompanyFunctionNumber_data = [
+        {
+            'numbering_by': 0,
+            'schema': None,
+            'schema_text': None,
+            'first_number': None,
+            'last_number': None,
+            'reset_frequency': None
+        }
+    ]
 
     def __init__(self, company_obj):
         self.company_obj = company_obj
@@ -97,6 +107,7 @@ class SaleDefaultData:
                 self.create_price_default()
                 self.create_account_types()
                 self.create_uom_group()
+                self.create_company_function_number()
             return True
         except Exception as err:
             logger.error(
@@ -181,6 +192,20 @@ class SaleDefaultData:
         ]
         UnitOfMeasureGroup.objects.bulk_create(objs)
         return True
+
+    def create_company_function_number(self):
+        for function_index in range(10):
+            objs = [
+                CompanyFunctionNumber(
+                    company=self.company_obj,
+                    function=function_index,
+                    **cf_item
+                )
+                for cf_item in self.CompanyFunctionNumber_data
+            ]
+            CompanyFunctionNumber.objects.bulk_create(objs)
+            return True
+        return False
 
 
 class ConfigDefaultData:

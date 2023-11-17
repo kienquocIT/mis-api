@@ -1,11 +1,11 @@
 import json
-
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-
 from apps.core.hr.models import PermissionAbstractModel
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import (
+    DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+)
 from .config import OpportunityConfigStage, OpportunityConfig
 
 TYPE_CUSTOMER = [
@@ -495,17 +495,13 @@ class Opportunity(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        # auto create code (temporary)
-        opportunity = Opportunity.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
-        char = "OPP"
         if not self.code:
-            temper = "%04d" % (opportunity + 1)  # pylint: disable=C0209
-            code = f"{char}{temper}"
-            self.code = code
+            function_number = self.company.company_function_number.filter(function=0).first()
+            if function_number:
+                self.code = function_number.gen_code(company_obj=self.company, func=0)
+            if not self.code:
+                records = Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                self.code = 'OPP.00' + str(records.count() + 1)
 
         if 'quotation_confirm' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
@@ -515,7 +511,6 @@ class Opportunity(DataAbstractModel):
                 )
             kwargs['update_fields'].append('win_rate')
             del kwargs['quotation_confirm']
-
         elif 'sale_order_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(
@@ -524,7 +519,6 @@ class Opportunity(DataAbstractModel):
                 )
             kwargs['update_fields'].append('win_rate')
             del kwargs['sale_order_status']
-
         elif 'delivery_status' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
                 self.win_rate = self.auto_update_stage(

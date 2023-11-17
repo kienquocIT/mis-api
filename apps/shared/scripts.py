@@ -1,5 +1,5 @@
 from datetime import date
-from apps.core.company.models import Company
+from apps.core.company.models import Company, CompanyFunctionNumber
 from apps.masterdata.saledata.models.product import (
     ProductType, Product, ExpensePrice, ProductCategory, UnitOfMeasure,
     Expense,
@@ -10,12 +10,14 @@ from apps.masterdata.saledata.models.price import (
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.accounts import AccountType, Account, AccountCreditCards
 
-from apps.core.base.models import PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City
+from apps.core.base.models import (
+    PlanApplication, ApplicationProperty, Application, SubscriptionPlan, City, Currency as BaseCurrency
+)
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost,
     ReturnAdvance, ReturnAdvanceCost,
-    Payment, PaymentCost,
+    Payment, PaymentCost
 )
 from apps.core.workflow.models import WorkflowConfigOfApp, Workflow, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog
 from apps.masterdata.saledata.models import (
@@ -153,6 +155,12 @@ def update_account_billing_address():
 def delete_all_ap():
     AdvancePayment.objects.all().delete()
     AdvancePaymentCost.objects.all().delete()
+    return True
+
+
+def delete_all_payment():
+    Payment.objects.all().delete()
+    PaymentCost.objects.all().delete()
     return True
 
 
@@ -1063,7 +1071,56 @@ def update_date_approved_sales_apps():
         gr.save(update_fields=['date_approved'])
     print('update_date_approved_sales_apps done.')
 
+
 def update_available():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).leave_available_update()
     print('update leave available done')
+
+
+def update_company_setting():
+    vnd_currency = BaseCurrency.objects.filter(code='VND').first()
+    for company_obj in Company.objects.all():
+        if vnd_currency:
+            company_obj.definition_inventory_valuation = 0
+            company_obj.default_inventory_value_method = 0
+            company_obj.cost_per_warehouse = False
+            company_obj.cost_per_lot_batch = False
+            company_obj.primary_currency_id = str(vnd_currency.id)
+            company_obj.save(update_fields=[
+                'definition_inventory_valuation',
+                'default_inventory_value_method',
+                'cost_per_warehouse',
+                'cost_per_lot_batch',
+                'primary_currency_id'
+            ])
+    return True
+
+
+def create_company_function_number():
+    company_function_number_data = [
+        {
+            'numbering_by': 0,
+            'schema': None,
+            'schema_text': None,
+            'first_number': None,
+            'last_number': None,
+            'reset_frequency': None
+        }
+    ]
+    company_list = Company.objects.all()
+    bulk_create_data = []
+    for company_obj in company_list:
+        for function_index in range(10):
+            for cf_item in company_function_number_data:
+                bulk_create_data.append(
+                    CompanyFunctionNumber(
+                        company=company_obj,
+                        function=function_index,
+                        **cf_item
+                    )
+                )
+    CompanyFunctionNumber.objects.all().delete()
+    CompanyFunctionNumber.objects.bulk_create(bulk_create_data)
+    return True
+

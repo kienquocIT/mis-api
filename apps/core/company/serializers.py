@@ -1,10 +1,12 @@
+import datetime
 from crum import get_current_user
 from django.conf import settings
 from django.db.models import Count, Subquery
 from rest_framework import serializers
 
-from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
+from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
+from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
@@ -104,7 +106,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'date_created',
             'representative_fullname',
             'tenant_auto_create_company',
-            'sub_domain',
+            'sub_domain'
         )
 
     @classmethod
@@ -113,6 +115,9 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
+    company_setting = serializers.SerializerMethodField()
+    company_function_number = serializers.SerializerMethodField()
+
     class Meta:
         model = Company
         fields = (
@@ -123,11 +128,87 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'email',
             'address',
             'phone',
-            'sub_domain',
+            'fax',
+            'company_setting',
+            'company_function_number',
+			'sub_domain'
         )
+
+    @classmethod
+    def get_company_setting(cls, obj):
+        return {
+            'primary_currency': {
+                'id': obj.primary_currency_id,
+                'title': obj.primary_currency.title,
+                'abbreviation': obj.primary_currency.code,
+            } if obj.primary_currency else {},
+            'definition_inventory_valuation': obj.definition_inventory_valuation,
+            'default_inventory_value_method': obj.default_inventory_value_method,
+            'cost_per_warehouse': obj.cost_per_warehouse,
+            'cost_per_lot_batch': obj.cost_per_lot_batch
+        }
+
+    @classmethod
+    def get_company_function_number(cls, obj):
+        company_function_number = []
+        for item in obj.company_function_number.all():
+            company_function_number.append({
+                'function': item.function,
+                'numbering_by': item.numbering_by,
+                'schema_text': item.schema_text,
+                'schema': item.schema,
+                'first_number': item.first_number,
+                'last_number': item.last_number,
+                'reset_frequency': item.reset_frequency
+            })
+        return company_function_number
+
+
+def create_company_function_number(company_obj, company_function_number_data):
+    date_now = datetime.datetime.now()
+    data_calendar = datetime.date.today().isocalendar()
+    updated_function = []
+    for item in company_function_number_data:
+        obj = CompanyFunctionNumber.objects.filter(
+            company=company_obj,
+            function=item.get('function', None)
+        )
+        if obj.count() == 1:
+            updated_function.append(item.get('function', None))
+            updated_fields = {
+                **item,
+                'latest_number': int(item.get('last_number', None)) - 1,
+                'year_reset': date_now.year,
+                'month_reset': int(f"{date_now.year}{date_now.month:02}"),
+                'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
+                'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            }
+            obj.update(**updated_fields)
+
+    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(
+        function__in=updated_function
+    ).update(
+        numbering_by=0,
+        schema=None,
+        schema_text=None,
+        first_number=None,
+        last_number=None,
+        reset_frequency=None,
+        latest_number=None,
+        year_reset=None,
+        month_reset=None,
+        week_reset=None,
+        day_reset=None
+    )
+    return True
 
 
 class CompanyCreateSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(max_length=150, required=True)
+    address = serializers.CharField(max_length=150, required=True)
+    phone = serializers.CharField(max_length=25, required=True)
+    primary_currency = serializers.UUIDField()
+
     class Meta:
         model = Company
         fields = (
@@ -137,22 +218,50 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
+            'fax',
+            'primary_currency',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
         )
 
-    def validate(self, attrs):
+    @classmethod
+    def validate_primary_currency(cls, attrs):
+        if attrs:
+            obj = BaseCurrency.objects.filter(id=attrs).first()
+            if not obj:
+                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
+            return obj
+        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
+
+    def validate(self, validate_data):
+        for item in self.initial_data.get('company_function_number_data', []):
+            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
+                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
         user_obj = get_current_user()
         if user_obj and hasattr(user_obj, 'tenant_current'):
             company_quantity_max = user_obj.tenant_current.company_quality_max
             current_company_quantity = Company.objects.filter(tenant=user_obj.tenant_current).count()
             if current_company_quantity <= company_quantity_max:
-                return attrs
-            raise serializers.ValidationError(
-                {'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))}
-            )
+                return validate_data
+            raise serializers.ValidationError({
+                'detail': CompanyMsg.MAXIMUM_COMPANY_LIMITED.format(str(company_quantity_max))
+            })
         raise serializers.ValidationError({'detail': CompanyMsg.VALID_NEED_TENANT_DATA})
+
+    def create(self, validated_data):
+        company_obj = Company.objects.create(**validated_data)
+        create_company_function_number(company_obj, self.initial_data.get('company_function_number_data', []))
+        return company_obj
 
 
 class CompanyUpdateSerializer(serializers.ModelSerializer):
+    email = serializers.CharField(max_length=150, required=True)
+    address = serializers.CharField(max_length=150, required=True)
+    phone = serializers.CharField(max_length=25, required=True)
+    primary_currency = serializers.UUIDField()
+
     class Meta:
         model = Company
         fields = (
@@ -162,7 +271,35 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
+            'fax',
+            'primary_currency',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
         )
+
+    @classmethod
+    def validate_primary_currency(cls, attrs):
+        if attrs:
+            obj = BaseCurrency.objects.filter(id=attrs).first()
+            if not obj:
+                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
+            return obj
+        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
+
+    def validate(self, validate_data):
+        for item in self.initial_data.get('company_function_number_data', []):
+            if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
+                raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
+        return instance
 
 
 class CompanyOverviewSerializer(serializers.ModelSerializer):

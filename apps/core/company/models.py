@@ -1,14 +1,54 @@
+import re
 import json
+import datetime
+import calendar
 from typing import Literal, Union
 from uuid import UUID
-
 from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
-
+from django.utils.translation import gettext_lazy as _
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
-
 from apps.core.models import CoreAbstractModel
+
+
+DEFINITION_INVENTORY_VALUATION_CHOICES = [
+    (0, _('Perpetual inventory')),
+    (1, _('Periodic inventory')),
+]
+
+DEFAULT_INVENTORY_VALUE_METHOD_CHOICES = [
+    (0, _('FIFO')),
+    (1, _('Cumulative weighted average')),
+    (2, _('Weighted average')),
+    (3, _('Specific identification method')),
+]
+
+NUMBERING_BY_CHOICES = [
+    (0, _('System')),
+    (1, _('User defined')),
+]
+
+RESET_FREQUENCY_CHOICES = [
+    (0, _('Yearly')),
+    (1, _('Monthly')),
+    (2, _('Weekly')),
+    (3, _('Daily')),
+    (4, _('Never')),
+]
+
+FUNCTION_CHOICES = [
+    (0, _('Opportunity')),
+    (1, _('Sale quotation')),
+    (2, _('Sale order')),
+    (3, _('Picking')),
+    (4, _('Delivery')),
+    (5, _('Task')),
+    (6, _('Advance payment')),
+    (7, _('Payment')),
+    (8, _('Return payment')),
+    (9, _('Purchase request')),
+]
 
 
 class Company(CoreAbstractModel):
@@ -46,6 +86,12 @@ class Company(CoreAbstractModel):
         null=True,
         max_length=25
     )
+    fax = models.CharField(
+        verbose_name='fax',
+        blank=True,
+        null=True,
+        max_length=25
+    )
 
     # media
     media_company_id = models.UUIDField(null=True)
@@ -53,6 +99,13 @@ class Company(CoreAbstractModel):
 
     # web builder | tenant_code : 10 + company_code : 25 = 35
     sub_domain = models.CharField(max_length=35, unique=True)
+
+    # Company Setting
+    primary_currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
+    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
+    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
+    cost_per_warehouse = models.BooleanField(default=True)
+    cost_per_lot_batch = models.BooleanField(default=False)
 
     def get_detail(self, excludes=None):
         return {
@@ -332,3 +385,73 @@ class CompanyUserEmployee(SimpleAbstractModel):
                 cls.objects.filter(company_id=company_id).values_list('user_id', flat=True).cache()
             )
         )
+
+
+class CompanyFunctionNumber(SimpleAbstractModel):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='company_function_number')
+    function = models.SmallIntegerField(choices=FUNCTION_CHOICES)
+    numbering_by = models.SmallIntegerField(choices=NUMBERING_BY_CHOICES, default=0)
+    schema = models.CharField(max_length=500, null=True)
+    schema_text = models.CharField(max_length=500, null=True)
+    first_number = models.IntegerField(null=True)
+    last_number = models.IntegerField(null=True)
+    reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
+    latest_number = models.IntegerField(null=True)
+    year_reset = models.IntegerField(null=True)
+    month_reset = models.IntegerField(null=True)
+    week_reset = models.IntegerField(null=True)
+    day_reset = models.IntegerField(null=True)
+
+    class Meta:
+        verbose_name = 'Company Function Number'
+        verbose_name_plural = 'Company Functions Number'
+        ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+    @classmethod
+    def gen_code(cls, company_obj, func):
+        obj = cls.objects.filter(company=company_obj, function=func).first()
+        if obj and obj.schema is not None:
+            result = []
+
+            # check_reset_frequency
+            current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
+            data_calendar = datetime.date.today().isocalendar()
+            flag = False
+            conditions = [
+                (0, obj.year_reset, current_year),
+                (1, obj.month_reset, f"{current_year}{current_month:02}"),
+                (2, obj.week_reset, f"{data_calendar[0]}{data_calendar[1]:02}"),
+                (3, obj.day_reset, f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
+            ]
+            for reset_frequency, reset_value, new_value in conditions:
+                if obj.reset_frequency == reset_frequency and reset_value < int(new_value):
+                    setattr(obj, f"{obj.get_reset_field_name(reset_frequency)}", int(new_value))
+                    flag = True
+                    break
+            if flag:
+                obj.latest_number = obj.first_number - 1
+                obj.save()
+
+            schema_item_list = [
+                obj.latest_number + 1,
+                current_year % 100,
+                current_year,
+                calendar.month_name[current_month][0:3],
+                calendar.month_name[current_month],
+                current_month,
+                data_calendar[1],
+                datetime.date.today().timetuple().tm_yday,
+                datetime.date.today().day,
+                data_calendar[2]
+            ]
+            for match in re.findall(r"\[.*?\]|\d", obj.schema):
+                if match.isdigit():
+                    result.append(str(schema_item_list[int(match)]))
+                else:
+                    result.append(match[1:-1])
+            obj.latest_number = obj.latest_number + 1
+            obj.save()
+            return '-'.join(result)
+        return None
