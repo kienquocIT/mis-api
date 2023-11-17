@@ -347,7 +347,10 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     queryset = Employee.objects
-    filterset_fields = {'company_id': ['exact']}
+    filterset_fields = {
+        'company_id': ['exact'],
+        'role__id': ['exact'],
+    }
 
     serializer_list = EmployeeListSerializer
     serializer_detail = EmployeeListSerializer
