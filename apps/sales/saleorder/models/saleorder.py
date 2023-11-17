@@ -718,6 +718,7 @@ class SaleOrderExpense(MasterDataAbstractModel):
         default=False,
         help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
+    payment_plan_real_value = models.FloatField(default=0)
 
     class Meta:
         verbose_name = 'Sale Order Expense'

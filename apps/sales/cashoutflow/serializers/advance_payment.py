@@ -470,7 +470,6 @@ class AdvancePaymentCostListSerializer(serializers.ModelSerializer):
             'expense_after_tax_price',
             'sum_return_value',
             'sum_converted_value',
-            'sum_real_value'
         )
 
     @classmethod
