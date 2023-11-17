@@ -13,6 +13,7 @@ class ExpenseListSerializer(serializers.ModelSerializer):
     uom_group = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
     expense_item = serializers.SerializerMethodField()
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -23,6 +24,7 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'uom_group',
             'uom',
             'expense_item',
+            'price_list',
         )
 
     @classmethod
@@ -50,6 +52,13 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'title': obj.expense_item.title,
             'code': obj.expense_item.code
         } if obj.expense_item else {}
+
+    @classmethod
+    def get_price_list(cls, obj):
+        return [
+            {'id': price.id, 'price_value': price.price_value}
+            for price in obj.expense.all()
+        ]
 
 
 class ExpenseCreateSerializer(serializers.ModelSerializer):
@@ -177,8 +186,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_price_list(cls, obj):
-        price_obj = ExpensePrice.objects.filter(expense=obj).select_related('price', 'currency')
-
+        price_obj = obj.expense.select_related('price', 'currency')
         price_list = [
             {
                 'id': item.price_id,

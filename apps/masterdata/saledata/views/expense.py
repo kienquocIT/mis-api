@@ -22,7 +22,7 @@ class ExpenseList(BaseListMixin, BaseCreateMixin):
             'uom_group',
             'uom',
             'expense_item',
-        )
+        ).prefetch_related('expense')
 
     @swagger_auto_schema(
         operation_summary="Expense list",
@@ -59,7 +59,7 @@ class ExpenseDetail(BaseRetrieveMixin, BaseUpdateMixin):
             'uom', 'uom_group', 'expense_item',
         ).prefetch_related(
             'role',
-            'price_list',
+            'expense',
         )
 
     @swagger_auto_schema(

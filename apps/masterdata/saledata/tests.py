@@ -2087,10 +2087,23 @@ class ExpenseTestCase(AdvanceTestCase):
         response = self.client.post(url, data, format='json')
         return response
 
+    @staticmethod
+    def create_expense_item(self):
+        url = reverse('ExpenseItemList')
+        data = {
+            'code': 'EFE',
+            'title': 'Chi phí số 1',
+            'description': '',
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        return response
+
     def test_create_new_expense(self):
         currency = self.get_currency(self).data['result']  # noqa
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
+        expense_item = self.create_expense_item(self).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "title": "Chi phí nhân công sản xuất",
@@ -2104,7 +2117,8 @@ class ExpenseTestCase(AdvanceTestCase):
                     'is_auto_update': False,
                 }
             ],
-            "currency_using": currency[0]['id']
+            "currency_using": currency[0]['id'],
+            "expense_item": expense_item['id'],
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
@@ -2118,7 +2132,7 @@ class ExpenseTestCase(AdvanceTestCase):
         )
         self.assertCountEqual(
             response.data['result'],
-            ['id', 'title', 'code', 'price_list', 'uom_group', 'uom', 'role'],
+            ['id', 'title', 'code', 'price_list', 'uom_group', 'uom', 'role', 'expense_item'],
             check_sum_second=True,
         )
         return response, price_list
@@ -2127,6 +2141,7 @@ class ExpenseTestCase(AdvanceTestCase):
         currency = self.get_currency(self).data['result']  # noqa
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
+        expense_item = self.create_expense_item(self).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {
             "uom_group": uom_group['id'],
@@ -2139,7 +2154,8 @@ class ExpenseTestCase(AdvanceTestCase):
                     'is_auto_update': False,
                 }
             ],
-            "currency_using": currency[0]['id']
+            "currency_using": currency[0]['id'],
+            "expense_item": expense_item['id'],
         }
         url = reverse("ExpenseList")
 
@@ -2168,7 +2184,8 @@ class ExpenseTestCase(AdvanceTestCase):
                     'is_auto_update': False,
                 }
             ],
-            "currency_using": currency[0]['id']
+            "currency_using": currency[0]['id'],
+            "expense_item": expense_item['id'],
         }
 
         response1 = self.client.post(url, data1, format='json')
@@ -2191,6 +2208,7 @@ class ExpenseTestCase(AdvanceTestCase):
         currency = self.get_currency(self).data['result']  # noqa
         uom_group = self.create_uom_group(self).data['result']
         uom = self.create_uom(self, uom_group).data['result']
+        expense_item = self.create_expense_item(self).data['result']
         price_list = self.create_price_list(self, currency).data['result']
         data = {  # noqa
             "title": "Chi phí nhân công sản xuất",
@@ -2204,7 +2222,8 @@ class ExpenseTestCase(AdvanceTestCase):
                     'is_auto_update': False,
                 }
             ],
-            "currency_using": currency[0]['id']
+            "currency_using": currency[0]['id'],
+            "expense_item": expense_item['id'],
         }
         url = reverse("ExpenseList")
         response = self.client.post(url, data, format='json')
