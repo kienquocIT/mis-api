@@ -14,14 +14,9 @@ class TaskTestCase(AdvanceTestCase):
         self.client = APIClient()
         self.authenticated()
 
-    def create_new_currency(self):
-        data = {
-            "abbreviation": "CAD",
-            "title": "CANADIAN DOLLAR",
-            "rate": 0.45
-        }
-        response = self.client.post(reverse("CurrencyList"), data, format='json')
-        self.assertEqual(response.status_code, 201)
+    def get_base_currency(self):
+        response = self.client.get(reverse("BaseCurrencyList"), format='json')
+        self.assertEqual(response.status_code, 200)
         return response
 
     def create_company(self):
@@ -32,7 +27,7 @@ class TaskTestCase(AdvanceTestCase):
             'address': '7826 avenue, Victoria Street, California, American',
             'email': 'mike.nguyen.7826@gmail.com',
             'phone': '0983875345',
-            'primary_currency': self.create_new_currency().data['result']['id']
+            'primary_currency': self.get_base_currency().data['result'][0]['id']
         }
         company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
         self.assertEqual(company_req.status_code, 201)
