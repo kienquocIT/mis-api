@@ -89,9 +89,11 @@ def leave_months_calc(dt_now, dt_begin, an_number):
     year_senior = (dt_now - dt_begin) // timedelta(days=365)
 
     # tính ngày added theo thâm niên
-    added_days = 1
+    added_days = 0
     for item in LEAVE_YEARS_SENIORITY:
-        if item['from_range'] <= year_senior <= item['to_range']:
+        if item['from_range'] <= year_senior < item['to_range']:
+            added_days = item['added']
+        elif item['to_range'] == 34 and year_senior > 34:
             added_days = item['added']
 
     # tính tháng làm việc thực tế
