@@ -718,6 +718,10 @@ class SaleOrderExpense(MasterDataAbstractModel):
         default=False,
         help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
+    is_labor = models.BooleanField(
+        default=False,
+        help_text="flag to check if record is MasterData Internal Labor Item (model Expense)"
+    )
 
     class Meta:
         verbose_name = 'Sale Order Expense'
