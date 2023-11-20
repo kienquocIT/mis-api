@@ -1,4 +1,5 @@
 from django.db import models
+from apps.masterdata.saledata.models.price import Price
 from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
@@ -92,6 +93,14 @@ class Product(DataAbstractModel):
         symmetrical=False,
         blank=True,
         related_name='warehouses_of_product'
+    )
+
+    price_list = models.ManyToManyField(
+        Price,
+        through='ProductPriceList',
+        symmetrical=False,
+        blank=True,
+        related_name='product_map_price'
     )
 
     # General
@@ -195,6 +204,8 @@ class Product(DataAbstractModel):
         verbose_name='Available Stock',
         help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
     )
+
+    is_public_website = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Product'

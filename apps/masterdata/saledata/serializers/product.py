@@ -42,7 +42,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'stock_amount',
             'wait_delivery_amount',
             'wait_receipt_amount',
-            'available_amount'
+            'available_amount',
+            'is_public_website'
         )
 
     @classmethod
@@ -548,6 +549,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             # Purchase
             'purchase_default_uom',
             'purchase_tax',
+            'is_public_website'
         )
 
     @classmethod
