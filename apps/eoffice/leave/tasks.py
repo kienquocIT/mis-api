@@ -86,12 +86,12 @@ def diff_months_counter(dt_now, dt_begin):
 # return number of added days for current month
 def leave_months_calc(dt_now, dt_begin, an_number):
     # năm thâm niên
-    year_senior = (dt_now - dt_begin) // timedelta(days=365)
+    year_senior = (dt_now.date() - dt_begin.date()) / timedelta(days=365)
 
     # tính ngày added theo thâm niên
     added_days = 0
     for item in LEAVE_YEARS_SENIORITY:
-        if item['from_range'] <= year_senior < item['to_range']:
+        if item['from_range'] <= year_senior <= item['to_range']:
             added_days = item['added']
         elif item['to_range'] == 34 and year_senior > 34:
             added_days = item['added']
