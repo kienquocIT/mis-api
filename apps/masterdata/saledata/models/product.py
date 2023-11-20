@@ -240,7 +240,7 @@ class Product(DataAbstractModel):
         super().save(*args, **kwargs)
 
 
-class Expense(MasterDataAbstractModel):
+class Expense(MasterDataAbstractModel):  # Internal Labor Item
     uom_group = models.ForeignKey(
         UnitOfMeasureGroup,
         verbose_name='Unit of Measure Group apply for expense',
@@ -273,6 +273,48 @@ class Expense(MasterDataAbstractModel):
         related_name='expenses_map_roles',
         default=None,
     )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="expense_expense_item",
+        null=True
+    )
+
+    @classmethod
+    def find_max_number(cls, codes):
+        num_max = None
+        for code in codes:
+            try:
+                if code != '':
+                    tmp = int(code.split('-', maxsplit=1)[0].split("S")[1])
+                    if num_max is None or (isinstance(num_max, int) and tmp > num_max):
+                        num_max = tmp
+            except Exception as err:
+                print(err)
+        return num_max
+
+    @classmethod
+    def generate_code(cls, company_id):
+        existing_codes = cls.objects.filter(company_id=company_id).values_list('code', flat=True)
+        num_max = cls.find_max_number(existing_codes)
+        if num_max is None:
+            code = 'S0001'
+        elif num_max < 10000:
+            num_str = str(num_max + 1).zfill(4)
+            code = f'S{num_str}'
+        else:
+            raise ValueError('Out of range: number exceeds 10000')
+        if cls.objects.filter(code=code, company_id=company_id).exists():
+            return cls.generate_code(company_id=company_id)
+        return code
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_code(self.company_id)
+
+        # hit DB
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = 'Expense'

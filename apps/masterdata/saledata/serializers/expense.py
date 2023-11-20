@@ -1,5 +1,7 @@
 from django.utils import timezone
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import ExpenseItem
 from apps.masterdata.saledata.models.product import (
     Expense, UnitOfMeasureGroup, UnitOfMeasure, ExpensePrice, ExpenseRole
 )
@@ -10,6 +12,8 @@ from apps.shared.translations.expense import ExpenseMsg
 class ExpenseListSerializer(serializers.ModelSerializer):
     uom_group = serializers.SerializerMethodField()
     uom = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
+    price_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -19,6 +23,8 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             'title',
             'uom_group',
             'uom',
+            'expense_item',
+            'price_list',
         )
 
     @classmethod
@@ -39,6 +45,21 @@ class ExpenseListSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    @classmethod
+    def get_expense_item(cls, obj):
+        return {
+            'id': obj.expense_item_id,
+            'title': obj.expense_item.title,
+            'code': obj.expense_item.code
+        } if obj.expense_item else {}
+
+    @classmethod
+    def get_price_list(cls, obj):
+        return [
+            {'id': price.id, 'price_value': price.price_value}
+            for price in obj.expense.all()
+        ]
+
 
 class ExpenseCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=True, allow_blank=False, allow_null=False)
@@ -47,6 +68,7 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
     data_price_list = serializers.ListField()
     currency_using = serializers.UUIDField()
     role = serializers.ListField(child=serializers.UUIDField())
+    expense_item = serializers.UUIDField()
 
     class Meta:
         model = Expense
@@ -56,7 +78,8 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             'uom',
             'data_price_list',
             'currency_using',
-            'role'
+            'role',
+            'expense_item',
         )
 
     @classmethod
@@ -95,17 +118,18 @@ class ExpenseCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'currency': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
 
+    @classmethod
+    def validate_expense_item(cls, value):
+        try:
+            return ExpenseItem.objects.get(id=value)
+        except ExpenseItem.DoesNotExist:
+            raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
+
     def create(self, validated_data):
-
-        char = 'S'
-        no_expense = Expense.objects.filter_current(fill__tenant=True, fill__company=True).count()
-        temper = "%04d" % (no_expense + 1)  # pylint: disable=C0209
-        new_code = f"{char}{temper}"
-
         data_price_list = validated_data.pop('data_price_list')
         currency_using = validated_data.pop('currency_using')
         data_role = validated_data.pop('role', [])
-        expense = Expense.objects.create(**validated_data, code=new_code)
+        expense = Expense.objects.create(**validated_data)
         self.common_create_expense_price(data_price_list, currency_using, validated_data['uom'], expense)
         self.common_create_expense_role(data_role, expense)
         return expense
@@ -145,6 +169,7 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
     uom = serializers.SerializerMethodField()
     uom_group = serializers.SerializerMethodField()
     role = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
 
     class Meta:
         model = Expense
@@ -156,12 +181,12 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
             'uom',
             'uom_group',
             'role',
+            'expense_item',
         )
 
     @classmethod
     def get_price_list(cls, obj):
-        price_obj = ExpensePrice.objects.filter(expense=obj).select_related('price', 'currency')
-
+        price_obj = obj.expense.select_related('price', 'currency')
         price_list = [
             {
                 'id': item.price_id,
@@ -210,6 +235,14 @@ class ExpenseDetailSerializer(serializers.ModelSerializer):
                 )
         return result
 
+    @classmethod
+    def get_expense_item(cls, obj):
+        return {
+            'id': obj.expense_item_id,
+            'title': obj.expense_item.title,
+            'code': obj.expense_item.code
+        } if obj.expense_item else {}
+
 
 class ExpenseUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False, allow_blank=False, allow_null=False)
@@ -218,6 +251,7 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
     data_price_list = serializers.ListField(required=False)
     currency_using = serializers.UUIDField(required=False)
     role = serializers.ListField(child=serializers.UUIDField(), required=False)
+    expense_item = serializers.UUIDField(required=False)
 
     class Meta:
         model = Expense
@@ -227,7 +261,8 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
             'uom',
             'data_price_list',
             'currency_using',
-            'role'
+            'role',
+            'expense_item',
         )
 
     @classmethod
@@ -265,6 +300,13 @@ class ExpenseUpdateSerializer(serializers.ModelSerializer):
         except Currency.DoesNotExist:
             raise serializers.ValidationError({'currency': ExpenseMsg.CURRENCY_NOT_EXIST})
         return None
+
+    @classmethod
+    def validate_expense_item(cls, value):
+        try:
+            return ExpenseItem.objects.get(id=value)
+        except ExpenseItem.DoesNotExist:
+            raise serializers.ValidationError({'expense_item': ExpenseMsg.EXPENSE_ITEM_NOT_EXIST})
 
     def update(self, instance, validated_data):
         self.common_update_expense_general(validated_data=validated_data, instance=instance)

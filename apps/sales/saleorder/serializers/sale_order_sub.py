@@ -811,6 +811,7 @@ class SaleOrderExpenseSerializer(serializers.ModelSerializer):
             'expense_subtotal_price_after_tax',
             'order',
             'is_product',
+            'is_labor',
         )
 
     @classmethod
