@@ -524,6 +524,7 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
             'expense_item',
             'tax',
             'plan_after_tax',
+            'payment_plan_real_value'
         )
 
     @classmethod

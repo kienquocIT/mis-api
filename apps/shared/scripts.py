@@ -1124,3 +1124,15 @@ def create_company_function_number():
     CompanyFunctionNumber.objects.bulk_create(bulk_create_data)
     return True
 
+
+def delete_payment_return():
+    for ap_cost_item in AdvancePaymentCost.objects.all():
+        ap_cost_item.sum_converted_value = 0
+        ap_cost_item.sum_return_value = 0
+        ap_cost_item.save()
+    PaymentCost.objects.all().delete()
+    Payment.objects.all().delete()
+    ReturnAdvanceCost.objects.all().delete()
+    ReturnAdvance.objects.all().delete()
+    return True
+

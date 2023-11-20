@@ -115,7 +115,6 @@ class AdvancePaymentCost(SimpleAbstractModel):
 
     sum_return_value = models.FloatField(default=0)
     sum_converted_value = models.FloatField(default=0)
-    sum_real_value = models.FloatField(default=0)
 
     currency = models.ForeignKey('saledata.Currency', on_delete=models.CASCADE)
     date_created = models.DateTimeField(
