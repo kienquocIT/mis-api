@@ -1,29 +1,31 @@
 from apps.masterdata.saledata.models import ProductMeasurements
-from apps.masterdata.saledata.models.price import ProductPriceList
+from apps.masterdata.saledata.models.price import ProductPriceList, Price
 
 
 class CommonCreateUpdateProduct:
     @classmethod
     def create_price_list(cls, product, data_price, validated_data):
-        if data_price:
+        default_pr = Price.objects.filter_current(fill__tenant=True, fill__company=True, is_default=True).first()
+        if data_price and default_pr:
             objs = []
             for item in data_price:
-                get_price_from_source = False
-                if item.get('is_auto_update', None) == 'true':
-                    get_price_from_source = True
-                objs.append(
-                    ProductPriceList(
-                        price_list_id=item.get('price_list_id', None),
-                        price=float(item.get('price_list_value', None)),
-                        product=product,
-                        currency_using_id=validated_data.get('sale_currency_using', {}).id,
-                        uom_using_id=validated_data.get('sale_default_uom', {}).id,
-                        uom_group_using_id=validated_data.get('general_uom_group', {}).id,
-                        get_price_from_source=get_price_from_source
-                    )
-                )
-            if len(objs) > 0:
-                ProductPriceList.objects.bulk_create(objs)
+                objs.append(ProductPriceList(
+                    price_list_id=item.get('price_list_id', None),
+                    price=float(item.get('price_list_value', None)),
+                    product=product,
+                    currency_using_id=validated_data.get('sale_currency_using', {}).id,
+                    uom_using_id=validated_data.get('sale_default_uom', {}).id,
+                    uom_group_using_id=validated_data.get('general_uom_group', {}).id,
+                    get_price_from_source=item.get('is_auto_update', None) == 'true'
+                ))
+                if default_pr.id == item.get('price_list_id', None):
+                    product.sale_price = float(item.get('price_list_value', None))
+                    product.save()
+            ProductPriceList.objects.filter(product=product).delete()
+            ProductPriceList.objects.bulk_create(objs)
+            return True
+        return False
+
 
     @classmethod
     def create_measure(cls, product, data_measure):

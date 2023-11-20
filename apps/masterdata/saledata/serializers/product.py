@@ -88,7 +88,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_general_price(cls, obj):
-        general_product_price = obj.product_price_product.filter(price_list__is_default=1).first()
+        general_product_price = obj.product_price_product.filter(price_list__is_default=True).first()
         if general_product_price:
             return general_product_price.price
         return None
@@ -714,7 +714,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-
         return instance
 
 

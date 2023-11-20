@@ -144,7 +144,8 @@ class Product(DataAbstractModel):
         related_name='sale_currency_using_for_cost',
         default=None
     )
-    sale_cost = models.FloatField(null=True)
+    sale_cost = models.FloatField(null=True, help_text="Capital price for sale")
+    sale_price = models.FloatField(default=0, help_text="General price in General price list")
     sale_product_price_list = models.JSONField(default=list)
 
     # Inventory
