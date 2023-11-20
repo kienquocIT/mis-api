@@ -42,7 +42,8 @@ class ProductListSerializer(serializers.ModelSerializer):
             'stock_amount',
             'wait_delivery_amount',
             'wait_receipt_amount',
-            'available_amount'
+            'available_amount',
+            'is_public_website'
         )
 
     @classmethod
@@ -88,10 +89,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_general_price(cls, obj):
-        general_product_price = obj.product_price_product.filter(price_list__is_default=1).first()
-        if general_product_price:
-            return general_product_price.price
-        return None
+        return obj.sale_price
 
 
 def sub_validate_volume_obj(initial_data, validate_data):
@@ -551,6 +549,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             # Purchase
             'purchase_default_uom',
             'purchase_tax',
+            'is_public_website'
         )
 
     @classmethod
@@ -714,7 +713,6 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
-
         return instance
 
 

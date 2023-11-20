@@ -94,6 +94,14 @@ class Product(DataAbstractModel):
         related_name='warehouses_of_product'
     )
 
+    price_list = models.ManyToManyField(
+        'saledata.Price',
+        through='ProductPriceList',
+        symmetrical=False,
+        blank=True,
+        related_name='product_map_price'
+    )
+
     # General
     general_product_types_mapped = models.ManyToManyField(
         ProductType,
@@ -144,7 +152,8 @@ class Product(DataAbstractModel):
         related_name='sale_currency_using_for_cost',
         default=None
     )
-    sale_cost = models.FloatField(null=True)
+    sale_cost = models.FloatField(null=True, help_text="Capital price for sale")
+    sale_price = models.FloatField(default=0, help_text="General price in General price list")
     sale_product_price_list = models.JSONField(default=list)
 
     # Inventory
@@ -194,6 +203,8 @@ class Product(DataAbstractModel):
         verbose_name='Available Stock',
         help_text='Theoretical amount product in warehouse, =(stock_amount - wait_delivery + wait_receipt)'
     )
+
+    is_public_website = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Product'
