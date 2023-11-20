@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 
 from apps.core.company.models import Company
 from apps.core.web_builder.authen import authenticated_for_ui
-from apps.core.web_builder.serializers import (
+from apps.core.web_builder.serializers.config import (
     PageBuilderListSerializer, PageBuilderDetailSerializer,
     PageBuilderUpdateSerializer, PageBuilderCreateSerializer, PageBuilderDetailViewerSerializer,
 )

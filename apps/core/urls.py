@@ -29,5 +29,6 @@ urlpatterns = [
     path('task-bg/<str:pk>', TaskBackgroundState.as_view(), name='TaskBackgroundState'),
     path('log/', include('apps.core.log.urls')),
     path('sale-process/', include('apps.core.process.urls')),
-    path('site/', include('apps.core.web_builder.urls')),
+    path('site/public/<str:company_sub_domain>/', include('apps.core.web_builder.urls.public')),
+    path('site/config/', include('apps.core.web_builder.urls.config')),
 ]

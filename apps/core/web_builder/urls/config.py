@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.core.web_builder.views import PageBuilderList, PageBuilderDetail, PageBuilderViewPathSub, CompanyGetter
+from apps.core.web_builder.views.config import PageBuilderList, PageBuilderDetail, PageBuilderViewPathSub, CompanyGetter
 
 urlpatterns = [
     path('page-list', PageBuilderList.as_view(), name='PageBuilderList'),
