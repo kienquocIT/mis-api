@@ -88,10 +88,7 @@ class ProductListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_general_price(cls, obj):
-        general_product_price = obj.product_price_product.filter(price_list__is_default=True).first()
-        if general_product_price:
-            return general_product_price.price
-        return None
+        return obj.sale_price
 
 
 def sub_validate_volume_obj(initial_data, validate_data):

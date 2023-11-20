@@ -1136,3 +1136,12 @@ def delete_payment_return():
     ReturnAdvance.objects.all().delete()
     return True
 
+
+def update_product_general_price():
+    for item in Product.objects.all():
+        general_product_price = item.product_price_product.filter(price_list__is_default=True).first()
+        if general_product_price:
+            item.sale_price = general_product_price.price
+            item.save()
+    return True
+

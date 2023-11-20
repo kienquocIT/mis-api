@@ -10,18 +10,17 @@ class CommonCreateUpdateProduct:
             objs = []
             for item in data_price:
                 objs.append(ProductPriceList(
+                    product=product,
                     price_list_id=item.get('price_list_id', None),
                     price=float(item.get('price_list_value', None)),
-                    product=product,
                     currency_using_id=validated_data.get('sale_currency_using', {}).id,
                     uom_using_id=validated_data.get('sale_default_uom', {}).id,
                     uom_group_using_id=validated_data.get('general_uom_group', {}).id,
                     get_price_from_source=item.get('is_auto_update', None) == 'true'
                 ))
-                if default_pr.id == item.get('price_list_id', None):
+                if str(default_pr.id) == item.get('price_list_id', None):
                     product.sale_price = float(item.get('price_list_value', None))
                     product.save()
-            ProductPriceList.objects.filter(product=product).delete()
             ProductPriceList.objects.bulk_create(objs)
             return True
         return False
@@ -29,12 +28,8 @@ class CommonCreateUpdateProduct:
 
     @classmethod
     def create_measure(cls, product, data_measure):
-        volume_id = None
-        weight_id = None
-        if len(data_measure['volume']) > 0:
-            volume_id = data_measure['volume']['id']
-        if len(data_measure['weight']) > 0:
-            weight_id = data_measure['weight']['id']
+        volume_id = data_measure['volume']['id'] if len(data_measure['volume']) > 0 else None
+        weight_id = data_measure['weight']['id'] if len(data_measure['weight']) > 0 else None
         if volume_id and 'value' in data_measure['volume']:
             ProductMeasurements.objects.create(
                 product=product,
@@ -47,6 +42,7 @@ class CommonCreateUpdateProduct:
                 measure_id=weight_id,
                 value=data_measure['weight']['value']
             )
+        return True
 
     @classmethod
     def delete_price_list(cls, product, price_list_id):
@@ -58,3 +54,5 @@ class CommonCreateUpdateProduct:
         )
         if product_price_list_item:
             product_price_list_item.delete()
+            return True
+        return False
