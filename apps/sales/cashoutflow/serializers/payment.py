@@ -3,6 +3,8 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
 )
+from apps.sales.quotation.models import QuotationExpense
+from apps.sales.saleorder.models import SaleOrderExpense
 from apps.masterdata.saledata.models import Currency
 from apps.shared import AdvancePaymentMsg
 
@@ -47,7 +49,7 @@ class PaymentListSerializer(serializers.ModelSerializer):
         return sum_payment_value
 
 
-def calculate_ap_cost(payment_cost_list):
+def update_ap_cost(payment_cost_list):
     for item in payment_cost_list:
         for child in item.ap_cost_converted_list:
             ap_item_id = child.get('ap_cost_converted_id', None)
@@ -56,20 +58,30 @@ def calculate_ap_cost(payment_cost_list):
                 ap_item = AdvancePaymentCost.objects.filter(id=ap_item_id).first()
                 if ap_item:
                     ap_item.sum_converted_value = float(ap_item.sum_converted_value) + float(ap_item_value_converted)
-                    ap_item.sum_real_value = float(ap_item.sum_real_value) + float(item.real_value)
                     ap_item.save()
     return True
 
 
-def create_payment_cost_items(instance, payment_expense_valid_list):
+def create_payment_cost_items(instance, payment_expense_valid_list, quotation_expense_plan, sale_order_expense_plan):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
+    quo_expense_list = QuotationExpense.objects.filter(id__in=quotation_expense_plan).select_related('expense')
+    so_expense_list = SaleOrderExpense.objects.filter(id__in=sale_order_expense_plan).select_related('expense')
     if vnd_currency:
         bulk_info = []
         for item in payment_expense_valid_list:
             bulk_info.append(PaymentCost(**item, payment=instance, currency=vnd_currency))
+            quo_expense_item = quo_expense_list.filter(expense_item_id=item['expense_type_id']).first()
+            if quo_expense_item:
+                quo_expense_item.payment_plan_real_value += float(item['real_value'])
+                quo_expense_item.save()
+            so_expense_item = so_expense_list.filter(expense_item_id=item['expense_type_id']).first()
+            if so_expense_item:
+                so_expense_item.payment_plan_real_value += float(item['real_value'])
+                so_expense_item.save()
+
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
-        calculate_ap_cost(payment_cost_list)
+        update_ap_cost(payment_cost_list)
         return True
     return False
 
@@ -109,7 +121,12 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         payment_obj = Payment.objects.create(**validated_data)
-        create_payment_cost_items(payment_obj, self.initial_data.get('payment_expense_valid_list', []))
+        create_payment_cost_items(
+            payment_obj,
+            self.initial_data.get('payment_expense_valid_list', []),
+            self.initial_data.get('quotation_expense_plan', []),
+            self.initial_data.get('sale_order_expense_plan', []),
+        )
         return payment_obj
 
 

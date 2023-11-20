@@ -492,7 +492,8 @@ class QuotationExpenseListSerializer(serializers.ModelSerializer):
             'expense_title',
             'expense_item',
             'tax',
-            'plan_after_tax'
+            'plan_after_tax',
+            'payment_plan_real_value'
         )
 
     @classmethod
