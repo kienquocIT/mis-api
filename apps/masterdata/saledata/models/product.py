@@ -1,5 +1,4 @@
 from django.db import models
-from apps.masterdata.saledata.models.price import Price
 from django.utils.translation import gettext_lazy as _
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
@@ -96,7 +95,7 @@ class Product(DataAbstractModel):
     )
 
     price_list = models.ManyToManyField(
-        Price,
+        'saledata.Price',
         through='ProductPriceList',
         symmetrical=False,
         blank=True,
