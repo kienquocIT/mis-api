@@ -56,3 +56,4 @@ class CommonCreateUpdateProduct:
             product_price_list_item.delete()
             return True
         return False
+    
