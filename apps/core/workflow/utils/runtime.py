@@ -414,7 +414,6 @@ class RuntimeStageHandler:
                     collab_in_wf[str(doc_employee_inherit.id)] = zone_and_properties
             elif collab.in_wf_option == 2:  # BY EMPLOYEE
                 collab_in_wf[str(collab.employee_id)] = zone_and_properties
-
         return collab_in_wf
 
     @classmethod
