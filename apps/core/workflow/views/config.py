@@ -129,7 +129,7 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
         if count > 0:
             raise serializers.ValidationError({'detail': WorkflowMsg.WORKFLOW_NOT_ALLOW_CHANGE.format(str(count))})
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer_update(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
