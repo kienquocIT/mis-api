@@ -45,37 +45,6 @@ class FinalAcceptance(DataAbstractModel):
             for data_indicator in list_data_indicator
         ]
         FinalAcceptanceIndicator.create_final_acceptance_indicators(list_indicator=list_indicator)
-
-
-
-
-
-
-        # if not cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id).exists():
-        #     final_acceptance = cls.objects.create(
-        #         tenant_id=tenant_id,
-        #         company_id=company_id,
-        #         sale_order_id=sale_order_id,
-        #         employee_created_id=employee_created_id,
-        #         employee_inherit_id=employee_inherit_id,
-        #         opportunity_id=opportunity_id,
-        #     )
-        #     if final_acceptance:
-        #         list_indicator = [
-        #             FinalAcceptanceIndicator(
-        #                 final_acceptance=final_acceptance,
-        #                 **data_indicator,
-        #             )
-        #             for data_indicator in list_data_indicator
-        #         ]
-        #         FinalAcceptanceIndicator.create_final_acceptance_indicators(
-        #             tenant_id=tenant_id,
-        #             company_id=company_id,
-        #             final_acceptance_id=final_acceptance.id,
-        #             list_indicator=list_indicator,
-        #         )
-        # else:
-        #     cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id)
         return True
 
     class Meta:
