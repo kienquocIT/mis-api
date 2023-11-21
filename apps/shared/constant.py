@@ -55,6 +55,7 @@ WORKFLOW_IN_WF_OPTION = (
 WORKFLOW_IN_WF_POSITION = (
     (1, '1st manager'),
     (2, '2nd manager'),
+    (3, 'Beneficiary'),
 )
 
 
