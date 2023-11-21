@@ -6,6 +6,8 @@ from apps.sales.acceptance.models import FinalAcceptance, FinalAcceptanceIndicat
 class FAIndicatorListSerializer(serializers.ModelSerializer):
     sale_order_indicator = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
+    payment = serializers.SerializerMethodField()
+    expense_item = serializers.SerializerMethodField()
 
     class Meta:
         model = FinalAcceptanceIndicator
@@ -13,6 +15,8 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'id',
             'sale_order_indicator',
             'sale_order',
+            'payment',
+            'expense_item',
             'indicator_value',
             'actual_value',
             'different_value',
@@ -33,6 +37,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
                 'id': obj.sale_order_indicator.quotation_indicator_id,
                 'title': obj.sale_order_indicator.quotation_indicator.title,
                 'code': obj.sale_order_indicator.quotation_indicator.code,
+                'formula_data_show': obj.sale_order_indicator.quotation_indicator.formula_data_show,
             } if obj.sale_order_indicator.quotation_indicator else {},
             'indicator_value': obj.sale_order_indicator.indicator_value,
             'indicator_rate': obj.sale_order_indicator.indicator_rate,
@@ -47,6 +52,22 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'title': obj.sale_order.title,
             'code': obj.sale_order.code,
         } if obj.sale_order else {}
+
+    @classmethod
+    def get_payment(cls, obj):
+        return {
+            'id': obj.payment_id,
+            'title': obj.payment.title,
+            'code': obj.payment.code,
+        } if obj.payment else {}
+
+    @classmethod
+    def get_expense_item(cls, obj):
+        return {
+            'id': obj.expense_item_id,
+            'title': obj.expense_item.title,
+            'code': obj.expense_item.code,
+        } if obj.expense_item else {}
 
 
 class FinalAcceptanceListSerializer(serializers.ModelSerializer):

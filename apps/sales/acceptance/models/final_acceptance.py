@@ -29,29 +29,53 @@ class FinalAcceptance(DataAbstractModel):
             opportunity_id,
             list_data_indicator: list,
     ):
-        if not cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id).exists():
-            final_acceptance = cls.objects.create(
-                tenant_id=tenant_id,
-                company_id=company_id,
-                sale_order_id=sale_order_id,
-                employee_created_id=employee_created_id,
-                employee_inherit_id=employee_inherit_id,
-                opportunity_id=opportunity_id,
+        obj, _created = cls.objects.get_or_create(
+            tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id,
+            defaults={
+                'employee_created_id': employee_created_id,
+                'employee_inherit_id': employee_inherit_id,
+                'opportunity_id': opportunity_id,
+            }
+        )
+        list_indicator = [
+            FinalAcceptanceIndicator(
+                final_acceptance=obj,
+                **data_indicator,
             )
-            if final_acceptance:
-                list_indicator = [
-                    FinalAcceptanceIndicator(
-                        final_acceptance=final_acceptance,
-                        **data_indicator,
-                    )
-                    for data_indicator in list_data_indicator
-                ]
-                FinalAcceptanceIndicator.create_final_acceptance_indicators(
-                    tenant_id=tenant_id,
-                    company_id=company_id,
-                    final_acceptance_id=final_acceptance.id,
-                    list_indicator=list_indicator,
-                )
+            for data_indicator in list_data_indicator
+        ]
+        FinalAcceptanceIndicator.create_final_acceptance_indicators(list_indicator=list_indicator)
+
+
+
+
+
+
+        # if not cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id).exists():
+        #     final_acceptance = cls.objects.create(
+        #         tenant_id=tenant_id,
+        #         company_id=company_id,
+        #         sale_order_id=sale_order_id,
+        #         employee_created_id=employee_created_id,
+        #         employee_inherit_id=employee_inherit_id,
+        #         opportunity_id=opportunity_id,
+        #     )
+        #     if final_acceptance:
+        #         list_indicator = [
+        #             FinalAcceptanceIndicator(
+        #                 final_acceptance=final_acceptance,
+        #                 **data_indicator,
+        #             )
+        #             for data_indicator in list_data_indicator
+        #         ]
+        #         FinalAcceptanceIndicator.create_final_acceptance_indicators(
+        #             tenant_id=tenant_id,
+        #             company_id=company_id,
+        #             final_acceptance_id=final_acceptance.id,
+        #             list_indicator=list_indicator,
+        #         )
+        # else:
+        #     cls.objects.filter(tenant_id=tenant_id, company_id=company_id, sale_order_id=sale_order_id)
         return True
 
     class Meta:
@@ -81,6 +105,20 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_sale_order",
         null=True,
     )
+    payment = models.ForeignKey(
+        'cashoutflow.Payment',
+        on_delete=models.CASCADE,
+        verbose_name="payment",
+        related_name="fa_indicator_payment",
+        null=True,
+    )
+    expense_item = models.ForeignKey(
+        'saledata.ExpenseItem',
+        on_delete=models.CASCADE,
+        verbose_name="expense item",
+        related_name="fa_indicator_expense_item",
+        null=True,
+    )
     indicator_value = models.FloatField(default=0)
     actual_value = models.FloatField(default=0)
     different_value = models.FloatField(default=0)
@@ -100,17 +138,9 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
     @classmethod
     def create_final_acceptance_indicators(
             cls,
-            tenant_id,
-            company_id,
-            final_acceptance_id,
             list_indicator,
     ):
-        if not cls.objects.filter(
-                tenant_id=tenant_id,
-                company_id=company_id,
-                final_acceptance_id=final_acceptance_id
-        ).exists():
-            cls.objects.bulk_create(list_indicator)
+        cls.objects.bulk_create(list_indicator)
         return True
 
     class Meta:
