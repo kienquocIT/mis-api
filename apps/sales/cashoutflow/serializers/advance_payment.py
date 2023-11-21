@@ -3,7 +3,7 @@ from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, ProductMsg
+from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
@@ -256,9 +256,11 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        advance_payment_obj = AdvancePayment.objects.create(**validated_data)
-        create_expense_items(advance_payment_obj, self.initial_data.get('expense_valid_list', []))
-        return advance_payment_obj
+        ap_obj = AdvancePayment.objects.create(**validated_data)
+        if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
+            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
+        create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
+        return ap_obj
 
 
 class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
