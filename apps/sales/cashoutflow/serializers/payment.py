@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
@@ -82,6 +84,30 @@ def create_payment_cost_items(instance, payment_expense_valid_list, quotation_ex
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
         update_ap_cost(payment_cost_list)
+
+        # create final acceptance (temporary use)
+        if instance.sale_order_mapped:
+            list_data_indicator = [
+                {
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'payment_id': instance.id,
+                    'expense_item_id': payment_exp.expense_type_id,
+                    'actual_value': payment_exp.real_value,
+                    'is_payment': True,
+                }
+                for payment_exp in payment_cost_list
+            ]
+            FinalAcceptance.create_final_acceptance_from_so(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                sale_order_id=instance.sale_order_mapped_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                opportunity_id=instance.sale_order_mapped.opportunity_id,
+                list_data_indicator=list_data_indicator
+            )
+
         return True
     return False
 

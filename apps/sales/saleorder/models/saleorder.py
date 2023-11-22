@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
@@ -336,6 +337,49 @@ class SaleOrder(DataAbstractModel):
         )
         return True
 
+    @classmethod
+    def create_final_acceptance(cls, instance):
+        list_data_indicator = [
+            {
+                'tenant_id': instance.tenant_id,
+                'company_id': instance.company_id,
+                'sale_order_indicator_id': so_ind.id,
+                'indicator_value': so_ind.indicator_value
+                if not instance.quotation else so_ind.quotation_indicator_value,
+                'actual_value': so_ind.indicator_value
+                if not instance.quotation else so_ind.quotation_indicator_value,
+                'rate_value': so_ind.indicator_rate
+                if not instance.quotation else so_ind.quotation_indicator_rate,
+                'order': so_ind.order,
+                'is_indicator': True,
+            }
+            for so_ind in instance.sale_order_indicator_sale_order.all()
+        ]
+        revenue = instance.sale_order_indicator_sale_order.filter(quotation_indicator__code='IN0001').first()
+        if revenue:
+            list_data_indicator.append(
+                {
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'sale_order_id': instance.id,
+                    'indicator_value': revenue.indicator_value
+                    if not instance.quotation else revenue.quotation_indicator_value,
+                    'actual_value': revenue.indicator_value
+                    if not instance.quotation else revenue.quotation_indicator_value,
+                    'is_sale_order': True,
+                }
+            )
+        FinalAcceptance.create_final_acceptance_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            opportunity_id=instance.opportunity_id,
+            list_data_indicator=list_data_indicator
+        )
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -358,6 +402,7 @@ class SaleOrder(DataAbstractModel):
                 self.create_report_revenue(self)
                 self.update_report_product(self)
                 self.update_report_customer(self)
+                self.create_final_acceptance(self)
 
         # hit DB
         super().save(*args, **kwargs)
