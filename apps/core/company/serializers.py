@@ -159,7 +159,8 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'schema': item.schema,
                 'first_number': item.first_number,
                 'last_number': item.last_number,
-                'reset_frequency': item.reset_frequency
+                'reset_frequency': item.reset_frequency,
+                'min_number_char': item.min_number_char
             })
         return company_function_number
 
@@ -169,10 +170,7 @@ def create_company_function_number(company_obj, company_function_number_data):
     data_calendar = datetime.date.today().isocalendar()
     updated_function = []
     for item in company_function_number_data:
-        obj = CompanyFunctionNumber.objects.filter(
-            company=company_obj,
-            function=item.get('function', None)
-        )
+        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=item.get('function', None))
         if obj.count() == 1:
             updated_function.append(item.get('function', None))
             updated_fields = {
@@ -185,15 +183,14 @@ def create_company_function_number(company_obj, company_function_number_data):
             }
             obj.update(**updated_fields)
 
-    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(
-        function__in=updated_function
-    ).update(
+    CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(function__in=updated_function).update(
         numbering_by=0,
         schema=None,
         schema_text=None,
         first_number=None,
         last_number=None,
         reset_frequency=None,
+        min_number_char=None,
         latest_number=None,
         year_reset=None,
         month_reset=None,
