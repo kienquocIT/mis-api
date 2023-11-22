@@ -3,6 +3,15 @@ from rest_framework import serializers
 from apps.sales.acceptance.models import FinalAcceptance, FinalAcceptanceIndicator
 
 
+class FAIndicatorUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = FinalAcceptanceIndicator
+        fields = (
+            'id',
+        )
+
+
 class FAIndicatorListSerializer(serializers.ModelSerializer):
     sale_order_indicator = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
@@ -83,3 +92,22 @@ class FinalAcceptanceListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_final_acceptance_indicator(cls, obj):
         return FAIndicatorListSerializer(obj.fa_indicator_final_acceptance.all(), many=True).data
+
+
+class FinalAcceptanceUpdateSerializer(serializers.ModelSerializer):
+    final_acceptance_indicator = serializers.JSONField(required=False)
+
+    class Meta:
+        model = FinalAcceptance
+        fields = (
+            'final_acceptance_indicator',
+        )
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.get('final_acceptance_indicator', {}).items():
+            fa_indicator = FinalAcceptanceIndicator.objects.filter(id=key).first()
+            if fa_indicator:
+                fa_indicator.actual_value = value.get('actual_value', 0)
+                fa_indicator.different_value = value.get('different_value', 0)
+                fa_indicator.save(update_fields=['actual_value', 'different_value'])
+        return instance

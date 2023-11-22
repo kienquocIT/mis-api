@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..sales.delivery.models import DeliveryConfig
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse
 from ..sales.opportunity.models import (
@@ -1144,4 +1145,11 @@ def update_product_general_price():
             item.sale_price = general_product_price.price
             item.save()
     return True
+
+
+def update_delivery_config():
+    for config in DeliveryConfig.objects.all():
+        config.is_partial_ship = 1
+        config.save(update_fields=['is_partial_ship'])
+    print('update_delivery_config done')
 
