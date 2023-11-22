@@ -43,9 +43,6 @@ class FinalAcceptanceDetail(
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
-    def get_queryset(self):
-        return super().get_queryset()
-
     @swagger_auto_schema(
         operation_summary="Final Acceptance detail",
         operation_description="Get Final Acceptance detail by ID",
