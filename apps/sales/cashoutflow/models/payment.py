@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = [
@@ -66,14 +68,47 @@ class Payment(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def create_final_acceptance(cls, instance):
+        if instance.sale_order_mapped:
+            list_data_indicator = [
+                {
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'payment_id': instance.id,
+                    'expense_item_id': payment_exp.expense_type_id,
+                    'actual_value': payment_exp.real_value,
+                    'is_payment': True,
+                }
+                for payment_exp in instance.payment.all()
+            ]
+            FinalAcceptance.create_final_acceptance_from_so(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                sale_order_id=instance.sale_order_mapped_id,
+                employee_created_id=instance.employee_created_id,
+                employee_inherit_id=instance.employee_inherit_id,
+                opportunity_id=instance.sale_order_mapped.opportunity_id,
+                list_data_indicator=list_data_indicator
+            )
+        return True
+
     def save(self, *args, **kwargs):
-        if not self.code:
-            function_number = self.company.company_function_number.filter(function=7).first()
-            if function_number:
-                self.code = function_number.gen_code(company_obj=self.company, func=7)
+        if self.system_status in [2, 3]:
             if not self.code:
-                records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
-                self.code = 'PAYMENT.00' + str(records.count() + 1)
+                function_number = self.company.company_function_number.filter(function=7).first()
+                if function_number:
+                    self.code = function_number.gen_code(company_obj=self.company, func=7)
+                if not self.code:
+                    records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                    self.code = 'PAYMENT.00' + str(records.count() + 1)
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+                self.create_final_acceptance(self)
+
         super().save(*args, **kwargs)
 
 
