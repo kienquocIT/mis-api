@@ -43,6 +43,7 @@ class PageBuilderDetailViewerSerializer(serializers.ModelSerializer):
         fields = (
             'page_title', 'is_publish',
             'page_html', 'page_css', 'page_js',
+            'is_publish',
         )
 
 

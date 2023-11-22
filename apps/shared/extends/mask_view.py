@@ -931,9 +931,14 @@ class PermissionController:
 
     @classmethod
     def check_permit_each_item(cls, key_full, data, obj_or_dict):
+        # cho trường hợp elif nếu key là company_id và obj là models Company thì trả về id của models Company đó
         def get_value_special_key_for_obj(_key1):
             if _key1 in ['employee_inherit', 'opportunity', 'project']:
                 return getattr(obj_or_dict, _key1 + '_id', None)
+            if _key1 == 'company_id':
+                company_model = DisperseModel(app_model='company.company').get_model()
+                if isinstance(obj_or_dict, company_model):  # noqa
+                    return getattr(obj_or_dict, 'id', None)
             return getattr(obj_or_dict, _key1, None)
 
         def get_value_special_key_for_dict(_key2):
@@ -1788,6 +1793,7 @@ def mask_view(**parent_kwargs):
         'prj_enabled': parent_kwargs.get('prj_enabled', False),
         'skip_filter_employee': parent_kwargs.get('skip_filter_employee', False),
     }
+
     # -- fake typehint for parent_kwargs
 
     def decorated(func_view):
