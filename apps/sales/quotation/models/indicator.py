@@ -114,10 +114,10 @@ class QuotationIndicator(MasterDataAbstractModel):
 class SQIndicatorDefaultData:
     INDICATOR_DATA = [
         {
-            "title": "Revenue",
+            "title": "Doanh thu",
             "code": "IN0001",
-            "remark": "Revenue",
-            "example": "indicator(Revenue)",
+            "remark": "Doanh thu",
+            "example": "indicator(Doanh thu)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -137,10 +137,10 @@ class SQIndicatorDefaultData:
             "order": 1
         },
         {
-            "title": "Total cost",
+            "title": "Tổng chi phí",
             "code": "IN0002",
-            "remark": "Total cost",
-            "example": "indicator(Total cost)",
+            "remark": "Tổng chi phí",
+            "example": "indicator(Tổng chi phí)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -160,10 +160,10 @@ class SQIndicatorDefaultData:
             "order": 2
         },
         {
-            "title": "Gross profit",
+            "title": "Lợi nhuận gộp",
             "code": "IN0003",
-            "remark": "Gross profit",
-            "example": "indicator(Gross profit)",
+            "remark": "Lợi nhuận gộp",
+            "example": "indicator(Lợi nhuận gộp)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -196,11 +196,11 @@ class SQIndicatorDefaultData:
                 {
                     "id": "2",
                     "order": 2,
-                    "title": "Total cost",
-                    "remark": "Total cost",
-                    "syntax": "indicator(Total cost)",
-                    "example": "indicator(Total cost)",
-                    "syntax_show": "indicator(Total cost)",
+                    "title": "Tổng chi phí",
+                    "remark": "Tổng chi phí",
+                    "syntax": "indicator(Tổng chi phí)",
+                    "example": "indicator(Tổng chi phí)",
+                    "syntax_show": "indicator(Tổng chi phí)",
                     "formula_data": [
                         {
                             "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
@@ -219,14 +219,14 @@ class SQIndicatorDefaultData:
                     "formula_data_show": "prop(Total cost before tax)"
                 }
             ],
-            "formula_data_show": "indicator(Revenue) - indicator(Total cost)",
+            "formula_data_show": "indicator(Revenue) - indicator(Tổng chi phí)",
             "order": 3
         },
         {
-            "title": "Operating expense",
+            "title": "Chi phí vận hành",
             "code": "IN0004",
-            "remark": "Operating expense",
-            "example": "indicator(Operating expense)",
+            "remark": "Chi phí vận hành",
+            "example": "indicator(Chi phí vận hành)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -273,10 +273,10 @@ class SQIndicatorDefaultData:
             "order": 4
         },
         {
-            "title": "Other expenses",
+            "title": "Chi phí khác",
             "code": "IN0005",
-            "remark": "Other expenses",
-            "example": "indicator(Other expenses)",
+            "remark": "Chi phí khác",
+            "example": "indicator(Chi phí khác)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -295,11 +295,11 @@ class SQIndicatorDefaultData:
                 {
                     "id": "4",
                     "order": 4,
-                    "title": "Operating expense",
-                    "remark": "Operating expense",
-                    "syntax": "indicator(Operating expense)",
-                    "example": "indicator(Operating expense)",
-                    "syntax_show": "indicator(Operating expense)",
+                    "title": "Chi phí vận hành",
+                    "remark": "Chi phí vận hành",
+                    "syntax": "indicator(Chi phí vận hành)",
+                    "example": "indicator(Chi phí vận hành)",
+                    "syntax_show": "indicator(Chi phí vận hành)",
                     "formula_data": [
                         {
                             "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
@@ -347,24 +347,24 @@ class SQIndicatorDefaultData:
                         'sumItemIf(prop(Expense type)=="Chi phí triển khai",prop(Expense subtotal before tax))',
                 }
             ],
-            "formula_data_show": 'prop(Total expense before tax) - indicator(Operating expense)',
+            "formula_data_show": 'prop(Total expense before tax) - indicator(Chi phí vận hành)',
             "order": 5
         },
         {
-            "title": "Net income",
+            "title": "Lợi nhuận thuần",
             "code": "IN0006",
-            "remark": "Net income",
-            "example": "indicator(Net income)",
+            "remark": "Lợi nhuận thuần",
+            "example": "indicator(Lợi nhuận thuần)",
             "application_code": "quotation",
             "formula_data": [
                 {
                     "id": "3",
                     "order": 3,
-                    "title": "Gross profit",
-                    "remark": "Gross profit",
-                    "syntax": "indicator(Gross profit)",
-                    "example": "indicator(Gross profit)",
-                    "syntax_show": "indicator(Gross profit)",
+                    "title": "Lợi nhuận gộp",
+                    "remark": "Lợi nhuận gộp",
+                    "syntax": "indicator(Lợi nhuận gộp)",
+                    "example": "indicator(Lợi nhuận gộp)",
+                    "syntax_show": "indicator(Lợi nhuận gộp)",
                     "formula_data": [
                         {
                             "id": "1",
@@ -396,11 +396,11 @@ class SQIndicatorDefaultData:
                         {
                             "id": "2",
                             "order": 2,
-                            "title": "Total cost",
-                            "remark": "Total cost",
-                            "syntax": "indicator(Total cost)",
-                            "example": "indicator(Total cost)",
-                            "syntax_show": "indicator(Total cost)",
+                            "title": "Tổng chi phí",
+                            "remark": "Tổng chi phí",
+                            "syntax": "indicator(Tổng chi phí)",
+                            "example": "indicator(Tổng chi phí)",
+                            "syntax_show": "indicator(Tổng chi phí)",
                             "formula_data": [
                                 {
                                     "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
@@ -420,17 +420,17 @@ class SQIndicatorDefaultData:
                         }
                     ],
                     "is_indicator": True,
-                    "formula_data_show": "indicator(Revenue) - indicator(Total cost)"
+                    "formula_data_show": "indicator(Revenue) - indicator(Tổng chi phí)"
                 },
                 "-",
                 {
                     "id": "4",
                     "order": 4,
-                    "title": "Operating expense",
-                    "remark": "Operating expense",
-                    "syntax": "indicator(Operating expense)",
-                    "example": "indicator(Operating expense)",
-                    "syntax_show": "indicator(Operating expense)",
+                    "title": "Chi phí vận hành",
+                    "remark": "Chi phí vận hành",
+                    "syntax": "indicator(Chi phí vận hành)",
+                    "example": "indicator(Chi phí vận hành)",
+                    "syntax_show": "indicator(Chi phí vận hành)",
                     "formula_data": [
                         {
                             "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
@@ -479,11 +479,11 @@ class SQIndicatorDefaultData:
                 {
                     "id": "5",
                     "order": 5,
-                    "title": "Other expenses",
-                    "remark": "Other expenses",
-                    "syntax": "indicator(Other expenses)",
-                    "example": "indicator(Other expenses)",
-                    "syntax_show": "indicator(Other expenses)",
+                    "title": "Chi phí khác",
+                    "remark": "Chi phí khác",
+                    "syntax": "indicator(Chi phí khác)",
+                    "example": "indicator(Chi phí khác)",
+                    "syntax_show": "indicator(Chi phí khác)",
                     "formula_data": [
                         {
                             "id": "490ecfee-30d2-468a-b075-84d44b8b150e",
@@ -501,11 +501,11 @@ class SQIndicatorDefaultData:
                         {
                             "id": "62fca217-1985-447a-8aa9-4a8c27ceeba4",
                             "order": 4,
-                            "title": "Operating expense",
-                            "remark": "Operating expense",
-                            "syntax": "indicator(Operating expense)",
-                            "example": "indicator(Operating expense)",
-                            "syntax_show": "indicator(Operating expense)",
+                            "title": "Chi phí vận hành",
+                            "remark": "Chi phí vận hành",
+                            "syntax": "indicator(Chi phí vận hành)",
+                            "example": "indicator(Chi phí vận hành)",
+                            "syntax_show": "indicator(Chi phí vận hành)",
                             "formula_data": [
                                 {
                                     "id": "aebaf647-49ff-4d59-a738-41ed6a583b50",
@@ -554,10 +554,10 @@ class SQIndicatorDefaultData:
                         }
                     ],
                     "is_indicator": True,
-                    "formula_data_show": "prop(Total expense before tax) - indicator(Operating expense)"
+                    "formula_data_show": "prop(Total expense before tax) - indicator(Chi phí vận hành)"
                 }
             ],
-            "formula_data_show": "indicator(Gross profit) - indicator(Operating expense) - indicator(Other expenses)",
+            "formula_data_show": "indicator(Lợi nhuận gộp) - indicator(Chi phí vận hành) - indicator(Chi phí khác)",
             "order": 6
         }
     ]
