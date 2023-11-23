@@ -395,6 +395,14 @@ AppProp_SaleData_Quotation_data = {
         'type': 1,
         'is_sale_indicator': True,
     },
+    'af3d550c-8b22-481f-998b-35499f0df141': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Internal labor item',
+        'code': 'expense_title',
+        'remark': 'Internal labor item on quotation expense line',
+        'type': 1,
+        'is_sale_indicator': True,
+    },
     '2f468197-0132-44eb-9966-80deb69aa77a': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Expense unit title',
