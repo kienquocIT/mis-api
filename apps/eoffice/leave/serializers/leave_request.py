@@ -96,10 +96,10 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
                 "id": obj.employee_inherit_id,
                 "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
                 "group": {
-                    "id": str(obj.employee_inherit.group.id),
+                    "id": str(obj.employee_inherit.group_id),
                     "title": obj.employee_inherit.group.title,
                     "code": obj.employee_inherit.group.code
-                }
+                } if obj.employee_inherit.group_id else {}
             }
         return {}
 
@@ -117,7 +117,7 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
             data_list = LeaveRequestDateListRegister.objects.filter_current(
                 fill__company=True, fill__tenant=True, leave_id=str(obj.id)
             )
-            if data_list.exists():
+            if data_list.exists() and available_list.exists():
                 get_detail_data = []
                 for item in data_list:
                     available = available_list.get(leave_type_id=item.leave_type)

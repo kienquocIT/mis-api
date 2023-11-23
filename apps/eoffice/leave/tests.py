@@ -187,10 +187,9 @@ class LeaveTestCase(AdvanceTestCase):
                 "date_to": time_now,
                 "subtotal": 1,
                 "date_from": time_now,
-                "leave_type": {
+                "leave_available": {
                     "leave_type": {
-                        "id": str(leave_type.id),
-                        "code": str(leave_type.code)
+                        "id": str(leave_type.id)
                     }
                 },
                 "morning_shift_f": True,
@@ -227,8 +226,6 @@ class LeaveTestCase(AdvanceTestCase):
     def test_update_detail_leave_request(self):
         res = self.test_create_leave_request()
         url = reverse('LeaveRequestDetail', args=[res.data['result'].get('id', '')])
-        get_detail = self.client.get(url, format='json')
-        data = get_detail.data['result']
         time_now = (timezone.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         data_update = {
             'title': 'xin nghỉ làm việc nhà update',
