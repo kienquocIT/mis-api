@@ -344,12 +344,9 @@ class SaleOrder(DataAbstractModel):
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
                 'sale_order_indicator_id': so_ind.id,
-                'indicator_value': so_ind.indicator_value
-                if not instance.quotation else so_ind.quotation_indicator_value,
-                'actual_value': so_ind.indicator_value
-                if not instance.quotation else so_ind.quotation_indicator_value,
-                'rate_value': so_ind.indicator_rate
-                if not instance.quotation else so_ind.quotation_indicator_rate,
+                'indicator_value': so_ind.indicator_value,
+                'actual_value': so_ind.indicator_value,
+                'rate_value': so_ind.indicator_rate,
                 'order': so_ind.order,
                 'is_indicator': True,
             }
@@ -362,10 +359,8 @@ class SaleOrder(DataAbstractModel):
                     'tenant_id': instance.tenant_id,
                     'company_id': instance.company_id,
                     'sale_order_id': instance.id,
-                    'indicator_value': revenue.indicator_value
-                    if not instance.quotation else revenue.quotation_indicator_value,
-                    'actual_value': revenue.indicator_value
-                    if not instance.quotation else revenue.quotation_indicator_value,
+                    'indicator_value': revenue.indicator_value,
+                    'actual_value': revenue.indicator_value,
                     'is_sale_order': True,
                 }
             )
