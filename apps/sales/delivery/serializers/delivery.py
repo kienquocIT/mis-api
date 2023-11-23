@@ -538,6 +538,34 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
         order_delivery.save(update_fields=['sub', 'state'])
 
+    @classmethod
+    def create_final_acceptance(cls, instance, validated_product):
+        list_data_indicator = []
+        for item in validated_product:
+            # config final acceptance
+            so_product_cost = SaleOrderCost.objects.filter(
+                sale_order_id=instance.order_delivery.sale_order_id,
+                product_id=item.get('product_id', None)
+            ).first()
+            if so_product_cost:
+                list_data_indicator.append({
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'delivery_sub_id': instance.id,
+                    'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
+                    'is_delivery': True,
+                })
+        FinalAcceptance.create_final_acceptance_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.order_delivery.sale_order_id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
+            list_data_indicator=list_data_indicator
+        )
+        return True
+
     def update(self, instance, validated_data):
         # declare default object
         CommonFunc.check_update_prod_and_emp(instance, validated_data)
@@ -554,8 +582,6 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         is_partial = config['is_partial_ship']
         product_done = {}
         total_done = 0
-        # final acceptance
-        list_data_indicator = []
         for item in validated_product:
             prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
@@ -563,28 +589,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
 
-            # config final acceptance
-            so_product_cost = SaleOrderCost.objects.filter(
-                sale_order_id=instance.order_delivery.sale_order_id,
-                product_id=item.get('product_id', None)
-            ).first()
-            if so_product_cost:
-                list_data_indicator.append({
-                        'tenant_id': instance.tenant_id,
-                        'company_id': instance.company_id,
-                        'delivery_sub_id': instance.id,
-                        'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
-                        'is_delivery': True,
-                    })
-        FinalAcceptance.create_final_acceptance_from_so(
-            tenant_id=instance.tenant_id,
-            company_id=instance.company_id,
-            sale_order_id=instance.order_delivery.sale_order_id,
-            employee_created_id=instance.employee_created_id,
-            employee_inherit_id=instance.employee_inherit_id,
-            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
-            list_data_indicator=list_data_indicator
-        )
+        # create final acceptance
+        self.create_final_acceptance(instance=instance, validated_product=validated_product)
 
         if len(product_done) > 0:
             # update instance info
