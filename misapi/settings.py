@@ -99,6 +99,7 @@ INSTALLED_APPS = \
 
         'apps.sales.project',
         'apps.sales.report',
+        'apps.sales.acceptance',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]
