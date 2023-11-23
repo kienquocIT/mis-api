@@ -137,10 +137,10 @@ class SQIndicatorDefaultData:
             "order": 1
         },
         {
-            "title": "Tổng chi phí",
+            "title": "Giá vốn",
             "code": "IN0002",
-            "remark": "Tổng chi phí",
-            "example": "indicator(Tổng chi phí)",
+            "remark": "Giá vốn",
+            "example": "indicator(Giá vốn)",
             "application_code": "quotation",
             "formula_data": [
                 {
@@ -169,11 +169,11 @@ class SQIndicatorDefaultData:
                 {
                     "id": "1",
                     "order": 1,
-                    "title": "Revenue",
-                    "remark": "Revenue",
-                    "syntax": "indicator(Revenue)",
-                    "example": "indicator(Revenue)",
-                    "syntax_show": "indicator(Revenue)",
+                    "title": "Doanh thu",
+                    "remark": "Doanh thu",
+                    "syntax": "indicator(Doanh thu)",
+                    "example": "indicator(Doanh thu)",
+                    "syntax_show": "indicator(Doanh thu)",
                     "formula_data": [
                         {
                             "id": "9a8bef37-6812-4d8b-ba6a-dc5669e61029",
@@ -196,11 +196,11 @@ class SQIndicatorDefaultData:
                 {
                     "id": "2",
                     "order": 2,
-                    "title": "Tổng chi phí",
-                    "remark": "Tổng chi phí",
-                    "syntax": "indicator(Tổng chi phí)",
-                    "example": "indicator(Tổng chi phí)",
-                    "syntax_show": "indicator(Tổng chi phí)",
+                    "title": "Giá vốn",
+                    "remark": "Giá vốn",
+                    "syntax": "indicator(Giá vốn)",
+                    "example": "indicator(Giá vốn)",
+                    "syntax_show": "indicator(Giá vốn)",
                     "formula_data": [
                         {
                             "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
@@ -219,7 +219,7 @@ class SQIndicatorDefaultData:
                     "formula_data_show": "prop(Total cost before tax)"
                 }
             ],
-            "formula_data_show": "indicator(Revenue) - indicator(Tổng chi phí)",
+            "formula_data_show": "indicator(Doanh thu) - indicator(Giá vốn)",
             "order": 3
         },
         {
@@ -369,11 +369,11 @@ class SQIndicatorDefaultData:
                         {
                             "id": "1",
                             "order": 1,
-                            "title": "Revenue",
-                            "remark": "Revenue",
-                            "syntax": "indicator(Revenue)",
-                            "example": "indicator(Revenue)",
-                            "syntax_show": "indicator(Revenue)",
+                            "title": "Doanh thu",
+                            "remark": "Doanh thu",
+                            "syntax": "indicator(Doanh thu)",
+                            "example": "indicator(Doanh thu)",
+                            "syntax_show": "indicator(Doanh thu)",
                             "formula_data": [
                                 {
                                     "id": "9a8bef37-6812-4d8b-ba6a-dc5669e61029",
@@ -396,11 +396,11 @@ class SQIndicatorDefaultData:
                         {
                             "id": "2",
                             "order": 2,
-                            "title": "Tổng chi phí",
-                            "remark": "Tổng chi phí",
-                            "syntax": "indicator(Tổng chi phí)",
-                            "example": "indicator(Tổng chi phí)",
-                            "syntax_show": "indicator(Tổng chi phí)",
+                            "title": "Giá vốn",
+                            "remark": "Giá vốn",
+                            "syntax": "indicator(Giá vốn)",
+                            "example": "indicator(Giá vốn)",
+                            "syntax_show": "indicator(Giá vốn)",
                             "formula_data": [
                                 {
                                     "id": "d1dcd149-6fc8-4234-870d-29497f8cfb88",
@@ -420,7 +420,7 @@ class SQIndicatorDefaultData:
                         }
                     ],
                     "is_indicator": True,
-                    "formula_data_show": "indicator(Revenue) - indicator(Tổng chi phí)"
+                    "formula_data_show": "indicator(Doanh thu) - indicator(Giá vốn)"
                 },
                 "-",
                 {
