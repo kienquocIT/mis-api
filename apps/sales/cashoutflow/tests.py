@@ -416,6 +416,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'workflow_runtime_id',
+                'system_status',
             ],
             check_sum_second=True,
         )
@@ -489,6 +491,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'workflow_runtime_id',
+                'system_status',
             ],
             check_sum_second=True,
         )

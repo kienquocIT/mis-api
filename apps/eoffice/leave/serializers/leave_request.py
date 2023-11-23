@@ -53,9 +53,9 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
                 if leave:
                     list_date_res = []
                     for item in date_list:
-                        leave_type_id = item["leave_type"]
-                        if isinstance(item['leave_type'], dict):
-                            leave_type_id = leave_type_id["leave_type"]['id']
+                        leave_available = item["leave_available"]
+                        if isinstance(leave_available['leave_type'], dict):
+                            leave_type_id = leave_available["leave_type"]['id']
                         list_date_res.append(
                             LeaveRequestDateListRegister(
                                 company_id=company_id,
@@ -82,6 +82,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
 class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     system_status = serializers.SerializerMethodField()
+    detail_data = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveRequest
@@ -93,7 +94,12 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
         if obj.employee_inherit:
             return {
                 "id": obj.employee_inherit_id,
-                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+                "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}',
+                "group": {
+                    "id": str(obj.employee_inherit.group_id),
+                    "title": obj.employee_inherit.group.title,
+                    "code": obj.employee_inherit.group.code
+                } if obj.employee_inherit.group_id else {}
             }
         return {}
 
@@ -105,30 +111,40 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_detail_data(cls, obj):
-        date_list = LeaveRequestDateListRegister.objects.filter_current(
-            fill__company=True, fill__tenant=True, leave_id=str(obj.id)
-        )
-        if date_list.exists():
-            return [
-                {
-                    'id': item[0],
-                    'order': item[1],
-                    'leave_type': {
-                        'id': item[2],
-                        'title': item[3],
-                        'code': item[4]
-                    },
-                    'date_from': item[5],
-                    'morning_shift_f': item[6],
-                    'date_to': item[7],
-                    'morning_shift_t': item[8],
-                    'subtotal': item[9],
-                    'remark': item[10],
-                } for item in date_list.values_list(
-                    'id', 'order', 'leave_type', 'leave_type__title', 'leave_type__code', 'date_from',
-                    'morning_shift_f', 'date_to', 'morning_shift_t', 'subtotal', 'remark'
-                )
-            ]
+        if obj.detail_data:
+            available_list = LeaveAvailable.objects.filter(employee_inherit_id=obj.employee_inherit_id)
+            # return for item in
+            data_list = LeaveRequestDateListRegister.objects.filter_current(
+                fill__company=True, fill__tenant=True, leave_id=str(obj.id)
+            )
+            if data_list.exists() and available_list.exists():
+                get_detail_data = []
+                for item in data_list:
+                    available = available_list.get(leave_type_id=item.leave_type)
+                    get_detail_data.append({
+                        'order': item.order,
+                        'remark': item.remark,
+                        'date_to': item.date_to,
+                        'subtotal': item.subtotal,
+                        'date_from': item.date_from,
+                        'leave_available': {
+                            'id': str(available.id),
+                            'used': available.used,
+                            'total': available.total,
+                            'available': available.available,
+                            'open_year': available.open_year,
+                            'leave_type': {
+                                'id': str(item.leave_type.id),
+                                'title': item.leave_type.title,
+                                'code': item.leave_type.code
+                            },
+                            'check_balance': available.check_balance,
+                            'expiration_date': available.expiration_date,
+                        },
+                        'morning_shift_f': item.morning_shift_f,
+                        'morning_shift_t': item.morning_shift_t,
+                    })
+                return get_detail_data
         return []
 
     def update(self, instance, validated_data):

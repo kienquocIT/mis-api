@@ -90,6 +90,7 @@ MAP_FIELD_TITLE = {
     'inventory.goodsreceipt': 'title',
     'purchasing.purchaserequest': 'title',
     'leave.leaverequest': 'title',
+    'cashoutflow.payment': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

@@ -861,12 +861,9 @@ class ConfigDefaultData:
                     total = 0
                     if l_type.is_check_expiration or l_type.code == 'AN':
                         exp_date = last_day_year
-                    elif l_type.code == 'FF' or l_type.code == 'MC' or l_type.code == 'MY':
+                    elif l_type.code in ['FF', 'MC', 'MY']:
                         exp_date = current_date.replace(month=12, day=31)
-                        if l_type.code == 'FF' or l_type.code == 'MY':
-                            total = 3
-                        else:
-                            total = 1
+                        total = 1 if l_type.code == 'MC' else 3
                     list_avai.append(
                         LeaveAvailable(
                             leave_type=l_type,

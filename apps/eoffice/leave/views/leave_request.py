@@ -59,6 +59,9 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit__group')
+
     @swagger_auto_schema(
         operation_summary="Leave request detail",
         operation_description="Get detail leave request by ID",

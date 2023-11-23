@@ -14,6 +14,7 @@ class IndicatorListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'remark',
             'example',
             'order',
@@ -31,6 +32,7 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'title',
+            'code',
             'remark',
             'example',
             'order',

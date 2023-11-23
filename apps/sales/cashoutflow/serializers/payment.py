@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
@@ -6,7 +8,7 @@ from apps.sales.cashoutflow.models import (
 from apps.sales.quotation.models import QuotationExpense
 from apps.sales.saleorder.models import SaleOrderExpense
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg
+from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -101,7 +103,9 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'status'
+            'status',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -119,8 +123,11 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         payment_obj = Payment.objects.create(**validated_data)
+        if Payment.objects.filter_current(fill__tenant=True, fill__company=True, code=payment_obj.code).count() > 1:
+            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_payment_cost_items(
             payment_obj,
             self.initial_data.get('payment_expense_valid_list', []),
@@ -130,7 +137,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         return payment_obj
 
 
-class PaymentDetailSerializer(serializers.ModelSerializer):
+class PaymentDetailSerializer(AbstractDetailSerializerModel):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
