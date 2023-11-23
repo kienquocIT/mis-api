@@ -48,11 +48,23 @@ class PageBuilderDetailViewerSerializer(serializers.ModelSerializer):
 
 
 class PageBuilderDetailSerializer(serializers.ModelSerializer):
+    menus = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_menus(cls, obj):  # pylint: disable=W0613
+        return [
+            {
+                'id': page_obj.page_path,
+                'name': page_obj.title,
+            } for page_obj in PageBuilder.objects.filter_current(fill__tenant=True, fill__company=True)
+        ]
+
     class Meta:
         model = PageBuilder
         fields = (
             'id', 'title', 'remarks', 'page_title', 'page_path', 'is_publish',
             'page_html', 'page_css', 'page_js', 'page_full',
+            'menus',
         )
 
 
