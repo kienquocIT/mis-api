@@ -14,6 +14,9 @@ from ..utils import CommonFunc
 __all__ = ['OrderDeliveryListSerializer', 'OrderDeliverySubListSerializer', 'OrderDeliverySubDetailSerializer',
            'OrderDeliverySubUpdateSerializer']
 
+from ...acceptance.models import FinalAcceptance
+from ...saleorder.models import SaleOrderCost
+
 
 class WarehouseQuantityHandle:
     @classmethod
@@ -455,7 +458,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         return new_sub
 
     @classmethod
-    def config_one(cls, instance, total_done, product_done, config):
+    def config_one(cls, instance, total_done, product_done, config):  # none_picking_one_delivery
         if instance.remaining_quantity == total_done:
             # update product and sub date_done
             cls.update_prod(instance, product_done, config)
@@ -474,7 +477,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             )
 
     @classmethod
-    def config_two(cls, instance, total_done, product_done, config):
+    def config_two(cls, instance, total_done, product_done, config):  # none_picking_many_delivery
         # cho phep giao nhieu lan and tạo sub mới
         cls.update_prod(instance, product_done, config)
         instance.date_done = timezone.now()
@@ -492,7 +495,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             delivery_obj.save(update_fields=['sub'])
 
     @classmethod
-    def config_three(cls, instance, total_done, product_done, config):
+    def config_three(cls, instance, total_done, product_done, config):  # many_picking_one_delivery
         order_delivery = instance.order_delivery
         if instance.remaining_quantity == total_done:
             cls.update_prod(instance, product_done, config)
@@ -513,7 +516,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             )
 
     @classmethod
-    def config_four(cls, instance, total_done, product_done, config):
+    def config_four(cls, instance, total_done, product_done, config):  # many_picking_many_delivery
         cls.update_prod(instance, product_done, config)
         order_delivery = instance.order_delivery
         if instance.remaining_quantity > total_done:
@@ -551,12 +554,38 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         is_partial = config['is_partial_ship']
         product_done = {}
         total_done = 0
+        # final acceptance
+        list_data_indicator = []
         for item in validated_product:
             prod_key = str(item['product_id']) + "___" + str(item['order'])
             total_done += item['done']
             product_done[prod_key] = {}
             product_done[prod_key]['picked_num'] = item['done']
             product_done[prod_key]['delivery_data'] = item['delivery_data']
+
+            # config final acceptance
+            so_product_cost = SaleOrderCost.objects.filter(
+                sale_order_id=instance.order_delivery.sale_order_id,
+                product_id=item.get('product_id', None)
+            ).first()
+            if so_product_cost:
+                list_data_indicator.append({
+                        'tenant_id': instance.tenant_id,
+                        'company_id': instance.company_id,
+                        'delivery_sub_id': instance.id,
+                        'actual_value': so_product_cost.product_cost_price * item.get('done', 0),
+                        'is_delivery': True,
+                    })
+        FinalAcceptance.create_final_acceptance_from_so(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.order_delivery.sale_order_id,
+            employee_created_id=instance.employee_created_id,
+            employee_inherit_id=instance.employee_inherit_id,
+            opportunity_id=instance.order_delivery.sale_order.opportunity_id,
+            list_data_indicator=list_data_indicator
+        )
+
         if len(product_done) > 0:
             # update instance info
             self.update_self_info(instance, validated_data)
@@ -566,16 +595,16 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
                 with transaction.atomic():
                     self.handle_attach_file(instance, validated_data)
                     if not is_partial and not is_picking:
-                        # config 1
+                        # config 1 (one_picking_one_delivery)
                         self.config_one(instance, total_done, product_done, config)
                     elif is_partial and not is_picking:
-                        # config 2
+                        # config 2 (one_picking_many_delivery)
                         self.config_two(instance, total_done, product_done, config)
                     elif is_picking and not is_partial:
-                        # config 3
+                        # config 3 (many_picking_one_delivery)
                         self.config_three(instance, total_done, product_done, config)
                     else:
-                        # config 4
+                        # config 4 (many_picking_many_delivery)
                         self.config_four(instance, total_done, product_done, config)
             except Exception as err:
                 print(err)

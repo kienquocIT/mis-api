@@ -88,6 +88,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_expense_item",
         null=True,
     )
+    delivery_sub = models.ForeignKey(
+        'delivery.OrderDeliverySub',
+        on_delete=models.CASCADE,
+        verbose_name="delivery sub",
+        related_name="fa_indicator_delivery_sub",
+        null=True,
+    )
     indicator_value = models.FloatField(default=0)
     actual_value = models.FloatField(default=0)
     different_value = models.FloatField(default=0)

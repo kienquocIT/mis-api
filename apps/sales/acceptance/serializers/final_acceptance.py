@@ -17,6 +17,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     expense_item = serializers.SerializerMethodField()
+    delivery_sub = serializers.SerializerMethodField()
 
     class Meta:
         model = FinalAcceptanceIndicator
@@ -26,6 +27,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'sale_order',
             'payment',
             'expense_item',
+            'delivery_sub',
             'indicator_value',
             'actual_value',
             'different_value',
@@ -78,6 +80,14 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'code': obj.expense_item.code,
         } if obj.expense_item else {}
 
+    @classmethod
+    def get_delivery_sub(cls, obj):
+        return {
+            'id': obj.delivery_sub_id,
+            'title': obj.delivery_sub.title,
+            'code': obj.delivery_sub.code,
+        } if obj.delivery_sub else {}
+
 
 class FinalAcceptanceListSerializer(serializers.ModelSerializer):
     final_acceptance_indicator = serializers.SerializerMethodField()
@@ -109,5 +119,6 @@ class FinalAcceptanceUpdateSerializer(serializers.ModelSerializer):
             if fa_indicator:
                 fa_indicator.actual_value = value.get('actual_value', 0)
                 fa_indicator.different_value = value.get('different_value', 0)
-                fa_indicator.save(update_fields=['actual_value', 'different_value'])
+                fa_indicator.rate_value = value.get('rate_value', 0)
+                fa_indicator.save(update_fields=['actual_value', 'different_value', 'rate_value'])
         return instance
