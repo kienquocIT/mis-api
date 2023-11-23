@@ -122,7 +122,7 @@ class PageBuilderViewPathSub(APIView):
             if not path_sub.startswith('/'):
                 path_sub = '/' + path_sub
 
-            for obj in PageBuilder.objects.filter(company_id=pk_company, **self.filter_page_customize()).cache():
+            for obj in PageBuilder.objects.filter(company_id=pk_company, **self.filter_page_customize()):
                 regex_str = obj.page_path
                 if '{id}' in obj.page_path:
                     regex_str = str(obj.page_path).replace(
