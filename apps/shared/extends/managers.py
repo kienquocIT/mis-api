@@ -1,5 +1,7 @@
 from typing import Union
 
+import pymemcache
+
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import EmptyResultSet
@@ -9,6 +11,8 @@ from crum import get_current_user
 __all__ = ['NormalManager']
 
 from .caching import Caching
+from .push_notify import TeleBotPushNotify
+
 
 DEFAULT__FILL__MAP_KEY = {
     'fill__tenant': 'tenant_id',
@@ -152,16 +156,29 @@ class EntryQuerySet(models.query.QuerySet):
                 return data
 
             data = self
+
             if timeout is None:
                 timeout = settings.CACHE_EXPIRES_DEFAULT
             elif timeout == 0:
                 timeout = None
             else:
                 timeout = timeout * 60
+
             Caching().set(key, data, timeout=timeout)
             return data
         except EmptyResultSet:
             ...
+        except pymemcache.exceptions.MemcacheServerError as err:
+            msg = TeleBotPushNotify.generate_msg(
+                idx='MEMCACHED_ERROR',
+                status='FAILURE',
+                group_name='MEMCACHED',
+                **{
+                    'class_model': str(self.__class__),
+                    'err': str(err),
+                }
+            )
+            TeleBotPushNotify().send_msg(msg=msg)
         return self
 
     def get_current(
