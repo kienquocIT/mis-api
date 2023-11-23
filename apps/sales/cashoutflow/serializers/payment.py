@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sales.acceptance.models import FinalAcceptance
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
@@ -8,7 +8,7 @@ from apps.sales.cashoutflow.models import (
 from apps.sales.quotation.models import QuotationExpense
 from apps.sales.saleorder.models import SaleOrderExpense
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, HRMsg
+from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -84,30 +84,6 @@ def create_payment_cost_items(instance, payment_expense_valid_list, quotation_ex
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
         update_ap_cost(payment_cost_list)
-
-        # create final acceptance (temporary use)
-        if instance.sale_order_mapped:
-            list_data_indicator = [
-                {
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'payment_id': instance.id,
-                    'expense_item_id': payment_exp.expense_type_id,
-                    'actual_value': payment_exp.real_value,
-                    'is_payment': True,
-                }
-                for payment_exp in payment_cost_list
-            ]
-            FinalAcceptance.create_final_acceptance_from_so(
-                tenant_id=instance.tenant_id,
-                company_id=instance.company_id,
-                sale_order_id=instance.sale_order_mapped_id,
-                employee_created_id=instance.employee_created_id,
-                employee_inherit_id=instance.employee_inherit_id,
-                opportunity_id=instance.sale_order_mapped.opportunity_id,
-                list_data_indicator=list_data_indicator
-            )
-
         return True
     return False
 
@@ -127,7 +103,9 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'status'
+            'status',
+            # system
+            'system_status',
         )
 
     @classmethod
@@ -145,6 +123,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     def validate(self, validate_data):
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         payment_obj = Payment.objects.create(**validated_data)
         if Payment.objects.filter_current(fill__tenant=True, fill__company=True, code=payment_obj.code).count() > 1:
@@ -158,7 +137,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         return payment_obj
 
 
-class PaymentDetailSerializer(serializers.ModelSerializer):
+class PaymentDetailSerializer(AbstractDetailSerializerModel):
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
