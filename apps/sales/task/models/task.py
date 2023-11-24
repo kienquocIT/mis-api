@@ -5,7 +5,6 @@ from django.db import models
 from django.utils import timezone
 
 from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
-from apps.sales.opportunity.models import Opportunity
 from .config import OpportunityTaskConfig
 
 __all__ = ['OpportunityTask', 'OpportunityTaskStatus', 'OpportunityLogWork', 'TaskAttachmentFile']
@@ -57,7 +56,7 @@ class OpportunityTask(DataAbstractModel):
         verbose_name='Estimate Time', null=True
     )
     opportunity = models.ForeignKey(
-        Opportunity,
+        'opportunity.Opportunity',
         on_delete=models.CASCADE,
         verbose_name='Opportunity code',
         null=True,
