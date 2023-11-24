@@ -345,7 +345,6 @@ class SaleOrder(DataAbstractModel):
                 'company_id': instance.company_id,
                 'sale_order_indicator_id': so_ind.id,
                 'indicator_value': so_ind.indicator_value,
-                'actual_value': so_ind.indicator_value,
                 'rate_value': so_ind.indicator_rate,
                 'order': so_ind.order,
                 'is_indicator': True,

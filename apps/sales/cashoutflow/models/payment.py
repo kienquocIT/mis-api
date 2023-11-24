@@ -70,7 +70,16 @@ class Payment(DataAbstractModel):
 
     @classmethod
     def create_final_acceptance(cls, instance):
+        sale_order_id = None
+        opportunity_id = None
         if instance.sale_order_mapped:
+            sale_order_id = instance.sale_order_mapped_id
+            opportunity_id = instance.sale_order_mapped.opportunity_id
+        elif instance.opportunity_mapped:
+            if instance.opportunity_mapped.sale_order:
+                sale_order_id = instance.opportunity_mapped.sale_order_id
+                opportunity_id = instance.opportunity_mapped_id
+        if sale_order_id:
             list_data_indicator = [
                 {
                     'tenant_id': instance.tenant_id,
@@ -85,10 +94,10 @@ class Payment(DataAbstractModel):
             FinalAcceptance.create_final_acceptance_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
-                sale_order_id=instance.sale_order_mapped_id,
+                sale_order_id=sale_order_id,
                 employee_created_id=instance.employee_created_id,
                 employee_inherit_id=instance.employee_inherit_id,
-                opportunity_id=instance.sale_order_mapped.opportunity_id,
+                opportunity_id=opportunity_id,
                 list_data_indicator=list_data_indicator
             )
         return True
