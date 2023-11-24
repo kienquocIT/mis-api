@@ -154,6 +154,7 @@ class OpportunityTaskListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
+    employee_inherit_id = serializers.UUIDField()
     title = serializers.CharField(max_length=250)
 
     class Meta:
@@ -177,6 +178,17 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError(
             {'title': django.utils.translation.gettext_lazy("End date is required.")}
         )
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            ).id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
     @classmethod
     def validate_employee_created(cls, value):
