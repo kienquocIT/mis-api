@@ -18,7 +18,7 @@ class ReturnAdvanceList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
-        ap_list_id = self.request.query_params['advance_payment_id'].split(',')
+        ap_list_id = self.request.query_params['advance_payment_id_list'].split(',')
         if len(ap_list_id) > 0:
             return super().get_queryset().select_related('advance_payment').prefetch_related('return_advance').filter(
                 advance_payment_id__in=ap_list_id
