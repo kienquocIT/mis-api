@@ -49,6 +49,8 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
                 'title': obj.sale_order_indicator.quotation_indicator.title,
                 'code': obj.sale_order_indicator.quotation_indicator.code,
                 'formula_data_show': obj.sale_order_indicator.quotation_indicator.formula_data_show,
+                'acceptance_affect_by': obj.sale_order_indicator.quotation_indicator.acceptance_affect_by,
+                'is_acceptance_editable': obj.sale_order_indicator.quotation_indicator.is_acceptance_editable,
             } if obj.sale_order_indicator.quotation_indicator else {},
             'indicator_value': obj.sale_order_indicator.indicator_value,
             'indicator_rate': obj.sale_order_indicator.indicator_rate,
