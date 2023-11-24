@@ -13,6 +13,9 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     serializer_list = PaymentListSerializer
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
+    filterset_fields = {
+        'opportunity_mapped_id': ['exact'],
+    }
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
 
