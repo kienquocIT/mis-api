@@ -344,6 +344,7 @@ class SaleOrder(DataAbstractModel):
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
                 'sale_order_indicator_id': so_ind.id,
+                'indicator_id': so_ind.quotation_indicator_id,
                 'indicator_value': so_ind.indicator_value,
                 'rate_value': so_ind.indicator_rate,
                 'order': so_ind.order,
@@ -351,16 +352,16 @@ class SaleOrder(DataAbstractModel):
             }
             for so_ind in instance.sale_order_indicator_sale_order.all()
         ]
-        revenue = instance.sale_order_indicator_sale_order.filter(quotation_indicator__code='IN0001').first()
-        if revenue:
+        for so_ind_plan in instance.sale_order_indicator_sale_order.filter(quotation_indicator__acceptance_affect_by=2):
             list_data_indicator.append(
                 {
                     'tenant_id': instance.tenant_id,
                     'company_id': instance.company_id,
                     'sale_order_id': instance.id,
-                    'indicator_value': revenue.indicator_value,
-                    'actual_value': revenue.indicator_value,
-                    'is_sale_order': True,
+                    'indicator_id': so_ind_plan.quotation_indicator_id,
+                    'indicator_value': so_ind_plan.indicator_value,
+                    'actual_value': so_ind_plan.indicator_value,
+                    'is_plan': True,
                 }
             )
         FinalAcceptance.create_final_acceptance_from_so(

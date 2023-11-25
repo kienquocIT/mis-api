@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse
@@ -1147,9 +1148,10 @@ def update_product_general_price():
     return True
 
 
-def update_delivery_config():
-    for config in DeliveryConfig.objects.all():
-        config.is_partial_ship = 1
-        config.save(update_fields=['is_partial_ship'])
-    print('update_delivery_config done')
+def update_final_acceptance_indicator():
+    for ind in FinalAcceptanceIndicator.objects.all():
+        if ind.sale_order_indicator:
+            ind.indicator_id = ind.sale_order_indicator.quotation_indicator_id
+            ind.save(update_fields=['indicator_id'])
+    print('update_final_acceptance_indicator done.')
 
