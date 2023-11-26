@@ -15,3 +15,7 @@ class PermissionMsg:
     PERMISSION_INCORRECT = _('Permission format is incorrect')
     SOME_PLAN_WAS_EXPIRED_OR_NOT_FOUND = _('Some subscription is expired or not found')
     CONFIG_AUTH_VIEW_INCORRECT = _('View config is enable authenticated checking but not provide value of permit')
+
+
+class AttachmentMsg:
+    ERROR_VERIFY = _('Attachment can not verify please try again or contact your admin')

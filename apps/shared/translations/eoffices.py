@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-__all__ = ['LeaveMsg']
+__all__ = ['LeaveMsg', 'BusinessMsg']
 
 
 class LeaveMsg:
@@ -21,3 +21,7 @@ class LeaveMsg:
     ERROR_QUANTITY = _('Quantity number is wrong format')
     EMPTY_AVAILABLE_NUMBER = _('Day off large than leave available')
     EMPTY_DATE_EXPIRED = _('Leave available had expired')
+
+
+class BusinessMsg:
+    EMPTY_EXPENSE_ITEMS = _('List expense item is empty')

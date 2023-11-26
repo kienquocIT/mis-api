@@ -604,4 +604,13 @@ msgstr "Bạn không có quyền thay đổi thời gian đã ước tính"
 
 #
 msgid "Missing default info please contact with admin"
-msgstr "Thiếu thông tin vui lòng liên hệ quản trị viên"
+msgstr "Thiếu thông tin, vui lòng liên hệ quản trị viên"
+
+#
+msgid "User still not map with the Employee please contact your Admin"
+msgstr "Tài khoản chưa liên kết với nhân viên, vui lòng thử lại"
+
+#
+msgid "Attachment can not verify please try again or contact your admin"
+msgstr "Tiệp đính kèm không thề xác minh, vui lòng thử lại"
+

@@ -95,11 +95,13 @@ INSTALLED_APPS = \
         'apps.sales.task',
         'apps.sales.purchasing',
         'apps.sales.inventory',
-        'apps.eoffice.leave',
-
         'apps.sales.project',
         'apps.sales.report',
         'apps.sales.acceptance',
+
+        'apps.eoffice.leave',
+        'apps.eoffice.businesstrip',
+
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]
