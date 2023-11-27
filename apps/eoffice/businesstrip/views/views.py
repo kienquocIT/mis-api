@@ -26,7 +26,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         operation_description="get business trip request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessrequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -38,7 +38,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         request_body=BusinessRequestCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessrequest', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
@@ -71,7 +71,7 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="get business trip request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessRequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -83,7 +83,7 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BusinessRequestUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessRequest', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):

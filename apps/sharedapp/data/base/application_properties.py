@@ -1052,7 +1052,69 @@ AppProp_Eoffice_Leave_data = {
         'code': 'detail_data',
         'type': 1,
     },
+}
 
+AppProp_Eoffice_Business_trip_data = {
+    '38c2afd8-f4a8-4dac-a709-39e69ba8f9e6': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Title',
+        'code': 'title',
+        'type': 1,
+    },
+    '9351e068-8fc9-4431-99ac-66454998aff0': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Departure',
+        'code': 'departure',
+        'type': 5,
+    },
+    '77ae7fd2-5982-434b-b4d7-4668ba28fbba': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Destination',
+        'code': 'destination',
+        'type': 5,
+    },
+    '99638e9d-2136-4060-84a2-45568b833bec': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Employee on trip',
+        'code': 'employee_on_trip',
+        'type': 5,
+    },
+    'de46a5ae-b447-424e-b364-685d0ddaf26d': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Date from',
+        'code': 'date_f',
+        'type': 2,
+    },
+    '8323f1d7-7e69-4c24-b8d2-458c9fb2d73e': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Date to',
+        'code': 'date_t',
+        'type': 2,
+    },
+    '94bdd32e-177a-4b8e-9491-03749ef9514f': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Time ranges from',
+        'code': 'morning_f',
+        'type': 4,
+    },
+    'eb5f70bf-bfe5-412b-93a5-02390ddea5bd': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Time ranges to',
+        'code': 'morning_t',
+        'type': 4,
+    },
+    'c6e40f86-b4f0-4670-b336-68ee09efb898': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Attachment file',
+        'code': 'attachment',
+        'type': 5,
+    },
+    '6520174d-4fb9-4152-ba12-a853e9cbcf36': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Detail Expense list',
+        'code': 'expense_items',
+        'type': 1,
+    },
 }
 
 ApplicationProperty_data = {
@@ -1062,4 +1124,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Opportunity_data,
     **AppProp_SaleData_SaleOrder_data,
     **AppProp_Eoffice_Leave_data,
+    **AppProp_Eoffice_Business_trip_data,
 }
