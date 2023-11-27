@@ -339,31 +339,29 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def create_final_acceptance(cls, instance):
-        list_data_indicator = [
-            {
-                'tenant_id': instance.tenant_id,
-                'company_id': instance.company_id,
-                'sale_order_indicator_id': so_ind.id,
-                'indicator_id': so_ind.quotation_indicator_id,
-                'indicator_value': so_ind.indicator_value,
-                'rate_value': so_ind.indicator_rate,
-                'order': so_ind.order,
-                'is_indicator': True,
-            }
-            for so_ind in instance.sale_order_indicator_sale_order.all()
-        ]
-        for so_ind_plan in instance.sale_order_indicator_sale_order.filter(quotation_indicator__acceptance_affect_by=2):
-            list_data_indicator.append(
+        list_data_indicator = []
+        for so_ind in instance.sale_order_indicator_sale_order.all():
+            list_data_indicator.extend([
+                {
+                    'tenant_id': instance.tenant_id,
+                    'company_id': instance.company_id,
+                    'sale_order_indicator_id': so_ind.id,
+                    'indicator_id': so_ind.quotation_indicator_id,
+                    'indicator_value': so_ind.indicator_value,
+                    'rate_value': so_ind.indicator_rate,
+                    'order': so_ind.order,
+                    'is_indicator': True,
+                },
                 {
                     'tenant_id': instance.tenant_id,
                     'company_id': instance.company_id,
                     'sale_order_id': instance.id,
-                    'indicator_id': so_ind_plan.quotation_indicator_id,
-                    'indicator_value': so_ind_plan.indicator_value,
-                    'actual_value': so_ind_plan.indicator_value,
+                    'indicator_id': so_ind.quotation_indicator_id,
+                    'indicator_value': so_ind.indicator_value,
+                    'actual_value': so_ind.indicator_value,
                     'is_plan': True,
                 }
-            )
+            ])
         FinalAcceptance.create_final_acceptance_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
