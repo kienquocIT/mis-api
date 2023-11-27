@@ -27,7 +27,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='businesstrip', model_code='businessrequest', perm_code='view',
+        label_code='businessTrip', model_code='businessRequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -39,7 +39,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='businesstrip', model_code='businessrequest', perm_code='create'
+        label_code='businessTrip', model_code='businessRequest', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {

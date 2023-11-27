@@ -101,6 +101,6 @@ Application_eOffice_data = {
     ),
     "87ce1662-ca9d-403f-a32e-9553714ebc6d": ApplicationConfigFrame(**LEAVE_APP_BUSINESS_TRIP).data(
         depend_follow_main=False,
-        filtering_inheritor=False
+        filtering_inheritor=True
     ),
 }
