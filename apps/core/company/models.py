@@ -411,6 +411,13 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         permissions = ()
 
     @classmethod
+    def get_reset_field_name(cls, reset_frequency):
+        reset_frequency_fields = ['year_reset', 'month_reset', 'week_reset', 'day_reset']
+        if reset_frequency <= len(reset_frequency_fields):
+            return reset_frequency_fields[reset_frequency]
+        raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
+
+    @classmethod
     def gen_code(cls, company_obj, func):
         obj = cls.objects.filter(company=company_obj, function=func).first()
         if obj and obj.schema is not None:
