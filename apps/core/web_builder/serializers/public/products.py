@@ -6,4 +6,4 @@ from apps.masterdata.saledata.models import Product
 class PublicProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ('id', 'title', 'code', 'available_amount', 'avatar', 'description', 'sale_price')
+        fields = ('id', 'title', 'code', 'stock_amount', 'avatar', 'description', 'sale_price')
