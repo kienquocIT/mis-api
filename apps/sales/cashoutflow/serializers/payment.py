@@ -8,7 +8,7 @@ from apps.sales.cashoutflow.models import (
 from apps.sales.quotation.models import QuotationExpense
 from apps.sales.saleorder.models import SaleOrderExpense
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel
+from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -126,6 +126,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
     @decorator_run_workflow
     def create(self, validated_data):
         payment_obj = Payment.objects.create(**validated_data)
+        if Payment.objects.filter_current(fill__tenant=True, fill__company=True, code=payment_obj.code).count() > 1:
+            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_payment_cost_items(
             payment_obj,
             self.initial_data.get('payment_expense_valid_list', []),

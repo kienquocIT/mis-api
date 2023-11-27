@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost, AdvancePayment
-from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED
+from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED, HRMsg
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
@@ -121,12 +121,11 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         data_cost = validated_data.pop('cost')
-        return_advance = ReturnAdvance.objects.create(**validated_data)
-        self.common_create_return_advance_cost(
-            validate_data=data_cost,
-            return_advance=return_advance
-        )
-        return return_advance
+        return_ad = ReturnAdvance.objects.create(**validated_data)
+        if ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, code=return_ad.code).count() > 1:
+            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
+        self.common_create_return_advance_cost(validate_data=data_cost, return_advance=return_ad)
+        return return_ad
 
 
 class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):

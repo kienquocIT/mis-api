@@ -14,6 +14,7 @@ class PageBuilder(MasterDataAbstractModel):
     page_css = models.TextField(blank=True)
     page_js = models.TextField(blank=True)
     page_full = models.TextField(blank=True)
+    project_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = 'Page Builder'

@@ -396,6 +396,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
     first_number = models.IntegerField(null=True)
     last_number = models.IntegerField(null=True)
     reset_frequency = models.SmallIntegerField(choices=RESET_FREQUENCY_CHOICES, null=True)
+    min_number_char = models.IntegerField(null=True)
     latest_number = models.IntegerField(null=True)
     year_reset = models.IntegerField(null=True)
     month_reset = models.IntegerField(null=True)
@@ -410,10 +411,17 @@ class CompanyFunctionNumber(SimpleAbstractModel):
         permissions = ()
 
     @classmethod
+    def get_reset_field_name(cls, reset_frequency):
+        reset_frequency_fields = ['year_reset', 'month_reset', 'week_reset', 'day_reset']
+        if reset_frequency <= len(reset_frequency_fields):
+            return reset_frequency_fields[reset_frequency]
+        raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
+
+    @classmethod
     def gen_code(cls, company_obj, func):
         obj = cls.objects.filter(company=company_obj, function=func).first()
         if obj and obj.schema is not None:
-            result = []
+            result = obj.schema
 
             # check_reset_frequency
             current_year, current_month = datetime.datetime.now().year, datetime.datetime.now().month
@@ -435,7 +443,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 obj.save()
 
             schema_item_list = [
-                obj.latest_number + 1,
+                str(obj.latest_number + 1).zfill(obj.min_number_char),
                 current_year % 100,
                 current_year,
                 calendar.month_name[current_month][0:3],
@@ -446,12 +454,9 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 datetime.date.today().day,
                 data_calendar[2]
             ]
-            for match in re.findall(r"\[.*?\]|\d", obj.schema):
-                if match.isdigit():
-                    result.append(str(schema_item_list[int(match)]))
-                else:
-                    result.append(match[1:-1])
+            for match in re.findall(r"\[.*?\]", result):
+                result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
             obj.latest_number = obj.latest_number + 1
             obj.save()
-            return '-'.join(result)
+            return result
         return None

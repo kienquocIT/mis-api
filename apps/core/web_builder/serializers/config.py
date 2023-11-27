@@ -1,3 +1,5 @@
+import json
+
 from rest_framework import serializers
 
 from apps.core.web_builder.models import PageBuilder
@@ -41,18 +43,37 @@ class PageBuilderDetailViewerSerializer(serializers.ModelSerializer):
     class Meta:
         model = PageBuilder
         fields = (
-            'page_title', 'is_publish',
+            'page_title',
             'page_html', 'page_css', 'page_js',
             'is_publish',
         )
 
 
 class PageBuilderDetailSerializer(serializers.ModelSerializer):
+    project_data = serializers.SerializerMethodField()
+    menus = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_project_data(cls, obj):
+        if isinstance(obj.project_data, str):
+            return json.loads(obj.project_data)
+        return obj.project_data
+
+    @classmethod
+    def get_menus(cls, obj):  # pylint: disable=W0613
+        return [
+            {
+                'id': page_obj.page_path,
+                'name': page_obj.title,
+            } for page_obj in PageBuilder.objects.filter_current(fill__tenant=True, fill__company=True)
+        ]
+
     class Meta:
         model = PageBuilder
         fields = (
             'id', 'title', 'remarks', 'page_title', 'page_path', 'is_publish',
-            'page_html', 'page_css', 'page_js', 'page_full',
+            'page_html', 'page_css', 'page_js', 'page_full', 'project_data',
+            'menus',
         )
 
 
@@ -86,5 +107,5 @@ class PageBuilderUpdateSerializer(serializers.ModelSerializer):
         model = PageBuilder
         fields = (
             'title', 'remarks', 'page_title', 'page_path', 'is_publish',
-            'page_html', 'page_css', 'page_js', 'page_full',
+            'page_html', 'page_css', 'page_js', 'page_full', 'project_data',
         )

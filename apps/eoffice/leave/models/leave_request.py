@@ -115,42 +115,36 @@ class LeaveRequest(DataAbstractModel):
         # trừ leave available và ghi history
         type_list = self.detail_data
         for item in type_list:
-            leave_type = item['leave_type']['leave_type']
-            get_leave = LeaveAvailable.objects.filter(
-                employee_inherit_id=self.employee_inherit_id, leave_type_id=leave_type['id'], is_delete=False
-            )
+            leave_available = LeaveAvailable.objects.filter(id=item['leave_available']['id'])
             # nếu ko có quản lý số dư thì ko trừ available
-            if not get_leave.exists():  # pylint: disable=R1724
-                continue
-            else:
-                get_leave = get_leave.first()
-                if not get_leave.check_balance:
-                    continue
-            # các leave có quản lý số dư dc phép trừ stock
-            # nếu số dư ko đủ raise lỗi
-            if item['subtotal'] > get_leave.available:
-                raise ValueError(LeaveMsg.EMPTY_AVAILABLE_NUMBER)
-            if get_leave.check_balance:
-                crt_time = timezone.now().date()
-                leave_exp = get_leave.expiration_date
-                if crt_time > leave_exp:
-                    raise ValueError(LeaveMsg.EMPTY_DATE_EXPIRED)
-            get_leave.used += item['subtotal']
-            get_leave.available = get_leave.total - get_leave.used
-            get_leave.save(update_fields=['used', 'available'])
+            if leave_available.exists():
+                available = leave_available.first()
+                if available.check_balance:
+                    # các leave có quản lý số dư dc phép trừ stock
+                    # nếu số dư ko đủ raise lỗi
+                    if item['subtotal'] > available.available:
+                        raise ValueError(LeaveMsg.EMPTY_AVAILABLE_NUMBER)
+                    if available.check_balance:
+                        crt_time = timezone.now().date()
+                        leave_exp = available.expiration_date
+                        if crt_time > leave_exp:
+                            raise ValueError(LeaveMsg.EMPTY_DATE_EXPIRED)
+                    available.used += item['subtotal']
+                    available.available = available.total - available.used
+                    available.save(update_fields=['used', 'available'])
 
-            LeaveAvailableHistory.objects.create(
-                employee_inherit=get_leave.employee_inherit,
-                tenant=get_leave.tenant,
-                company=get_leave.company,
-                leave_available=get_leave,
-                total=get_leave.total - item['subtotal'],
-                action=2,
-                quantity=item['subtotal'],
-                adjusted_total=item['subtotal'],
-                remark=str(TYPE_LIST[2][1]),
-                type_arises=3
-            )
+                    LeaveAvailableHistory.objects.create(
+                        employee_inherit=available.employee_inherit,
+                        tenant=available.tenant,
+                        company=available.company,
+                        leave_available=available,
+                        total=available.total - item['subtotal'],
+                        action=2,
+                        quantity=item['subtotal'],
+                        adjusted_total=item['subtotal'],
+                        remark=str(TYPE_LIST[2][1]),
+                        type_arises=3
+                    )
 
     def before_save(self):
         self.minus_available()
