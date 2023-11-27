@@ -127,7 +127,7 @@ class PageBuilderViewPathSub(APIView):
             ):
                 # sys.getsizeof() return not correct size of variable! because QuerySet is sequence data (related data)
                 # cache all page --> over size memcached! --> cache each object page.
-                obj = PageBuilder.objects.filter(pk=obj_id).cache().first()
+                obj = PageBuilder.objects.filter(pk=obj_id).first()  # CACHE big size!
                 regex_str = obj.page_path
                 if '{id}' in obj.page_path:
                     regex_str = str(obj.page_path).replace(
