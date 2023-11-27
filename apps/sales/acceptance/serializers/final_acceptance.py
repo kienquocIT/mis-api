@@ -18,6 +18,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     expense_item = serializers.SerializerMethodField()
+    labor_item = serializers.SerializerMethodField()
     delivery_sub = serializers.SerializerMethodField()
 
     class Meta:
@@ -29,6 +30,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'sale_order',
             'payment',
             'expense_item',
+            'labor_item',
             'delivery_sub',
             'indicator_value',
             'actual_value',
@@ -86,6 +88,14 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'title': obj.expense_item.title,
             'code': obj.expense_item.code,
         } if obj.expense_item else {}
+
+    @classmethod
+    def get_labor_item(cls, obj):
+        return {
+            'id': obj.labor_item_id,
+            'title': obj.labor_item.title,
+            'code': obj.labor_item.code,
+        } if obj.labor_item else {}
 
     @classmethod
     def get_delivery_sub(cls, obj):
