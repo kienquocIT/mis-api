@@ -372,7 +372,7 @@ PRODUCT_APP_CONFIG = {
 
 EXPENSES_APP_CONFIG = {
     "id": "022375ce-c99c-4f11-8841-0a26c85f2fc2",
-    "title": "Expenses",
+    "title": "Internal labor item",
     "code": "expenses",
     "model_code": "expenses",
     "app_label": "saledata",

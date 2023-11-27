@@ -14,7 +14,7 @@ urlpatterns = [
     path('<str:pk>', CompanyDetail.as_view(), name='CompanyDetail'),
 
     # overview company page
-    path('overview', CompanyListOverview.as_view(), name='CompanyListOverview'),
+    path('overview/list', CompanyListOverview.as_view(), name='CompanyListOverview'),
     path('overview/<str:pk>/<int:option>', CompanyOverviewDetail.as_view(), name='CompanyOverviewDetail'),
     path('user/available', CompanyUserNotMapEmployeeList.as_view(), name='CompanyUserNotMapEmployeeList'),
     path(

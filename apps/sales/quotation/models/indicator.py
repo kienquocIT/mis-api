@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel, StringHandler
+from apps.shared import MasterDataAbstractModel, StringHandler, ACCEPTANCE_AFFECT_BY
 
 
 class QuotationIndicatorConfig(MasterDataAbstractModel):
@@ -31,6 +31,11 @@ class QuotationIndicatorConfig(MasterDataAbstractModel):
         blank=True,
         null=True
     )
+    acceptance_affect_by = models.SmallIntegerField(
+        default=1,
+        help_text='choices= ' + str(ACCEPTANCE_AFFECT_BY),
+    )
+    is_acceptance_editable = models.BooleanField(default=False)
     order = models.IntegerField(
         default=1
     )

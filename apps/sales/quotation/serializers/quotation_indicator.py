@@ -20,6 +20,8 @@ class IndicatorListSerializer(serializers.ModelSerializer):
             'order',
             'formula_data',
             'formula_data_show',
+            'acceptance_affect_by',
+            'is_acceptance_editable',
         )
 
 
@@ -38,6 +40,8 @@ class IndicatorDetailSerializer(serializers.ModelSerializer):
             'order',
             'formula_data',
             'formula_data_show',
+            'acceptance_affect_by',
+            'is_acceptance_editable',
         )
 
 
@@ -68,6 +72,8 @@ class IndicatorUpdateSerializer(serializers.ModelSerializer):
             'example',
             'formula_data',
             'formula_data_show',
+            'acceptance_affect_by',
+            'is_acceptance_editable',
             'order',
         )
 
