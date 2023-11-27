@@ -165,6 +165,7 @@ class EntryQuerySet(models.query.QuerySet):
                 timeout = timeout * 60
 
             Caching().set(key, data, timeout=timeout)
+            raise pymemcache.exceptions.MemcacheServerError
             return data
         except EmptyResultSet:
             ...
@@ -172,9 +173,9 @@ class EntryQuerySet(models.query.QuerySet):
             msg = TeleBotPushNotify.generate_msg(
                 idx='MEMCACHED_ERROR',
                 status='FAILURE',
-                group_name='MEMCACHED',
+                group_name='INFO',
                 **{
-                    'class_model': str(self.__class__),
+                    'class_model': str(self.table_name),
                     'err': str(err),
                 }
             )
