@@ -3,7 +3,6 @@ from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
-from apps.sales.opportunity.models import Opportunity
 from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg
 
 
