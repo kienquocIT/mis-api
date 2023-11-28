@@ -165,8 +165,7 @@ class EntryQuerySet(models.query.QuerySet):
                 timeout = timeout * 60
 
             Caching().set(key, data, timeout=timeout)
-            raise pymemcache.exceptions.MemcacheServerError
-            # return data  (comment do pylint fail)
+            return data
         except EmptyResultSet:
             ...
         except pymemcache.exceptions.MemcacheServerError as err:
