@@ -361,4 +361,3 @@ class PaymentCostListSerializer(serializers.ModelSerializer):
             'code': obj.expense_type.code,
             'title': obj.expense_type.title
         } if obj.expense_type else {}
-
