@@ -95,6 +95,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_expense_item",
         null=True,
     )
+    labor_item = models.ForeignKey(
+        'saledata.Expense',
+        on_delete=models.CASCADE,
+        verbose_name="labor item",
+        related_name="fa_indicator_labor_item",
+        null=True
+    )
     delivery_sub = models.ForeignKey(
         'delivery.OrderDeliverySub',
         on_delete=models.CASCADE,
