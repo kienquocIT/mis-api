@@ -1155,3 +1155,11 @@ def update_final_acceptance_indicator():
             ind.save(update_fields=['indicator_id'])
     print('update_final_acceptance_indicator done.')
 
+
+def update_payment_cost():
+    for item in PaymentCost.objects.all():
+        item.opportunity_mapped = item.payment.opportunity_mapped
+        item.quotation_mapped = item.payment.quotation_mapped
+        item.sale_order_mapped = item.payment.sale_order_mapped
+        item.save()
+    print('update done')

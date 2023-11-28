@@ -127,6 +127,21 @@ class PaymentCost(SimpleAbstractModel):
         on_delete=models.CASCADE,
         related_name='payment'
     )
+    sale_order_mapped = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_sale_order_mapped"
+    )
+    quotation_mapped = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_quotation_mapped"
+    )
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_opportunity_mapped"
+    )
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_description = models.CharField(max_length=150, null=True)
     expense_uom_name = models.CharField(max_length=150, null=True)
