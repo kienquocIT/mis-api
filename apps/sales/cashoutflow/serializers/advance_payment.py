@@ -3,7 +3,8 @@ from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg
+from apps.sales.opportunity.models import Opportunity
+from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
@@ -253,6 +254,10 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             for item in self.initial_data['expense_valid_list']:
                 if not item.get('expense_type_id', None):
                     raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
+        if validate_data.get('opportunity_mapped', None):
+            if (validate_data['opportunity_mapped'].is_close_lost is True or
+                    validate_data['opportunity_mapped'].is_deal_close):
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
     def create(self, validated_data):

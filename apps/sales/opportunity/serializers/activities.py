@@ -8,7 +8,7 @@ from apps.sales.opportunity.models import (
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
     OpportunityActivityLogs
 )
-from apps.shared import BaseMsg
+from apps.shared import BaseMsg, SaleMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 from apps.shared.mail import GmailController
 
@@ -69,6 +69,12 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         if value:
             return value
         raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_CALL_LOG_RESULT_NOT_NULL})
+
+    def validate(self, validate_data):
+        if validate_data.get('opportunity', None):
+            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return validate_data
 
     def create(self, validated_data):
         call_log_obj = OpportunityCallLog.objects.create(**validated_data)
@@ -179,6 +185,12 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_email_cc_list(cls, value):
         return value
+
+    def validate(self, validate_data):
+        if validate_data.get('opportunity', None):
+            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return validate_data
 
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
@@ -317,6 +329,12 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         if value:
             return value
         raise serializers.ValidationError({'detail': OpportunityMsg.ACTIVITIES_MEETING_RESULT_NOT_NULL})
+
+    def validate(self, validate_data):
+        if validate_data.get('opportunity', None):
+            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return validate_data
 
     def create(self, validated_data):
         meeting_obj = OpportunityMeeting.objects.create(**validated_data)
@@ -481,6 +499,12 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
         ) for person_id in data]
         OpportunityDocumentPersonInCharge.objects.bulk_create(bulk_data)
         return True
+
+    def validate(self, validate_data):
+        if validate_data.get('opportunity', None):
+            if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        return validate_data
 
     def create(self, validated_data):
         user = self.context.get('user', None)

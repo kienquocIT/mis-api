@@ -6,7 +6,8 @@ from apps.sales.cashoutflow.models import (
     AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel
+from apps.sales.opportunity.models import Opportunity
+from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel, SaleMsg
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -117,6 +118,10 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('opportunity_mapped', None):
+            if (validate_data['opportunity_mapped'].is_close_lost is True or
+                    validate_data['opportunity_mapped'].is_deal_close):
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
     @decorator_run_workflow
