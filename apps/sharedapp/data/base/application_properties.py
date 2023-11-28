@@ -266,10 +266,33 @@ AppProp_SaleData_Quotation_data = {
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
     },
+    # tabs
+    'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Tab detail',
+        'code': 'quotation_products_data',
+        'remark': 'Tab line detail of quotation',
+        'type': 1,
+    },
     'fda17a32-9f16-4e7c-b7db-53f007f6467b': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
-        'title': 'Logistic',
+        'title': 'Tab logistic',
         'code': 'quotation_logistic_data',
+        'remark': 'Tab logistic of quotation',
+        'type': 1,
+    },
+    'cf82dbac-a903-425c-aa41-b45e7ccec41b': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Tab cost',
+        'code': 'quotation_costs_data',
+        'remark': 'Tab cost of quotation',
+        'type': 1,
+    },
+    '10946df3-1e9d-4538-9173-7f75861ab7ed': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Tab expense',
+        'code': 'quotation_expenses_data',
+        'remark': 'Tab expense of quotation',
         'type': 1,
     },
     # Total fields
