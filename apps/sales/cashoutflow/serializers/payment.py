@@ -93,6 +93,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             'title',
             'sale_code_type',
             'supplier',
+            'employee_payment',
+            'is_internal_payment',
             'method',
             'creator_name',
             'employee_inherit',
@@ -121,6 +123,13 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             if (validate_data['opportunity_mapped'].is_close_lost is True or
                     validate_data['opportunity_mapped'].is_deal_close):
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+        if validate_data.get('is_internal_payment'):
+            if 'supplier' in validate_data:
+                validate_data.pop('supplier')
+        else:
+            if 'employee_payment' in validate_data:
+                validate_data.pop('employee_payment')
         return validate_data
 
     @decorator_run_workflow
@@ -141,6 +150,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     opportunity_mapped = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
+    employee_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     creator_name = serializers.SerializerMethodField()
 
@@ -158,6 +168,8 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'quotation_mapped',
             'sale_order_mapped',
             'supplier',
+            'employee_payment',
+            'is_internal_payment',
             'creator_name',
             'employee_inherit',
         )
@@ -266,6 +278,21 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                     'title': obj.supplier.industry.title
                 } if obj.supplier.industry else {},
                 'bank_accounts_mapped': bank_accounts_mapped_list
+            }
+        return {}
+
+    @classmethod
+    def get_employee_payment(cls, obj):
+        if obj.employee_payment:
+            return {
+                'id': obj.employee_payment_id,
+                'code': obj.employee_payment.code,
+                'full_name': obj.employee_payment.get_full_name(2),
+                'group': {
+                    'id': obj.employee_payment.group_id,
+                    'title': obj.employee_payment.group.title,
+                    'code': obj.employee_payment.group.code,
+                } if obj.employee_payment.group else {}
             }
         return {}
 
