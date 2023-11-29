@@ -826,10 +826,33 @@ AppProp_SaleData_SaleOrder_data = {
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
     },
+    # tabs
+    '50857b72-4bc2-4d26-a365-9ee1e894b6d2': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Tab detail',
+        'code': 'sale_order_products_data',
+        'remark': 'Tab line detail of sale order',
+        'type': 1,
+    },
     'd13549a8-a1c1-450e-818a-613cde814d6a': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
-        'title': 'Logistic',
+        'title': 'Tab logistic',
         'code': 'sale_order_logistic_data',
+        'remark': 'Tab logistic of sale order',
+        'type': 1,
+    },
+    '0cb516c2-2b59-4a11-98cf-4b78fd4a464d': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Tab cost',
+        'code': 'sale_order_costs_data',
+        'remark': 'Tab cost of sale order',
+        'type': 1,
+    },
+    '4ac8ebc5-adfd-4078-9834-51de58c064d1': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Tab expense',
+        'code': 'sale_order_expenses_data',
+        'remark': 'Tab expense of sale order',
         'type': 1,
     },
     # total fields
