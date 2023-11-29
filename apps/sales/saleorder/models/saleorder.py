@@ -6,7 +6,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 
 
 # CONFIG
-class SaleOrderAppConfig(SimpleAbstractModel):
+class SaleOrderAppConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company',
         on_delete=models.CASCADE,
@@ -348,6 +348,7 @@ class SaleOrder(DataAbstractModel):
                     'sale_order_indicator_id': so_ind.id,
                     'indicator_id': so_ind.quotation_indicator_id,
                     'indicator_value': so_ind.indicator_value,
+                    'different_value': 0 - so_ind.indicator_value,
                     'rate_value': so_ind.indicator_rate,
                     'order': so_ind.order,
                     'is_indicator': True,
