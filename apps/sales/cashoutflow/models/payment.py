@@ -19,9 +19,9 @@ SALE_CODE_TYPE = [
 ]
 
 ADVANCE_PAYMENT_METHOD = [
-    (0, _('Cash')),
-    (1, _('Bank Transfer')),
-    (2, _('None')),
+    (0, _('None')),
+    (1, _('Cash')),
+    (2, _('Bank Transfer')),
 ]
 
 
@@ -61,7 +61,7 @@ class Payment(DataAbstractModel):
     method = models.SmallIntegerField(
         choices=ADVANCE_PAYMENT_METHOD,
         verbose_name='Payment method',
-        help_text='0 is Cash, 1 is Bank Transfer, 2 is None'
+        help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
     creator_name = models.ForeignKey(
         'hr.Employee',
