@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 __all__ = ['DeliveryConfig']
 
