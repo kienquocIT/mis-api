@@ -125,9 +125,11 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
 
         if validate_data.get('is_internal_payment'):
-            if 'supplier' in validate_data: validate_data.pop('supplier')
+            if 'supplier' in validate_data:
+                validate_data.pop('supplier')
         else:
-            if 'employee_payment' in validate_data: validate_data.pop('employee_payment')
+            if 'employee_payment' in validate_data:
+                validate_data.pop('employee_payment')
         return validate_data
 
     @decorator_run_workflow
