@@ -127,9 +127,13 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('is_internal_payment'):
             if 'supplier' in validate_data:
                 validate_data.pop('supplier')
+                if not validate_data['employee_payment']:
+                    raise serializers.ValidationError({'Employee': AdvancePaymentMsg.EMPLOYEE_IS_NOT_NULL})
         else:
             if 'employee_payment' in validate_data:
                 validate_data.pop('employee_payment')
+                if not validate_data['supplier']:
+                    raise serializers.ValidationError({'Supplier': AdvancePaymentMsg.SUPPLIER_IS_NOT_NULL})
         return validate_data
 
     @decorator_run_workflow
