@@ -348,7 +348,7 @@ class SaleOrder(DataAbstractModel):
                 'indicator_id': so_ind.quotation_indicator_id,
                 'indicator_value': so_ind.indicator_value,
                 'different_value': 0 - so_ind.indicator_value,
-                # 'rate_value': so_ind.indicator_rate,
+                'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
                 'order': so_ind.order,
                 'is_indicator': True,
             }
