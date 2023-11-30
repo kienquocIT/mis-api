@@ -114,7 +114,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_method(cls, attrs):
-        if attrs in [0, 1]:
+        if attrs in [0, 1, 2]:
             return attrs
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
