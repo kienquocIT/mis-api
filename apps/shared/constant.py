@@ -91,6 +91,7 @@ MAP_FIELD_TITLE = {
     'purchasing.purchaserequest': 'title',
     'leave.leaverequest': 'title',
     'cashoutflow.payment': 'title',
+    'businesstrip.businessrequest': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

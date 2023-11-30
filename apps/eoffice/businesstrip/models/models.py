@@ -92,6 +92,32 @@ class BusinessRequest(DataAbstractModel):
         related_name='expense_item_of_business_request',
     )
 
+    def code_generator(self):
+        b_rqst = BusinessRequest.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False
+        ).count()
+        if not self.code:
+            char = "B"
+            temper = b_rqst
+            code = f"{char}{temper:03d}"
+            self.code = code
+
+    def before_save(self):
+        self.code_generator()
+
+    def save(self, *args, **kwargs):
+        if self.system_status > 2:
+            if self.system_status == 3:
+                self.before_save()
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    kwargs['update_fields'].append('code')
+            else:
+                kwargs.update({'update_fields': ['code']})
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'Business trip request'
         verbose_name_plural = 'Business trip request'

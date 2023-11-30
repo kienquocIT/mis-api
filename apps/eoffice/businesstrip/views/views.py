@@ -26,7 +26,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         operation_description="get business trip request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessrequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -38,8 +38,8 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         request_body=BusinessRequestCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='businesstrip', model_code='businessrequest', perm_code='create'
+        login_require=True, auth_require=True,
+        label_code='businesstrip', model_code='businessRequest', perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         self.ser_context = {
@@ -53,9 +53,10 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_detail = BusinessRequestDetailSerializer
     serializer_update = BusinessRequestUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
-        return super().get_queryset().select_related('employee_inherit').prefetch_related(
+        return super().get_queryset().select_related('employee_inherit', 'departure', 'destination').prefetch_related(
             Prefetch(
                 'expense_item_map_business_request',
                 queryset=ExpenseItemMapBusinessRequest.objects.select_related(
@@ -71,7 +72,7 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="get business trip request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessRequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
@@ -83,7 +84,7 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=BusinessRequestUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='businesstrip', model_code='businessRequest', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
