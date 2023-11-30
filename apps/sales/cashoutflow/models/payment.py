@@ -90,7 +90,8 @@ class Payment(DataAbstractModel):
                         'payment_id': instance.id,
                         'expense_item_id': payment_exp.expense_type_id,
                         'labor_item_id': so_expense.expense_id if so_expense else None,
-                        'actual_value': payment_exp.expense_after_tax_price,
+                        'actual_value': payment_exp.expense_subtotal_price,
+                        'actual_value_after_tax': payment_exp.expense_after_tax_price,
                         'is_payment': True,
                     })
             FinalAcceptance.create_final_acceptance_from_so(
