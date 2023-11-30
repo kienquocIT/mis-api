@@ -323,7 +323,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
                 if opportunity:
                     if opportunity.sale_order_opportunity.exists():
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_SALE_ORDER_USED})
-                    if opportunity.is_close_lost is True or opportunity.is_deal_close:
+                    if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
@@ -524,7 +524,6 @@ class SaleOrderExpenseListSerializer(serializers.ModelSerializer):
             'expense_item',
             'tax',
             'plan_after_tax',
-            'payment_plan_real_value'
         )
 
     @classmethod

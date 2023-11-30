@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
-from apps.core.workflow.tasks import decorator_run_workflow
+# from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
     AccountCreditCards, AccountShippingAddress, AccountBillingAddress, PaymentTerm
@@ -285,7 +285,7 @@ class AccountCreateSerializer(serializers.ModelSerializer):
 
         return validate_data
 
-    @decorator_run_workflow
+    # @decorator_run_workflow (comment do yeu cau ko chay WF)
     def create(self, validated_data):
         contact_mapped = self.initial_data.get('contact_mapped', None)
 
@@ -683,7 +683,7 @@ class AccountUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"Total employee": AccountsMsg.TOTAL_EMPLOYEES_NOT_NONE})
         return validate_data
 
-    @decorator_run_workflow
+    # @decorator_run_workflow
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)

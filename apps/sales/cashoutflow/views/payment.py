@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
-from apps.sales.cashoutflow.models import Payment, PaymentConfig
+from apps.sales.cashoutflow.models import Payment, PaymentConfig, PaymentCost
 from apps.sales.cashoutflow.serializers import (
-    PaymentListSerializer, PaymentCreateSerializer, PaymentDetailSerializer,
+    PaymentListSerializer, PaymentCreateSerializer, PaymentDetailSerializer, PaymentCostListSerializer,
     PaymentConfigListSerializer, PaymentConfigUpdateSerializer, PaymentConfigDetailSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -114,3 +114,24 @@ class PaymentConfigList(BaseListMixin, BaseCreateMixin):
             'company_current': request.user.company_current
         }
         return self.create(request, *args, **kwargs)
+
+
+class PaymentCostList(BaseListMixin):
+    queryset = PaymentCost.objects
+    filterset_fields = {
+        'opportunity_mapped_id': ['exact'],
+        'quotation_mapped_id': ['exact'],
+        'sale_order_mapped_id': ['exact'],
+    }
+    serializer_list = PaymentCostListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('expense_type')
+
+    @swagger_auto_schema(
+        operation_summary="PaymentCost List",
+        operation_description="Get PaymentCost List",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

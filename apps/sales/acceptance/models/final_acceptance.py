@@ -67,6 +67,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         null=True
     )
+    indicator = models.ForeignKey(
+        'quotation.QuotationIndicatorConfig',
+        on_delete=models.CASCADE,
+        verbose_name="indicator",
+        related_name="fa_indicator_indicator",
+        null=True
+    )
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
         on_delete=models.CASCADE,
@@ -88,6 +95,13 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
         related_name="fa_indicator_expense_item",
         null=True,
     )
+    labor_item = models.ForeignKey(
+        'saledata.Expense',
+        on_delete=models.CASCADE,
+        verbose_name="labor item",
+        related_name="fa_indicator_labor_item",
+        null=True
+    )
     delivery_sub = models.ForeignKey(
         'delivery.OrderDeliverySub',
         on_delete=models.CASCADE,
@@ -107,7 +121,7 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
     )
     order = models.IntegerField(default=1)
     is_indicator = models.BooleanField(default=False)
-    is_sale_order = models.BooleanField(default=False)
+    is_plan = models.BooleanField(default=False)
     is_delivery = models.BooleanField(default=False)
     is_payment = models.BooleanField(default=False)
 

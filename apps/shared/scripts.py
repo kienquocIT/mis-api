@@ -32,6 +32,7 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
     GoodsReceiptWarehouse
@@ -41,9 +42,10 @@ from ..sales.opportunity.models import (
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
+    SaleOrderAppConfig
 
 
 def update_sale_default_data_old_company():
@@ -1147,9 +1149,38 @@ def update_product_general_price():
     return True
 
 
-def update_delivery_config():
-    for config in DeliveryConfig.objects.all():
-        config.is_partial_ship = 1
-        config.save(update_fields=['is_partial_ship'])
-    print('update_delivery_config done')
+def update_final_acceptance_indicator():
+    for ind in FinalAcceptanceIndicator.objects.all():
+        if ind.sale_order_indicator:
+            ind.indicator_id = ind.sale_order_indicator.quotation_indicator_id
+            ind.save(update_fields=['indicator_id'])
+    print('update_final_acceptance_indicator done.')
 
+
+def update_payment_cost():
+    for item in PaymentCost.objects.all():
+        item.opportunity_mapped = item.payment.opportunity_mapped
+        item.quotation_mapped = item.payment.quotation_mapped
+        item.sale_order_mapped = item.payment.sale_order_mapped
+        item.save()
+    print('update done')
+
+
+def update_tenant_quotation_so_config():
+    for quo_config in QuotationAppConfig.objects.all():
+        if quo_config.company:
+            quo_config.tenant = quo_config.company.tenant
+            quo_config.save(update_fields=['tenant'])
+    for so_config in SaleOrderAppConfig.objects.all():
+        if so_config.company:
+            so_config.tenant = so_config.company.tenant
+            so_config.save(update_fields=['tenant'])
+    print('update_tenant_quotation_so_config done.')
+
+
+def update_tenant_delivery_config():
+    for deli_config in DeliveryConfig.objects.all():
+        if deli_config.company:
+            deli_config.tenant = deli_config.company.tenant
+            deli_config.save(update_fields=['tenant'])
+    print('update_tenant_delivery_config done.')

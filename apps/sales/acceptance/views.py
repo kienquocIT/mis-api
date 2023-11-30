@@ -1,6 +1,7 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.acceptance.models import FinalAcceptance
+from apps.sales.acceptance.models import FinalAcceptance, FinalAcceptanceIndicator
 from apps.sales.acceptance.serializers.final_acceptance import FinalAcceptanceListSerializer, \
     FinalAcceptanceUpdateSerializer
 from apps.shared import mask_view, BaseListMixin, BaseUpdateMixin, BaseRetrieveMixin
@@ -18,7 +19,18 @@ class FinalAcceptanceList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            "fa_indicator_final_acceptance",
+            Prefetch(
+                "fa_indicator_final_acceptance",
+                queryset=FinalAcceptanceIndicator.objects.select_related(
+                    "sale_order_indicator",
+                    'indicator',
+                    'sale_order',
+                    "payment",
+                    "expense_item",
+                    "labor_item",
+                    "delivery_sub",
+                )
+            ),
         )
 
     @swagger_auto_schema(

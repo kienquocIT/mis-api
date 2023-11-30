@@ -14,9 +14,11 @@ class FAIndicatorUpdateSerializer(serializers.ModelSerializer):
 
 class FAIndicatorListSerializer(serializers.ModelSerializer):
     sale_order_indicator = serializers.SerializerMethodField()
+    indicator = serializers.SerializerMethodField()
     sale_order = serializers.SerializerMethodField()
     payment = serializers.SerializerMethodField()
     expense_item = serializers.SerializerMethodField()
+    labor_item = serializers.SerializerMethodField()
     delivery_sub = serializers.SerializerMethodField()
 
     class Meta:
@@ -24,9 +26,11 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'sale_order_indicator',
+            'indicator',
             'sale_order',
             'payment',
             'expense_item',
+            'labor_item',
             'delivery_sub',
             'indicator_value',
             'actual_value',
@@ -35,7 +39,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'remark',
             'order',
             'is_indicator',
-            'is_sale_order',
+            'is_plan',
             'is_delivery',
             'is_payment',
         )
@@ -44,17 +48,22 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
     def get_sale_order_indicator(cls, obj):
         return {
             'id': obj.sale_order_indicator_id,
-            'indicator': {
-                'id': obj.sale_order_indicator.quotation_indicator_id,
-                'title': obj.sale_order_indicator.quotation_indicator.title,
-                'code': obj.sale_order_indicator.quotation_indicator.code,
-                'formula_data_show': obj.sale_order_indicator.quotation_indicator.formula_data_show,
-            } if obj.sale_order_indicator.quotation_indicator else {},
             'indicator_value': obj.sale_order_indicator.indicator_value,
             'indicator_rate': obj.sale_order_indicator.indicator_rate,
             'quotation_indicator_value': obj.sale_order_indicator.quotation_indicator_value,
             'quotation_indicator_rate': obj.sale_order_indicator.quotation_indicator_rate,
         } if obj.sale_order_indicator else {}
+
+    @classmethod
+    def get_indicator(cls, obj):
+        return {
+            'id': obj.indicator_id,
+            'title': obj.indicator.title,
+            'code': obj.indicator.code,
+            'formula_data_show': obj.indicator.formula_data_show,
+            'acceptance_affect_by': obj.indicator.acceptance_affect_by,
+            'is_acceptance_editable': obj.indicator.is_acceptance_editable,
+        } if obj.indicator else {}
 
     @classmethod
     def get_sale_order(cls, obj):
@@ -79,6 +88,14 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'title': obj.expense_item.title,
             'code': obj.expense_item.code,
         } if obj.expense_item else {}
+
+    @classmethod
+    def get_labor_item(cls, obj):
+        return {
+            'id': obj.labor_item_id,
+            'title': obj.labor_item.title,
+            'code': obj.labor_item.code,
+        } if obj.labor_item else {}
 
     @classmethod
     def get_delivery_sub(cls, obj):

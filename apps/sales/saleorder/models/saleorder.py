@@ -6,7 +6,7 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 
 
 # CONFIG
-class SaleOrderAppConfig(SimpleAbstractModel):
+class SaleOrderAppConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company',
         on_delete=models.CASCADE,
@@ -343,26 +343,17 @@ class SaleOrder(DataAbstractModel):
             {
                 'tenant_id': instance.tenant_id,
                 'company_id': instance.company_id,
+                'sale_order_id': instance.id,
                 'sale_order_indicator_id': so_ind.id,
+                'indicator_id': so_ind.quotation_indicator_id,
                 'indicator_value': so_ind.indicator_value,
-                'rate_value': so_ind.indicator_rate,
+                'different_value': 0 - so_ind.indicator_value,
+                'rate_value': 100 if so_ind.quotation_indicator.code == 'IN0001' else 0,
                 'order': so_ind.order,
                 'is_indicator': True,
             }
             for so_ind in instance.sale_order_indicator_sale_order.all()
         ]
-        revenue = instance.sale_order_indicator_sale_order.filter(quotation_indicator__code='IN0001').first()
-        if revenue:
-            list_data_indicator.append(
-                {
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'sale_order_id': instance.id,
-                    'indicator_value': revenue.indicator_value,
-                    'actual_value': revenue.indicator_value,
-                    'is_sale_order': True,
-                }
-            )
         FinalAcceptance.create_final_acceptance_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
@@ -757,7 +748,6 @@ class SaleOrderExpense(MasterDataAbstractModel):
         default=False,
         help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
-    payment_plan_real_value = models.FloatField(default=0)
     is_labor = models.BooleanField(
         default=False,
         help_text="flag to check if record is MasterData Internal Labor Item (model Expense)"

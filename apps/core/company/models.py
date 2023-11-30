@@ -413,7 +413,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
     @classmethod
     def get_reset_field_name(cls, reset_frequency):
         reset_frequency_fields = ['year_reset', 'month_reset', 'week_reset', 'day_reset']
-        if reset_frequency <= len(reset_frequency_fields):
+        if reset_frequency < len(reset_frequency_fields):
             return reset_frequency_fields[reset_frequency]
         raise RuntimeError('[CompanyFunctionNumber.reset_frequency] Find Field Map returned null.')
 
@@ -442,8 +442,10 @@ class CompanyFunctionNumber(SimpleAbstractModel):
                 obj.latest_number = obj.first_number - 1
                 obj.save()
 
+            obj.latest_number = obj.latest_number + 1
+            obj.save()
             schema_item_list = [
-                str(obj.latest_number + 1).zfill(obj.min_number_char),
+                str(obj.latest_number).zfill(obj.min_number_char),
                 current_year % 100,
                 current_year,
                 calendar.month_name[current_month][0:3],
@@ -456,7 +458,5 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             ]
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
-            obj.latest_number = obj.latest_number + 1
-            obj.save()
             return result
         return None

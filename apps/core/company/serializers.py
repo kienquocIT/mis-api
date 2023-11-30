@@ -170,9 +170,10 @@ def create_company_function_number(company_obj, company_function_number_data):
     data_calendar = datetime.date.today().isocalendar()
     updated_function = []
     for item in company_function_number_data:
-        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=item.get('function', None))
+        function_name = item.get('function')
+        obj = CompanyFunctionNumber.objects.filter(company=company_obj, function=function_name)
         if obj.count() == 1:
-            updated_function.append(item.get('function', None))
+            updated_function.append(function_name)
             updated_fields = {
                 **item,
                 'latest_number': int(item.get('last_number', None)) - 1,
@@ -180,22 +181,12 @@ def create_company_function_number(company_obj, company_function_number_data):
                 'month_reset': int(f"{date_now.year}{date_now.month:02}"),
                 'week_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}"),
                 'day_reset': int(f"{data_calendar[0]}{data_calendar[1]:02}{data_calendar[2]}")
-            }
+            } if obj.first().latest_number is None else {**item}
             obj.update(**updated_fields)
 
     CompanyFunctionNumber.objects.filter_current(company=company_obj).exclude(function__in=updated_function).update(
-        numbering_by=0,
-        schema=None,
-        schema_text=None,
-        first_number=None,
-        last_number=None,
-        reset_frequency=None,
-        min_number_char=None,
-        latest_number=None,
-        year_reset=None,
-        month_reset=None,
-        week_reset=None,
-        day_reset=None
+        numbering_by=0, schema=None, schema_text=None, first_number=None, last_number=None, reset_frequency=None,
+        min_number_char=None, latest_number=None, year_reset=None, month_reset=None, week_reset=None, day_reset=None
     )
     return True
 

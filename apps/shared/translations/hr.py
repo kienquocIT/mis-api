@@ -24,4 +24,4 @@ class HRMsg:
     APP_NOT_MATCH_PLAN = _('Some app not match with plan')
     PLAN_TYPE_INCORRECT = _('Plan Type is incorrect')
     MEMBER_NOT_FOUND = _('Some member not found')
-    INVALID_SCHEMA = _("Duplicated code! Check the schema of Opportunity in Company setting.")
+    INVALID_SCHEMA = _("Duplicated code! Check the schema function in Company setting.")

@@ -4,6 +4,7 @@ from datetime import date, timedelta
 from uuid import uuid4
 
 from django.db import transaction
+from django.db.models import Q
 from django.db.models.signals import post_save, pre_delete, post_delete, pre_save
 from django.dispatch import receiver
 from django.utils import translation, timezone
@@ -531,6 +532,7 @@ class ConfigDefaultData:
 
     def delivery_config(self):
         DeliveryConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'is_picking': False,
@@ -551,6 +553,7 @@ class ConfigDefaultData:
             'is_not_discount_on_total': False,
         }
         config, created = QuotationAppConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'short_sale_config': short_sale_config,
@@ -580,6 +583,7 @@ class ConfigDefaultData:
             'is_not_discount_on_total': False,
         }
         config, created = SaleOrderAppConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'short_sale_config': short_sale_config,
@@ -991,6 +995,18 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
+                # check if assignee has zones => append perm edit on doc_id
+                if emp.all_runtime_assignee_of_employee.filter(
+                        ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),
+                        stage__runtime=runtime,
+                ).exists():
+                    emp.append_permit_by_ids(
+                        app_label=app_obj.app_label,
+                        model_code=app_obj.code,
+                        perm_code='edit',
+                        doc_id=str(doc_id),
+                        tenant_id=instance.runtime.tenant_id,
+                    )
 
 
 @receiver(post_save, sender=RuntimeAssignee)

@@ -6,7 +6,7 @@ from apps.shared import (
 
 
 # CONFIG
-class QuotationAppConfig(SimpleAbstractModel):
+class QuotationAppConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company',
         on_delete=models.CASCADE,
@@ -706,7 +706,6 @@ class QuotationExpense(MasterDataAbstractModel):
         default=False,
         help_text='flag to check if record is MasterData Expense or Product, if True is Product'
     )
-    payment_plan_real_value = models.FloatField(default=0)
     is_labor = models.BooleanField(
         default=False,
         help_text="flag to check if record is MasterData Internal Labor Item (model Expense)"

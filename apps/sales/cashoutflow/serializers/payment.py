@@ -5,10 +5,8 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
 )
-from apps.sales.quotation.models import QuotationExpense
-from apps.sales.saleorder.models import SaleOrderExpense
 from apps.masterdata.saledata.models import Currency
-from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel
+from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel, SaleMsg
 
 
 class PaymentListSerializer(serializers.ModelSerializer):
@@ -64,23 +62,21 @@ def update_ap_cost(payment_cost_list):
     return True
 
 
-def create_payment_cost_items(instance, payment_expense_valid_list, quotation_expense_plan, sale_order_expense_plan):
+def create_payment_cost_items(instance, payment_expense_valid_list):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
-    quo_expense_list = QuotationExpense.objects.filter(id__in=quotation_expense_plan).select_related('expense')
-    so_expense_list = SaleOrderExpense.objects.filter(id__in=sale_order_expense_plan).select_related('expense')
     if vnd_currency:
         bulk_info = []
         for item in payment_expense_valid_list:
-            bulk_info.append(PaymentCost(**item, payment=instance, currency=vnd_currency))
-            quo_expense_item = quo_expense_list.filter(expense_item_id=item['expense_type_id']).first()
-            if quo_expense_item:
-                quo_expense_item.payment_plan_real_value += float(item['real_value'])
-                quo_expense_item.save()
-            so_expense_item = so_expense_list.filter(expense_item_id=item['expense_type_id']).first()
-            if so_expense_item:
-                so_expense_item.payment_plan_real_value += float(item['real_value'])
-                so_expense_item.save()
-
+            bulk_info.append(
+                PaymentCost(
+                    **item,
+                    payment=instance,
+                    currency=vnd_currency,
+                    sale_order_mapped=instance.sale_order_mapped,
+                    quotation_mapped=instance.quotation_mapped,
+                    opportunity_mapped=instance.opportunity_mapped
+                )
+            )
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
         update_ap_cost(payment_cost_list)
@@ -97,6 +93,8 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             'title',
             'sale_code_type',
             'supplier',
+            'employee_payment',
+            'is_internal_payment',
             'method',
             'creator_name',
             'employee_inherit',
@@ -116,11 +114,22 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_method(cls, attrs):
-        if attrs in [0, 1]:
+        if attrs in [0, 1, 2]:
             return attrs
         raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
 
     def validate(self, validate_data):
+        if validate_data.get('opportunity_mapped', None):
+            if (validate_data['opportunity_mapped'].is_close_lost is True or
+                    validate_data['opportunity_mapped'].is_deal_close):
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+
+        if validate_data.get('is_internal_payment'):
+            if 'supplier' in validate_data:
+                validate_data.pop('supplier')
+        else:
+            if 'employee_payment' in validate_data:
+                validate_data.pop('employee_payment')
         return validate_data
 
     @decorator_run_workflow
@@ -130,9 +139,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_payment_cost_items(
             payment_obj,
-            self.initial_data.get('payment_expense_valid_list', []),
-            self.initial_data.get('quotation_expense_plan', []),
-            self.initial_data.get('sale_order_expense_plan', []),
+            self.initial_data.get('payment_expense_valid_list', [])
         )
         return payment_obj
 
@@ -143,6 +150,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     opportunity_mapped = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
+    employee_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     creator_name = serializers.SerializerMethodField()
 
@@ -160,6 +168,8 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'quotation_mapped',
             'sale_order_mapped',
             'supplier',
+            'employee_payment',
+            'is_internal_payment',
             'creator_name',
             'employee_inherit',
         )
@@ -272,6 +282,21 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
         return {}
 
     @classmethod
+    def get_employee_payment(cls, obj):
+        if obj.employee_payment:
+            return {
+                'id': obj.employee_payment_id,
+                'code': obj.employee_payment.code,
+                'full_name': obj.employee_payment.get_full_name(2),
+                'group': {
+                    'id': obj.employee_payment.group_id,
+                    'title': obj.employee_payment.group.title,
+                    'code': obj.employee_payment.group.code,
+                } if obj.employee_payment.group else {}
+            }
+        return {}
+
+    @classmethod
     def get_creator_name(cls, obj):
         return {
             'id': obj.creator_name_id,
@@ -347,3 +372,23 @@ class PaymentConfigDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = PaymentConfig
         fields = '__all__'
+
+
+class PaymentCostListSerializer(serializers.ModelSerializer):
+    expense_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PaymentCost
+        fields = (
+            'expense_type',
+            'real_value',
+            'converted_value'
+        )
+
+    @classmethod
+    def get_expense_type(cls, obj):
+        return {
+            'id': obj.expense_type_id,
+            'code': obj.expense_type.code,
+            'title': obj.expense_type.title
+        } if obj.expense_type else {}

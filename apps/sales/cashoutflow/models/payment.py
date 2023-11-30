@@ -19,8 +19,9 @@ SALE_CODE_TYPE = [
 ]
 
 ADVANCE_PAYMENT_METHOD = [
-    (0, _('Cash')),
-    (1, _('Bank Transfer')),
+    (0, _('None')),
+    (1, _('Cash')),
+    (2, _('Bank Transfer')),
 ]
 
 
@@ -48,11 +49,19 @@ class Payment(DataAbstractModel):
         'saledata.Account',
         verbose_name='Supplier mapped',
         on_delete=models.CASCADE,
+        null=True
     )
+    employee_payment = models.ForeignKey(
+        'hr.Employee',
+        verbose_name='Employee payment mapped',
+        on_delete=models.CASCADE,
+        null=True
+    )
+    is_internal_payment = models.BooleanField(default=False)
     method = models.SmallIntegerField(
         choices=ADVANCE_PAYMENT_METHOD,
         verbose_name='Payment method',
-        help_text='0 is Cash, 1 is Bank Transfer'
+        help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
     creator_name = models.ForeignKey(
         'hr.Employee',
@@ -80,17 +89,19 @@ class Payment(DataAbstractModel):
                 sale_order_id = instance.opportunity_mapped.sale_order_id
                 opportunity_id = instance.opportunity_mapped_id
         if sale_order_id:
-            list_data_indicator = [
-                {
-                    'tenant_id': instance.tenant_id,
-                    'company_id': instance.company_id,
-                    'payment_id': instance.id,
-                    'expense_item_id': payment_exp.expense_type_id,
-                    'actual_value': payment_exp.real_value,
-                    'is_payment': True,
-                }
-                for payment_exp in instance.payment.all()
-            ]
+            list_data_indicator = []
+            for payment_exp in instance.payment.all():
+                if payment_exp.expense_type:
+                    so_expense = payment_exp.expense_type.sale_order_expense_expense_item.first()
+                    list_data_indicator.append({
+                        'tenant_id': instance.tenant_id,
+                        'company_id': instance.company_id,
+                        'payment_id': instance.id,
+                        'expense_item_id': payment_exp.expense_type_id,
+                        'labor_item_id': so_expense.expense_id if so_expense else None,
+                        'actual_value': payment_exp.expense_after_tax_price,
+                        'is_payment': True,
+                    })
             FinalAcceptance.create_final_acceptance_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
@@ -126,6 +137,21 @@ class PaymentCost(SimpleAbstractModel):
         Payment,
         on_delete=models.CASCADE,
         related_name='payment'
+    )
+    sale_order_mapped = models.ForeignKey(
+        'saleorder.SaleOrder',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_sale_order_mapped"
+    )
+    quotation_mapped = models.ForeignKey(
+        'quotation.Quotation',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_quotation_mapped"
+    )
+    opportunity_mapped = models.ForeignKey(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE, null=True,
+        related_name="payment_cost_opportunity_mapped"
     )
     expense_type = models.ForeignKey('saledata.ExpenseItem', on_delete=models.CASCADE, null=True)
     expense_description = models.CharField(max_length=150, null=True)

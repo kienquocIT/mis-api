@@ -262,3 +262,11 @@ RETURN_ADVANCE_MONEY_RECEIVED = (
     (True, _('Received')),
     (False, _('Waiting')),
 )
+
+# Quotation/ SaleOrder Indicator
+ACCEPTANCE_AFFECT_BY = (
+    (1, 'None'),
+    (2, 'Plan value'),
+    (3, 'Delivery'),
+    (4, 'Payment'),
+)

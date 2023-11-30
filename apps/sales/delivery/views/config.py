@@ -38,7 +38,10 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     @swagger_auto_schema(
         operation_summary="Delivery Config Detail",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        allow_admin_tenant=True, allow_admin_company=True,
+    )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
         self.kwargs['company_id'] = request.user.company_current_id
@@ -49,8 +52,8 @@ class DeliveryConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=DeliveryConfigUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        label_code='delivery', model_code='orderdiliverysub', perm_code='edit',
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
     )
     def put(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
