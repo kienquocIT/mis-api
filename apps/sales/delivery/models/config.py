@@ -1,11 +1,11 @@
 from django.db import models
 
-from apps.shared import SimpleAbstractModel
+from apps.shared import MasterDataAbstractModel
 
 __all__ = ['DeliveryConfig']
 
 
-class DeliveryConfig(SimpleAbstractModel):
+class DeliveryConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company', on_delete=models.CASCADE,
         related_name='sales_delivery_config_detail',

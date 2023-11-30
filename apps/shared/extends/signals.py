@@ -531,6 +531,7 @@ class ConfigDefaultData:
 
     def delivery_config(self):
         DeliveryConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'is_picking': False,
@@ -551,6 +552,7 @@ class ConfigDefaultData:
             'is_not_discount_on_total': False,
         }
         config, created = QuotationAppConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'short_sale_config': short_sale_config,
@@ -580,6 +582,7 @@ class ConfigDefaultData:
             'is_not_discount_on_total': False,
         }
         config, created = SaleOrderAppConfig.objects.get_or_create(
+            tenant=self.company_obj.tenant,
             company=self.company_obj,
             defaults={
                 'short_sale_config': short_sale_config,

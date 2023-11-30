@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost, AdvancePayment
-from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED, HRMsg
+from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED, HRMsg, SaleMsg
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
@@ -91,6 +91,11 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        if validate_data.get('advance_payment', None):
+            if validate_data['advance_payment'].opportunity_mapped:
+                opp = validate_data['advance_payment'].opportunity_mapped
+                if opp.is_close_lost is True or opp.is_deal_close:
+                    raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         count_expense = AdvancePaymentCost.objects.filter(
             advance_payment_id=validate_data['advance_payment'],
         ).count()

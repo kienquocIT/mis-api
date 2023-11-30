@@ -19,8 +19,9 @@ SALE_CODE_TYPE = [
 ]
 
 ADVANCE_PAYMENT_METHOD = [
-    (0, _('Cash')),
-    (1, _('Bank Transfer')),
+    (0, _('None')),
+    (1, _('Cash')),
+    (2, _('Bank Transfer')),
 ]
 
 
@@ -48,11 +49,19 @@ class Payment(DataAbstractModel):
         'saledata.Account',
         verbose_name='Supplier mapped',
         on_delete=models.CASCADE,
+        null=True
     )
+    employee_payment = models.ForeignKey(
+        'hr.Employee',
+        verbose_name='Employee payment mapped',
+        on_delete=models.CASCADE,
+        null=True
+    )
+    is_internal_payment = models.BooleanField(default=False)
     method = models.SmallIntegerField(
         choices=ADVANCE_PAYMENT_METHOD,
         verbose_name='Payment method',
-        help_text='0 is Cash, 1 is Bank Transfer'
+        help_text='0 is None, 1 is Cash, 2 is Bank Transfer'
     )
     creator_name = models.ForeignKey(
         'hr.Employee',
@@ -90,7 +99,7 @@ class Payment(DataAbstractModel):
                         'payment_id': instance.id,
                         'expense_item_id': payment_exp.expense_type_id,
                         'labor_item_id': so_expense.expense_id if so_expense else None,
-                        'actual_value': payment_exp.real_value,
+                        'actual_value': payment_exp.expense_after_tax_price,
                         'is_payment': True,
                     })
             FinalAcceptance.create_final_acceptance_from_so(

@@ -42,9 +42,10 @@ from ..sales.opportunity.models import (
 )
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
-from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator
+from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
 from ..sales.report.models import ReportRevenue
-from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator
+from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
+    SaleOrderAppConfig
 
 
 def update_sale_default_data_old_company():
@@ -1163,3 +1164,23 @@ def update_payment_cost():
         item.sale_order_mapped = item.payment.sale_order_mapped
         item.save()
     print('update done')
+
+
+def update_tenant_quotation_so_config():
+    for quo_config in QuotationAppConfig.objects.all():
+        if quo_config.company:
+            quo_config.tenant = quo_config.company.tenant
+            quo_config.save(update_fields=['tenant'])
+    for so_config in SaleOrderAppConfig.objects.all():
+        if so_config.company:
+            so_config.tenant = so_config.company.tenant
+            so_config.save(update_fields=['tenant'])
+    print('update_tenant_quotation_so_config done.')
+
+
+def update_tenant_delivery_config():
+    for deli_config in DeliveryConfig.objects.all():
+        if deli_config.company:
+            deli_config.tenant = deli_config.company.tenant
+            deli_config.save(update_fields=['tenant'])
+    print('update_tenant_delivery_config done.')
