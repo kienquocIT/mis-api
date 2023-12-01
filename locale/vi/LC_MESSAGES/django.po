@@ -614,3 +614,7 @@ msgstr "Tài khoản chưa liên kết với nhân viên, vui lòng thử lại"
 msgid "Attachment can not verify please try again or contact your admin"
 msgstr "Tiệp đính kèm không thề xác minh, vui lòng thử lại"
 
+#
+msgid "List expense item is empty"
+msgstr "Danh sách chi phí đang trống"
+

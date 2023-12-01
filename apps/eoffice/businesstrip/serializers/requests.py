@@ -9,7 +9,7 @@ from apps.eoffice.businesstrip.models import ExpenseItemMapBusinessRequest, Busi
 __all__ = ['BusinessRequestListSerializer', 'BusinessRequestCreateSerializer', 'BusinessRequestDetailSerializer',
            'BusinessRequestUpdateSerializer']
 
-from apps.shared import TypeCheck, HRMsg
+from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
 from apps.shared.translations.base import AttachmentMsg, BaseMsg
 from apps.shared.translations.eoffices import BusinessMsg
 
@@ -131,6 +131,7 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
 
 
 class BusinessRequestCreateSerializer(serializers.ModelSerializer):
+    employee_inherit_id = serializers.UUIDField()
     expense_items = ExpenseItemListUpdateSerializer(many=True)
 
     @classmethod
@@ -198,10 +199,14 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
         )
 
 
-class BusinessRequestDetailSerializer(serializers.ModelSerializer):
+class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
+    employee_inherit = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
-    employee_inherit = serializers.SerializerMethodField()
+    system_status = serializers.SerializerMethodField()
+    departure = serializers.SerializerMethodField()
+    destination = serializers.SerializerMethodField()
+    employee_on_trip = serializers.SerializerMethodField()
 
     @classmethod
     def get_expense_items(cls, obj):
@@ -210,6 +215,12 @@ class BusinessRequestDetailSerializer(serializers.ModelSerializer):
             many=True,
         ).data
         return item_list
+
+    @classmethod
+    def get_system_status(cls, obj):
+        if obj.system_status or obj.system_status == 0:
+            return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -248,6 +259,34 @@ class BusinessRequestDetailSerializer(serializers.ModelSerializer):
                         }
                     )
                 return attachments
+        return []
+
+    @classmethod
+    def get_departure(cls, obj):
+        return {
+            'id': str(obj.departure_id),
+            'title': obj.departure.title
+        } if obj.departure else {}
+
+    @classmethod
+    def get_destination(cls, obj):
+        return {
+            'id': str(obj.destination_id),
+            'title': obj.destination.title
+        } if obj.destination else {}
+
+    @classmethod
+    def get_employee_on_trip(cls, obj):
+        employee_list = DisperseModel(app_model='hr.Employee').get_model().objects.filter(
+            id__in=obj.employee_on_trip,
+        )
+        if employee_list.exists():
+            return [{
+                'id': str(item.id),
+                'last_name': item.last_name,
+                'first_name': item.first_name,
+                'full_name': item.get_full_name()
+            } for item in employee_list]
         return []
 
     class Meta:

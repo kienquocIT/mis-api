@@ -6,7 +6,7 @@ from apps.shared import (
 
 
 # CONFIG
-class QuotationAppConfig(SimpleAbstractModel):
+class QuotationAppConfig(MasterDataAbstractModel):
     company = models.OneToOneField(
         'company.Company',
         on_delete=models.CASCADE,

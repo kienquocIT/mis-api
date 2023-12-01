@@ -122,6 +122,8 @@ class PageBuilderViewPathSub(APIView):
             if not path_sub.startswith('/'):
                 path_sub = '/' + path_sub
 
+            path_sub = path_sub.replace('---', '/')
+
             for obj_id in PageBuilder.objects.filter(company_id=pk_company, **self.filter_page_customize()).values_list(
                     'id', flat=True
             ):

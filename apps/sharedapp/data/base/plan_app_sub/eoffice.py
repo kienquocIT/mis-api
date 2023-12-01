@@ -58,10 +58,10 @@ LEAVE_APP_AVAILABLE = {
         },
     },
 }
-LEAVE_APP_BUSINESS_TRIP = {
+BUSINESS_TRIP_REQUEST = {
     "id": "87ce1662-ca9d-403f-a32e-9553714ebc6d",
     "title": "Business trip",
-    "code": "businesstrip",
+    "code": "businessrequest",
     "model_code": "businessrequest",
     "app_label": "businesstrip",
     "is_workflow": True,
@@ -99,8 +99,8 @@ Application_eOffice_data = {
         depend_follow_main=False,
         filtering_inheritor=False
     ),
-    "87ce1662-ca9d-403f-a32e-9553714ebc6d": ApplicationConfigFrame(**LEAVE_APP_BUSINESS_TRIP).data(
+    "87ce1662-ca9d-403f-a32e-9553714ebc6d": ApplicationConfigFrame(**BUSINESS_TRIP_REQUEST).data(
         depend_follow_main=False,
-        filtering_inheritor=False
+        filtering_inheritor=True
     ),
 }

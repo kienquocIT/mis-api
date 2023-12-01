@@ -29,3 +29,23 @@ class PublicProductListAPI(GenericAPIView):
 
         serializer = self.serializer_class(queryset, many=True)
         return ResponseController.success_200(data=serializer.data, key_data='result')
+
+
+class ProductDetailAPI(GenericAPIView):
+    queryset = Product.objects
+    serializer_class = PublicProductListSerializer
+
+    @mask_view(login_require=False, auth_require=False)
+    def get(self, request, *args, company_sub_domain, pk, **kwargs):
+        try:
+            company_obj = Company.objects.get(sub_domain=company_sub_domain)
+        except Company.DoesNotExist:
+            return ResponseController.notfound_404()
+
+        obj = self.filter_queryset(
+            self.queryset.filter(company=company_obj, product_choice__contains=0, is_public_website=True, pk=pk)
+        ).first()
+        if obj:
+            serializer = self.serializer_class(obj)
+            return ResponseController.success_200(data=serializer.data, key_data='result')
+        return ResponseController.notfound_404()
