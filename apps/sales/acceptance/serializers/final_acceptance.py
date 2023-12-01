@@ -34,6 +34,7 @@ class FAIndicatorListSerializer(serializers.ModelSerializer):
             'delivery_sub',
             'indicator_value',
             'actual_value',
+            'actual_value_after_tax',
             'different_value',
             'rate_value',
             'remark',

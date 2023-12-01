@@ -111,6 +111,7 @@ class FinalAcceptanceIndicator(MasterDataAbstractModel):
     )
     indicator_value = models.FloatField(default=0)
     actual_value = models.FloatField(default=0)
+    actual_value_after_tax = models.FloatField(default=0)
     different_value = models.FloatField(default=0)
     rate_value = models.FloatField(default=0)
     remark = models.CharField(
