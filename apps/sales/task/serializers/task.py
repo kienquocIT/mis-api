@@ -13,7 +13,7 @@ from apps.sales.task.models import OpportunityTask, OpportunityLogWork, Opportun
 from apps.sales.task.utils import task_create_opportunity_activity_log
 
 from apps.shared import HRMsg, BaseMsg, call_task_background
-from apps.shared.translations.sales import SaleTask
+from apps.shared.translations.sales import SaleTask, SaleMsg
 
 __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', 'OpportunityTaskDetailSerializer',
            'OpportunityTaskUpdateSTTSerializer', 'OpportunityTaskLogWorkSerializer',
@@ -211,6 +211,15 @@ class OpportunityTaskCreateSerializer(serializers.ModelSerializer):
             )
         return value
 
+    @classmethod
+    def validate_opportunity(cls, value):
+        if value:
+            if value.is_close_lost or value.is_deal_close:
+                raise serializers.ValidationError(
+                    {'opportunity': SaleMsg.OPPORTUNITY_CLOSED}
+                )
+        return value
+
     def create(self, validated_data):
         user = self.context.get('user', None)
         task = OpportunityTask.objects.create(**validated_data)
@@ -392,6 +401,11 @@ class OpportunityTaskUpdateSerializer(serializers.ModelSerializer):
         if not before_opp and assign_to and request_emp and str(request_emp) == assign_to:
             raise serializers.ValidationError(
                 {'title': SaleTask.ERROR_NOT_CHANGE}
+            )
+
+        if attrs.is_close_lost or attrs.is_deal_close:
+            raise serializers.ValidationError(
+                {'opportunity': SaleMsg.OPPORTUNITY_CLOSED}
             )
         return attrs
 
