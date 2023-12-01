@@ -6,7 +6,6 @@ from rest_framework import serializers
 
 from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
-from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
