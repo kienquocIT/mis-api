@@ -100,13 +100,6 @@ class Company(CoreAbstractModel):
     # web builder | tenant_code : 10 + company_code : 25 = 35
     sub_domain = models.CharField(max_length=35, unique=True)
 
-    # Company Setting
-    primary_currency = models.ForeignKey('base.Currency', on_delete=models.CASCADE, null=True)
-    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
-    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
-    cost_per_warehouse = models.BooleanField(default=True)
-    cost_per_lot_batch = models.BooleanField(default=False)
-
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),
@@ -186,6 +179,10 @@ class CompanyConfig(SimpleAbstractModel):
             }
         )
     )
+    definition_inventory_valuation = models.SmallIntegerField(choices=DEFINITION_INVENTORY_VALUATION_CHOICES, default=0)
+    default_inventory_value_method = models.SmallIntegerField(choices=DEFAULT_INVENTORY_VALUE_METHOD_CHOICES, default=2)
+    cost_per_warehouse = models.BooleanField(default=True)
+    cost_per_lot_batch = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Currency was used by Company'
