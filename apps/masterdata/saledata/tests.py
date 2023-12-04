@@ -330,7 +330,8 @@ class ProductTestCase(AdvanceTestCase):
                 'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
-                'available_amount'
+                'available_amount',
+                'is_public_website'
             ],
             check_sum_second=True,
         )
@@ -409,7 +410,8 @@ class ProductTestCase(AdvanceTestCase):
                 'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
-                'available_amount'
+                'available_amount',
+                'is_public_website'
             ],
             check_sum_second=True,
         )
