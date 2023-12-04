@@ -80,8 +80,8 @@ class OpportunityMeeting(SimpleAbstractModel):
         related_name='all_customer_member'
     )
     meeting_date = models.DateTimeField()
-    meeting_from_time = models.TimeField(auto_now=True)
-    meeting_to_time = models.TimeField(auto_now=True)
+    meeting_from_time = models.TimeField()
+    meeting_to_time = models.TimeField()
     meeting_address = models.CharField(max_length=250)
     room_location = models.CharField(max_length=250, null=True)
     input_result = models.CharField(max_length=250, null=True)
