@@ -87,33 +87,34 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def update_gr_info_for_po(cls, instance):
-        for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
-            gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
-            gr_po_product.purchase_order_product.gr_completed_quantity = round(
-                gr_po_product.purchase_order_product.gr_completed_quantity,
-                2
-            )
-            gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
-            gr_po_product.purchase_order_product.gr_remain_quantity = round(
-                gr_po_product.purchase_order_product.gr_remain_quantity,
-                2
-            )
-            gr_po_product.purchase_order_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
-        for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
-            gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
-            gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
-                gr_pr_product.purchase_order_request_product.gr_completed_quantity,
-                2
-            )
-            gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
-            gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
-                gr_pr_product.purchase_order_request_product.gr_remain_quantity,
-                2
-            )
-            gr_pr_product.purchase_order_request_product.save(update_fields=[
-                'gr_completed_quantity',
-                'gr_remain_quantity'
-            ])
+        if not instance.inventory_adjustment:
+            for gr_po_product in instance.goods_receipt_product_goods_receipt.all():
+                gr_po_product.purchase_order_product.gr_completed_quantity += gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_completed_quantity = round(
+                    gr_po_product.purchase_order_product.gr_completed_quantity,
+                    2
+                )
+                gr_po_product.purchase_order_product.gr_remain_quantity -= gr_po_product.quantity_import
+                gr_po_product.purchase_order_product.gr_remain_quantity = round(
+                    gr_po_product.purchase_order_product.gr_remain_quantity,
+                    2
+                )
+                gr_po_product.purchase_order_product.save(update_fields=['gr_completed_quantity', 'gr_remain_quantity'])
+            for gr_pr_product in instance.goods_receipt_request_product_goods_receipt.all():
+                gr_pr_product.purchase_order_request_product.gr_completed_quantity += gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_completed_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_completed_quantity,
+                    2
+                )
+                gr_pr_product.purchase_order_request_product.gr_remain_quantity -= gr_pr_product.quantity_import
+                gr_pr_product.purchase_order_request_product.gr_remain_quantity = round(
+                    gr_pr_product.purchase_order_request_product.gr_remain_quantity,
+                    2
+                )
+                gr_pr_product.purchase_order_request_product.save(update_fields=[
+                    'gr_completed_quantity',
+                    'gr_remain_quantity'
+                ])
         return True
 
     @classmethod
