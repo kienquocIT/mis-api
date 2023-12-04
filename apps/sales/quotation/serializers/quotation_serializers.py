@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.opportunity.models import Opportunity
+from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
 from apps.sales.quotation.models import Quotation, QuotationExpense
 from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate, QuotationCommonValidate, \
     QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
@@ -313,13 +313,24 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=quotation
         )
-        # update field quotation for opportunity
+        # update field quotation & create activity log for opportunity
         if quotation.opportunity:
+            # update field quotation
             quotation.opportunity.quotation = quotation
             quotation.opportunity.save(**{
                 'update_fields': ['quotation'],
                 'quotation_confirm': quotation.is_customer_confirm,
             })
+            # create activity log
+            OpportunityActivityLogs.create_opportunity_log_application(
+                tenant_id=quotation.tenant_id,
+                company_id=quotation.company_id,
+                opportunity_id=quotation.opportunity_id,
+                employee_created_id=quotation.employee_created_id,
+                app_code=str(quotation.__class__.get_model_code()),
+                doc_id=quotation.id,
+                title=quotation.title,
+            )
         return quotation
 
 

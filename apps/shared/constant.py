@@ -270,3 +270,13 @@ ACCEPTANCE_AFFECT_BY = (
     (3, 'Delivery'),
     (4, 'Payment'),
 )
+
+# Opportunity
+OPPORTUNITY_LOG_TYPE = (
+    (0, 'Application'),
+    (1, 'Task'),
+    (2, 'Call'),
+    (3, 'Email'),
+    (4, 'Meeting'),
+    (5, 'Document'),
+)
