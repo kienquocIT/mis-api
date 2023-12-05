@@ -131,7 +131,8 @@ class QuotationDetailSerializer(serializers.ModelSerializer):
             'customer': {
                 'id': obj.opportunity.customer_id,
                 'title': obj.opportunity.customer.title
-            } if obj.opportunity.customer else {}
+            } if obj.opportunity.customer else {},
+            'quotation_id': obj.opportunity.quotation_id,
         } if obj.opportunity else {}
 
     @classmethod
