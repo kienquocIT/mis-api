@@ -300,10 +300,14 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
                     id=validate_data['opportunity_id']
                 ).first()
                 if opportunity:
-                    if opportunity.quotation_opportunity.exists():
-                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_QUOTATION_USED})
+                    if opportunity.sale_order_opportunity.exists():
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_SALE_ORDER})
                     if opportunity.is_close_lost is True or opportunity.is_deal_close is True:
                         raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+                    quotation_invalid = opportunity.quotation_opportunity.filter(system_status__in=[2, 3, 4]).count()
+                    quotation_all = opportunity.quotation_opportunity.all().count()
+                    if quotation_invalid != quotation_all:
+                        raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_HAS_QUOTATION_NOT_DONE})
         return validate_data
 
     @decorator_run_workflow
@@ -316,11 +320,13 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
         # update field quotation & create activity log for opportunity
         if quotation.opportunity:
             # update field quotation
-            quotation.opportunity.quotation = quotation
+
+            quotation.opportunity.quotation = None
             quotation.opportunity.save(**{
                 'update_fields': ['quotation'],
-                'quotation_confirm': quotation.is_customer_confirm,
+                # 'quotation_confirm': quotation.is_customer_confirm,
             })
+
             # create activity log
             OpportunityActivityLogs.create_opportunity_log_application(
                 tenant_id=quotation.tenant_id,

@@ -28,6 +28,7 @@ class QuotationList(BaseListMixin, BaseCreateMixin):
         'opportunity__is_close_lost': ['exact'],
         'opportunity__is_deal_close': ['exact'],
         'system_status': ['in'],
+        'id': ['exact'],
     }
     serializer_list = QuotationListSerializer
     serializer_create = QuotationCreateSerializer

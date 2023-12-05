@@ -256,6 +256,17 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
             return cls.generate_code(company_id=company_id)
         return code
 
+    @classmethod
+    def update_quotation_field_for_opportunity(cls, instance):
+        if instance.opportunity:
+            # update field quotation
+            instance.opportunity.quotation = instance
+            instance.opportunity.save(**{
+                'update_fields': ['quotation'],
+                'quotation_confirm': instance.is_customer_confirm,
+            })
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -274,6 +285,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                self.update_quotation_field_for_opportunity(self)
 
         # hit DB
         super().save(*args, **kwargs)
