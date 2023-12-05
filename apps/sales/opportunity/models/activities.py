@@ -2,13 +2,14 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
-from apps.shared import SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import SimpleAbstractModel, MasterDataAbstractModel, OPPORTUNITY_LOG_TYPE
 
 __all__ = ['OpportunityCallLog', 'OpportunityEmail', 'OpportunityMeeting', 'OpportunityMeetingEmployeeAttended',
            'OpportunityMeetingCustomerMember', 'OpportunityActivityLogTask', 'OpportunityActivityLogs',
            'OpportunityDocument', 'OpportunityDocumentPersonInCharge', 'OpportunitySubDocument']
 
 
+# LOGS OF CALL
 class OpportunityCallLog(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
@@ -37,6 +38,7 @@ class OpportunityCallLog(SimpleAbstractModel):
         permissions = ()
 
 
+# LOGS OF EMAIL
 class OpportunityEmail(SimpleAbstractModel):
     opportunity = models.ForeignKey(
         'opportunity.Opportunity',
@@ -60,6 +62,7 @@ class OpportunityEmail(SimpleAbstractModel):
         permissions = ()
 
 
+# LOGS OF MEETING
 class OpportunityMeeting(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
@@ -103,6 +106,7 @@ class OpportunityMeetingCustomerMember(SimpleAbstractModel):
     customer_member_mapped = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE)
 
 
+# LOGS OF DOCUMENT
 class OpportunityDocument(MasterDataAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
@@ -180,6 +184,7 @@ class OpportunitySubDocument(SimpleAbstractModel):
         permissions = ()
 
 
+# LOGS OF TASK
 class OpportunityActivityLogTask(SimpleAbstractModel):
     subject = models.CharField(max_length=250)
     opportunity = models.ForeignKey(
@@ -207,7 +212,8 @@ class OpportunityActivityLogTask(SimpleAbstractModel):
         permissions = ()
 
 
-class OpportunityActivityLogs(SimpleAbstractModel):
+# Common model of opportunity activity logs
+class OpportunityActivityLogs(MasterDataAbstractModel):
     call = models.ForeignKey(
         OpportunityCallLog,
         on_delete=models.CASCADE,
@@ -247,6 +253,42 @@ class OpportunityActivityLogs(SimpleAbstractModel):
         default=timezone.now, editable=False,
         help_text='date created after record created',
     )
+
+    # applications that has foreign key to opportunity
+    app_code = models.CharField(
+        max_length=100,
+        verbose_name='Code of application',
+        help_text='{app_label}.{model}',
+        null=True,
+    )
+    doc_id = models.UUIDField(verbose_name='Document that has foreign key to opportunity', null=True)
+    log_type = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(OPPORTUNITY_LOG_TYPE),
+    )
+
+    @classmethod
+    def create_opportunity_log_application(
+            cls,
+            tenant_id,
+            company_id,
+            opportunity_id,
+            employee_created_id,
+            app_code,
+            doc_id,
+            title,
+    ):
+        cls.objects.create(
+            tenant_id=tenant_id,
+            company_id=company_id,
+            opportunity_id=opportunity_id,
+            employee_created_id=employee_created_id,
+            app_code=app_code,
+            doc_id=doc_id,
+            title=title,
+            log_type=0,
+        )
+        return True
 
     class Meta:
         verbose_name = 'Opportunity activity log'

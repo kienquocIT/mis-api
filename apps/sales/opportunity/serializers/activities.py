@@ -664,5 +664,9 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'meeting',
             'document',
             'task',
-            'date_created'
+            'date_created',
+            'app_code',
+            'doc_id',
+            'title',
+            'log_type',
         )
