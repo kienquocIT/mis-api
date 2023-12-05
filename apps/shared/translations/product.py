@@ -18,6 +18,7 @@ class ProductMsg:
     UNIT_OF_MEASURE_NOT_EXIST = _('Unit of measure does not exist.')
     UNIT_OF_MEASURE_CODE_EXIST = _('Unit of measure code is already exist.')
     CODE_EXIST = _('Code is already exist.')
+    CODE_NOT_NULL = _('Code must not null.')
     PRODUCT_CODE_EXIST = _('Product code is already exist.')
     RATIO_MUST_BE_GREATER_THAN_ZERO = _('Ratio value must be > 0.')
     TITLE_IS_NOT_NONE = _('Title is not null.')

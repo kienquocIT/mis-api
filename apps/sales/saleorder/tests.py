@@ -305,6 +305,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
+            "code": 'PRD2123',
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
