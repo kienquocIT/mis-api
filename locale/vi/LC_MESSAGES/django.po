@@ -618,3 +618,10 @@ msgstr "Tiệp đính kèm không thề xác minh, vui lòng thử lại"
 msgid "List expense item is empty"
 msgstr "Danh sách chi phí đang trống"
 
+#
+msgid "Opportunity already has sale order"
+msgstr "Cơ hội kinh doanh đã có đơn hàng"
+
+#
+msgid "Opportunity has quotation is not finished"
+msgstr "Cơ hội kinh doanh có báo giá chưa hoàn tất"
