@@ -410,9 +410,9 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
 
     def validate_code(self, value):
         if value:
-            if value != self.instance.code and Employee.objects.filter_current(
+            if Employee.objects.filter_current(
                     fill__tenant=True, fill__company=True, code=value
-            ).exists():
+            ).exclude(code=self.instance.code).exists():
                 raise serializers.ValidationError({"code": AccountMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"code": AccountMsg.CODE_NOT_NULL})
