@@ -81,7 +81,8 @@ class OpportunityCallLogCreateSerializer(serializers.ModelSerializer):
         OpportunityActivityLogs.objects.create(
             call=call_log_obj,
             opportunity=validated_data['opportunity'],
-            date_created=validated_data['call_date']
+            date_created=validated_data['call_date'],
+            log_type=2,
         )
         return call_log_obj
 
@@ -204,6 +205,7 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
         OpportunityActivityLogs.objects.create(
             email=email_obj,
             opportunity=validated_data['opportunity'],
+            log_type=3,
         )
         return email_obj
 
@@ -343,7 +345,8 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         OpportunityActivityLogs.objects.create(
             meeting=meeting_obj,
             opportunity=validated_data['opportunity'],
-            date_created=validated_data['meeting_date']
+            date_created=validated_data['meeting_date'],
+            log_type=4,
         )
         return meeting_obj
 
@@ -517,7 +520,8 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             OpportunityActivityLogs.objects.create(
                 document=instance,
                 opportunity=validated_data['opportunity'],
-                date_created=validated_data['request_completed_date']
+                date_created=validated_data['request_completed_date'],
+                log_type=5,
             )
         return instance
 
@@ -664,5 +668,9 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'meeting',
             'document',
             'task',
-            'date_created'
+            'date_created',
+            'app_code',
+            'doc_id',
+            'title',
+            'log_type',
         )

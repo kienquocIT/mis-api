@@ -24,6 +24,7 @@ def task_create_opportunity_activity_log(subject, opps, task):
                 meeting=None,
                 task=activity,
                 opportunity=activity.opportunity,
+                log_type=1,
             )
             if log:
                 return True, ''

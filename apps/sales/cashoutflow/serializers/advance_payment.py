@@ -3,6 +3,7 @@ from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
+from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg
 
 
@@ -264,6 +265,19 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
             raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
+
+        # create activity log for opportunity
+        if ap_obj.opportunity_mapped:
+            OpportunityActivityLogs.create_opportunity_log_application(
+                tenant_id=ap_obj.tenant_id,
+                company_id=ap_obj.company_id,
+                opportunity_id=ap_obj.opportunity_mapped_id,
+                employee_created_id=ap_obj.employee_created_id,
+                app_code=str(ap_obj.__class__.get_model_code()),
+                doc_id=ap_obj.id,
+                title=ap_obj.title,
+            )
+
         return ap_obj
 
 
