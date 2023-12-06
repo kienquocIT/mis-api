@@ -262,6 +262,7 @@ class InventoryAdjustmentOtherListSerializer(serializers.ModelSerializer):
                 'title': ia_product.product_mapped.title,
                 'code': ia_product.product_mapped.code,
                 'general_traceability_method': ia_product.product_mapped.general_traceability_method,
+                'description': ia_product.product_mapped.description,
             } if ia_product.product_mapped else {},
             'uom': {
                 'id': ia_product.uom_mapped_id,
