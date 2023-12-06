@@ -232,7 +232,7 @@ def validate_role_for_employee(value):
 
 
 class EmployeeCreateSerializer(serializers.ModelSerializer):
-    user = serializers.UUIDField(required=False)
+    user = serializers.UUIDField(required=False, allow_null=True)
     plan_app = HasPermPlanAppCreateSerializer(many=True)
     group = serializers.UUIDField(required=False, allow_null=True)
     role = serializers.ListField(
@@ -262,10 +262,12 @@ class EmployeeCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_user(cls, value):
-        try:
-            return User.objects.get(id=value)
-        except User.DoesNotExist:
-            raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
+        if value is not None:
+            try:
+                return User.objects.get(id=value)
+            except User.DoesNotExist:
+                raise serializers.ValidationError({'detail': AccountMsg.USER_NOT_EXIST})
+        return None
 
     @classmethod
     def validate_group(cls, value):
