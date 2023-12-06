@@ -1045,7 +1045,7 @@ class PermissionController:
 
     def config_data__check_obj_on_id_list(self, obj):  # check perm on DOC_ID (workflow)
         try:
-            data_check_id_list = None
+            data_check_id_list = {}
             for data_item in self.config_data__simple_list:
                 if 'id__in' in data_item:
                     data_check_id_list = data_item
