@@ -408,10 +408,11 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
     def validate_permission_by_configured(self, attrs):
         return PermissionController(tenant_id=self.instance.tenant_id).valid(attrs=attrs)
 
-    @classmethod
-    def validate_code(cls, value):
+    def validate_code(self, value):
         if value:
-            if Employee.objects.filter_current(fill__tenant=True, fill__company=True, code=value).count() > 1:
+            if value != self.instance.code and Employee.objects.filter_current(
+                    fill__tenant=True, fill__company=True, code=value
+            ).exists():
                 raise serializers.ValidationError({"code": AccountMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"code": AccountMsg.CODE_NOT_NULL})

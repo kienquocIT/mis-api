@@ -557,10 +557,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'is_public_website'
         )
 
-    @classmethod
-    def validate_code(cls, value):
+    def validate_code(self, value):
         if value:
-            if Product.objects.filter_current(fill__tenant=True, fill__company=True, code=value).count() > 1:
+            if value != self.instance.code and Product.objects.filter_current(
+                    fill__tenant=True, fill__company=True, code=value
+            ).exists():
                 raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
             return value
         raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
