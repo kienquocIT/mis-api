@@ -283,8 +283,8 @@ OPPORTUNITY_LOG_TYPE = (
 
 # Sale order
 SALE_ORDER_DELIVERY_STATUS = (
-    (0, _('Confirm')),
-    (1, _('Delivery')),
+    (0, _('None')),
+    (1, _('Delivering')),
     (2, _('Partially delivered')),
     (3, _('Delivered')),
 )
