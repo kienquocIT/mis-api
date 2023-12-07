@@ -657,3 +657,7 @@ msgstr "Nhập kho một phần"
 #
 msgid "Received"
 msgstr "Đã nhập kho xong"
+
+#
+msgid "Received money"
+msgstr "Đã nhận tiền"
