@@ -214,8 +214,6 @@ class Employee(TenantAbstractModel):
         self.search_content = f'{self.first_name} {self.last_name} , {self.last_name} {self.first_name} , {self.code}'
 
         # auto create code (temporary)
-        if not self.code:
-            self.code = self.generate_code(self.company_id)
 
         # get old user and new user
         user_id_old, user_id_new = None, self.user_id

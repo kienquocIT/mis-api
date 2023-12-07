@@ -142,6 +142,7 @@ def create_product_types_mapped(product_obj, product_types_mapped_list):
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
@@ -160,6 +161,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
+            'code',
             'title',
             'description',
             'product_choice',
@@ -186,6 +188,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'purchase_tax',
             'is_public_website'
         )
+
+    @classmethod
+    def validate_code(cls, value):
+        if value:
+            if Product.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_general_product_category(cls, value):
@@ -326,16 +336,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return validate_data
 
     def create(self, validated_data):
-        if Product.objects.filter_current(fill__tenant=True, fill__company=True).count() == 0:
-            new_code = 'PRD.0001'
-        else:
-            latest_code = Product.objects.filter_current(
-                fill__tenant=True, fill__company=True
-            ).latest('date_created').code
-            new_code = int(latest_code.split('.')[-1]) + 1
-            new_code = 'PRD.000' + str(new_code)
-
-        product = Product.objects.create(**validated_data, code=new_code)
+        product = Product.objects.create(**validated_data)
 
         create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
 
@@ -509,6 +510,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
     product_choice = serializers.ListField(
         child=serializers.ChoiceField(choices=PRODUCT_OPTION),
@@ -527,6 +529,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
+            'code',
             'title',
             'description',
             'product_choice',
@@ -553,6 +556,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'purchase_tax',
             'is_public_website'
         )
+
+    def validate_code(self, value):
+        if value:
+            if Product.objects.filter_current(
+                    fill__tenant=True, fill__company=True, code=value
+            ).exclude(code=self.instance.code).exists():
+                raise serializers.ValidationError({"code": ProductMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": ProductMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_general_product_category(cls, value):

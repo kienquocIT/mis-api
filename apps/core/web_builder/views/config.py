@@ -11,12 +11,33 @@ from apps.core.web_builder.authen import authenticated_for_ui
 from apps.core.web_builder.serializers.config import (
     PageBuilderListSerializer, PageBuilderDetailSerializer,
     PageBuilderUpdateSerializer, PageBuilderCreateSerializer, PageBuilderDetailViewerSerializer,
+    PageTemplateListSerializer, PageTemplateDetailSerializer,
 )
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
     TypeCheck, ResponseController, StringHandler,
 )
-from apps.core.web_builder.models import PageBuilder
+from apps.core.web_builder.models import PageBuilder, PageTemplate
+
+
+class TemplateList(BaseListMixin):
+    queryset = PageTemplate.objects
+    serializer_list = PageTemplateListSerializer
+
+    @swagger_auto_schema()
+    @mask_view()
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class TemplateDetail(BaseRetrieveMixin):
+    queryset = PageTemplate.objects
+    serializer_detail = PageTemplateDetailSerializer
+
+    @swagger_auto_schema()
+    @mask_view()
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
 
 
 class PageBuilderList(BaseListMixin, BaseCreateMixin):

@@ -37,6 +37,7 @@ class PromotionTestCase(AdvanceTestCase):
         product_category = ProductTestCase.create_product_category(self).data['result']
         unit_of_measure, uom_group = ProductTestCase.create_uom(self)
         data1 = {
+            "code": 'PRD123',
             "title": "Laptop HP 6R",
             "product_choice": [],
             'product_types_mapped_list': [product_type['id']],
