@@ -259,7 +259,7 @@ GOODS_ISSUE_TYPE = (
 )
 
 RETURN_ADVANCE_MONEY_RECEIVED = (
-    (True, _('Received')),
+    (True, _('Received money')),
     (False, _('Waiting')),
 )
 
