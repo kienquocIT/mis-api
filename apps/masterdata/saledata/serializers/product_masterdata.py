@@ -340,3 +340,36 @@ class UnitOfMeasureUpdateSerializer(serializers.ModelSerializer):
             instance.group.uom_reference = instance
             instance.group.save(update_fields=['uom_reference'])
         return instance
+
+
+class ProductMeasurementsCreateSerializer(serializers.ModelSerializer):
+    unit = serializers.UUIDField(required=True, allow_null=False)
+
+    class Meta:
+        model = ProductMeasurements
+        fields = (
+            'unit',
+            'value',
+        )
+
+    @classmethod
+    def validate_unit(cls, value):
+        try:  # noqa
+            if value is not None:
+                unit = BaseItemUnit.objects.get(
+                    id=value, title__in=['volume', 'weight']
+                )
+                return {
+                    'id': str(unit.id),
+                    'title': unit.title,
+                    'measure': unit.measure
+                }
+        except BaseItemUnit.DoesNotExist:
+            raise serializers.ValidationError({'Unit': ProductMsg.NOT_SAVE})
+        return None
+
+    @classmethod
+    def validate_value(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'volume or weight': ProductMsg.VALUE_GREATER_THAN_ZERO})
+        return value
