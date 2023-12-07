@@ -622,4 +622,14 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.save()
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
+
+        # update sale order delivery_status (Partially delivered)
+        if instance.order_delivery.sale_order.delivery_status in [0, 1]:
+            instance.order_delivery.sale_order.delivery_status = 2
+            instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+        # update sale order delivery_status (Delivered)
+        if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
+            instance.order_delivery.sale_order.delivery_status = 3
+            instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+
         return instance

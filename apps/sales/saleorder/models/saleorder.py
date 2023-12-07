@@ -2,7 +2,7 @@ from django.db import models
 
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
 
 
 # CONFIG
@@ -222,6 +222,10 @@ class SaleOrder(DataAbstractModel):
     sale_order_indicators_data = models.JSONField(
         default=list,
         help_text="read data indicators, use for get list or detail sale order, records in model SaleOrderIndicator"
+    )
+    delivery_status = models.SmallIntegerField(
+        choices=SALE_ORDER_DELIVERY_STATUS,
+        default=0
     )
 
     class Meta:
