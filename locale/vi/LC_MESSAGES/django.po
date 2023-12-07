@@ -625,3 +625,35 @@ msgstr "Cơ hội kinh doanh đã có đơn hàng"
 #
 msgid "Opportunity has quotation is not finished"
 msgstr "Cơ hội kinh doanh có báo giá chưa hoàn tất"
+
+#
+msgid "Confirm"
+msgstr "Xác nhận"
+
+#
+msgid "Delivery"
+msgstr "Giao hàng"
+
+#
+msgid "Partially delivered"
+msgstr "Giao hàng một phần"
+
+#
+msgid "Delivered"
+msgstr "Đã giao hàng xong"
+
+#
+msgid "None"
+msgstr "Không có"
+
+#
+msgid "Wait"
+msgstr "Đợi"
+
+#
+msgid "Partially received"
+msgstr "Nhập kho một phần"
+
+#
+msgid "Received"
+msgstr "Đã nhập kho xong"

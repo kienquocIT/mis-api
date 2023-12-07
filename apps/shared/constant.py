@@ -196,10 +196,10 @@ PURCHASE_STATUS = [
 
 # Purchase order
 RECEIPT_STATUS = (
-    (0, 'None'),
-    (1, 'Wait'),
-    (2, 'Partially received'),
-    (3, 'Received'),
+    (0, _('None')),
+    (1, _('Wait')),
+    (2, _('Partially received')),
+    (3, _('Received')),
 )
 
 RETURN_ADVANCE_STATUS = [
@@ -279,4 +279,12 @@ OPPORTUNITY_LOG_TYPE = (
     (3, 'Email'),
     (4, 'Meeting'),
     (5, 'Document'),
+)
+
+# Sale order
+SALE_ORDER_DELIVERY_STATUS = (
+    (0, _('Confirm')),
+    (1, _('Delivery')),
+    (2, _('Partially delivered')),
+    (3, _('Delivered')),
 )

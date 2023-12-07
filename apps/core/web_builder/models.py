@@ -1,6 +1,19 @@
 from django.db import models
 
-from apps.shared import MasterDataAbstractModel
+from apps.shared import MasterDataAbstractModel, SimpleAbstractModel
+
+
+class PageTemplate(SimpleAbstractModel):
+    title = models.CharField(max_length=100)
+    image = models.TextField(blank=True)
+    project_data = models.JSONField(blank=True)
+
+    class Meta:
+        verbose_name = 'Page Template'
+        verbose_name_plural = 'Page Template'
+        ordering = ('title',)
+        default_permissions = ()
+        permissions = ()
 
 
 class PageBuilder(MasterDataAbstractModel):

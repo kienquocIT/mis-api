@@ -577,6 +577,7 @@ class TestCaseSaleOrder(AdvanceTestCase):
                 'opportunity',
                 'quotation',
                 'delivery_call',
+                'delivery_status',
             ],
             check_sum_second=True,
         )

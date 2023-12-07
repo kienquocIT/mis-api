@@ -2,8 +2,20 @@ import json
 
 from rest_framework import serializers
 
-from apps.core.web_builder.models import PageBuilder
+from apps.core.web_builder.models import PageBuilder, PageTemplate
 from apps.shared.translations import WebBuilderMsg
+
+
+class PageTemplateListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PageTemplate
+        fields = ('id', 'title', 'image')
+
+
+class PageTemplateDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PageTemplate
+        fields = ('id', 'project_data')
 
 
 class PageBuilderListSerializer(serializers.ModelSerializer):
