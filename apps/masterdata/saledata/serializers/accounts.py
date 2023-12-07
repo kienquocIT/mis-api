@@ -448,7 +448,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                                 'owner': {
                                     'id': item.owner_id,
                                     'fullname': item.owner.get_full_name(2)
-                                }
+                                } if item.owner else {}
                             })
                     )
                 else:
@@ -463,7 +463,7 @@ class AccountDetailSerializer(AbstractDetailSerializerModel):
                             'owner': {
                                 'id': item.owner_id,
                                 'fullname': item.owner.get_full_name(2)
-                            }
+                            } if item.owner else {}
                         }
                     )
             return list_contact_mapped
