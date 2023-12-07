@@ -11,8 +11,9 @@ class AccountTypeListSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'code', 'is_default', 'description')
 
 
-class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150) # noqa
+class AccountTypeCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = AccountType
@@ -20,23 +21,17 @@ class AccountTypeCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        if AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
-        return value
+        if value:
+            if AccountType.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_title(cls, value):
-        if AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
 
 class AccountTypeDetailsSerializer(serializers.ModelSerializer):
@@ -46,20 +41,16 @@ class AccountTypeDetailsSerializer(serializers.ModelSerializer):
 
 
 class AccountTypeUpdateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = AccountType
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        if value != self.instance.title and AccountType.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
 
 # Account Group
@@ -69,8 +60,9 @@ class AccountGroupListSerializer(serializers.ModelSerializer):  # noqa
         fields = ('id', 'title', 'code', 'description')
 
 
-class AccountGroupCreateSerializer(serializers.ModelSerializer):  # noqa
-    title = serializers.CharField(max_length=150)
+class AccountGroupCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = AccountGroup
@@ -78,23 +70,17 @@ class AccountGroupCreateSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def validate_code(cls, value):
-        if AccountGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
-        return value
+        if value:
+            if AccountGroup.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_title(cls, value):
-        if AccountGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
 
 class AccountGroupDetailsSerializer(serializers.ModelSerializer):
@@ -104,20 +90,16 @@ class AccountGroupDetailsSerializer(serializers.ModelSerializer):
 
 
 class AccountGroupUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = AccountGroup
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        if value != self.instance.title and AccountGroup.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
 
 # Industry
@@ -128,7 +110,8 @@ class IndustryListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class IndustryCreateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
+    code = serializers.CharField(max_length=100)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = Industry
@@ -136,23 +119,17 @@ class IndustryCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def validate_code(cls, value):
-        if Industry.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                code=value,
-        ).exists():
-            raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
-        return value
+        if value:
+            if Industry.objects.filter_current(fill__tenant=True, fill__company=True, code=value).exists():
+                raise serializers.ValidationError({"code": AccountsMsg.CODE_EXIST})
+            return value
+        raise serializers.ValidationError({"code": AccountsMsg.CODE_NOT_NULL})
 
     @classmethod
     def validate_title(cls, value):
-        if Industry.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
 
 
 class IndustryDetailsSerializer(serializers.ModelSerializer):
@@ -162,17 +139,13 @@ class IndustryDetailsSerializer(serializers.ModelSerializer):
 
 
 class IndustryUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=150)
+    title = serializers.CharField(max_length=100)
 
     class Meta:
         model = Industry
         fields = ('title', 'description')
 
     def validate_title(self, value):
-        if value != self.instance.title and Industry.objects.filter_current(
-                fill__tenant=True,
-                fill__company=True,
-                title=value,
-        ).exists():
-            raise serializers.ValidationError({"title": AccountsMsg.NAME_EXIST})
-        return value
+        if value:
+            return value
+        raise serializers.ValidationError({"title": AccountsMsg.TITLE_NOT_NULL})
