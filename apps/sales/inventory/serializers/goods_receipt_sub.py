@@ -92,6 +92,7 @@ class GoodsReceiptCommonCreate:
                     goods_receipt_warehouse=new_warehouse,
                     **serial
                 )
+        return True
 
     @classmethod
     def delete_old_m2m_goods_receipt_pr(cls, instance):
