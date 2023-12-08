@@ -7,31 +7,54 @@ from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister
 from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
-           'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer']
+           'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer',
+           'LeaveRequestDateListRegisterSerializer',
+           ]
 
 
 class LeaveRequestListSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveRequest
-        fields = ('id', 'title', 'code', 'start_day', 'total', 'system_status')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'start_day',
+            'total',
+            'system_status'
+        )
 
 
 class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
     leave = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_leave(cls, obj):
         if obj.leave:
+            return obj.leave_type.title
+        return {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.leave:
+            leave = obj.leave
             return {
-                'id': str(obj.leave_type_id),
-                'title': obj.leave_type.title,
-                'code': obj.leave_type.code
+                'id': leave.employee_inherit_id,
+                'full_name': leave.employee_inherit.get_full_name()
             }
         return {}
 
     class Meta:
         model = LeaveRequestDateListRegister
-        fields = ('date_from', 'date_to')
+        fields = (
+            'date_from',
+            'date_to',
+            'morning_shift_f',
+            'morning_shift_t',
+            'remark',
+            'employee_inherit'
+        )
 
 
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):

@@ -23,6 +23,9 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
     search_fields = ('code', 'title')
     filterset_class = BusinessTripListFilters
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('destination')
+
     @swagger_auto_schema(
         operation_summary="Business trip request list",
         operation_description="get business trip request list",

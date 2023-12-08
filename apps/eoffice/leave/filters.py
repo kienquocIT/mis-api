@@ -25,7 +25,7 @@ class LeaveRequestListFilters(BastionFieldAbstractListFilter):
     def filter_leave_date(self, queryset, value):
         user_obj = getattr(self.request, 'user', None)
         if user_obj:
-            filter_kwargs = None
+            filter_kwargs = {'leave__system_status__gte': 2}
             try:
                 date_month = datetime.strptime(value, '%Y-%m-%d')
                 first_month = date_month.replace(day=1)

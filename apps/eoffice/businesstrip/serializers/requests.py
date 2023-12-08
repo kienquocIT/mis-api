@@ -117,6 +117,13 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
             "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_destination(cls, obj):
+        return {
+            "id": obj.destination_id,
+            "title": obj.destination.title,
+        } if obj.destination else {}
+
     class Meta:
         model = BusinessRequest
         fields = (

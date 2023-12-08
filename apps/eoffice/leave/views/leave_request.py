@@ -5,7 +5,7 @@ from apps.eoffice.leave.models import LeaveRequest, LeaveAvailable, LeaveAvailab
 from apps.eoffice.leave.serializers import LeaveRequestListSerializer, LeaveRequestCreateSerializer, \
     LeaveRequestDetailSerializer
 from apps.eoffice.leave.serializers.leave_request import LeaveAvailableListSerializer, LeaveAvailableEditSerializer, \
-    LeaveAvailableHistoryListSerializer
+    LeaveAvailableHistoryListSerializer, LeaveRequestDateListRegisterSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
 
 __all__ = ['LeaveRequestList', 'LeaveRequestDetail', 'LeaveAvailableList', 'LeaveAvailableUpdate',
@@ -55,12 +55,12 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
 
 class LeaveRequestDateList(BaseListMixin):
     queryset = LeaveRequestDateListRegister.objects
-    serializer_list = LeaveRequestListSerializer
+    serializer_list = LeaveRequestDateListRegisterSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_class = LeaveRequestListFilters
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('leave_request_date_leave')
+        return super().get_queryset().prefetch_related('leave_request_date_leave', 'leave__employee_inherit')
 
     @swagger_auto_schema(
         operation_summary="Leave request list",
