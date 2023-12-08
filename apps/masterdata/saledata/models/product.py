@@ -205,11 +205,11 @@ class Product(DataAbstractModel):
     )
 
     is_public_website = models.BooleanField(default=False)
-    price_list_for_online_sale = models.ForeignKey(
+    online_price_list = models.ForeignKey(
         'saledata.Price',
         null=True,
         on_delete=models.CASCADE,
-        related_name='price_list_for_online_sale',
+        related_name='online_price_list',
         default=None
     )
 

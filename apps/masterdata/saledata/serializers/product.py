@@ -158,7 +158,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
-    price_list_for_online_sale = serializers.UUIDField(required=False, allow_null=True)
+    online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
@@ -186,7 +186,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_tax',
             'sale_currency_using',
             'sale_cost',
-            'price_list_for_online_sale',
+            'online_price_list',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
@@ -295,7 +295,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_price_list_for_online_sale(cls, value):
+    def validate_online_price_list(cls, value):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
@@ -303,7 +303,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
-                raise serializers.ValidationError({'price_list_for_online_sale': ProductMsg.DOES_NOT_EXIST})
+                raise serializers.ValidationError({'online_price_list': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -477,9 +477,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             } if obj.sale_currency_using else {},
             'sale_product_price_list': sale_product_price_list,
             'price_list_for_online_sale': {
-                'id': obj.price_list_for_online_sale_id,
-                'title': obj.price_list_for_online_sale.title,
-            } if obj.price_list_for_online_sale else {},
+                'id': obj.online_price_list_id,
+                'title': obj.online_price_list.title,
+            } if obj.online_price_list else {},
         }
         return result
 
@@ -544,7 +544,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
-    price_list_for_online_sale = serializers.UUIDField(required=False, allow_null=True)
+    online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
@@ -572,7 +572,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_tax',
             'sale_currency_using',
             'sale_cost',
-            'price_list_for_online_sale',
+            'online_price_list',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
@@ -656,7 +656,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_price_list_for_online_sale(cls, value):
+    def validate_online_price_list(cls, value):
         if value:
             try:
                 price_list = Price.objects.get(id=value)
@@ -664,7 +664,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                     return price_list
                 raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
             except Price.DoesNotExist:
-                raise serializers.ValidationError({'price_list_for_online_sale': ProductMsg.DOES_NOT_EXIST})
+                raise serializers.ValidationError({'online_price_list': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
