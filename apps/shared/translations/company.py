@@ -13,3 +13,5 @@ class CompanyMsg:
     INVALID_COMPANY_FUNCTION_NUMBER_DATA = _("Invalid company function number data.")
     INVALID_BASE_CURRENCY = _("Invalid currency.")
     PRIMARY_CURRENCY_IS_NOT_NULL = _("Primary currency is not NULL.")
+    DIV_NOT_VALID = _("Definition inventory valuation not valid.")
+    DIV_METHOD_NOT_VALID = _("Definition inventory value method not valid.")

@@ -95,7 +95,6 @@ class TaxCreateSerializer(serializers.ModelSerializer):  # noqa
 
 
 class TaxDetailSerializer(serializers.ModelSerializer):  # noqa
-
     category = serializers.SerializerMethodField()
 
     class Meta:

@@ -270,6 +270,7 @@ class ProductTestCase(AdvanceTestCase):
         product_category = self.create_product_category().data['result']
         unit_of_measure, uom_group = self.create_uom()
         data = {
+            "code": 'PRD123',
             "title": "Laptop HP HLVVL6R",
             'product_choice': [0, 1, 2],
             # general
@@ -330,7 +331,8 @@ class ProductTestCase(AdvanceTestCase):
                 'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
-                'available_amount'
+                'available_amount',
+                'is_public_website'
             ],
             check_sum_second=True,
         )
@@ -409,7 +411,8 @@ class ProductTestCase(AdvanceTestCase):
                 'stock_amount',
                 'wait_delivery_amount',
                 'wait_receipt_amount',
-                'available_amount'
+                'available_amount',
+                'is_public_website'
             ],
             check_sum_second=True,
         )
@@ -497,26 +500,6 @@ class SalutationTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
 
-        data1 = {  # noqa
-            "code": "S01",
-            "title": "Mr"
-        }
-        url = reverse('SalutationList')
-        response1 = self.client.post(url, data1, format='json')
-        self.assertResponseList(
-            response1,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response1.data,
-            type_match={'result': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response1.data['result'],
-            ['id', 'code', 'title', 'description'],
-            check_sum_second=True,
-        )
-
         data2 = {  # noqa
             "title": "Miss",
             "description": "A Human"
@@ -525,15 +508,15 @@ class SalutationTestCase(AdvanceTestCase):
         response2 = self.client.post(url, data2, format='json')
         self.assertResponseList(
             response2,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
             all_key_from=response2.data,
-            type_match={'result': dict, 'status': int},
+            type_match={'errors': dict, 'status': int},
         )
         self.assertCountEqual(
-            response2.data['result'],
-            ['id', 'code', 'title', 'description'],
+            response2.data['errors'],
+            ['code'],
             check_sum_second=True,
         )
         return None
@@ -1220,6 +1203,7 @@ class ProductTypeAndProductCategoryTestCase(AdvanceTestCase):
 
     def test_create_new_product_type(self):
         data = {
+            "code": "XX001",
             "title": "Sảm phẩm lỗi",
             "description": "Những sản phẩm mắc lỗi kỹ thuật"
         }
@@ -1398,6 +1382,7 @@ class AccountTypeTestCase(AdvanceTestCase):
 
     def test_create_new(self):
         data = {  # noqa
+            "code": "CD01",
             "title": "Customer_01",
             "description": "Cho phép người dùng tự điều chỉnh"
         }
@@ -1476,41 +1461,23 @@ class AccountTypeTestCase(AdvanceTestCase):
         )
 
         data1 = {  # noqa
-            "title": "Supplier_01",
-            "description": "Supplier"
+            "title": "Dai ly cap 1",
+            "description": "Customer_01"
         }
-        response1 = self.client.post(url, data1, format='json')  # noqa
-        self.assertResponseList(
-            response1,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response1.data,
-            type_match={'result': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response1.data['result'],
-            ['id', 'code', 'title', 'is_default', 'description'],
-            check_sum_second=True,
-        )
-
-        data2 = {  # noqa
-            "code": "AT09",
-            "title": "Customer_01",
-        }
-
-        response2 = self.client.post(url, data2, format='json')  # noqa
+        url = reverse("AccountTypeList")
+        response2 = self.client.post(url, data1, format='json')
+        self.assertEqual(response2.status_code, 400)
         self.assertResponseList(
             response2,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
             all_key_from=response2.data,
-            type_match={'result': dict, 'status': int},
+            type_match={'errors': dict, 'status': int},
         )
         self.assertCountEqual(
-            response2.data['result'],
-            ['id', 'code', 'title', 'is_default', 'description'],
+            response2.data['errors'],
+            ['code'],
             check_sum_second=True,
         )
         return None
@@ -1654,17 +1621,18 @@ class AccountGroupTestCase(AdvanceTestCase):
         }
 
         response1 = self.client.post(url, data1, format='json')  # noqa
+        self.assertEqual(response.status_code, 400)
         self.assertResponseList(
-            response1,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response1.data,
-            type_match={'result': dict, 'status': int},
+            response,
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
+            all_key_from=response.data,
+            type_match={'errors': dict, 'status': int},
         )
         self.assertCountEqual(
-            response1.data['result'],
-            ['id', 'code', 'title', 'description'],
+            response.data['errors'],
+            ['title'],
             check_sum_second=True,
         )
 
@@ -1814,43 +1782,22 @@ class IndustryTestCase(AdvanceTestCase):
             check_sum_second=True,
         )
 
-        data1 = {  # noqa
-            "title": "IT Service",
+        data2 = {  # noqa
+            "title": "Dich vu",
             "description": "Dịch vụ"
         }
-
-        response1 = self.client.post(self.url, data1, format='json')  # noqa
-        self.assertResponseList(
-            response1,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response1.data,
-            type_match={'result': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response1.data['result'],
-            ['id', 'code', 'title', 'description'],
-            check_sum_second=True,
-        )
-
-        data2 = {  # noqa
-            "code": "I02",
-            "title": "Internet Banking",
-        }
-
-        response2 = self.client.post(self.url, data2, format='json')  # noqa
+        response2 = self.client.post(self.url, data2, format='json')
         self.assertResponseList(
             response2,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
+            status_code=status.HTTP_400_BAD_REQUEST,
+            key_required=['errors', 'status'],
+            all_key=['errors', 'status'],
             all_key_from=response2.data,
-            type_match={'result': dict, 'status': int},
+            type_match={'errors': dict, 'status': int},
         )
         self.assertCountEqual(
-            response2.data['result'],
-            ['id', 'code', 'title', 'description'],
+            response2.data['errors'],
+            ['code'],
             check_sum_second=True,
         )
 

@@ -296,6 +296,11 @@ class SaleOrderActiveDeliverySerializer:
                     obj_delivery.sub = sub_obj
                     obj_delivery.save(update_fields=['sub'])
                     OrderDeliveryProduct.objects.bulk_create(_y)
+
+                    # update sale order delivery_status
+                    self.order_obj.delivery_status = 1
+                    self.order_obj.save(update_fields=['delivery_status'])
+
                     if obj_delivery:
                         return True, ''
                     raise ValueError('Have exception in create picking or delivery process')

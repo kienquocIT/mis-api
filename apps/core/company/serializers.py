@@ -6,7 +6,6 @@ from rest_framework import serializers
 
 from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig, CompanyFunctionNumber
 from apps.core.account.models import User
-from apps.core.base.models import Currency as BaseCurrency
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
 from apps.shared import DisperseModel
@@ -46,12 +45,25 @@ class CompanyConfigDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CompanyConfig
-        fields = ('language', 'currency', 'currency_rule', 'sub_domain')
+        fields = (
+            'language',
+            'currency',
+            'currency_rule',
+            'sub_domain',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
+        )
 
 
 class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
     currency = serializers.CharField()
     sub_domain = serializers.CharField(max_length=35, required=False)
+    definition_inventory_valuation = serializers.BooleanField()
+    default_inventory_value_method = serializers.IntegerField()
+    cost_per_warehouse = serializers.BooleanField()
+    cost_per_lot_batch = serializers.BooleanField()
 
     @classmethod
     def validate_currency(cls, attrs):
@@ -74,9 +86,38 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'sub_domain': CompanyMsg.SUB_DOMAIN_EXIST})
         return attrs
 
+    @classmethod
+    def validate_definition_inventory_valuation(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError({'definition_inventory_valuation': CompanyMsg.DIV_NOT_VALID})
+
+    @classmethod
+    def validate_default_inventory_value_method(cls, attrs):
+        if attrs in [0, 1, 2, 3]:
+            return attrs
+        raise serializers.ValidationError({'default_inventory_value_method': CompanyMsg.DIV_METHOD_NOT_VALID})
+
+    @classmethod
+    def validate_cost_per_warehouse(cls, attrs):
+        return attrs
+
+    @classmethod
+    def validate_cost_per_lot_batch(cls, attrs):
+        return attrs
+
     class Meta:
         model = CompanyConfig
-        fields = ('language', 'currency', 'currency_rule', 'sub_domain')
+        fields = (
+            'language',
+            'currency',
+            'currency_rule',
+            'sub_domain',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
+        )
 
     def update(self, instance, validated_data):
         sub_domain = validated_data.pop('sub_domain', None)
@@ -84,7 +125,15 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.currency_rule.update(currency_rule)
-        instance.save(update_fields=['language', 'currency', 'currency_rule'])
+        instance.save(update_fields=[
+            'language',
+            'currency',
+            'currency_rule',
+            'definition_inventory_valuation',
+            'default_inventory_value_method',
+            'cost_per_warehouse',
+            'cost_per_lot_batch'
+        ])
 
         if sub_domain:
             instance.company.sub_domain = sub_domain
@@ -115,7 +164,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
-    company_setting = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
 
     class Meta:
@@ -129,24 +177,9 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'address',
             'phone',
             'fax',
-            'company_setting',
             'company_function_number',
 			'sub_domain'
         )
-
-    @classmethod
-    def get_company_setting(cls, obj):
-        return {
-            'primary_currency': {
-                'id': obj.primary_currency_id,
-                'title': obj.primary_currency.title,
-                'abbreviation': obj.primary_currency.code,
-            } if obj.primary_currency else {},
-            'definition_inventory_valuation': obj.definition_inventory_valuation,
-            'default_inventory_value_method': obj.default_inventory_value_method,
-            'cost_per_warehouse': obj.cost_per_warehouse,
-            'cost_per_lot_batch': obj.cost_per_lot_batch
-        }
 
     @classmethod
     def get_company_function_number(cls, obj):
@@ -195,7 +228,6 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
-    primary_currency = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -206,22 +238,8 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax',
-            'primary_currency',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'fax'
         )
-
-    @classmethod
-    def validate_primary_currency(cls, attrs):
-        if attrs:
-            obj = BaseCurrency.objects.filter(id=attrs).first()
-            if not obj:
-                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
-            return obj
-        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):
@@ -248,7 +266,6 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
-    primary_currency = serializers.UUIDField()
 
     class Meta:
         model = Company
@@ -259,22 +276,8 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'phone',
-            'fax',
-            'primary_currency',
-            'definition_inventory_valuation',
-            'default_inventory_value_method',
-            'cost_per_warehouse',
-            'cost_per_lot_batch'
+            'fax'
         )
-
-    @classmethod
-    def validate_primary_currency(cls, attrs):
-        if attrs:
-            obj = BaseCurrency.objects.filter(id=attrs).first()
-            if not obj:
-                raise serializers.ValidationError({'primary currency': CompanyMsg.INVALID_BASE_CURRENCY})
-            return obj
-        raise serializers.ValidationError({'primary currency': CompanyMsg.PRIMARY_CURRENCY_IS_NOT_NULL})
 
     def validate(self, validate_data):
         for item in self.initial_data.get('company_function_number_data', []):

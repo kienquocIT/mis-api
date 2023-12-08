@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost, AdvancePayment
+from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED, HRMsg, SaleMsg
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
@@ -130,6 +131,19 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
         if ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, code=return_ad.code).count() > 1:
             raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         self.common_create_return_advance_cost(validate_data=data_cost, return_advance=return_ad)
+
+        # create activity log for opportunity
+        if return_ad.advance_payment.opportunity_mapped:
+            OpportunityActivityLogs.create_opportunity_log_application(
+                tenant_id=return_ad.tenant_id,
+                company_id=return_ad.company_id,
+                opportunity_id=return_ad.advance_payment.opportunity_mapped_id,
+                employee_created_id=return_ad.employee_created_id,
+                app_code=str(return_ad.__class__.get_model_code()),
+                doc_id=return_ad.id,
+                title=return_ad.title,
+            )
+
         return return_ad
 
 

@@ -426,6 +426,12 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
 
         if employee_inherit_id and TypeCheck.check_uuid(employee_inherit_id):
             if opportunity_id and TypeCheck.check_uuid(opportunity_id):
+
+                # check perm on DOC_ID (workflow) before check perm by Opportunity
+                check_on_id = self.cls_check.permit_cls.config_data__check_obj_on_id_list(obj=obj)
+                if check_on_id is True:
+                    return True
+
                 return self.cls_check.permit_cls.config_data__check_by_opp(
                     opp_id=opportunity_id,
                     employee_inherit_id=employee_inherit_id,

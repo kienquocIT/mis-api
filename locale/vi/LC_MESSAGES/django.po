@@ -618,3 +618,46 @@ msgstr "Tiệp đính kèm không thề xác minh, vui lòng thử lại"
 msgid "List expense item is empty"
 msgstr "Danh sách chi phí đang trống"
 
+#
+msgid "Opportunity already has sale order"
+msgstr "Cơ hội kinh doanh đã có đơn hàng"
+
+#
+msgid "Opportunity has quotation is not finished"
+msgstr "Cơ hội kinh doanh có báo giá chưa hoàn tất"
+
+#
+msgid "Confirm"
+msgstr "Xác nhận"
+
+#
+msgid "Delivering"
+msgstr "Đang giao hàng"
+
+#
+msgid "Partially delivered"
+msgstr "Đã giao một phần"
+
+#
+msgid "Delivered"
+msgstr "Đã giao hàng"
+
+#
+msgid "None"
+msgstr "Không có"
+
+#
+msgid "Wait"
+msgstr "Đợi"
+
+#
+msgid "Partially received"
+msgstr "Nhập kho một phần"
+
+#
+msgid "Received"
+msgstr "Đã nhập kho"
+
+#
+msgid "Received money"
+msgstr "Đã nhận tiền"

@@ -196,10 +196,10 @@ PURCHASE_STATUS = [
 
 # Purchase order
 RECEIPT_STATUS = (
-    (0, 'None'),
-    (1, 'Wait'),
-    (2, 'Partially received'),
-    (3, 'Received'),
+    (0, _('None')),
+    (1, _('Wait')),
+    (2, _('Partially received')),
+    (3, _('Received')),
 )
 
 RETURN_ADVANCE_STATUS = [
@@ -259,7 +259,7 @@ GOODS_ISSUE_TYPE = (
 )
 
 RETURN_ADVANCE_MONEY_RECEIVED = (
-    (True, _('Received')),
+    (True, _('Received money')),
     (False, _('Waiting')),
 )
 
@@ -269,4 +269,22 @@ ACCEPTANCE_AFFECT_BY = (
     (2, 'Plan value'),
     (3, 'Delivery'),
     (4, 'Payment'),
+)
+
+# Opportunity
+OPPORTUNITY_LOG_TYPE = (
+    (0, 'Application'),
+    (1, 'Task'),
+    (2, 'Call'),
+    (3, 'Email'),
+    (4, 'Meeting'),
+    (5, 'Document'),
+)
+
+# Sale order
+SALE_ORDER_DELIVERY_STATUS = (
+    (0, _('None')),
+    (1, _('Delivering')),
+    (2, _('Partially delivered')),
+    (3, _('Delivered')),
 )

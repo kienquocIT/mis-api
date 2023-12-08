@@ -1043,6 +1043,33 @@ class PermissionController:
             self._config_data__check_obj = False
         return self._config_data__check_obj
 
+    def config_data__check_obj_on_id_list(self, obj):  # check perm on DOC_ID (workflow)
+        try:
+            data_check_id_list = {}
+            for data_item in self.config_data__simple_list:
+                if 'id__in' in data_item:
+                    data_check_id_list = data_item
+                    break
+        except Exception as err:
+            return False
+        is_allow = False
+        one_item_allow = None
+        for key_full, data in data_check_id_list.items():
+            if is_allow is True:
+                break
+
+            one_item_allow = self.check_permit_each_item(key_full=key_full, data=data, obj_or_dict=obj)
+            if one_item_allow is True:
+                one_item_allow = True
+                continue
+            else:
+                one_item_allow = False
+                break
+
+        if one_item_allow is True:
+            return True
+        return False
+
     def config_data__check_by_opp(self, opp_id: Union[str, uuid4], employee_inherit_id: Union[str, uuid4]) -> bool:
         if opp_id and self.config_data and employee_inherit_id:
             try:

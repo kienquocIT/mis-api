@@ -197,7 +197,7 @@ class CityList(BaseListMixin):
 
 class DistrictList(BaseListMixin):
     queryset = District.objects
-    search_fields = ('title', 'code')
+    search_fields = ('title',)
     filterset_fields = {
         "city_id": ["exact", "in"],
         "id": ["exact", "in"],

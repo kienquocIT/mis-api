@@ -1,12 +1,12 @@
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.sales.opportunity.models import Opportunity
+from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
     SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg
+from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg, SALE_ORDER_DELIVERY_STATUS
 
 
 # SALE ORDER BEGIN
@@ -16,6 +16,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     system_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
+    delivery_status = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -31,6 +32,7 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'opportunity',
             'quotation',
             'delivery_call',
+            'delivery_status',
         )
 
     @classmethod
@@ -73,6 +75,12 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     def get_system_status(cls, obj):
         if obj.system_status or obj.system_status == 0:
             return dict(SYSTEM_STATUS).get(obj.system_status)
+        return None
+
+    @classmethod
+    def get_delivery_status(cls, obj):
+        if obj.delivery_status or obj.delivery_status == 0:
+            return dict(SALE_ORDER_DELIVERY_STATUS).get(obj.delivery_status)
         return None
 
 
@@ -334,14 +342,25 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             validated_data=validated_data,
             instance=sale_order
         )
-        # update field sale_order for opportunity
+        # update field sale_order & create activity log for opportunity
         if sale_order.opportunity:
+            # update field sale_order
             sale_order.opportunity.sale_order = sale_order
             sale_order.opportunity.save(
                 **{
                     'update_fields': ['sale_order'],
                     'sale_order_status': sale_order.system_status,
                 }
+            )
+            # create activity log
+            OpportunityActivityLogs.create_opportunity_log_application(
+                tenant_id=sale_order.tenant_id,
+                company_id=sale_order.company_id,
+                opportunity_id=sale_order.opportunity_id,
+                employee_created_id=sale_order.employee_created_id,
+                app_code=str(sale_order.__class__.get_model_code()),
+                doc_id=sale_order.id,
+                title=sale_order.title,
             )
         return sale_order
 
