@@ -187,6 +187,8 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_currency_using',
             'sale_cost',
             'online_price_list',
+            'available_notify',
+            'available_notify_quantity',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
@@ -480,6 +482,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'id': obj.online_price_list_id,
                 'title': obj.online_price_list.title,
             } if obj.online_price_list else {},
+            'available_notify': obj.available_notify,
+            'available_notify_quantity': obj.available_notify_quantity
         }
         return result
 
@@ -573,6 +577,8 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_currency_using',
             'sale_cost',
             'online_price_list',
+            'available_notify',
+            'available_notify_quantity',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
