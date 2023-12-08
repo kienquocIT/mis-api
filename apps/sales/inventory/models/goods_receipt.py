@@ -194,10 +194,10 @@ class GoodsReceipt(DataAbstractModel):
             lot_data = []
             serial_data = []
             for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
-                if lot.lot:
+                if lot.lot:  # if GR for exist LOT => update quantity
                     lot.lot.quantity_import += lot.quantity_import * final_ratio
                     lot.lot.save(update_fields=['quantity_import'])
-                else:
+                else:  # GR with new LOTS => setup data to create ProductWarehouseLot
                     lot_data.append({
                         'lot_number': lot.lot_number,
                         'quantity_import': lot.quantity_import * final_ratio,

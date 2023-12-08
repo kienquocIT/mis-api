@@ -6,7 +6,7 @@ from apps.masterdata.saledata.models.product import (
     ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
-from apps.shared import ProductMsg
+from apps.shared import ProductMsg, PriceMsg
 from .product_sub import CommonCreateUpdateProduct
 
 PRODUCT_OPTION = [
@@ -141,6 +141,12 @@ def create_product_types_mapped(product_obj, product_types_mapped_list):
     return True
 
 
+def check_expired_price_list(price_list):
+    if not price_list.valid_time_end < timezone.now():
+        return True
+    return False
+
+
 class ProductCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
@@ -152,6 +158,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
+    online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
@@ -179,6 +186,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             'sale_tax',
             'sale_currency_using',
             'sale_cost',
+            'online_price_list',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
@@ -284,6 +292,18 @@ class ProductCreateSerializer(serializers.ModelSerializer):
             if float(value) < 0:
                 raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
             return value
+        return None
+
+    @classmethod
+    def validate_online_price_list(cls, value):
+        if value:
+            try:
+                price_list = Price.objects.get(id=value)
+                if check_expired_price_list(price_list):
+                    return price_list
+                raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
+            except Price.DoesNotExist:
+                raise serializers.ValidationError({'online_price_list': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -455,7 +475,11 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 'code': obj.sale_currency_using.code,
                 'abbreviation': obj.sale_currency_using.abbreviation
             } if obj.sale_currency_using else {},
-            'sale_product_price_list': sale_product_price_list
+            'sale_product_price_list': sale_product_price_list,
+            'price_list_for_online_sale': {
+                'id': obj.online_price_list_id,
+                'title': obj.online_price_list.title,
+            } if obj.online_price_list else {},
         }
         return result
 
@@ -520,6 +544,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     sale_default_uom = serializers.UUIDField(required=False, allow_null=True)
     sale_tax = serializers.UUIDField(required=False, allow_null=True)
     sale_currency_using = serializers.UUIDField(required=False, allow_null=True)
+    online_price_list = serializers.UUIDField(required=False, allow_null=True)
     inventory_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_default_uom = serializers.UUIDField(required=False, allow_null=True)
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
@@ -547,6 +572,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             'sale_tax',
             'sale_currency_using',
             'sale_cost',
+            'online_price_list',
             # Inventory
             'inventory_uom',
             'inventory_level_min',
@@ -630,12 +656,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
-    def validate_sale_tax(cls, value):
+    def validate_online_price_list(cls, value):
         if value:
             try:
-                return Tax.objects.get(id=value)
-            except Tax.DoesNotExist:
-                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
+                price_list = Price.objects.get(id=value)
+                if check_expired_price_list(price_list):
+                    return price_list
+                raise serializers.ValidationError(PriceMsg.PRICE_LIST_FOR_ONLINE_EXPIRED)
+            except Price.DoesNotExist:
+                raise serializers.ValidationError({'online_price_list': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
@@ -653,6 +682,15 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
             if float(value) < 0:
                 raise serializers.ValidationError({'sale_product_cost': ProductMsg.VALUE_INVALID})
             return value
+        return None
+
+    @classmethod
+    def validate_sale_tax(cls, value):
+        if value:
+            try:
+                return Tax.objects.get(id=value)
+            except Tax.DoesNotExist:
+                raise serializers.ValidationError({'sale_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
     @classmethod
