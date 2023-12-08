@@ -1,6 +1,7 @@
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
+from ..filters import BusinessTripListFilters
 from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
 from apps.eoffice.businesstrip.serializers import BusinessRequestListSerializer, BusinessRequestDetailSerializer, \
     BusinessRequestCreateSerializer, BusinessRequestUpdateSerializer
@@ -20,6 +21,7 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         'employee_created_id',
     ]
     search_fields = ('code', 'title')
+    filterset_class = BusinessTripListFilters
 
     @swagger_auto_schema(
         operation_summary="Business trip request list",

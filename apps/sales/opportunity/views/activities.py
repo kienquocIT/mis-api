@@ -1,4 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
+
+from ..filters import OpportunityMeetingFilters
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
     OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
@@ -130,10 +132,10 @@ class OpportunityEmailDelete(BaseDestroyMixin):
 
 class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     queryset = OpportunityMeeting.objects
-
     serializer_list = OpportunityMeetingListSerializer
     serializer_create = OpportunityMeetingCreateSerializer
     serializer_detail = OpportunityMeetingDetailSerializer
+    filterset_class = OpportunityMeetingFilters
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity").prefetch_related(

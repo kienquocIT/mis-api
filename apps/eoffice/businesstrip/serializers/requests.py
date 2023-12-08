@@ -127,6 +127,9 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
             'date_f',
             'date_t',
             'system_status',
+            'destination',
+            'employee_on_trip',
+            'remark'
         )
 
 

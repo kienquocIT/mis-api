@@ -16,6 +16,24 @@ class LeaveRequestListSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code', 'start_day', 'total', 'system_status')
 
 
+class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
+    leave = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_leave(cls, obj):
+        if obj.leave:
+            return {
+                'id': str(obj.leave_type_id),
+                'title': obj.leave_type.title,
+                'code': obj.leave_type.code
+            }
+        return {}
+
+    class Meta:
+        model = LeaveRequestDateListRegister
+        fields = ('date_from', 'date_to')
+
+
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     detail_data = serializers.JSONField(allow_null=True)
@@ -121,29 +139,31 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
                 get_detail_data = []
                 for item in data_list:
                     available = available_list.get(leave_type_id=item.leave_type)
-                    get_detail_data.append({
-                        'order': item.order,
-                        'remark': item.remark,
-                        'date_to': item.date_to,
-                        'subtotal': item.subtotal,
-                        'date_from': item.date_from,
-                        'leave_available': {
-                            'id': str(available.id),
-                            'used': available.used,
-                            'total': available.total,
-                            'available': available.available,
-                            'open_year': available.open_year,
-                            'leave_type': {
-                                'id': str(item.leave_type.id),
-                                'title': item.leave_type.title,
-                                'code': item.leave_type.code
+                    get_detail_data.append(
+                        {
+                            'order': item.order,
+                            'remark': item.remark,
+                            'date_to': item.date_to,
+                            'subtotal': item.subtotal,
+                            'date_from': item.date_from,
+                            'leave_available': {
+                                'id': str(available.id),
+                                'used': available.used,
+                                'total': available.total,
+                                'available': available.available,
+                                'open_year': available.open_year,
+                                'leave_type': {
+                                    'id': str(item.leave_type.id),
+                                    'title': item.leave_type.title,
+                                    'code': item.leave_type.code
+                                },
+                                'check_balance': available.check_balance,
+                                'expiration_date': available.expiration_date,
                             },
-                            'check_balance': available.check_balance,
-                            'expiration_date': available.expiration_date,
-                        },
-                        'morning_shift_f': item.morning_shift_f,
-                        'morning_shift_t': item.morning_shift_t,
-                    })
+                            'morning_shift_f': item.morning_shift_f,
+                            'morning_shift_t': item.morning_shift_t,
+                        }
+                    )
                 return get_detail_data
         return []
 
