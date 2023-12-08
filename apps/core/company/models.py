@@ -442,7 +442,7 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             obj.latest_number = obj.latest_number + 1
             obj.save()
             schema_item_list = [
-                str(obj.latest_number).zfill(obj.min_number_char),
+                str(obj.latest_number).zfill(obj.min_number_char) if obj.min_number_char else str(obj.latest_number),
                 current_year % 100,
                 current_year,
                 calendar.month_name[current_month][0:3],
