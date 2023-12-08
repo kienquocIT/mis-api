@@ -197,6 +197,7 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'id': obj.quotation_id,
             'title': obj.quotation.title,
             'code': obj.quotation.code,
+            'quotation_indicators_data': obj.quotation.quotation_indicators_data,
         } if obj.quotation else {}
 
     @classmethod
