@@ -236,7 +236,8 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if (not obj.valid_time_start.date() >= datetime.now().date()) and (obj.valid_time_end.date() >= datetime.now().date()):
+        if ((not obj.valid_time_start.date() >= datetime.now().date()) and
+                (obj.valid_time_end.date() >= datetime.now().date())):
             return 'Valid'
         if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
