@@ -1,4 +1,4 @@
-from django.utils import timezone
+from datetime import datetime
 from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
@@ -142,7 +142,7 @@ def create_product_types_mapped(product_obj, product_types_mapped_list):
 
 
 def check_expired_price_list(price_list):
-    if not price_list.valid_time_end < timezone.now():
+    if not price_list.valid_time_end.date() < datetime.now().date():
         return True
     return False
 
@@ -794,12 +794,12 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def check_status_price(cls, valid_time_start, valid_time_end):
-        current_time = timezone.now()
-        if (not valid_time_start >= current_time) and (valid_time_end >= current_time):
+        current_time = datetime.now().date()
+        if (not valid_time_start.date() >= current_time) and (valid_time_end.date() >= current_time):
             return 'Valid'
-        if valid_time_end < current_time:
+        if valid_time_end.date() < current_time:
             return 'Expired'
-        if valid_time_start >= current_time:
+        if valid_time_start.date() >= current_time:
             return 'Invalid'
         return 'Undefined'
 
