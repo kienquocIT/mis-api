@@ -205,6 +205,13 @@ class Product(DataAbstractModel):
     )
 
     is_public_website = models.BooleanField(default=False)
+    online_price_list = models.ForeignKey(
+        'saledata.Price',
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='online_price_list',
+        default=None
+    )
 
     class Meta:
         verbose_name = 'Product'

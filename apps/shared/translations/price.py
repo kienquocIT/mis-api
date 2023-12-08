@@ -22,6 +22,7 @@ class PriceMsg:
     PARENT_PRICE_LIST_CANT_BE_DELETE = _('Source Price List can not be deleted.')
     NON_EMPTY_PRICE_LIST_CANT_BE_DELETE = _('Non-empty Price List can not be deleted.')
     PRICE_LIST_EXPIRED = _('Price List is expired.')
+    PRICE_LIST_FOR_ONLINE_EXPIRED = _('Price List for online sale is expired.')
     ITEM_EXIST = _('Item already exists')
     AUTO_UPDATE_CONFLICT_CAN_DELETE = _('When auto_update is False, can_delete must not be True')
     AUTO_UPDATE_CAN_DELETE_ARE_FALSE = _('If not map with another price list, auto_update and can_delete are False')
