@@ -266,6 +266,12 @@ AppProp_SaleData_Quotation_data = {
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
     },
+    'a77ab96c-1141-4915-a7d4-ed29874d7c7c': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Customer confirm',
+        'code': 'is_customer_confirm',
+        'type': 4,
+    },
     # tabs
     'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
