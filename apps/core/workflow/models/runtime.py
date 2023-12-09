@@ -198,9 +198,19 @@ class Runtime(SimpleAbstractModel):
                 False: All document finished process
         """
         if state_or_count == 'state':
-            return cls.objects.filter(flow_id=workflow_id).exclude(status=2).exists()
+            # return cls.objects.filter(flow_id=workflow_id).exclude(status=2).exists()
+            return cls.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                flow_id=workflow_id,
+            ).exclude(state__in=[2, 3], status__in=[1, 2]).exists()
         if state_or_count == 'count':
-            return cls.objects.filter(flow_id=workflow_id).exclude(status=2).count()
+            # return cls.objects.filter(flow_id=workflow_id).exclude(status=2).count()
+            return cls.objects.filter_current(
+                fill__tenant=True,
+                fill__company=True,
+                flow_id=workflow_id,
+            ).exclude(state__in=[2, 3], status__in=[1, 2]).count()
         raise AttributeError('state_or_count value must be choice in [state, count].')
 
     @classmethod
