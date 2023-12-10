@@ -233,7 +233,8 @@ class GoodsReceiptProductSerializer(serializers.ModelSerializer):
         serial_number_list = []
         for warehouse in warehouse_data:
             for lot in warehouse.get('lot_data', []):
-                lot_number_list.append(lot.get('lot_number', None))
+                if 'lot' not in lot:
+                    lot_number_list.append(lot.get('lot_number', None))
             for serial in warehouse.get('serial_data', []):
                 serial_number_list.append(serial.get('serial_number', None))
         # Check lot & serial

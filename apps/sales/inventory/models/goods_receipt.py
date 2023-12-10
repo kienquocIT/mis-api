@@ -185,26 +185,46 @@ class GoodsReceipt(DataAbstractModel):
 
     @classmethod
     def push_by_ia(cls, instance):
-        for product_receipt in instance.goods_receipt_product_goods_receipt.all():
-            uom_product_inventory = product_receipt.product.inventory_uom
-            uom_product_gr = product_receipt.uom
+        for gr_warehouse in instance.goods_receipt_warehouse_goods_receipt.all():
+            uom_product_inventory = gr_warehouse.goods_receipt_product.product.inventory_uom
+            uom_product_gr = gr_warehouse.goods_receipt_product.uom
             final_ratio = 1
             if uom_product_inventory and uom_product_gr:
                 final_ratio = uom_product_gr.ratio / uom_product_inventory.ratio
-
-            # Check if product and product has inventory choice
-            if product_receipt.product:
-                if 1 in product_receipt.product.product_choice:
-                    ProductWareHouse.push_from_receipt(
-                        tenant_id=instance.tenant_id,
-                        company_id=instance.company_id,
-                        product_id=product_receipt.product_id,
-                        warehouse_id=product_receipt.warehouse_id,
-                        uom_id=product_receipt.product.inventory_uom_id,
-                        tax_id=product_receipt.tax_id,
-                        amount=product_receipt.quantity_import * final_ratio,
-                        unit_price=product_receipt.product_unit_price,
-                    )
+            lot_data = []
+            serial_data = []
+            for lot in gr_warehouse.goods_receipt_lot_gr_warehouse.all():
+                if lot.lot:  # if GR for exist LOT => update quantity
+                    lot.lot.quantity_import += lot.quantity_import * final_ratio
+                    lot.lot.save(update_fields=['quantity_import'])
+                else:  # GR with new LOTS => setup data to create ProductWarehouseLot
+                    lot_data.append({
+                        'lot_number': lot.lot_number,
+                        'quantity_import': lot.quantity_import * final_ratio,
+                        'expire_date': lot.expire_date,
+                        'manufacture_date': lot.manufacture_date,
+                    })
+            for serial in gr_warehouse.goods_receipt_serial_gr_warehouse.all():
+                serial_data.append({
+                    'vendor_serial_number': serial.vendor_serial_number,
+                    'serial_number': serial.serial_number,
+                    'expire_date': serial.expire_date,
+                    'manufacture_date': serial.manufacture_date,
+                    'warranty_start': serial.warranty_start,
+                    'warranty_end': serial.warranty_end,
+                })
+            ProductWareHouse.push_from_receipt(
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                product_id=gr_warehouse.goods_receipt_product.product_id,
+                warehouse_id=gr_warehouse.warehouse_id,
+                uom_id=uom_product_inventory.id,
+                tax_id=gr_warehouse.goods_receipt_product.product.purchase_tax_id,
+                amount=gr_warehouse.goods_receipt_product.quantity_import * final_ratio,
+                unit_price=gr_warehouse.goods_receipt_product.product_unit_price,
+                lot_data=lot_data,
+                serial_data=serial_data,
+            )
         return True
 
     @classmethod
