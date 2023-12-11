@@ -1,4 +1,5 @@
 # pylint: disable=C0302
+import datetime
 from uuid import uuid4
 from rest_framework import serializers
 from apps.core.hr.models import Employee, DistributionApplication
@@ -135,7 +136,6 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             'customer',
             'product_category',
             'employee_inherit_id',
-            'open_date',
         )
 
     @classmethod
@@ -261,6 +261,7 @@ class OpportunityCreateSerializer(serializers.ModelSerializer):
             **validated_data,
             opportunity_sale_team_datas=sale_team_data,
             win_rate=win_rate,
+            open_date=datetime.datetime.now()
         )
 
         if Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, code=opportunity.code).count() > 1:
