@@ -1,3 +1,6 @@
+# from apps.core.workflow.models import RuntimeLog
+
+
 class WFSupportFunctionsHandler:
 
     @classmethod
@@ -27,3 +30,14 @@ class WFSupportFunctionsHandler:
             if group.parent_n.first_manager_id:
                 return group.parent_n.first_manager_id
         raise ValueError('1st manager is not defined')
+
+    # @classmethod
+    # def log_get_assignee_error(cls):
+    #     return RuntimeLog.objects.create(
+    #         runtime=cls.stage_obj.runtime,
+    #         stage=cls.stage_obj,
+    #         kind=1,  # in doc
+    #         action=0,
+    #         msg='Update data at zone',
+    #         is_system=cls.is_system,
+    #     )

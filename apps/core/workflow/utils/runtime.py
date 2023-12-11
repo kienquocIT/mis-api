@@ -886,7 +886,7 @@ class RuntimeLogHandler:
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
                 # 'msg': 'Return to begin station',
-                'msg': 'Return to initial node',  # edit to None by PO's request
+                'msg': 'Return to initial node',  # edit by PO's request
                 'task_workflow_id': None,
             },
         )
@@ -897,7 +897,7 @@ class RuntimeLogHandler:
             kind=2,
             action=0,
             # msg='Return to begin station',
-            msg='Return to initial node',  # edit to None by PO's request
+            msg='Return to initial node',  # edit by PO's request
             is_system=self.is_system,
         )
 
