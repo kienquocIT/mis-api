@@ -10,6 +10,7 @@ from apps.core.log.tasks import (
     force_log_activity,
     force_new_notify_many,
 )
+from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler
 from apps.shared import (
     FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
     WorkflowMsgNotify,
@@ -139,7 +140,6 @@ class RuntimeHandler:
         Args:
             doc_id: UUID4
             app_code: "app.model"
-
         Returns:
             Document Object
         """
@@ -163,7 +163,6 @@ class RuntimeHandler:
             company_id:
             doc_id:
             app_code:
-
         Returns:
             Runtime Object
         """
@@ -178,7 +177,6 @@ class RuntimeHandler:
                         doc_id=doc_id, app=app_obj,
                 ).exists():
                     raise ValueError('Runtime Obj is exist')
-
                 # check doc exist
                 doc_obj = DocHandler(doc_id, app_code).get_obj(
                     default_filter={'tenant_id': tenant_id, 'company_id': company_id}
@@ -216,7 +214,6 @@ class RuntimeHandler:
         Args:
             doc_id:
             app_code:
-
         Returns:
             Runtime Object
         """
@@ -286,10 +283,8 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-
                     # update doc to reject
                     DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
-
                     # handle next stage
                     # close all assignee waiting
                     # update runtime + doc with reject
@@ -299,6 +294,7 @@ class RuntimeHandler:
                 case 3:  # return
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
+                        assignee_action_return=rt_assignee.employee  # who click action return (edit by PO's request)
                     )
                 case 4:  # receive
                     cls.action_perform(
@@ -327,10 +323,12 @@ class RuntimeStageHandler:
     def return_begin_runtime_by_assignee(
             self,
             stage_runtime_currently: RuntimeStage,
+            assignee_action_return
     ):
         RuntimeLogHandler(
             stage_obj=stage_runtime_currently,
-            actor_obj=self.runtime_obj.doc_employee_created,
+            # actor_obj=self.runtime_obj.doc_employee_created,
+            actor_obj=assignee_action_return,
             is_system=False,
         ).log_return_task()  # return
         config_cls = WFConfigSupport(workflow=self.runtime_obj.flow)
@@ -399,21 +397,10 @@ class RuntimeStageHandler:
         collab_in_wf = {}
         for collab in CollabInWorkflow.objects.filter(node=node):
             zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
-            if collab.in_wf_option == 1 and doc_employee_inherit:  # BY POSITION
-                if not doc_employee_inherit.group:
-                    raise ValueError('Employee inherit does not have group')
-                if collab.position_choice == 1:  # 1st manager
-                    if not doc_employee_inherit.group.first_manager_id:
-                        raise ValueError('1st manager is not defined')
-                    collab_in_wf[str(doc_employee_inherit.group.first_manager_id)] = zone_and_properties
-                elif collab.position_choice == 2:  # 2nd manager
-                    if not doc_employee_inherit.group.second_manager_id:
-                        raise ValueError('2nd manager is not defined')
-                    collab_in_wf[str(doc_employee_inherit.group.second_manager_id)] = zone_and_properties
-                elif collab.position_choice == 3:  # Beneficiary (Document inherit)
-                    collab_in_wf[str(doc_employee_inherit.id)] = zone_and_properties
-            elif collab.in_wf_option == 2:  # BY EMPLOYEE
-                collab_in_wf[str(collab.employee_id)] = zone_and_properties
+            assignee_id = WFSupportFunctionsHandler.get_assignee_node_in_wf(
+                collab=collab, doc_employee_inherit=doc_employee_inherit
+            )
+            collab_in_wf[str(assignee_id)] = zone_and_properties
         return collab_in_wf
 
     @classmethod
@@ -898,7 +885,8 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': 'Return to begin station',
+                # 'msg': 'Return to begin station',
+                'msg': 'Return to initial node',  # edit to None by PO's request
                 'task_workflow_id': None,
             },
         )
@@ -908,7 +896,8 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Return to begin station',
+            # msg='Return to begin station',
+            msg='Return to initial node',  # edit to None by PO's request
             is_system=self.is_system,
         )
 
