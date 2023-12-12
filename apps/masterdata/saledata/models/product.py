@@ -212,6 +212,8 @@ class Product(DataAbstractModel):
         related_name='online_price_list',
         default=None
     )
+    available_notify = models.BooleanField(default=False)
+    available_notify_quantity = models.IntegerField(null=True)
 
     class Meta:
         verbose_name = 'Product'
