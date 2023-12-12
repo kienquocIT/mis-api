@@ -286,7 +286,14 @@ class RuntimeHandler:
                     # update doc to reject
                     DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
                     # handle next stage
-                    # close all assignee waiting
+                    # close all other assignees waiting
+                    for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
+                        id=rt_assignee.id
+                    ):
+                        other_assignee.is_done = True
+                        other_assignee.action_perform.append(action_code)
+                        other_assignee.action_perform = list(set(other_assignee.action_perform))
+                        other_assignee.save(update_fields=['is_done', 'action_perform'])
                     # update runtime + doc with reject
                     RuntimeStageHandler(runtime_obj=runtime_obj).reject_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
