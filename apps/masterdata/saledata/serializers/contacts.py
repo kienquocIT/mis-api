@@ -209,6 +209,12 @@ class ContactCreateSerializer(AbstractCreateSerializerModel):
             return attrs
         return None
 
+    @classmethod
+    def validate_owner(cls, attrs):
+        if attrs:
+            return attrs
+        raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
+
     @decorator_run_workflow
     def create(self, validated_data):
         contact = Contact.objects.create(**validated_data)
@@ -429,6 +435,12 @@ class ContactUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"mobile": AccountsMsg.MOBILE_EXIST})
             return attrs
         return None
+
+    @classmethod
+    def validate_owner(cls, attrs):
+        if attrs:
+            return attrs
+        raise serializers.ValidationError({"owner": AccountsMsg.OWNER_NOT_NULL})
 
     def validate(self, validate_data):
         home_address_dict = self.initial_data.get('home_address_dict', [])

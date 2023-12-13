@@ -2,6 +2,8 @@ import json
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.core.hr.models import PermissionAbstractModel
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
@@ -496,10 +498,10 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
-            function_number = self.company.company_function_number.filter(function=0).first()
-            if function_number:
-                self.code = function_number.gen_code(company_obj=self.company, func=0)
-            if not self.code:
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=0)
+            if code_generated:
+                self.code = code_generated
+            else:
                 records = Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
                 self.code = 'OPP.00' + str(records.count() + 1)
 

@@ -2,6 +2,7 @@ import json
 
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     SimpleAbstractModel, DataAbstractModel, PICKING_STATE, DELIVERY_OPTION,
 )
@@ -122,16 +123,18 @@ class OrderPicking(DataAbstractModel):
 
     def create_code_picking(self):
         # auto create code (temporary)
-        delivery = OrderPickingSub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
         if not self.code:
-            char = "P"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=3)
+            if code_generated:
+                self.code = code_generated
+            else:
+                picking = OrderPickingSub.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "P"
+                temper = picking + 1
+                code = f"{char}{temper:03d}"
+                self.code = code
 
     def before_save(self):
         self.create_code_picking()
