@@ -573,21 +573,6 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def update_opportunity_stage(cls, data, instance):
-        OpportunityStage.objects.filter(opportunity=instance).delete()
-
-        data_bulk = []
-        for item in data:
-            opportunity_stage = OpportunityStage(
-                opportunity=instance,
-                stage_id=item['stage'],
-                is_current=item['is_current']
-            )
-            data_bulk.append(opportunity_stage)
-        OpportunityStage.objects.bulk_create(data_bulk)
-        return True
-
-    @classmethod
     def update_opportunity_stage_for_list(cls, instance):
         opp_config_stage = get_opp_config_stage()
         instance_stage = get_instance_stage(instance)
