@@ -272,7 +272,9 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         if self.system_status in [2, 3]:
             if not self.code:
                 code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=1)
-                if not code_generated:
+                if code_generated:
+                    self.code = code_generated
+                else:
                     self.code = self.generate_code(self.company_id)
 
                 if 'update_fields' in kwargs:

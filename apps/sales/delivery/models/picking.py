@@ -125,7 +125,9 @@ class OrderPicking(DataAbstractModel):
         # auto create code (temporary)
         if not self.code:
             code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=3)
-            if not code_generated:
+            if code_generated:
+                self.code = code_generated
+            else:
                 picking = OrderPickingSub.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False
                 ).count()

@@ -80,7 +80,9 @@ class AdvancePayment(DataAbstractModel):
     def save(self, *args, **kwargs):
         if not self.code:
             code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=6)
-            if not code_generated:
+            if code_generated:
+                self.code = code_generated
+            else:
                 records = AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
                 self.code = 'AP.00' + str(records.count() + 1)
 

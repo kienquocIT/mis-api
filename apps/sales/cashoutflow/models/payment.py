@@ -118,8 +118,10 @@ class Payment(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=7)
-                if not code_generated:
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=6)
+                if code_generated:
+                    self.code = code_generated
+                else:
                     records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
                     self.code = 'PAYMENT.00' + str(records.count() + 1)
 

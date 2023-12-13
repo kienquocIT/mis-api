@@ -47,7 +47,9 @@ class ReturnAdvance(DataAbstractModel):
     def save(self, *args, **kwargs):
         if not self.code:
             code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=8)
-            if not code_generated:
+            if code_generated:
+                self.code = code_generated
+            else:
                 records = ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
                 self.code = 'RP.00' + str(records.count() + 1)
         super().save(*args, **kwargs)

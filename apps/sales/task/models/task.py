@@ -119,7 +119,9 @@ class OpportunityTask(DataAbstractModel):
         # auto create code (temporary)
         if not self.code:
             code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=5)
-            if not code_generated:
+            if code_generated:
+                self.code = code_generated
+            else:
                 task = OpportunityTask.objects.filter_current(
                     fill__tenant=True, fill__company=True, is_delete=False
                 ).count()
