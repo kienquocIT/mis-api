@@ -1,3 +1,10 @@
+from django.utils import timezone
+from apps.core.log.tasks import (
+    force_log_activity,
+)
+from apps.shared import (
+    call_task_background,
+)
 from apps.core.workflow.models import RuntimeLog
 
 
@@ -32,19 +39,38 @@ class WFSupportFunctionsHandler:
         raise ValueError('1st manager is not defined')
 
     @classmethod
-    def update_runtime_when_error(cls, runtime_obj):
-        runtime_obj.state = 2  # finish
-        runtime_obj.status = 2
-        runtime_obj.save(update_fields=['state', 'status'])
-        return True
+    def update_runtime_when_error(cls, stage_obj, value_error):
+        stage_obj.runtime.state = 4  # fail
+        stage_obj.runtime.status = 2  # fail
+        stage_obj.runtime.save(update_fields=['state', 'status'])
+        # log error
+        msg = 'Workflow error: ' + str(value_error)
+        cls.log_runtime_error(stage_obj=stage_obj, msg=msg)
+        raise value_error
 
     @classmethod
-    def log_get_assignee_error(cls, stage_obj, is_system):
+    def log_runtime_error(cls, stage_obj, msg):
+        call_task_background(
+            force_log_activity,
+            **{
+                'tenant_id': stage_obj.runtime.tenant_id,
+                'company_id': stage_obj.runtime.company_id,
+                'date_created': timezone.now(),
+                'doc_id': stage_obj.runtime.doc_id,
+                'doc_app': stage_obj.runtime.app_code,
+                'automated_logging': False,
+                'user_id': None,
+                'employee_id': None,
+                'msg': msg,
+                'task_workflow_id': None,
+            },
+        )
         return RuntimeLog.objects.create(
+            actor=None,
             runtime=stage_obj.runtime,
             stage=stage_obj,
-            kind=1,  # in doc
+            kind=2,
             action=0,
-            msg='Update data at zone',
-            is_system=is_system,
+            msg=msg,
+            is_system=True,
         )

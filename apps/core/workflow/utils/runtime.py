@@ -6,20 +6,12 @@ from uuid import UUID
 from django.db import models
 from django.utils import timezone
 
-from apps.core.log.tasks import (
-    force_log_activity,
-    force_new_notify_many,
-)
+from apps.core.log.tasks import (force_log_activity, force_new_notify_many,)
 from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler
-from apps.shared import (
-    FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
-    WorkflowMsgNotify,
-)
+from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify,)
 from apps.core.workflow.models import (
-    WorkflowConfigOfApp,
-    Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
-    Zone,
-    Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
+    WorkflowConfigOfApp, Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
+    Zone, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
 )
 
 logger = logging.getLogger(__name__)
@@ -262,15 +254,21 @@ class RuntimeHandler:
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next
-                        RuntimeStageHandler(
-                            runtime_obj=runtime_obj,
-                        ).run_next(
-                            workflow=runtime_obj.flow, stage_obj_currently=rt_assignee.stage
-                        )
-                        # update runtime object
-                        RuntimeStageHandler(
-                            runtime_obj=runtime_obj,
-                        ).set_state_task_bg('SUCCESS')
+                        try:
+                            RuntimeStageHandler(
+                                runtime_obj=runtime_obj,
+                            ).run_next(
+                                workflow=runtime_obj.flow, stage_obj_currently=rt_assignee.stage
+                            )
+                            # update runtime object
+                            RuntimeStageHandler(
+                                runtime_obj=runtime_obj,
+                            ).set_state_task_bg('SUCCESS')
+                        except Exception as err:
+                            WFSupportFunctionsHandler.update_runtime_when_error(
+                                stage_obj=rt_assignee.stage, value_error=err
+                            )
+                            print(err)
                 case 2:  # reject
                     # RuntimeStage logging
                     # Update flag done
@@ -360,9 +358,7 @@ class RuntimeStageHandler:
         Args:
             state:
             field_saved:
-
         Returns:
-
         """
         field_saved = field_saved if isinstance(field_saved, list) else []
         self.runtime_obj.task_bg_state = state
@@ -455,61 +451,65 @@ class RuntimeStageHandler:
 
     def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> list[RuntimeAssignee]:
         if stage_obj.node:
-            # get assignee and zone
-            assignee_and_zone = self.__parse_collaboration(
-                node=stage_obj.node,
-                doc_params=self.runtime_obj.doc_params,
-                employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
-                doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
-            )
-            # convert assignee and zone to simple data
-            employee_ids_zones = {}
-            objs = []
-            log_objs = []
-            objs_created = []
-            for emp_id, zone_and_properties in assignee_and_zone.items():
-                obj_assignee = RuntimeAssignee(
-                    stage=stage_obj,
-                    employee_id=emp_id,
-                    zone_and_properties=zone_and_properties,
+            try:
+                # get assignee and zone
+                assignee_and_zone = self.__parse_collaboration(
+                    node=stage_obj.node,
+                    doc_params=self.runtime_obj.doc_params,
+                    employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
+                    doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
                 )
-                obj_assignee.before_save(force_insert=True)
-                objs.append(obj_assignee)
+                # convert assignee and zone to simple data
+                employee_ids_zones = {}
+                objs = []
+                log_objs = []
+                objs_created = []
+                for emp_id, zone_and_properties in assignee_and_zone.items():
+                    obj_assignee = RuntimeAssignee(
+                        stage=stage_obj,
+                        employee_id=emp_id,
+                        zone_and_properties=zone_and_properties,
+                    )
+                    obj_assignee.before_save(force_insert=True)
+                    objs.append(obj_assignee)
 
-                obj_created = RuntimeAssignee.objects.create(
-                    stage=stage_obj,
-                    employee_id=emp_id,
-                    zone_and_properties=zone_and_properties,
-                )
-                objs_created.append(obj_created)
-                # create instance log
-                log_obj_tmp = RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_id=emp_id,
-                    is_system=True,
-                ).log_new_assignee(
-                    perform_created=False,
-                    is_return=is_return,
-                )
-                # update some field need call save() (call bulk don't hit save())
-                log_obj_tmp.before_save(force_insert=True)
-                # add to list for call bulk create
-                log_objs.append(log_obj_tmp)
-                # push employee to stages.assignees
-                employee_ids_zones.update({emp_id: zone_and_properties})
-            # create runtime assignee
-            # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+                    obj_created = RuntimeAssignee.objects.create(
+                        stage=stage_obj,
+                        employee_id=emp_id,
+                        zone_and_properties=zone_and_properties,
+                    )
+                    objs_created.append(obj_created)
+                    # create instance log
+                    log_obj_tmp = RuntimeLogHandler(
+                        stage_obj=stage_obj,
+                        actor_id=emp_id,
+                        is_system=True,
+                    ).log_new_assignee(
+                        perform_created=False,
+                        is_return=is_return,
+                    )
+                    # update some field need call save() (call bulk don't hit save())
+                    log_obj_tmp.before_save(force_insert=True)
+                    # add to list for call bulk create
+                    log_objs.append(log_obj_tmp)
+                    # push employee to stages.assignees
+                    employee_ids_zones.update({emp_id: zone_and_properties})
+                # create runtime assignee
+                # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
-            # active hook push notify
-            HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
-                runtime_assignee_obj=objs_created,
-            )
-            # update assignee and zone to Stage
-            stage_obj.assignee_and_zone_data = employee_ids_zones
-            stage_obj.save(update_fields=['assignee_and_zone_data'])
-            # create log
-            RuntimeLogHandler.perform_create(log_objs)
-            return objs_created
+                # active hook push notify
+                HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
+                    runtime_assignee_obj=objs_created,
+                )
+                # update assignee and zone to Stage
+                stage_obj.assignee_and_zone_data = employee_ids_zones
+                stage_obj.save(update_fields=['assignee_and_zone_data'])
+                # create log
+                RuntimeLogHandler.perform_create(log_objs)
+                return objs_created
+            except Exception as err:
+                WFSupportFunctionsHandler.update_runtime_when_error(stage_obj=stage_obj, value_error=err)
+                print(err)
         return []
 
     def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
