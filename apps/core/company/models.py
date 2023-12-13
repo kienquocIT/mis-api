@@ -7,6 +7,7 @@ from uuid import UUID
 from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
+from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
 from apps.core.models import CoreAbstractModel
@@ -456,4 +457,4 @@ class CompanyFunctionNumber(SimpleAbstractModel):
             for match in re.findall(r"\[.*?\]", result):
                 result = result.replace(match, str(schema_item_list[int(match[1:-1])]))
             return result
-        return None
+        raise serializers.ValidationError({'Company gen code': 'Can not generate code by Company config.'})

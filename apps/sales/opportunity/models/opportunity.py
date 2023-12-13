@@ -496,12 +496,11 @@ class Opportunity(DataAbstractModel):
 
     def save(self, *args, **kwargs):
         if not self.code:
+            records = Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+            self.code = 'OPP.00' + str(records.count() + 1)
             function_number = self.company.company_function_number.filter(function=0).first()
             if function_number:
                 self.code = function_number.gen_code(company_obj=self.company, func=0)
-            if not self.code:
-                records = Opportunity.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
-                self.code = 'OPP.00' + str(records.count() + 1)
 
         if 'quotation_confirm' in kwargs and not self.is_close_lost and not self.is_deal_close:
             if self.check_config_auto_update_stage():
