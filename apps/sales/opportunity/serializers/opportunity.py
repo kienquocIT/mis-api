@@ -396,10 +396,10 @@ def get_instance_stage(instance):
     delivery_status = instance.sale_order.delivery_status if instance.sale_order else None
     instance_stage.append('SaleOrder.Delivery.Status!=0' if delivery_status else 'SaleOrder.Delivery.Status=0')
     # Customer Annual Revenue
-    customer_revenue = instance.customer.annual_revenue if instance.customer else None
-    instance_stage.append('Customer=0' if not customer_revenue else 'Customer!=0')
+    customer = instance.customer if instance.customer else None
+    instance_stage.append('Customer=0' if not customer else 'Customer!=0')
     if 'Customer!=0' in instance_stage:
-        instance_stage.append('Customer='+customer_revenue)
+        instance_stage.append('Customer='+customer.total_employees)
     # Product Category
     product_category = instance.product_category.all()
     instance_stage.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
