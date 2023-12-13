@@ -399,7 +399,7 @@ def get_instance_stage(instance):
     customer = instance.customer if instance.customer else None
     instance_stage.append('Customer=0' if not customer else 'Customer!=0')
     if 'Customer!=0' in instance_stage:
-        instance_stage.append('Customer='+customer.total_employees)
+        instance_stage.append('Customer='+str(customer.total_employees))
     # Product Category
     product_category = instance.product_category.all()
     instance_stage.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
