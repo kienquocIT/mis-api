@@ -8,6 +8,7 @@ class AccountsMsg:
     ACCOUNTTYPE_NOT_EXIST = _('Account type does not exist.')
     INDUSTRY_NOT_EXIST = _('Industry does not exist.')
     INDUSTRY_NOT_NULL = _('Industry must not NULL.')
+    OWNER_NOT_NULL = _('Owner must not NULL.')
     NAME_NOT_NULL = _('Account Name must not NULL.')
     ACCOUNT_GROUP_NOT_EXIST = _('Account group does not exist.')
     PARENT_ACCOUNT_NOT_EXIST = _('Parent account does not exist.')

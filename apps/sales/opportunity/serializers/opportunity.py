@@ -384,6 +384,28 @@ class OpportunityProductCreateSerializer(serializers.ModelSerializer):
         return value
 
 
+def get_opp_config_stage():
+    opp_config_stage = []
+    for item in OpportunityConfigStage.objects.filter_current(fill__company=True):
+        condition_datas = []
+        for data in item.condition_datas:
+            condition_datas.append(
+                data['condition_property']['title']
+                + str(data['comparison_operator'].encode('utf-8'))
+                .replace("b'='", '=')
+                .replace("b'\\xe2\\x89\\xa0'", '!=')
+                + str(data['compare_data'])
+            )
+        opp_config_stage.append({
+            'id': item.id,
+            'indicator': item.indicator,
+            'win_rate': item.win_rate,
+            'logical_operator': item.logical_operator,
+            'condition': condition_datas
+        })
+    return opp_config_stage
+
+
 def get_instance_stage(instance):
     instance_stage = []
     # Quotation Confirm
@@ -396,10 +418,10 @@ def get_instance_stage(instance):
     delivery_status = instance.sale_order.delivery_status if instance.sale_order else None
     instance_stage.append('SaleOrder.Delivery.Status!=0' if delivery_status else 'SaleOrder.Delivery.Status=0')
     # Customer Annual Revenue
-    customer_revenue = instance.customer.annual_revenue if instance.customer else None
-    instance_stage.append('Customer=0' if not customer_revenue else 'Customer!=0')
+    customer = instance.customer if instance.customer else None
+    instance_stage.append('Customer=0' if not customer else 'Customer!=0')
     if 'Customer!=0' in instance_stage:
-        instance_stage.append('Customer='+customer_revenue)
+        instance_stage.append('Customer='+str(customer.total_employees))
     # Product Category
     product_category = instance.product_category.all()
     instance_stage.append('Product Category=0' if product_category.count() == 0 else 'Product Category!=0')
@@ -420,6 +442,35 @@ def get_instance_stage(instance):
     # Lost By Other Reason
     instance_stage.append('Lost By Other Reason=0' if instance.lost_by_other_reason else 'Lost By Other Reason!=0')
     return instance_stage
+
+
+def get_instance_current_stage(opp_config_stage, instance_stage):
+    instance_current_stage = []
+    for stage in opp_config_stage:
+        if stage['logical_operator']:
+            flag = False
+            for item in stage['condition']:
+                if item in instance_stage:
+                    flag = True
+                    break
+            if flag:
+                instance_current_stage.append({
+                    'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+                })
+        else:
+            flag = True
+            for item in stage['condition']:
+                if item not in instance_stage:
+                    flag = False
+            if flag:
+                instance_current_stage.append({
+                    'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
+                })
+    if len(instance_current_stage) > 0:
+        instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
+        instance_current_stage[0]['current'] = 1
+        return instance_current_stage
+    raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
 
 class CommonOpportunityUpdate(serializers.ModelSerializer):
@@ -522,66 +573,10 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
         return True
 
     @classmethod
-    def update_opportunity_stage(cls, data, instance):
-        OpportunityStage.objects.filter(opportunity=instance).delete()
-
-        data_bulk = []
-        for item in data:
-            opportunity_stage = OpportunityStage(
-                opportunity=instance,
-                stage_id=item['stage'],
-                is_current=item['is_current']
-            )
-            data_bulk.append(opportunity_stage)
-        OpportunityStage.objects.bulk_create(data_bulk)
-        return True
-
-    @classmethod
     def update_opportunity_stage_for_list(cls, instance):
-        opp_config_stage = []
-        for item in OpportunityConfigStage.objects.filter_current(fill__company=True):
-            condition_datas = []
-            for data in item.condition_datas:
-                condition_datas.append(
-                    data['condition_property']['title']
-                    + str(data['comparison_operator'].encode('utf-8'))
-                    .replace("b'='", '=')
-                    .replace("b'\\xe2\\x89\\xa0'", '!=')
-                    + str(data['compare_data'])
-                )
-            opp_config_stage.append({
-                'id': item.id,
-                'indicator': item.indicator,
-                'win_rate': item.win_rate,
-                'logical_operator': item.logical_operator,
-                'condition': condition_datas
-            })
-
+        opp_config_stage = get_opp_config_stage()
         instance_stage = get_instance_stage(instance)
-
-        instance_current_stage = []
-        for stage in opp_config_stage:
-            if stage['logical_operator']:
-                flag = False
-                for item in stage['condition']:
-                    if item in instance_stage:
-                        flag = True
-                        break
-                if flag:
-                    instance_current_stage.append({
-                        'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
-                    })
-            else:
-                flag = True
-                for item in stage['condition']:
-                    if item not in instance_stage:
-                        flag = False
-                if flag:
-                    instance_current_stage.append({
-                        'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
-                    })
-        instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-        instance_current_stage[0]['current'] = 1
+        instance_current_stage = get_instance_current_stage(opp_config_stage, instance_stage)
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
