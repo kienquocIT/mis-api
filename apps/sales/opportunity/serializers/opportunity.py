@@ -580,8 +580,11 @@ class CommonOpportunityUpdate(serializers.ModelSerializer):
                     instance_current_stage.append({
                         'id': stage['id'], 'indicator': stage['indicator'], 'win_rate': stage['win_rate'], 'current': 0
                     })
-        instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
-        instance_current_stage[0]['current'] = 1
+        if len(instance_current_stage) > 0:
+            instance_current_stage = sorted(instance_current_stage, key=lambda x: x['win_rate'], reverse=True)
+            instance_current_stage[0]['current'] = 1
+        else:
+            raise serializers.ValidationError({'current stage': OpportunityMsg.ERROR_WHEN_GET_NULL_CURRENT_STAGE})
 
         OpportunityStage.objects.filter(opportunity=instance).delete()
         data_bulk = []
