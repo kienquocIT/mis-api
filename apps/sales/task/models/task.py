@@ -4,6 +4,7 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
 from .config import OpportunityTaskConfig
 
@@ -117,16 +118,15 @@ class OpportunityTask(DataAbstractModel):
     def create_code_task(self):
         # auto create code (temporary)
         if not self.code:
-            task = OpportunityTask.objects.filter_current(
-                fill__tenant=True, fill__company=True, is_delete=False
-            ).count()
-            char = "T"
-            temper = task + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
-            function_number = self.company.company_function_number.filter(function=5).first()
-            if function_number:
-                self.code = function_number.gen_code(company_obj=self.company, func=5)
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=5)
+            if not code_generated:
+                task = OpportunityTask.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "T"
+                temper = task + 1
+                code = f"{char}{temper:03d}"
+                self.code = code
 
     def before_save(self):
         self.create_code_task()

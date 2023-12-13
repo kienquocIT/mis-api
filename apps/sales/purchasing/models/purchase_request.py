@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, REQUEST_FOR, PURCHASE_STATUS
 
 
@@ -100,10 +101,8 @@ class PurchaseRequest(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                function_number = self.company.company_function_number.filter(function=9).first()
-                if function_number:
-                    self.code = function_number.gen_code(company_obj=self.company, func=9)
-                if not self.code:
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=9)
+                if not code_generated:
                     self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

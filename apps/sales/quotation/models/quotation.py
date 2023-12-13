@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 )
@@ -270,10 +271,9 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code(self.company_id)
-                function_number = self.company.company_function_number.filter(function=1).first()
-                if function_number:
-                    self.code = function_number.gen_code(company_obj=self.company, func=1)
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=1)
+                if not code_generated:
+                    self.code = self.generate_code(self.company_id)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

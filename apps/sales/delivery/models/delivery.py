@@ -2,6 +2,8 @@ import json
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -144,16 +146,15 @@ class OrderDelivery(DataAbstractModel):
     def create_code_delivery(self):
         # auto create code (temporary)
         if not self.code:
-            delivery = OrderDeliverySub.objects.filter_current(
-                fill__tenant=True, fill__company=True, is_delete=False
-            ).count()
-            char = "D"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
-            function_number = self.company.company_function_number.filter(function=4).first()
-            if function_number:
-                self.code = function_number.gen_code(company_obj=self.company, func=4)
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=4)
+            if not code_generated:
+                delivery = OrderDeliverySub.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "D"
+                temper = delivery + 1
+                code = f"{char}{temper:03d}"
+                self.code = code
 
     def save(self, *args, **kwargs):
         self.put_backup_data()

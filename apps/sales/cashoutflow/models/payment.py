@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
@@ -117,11 +118,10 @@ class Payment(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
-                self.code = 'PAYMENT.00' + str(records.count() + 1)
-                function_number = self.company.company_function_number.filter(function=7).first()
-                if function_number:
-                    self.code = function_number.gen_code(company_obj=self.company, func=7)
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=7)
+                if not code_generated:
+                    records = Payment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                    self.code = 'PAYMENT.00' + str(records.count() + 1)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
