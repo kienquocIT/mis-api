@@ -100,14 +100,17 @@ class PurchaseRequest(DataAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code(self.company_id)
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-                self.update_remain_for_purchase_request_so(self)
-
+                function_number = self.company.company_function_number.filter(function=9).first()
+                if function_number:
+                    self.code = function_number.gen_code(company_obj=self.company, func=9)
+                if not self.code:
+                    self.code = self.generate_code(self.company_id)
+                    if 'update_fields' in kwargs:
+                        if isinstance(kwargs['update_fields'], list):
+                            kwargs['update_fields'].append('code')
+                    else:
+                        kwargs.update({'update_fields': ['code']})
+                    self.update_remain_for_purchase_request_so(self)
         # hit DB
         super().save(*args, **kwargs)
 
