@@ -1,4 +1,4 @@
-# from apps.core.workflow.models import RuntimeLog
+from apps.core.workflow.models import RuntimeLog
 
 
 class WFSupportFunctionsHandler:
@@ -31,13 +31,20 @@ class WFSupportFunctionsHandler:
                 return group.parent_n.first_manager_id
         raise ValueError('1st manager is not defined')
 
-    # @classmethod
-    # def log_get_assignee_error(cls):
-    #     return RuntimeLog.objects.create(
-    #         runtime=cls.stage_obj.runtime,
-    #         stage=cls.stage_obj,
-    #         kind=1,  # in doc
-    #         action=0,
-    #         msg='Update data at zone',
-    #         is_system=cls.is_system,
-    #     )
+    @classmethod
+    def update_runtime_when_error(cls, runtime_obj):
+        runtime_obj.state = 2  # finish
+        runtime_obj.status = 2
+        runtime_obj.save(update_fields=['state', 'status'])
+        return True
+
+    @classmethod
+    def log_get_assignee_error(cls, stage_obj, is_system):
+        return RuntimeLog.objects.create(
+            runtime=stage_obj.runtime,
+            stage=stage_obj,
+            kind=1,  # in doc
+            action=0,
+            msg='Update data at zone',
+            is_system=is_system,
+        )
