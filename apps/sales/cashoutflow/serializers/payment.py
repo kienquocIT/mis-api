@@ -68,16 +68,20 @@ def create_payment_cost_items(instance, payment_expense_valid_list):
     if vnd_currency:
         bulk_info = []
         for item in payment_expense_valid_list:
-            bulk_info.append(
-                PaymentCost(
-                    **item,
-                    payment=instance,
-                    currency=vnd_currency,
-                    sale_order_mapped=instance.sale_order_mapped,
-                    quotation_mapped=instance.quotation_mapped,
-                    opportunity_mapped=instance.opportunity_mapped
+            if float(item['real_value']) + float(item['converted_value']) == float(item['sum_value']):
+                bulk_info.append(
+                    PaymentCost(
+                        **item,
+                        payment=instance,
+                        currency=vnd_currency,
+                        sale_order_mapped=instance.sale_order_mapped,
+                        quotation_mapped=instance.quotation_mapped,
+                        opportunity_mapped=instance.opportunity_mapped
+                    )
                 )
-            )
+            else:
+                raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
+
         PaymentCost.objects.filter(payment=instance).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
         update_ap_cost(payment_cost_list)
