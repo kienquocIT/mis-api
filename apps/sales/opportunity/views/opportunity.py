@@ -359,11 +359,11 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
 
     retrieve_hidden_field = ('tenant_id', 'company_id')
 
-    def check_has_permit_of_space_all(self, opp_obj):
+    def check_has_permit_of_space_all(self, opp_obj):  # pylint: disable=R0912
         config_data = self.cls_check.permit_cls.config_data
         if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
-                if 'general' in config_data['employee']:  # fix bug keyError: 'general
+                if 'general' in config_data['employee']:  # fix bug keyError: 'general'
                     general_data = config_data['employee']['general']
                     if general_data and isinstance(general_data, dict):
                         for _permit_code, permit_config in general_data.items():
