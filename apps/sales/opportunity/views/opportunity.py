@@ -363,15 +363,16 @@ class MemberOfOpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyM
         config_data = self.cls_check.permit_cls.config_data
         if config_data and isinstance(config_data, dict):  # pylint: disable=R1702
             if 'employee' in config_data and isinstance(config_data['employee'], dict):
-                general_data = config_data['employee']['general']
-                if general_data and isinstance(general_data, dict):
-                    for _permit_code, permit_config in general_data.items():
-                        if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
-                            if (
-                                    permit_config['space'] == '1'
-                                    and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
-                            ):
-                                return True
+                if 'general' in config_data['employee']:  # fix bug keyError: 'general
+                    general_data = config_data['employee']['general']
+                    if general_data and isinstance(general_data, dict):
+                        for _permit_code, permit_config in general_data.items():
+                            if permit_config and isinstance(permit_config, dict) and 'space' in permit_config:
+                                if (
+                                        permit_config['space'] == '1'
+                                        and str(opp_obj.company_id) == self.cls_check.employee_attr.company_id
+                                ):
+                                    return True
             if 'roles' in config_data and isinstance(config_data['roles'], list):
                 for role_data in config_data['roles']:
                     general_data = role_data['general']
