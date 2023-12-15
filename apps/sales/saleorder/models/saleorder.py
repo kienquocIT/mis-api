@@ -143,14 +143,14 @@ class SaleOrder(DataAbstractModel):
     )
     customer_shipping = models.ForeignKey(
         'saledata.AccountShippingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="sale order shipping",
         related_name="sale_order_customer_shipping",
         null=True
     )
     customer_billing = models.ForeignKey(
         'saledata.AccountBillingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="sale order billing",
         related_name="sale_order_customer_billing",
         null=True

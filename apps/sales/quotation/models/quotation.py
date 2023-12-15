@@ -140,14 +140,14 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     )
     customer_shipping = models.ForeignKey(
         'saledata.AccountShippingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="customer shipping",
         related_name="quotation_customer_shipping",
         null=True
     )
     customer_billing = models.ForeignKey(
         'saledata.AccountBillingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="customer billing",
         related_name="quotation_customer_billing",
         null=True
