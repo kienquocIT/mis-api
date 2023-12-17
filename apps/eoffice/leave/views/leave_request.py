@@ -1,12 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from ..filters import LeaveRequestListFilters
 from apps.eoffice.leave.models import LeaveRequest, LeaveAvailable, LeaveAvailableHistory, LeaveRequestDateListRegister
 from apps.eoffice.leave.serializers import LeaveRequestListSerializer, LeaveRequestCreateSerializer, \
     LeaveRequestDetailSerializer
 from apps.eoffice.leave.serializers.leave_request import LeaveAvailableListSerializer, LeaveAvailableEditSerializer, \
     LeaveAvailableHistoryListSerializer, LeaveRequestDateListRegisterSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from ..filters import LeaveRequestListFilters
 
 __all__ = ['LeaveRequestList', 'LeaveRequestDetail', 'LeaveAvailableList', 'LeaveAvailableUpdate',
            'LeaveAvailableHistoryList', 'LeaveRequestDateList']
@@ -60,7 +60,7 @@ class LeaveRequestDateList(BaseListMixin):
     filterset_class = LeaveRequestListFilters
 
     def get_queryset(self):
-        return super().get_queryset().prefetch_related('leave_request_date_leave', 'leave__employee_inherit')
+        return super().get_queryset().prefetch_related('leave__employee_inherit')
 
     @swagger_auto_schema(
         operation_summary="Leave request list",

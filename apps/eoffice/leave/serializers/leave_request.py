@@ -26,14 +26,14 @@ class LeaveRequestListSerializer(serializers.ModelSerializer):
 
 
 class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
-    leave = serializers.SerializerMethodField()
+    title = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
-    def get_leave(cls, obj):
+    def get_title(cls, obj):
         if obj.leave:
-            return obj.leave_type.title
-        return {}
+            return obj.leave.title
+        return ''
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -53,7 +53,8 @@ class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
             'morning_shift_f',
             'morning_shift_t',
             'remark',
-            'employee_inherit'
+            'employee_inherit',
+            'title'
         )
 
 

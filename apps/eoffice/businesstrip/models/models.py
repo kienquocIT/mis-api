@@ -4,7 +4,8 @@ import uuid
 from django.db import models
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
-__all__ = ['BusinessRequest', 'ExpenseItemMapBusinessRequest', 'BusinessRequestAttachmentFile']
+__all__ = ['BusinessRequest', 'ExpenseItemMapBusinessRequest', 'BusinessRequestAttachmentFile',
+           'BusinessRequestEmployeeOnTrip']
 
 
 class BusinessRequest(DataAbstractModel):
@@ -22,6 +23,12 @@ class BusinessRequest(DataAbstractModel):
         null=True,
         default=None,
         related_name='business_request_destination'
+    )
+    employee_on_trip_list = models.ManyToManyField(
+        'hr.Employee',
+        through='BusinessRequestEmployeeOnTrip',
+        symmetrical=False,
+        related_name='all_employee_on_trip'
     )
     employee_on_trip = models.JSONField(
         default=dict,
@@ -91,18 +98,26 @@ class BusinessRequest(DataAbstractModel):
         symmetrical=False,
         related_name='expense_item_of_business_request',
     )
+    is_clone = models.BooleanField(
+        verbose_name='is clone',
+        help_text='true if employee inherit is in other request member list',
+        default=False,
+        null=True
+    )
 
     def code_generator(self):
         b_rqst = BusinessRequest.objects.filter_current(
             fill__tenant=True,
             fill__company=True,
-            is_delete=False
+            is_delete=False,
+            is_clone=False
         ).count()
         if not self.code:
             char = "B"
             temper = b_rqst
             code = f"{char}{temper:03d}"
             self.code = code
+        print('ahihi do ngoc: ', self.code)
 
     def before_save(self):
         self.code_generator()
@@ -227,3 +242,8 @@ class BusinessRequestAttachmentFile(MasterDataAbstractModel):
         verbose_name_plural = 'Business trip attachments'
         default_permissions = ()
         permissions = ()
+
+
+class BusinessRequestEmployeeOnTrip(SimpleAbstractModel):
+    business_mapped = models.ForeignKey(BusinessRequest, on_delete=models.CASCADE)
+    employee_on_trip_mapped = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)

@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from ..filters import OpportunityMeetingFilters
 from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, OpportunityMeeting, \
     OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
@@ -13,6 +12,7 @@ from apps.sales.opportunity.serializers import (
     OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from ..filters import OpportunityMeetingFilters
 
 
 class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
@@ -140,14 +140,18 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity").prefetch_related(
             'employee_attended_list',
-            'customer_member_list'
+            'customer_member_list',
+            'opportunity__employee_inherit'
         )
 
     @swagger_auto_schema(
         operation_summary="OpportunityMeeting List",
         operation_description="Get OpportunityMeeting List",
     )
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(
+        login_require=True, auth_require=False,
+        # label_code='opportunity', model_code='opportunity', perm_code="view"
+    )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
 
@@ -212,7 +216,6 @@ class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
-
 
     @swagger_auto_schema(
         operation_summary="Create OpportunityDocument",
