@@ -542,71 +542,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         )
         return response
 
-    def test_ap_create(self):
-        url = reverse("AdvancePaymentList")
-        expense1, expense2 = ExpenseItemTestCase.test_create_new_expense(self)
-        tax = TaxAndTaxCategoryTestCase.test_create_new_tax(self)
-        data = {
-            'title': 'Tam ung thang 5',
-            'sale_code_type': 2,  # non-sale
-            'advance_payment_type': 0,  # to_employee
-            'supplier': None,
-            'method': 1,  # bank
-            'creator_name': self.get_employee().data['result'][0]['id'],
-            'beneficiary': self.get_employee().data['result'][0]['id'],
-            'return_date': '2024-06-06 11:21:00.000000',
-            'money_gave': True,
-            'expense_valid_list': [
-                {
-                    'expense_name': 'Expense Item so 1',
-                    'expense_type_id': expense1.data['result']['id'],
-                    'expense_tax_id': tax.data['result']['id'],
-                    'expense_quantity': 2,
-                    'expense_unit_price': 20000000,
-                    'expense_tax_price': 20000000 * (tax.data['result']['rate']/100),
-                    'expense_subtotal_price': 20000000,
-                    'expense_after_tax_price': 20000000 + 20000000 * (tax.data['result']['rate']/100),
-                    'expense_uom_name': 'manhour',
-                }
-            ]
-        }
-        response = self.client.post(url, data, format='json')
-        self.assertResponseList(
-            response,
-            status_code=status.HTTP_201_CREATED,
-            key_required=['result', 'status'],
-            all_key=['result', 'status'],
-            all_key_from=response.data,
-            type_match={'result': dict, 'status': int},
-        )
-        self.assertCountEqual(
-            response.data['result'],
-            [
-                'id',
-                'title',
-                'code',
-                'method',
-                'money_gave',
-                'date_created',
-                'return_date',
-                'sale_code_type',
-                'advance_value',
-                'advance_payment_type',
-                'expense_items',
-                'opportunity_mapped',
-                'quotation_mapped',
-                'sale_order_mapped',
-                'supplier',
-                'creator_name',
-                'employee_inherit',
-            ],
-            check_sum_second=True,
-        )
-
-        return response
-
     def test_create_return_advance(self):
-        advance_payment = self.test_ap_create()
+        advance_payment = AdvancePaymentTestCase.test_ap_create(self)
         employee_id = self.get_employee().data['result'][0]['id']
         url = reverse("ReturnAdvanceList")
         cost_data = []
