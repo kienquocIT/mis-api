@@ -27,7 +27,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
             'return_date': '2023-06-06',
-            'money_gave': True
+            'money_gave': True,
+            'system_status': 1,
         }
         response1 = self.client.post(url, data1, format='json') # noqa
         self.assertResponseList(
@@ -390,6 +391,7 @@ class PaymentTestCase(AdvanceTestCase):
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
+            'system_status': 1,
         }
         response1 = self.client.post(url, data1, format='json')
         self.assertResponseList(
