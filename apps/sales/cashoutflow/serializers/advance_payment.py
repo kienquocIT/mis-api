@@ -1,10 +1,12 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.opportunity.models import OpportunityActivityLogs
-from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg
+from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg, AbstractDetailSerializerModel
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
@@ -228,7 +230,8 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'status'
+            'status',
+            'system_status'
         )
 
     @classmethod
@@ -260,6 +263,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
         if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
@@ -281,7 +285,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         return ap_obj
 
 
-class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
+class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     expense_items = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
@@ -464,6 +468,7 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
         model = AdvancePayment
         fields = (
             'money_gave',
+            'system_status'
         )
 
     def update(self, instance, validated_data):

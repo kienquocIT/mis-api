@@ -1175,6 +1175,159 @@ AppProp_Eoffice_Business_trip_data = {
     },
 }
 
+AppProp_SaleData_Advance_Payment_data = {
+    "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "ceba8e0a-1613-4903-bccd-d6895b236abf": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment type",
+        "code": "advance_payment_type",
+        "type": 6,
+    },
+    "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "3dca605f-1a45-454c-9909-973904fcd820": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment method",
+        "code": "method",
+        "type": 6,
+    },
+    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Return date",
+        "code": "return_date",
+        "type": 2,
+    },
+    # tab line detail
+    "a113e54a-02d0-443f-82e4-125bb9d3c0ae": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense name",
+        "code": "expense_name",
+        "type": 1,
+    },
+    "808b925d-aee4-4060-b56d-4c2e72ace9ae": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense type",
+        "code": "expense_type",
+        "type": 5,
+        'content_type': 'saledata.ExpenseItem',
+    },
+    "79e30cd7-620b-4ab5-ac85-338a11eb347d": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense uom",
+        "code": "expense_uom",
+        "type": 1,
+    },
+    "07a8c089-8525-4d0b-8f3d-a72e9702ce6e": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense quantity",
+        "code": "expense_quantity",
+        "type": 6,
+    },
+    "cb8622b4-0dfe-483f-9413-933cc3c2acc3": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense unit price",
+        "code": "expense_unit_price",
+        "type": 6,
+    },
+    "a9449c34-aec9-45f8-a6a5-a1ba71bc7701": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Expense tax",
+        "code": "expense_tax",
+        "type": 5,
+        'content_type': 'saledata.Tax',
+    },
+}
+
+AppProp_SaleData_Payment_data = {
+    "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "85556007-ef17-427d-ac7e-c65c4b10c210": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Internal payment",
+        "code": "is_internal_payment",
+        'type': 4,
+    },
+    "67099494-859c-4ad9-adad-92175230d08f": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Employee payment",
+        "code": "employee_payment",
+        'type': 5,
+        'content_type': 'hr.Employee',
+    },
+    "3811bd07-bab6-452e-89a4-6352c2c667d3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Payment method",
+        "code": "method",
+        "type": 6,
+    },
+    # tab line detail
+    "09b7660e-adde-4515-bcf1-764020f71e71": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense description",
+        "code": "expense_description",
+        "type": 1,
+    },
+    "4ae69f01-daa2-4c80-b5c5-e2c95ccf9e98": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense type",
+        "code": "expense_type",
+        "type": 5,
+        'content_type': 'saledata.ExpenseItem',
+    },
+    "e683b0fe-1afd-48ce-9eb8-fec0412720e3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense uom",
+        "code": "expense_uom",
+        "type": 1,
+    },
+    "5265a189-bc40-4858-bb13-e4accb5c555e": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense quantity",
+        "code": "expense_quantity",
+        "type": 6,
+    },
+    "c8784ad8-c58c-490e-9b92-953febce7c43": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense unit price",
+        "code": "expense_unit_price",
+        "type": 6,
+    },
+    "fb7d1660-29d6-42db-84e5-c8fd178b5f14": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Expense tax",
+        "code": "expense_tax",
+        "type": 5,
+        'content_type': 'saledata.Tax',
+    },
+    "3ef355cc-d191-4e4c-bbb8-caf9f248d2f8": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Document number",
+        "code": "document_number",
+        "type": 1,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
@@ -1183,4 +1336,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_SaleOrder_data,
     **AppProp_Eoffice_Leave_data,
     **AppProp_Eoffice_Business_trip_data,
+    **AppProp_SaleData_Advance_Payment_data,
+    **AppProp_SaleData_Payment_data,
 }
