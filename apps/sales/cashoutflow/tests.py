@@ -143,6 +143,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'system_status',
                 'workflow_runtime_id',
             ],
             check_sum_second=True,
