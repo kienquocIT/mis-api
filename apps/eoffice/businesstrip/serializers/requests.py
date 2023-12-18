@@ -97,7 +97,7 @@ class BusinessRequestExpenseItemListSerializer(serializers.ModelSerializer):
 
 class ExpenseItemListUpdateSerializer(serializers.Serializer):  # noqa
     expense_item = serializers.UUIDField()
-    tax = serializers.UUIDField()
+    tax = serializers.UUIDField(allow_null=True, required=False)
     title = serializers.CharField()
     uom_txt = serializers.CharField()
     quantity = serializers.FloatField()
@@ -176,7 +176,7 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
                 title=item['title'],
                 business_request=instance,
                 expense_item_id=str(item['expense_item']),
-                tax_id=str(item['tax']),
+                tax_id=str(item['tax']) if 'tax' in item else None,
                 uom_txt=item['uom_txt'],
                 quantity=item['quantity'],
                 price=item['price'],

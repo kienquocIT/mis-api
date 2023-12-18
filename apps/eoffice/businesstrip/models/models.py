@@ -117,7 +117,6 @@ class BusinessRequest(DataAbstractModel):
             temper = b_rqst
             code = f"{char}{temper:03d}"
             self.code = code
-        print('ahihi do ngoc: ', self.code)
 
     def before_save(self):
         self.code_generator()
@@ -173,6 +172,7 @@ class ExpenseItemMapBusinessRequest(SimpleAbstractModel):
         'saledata.Tax',
         on_delete=models.CASCADE,
         verbose_name='',
+        null=True
     )
     tax_data = models.JSONField(
         default=dict,
