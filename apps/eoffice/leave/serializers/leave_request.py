@@ -7,13 +7,55 @@ from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister
 from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
-           'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer']
+           'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer',
+           'LeaveRequestDateListRegisterSerializer',
+           ]
 
 
 class LeaveRequestListSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveRequest
-        fields = ('id', 'title', 'code', 'start_day', 'total', 'system_status')
+        fields = (
+            'id',
+            'title',
+            'code',
+            'start_day',
+            'total',
+            'system_status'
+        )
+
+
+class LeaveRequestDateListRegisterSerializer(serializers.ModelSerializer):
+    title = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_title(cls, obj):
+        if obj.leave:
+            return obj.leave.title
+        return ''
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.leave:
+            leave = obj.leave
+            return {
+                'id': leave.employee_inherit_id,
+                'full_name': leave.employee_inherit.get_full_name()
+            }
+        return {}
+
+    class Meta:
+        model = LeaveRequestDateListRegister
+        fields = (
+            'date_from',
+            'date_to',
+            'morning_shift_f',
+            'morning_shift_t',
+            'remark',
+            'employee_inherit',
+            'title'
+        )
 
 
 class LeaveRequestCreateSerializer(serializers.ModelSerializer):
@@ -121,29 +163,31 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
                 get_detail_data = []
                 for item in data_list:
                     available = available_list.get(leave_type_id=item.leave_type)
-                    get_detail_data.append({
-                        'order': item.order,
-                        'remark': item.remark,
-                        'date_to': item.date_to,
-                        'subtotal': item.subtotal,
-                        'date_from': item.date_from,
-                        'leave_available': {
-                            'id': str(available.id),
-                            'used': available.used,
-                            'total': available.total,
-                            'available': available.available,
-                            'open_year': available.open_year,
-                            'leave_type': {
-                                'id': str(item.leave_type.id),
-                                'title': item.leave_type.title,
-                                'code': item.leave_type.code
+                    get_detail_data.append(
+                        {
+                            'order': item.order,
+                            'remark': item.remark,
+                            'date_to': item.date_to,
+                            'subtotal': item.subtotal,
+                            'date_from': item.date_from,
+                            'leave_available': {
+                                'id': str(available.id),
+                                'used': available.used,
+                                'total': available.total,
+                                'available': available.available,
+                                'open_year': available.open_year,
+                                'leave_type': {
+                                    'id': str(item.leave_type.id),
+                                    'title': item.leave_type.title,
+                                    'code': item.leave_type.code
+                                },
+                                'check_balance': available.check_balance,
+                                'expiration_date': available.expiration_date,
                             },
-                            'check_balance': available.check_balance,
-                            'expiration_date': available.expiration_date,
-                        },
-                        'morning_shift_f': item.morning_shift_f,
-                        'morning_shift_t': item.morning_shift_t,
-                    })
+                            'morning_shift_f': item.morning_shift_f,
+                            'morning_shift_t': item.morning_shift_t,
+                        }
+                    )
                 return get_detail_data
         return []
 

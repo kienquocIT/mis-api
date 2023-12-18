@@ -760,9 +760,9 @@ EMAIL_LOG_APP_CONFIG = {
     "is_workflow": False,
 }
 
-METING_LOG_APP_CONFIG = {
+MEETING_LOG_APP_CONFIG = {
     "id": "2fe959e3-9628-4f47-96a1-a2ef03e867e3",
-    "title": "Metting With Customer",
+    "title": "Meetting With Customer",
     "code": "meetingwithcustomer",
     "model_code": "meetingwithcustomer",
     "app_label": "opportunity",
@@ -1398,7 +1398,7 @@ Application_crm_data = {
         depend_follow_main=False,
         filtering_inheritor=False,
     ),
-    "2fe959e3-9628-4f47-96a1-a2ef03e867e3": ApplicationConfigFrame(**METING_LOG_APP_CONFIG).data(
+    "2fe959e3-9628-4f47-96a1-a2ef03e867e3": ApplicationConfigFrame(**MEETING_LOG_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     ),
