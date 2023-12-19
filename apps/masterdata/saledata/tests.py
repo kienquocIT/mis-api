@@ -332,7 +332,9 @@ class ProductTestCase(AdvanceTestCase):
                 'wait_delivery_amount',
                 'wait_receipt_amount',
                 'available_amount',
-                'is_public_website'
+                'is_public_website',
+                'product_variant_attribute_list',
+                'product_variant_item_list'
             ],
             check_sum_second=True,
         )
@@ -412,7 +414,9 @@ class ProductTestCase(AdvanceTestCase):
                 'wait_delivery_amount',
                 'wait_receipt_amount',
                 'available_amount',
-                'is_public_website'
+                'is_public_website',
+                'product_variant_attribute_list',
+                'product_variant_item_list'
             ],
             check_sum_second=True,
         )

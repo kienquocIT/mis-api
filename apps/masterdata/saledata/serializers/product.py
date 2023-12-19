@@ -3,7 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType,
+    ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg, PriceMsg
@@ -145,6 +146,35 @@ def check_expired_price_list(price_list):
     if not price_list.valid_time_end.date() < datetime.now().date():
         return True
     return False
+
+
+def create_product_variant_attribute(product_obj, product_variant_attribute_list):
+    bulk_info = []
+    for item in product_variant_attribute_list:
+        bulk_info.append(ProductVariantAttribute(product=product_obj, **item))
+    ProductVariantAttribute.objects.filter(product=product_obj).delete()
+    ProductVariantAttribute.objects.bulk_create(bulk_info)
+    return True
+
+
+def create_product_variant_item(product_obj, product_variant_item_list):
+    bulk_info = []
+    for item in product_variant_item_list:
+        bulk_info.append(ProductVariant(product=product_obj, **item))
+    ProductVariant.objects.bulk_create(bulk_info)
+    return True
+
+
+def update_product_variant_item(product_obj, product_variant_item_update_list):
+    bulk_info = []
+    for item in product_variant_item_update_list:
+        if item.get('variant_value_id', None):
+            variant_value_id = item.pop('variant_value_id')
+            ProductVariant.objects.filter(id=variant_value_id).update(**item)
+        else:
+            bulk_info.append(ProductVariant(product=product_obj, **item))
+    ProductVariant.objects.bulk_create(bulk_info)
+    return True
 
 
 class ProductCreateSerializer(serializers.ModelSerializer):
@@ -373,6 +403,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 validated_data
             )
 
+        create_product_variant_attribute(product, self.initial_data.get('product_variant_attribute_list', []))
+        create_product_variant_item(product, self.initial_data.get('product_variant_item_list', []))
+
         return product
 
 
@@ -382,6 +415,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     inventory_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
     product_warehouse_detail = serializers.SerializerMethodField()
+    product_variant_attribute_list = serializers.SerializerMethodField()
+    product_variant_item_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -401,7 +436,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'wait_delivery_amount',
             'wait_receipt_amount',
             'available_amount',
-            'is_public_website'
+            'is_public_website',
+            'product_variant_attribute_list',
+            'product_variant_item_list'
         )
 
     @classmethod
@@ -535,6 +572,27 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                     'stock_amount': ratio_convert * item.stock_amount,
                 })
         return result
+
+    @classmethod
+    def get_product_variant_attribute_list(cls, obj):
+        return [{
+            'id': item.id,
+            'attribute_title': item.attribute_title,
+            'attribute_value_list': item.attribute_value_list,
+            'attribute_config': item.attribute_config
+        } for item in obj.product_variant_attributes.all()]
+
+    @classmethod
+    def get_product_variant_item_list(cls, obj):
+        return [{
+            'id': item.id,
+            'variant_value_list': item.variant_value_list,
+            'variant_name': item.variant_name,
+            'variant_des': item.variant_des,
+            'variant_SKU': item.variant_SKU,
+            'variant_extra_price': item.variant_extra_price,
+            'is_active': item.is_active,
+        } for item in obj.product_variants.all()]
 
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
@@ -771,6 +829,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
+
+        create_product_variant_attribute(instance, self.initial_data.get('product_variant_attribute_list', []))
+        update_product_variant_item(instance, self.initial_data.get('product_variant_item_list', []))
+
         return instance
 
 
