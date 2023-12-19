@@ -17,6 +17,8 @@ from .serializers import (
     UserCreateSerializer, EmployeeSpaceCreateSerializer,
 )
 
+from apps.eoffice.leave.leave_util import leave_available_map_employee as available_map_employee
+
 
 class TenantController:
     """
@@ -251,6 +253,10 @@ class TenantController:
                 tenant_id=kwargs.get('tenant'),
                 company_id=kwargs.get('company')
             )
+
+            # create new leave available list for employee
+            available_map_employee(obj, obj.company)
+
             # MediaForceAPI.call_regis_employee_media_storage(employee_obj=obj)
             return obj
         except serializers.ValidationError as err:

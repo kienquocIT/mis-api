@@ -158,7 +158,7 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
             # return for item in
             data_list = LeaveRequestDateListRegister.objects.filter_current(
                 fill__company=True, fill__tenant=True, leave_id=str(obj.id)
-            )
+            ).order_by('order')
             if data_list.exists() and available_list.exists():
                 get_detail_data = []
                 for item in data_list:

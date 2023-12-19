@@ -722,12 +722,6 @@ def update_opportunity_contact_role_datas():
     print('Update Done')
 
 
-def delete_old_m2m_data_price_list_product():
-    today = date.today()
-    ProductPriceList.objects.filter(date_created__lt=today).delete()
-    return True
-
-
 def update_parent_account():
     for obj in Account.objects.all():
         old_value = obj.parent_account
@@ -876,11 +870,6 @@ def update_backup_data_purchase_request():
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
 
-
-def leave_available_create():
-    for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_available_setup()
-    print('create leave available list successfully')
 
 
 def update_title_opportunity_document():
@@ -1073,12 +1062,6 @@ def update_date_approved_sales_apps():
         gr.date_approved = gr.date_created
         gr.save(update_fields=['date_approved'])
     print('update_date_approved_sales_apps done.')
-
-
-def update_available():
-    for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_available_update()
-    print('update leave available done')
 
 
 def update_company_setting():
