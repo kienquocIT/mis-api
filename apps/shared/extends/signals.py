@@ -932,8 +932,20 @@ class ConfigDefaultData:
 
 
 class WorkflowData:
+    """
+    data use for add perm view (on ID) for related models of application running WF
+    {
+        'model_code (model of application running WF)': [
+            {
+                'app_label': 'leave',
+                'model_code': 'leaveavailable'
+            },
+            ...
+        ]
+    }
+    """
     wf_app_relate_models = {
-        'leave': [
+        'leaverequest': [
             {
                 'app_label': 'leave',
                 'model_code': 'leaveavailable'
@@ -1009,8 +1021,8 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     tenant_id=instance.runtime.tenant_id,
                 )
                 # check if app has related models => append perm view to related models
-                if app_obj.app_label in WorkflowData.wf_app_relate_models:
-                    for relate_model in WorkflowData.wf_app_relate_models[app_obj.app_label]:
+                if app_obj.code in WorkflowData.wf_app_relate_models:
+                    for relate_model in WorkflowData.wf_app_relate_models[app_obj.code]:
                         app_label = relate_model.get('app_label', None)
                         model_code = relate_model.get('model_code', None)
                         if app_label and model_code:
