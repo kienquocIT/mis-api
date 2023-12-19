@@ -251,7 +251,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             ).exists():
                 raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
         if validate_data.get('opportunity_mapped', None):
-            if (validate_data['opportunity_mapped'].is_close_lost or validate_data['opportunity_mapped'].is_deal_close):
+            if validate_data['opportunity_mapped'].is_close_lost or validate_data['opportunity_mapped'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
