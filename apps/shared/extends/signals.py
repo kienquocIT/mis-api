@@ -950,7 +950,7 @@ class WorkflowData:
                 'app_label': 'leave',
                 'model_code': 'leaveavailable'
             }
-        ]
+        ],
     }
 
 

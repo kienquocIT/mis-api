@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
+from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
 )
-from apps.masterdata.saledata.models import Currency
+from apps.masterdata.saledata.models import Currency, Account
 from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel, SaleMsg
 
@@ -63,7 +64,7 @@ def update_ap_cost(payment_cost_list):
     return True
 
 
-def create_payment_cost_items(instance, payment_expense_valid_list):
+def create_payment_cost_items(payment_obj, payment_expense_valid_list):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
     if vnd_currency:
         bulk_info = []
@@ -72,17 +73,17 @@ def create_payment_cost_items(instance, payment_expense_valid_list):
                 bulk_info.append(
                     PaymentCost(
                         **item,
-                        payment=instance,
+                        payment=payment_obj,
                         currency=vnd_currency,
-                        sale_order_mapped=instance.sale_order_mapped,
-                        quotation_mapped=instance.quotation_mapped,
-                        opportunity_mapped=instance.opportunity_mapped
+                        sale_order_mapped=payment_obj.sale_order_mapped,
+                        quotation_mapped=payment_obj.quotation_mapped,
+                        opportunity_mapped=payment_obj.opportunity_mapped
                     )
                 )
             else:
                 raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
 
-        PaymentCost.objects.filter(payment=instance).delete()
+        PaymentCost.objects.filter(payment=payment_obj).delete()
         payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
         update_ap_cost(payment_cost_list)
         return True
@@ -106,7 +107,6 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'status',
             # system
             'system_status',
         )
@@ -125,20 +125,15 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('opportunity_mapped', None):
-            if (validate_data['opportunity_mapped'].is_close_lost is True or
-                    validate_data['opportunity_mapped'].is_deal_close):
+            if validate_data['opportunity_mapped'].is_close_lost or validate_data['opportunity_mapped'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
 
         if validate_data.get('is_internal_payment'):
             if 'supplier' in validate_data:
                 validate_data.pop('supplier')
-                if not validate_data['employee_payment']:
-                    raise serializers.ValidationError({'Employee': AdvancePaymentMsg.EMPLOYEE_IS_NOT_NULL})
         else:
             if 'employee_payment' in validate_data:
                 validate_data.pop('employee_payment')
-                if not validate_data['supplier']:
-                    raise serializers.ValidationError({'Supplier': AdvancePaymentMsg.SUPPLIER_IS_NOT_NULL})
         return validate_data
 
     @decorator_run_workflow
@@ -215,7 +210,8 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                     'expense_tax': {
                         'id': item.expense_tax_id,
                         'code': item.expense_tax.code,
-                        'title': item.expense_tax.title
+                        'title': item.expense_tax.title,
+                        'rate': item.expense_tax.rate,
                     } if item.expense_tax else {},
                     'expense_tax_price': item.expense_tax_price,
                     'expense_subtotal_price': item.expense_subtotal_price,
@@ -351,6 +347,50 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
                 'code': obj.employee_inherit.group.code
             } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
+
+
+class PaymentUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
+    class Meta:
+        model = Payment
+        fields = (
+            'title',
+            'supplier',
+            'employee_payment',
+            'is_internal_payment',
+            'method',
+            # system
+            'system_status',
+        )
+
+    @classmethod
+    def validate_method(cls, attrs):
+        if attrs in [0, 1, 2]:
+            return attrs
+        raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+
+    def validate(self, validate_data):
+        if validate_data.get('is_internal_payment'):
+            if 'supplier' in validate_data:
+                validate_data.pop('supplier')
+        else:
+            if 'employee_payment' in validate_data:
+                validate_data.pop('employee_payment')
+        return validate_data
+
+    def update(self, instance, validated_data):
+        if instance.opportunity_mapped:
+            if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        create_payment_cost_items(
+            instance,
+            self.initial_data.get('payment_expense_valid_list', [])
+        )
+        return instance
 
 
 class PaymentConfigListSerializer(serializers.ModelSerializer):
