@@ -259,8 +259,6 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
     @decorator_run_workflow
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
-        if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
-            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
 
         # create activity log for opportunity
