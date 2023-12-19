@@ -1,12 +1,10 @@
 from rest_framework import serializers
-
-from apps.core.hr.models import Employee
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig,
     AdvancePaymentCost
 )
-from apps.masterdata.saledata.models import Currency, Account
+from apps.masterdata.saledata.models import Currency
 from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, HRMsg, AbstractDetailSerializerModel, SaleMsg
 

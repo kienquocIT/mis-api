@@ -255,7 +255,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
-    # @decorator_run_workflow
+    @decorator_run_workflow
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
         if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
