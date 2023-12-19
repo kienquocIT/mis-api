@@ -28,7 +28,8 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'converted_value_list',
             'return_value_list',
             'payment_value',
-            'date_created'
+            'date_created',
+            'system_status'
         )
 
     @classmethod

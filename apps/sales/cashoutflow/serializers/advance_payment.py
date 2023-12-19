@@ -42,6 +42,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'expense_items',
             'opportunity_id',
+            'system_status'
         )
 
     @classmethod
