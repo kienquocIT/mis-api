@@ -43,6 +43,8 @@ from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from ..media_cloud_apis import MediaForceAPI
+from ...eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
+from ...eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 
 logger = logging.getLogger(__name__)
 

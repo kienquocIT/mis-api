@@ -403,6 +403,7 @@ ENABLE_TURN_ON_IS_EMAIL = False
 # CELERY + RABBITMQ CONFIG
 CELERY_BROKER_URL = None  # 'amqp://guest:guest@127.0.0.1:5672//'
 CELERY_TASK_ALWAYS_EAGER = True  # allow executable task real-time (True) or push task to queue (False)
+CELERY_RESULT_EXTENDED = True
 # -- CELERY + RABBITMQ CONFIG
 
 # import local_settings

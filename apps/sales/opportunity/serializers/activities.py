@@ -248,6 +248,8 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'employee_attended_list',
             'customer_member_list',
             'meeting_date',
+            'meeting_from_time',
+            'meeting_to_time',
             'meeting_address',
             'room_location',
             'input_result',
@@ -311,6 +313,8 @@ def create_customer_member_map_meeting(meeting_id, customer_member_list):
 
 class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
     input_result = serializers.CharField(required=True)
+    meeting_from_time = serializers.TimeField(required=True)
+    meeting_to_time = serializers.TimeField(required=True)
 
     class Meta:
         model = OpportunityMeeting
@@ -320,6 +324,8 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
             'employee_attended_list',
             'customer_member_list',
             'meeting_date',
+            'meeting_from_time',
+            'meeting_to_time',
             'meeting_address',
             'room_location',
             'input_result',
@@ -365,6 +371,8 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'employee_attended_list',
             'customer_member_list',
             'meeting_date',
+            'meeting_from_time',
+            'meeting_to_time',
             'meeting_address',
             'room_location',
             'input_result',
