@@ -23,10 +23,18 @@ __all__ = [
 
 class WorkflowOfAppList(BaseListMixin, BaseCreateMixin):
     queryset = WorkflowConfigOfApp.objects
+    filterset_fields = {
+        'code': ['exact'],
+    }
     serializer_class = WorkflowOfAppListSerializer
     serializer_list = WorkflowOfAppListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "workflow_currently",
+        )
 
     @swagger_auto_schema(
         operation_summary="Workflow of Feature List",

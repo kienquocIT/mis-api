@@ -21,9 +21,17 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_workflow_currently(cls, obj):
         if obj.workflow_currently:
+            initial_zones = []
+            for node_zone in InitialNodeZone.objects.filter(
+                    node__workflow=obj.workflow_currently
+            ).select_related('zone').prefetch_related('zone__properties'):
+                if node_zone.zone:
+                    for prop in node_zone.zone.properties.all():
+                        initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
             return {
                 'id': obj.workflow_currently.id,
                 'title': obj.workflow_currently.title,
+                'initial_zones': initial_zones,
             }
         return {}
 
