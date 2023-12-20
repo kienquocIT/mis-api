@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig
 from apps.shared.extends.tests import AdvanceTestCase
+from apps.core.hr.models import Employee
 
 
 class LeaveTestCase(AdvanceTestCase):
@@ -20,24 +21,18 @@ class LeaveTestCase(AdvanceTestCase):
         self.client = APIClient()
         self.authenticated()
 
-        company_data = {
-            'title': 'Cty TNHH one member',
-            'code': 'MMT',
-            'representative_fullname': 'Mike Nguyen',
-            'address': '7826 avenue, Victoria Street, California, American',
-            'email': 'mike.nguyen.7826@gmail.com',
-            'phone': '0983875345',
-            'primary_currency': self.get_base_currency().data['result'][0]['id']
-        }
-        company_req = self.client.post(reverse("CompanyList"), company_data, format='json')
+        url_emp = reverse("EmployeeList")
+        response = self.client.get(url_emp, format='json')
+        employee_obj = Employee.objects.get(id=response.data['result'][0]['id'])
+        self.employee = employee_obj
         leave_cf = LeaveConfig.objects.get_or_create(
-            company_id=company_req.data['result']['id'],
+            company_id=self.company_id,
             defaults={},
         )
         self.config = leave_cf[0]
 
         working_calendar = WorkingCalendarConfig.objects.get_or_create(
-            company_id=company_req.data['result']['id'],
+            company_id=self.company_id,
             defaults={  # noqa
                 'working_days':
                     {
@@ -80,12 +75,6 @@ class LeaveTestCase(AdvanceTestCase):
             },
         )
         self.working_calendar = working_calendar[0]
-        self.company = company_req
-
-    def get_employee(self):
-        url = reverse("EmployeeList")
-        response = self.client.get(url, format='json')
-        return response
 
     def test_create_leave_type_01(self):
         lv_type = {
@@ -95,7 +84,7 @@ class LeaveTestCase(AdvanceTestCase):
             'balance_control': False,
             'is_check_expiration': False,
             'leave_config': str(self.config.id),
-            'company_id': str(self.config.company_id),
+            'company_id': self.company_id,
             'prev_year': 0
         }
         response_lv_type = self.client.post(reverse('LeaveTypeConfigCreate'), lv_type, format='json')
@@ -173,13 +162,13 @@ class LeaveTestCase(AdvanceTestCase):
 
     def test_create_leave_request(self):
         leave_type = LeaveType.objects.filter_current(
-            company_id=self.company.data['result']['id'],
-            code='ANPY'
+            company_id=self.company_id,
+            code='AN'
         ).first()
         time_now = timezone.now().strftime('%Y-%m-%d')
         data = {
             'title': 'xin nghỉ làm việc nhà',
-            'employee_inherit_id': self.get_employee().data['result'][0]['id'],
+            'employee_inherit_id': str(self.employee.id),
             'request_date': time_now,
             'detail_data': [{
                 "order": 0,
