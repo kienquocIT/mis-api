@@ -1167,3 +1167,20 @@ def update_tenant_delivery_config():
             deli_config.tenant = deli_config.company.tenant
             deli_config.save(update_fields=['tenant'])
     print('update_tenant_delivery_config done.')
+
+
+def update_ap_title_in_payment_cost():
+    for item in PaymentCost.objects.all():
+        new_ap_cost_converted_list = []
+        for child in item.ap_cost_converted_list:
+            ap_cost_filter = AdvancePaymentCost.objects.filter(id=child['ap_cost_converted_id'])
+            if ap_cost_filter.exists():
+                ap_title_mapped = ap_cost_filter.first().advance_payment.title
+                new_ap_cost_converted_list.append({
+                    'ap_cost_converted_id': child['ap_cost_converted_id'],
+                    'value_converted': child['value_converted'],
+                    'ap_title': ap_title_mapped
+                })
+        item.ap_cost_converted_list = new_ap_cost_converted_list
+        item.save()
+    print('done')
