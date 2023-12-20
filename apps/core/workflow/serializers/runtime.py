@@ -223,6 +223,7 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
 class RuntimeDetailSerializer(serializers.ModelSerializer):
     action_myself = serializers.SerializerMethodField()
     stage_currents = serializers.SerializerMethodField()
+    zones_hidden_myself = serializers.SerializerMethodField()
 
     @staticmethod
     def get_properties_data(zone_and_properties):
@@ -265,10 +266,24 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    def get_zones_hidden_myself(self, obj):
+        zone_hidden_list = []
+        employee_current_id = self.context.get('employee_current_id', None)
+        if employee_current_id and obj.stage_currents:
+            stage_assignee_list = RuntimeAssignee.objects.filter_current(
+                stage__runtime=obj,
+                employee_id=employee_current_id,
+            )
+            if stage_assignee_list:
+                for stage_assignee_obj in stage_assignee_list:
+                    zone_hidden_list += self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties)
+        return zone_hidden_list
+
     class Meta:
         model = Runtime
         fields = (
             'id', 'stage_currents', 'date_finished', 'date_created', 'state', 'status', 'action_myself',
+            'zones_hidden_myself',
         )
 
 

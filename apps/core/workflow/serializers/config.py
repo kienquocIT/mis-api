@@ -373,6 +373,7 @@ class CommonCreateUpdate:
             collab_list = data_dict.get('collab_in_workflow', [])
             for collab in collab_list:
                 result = []
+                result_hidden = []
                 zone_list = collab.get('zone', [])
                 zone_hidden_list = collab.get('zone_hidden', [])
                 cls.mapping_zone_detail(
