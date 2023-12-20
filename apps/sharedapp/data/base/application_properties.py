@@ -1216,7 +1216,7 @@ AppProp_SaleData_Advance_Payment_data = {
     },
     "51840528-2a9f-448b-afcb-ad0f421fd523": {
         "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
-        "title": "Advance payment expenses",
+        "title": "Tab detail",
         "code": "expense_valid_list",
         "type": 1,
     },
@@ -1258,7 +1258,7 @@ AppProp_SaleData_Payment_data = {
     # tab line detail
     "09b7660e-adde-4515-bcf1-764020f71e71": {
         "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
-        "title": "Payment expenses",
+        "title": "Tab detail",
         "code": "payment_expense_valid_list",
         "type": 1,
     },
