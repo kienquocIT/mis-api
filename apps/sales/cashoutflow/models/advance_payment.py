@@ -88,6 +88,12 @@ class AdvancePayment(DataAbstractModel):
                     )
                     self.code = 'AP.00' + str(records.count() + 1)
 
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+
         super().save(*args, **kwargs)
 
 
