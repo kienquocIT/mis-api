@@ -118,7 +118,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Opportunity List",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
@@ -283,7 +283,7 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get Opportunity detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=True, employee_required=True,
+        login_require=True, auth_require=False, employee_required=True,
         label_code='opportunity', model_code='opportunity', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
@@ -295,7 +295,7 @@ class OpportunityDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=OpportunityUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='opportunity', model_code='opportunity', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
