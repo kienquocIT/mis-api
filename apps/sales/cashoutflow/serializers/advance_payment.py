@@ -6,7 +6,7 @@ from apps.sales.cashoutflow.models import (
 )
 from apps.masterdata.saledata.models import Currency, ExpenseItem
 from apps.sales.opportunity.models import OpportunityActivityLogs
-from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg, AbstractDetailSerializerModel
+from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
