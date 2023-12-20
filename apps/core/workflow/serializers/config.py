@@ -194,84 +194,94 @@ class CommonCreateUpdate:
         return True
 
     @classmethod
-    def delete_old_node(
-            cls,
-            instance
-    ):
+    def delete_old_node_initial(cls, old_node):
+        old_initial_node_zone = InitialNodeZone.objects.filter(
+            node__in=old_node
+        )
+        old_initial_node_zone_hidden = InitialNodeZoneHidden.objects.filter(
+            node__in=old_node
+        )
+        if old_initial_node_zone:
+            old_initial_node_zone.delete()
+        if old_initial_node_zone_hidden:
+            old_initial_node_zone_hidden.delete()
+        return True
+
+    @classmethod
+    def delete_old_node_in_form(cls, old_node):
+        old_collaboration_in_form = CollaborationInForm.objects.filter(
+            node__in=old_node
+        )
+        old_collaboration_in_form_zone = CollaborationInFormZone.objects.filter(
+            collab__in=old_collaboration_in_form
+        )
+        old_collaboration_in_form_zone_hidden = CollaborationInFormZoneHidden.objects.filter(
+            collab__in=old_collaboration_in_form
+        )
+        if old_collaboration_in_form_zone:
+            old_collaboration_in_form_zone.delete()
+        if old_collaboration_in_form_zone_hidden:
+            old_collaboration_in_form_zone_hidden.delete()
+        if old_collaboration_in_form:
+            old_collaboration_in_form.delete()
+        return True
+
+    @classmethod
+    def delete_old_node_out_form(cls, old_node):
+        old_collaboration_out_form = CollaborationOutForm.objects.filter(node__in=old_node)
+        old_collaboration_out_form_employee = CollaborationOutFormEmployee.objects.filter(
+            collab__in=old_collaboration_out_form
+        )
+        old_collaboration_out_form_zone = CollaborationOutFormZone.objects.filter(
+            collab__in=old_collaboration_out_form
+        )
+        old_collaboration_out_form_zone_hidden = CollaborationOutFormZoneHidden.objects.filter(
+            collab__in=old_collaboration_out_form
+        )
+        if old_collaboration_out_form_zone:
+            old_collaboration_out_form_zone.delete()
+        if old_collaboration_out_form_zone_hidden:
+            old_collaboration_out_form_zone_hidden.delete()
+        if old_collaboration_out_form_employee:
+            old_collaboration_out_form_employee.delete()
+        if old_collaboration_out_form:
+            old_collaboration_out_form.delete()
+        return True
+
+    @classmethod
+    def delete_old_node_in_wf(cls, old_node):
+        old_collab_in_workflow = CollabInWorkflow.objects.filter(node__in=old_node)
+        old_collab_in_workflow_zone = CollabInWorkflowZone.objects.filter(
+            collab__in=old_collab_in_workflow
+        )
+        old_collab_in_workflow_zone_hidden = CollabInWorkflowZoneHidden.objects.filter(
+            collab__in=old_collab_in_workflow
+        )
+        if old_collab_in_workflow_zone:
+            old_collab_in_workflow_zone.delete()
+        if old_collab_in_workflow_zone_hidden:
+            old_collab_in_workflow_zone_hidden.delete()
+        if old_collab_in_workflow:
+            old_collab_in_workflow.delete()
+        return True
+
+    @classmethod
+    def delete_old_node(cls, instance):
         old_node = Node.objects.filter(workflow=instance)
         if old_node:
             # initial
-            old_initial_node_zone = InitialNodeZone.objects.filter(
-                node__in=old_node
-            )
-            old_initial_node_zone_hidden = InitialNodeZoneHidden.objects.filter(
-                node__in=old_node
-            )
-            if old_initial_node_zone:
-                old_initial_node_zone.delete()
-            if old_initial_node_zone_hidden:
-                old_initial_node_zone_hidden.delete()
+            CommonCreateUpdate.delete_old_node_initial(old_node)
             # in form
-            old_collaboration_in_form = CollaborationInForm.objects.filter(
-                node__in=old_node
-            )
-            old_collaboration_in_form_zone = CollaborationInFormZone.objects.filter(
-                collab__in=old_collaboration_in_form
-            )
-            old_collaboration_in_form_zone_hidden = CollaborationInFormZoneHidden.objects.filter(
-                collab__in=old_collaboration_in_form
-            )
-            if old_collaboration_in_form_zone:
-                old_collaboration_in_form_zone.delete()
-            if old_collaboration_in_form_zone_hidden:
-                old_collaboration_in_form_zone_hidden.delete()
-            if old_collaboration_in_form:
-                old_collaboration_in_form.delete()
+            CommonCreateUpdate.delete_old_node_in_form(old_node)
             # out form
-            old_collaboration_out_form = CollaborationOutForm.objects.filter(
-                node__in=old_node
-            )
-            old_collaboration_out_form_employee = CollaborationOutFormEmployee.objects.filter(
-                collab__in=old_collaboration_out_form
-            )
-            old_collaboration_out_form_zone = CollaborationOutFormZone.objects.filter(
-                collab__in=old_collaboration_out_form
-            )
-            old_collaboration_out_form_zone_hidden = CollaborationOutFormZoneHidden.objects.filter(
-                collab__in=old_collaboration_out_form
-            )
-            if old_collaboration_out_form_zone:
-                old_collaboration_out_form_zone.delete()
-            if old_collaboration_out_form_zone_hidden:
-                old_collaboration_out_form_zone_hidden.delete()
-            if old_collaboration_out_form_employee:
-                old_collaboration_out_form_employee.delete()
-            if old_collaboration_out_form:
-                old_collaboration_out_form.delete()
+            CommonCreateUpdate.delete_old_node_out_form(old_node)
             # in workflow
-            old_collab_in_workflow = CollabInWorkflow.objects.filter(
-                node__in=old_node
-            )
-            old_collab_in_workflow_zone = CollabInWorkflowZone.objects.filter(
-                collab__in=old_collab_in_workflow
-            )
-            old_collab_in_workflow_zone_hidden = CollabInWorkflowZoneHidden.objects.filter(
-                collab__in=old_collab_in_workflow
-            )
-            if old_collab_in_workflow_zone:
-                old_collab_in_workflow_zone.delete()
-            if old_collab_in_workflow_zone_hidden:
-                old_collab_in_workflow_zone_hidden.delete()
-            if old_collab_in_workflow:
-                old_collab_in_workflow.delete()
+            CommonCreateUpdate.delete_old_node_in_wf(old_node)
         old_node.delete()
         return True
 
     @classmethod
-    def delete_old_zone(
-            cls,
-            instance
-    ):
+    def delete_old_zone(cls, instance):
         old_zone = Zone.objects.filter(workflow=instance)
         if old_zone:
             old_zone_properties = ZoneProperties.objects.filter(
@@ -283,11 +293,7 @@ class CommonCreateUpdate:
         return True
 
     @classmethod
-    def set_up_data(
-            cls,
-            validated_data,
-            instance=None
-    ):
+    def set_up_data(cls, validated_data, instance=None):
         node_list = None
         zone_list = None
         association_list = None
@@ -338,6 +344,48 @@ class CommonCreateUpdate:
         return True
 
     @classmethod
+    def mapping_zone_node_collab(cls, option, data_dict, zone_created_data, result, result_hidden):
+        if option == 0:
+            collab = data_dict.get('collab_in_form', {})
+            zone_list = collab.get('zone', [])
+            zone_hidden_list = collab.get('zone_hidden', [])
+            cls.mapping_zone_detail(
+                zone_list=zone_list,
+                zone_hidden_list=zone_hidden_list,
+                zone_created_data=zone_created_data,
+                result=result,
+                result_hidden=result_hidden,
+                collab=collab
+            )
+        elif option == 1:
+            collab = data_dict.get('collab_out_form', {})
+            zone_list = collab.get('zone', [])
+            zone_hidden_list = collab.get('zone_hidden', [])
+            cls.mapping_zone_detail(
+                zone_list=zone_list,
+                zone_hidden_list=zone_hidden_list,
+                zone_created_data=zone_created_data,
+                result=result,
+                result_hidden=result_hidden,
+                collab=collab
+            )
+        elif option == 2:
+            collab_list = data_dict.get('collab_in_workflow', [])
+            for collab in collab_list:
+                result = []
+                zone_list = collab.get('zone', [])
+                zone_hidden_list = collab.get('zone_hidden', [])
+                cls.mapping_zone_detail(
+                    zone_list=zone_list,
+                    zone_hidden_list=zone_hidden_list,
+                    zone_created_data=zone_created_data,
+                    result=result,
+                    result_hidden=result_hidden,
+                    collab=collab
+                )
+        return True
+
+    @classmethod
     def mapping_zone(
             cls,
             option,
@@ -368,44 +416,13 @@ class CommonCreateUpdate:
                         result.append(zone_created_data[zone])
                 data_dict.update({'zone': result})
         else:
-            if option == 0:
-                collab = data_dict.get('collab_in_form', {})
-                zone_list = collab.get('zone', [])
-                zone_hidden_list = collab.get('zone_hidden', [])
-                cls.mapping_zone_detail(
-                    zone_list=zone_list,
-                    zone_hidden_list=zone_hidden_list,
-                    zone_created_data=zone_created_data,
-                    result=result,
-                    result_hidden=result_hidden,
-                    collab=collab
-                )
-            elif option == 1:
-                collab = data_dict.get('collab_out_form', {})
-                zone_list = collab.get('zone', [])
-                zone_hidden_list = collab.get('zone_hidden', [])
-                cls.mapping_zone_detail(
-                    zone_list=zone_list,
-                    zone_hidden_list=zone_hidden_list,
-                    zone_created_data=zone_created_data,
-                    result=result,
-                    result_hidden=result_hidden,
-                    collab=collab
-                )
-            elif option == 2:
-                collab_list = data_dict.get('collab_in_workflow', [])
-                for collab in collab_list:
-                    result = []
-                    zone_list = collab.get('zone', [])
-                    zone_hidden_list = collab.get('zone_hidden', [])
-                    cls.mapping_zone_detail(
-                        zone_list=zone_list,
-                        zone_hidden_list=zone_hidden_list,
-                        zone_created_data=zone_created_data,
-                        result=result,
-                        result_hidden=result_hidden,
-                        collab=collab
-                    )
+            CommonCreateUpdate.mapping_zone_node_collab(
+                option=option,
+                data_dict=data_dict,
+                zone_created_data=zone_created_data,
+                result=result,
+                result_hidden=result_hidden
+            )
         return True
 
     @classmethod
