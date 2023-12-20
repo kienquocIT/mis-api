@@ -364,36 +364,44 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def cover_expense_items(cls, instance, order_dict):
+        list_current = [str(item.id) for item in ExpenseItemMapBusinessRequest.objects.filter_current(
+            business_request=instance
+        )]
         list_update = []
         list_create = []
         has_item = []
         for item in order_dict:
-            expense = ExpenseItemMapBusinessRequest(
-                title=item['title'],
-                business_request=instance,
-                expense_item_id=str(item['expense_item']),
-                tax_id=str(item['tax']),
-                uom_txt=item['uom_txt'],
-                quantity=item['quantity'],
-                price=item['price'],
-                subtotal=item['subtotal'],
-                order=item['order'],
-            )
             if 'id' in item and TypeCheck.check_uuid(item['id']):
-                expense.id = item['id']
+                expense = ExpenseItemMapBusinessRequest(
+                    id=item['id'],
+                    title=item['title'],
+                    business_request=instance,
+                    expense_item_id=str(item['expense_item']),
+                    tax_id=str(item['tax']) if 'tax' in item else None,
+                    uom_txt=item['uom_txt'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    subtotal=item['subtotal'],
+                    order=item['order'],
+                )
                 expense.before_save()
                 list_update.append(expense)
                 has_item.append(str(expense.id))
             else:
                 list_create.append(item)
 
-        ExpenseItemMapBusinessRequest.objects.bulk_update(
-            list_update, fields=['title', 'business_request',
-                                 'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
-        )
+        if len(list_update) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_update(
+                list_update, fields=['title', 'business_request',
+                                     'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
+            )
         # delete if expense not in list update
-        ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
-        ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
+        has_item = Counter(list_current) - Counter(has_item)
+        has_item = [element for element, count in has_item]
+        if len(has_item) > 0:
+            ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
+        if len(list_create) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
 
     @classmethod
     def handle_employee_on_trip(cls, instance, emp_list):
@@ -408,22 +416,25 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
         temp = Counter(emp_list) - Counter(temp)
         create_obt = []
         for item in temp:
-            create_obt.append(BusinessRequestEmployeeOnTrip(
-                business_mapped=instance, employee_on_trip_mapped_id=item
-            ))
+            create_obt.append(
+                BusinessRequestEmployeeOnTrip(
+                    business_mapped=instance, employee_on_trip_mapped_id=item
+                )
+            )
         BusinessRequestEmployeeOnTrip.objects.bulk_create(create_obt)
 
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         expense_list = validated_data['expense_items']
         del validated_data['expense_items']
-        emp_list = validated_data['employee_on_trip']
+        emp_list = validated_data['employee_on_trip'] if 'employee_on_trip' in validated_data else []
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         self.cover_expense_items(instance, expense_list)
         handle_attach_file(user, instance, validated_data)
-        self.handle_employee_on_trip(instance, emp_list)
+        if len(emp_list) > 0:
+            self.handle_employee_on_trip(instance, emp_list)
         return instance
 
     class Meta:

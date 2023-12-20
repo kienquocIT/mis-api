@@ -90,7 +90,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'advance_payment_type',
                 'date_created',
                 'return_date',
-                'status',
                 'advance_value',
                 'to_payment',
                 'return_value',
@@ -103,6 +102,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'opportunity_mapped',
                 'expense_items',
                 'opportunity_id',
+                'system_status'
             ],
             check_sum_second=True,
         )
@@ -461,7 +461,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'converted_value_list',
                 'return_value_list',
                 'payment_value',
-                'date_created'
+                'date_created',
+                'system_status'
             ],
             check_sum_second=True,
         )
