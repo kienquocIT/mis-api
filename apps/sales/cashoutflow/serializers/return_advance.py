@@ -93,6 +93,8 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('advance_payment', None):
+            if validate_data['advance_payment'].system_status != 3:
+                raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
             if validate_data['advance_payment'].opportunity_mapped:
                 opp = validate_data['advance_payment'].opportunity_mapped
                 if opp.is_close_lost is True or opp.is_deal_close:
@@ -248,6 +250,8 @@ class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'contact': ReturnAdvanceMsg.ADVANCE_PAYMENT_NOT_EXIST})
 
     def validate(self, validate_data):
+        if validate_data['advance_payment'].system_status != 3:
+            raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
         count_expense = AdvancePaymentCost.objects.filter(
             advance_payment=validate_data['advance_payment'],
         ).count()

@@ -58,6 +58,8 @@ def update_ap_cost(payment_cost_list):
             if ap_item_id and ap_item_value_converted and item.real_value:
                 ap_item = AdvancePaymentCost.objects.filter(id=ap_item_id).first()
                 if ap_item:
+                    if ap_item.advance_payment.system_status != 3:
+                        raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
                     ap_item.sum_converted_value = float(ap_item.sum_converted_value) + float(ap_item_value_converted)
                     ap_item.save()
     return True
