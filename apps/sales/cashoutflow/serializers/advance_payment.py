@@ -466,7 +466,7 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
             'method',
             'return_date',
             'money_gave',
-            'system_status'
+            'system_status',
         )
 
     @classmethod
