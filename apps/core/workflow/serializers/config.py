@@ -5,7 +5,9 @@ from apps.core.workflow.models import (
     Workflow, Node, Zone, Association,
     ZoneProperties, CollaborationInForm, CollaborationInFormZone, CollaborationOutForm,
     CollaborationOutFormEmployee, CollaborationOutFormZone, CollabInWorkflow,
-    CollabInWorkflowZone, InitialNodeZone, WorkflowConfigOfApp, WORKFLOW_CONFIG_MODE,  # pylint: disable-msg=E0611
+    CollabInWorkflowZone, InitialNodeZone, WorkflowConfigOfApp, WORKFLOW_CONFIG_MODE,
+    InitialNodeZoneHidden, CollaborationInFormZoneHidden, CollaborationOutFormZoneHidden,
+    CollabInWorkflowZoneHidden,  # pylint: disable-msg=E0611
 )
 from apps.core.workflow.serializers.config_sub import (
     NodeCreateSerializer, ZoneDetailSerializer,
@@ -22,16 +24,24 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
     def get_workflow_currently(cls, obj):
         if obj.workflow_currently:
             initial_zones = []
+            initial_zones_hidden = []
             for node_zone in InitialNodeZone.objects.filter(
                     node__workflow=obj.workflow_currently
             ).select_related('zone').prefetch_related('zone__properties'):
                 if node_zone.zone:
                     for prop in node_zone.zone.properties.all():
                         initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
+            for node_zone_hidden in InitialNodeZoneHidden.objects.filter(
+                    node__workflow=obj.workflow_currently
+            ).select_related('zone').prefetch_related('zone__properties'):
+                if node_zone_hidden.zone:
+                    for prop in node_zone_hidden.zone.properties.all():
+                        initial_zones_hidden.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
             return {
                 'id': obj.workflow_currently.id,
                 'title': obj.workflow_currently.title,
                 'initial_zones': initial_zones,
+                'initial_zones_hidden': initial_zones_hidden,
             }
         return {}
 
@@ -83,7 +93,7 @@ class WorkflowOfAppUpdateSerializer(serializers.ModelSerializer):
         fields = ('mode', 'workflow_currently')
 
 
-# Workflow
+# Workflow Config
 class WorkflowListSerializer(serializers.ModelSerializer):
     application = serializers.SerializerMethodField()
 
@@ -194,8 +204,13 @@ class CommonCreateUpdate:
             old_initial_node_zone = InitialNodeZone.objects.filter(
                 node__in=old_node
             )
+            old_initial_node_zone_hidden = InitialNodeZoneHidden.objects.filter(
+                node__in=old_node
+            )
             if old_initial_node_zone:
                 old_initial_node_zone.delete()
+            if old_initial_node_zone_hidden:
+                old_initial_node_zone_hidden.delete()
             # in form
             old_collaboration_in_form = CollaborationInForm.objects.filter(
                 node__in=old_node
@@ -203,8 +218,13 @@ class CommonCreateUpdate:
             old_collaboration_in_form_zone = CollaborationInFormZone.objects.filter(
                 collab__in=old_collaboration_in_form
             )
+            old_collaboration_in_form_zone_hidden = CollaborationInFormZoneHidden.objects.filter(
+                collab__in=old_collaboration_in_form
+            )
             if old_collaboration_in_form_zone:
                 old_collaboration_in_form_zone.delete()
+            if old_collaboration_in_form_zone_hidden:
+                old_collaboration_in_form_zone_hidden.delete()
             if old_collaboration_in_form:
                 old_collaboration_in_form.delete()
             # out form
@@ -217,8 +237,13 @@ class CommonCreateUpdate:
             old_collaboration_out_form_zone = CollaborationOutFormZone.objects.filter(
                 collab__in=old_collaboration_out_form
             )
+            old_collaboration_out_form_zone_hidden = CollaborationOutFormZoneHidden.objects.filter(
+                collab__in=old_collaboration_out_form
+            )
             if old_collaboration_out_form_zone:
                 old_collaboration_out_form_zone.delete()
+            if old_collaboration_out_form_zone_hidden:
+                old_collaboration_out_form_zone_hidden.delete()
             if old_collaboration_out_form_employee:
                 old_collaboration_out_form_employee.delete()
             if old_collaboration_out_form:
@@ -230,8 +255,13 @@ class CommonCreateUpdate:
             old_collab_in_workflow_zone = CollabInWorkflowZone.objects.filter(
                 collab__in=old_collab_in_workflow
             )
+            old_collab_in_workflow_zone_hidden = CollabInWorkflowZoneHidden.objects.filter(
+                collab__in=old_collab_in_workflow
+            )
             if old_collab_in_workflow_zone:
                 old_collab_in_workflow_zone.delete()
+            if old_collab_in_workflow_zone_hidden:
+                old_collab_in_workflow_zone_hidden.delete()
             if old_collab_in_workflow:
                 old_collab_in_workflow.delete()
         old_node.delete()
@@ -291,14 +321,20 @@ class CommonCreateUpdate:
     def mapping_zone_detail(
             cls,
             zone_list,
+            zone_hidden_list,
             zone_created_data,
             result,
+            result_hidden,
             collab
     ):
         for zone in zone_list:
             if zone in zone_created_data:
                 result.append(zone_created_data[zone])
         collab.update({'zone': result})
+        for zone_hidden in zone_hidden_list:
+            if zone_hidden in zone_created_data:
+                result_hidden.append(zone_created_data[zone_hidden])
+        collab.update({'zone_hidden': result_hidden})
         return True
 
     @classmethod
@@ -311,12 +347,18 @@ class CommonCreateUpdate:
             is_in_workflow=False
     ):
         result = []
+        result_hidden = []
         if is_initial:
             zone_list = data_dict.get('zone_initial_node', [])
             for zone in zone_list:
                 if zone in zone_created_data:
                     result.append(zone_created_data[zone])
             data_dict.update({'zone_initial_node': result})
+            zone_hidden_list = data_dict.get('zone_hidden_initial_node', [])
+            for zone_hidden in zone_hidden_list:
+                if zone_hidden in zone_created_data:
+                    result_hidden.append(zone_created_data[zone_hidden])
+            data_dict.update({'zone_hidden_initial_node': result_hidden})
         elif is_in_workflow:
             if 'collaborator_zone' in data_dict:
                 zone_list = data_dict['collaborator_zone']
@@ -329,19 +371,25 @@ class CommonCreateUpdate:
             if option == 0:
                 collab = data_dict.get('collab_in_form', {})
                 zone_list = collab.get('zone', [])
+                zone_hidden_list = collab.get('zone_hidden', [])
                 cls.mapping_zone_detail(
                     zone_list=zone_list,
+                    zone_hidden_list=zone_hidden_list,
                     zone_created_data=zone_created_data,
                     result=result,
+                    result_hidden=result_hidden,
                     collab=collab
                 )
             elif option == 1:
                 collab = data_dict.get('collab_out_form', {})
                 zone_list = collab.get('zone', [])
+                zone_hidden_list = collab.get('zone_hidden', [])
                 cls.mapping_zone_detail(
                     zone_list=zone_list,
+                    zone_hidden_list=zone_hidden_list,
                     zone_created_data=zone_created_data,
                     result=result,
+                    result_hidden=result_hidden,
                     collab=collab
                 )
             elif option == 2:
@@ -349,10 +397,13 @@ class CommonCreateUpdate:
                 for collab in collab_list:
                     result = []
                     zone_list = collab.get('zone', [])
+                    zone_hidden_list = collab.get('zone_hidden', [])
                     cls.mapping_zone_detail(
                         zone_list=zone_list,
+                        zone_hidden_list=zone_hidden_list,
                         zone_created_data=zone_created_data,
                         result=result,
+                        result_hidden=result_hidden,
                         collab=collab
                     )
         return True
@@ -440,7 +491,8 @@ class CommonCreateUpdate:
     def create_models_support_initial_node(
             cls,
             node_create,
-            zone_data_list
+            zone_data_list,
+            zone_hidden_data_list,
     ):
         InitialNodeZone.objects.bulk_create(
             [
@@ -449,6 +501,15 @@ class CommonCreateUpdate:
                     zone_id=zone.get('id', None)
                 )
                 for zone in zone_data_list
+            ]
+        )
+        InitialNodeZoneHidden.objects.bulk_create(
+            [
+                InitialNodeZoneHidden(
+                    node=node_create,
+                    zone_id=zone.get('id', None)
+                )
+                for zone in zone_hidden_data_list
             ]
         )
         return True
@@ -468,6 +529,12 @@ class CommonCreateUpdate:
                 [
                     CollaborationInFormZone(collab=collab_in_forms, zone_id=zone.get('id', None))
                     for zone in collab_in_form.get('zone', [])
+                ]
+            )
+            CollaborationInFormZoneHidden.objects.bulk_create(
+                [
+                    CollaborationInFormZoneHidden(collab=collab_in_forms, zone_id=zone.get('id', None))
+                    for zone in collab_in_form.get('zone_hidden', [])
                 ]
             )
         return True
@@ -494,6 +561,12 @@ class CommonCreateUpdate:
                     for zone in collab_out_form.get('zone', [])
                 ]
             )
+            CollaborationOutFormZoneHidden.objects.bulk_create(
+                [
+                    CollaborationOutFormZoneHidden(collab=collab_out_forms, zone_id=zone.get('id', None))
+                    for zone in collab_out_form.get('zone_hidden', [])
+                ]
+            )
         return True
 
     @classmethod
@@ -516,6 +589,12 @@ class CommonCreateUpdate:
                         for zone in data_in_workflow.get('zone', [])
                     ]
                 )
+                CollabInWorkflowZoneHidden.objects.bulk_create(
+                    [
+                        CollabInWorkflowZoneHidden(collab=collab_in_workflows, zone_id=zone.get('id', None))
+                        for zone in data_in_workflow.get('zone_hidden', [])
+                    ]
+                )
         return True
 
     @classmethod
@@ -535,9 +614,11 @@ class CommonCreateUpdate:
             node_created_data.update({node['order']: node_create})
             if node.get('is_system') is True and node.get('code_node_system') == 'initial':
                 zone_data_list = node.get('zone_initial_node')
+                zone_hidden_data_list = node.get('zone_hidden_initial_node')
                 cls.create_models_support_initial_node(
                     node_create=node_create,
-                    zone_data_list=zone_data_list
+                    zone_data_list=zone_data_list,
+                    zone_hidden_data_list=zone_hidden_data_list,
                 )
             elif node.get('is_system') is False:
                 option = node.get('option_collaborator')

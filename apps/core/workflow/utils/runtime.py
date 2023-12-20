@@ -400,10 +400,14 @@ class RuntimeStageHandler:
         collab_in_wf = {}
         for collab in CollabInWorkflow.objects.filter(node=node):
             zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
+            zone_hidden_and_properties = cls.__get_zone_and_properties(collab.zone_hidden.all())
             assignee_id = WFSupportFunctionsHandler.get_assignee_node_in_wf(
                 collab=collab, doc_employee_inherit=doc_employee_inherit
             )
-            collab_in_wf[str(assignee_id)] = zone_and_properties
+            collab_in_wf[str(assignee_id)] = {
+                'zone_edit': zone_and_properties,
+                'zone_hidden': zone_hidden_and_properties,
+            }
         return collab_in_wf
 
     @classmethod
@@ -419,7 +423,10 @@ class RuntimeStageHandler:
         state_system, code_system = WFConfigSupport.check_stage_is_system(node)
         if state_system and code_system == WFConfigSupport.code_node_initial and employee_creator_id:
             return {
-                str(employee_creator_id): cls.__get_zone_and_properties(node.zones_initial_node.all())
+                str(employee_creator_id): {
+                    'zone_edit': cls.__get_zone_and_properties(node.zones_initial_node.all()),
+                    'zone_hidden': cls.__get_zone_and_properties(node.zones_hidden_initial_node.all()),
+                }
             }
         try:
             collab_opt = node.option_collaborator
@@ -433,13 +440,18 @@ class RuntimeStageHandler:
                     if not employee_id:
                         raise ValueError('Get employee from IN FORM return None')
                     return {
-                        str(employee_id): cls.__get_zone_and_properties(in_form_obj.zone.all())
+                        str(employee_id): {
+                            'zone_edit': cls.__get_zone_and_properties(in_form_obj.zone.all()),
+                            'zone_hidden': cls.__get_zone_and_properties(in_form_obj.zone_hidden.all()),
+                        }
                     }
                 case 1:
                     out_form_obj = CollaborationOutForm.objects.get(node=node)
                     zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
+                    zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
                     return {
-                        str(_id): zones for _id in out_form_obj.employees.all().values_list('id', flat=True)
+                        str(_id): {'zone_edit': zones, 'zone_hidden': zones_hidden}
+                        for _id in out_form_obj.employees.all().values_list('id', flat=True)
                     }
                 case 2:
                     return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
@@ -461,6 +473,7 @@ class RuntimeStageHandler:
                 )
                 # convert assignee and zone to simple data
                 employee_ids_zones = {}
+                employee_ids_zones_hidden = {}
                 objs = []
                 log_objs = []
                 objs_created = []
@@ -468,7 +481,8 @@ class RuntimeStageHandler:
                     obj_assignee = RuntimeAssignee(
                         stage=stage_obj,
                         employee_id=emp_id,
-                        zone_and_properties=zone_and_properties,
+                        zone_and_properties=zone_and_properties.get('zone_edit', []),
+                        zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
                     )
                     obj_assignee.before_save(force_insert=True)
                     objs.append(obj_assignee)
@@ -476,7 +490,8 @@ class RuntimeStageHandler:
                     obj_created = RuntimeAssignee.objects.create(
                         stage=stage_obj,
                         employee_id=emp_id,
-                        zone_and_properties=zone_and_properties,
+                        zone_and_properties=zone_and_properties.get('zone_edit', []),
+                        zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
                     )
                     objs_created.append(obj_created)
                     # create instance log
@@ -493,7 +508,8 @@ class RuntimeStageHandler:
                     # add to list for call bulk create
                     log_objs.append(log_obj_tmp)
                     # push employee to stages.assignees
-                    employee_ids_zones.update({emp_id: zone_and_properties})
+                    employee_ids_zones.update({emp_id: zone_and_properties.get('zone_edit', [])})
+                    employee_ids_zones_hidden.update({emp_id: zone_and_properties.get('zone_hidden', [])})
                 # create runtime assignee
                 # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
@@ -503,7 +519,8 @@ class RuntimeStageHandler:
                 )
                 # update assignee and zone to Stage
                 stage_obj.assignee_and_zone_data = employee_ids_zones
-                stage_obj.save(update_fields=['assignee_and_zone_data'])
+                stage_obj.assignee_and_zone_hidden_data = employee_ids_zones_hidden
+                stage_obj.save(update_fields=['assignee_and_zone_data', 'assignee_and_zone_hidden_data'])
                 # create log
                 RuntimeLogHandler.perform_create(log_objs)
                 return objs_created

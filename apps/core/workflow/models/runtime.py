@@ -357,6 +357,13 @@ class RuntimeStage(SimpleAbstractModel):
             {'employee_id': [{"id": "", "title": "", "remark": "", "properties": ['application_property_id']}]}
         )
     )
+    assignee_and_zone_hidden_data = models.JSONField(
+        default=dict,
+        verbose_name='Summary assignee and zone hidden data',
+        help_text=json.dumps(
+            {'employee_id': [{"id": "", "title": "", "remark": "", "properties": ['application_property_id']}]}
+        )
+    )
 
     # utils
     order = models.IntegerField(
@@ -468,7 +475,14 @@ class RuntimeAssignee(SimpleAbstractModel):
         related_name='all_runtime_assignee_of_employee',
         verbose_name='Employee selected',
     )
-    zone_and_properties = models.JSONField(
+    zone_and_properties = models.JSONField(  # zones editable
+        default=dict,
+        verbose_name='Zone detail and Properties ID of Zone | collect from Zone() and ApplicationProperties()',
+        help_text=json.dumps(
+            [{"id": "", "title": "", "remark": "", "properties": ['application_property_id']}]
+        ),
+    )
+    zone_hidden_and_properties = models.JSONField(  # zones hidden
         default=dict,
         verbose_name='Zone detail and Properties ID of Zone | collect from Zone() and ApplicationProperties()',
         help_text=json.dumps(

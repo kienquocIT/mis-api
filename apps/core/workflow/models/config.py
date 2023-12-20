@@ -233,6 +233,18 @@ class Node(MasterDataAbstractModel):
         default=list,
         help_text="list zones of initial node"
     )
+    zones_hidden_initial_node = models.ManyToManyField(
+        Zone,
+        through='InitialNodeZoneHidden',
+        symmetrical=False,
+        related_name='initial_node_map_zones_hidden',
+    )
+    # ['zoneID1', 'zoneID2', ....]
+    zone_hidden_initial_node = models.JSONField(
+        verbose_name="init zone hidden",
+        default=list,
+        help_text="list zones hidden of initial node"
+    )
 
     order = models.IntegerField(
         null=True
@@ -342,15 +354,36 @@ class InitialNodeZone(SimpleAbstractModel):
     node = models.ForeignKey(
         Node,
         on_delete=models.CASCADE,
+        related_name='init_node_zone_node'
     )
     zone = models.ForeignKey(
         Zone,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='init_node_zone_zone'
     )
 
     class Meta:
         verbose_name = 'Initial Node Zone'
         verbose_name_plural = 'Initial Node Zones'
+        default_permissions = ()
+        permissions = ()
+
+
+class InitialNodeZoneHidden(SimpleAbstractModel):
+    node = models.ForeignKey(
+        Node,
+        on_delete=models.CASCADE,
+        related_name='init_node_zone_hidden_node'
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE,
+        related_name='init_node_zone_hidden_zone'
+    )
+
+    class Meta:
+        verbose_name = 'Initial Node Zone Hidden'
+        verbose_name_plural = 'Initial Node Zones Hidden'
         default_permissions = ()
         permissions = ()
 
@@ -371,6 +404,12 @@ class CollaborationInForm(MasterDataAbstractModel):
         symmetrical=False,
         related_name='collab_in_forms_map_zones'
     )
+    zone_hidden = models.ManyToManyField(
+        Zone,
+        through='CollaborationInFormZoneHidden',
+        symmetrical=False,
+        related_name='collab_in_forms_map_zones_hidden'
+    )
 
     class Meta:
         verbose_name = 'Collab in form'
@@ -383,16 +422,38 @@ class CollaborationInForm(MasterDataAbstractModel):
 class CollaborationInFormZone(SimpleAbstractModel):
     collab = models.ForeignKey(
         CollaborationInForm,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_form_zone_collab'
     )
     zone = models.ForeignKey(
         Zone,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_form_zone_zone'
     )
 
     class Meta:
         verbose_name = 'Collab in form zone'
         verbose_name_plural = 'Collab in form zones'
+        default_permissions = ()
+        permissions = ()
+
+
+class CollaborationInFormZoneHidden(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollaborationInForm,
+        on_delete=models.CASCADE,
+        related_name='in_form_zone_hidden_collab'
+
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE,
+        related_name='in_form_zone_hidden_zone'
+    )
+
+    class Meta:
+        verbose_name = 'Collab in form zone hidden'
+        verbose_name_plural = 'Collab in form zones hidden'
         default_permissions = ()
         permissions = ()
 
@@ -412,6 +473,11 @@ class CollaborationOutForm(MasterDataAbstractModel):
         Zone,
         through='CollaborationOutFormZone',
         related_name='collab_out_forms_map_zones'
+    )
+    zone_hidden = models.ManyToManyField(
+        Zone,
+        through='CollaborationOutFormZoneHidden',
+        related_name='collab_out_forms_map_zones_hidden'
     )
 
     class Meta:
@@ -442,16 +508,37 @@ class CollaborationOutFormEmployee(SimpleAbstractModel):
 class CollaborationOutFormZone(SimpleAbstractModel):
     collab = models.ForeignKey(
         CollaborationOutForm,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='out_form_zone_collab'
     )
     zone = models.ForeignKey(
         Zone,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='out_form_zone_zone'
     )
 
     class Meta:
         verbose_name = 'Collab out form zone'
         verbose_name_plural = 'Collab out form zones'
+        default_permissions = ()
+        permissions = ()
+
+
+class CollaborationOutFormZoneHidden(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollaborationOutForm,
+        on_delete=models.CASCADE,
+        related_name='out_form_zone_hidden_collab'
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE,
+        related_name='out_form_zone_hidden_zone'
+    )
+
+    class Meta:
+        verbose_name = 'Collab out form zone hidden'
+        verbose_name_plural = 'Collab out form zones hidden'
         default_permissions = ()
         permissions = ()
 
@@ -485,6 +572,11 @@ class CollabInWorkflow(MasterDataAbstractModel):
         through='CollabInWorkflowZone',
         related_name='collab_in_workflows_map_zones'
     )
+    zone_hidden = models.ManyToManyField(
+        Zone,
+        through='CollabInWorkflowZoneHidden',
+        related_name='collab_in_workflows_map_zones_hidden'
+    )
 
     class Meta:
         verbose_name = 'Collab in workflow'
@@ -497,15 +589,36 @@ class CollabInWorkflow(MasterDataAbstractModel):
 class CollabInWorkflowZone(SimpleAbstractModel):
     collab = models.ForeignKey(
         CollabInWorkflow,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_wf_zone_collab'
     )
     zone = models.ForeignKey(
         Zone,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='in_wf_zone_zone'
     )
 
     class Meta:
         verbose_name = 'Collab in workflow zone'
         verbose_name_plural = 'Collab in workflow zones'
+        default_permissions = ()
+        permissions = ()
+
+
+class CollabInWorkflowZoneHidden(SimpleAbstractModel):
+    collab = models.ForeignKey(
+        CollabInWorkflow,
+        on_delete=models.CASCADE,
+        related_name='in_wf_zone_hidden_collab'
+    )
+    zone = models.ForeignKey(
+        Zone,
+        on_delete=models.CASCADE,
+        related_name='in_wf_zone_hidden_zone'
+    )
+
+    class Meta:
+        verbose_name = 'Collab in workflow zone hidden'
+        verbose_name_plural = 'Collab in workflow zones hidden'
         default_permissions = ()
         permissions = ()

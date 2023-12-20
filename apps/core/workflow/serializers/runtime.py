@@ -250,6 +250,7 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                         'id': stage_assignee_obj.id,
                         'actions': obj.stage_currents.actions,
                         'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
+                        'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
                     }
         return {}
 

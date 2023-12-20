@@ -234,7 +234,7 @@ AppProp_SaleData_Quotation_data = {
     'd59eea03-2eb8-4d1a-ac9d-dc3993545b67': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Opportunity',
-        'code': 'opportunity',
+        'code': 'opportunity_id',
         'type': 5,
         'content_type': 'opportunity.Opportunity',
     },
@@ -255,7 +255,7 @@ AppProp_SaleData_Quotation_data = {
     '37891f62-57f9-436e-9f93-caa1b6556590': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
         'title': 'Sale person',
-        'code': 'sale_person',
+        'code': 'employee_inherit_id',
         'type': 5,
         'content_type': 'hr.Employee',
     },
@@ -806,7 +806,7 @@ AppProp_SaleData_SaleOrder_data = {
     '031519a6-3c40-4eb2-845a-32f869a2e903': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Opportunity',
-        'code': 'opportunity',
+        'code': 'opportunity_id',
         'type': 5,
         'content_type': 'opportunity.Opportunity',
     },
@@ -827,7 +827,7 @@ AppProp_SaleData_SaleOrder_data = {
     'fa8df51a-fb69-4887-9de4-e5e3c933d3b5': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
         'title': 'Sale person',
-        'code': 'sale_person',
+        'code': 'employee_inherit_id',
         'type': 5,
         'content_type': 'hr.Employee',
     },
