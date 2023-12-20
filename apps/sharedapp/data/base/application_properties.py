@@ -1246,6 +1246,12 @@ AppProp_SaleData_Advance_Payment_data = {
         "type": 5,
         'content_type': 'saledata.Tax',
     },
+    "9e7f4f88-2ae1-4f9d-a512-ef8e4c7b99a1": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Money gave",
+        "code": "money_gave",
+        "type": 3,
+    },
 }
 
 AppProp_SaleData_Payment_data = {
