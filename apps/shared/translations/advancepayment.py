@@ -10,3 +10,4 @@ class AdvancePaymentMsg:
     SUPPLIER_IS_NOT_NULL = _('Supplier employee is not null.')
     EMPLOYEE_IS_NOT_NULL = _('Payment employee is not null.')
     ROW_ERROR = _('Sum value != Real value + Converted value.')
+    CONVERT_ERROR = _('Converted value must <= Available value.')

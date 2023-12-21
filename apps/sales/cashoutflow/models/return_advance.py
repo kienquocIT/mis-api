@@ -2,7 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RETURN_ADVANCE_STATUS
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 from .advance_payment import AdvancePaymentCost
 
 
@@ -19,7 +19,6 @@ class ReturnAdvance(DataAbstractModel):
         'cashoutflow.AdvancePayment',
         on_delete=models.CASCADE,
         related_name='return_advance_payment'
-
     )
     method = models.SmallIntegerField(
         choices=RETURN_ADVANCE_METHOD,
@@ -27,14 +26,7 @@ class ReturnAdvance(DataAbstractModel):
         help_text='0 is Cash, 1 is Bank Transfer',
         default=0
     )
-    status = models.SmallIntegerField(
-        choices=RETURN_ADVANCE_STATUS,
-        verbose_name='status of Return Advance',
-        default=0
-    )
-    return_total = models.FloatField(
-        default=0
-    )
+    return_total = models.FloatField(default=0)
     money_received = models.BooleanField(default=False)
 
     class Meta:
@@ -44,14 +36,32 @@ class ReturnAdvance(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def update_advance_payment_cost(cls, instance):
+        instance.money_received = True
+        instance.save(update_fields=['money_received'])
+        for item in instance.return_advance.all():
+            item.advance_payment_cost.sum_return_value += item.return_value
+            item.advance_payment_cost.save(update_fields=['sum_return_value'])
+        return True
+
     def save(self, *args, **kwargs):
-        if not self.code:
-            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=8)
-            if code_generated:
-                self.code = code_generated
-            else:
-                records = ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
-                self.code = 'RP.00' + str(records.count() + 1)
+        if self.system_status in [2, 3]:
+            if not self.code:
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=8)
+                if code_generated:
+                    self.code = code_generated
+                else:
+                    records = ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                    self.code = 'RP.00' + str(records.count() + 1)
+
+                if 'update_fields' in kwargs:
+                    if isinstance(kwargs['update_fields'], list):
+                        kwargs['update_fields'].append('code')
+                else:
+                    kwargs.update({'update_fields': ['code']})
+                self.update_advance_payment_cost(self)
+
         super().save(*args, **kwargs)
 
 

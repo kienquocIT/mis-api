@@ -76,6 +76,12 @@ class AdvancePayment(DataAbstractModel):
         default_permissions = ()
         permissions = ()
 
+    @classmethod
+    def update_money_gave(cls, instance):
+        instance.money_gave = True
+        instance.save(update_fields=['money_gave'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -93,6 +99,7 @@ class AdvancePayment(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
+                self.update_money_gave(self)
 
         super().save(*args, **kwargs)
 

@@ -1,10 +1,12 @@
 from django.db import models
 from django.utils import timezone
+from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.sales.cashoutflow.models import AdvancePaymentCost
+from apps.shared import DataAbstractModel, SimpleAbstractModel, AdvancePaymentMsg
 
 __all__ = [
     'Payment',
@@ -114,6 +116,30 @@ class Payment(DataAbstractModel):
             )
         return True
 
+    @classmethod
+    def convert_ap_cost(cls, instance):
+        payment_cost_list = instance.payment.all()
+        ap_item_valid = []
+        ap_item_value_converted_valid = []
+        for item in payment_cost_list:
+            for child in item.ap_cost_converted_list:
+                ap_item_id = child.get('ap_cost_converted_id', None)
+                ap_item_value_converted = child.get('value_converted', None)
+                if ap_item_id and ap_item_value_converted:
+                    ap_item = AdvancePaymentCost.objects.filter(id=ap_item_id).first()
+                    if ap_item:
+                        available = (ap_item.expense_after_tax_price + ap_item.sum_return_value -
+                                     ap_item.sum_converted_value)
+                        if available >= ap_item_value_converted:
+                            ap_item_valid.append(ap_item)
+                            ap_item_value_converted_valid.append(ap_item_value_converted)
+                        else:
+                            raise serializers.ValidationError({'Converted error': AdvancePaymentMsg.CONVERT_ERROR})
+        for i in range(len(ap_item_valid)):
+            ap_item_valid[i].sum_converted_value += float(ap_item_value_converted_valid[i])
+            ap_item_valid[i].save(update_fields=['sum_converted_value'])
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -130,6 +156,7 @@ class Payment(DataAbstractModel):
                 else:
                     kwargs.update({'update_fields': ['code']})
                 self.create_final_acceptance(self)
+                self.convert_ap_cost(self)
 
         super().save(*args, **kwargs)
 

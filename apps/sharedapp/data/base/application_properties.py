@@ -1264,6 +1264,34 @@ AppProp_SaleData_Payment_data = {
     },
 }
 
+AppProp_SaleData_Return_Payment_data = {
+    "192965a3-95ca-47a7-9247-58e1cbf652d4": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "c5c05715-bf9d-4c08-9b6b-4cfa649bf806": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Return payment method",
+        "code": "method",
+        "type": 6,
+    },
+    # tab line detail
+    "6ae7e6cc-d3ff-417f-8407-eee143078889": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Tab detail",
+        "code": "cost",
+        "type": 1,
+    },
+    "0db6a091-3f1a-4948-bcc9-716287ab9427": {
+        "application_id": "65d36757-557e-4534-87ea-5579709457d7",
+        "title": "Money received",
+        "code": "money_received",
+        "type": 3,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
@@ -1274,4 +1302,5 @@ ApplicationProperty_data = {
     **AppProp_Eoffice_Business_trip_data,
     **AppProp_SaleData_Advance_Payment_data,
     **AppProp_SaleData_Payment_data,
+    **AppProp_SaleData_Return_Payment_data,
 }
