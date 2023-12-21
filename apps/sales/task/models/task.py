@@ -1,5 +1,4 @@
 import json
-import uuid
 
 from django.db import models
 from django.utils import timezone
@@ -197,7 +196,6 @@ class TaskAttachmentFile(MasterDataAbstractModel):
     order = models.SmallIntegerField(
         default=1
     )
-    media_file = models.UUIDField(unique=True, default=uuid.uuid4)
 
     class Meta:
         verbose_name = 'Opportunity Attachment Task'

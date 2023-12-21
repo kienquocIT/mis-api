@@ -1,13 +1,18 @@
+__all__ = [
+    'BusinessRequestListSerializer', 'BusinessRequestCreateSerializer', 'BusinessRequestDetailSerializer',
+    'BusinessRequestUpdateSerializer',
+]
+
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.eoffice.businesstrip.models import ExpenseItemMapBusinessRequest, BusinessRequest, \
-    BusinessRequestAttachmentFile
-
-__all__ = ['BusinessRequestListSerializer', 'BusinessRequestCreateSerializer', 'BusinessRequestDetailSerializer',
-           'BusinessRequestUpdateSerializer']
+from apps.eoffice.businesstrip.models import (
+    ExpenseItemMapBusinessRequest, BusinessRequest,
+    BusinessRequestAttachmentFile,
+)
 
 from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
 from apps.shared.translations.base import AttachmentMsg, BaseMsg
@@ -15,46 +20,46 @@ from apps.shared.translations.eoffices import BusinessMsg
 
 
 def handle_attach_file(user, instance, validate_data):
-    if 'attachment' in validate_data and validate_data['attachment']:
-        type_check = True
-        if isinstance(validate_data['attachment'], list):
-            type_check = TypeCheck.check_uuid_list(validate_data['attachment'])
-        elif isinstance(validate_data['attachment'], str):
-            type_check = TypeCheck.check_uuid(validate_data['attachment'])
-        if not type_check:
-            return True
+    attachment = validate_data.get('attachment', None)
+    if attachment and TypeCheck.check_uuid_list(attachment):
+        # app object
         relate_app = Application.objects.get(id="87ce1662-ca9d-403f-a32e-9553714ebc6d")
-        relate_app_code = 'businesstrip'
-        business_request_id = str(instance.id)
-        if not user.employee_current:
-            raise serializers.ValidationError(
-                {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
-            )
-        is_check, attach_check = Files.check_media_file(
-            media_file_id=validate_data['attachment'],
-            media_user_id=str(user.employee_current.media_user_id)
-        )
-        if is_check:
-            # tạo file
-            files_id = Files.regis_media_file(
-                relate_app, business_request_id, relate_app_code, user, media_result=attach_check
+
+        # person object
+        employee_id = getattr(user, 'employee_current_id', None)
+        if not employee_id:
+            raise serializers.ValidationError({'User': BaseMsg.USER_NOT_MAP_EMPLOYEE})
+
+        # check files. after handle link
+        state, att_check = Files.check_media_file(file_ids=attachment, employee_id=employee_id, doc_id=instance.id)
+        if state is True:
+            # register file
+            files_objs = Files.regis_media_file(
+                relate_app=relate_app, relate_doc_id=instance.id, file_objs=att_check,
             )
 
-            # tạo phiếu attachment
-            BusinessRequestAttachmentFile.objects.create(
-                business_request=instance,
-                files=files_id,
-                media_file=validate_data['attachment']
-            )
+            # destroy old linked att.
+            att_old_linked = BusinessRequestAttachmentFile.objects.filter(business_request=instance)
+            if att_old_linked:
+                att_old_linked.delete()
+
+            # create attachment linked to business request document.
+            business_file_objs = []
+            for counter, file_obj in enumerate(files_objs):
+                business_file_objs.append(
+                    BusinessRequestAttachmentFile(
+                        business_request=instance,
+                        attachment=file_obj,
+                        order=counter + 1,
+                        date_created=getattr(file_obj, 'date_created', timezone.now()),
+                    )
+                )
+            BusinessRequestAttachmentFile.objects.bulk_create(business_file_objs)
+
             instance.attachment = validate_data['attachment']
             instance.save(update_fields=['attachment'])
             return validate_data
-
-        raise serializers.ValidationError(
-            {
-                'attachment': AttachmentMsg.ERROR_VERIFY
-            }
-        )
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
 
 
@@ -236,29 +241,8 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_attachment(cls, obj):
         if obj.attachment:
-            attach = BusinessRequestAttachmentFile.objects.filter(
-                delivery_sub=obj,
-                media_file=obj.attachment
-            )
-            if attach.exists():
-                attachments = []
-                for item in attach:
-                    files = item.files
-                    attachments.append(
-                        {
-                            'files': {
-                                "id": str(files.id),
-                                "relate_app_id": str(files.relate_app_id),
-                                "relate_app_code": files.relate_app_code,
-                                "relate_doc_id": str(files.relate_doc_id),
-                                "media_file_id": str(files.media_file_id),
-                                "file_name": files.file_name,
-                                "file_size": int(files.file_size),
-                                "file_type": files.file_type
-                            }
-                        }
-                    )
-                return attachments
+            att_objs = BusinessRequestAttachmentFile.objects.select_related('attachment').filter(business_request=obj)
+            return [item.attachment.get_detail() for item in att_objs]
         return []
 
     @classmethod

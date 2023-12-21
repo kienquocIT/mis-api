@@ -1,6 +1,7 @@
 import json
 
 from django.db import models
+from django.utils.text import slugify
 from jsonfield import JSONField
 
 from apps.shared import SimpleAbstractModel, INDICATOR_PARAM_TYPE, PERMISSION_OPTION_RANGE
@@ -405,6 +406,21 @@ class City(SimpleAbstractModel):
         verbose_name='Zip Code/Postal Code',
         max_length=15
     )
+    short_search = models.CharField(blank=True, max_length=10)
+
+    def resolve_short_search(self):
+        if not self.short_search:
+            short_txt = ''
+            for item in slugify(self.title).split("-"):
+                if item:
+                    short_txt += item[0]
+            if len(short_txt) > 10:
+                short_txt = short_txt[:10]
+            self.short_search = short_txt
+
+    def save(self, *args, **kwargs):
+        self.resolve_short_search()
+        super().save(*args, **kwargs)
 
     class Meta:
         default_permissions = ()

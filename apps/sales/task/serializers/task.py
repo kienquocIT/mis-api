@@ -21,51 +21,43 @@ __all__ = ['OpportunityTaskListSerializer', 'OpportunityTaskCreateSerializer', '
 
 
 def handle_attachment(user, instance, attachments, create_method):
-    # attachments: list -> danh sách id từ cloud trả về, tạm thời chi có 1 nên lấy [0]
-    relate_app = Application.objects.get(id="e66cfb5a-b3ce-4694-a4da-47618f53de4c")
-    relate_app_code = 'task'
-    instance_id = str(instance.id)  # noqa
-    attachment = attachments[0] if attachments else None
-    # check file trong API
-    current_attach = TaskAttachmentFile.objects.filter(task=instance)
+    if attachments:
+        relate_app = Application.objects.get(id="e66cfb5a-b3ce-4694-a4da-47618f53de4c")
 
-    # kiểm tra current attach trùng media_id với attachments gửi lên
-    if current_attach.exists():
-        attach = current_attach.first()
-        if not str(attach.media_file) == attachment:
-            # this case update new file
+        # destroy current attachment
+        current_attach = TaskAttachmentFile.objects.filter(task=instance)
+        if current_attach:
             current_attach.delete()
-        else:
-            # current and update file are the same or attachments is empty
+
+        employee_id = getattr(user, 'employee_current_id', None)
+        if not employee_id:
+            raise serializers.ValidationError({'User': BaseMsg.USER_NOT_MAP_EMPLOYEE})
+
+        # check files
+        state, att_objs = Files.check_media_file(file_ids=attachments, employee_id=employee_id, doc_id=instance.id)
+        if state:
+            # regis file
+            file_objs = Files.regis_media_file(
+                relate_app=relate_app, relate_doc_id=instance.id, file_objs=att_objs,
+            )
+
+            # create m2m
+            m2m_obj = []
+            for counter, obj in enumerate(file_objs):
+                m2m_obj.append(
+                    TaskAttachmentFile(
+                        task=instance,
+                        attachment=obj,
+                        order=counter+1,
+                    )
+                )
+            TaskAttachmentFile.objects.bulk_create(m2m_obj)
+
+            instance.attach = attachments
+            if create_method:
+                instance.save(update_fields=['attach'])
             return True
-
-    if not user.employee_current:
-        raise serializers.ValidationError(
-            {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
-        )
-    # check file trên cloud
-    if not attachment:
-        return False
-    is_check, attach_check = Files.check_media_file(
-        media_file_id=attachment,
-        media_user_id=str(user.employee_current.media_user_id)
-    )
-    if not is_check:
         raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
-
-    # step 1: tạo mới file trong File API
-    files = Files.regis_media_file(
-        relate_app, instance_id, relate_app_code, user, media_result=attach_check
-    )
-    # step 2: tạo mới file trong table M2M
-    TaskAttachmentFile.objects.create(
-        task=instance,
-        attachment=files,
-        media_file=attachment
-    )
-    instance.attach = attachments
-    if create_method:
-        instance.save(update_fields=['attach'])
     return True
 
 

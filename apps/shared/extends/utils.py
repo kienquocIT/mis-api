@@ -183,3 +183,24 @@ class FORMATTING:
             if isinstance(value_str, str):
                 return datetime.strptime(value_str, cls.DATE)
         return None
+
+    @classmethod
+    def bytes_to_large(cls, value, ext_code, stop_code='TB') -> (int, str):
+        def upgrade_code():
+            if ext_code == 'B':
+                return 'KB'
+            if ext_code == 'KB':
+                return 'MB'
+            if ext_code == 'MB':
+                return 'GB'
+            return 'TB'
+
+        if value < 1024 or value == 'TB' or ext_code == stop_code:
+            return value, ext_code
+
+        return cls.bytes_to_large(value / 1024, upgrade_code())
+
+    @classmethod
+    def size_to_text(cls, value, ext_code='B', rounded=2) -> str:
+        data = cls.bytes_to_large(value=value, ext_code=ext_code)
+        return f'{round(data[0], rounded)} {data[1]}'

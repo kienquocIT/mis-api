@@ -1,6 +1,7 @@
 import json
 
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
@@ -646,11 +647,14 @@ class OrderDeliveryAttachment(SimpleAbstractModel):
         help_text='Delivery sub had one/many attachment file',
         related_name='order_delivery_attachment_files',
     )
-    media_file = models.UUIDField(unique=True)
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
 
     class Meta:
         verbose_name = 'Order Delivery Attachment'
         verbose_name_plural = 'Order Delivery Attachment'
-        # ordering = ('-date_created',)
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
