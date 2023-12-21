@@ -1,6 +1,5 @@
 from django.db import models
 from django.utils import timezone
-from rest_framework import serializers
 from django.utils.translation import gettext_lazy as _
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
@@ -133,7 +132,7 @@ class Payment(DataAbstractModel):
                             ap_item_valid.append(ap_item)
                             ap_item_value_converted_valid.append(ap_item_value_converted)
                         else:
-                            raise serializers.ValidationError({'Converted error': AdvancePaymentMsg.CONVERT_ERROR})
+                            raise ValueError('Converted value must <= Available value.')
         for index, item in enumerate(ap_item_valid):
             item.sum_converted_value += float(ap_item_value_converted_valid[index])
             item.save(update_fields=['sum_converted_value'])
