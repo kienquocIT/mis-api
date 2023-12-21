@@ -104,6 +104,7 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
                             LeaveRequestDateListRegister(
                                 company_id=company_id,
                                 tenant_id=tenant_id,
+                                employee_inherit=leave.employee_inherit,
                                 order=item["order"],
                                 leave_type_id=leave_type_id,
                                 date_from=item["date_from"],
@@ -167,14 +168,18 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
                 get_detail_data = []
                 for item in data_list:
                     available = available_list.get(leave_type_id=item.leave_type_id)
+                    # if (value.morning_shift_f) value.date_from += ' 00:00:00'
+                    # else value.date_from += ' 12:00:00'
+                    # if (value.morning_shift_t) value.date_to += ' 12:00:00'
+                    # else value.date_to += ' 23:59:59'
                     get_detail_data.append(
                         {
                             'id': item.id,
                             'order': item.order,
                             'remark': item.remark,
-                            'date_to': item.date_to,
+                            'date_from': f'{str(item.date_from)} {"00:00:00" if item.morning_shift_f else "12:00:00"}',
+                            'date_to': f'{item.date_to} {"12:00:00" if item.morning_shift_t else "23:59:59"}',
                             'subtotal': item.subtotal,
-                            'date_from': item.date_from,
                             'leave_available': {
                                 'id': str(available.id),
                                 'used': available.used,

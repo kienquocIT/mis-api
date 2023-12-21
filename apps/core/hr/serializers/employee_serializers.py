@@ -420,7 +420,7 @@ class EmployeeUpdateSerializer(serializers.ModelSerializer):
         raise serializers.ValidationError({"code": AccountMsg.CODE_NOT_NULL})
 
     def validate_plan_app(self, attrs):
-        if isinstance(attrs, list):
+        if isinstance(attrs, list): # noqa
             plan_ids = []
             app_ids = []
             app_by_plan = {}
