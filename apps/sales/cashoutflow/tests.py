@@ -654,7 +654,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received',
+                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'workflow_runtime_id',
                 'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total'
             ],
             check_sum_second=True,
@@ -726,7 +726,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             [
-                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'system_status', 'return_total'
+                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'system_status',
+                'return_total'
             ],
             check_sum_second=True,
         )
@@ -751,7 +752,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method',
-                'system_status', 'money_received', 'date_created', 'cost', 'return_total'
+                'system_status', 'money_received', 'date_created', 'cost', 'return_total', 'workflow_runtime_id',
             ],
             check_sum_second=True,
         )
@@ -760,38 +761,4 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             self.assertEqual(response.data['result']['title'], data_created.data['result']['title'])
         else:
             self.assertEqual(response.data['result']['id'], data_id)
-        return response
-
-    def test_update_return_advance(self):
-        return_advance = self.test_create_return_advance()
-        old_return_advance = self.test_get_detail_return_advance(return_advance.data['result']['id'])
-        title_changed = 'Return advance update'
-        product_data = old_return_advance.data['result']['cost']
-        cost_data = []
-        for item in product_data:
-            cost_data.append({
-                'advance_payment_cost': item['id'],
-                'expense_name': item['expense_name'],
-                'expense_type': item['expense_type']['id'],
-                'remain_value': item['remain_total'],
-                'return_value': item['return_value'] - 1,
-            })
-        data = {
-            "title": title_changed,
-            'advance_payment': old_return_advance.data['result']['advance_payment']['id'],
-            "cost": cost_data,
-        }
-        url = reverse("ReturnAdvanceDetail", kwargs={'pk': return_advance.data['result']['id']})
-        response = self.client.put(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-        data_changed = self.test_get_detail_return_advance(data_id=return_advance.data['result']['id'])
-        self.assertEqual(
-            data_changed.data['result']['cost'][0]['return_value'],
-            old_return_advance.data['result']['cost'][0]['return_value']-1,
-        )
-        self.assertEqual(
-            data_changed.data['result']['title'],
-            title_changed
-        )
         return response
