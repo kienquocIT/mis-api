@@ -8,6 +8,6 @@ RUN apt-get update && apt-get install -y default-mysql-client curl
 
 COPY req.txt /code/
 
-RUN python -m pip install .
+RUN python -m pip install -r req.txt
 
 COPY . /code/

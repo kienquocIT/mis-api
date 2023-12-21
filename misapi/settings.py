@@ -13,6 +13,7 @@ import json
 import sys
 import socket
 import os
+import textwrap
 
 from colorama import Fore
 from datetime import timedelta
@@ -589,7 +590,12 @@ SHOW_TESTCASE_NAME = True if os.environ.get('SHOW_TESTCASE_NAME', '0') in [1, '1
 DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
 DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
 
+
 # Display config about DB, Cache, CELERY,...
+def display_wraptext(text, length=80):
+    return "\n |  ".join(textwrap.wrap(text, length))
+
+
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
 if DEBUG is True:
     # debug toolbar IP Internal
@@ -597,11 +603,11 @@ if DEBUG is True:
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
-    print(Fore.BLUE, f'#  1. DATABASES: {DATABASES} \033[0m')
-    print(Fore.YELLOW, f'#  2. CELERY_BROKER_URL: {str(CELERY_BROKER_URL)} \033[0m')
-    print(Fore.GREEN, f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)} \033[0m')
-    print(Fore.RED, f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)} \033[0m')
-    print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
-    print(Fore.LIGHTMAGENTA_EX, f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED} \033[0m')
+    print(Fore.BLUE, display_wraptext(f'#  1. DATABASES: {DATABASES}'), '\033[0m')
+    print(Fore.YELLOW, display_wraptext(f'#  2. CELERY_BROKER_URL: {str(CELERY_BROKER_URL)}'), '\033[0m')
+    print(Fore.GREEN, display_wraptext(f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)}'), '\033[0m')
+    print(Fore.RED, display_wraptext(f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)}'), '\033[0m')
+    print(Fore.LIGHTBLUE_EX, display_wraptext(f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE}'), '\033[0m')
+    print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...
