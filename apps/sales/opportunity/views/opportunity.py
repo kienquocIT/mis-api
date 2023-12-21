@@ -45,7 +45,7 @@ class OpportunityList(BaseListMixin, BaseCreateMixin):
     ]
 
     def get_queryset(self):
-        return super().get_queryset().filter(employee_inherit_id=self.request.user.employee_current_id).select_related(
+        return super().get_queryset().select_related(
             "customer",
             "sale_person",
             "employee_inherit",
