@@ -12,7 +12,7 @@ before_script:
 #  # uncomment below commented when change image to global hub "python:3.11"
 #  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
 #  - pip install --upgrade pip
-  - pip install .
+  - pip install -r req.txt
 
 stages:
   - pylint_check
