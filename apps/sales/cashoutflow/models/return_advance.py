@@ -52,7 +52,9 @@ class ReturnAdvance(DataAbstractModel):
                 if code_generated:
                     self.code = code_generated
                 else:
-                    records = ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
+                    records = ReturnAdvance.objects.filter_current(
+                        fill__tenant=True, fill__company=True, is_delete=False
+                    )
                     self.code = 'RP.00' + str(records.count() + 1)
 
                 if 'update_fields' in kwargs:
