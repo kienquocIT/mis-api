@@ -514,6 +514,10 @@ class RuntimeAssignee(SimpleAbstractModel):
             }
         ),
     )
+    is_edit_all_zone = models.BooleanField(
+        default=False,
+        help_text='flag to know collaborator can edit whole document (not check zone)'
+    )
 
     def before_save(self, force_insert=False):
         if force_insert:

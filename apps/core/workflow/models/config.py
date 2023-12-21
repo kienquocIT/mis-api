@@ -176,7 +176,7 @@ class Node(MasterDataAbstractModel):
         max_length=100,
         blank=True,
         null=True,
-        help_text="code nodes system: Initial, Approve, Complete,...",
+        help_text="code nodes system: initial, approved, completed,...",
     )
     option_collaborator = models.SmallIntegerField(
         verbose_name="collaborator options",
@@ -244,6 +244,10 @@ class Node(MasterDataAbstractModel):
         verbose_name="init zone hidden",
         default=list,
         help_text="list zones hidden of initial node"
+    )
+    is_edit_all_zone = models.BooleanField(
+        default=False,
+        help_text='flag to know collaborator can edit whole document (not check zone)'
     )
 
     order = models.IntegerField(
@@ -410,6 +414,10 @@ class CollaborationInForm(MasterDataAbstractModel):
         symmetrical=False,
         related_name='collab_in_forms_map_zones_hidden'
     )
+    is_edit_all_zone = models.BooleanField(
+        default=False,
+        help_text='flag to know collaborator can edit whole document (not check zone)'
+    )
 
     class Meta:
         verbose_name = 'Collab in form'
@@ -478,6 +486,10 @@ class CollaborationOutForm(MasterDataAbstractModel):
         Zone,
         through='CollaborationOutFormZoneHidden',
         related_name='collab_out_forms_map_zones_hidden'
+    )
+    is_edit_all_zone = models.BooleanField(
+        default=False,
+        help_text='flag to know collaborator can edit whole document (not check zone)'
     )
 
     class Meta:
@@ -576,6 +588,10 @@ class CollabInWorkflow(MasterDataAbstractModel):
         Zone,
         through='CollabInWorkflowZoneHidden',
         related_name='collab_in_workflows_map_zones_hidden'
+    )
+    is_edit_all_zone = models.BooleanField(
+        default=False,
+        help_text='flag to know collaborator can edit whole document (not check zone)'
     )
 
     class Meta:

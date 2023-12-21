@@ -407,6 +407,7 @@ class RuntimeStageHandler:
             collab_in_wf[str(assignee_id)] = {
                 'zone_edit': zone_and_properties,
                 'zone_hidden': zone_hidden_and_properties,
+                'is_edit_all_zone': collab.is_edit_all_zone,
             }
         return collab_in_wf
 
@@ -426,6 +427,7 @@ class RuntimeStageHandler:
                 str(employee_creator_id): {
                     'zone_edit': cls.__get_zone_and_properties(node.zones_initial_node.all()),
                     'zone_hidden': cls.__get_zone_and_properties(node.zones_hidden_initial_node.all()),
+                    'is_edit_all_zone': node.is_edit_all_zone,
                 }
             }
         try:
@@ -443,6 +445,7 @@ class RuntimeStageHandler:
                         str(employee_id): {
                             'zone_edit': cls.__get_zone_and_properties(in_form_obj.zone.all()),
                             'zone_hidden': cls.__get_zone_and_properties(in_form_obj.zone_hidden.all()),
+                            'is_edit_all_zone': in_form_obj.is_edit_all_zone,
                         }
                     }
                 case 1:
@@ -450,7 +453,10 @@ class RuntimeStageHandler:
                     zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
                     zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
                     return {
-                        str(_id): {'zone_edit': zones, 'zone_hidden': zones_hidden}
+                        str(_id): {
+                            'zone_edit': zones, 'zone_hidden': zones_hidden,
+                            'is_edit_all_zone': out_form_obj.is_edit_all_zone,
+                        }
                         for _id in out_form_obj.employees.all().values_list('id', flat=True)
                     }
                 case 2:
@@ -483,6 +489,7 @@ class RuntimeStageHandler:
                         employee_id=emp_id,
                         zone_and_properties=zone_and_properties.get('zone_edit', []),
                         zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
+                        is_edit_all_zone=zone_and_properties.get('is_edit_all_zone', False),
                     )
                     obj_assignee.before_save(force_insert=True)
                     objs.append(obj_assignee)
@@ -492,6 +499,7 @@ class RuntimeStageHandler:
                         employee_id=emp_id,
                         zone_and_properties=zone_and_properties.get('zone_edit', []),
                         zone_hidden_and_properties=zone_and_properties.get('zone_hidden', []),
+                        is_edit_all_zone=zone_and_properties.get('is_edit_all_zone', False),
                     )
                     objs_created.append(obj_created)
                     # create instance log

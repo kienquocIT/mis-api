@@ -252,6 +252,7 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                         'actions': obj.stage_currents.actions,
                         'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
                         'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
+                        'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
                     }
         return {}
 

@@ -22,28 +22,33 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_workflow_currently(cls, obj):
-        if obj.workflow_currently:
-            initial_zones = []
-            initial_zones_hidden = []
-            for node_zone in InitialNodeZone.objects.filter(
-                    node__workflow=obj.workflow_currently
-            ).select_related('zone').prefetch_related('zone__properties'):
-                if node_zone.zone:
-                    for prop in node_zone.zone.properties.all():
-                        initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
-            for node_zone_hidden in InitialNodeZoneHidden.objects.filter(
-                    node__workflow=obj.workflow_currently
-            ).select_related('zone').prefetch_related('zone__properties'):
-                if node_zone_hidden.zone:
-                    for prop in node_zone_hidden.zone.properties.all():
-                        initial_zones_hidden.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
-            return {
-                'id': obj.workflow_currently.id,
-                'title': obj.workflow_currently.title,
-                'initial_zones': initial_zones,
-                'initial_zones_hidden': initial_zones_hidden,
-            }
-        return {}
+        try:
+            if obj.workflow_currently:
+                initial_zones = []
+                initial_zones_hidden = []
+                initial_node = obj.workflow_currently.node_workflow.get(is_system=True, code_node_system='initial')
+                for node_zone in InitialNodeZone.objects.filter(
+                        node=initial_node
+                ).select_related('zone').prefetch_related('zone__properties'):
+                    if node_zone.zone:
+                        for prop in node_zone.zone.properties.all():
+                            initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
+                for node_zone_hidden in InitialNodeZoneHidden.objects.filter(
+                        node=initial_node
+                ).select_related('zone').prefetch_related('zone__properties'):
+                    if node_zone_hidden.zone:
+                        for prop in node_zone_hidden.zone.properties.all():
+                            initial_zones_hidden.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
+                return {
+                    'id': obj.workflow_currently.id,
+                    'title': obj.workflow_currently.title,
+                    'initial_zones': initial_zones,
+                    'initial_zones_hidden': initial_zones_hidden,
+                    'is_edit_all_zone': initial_node.is_edit_all_zone,
+                }
+        except Exception as e:
+            print(e)
+            return {}
 
     class Meta:
         model = WorkflowConfigOfApp
@@ -540,7 +545,8 @@ class CommonCreateUpdate:
     ):
         collab_in_forms = CollaborationInForm.objects.create(
             node=node_create,
-            app_property_id=collab_in_form.get('app_property', {}).get('id', None)
+            app_property_id=collab_in_form.get('app_property', {}).get('id', None),
+            is_edit_all_zone=collab_in_form.get('is_edit_all_zone', False),
         )
         if collab_in_forms:
             CollaborationInFormZone.objects.bulk_create(
@@ -565,6 +571,7 @@ class CommonCreateUpdate:
     ):
         collab_out_forms = CollaborationOutForm.objects.create(
             node=node_create,
+            is_edit_all_zone=collab_out_form.get('is_edit_all_zone', False),
         )
         if collab_out_forms:
             CollaborationOutFormEmployee.objects.bulk_create(
@@ -599,6 +606,7 @@ class CommonCreateUpdate:
                 in_wf_option=data_in_workflow.get('in_wf_option'),
                 position_choice=data_in_workflow.get('position_choice', None),
                 employee_id=data_in_workflow.get('employee', {}).get('id', None),
+                is_edit_all_zone=data_in_workflow.get('is_edit_all_zone', False),
             )
             if collab_in_workflows:
                 CollabInWorkflowZone.objects.bulk_create(

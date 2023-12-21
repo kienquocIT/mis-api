@@ -29,6 +29,7 @@ class CollabInFormSerializer(serializers.ModelSerializer):  # noqa
             'app_property',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -56,6 +57,7 @@ class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
             'app_property',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -103,6 +105,7 @@ class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
             'employee_list',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -132,6 +135,7 @@ class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
             'employee_list',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone'
         )
 
     @classmethod
@@ -188,6 +192,7 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
             'employee',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -225,6 +230,7 @@ class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
             'employee',
             'zone',
             'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -276,6 +282,7 @@ class NodeListSerializer(serializers.ModelSerializer):
 class NodeDetailSerializer(serializers.ModelSerializer):
     actions = serializers.JSONField()
     zone_initial_node = serializers.JSONField()
+    zone_hidden_initial_node = serializers.JSONField()
     collab_in_form = serializers.SerializerMethodField()
     collab_out_form = serializers.SerializerMethodField()
     collab_in_workflow = serializers.SerializerMethodField()
@@ -292,13 +299,15 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'is_system',
             'code_node_system',
             'zone_initial_node',
+            'zone_hidden_initial_node',
             'option_collaborator',
             'collab_in_form',
             'collab_out_form',
             'collab_in_workflow',
             'order',
             'coordinates',
-            'condition'
+            'condition',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -379,7 +388,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'collab_in_form',
             'collab_out_form',
             'collab_in_workflow',
-            'coordinates'
+            'coordinates',
+            'is_edit_all_zone',
         )
 
 
