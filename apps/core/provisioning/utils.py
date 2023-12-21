@@ -6,11 +6,11 @@ from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.exceptions import ErrorDetail
 
-from apps.shared import ProvisioningMsg
+from apps.shared import ProvisioningMsg, FORMATTING
 
 from apps.core.tenant.models import Tenant, TenantPlan
 from apps.core.base.models import SubscriptionPlan
-from apps.shared import FORMATTING
+from apps.eoffice.leave.leave_util import leave_available_map_employee as available_map_employee
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
@@ -251,6 +251,10 @@ class TenantController:
                 tenant_id=kwargs.get('tenant'),
                 company_id=kwargs.get('company')
             )
+
+            # create new leave available list for employee
+            available_map_employee(obj, obj.company)
+
             # MediaForceAPI.call_regis_employee_media_storage(employee_obj=obj)
             return obj
         except serializers.ValidationError as err:

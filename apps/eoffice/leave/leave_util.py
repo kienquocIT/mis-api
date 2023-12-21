@@ -19,9 +19,9 @@ def leave_available_map_employee(employee, company_obj):
                     LeaveAvailable(
                         leave_type=l_type,
                         open_year=current_date.year,
-                        total=l_type.no_of_paid if l_type.code == 'AN' else 0,
+                        total=0,
                         used=0,
-                        available=l_type.no_of_paid if l_type.code == 'AN' else 0,
+                        available=0,
                         expiration_date=last_day_year,
                         company=company_obj,
                         tenant=company_obj.tenant,
@@ -54,4 +54,4 @@ def leave_available_map_employee(employee, company_obj):
                 list_avai.append(temp2)
         LeaveAvailable.objects.bulk_create(list_avai)
     except Exception as err:
-        print('create available for employee not complete pleave verify again', err)
+        print('create available for employee not complete please verify again', err)
