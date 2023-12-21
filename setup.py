@@ -35,8 +35,8 @@ setup(
     #     "Programming Language :: Python :: 3 :: Only",
     # ],
     # python_requires=">=3.11",
-    # packages=find_packages(),
-    # include_package_data=False,
+    packages=find_packages(),
+    include_package_data=True,
     install_requires=requirements,
     extras_require={
         ':sys_platform == "win32"': [
