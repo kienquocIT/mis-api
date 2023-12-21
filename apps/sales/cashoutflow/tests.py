@@ -637,7 +637,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             "method": 0,
             "employee_created": employee_id,
             "employee_inherit_id": employee_id,
-            "status": 0,
+            "system_status": 1,
             "money_received": True,
             "cost": cost_data,
             "return_total": return_total,
@@ -655,7 +655,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             response.data['result'],
             [
                 'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received',
-                'employee_created', 'employee_inherit', 'method', 'status', 'cost', 'return_total'
+                'employee_created', 'employee_inherit', 'method', 'system_status', 'cost', 'return_total'
             ],
             check_sum_second=True,
         )
@@ -685,7 +685,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
             "method": 0,
             "employee_created": employee_id,
             "employee_inherit_id": employee_id,
-            "status": 0,
+            "system_status": 1,
             "money_received": True,
             "cost": cost_data,
             "return_total": return_total,
@@ -726,7 +726,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'][0],
             [
-                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'status', 'return_total'
+                'id', 'title', 'code', 'advance_payment', 'date_created', 'money_received', 'system_status', 'return_total'
             ],
             check_sum_second=True,
         )
@@ -750,8 +750,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             [
-                'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method', 'status',
-                'money_received', 'date_created', 'cost', 'return_total'
+                'id', 'code', 'title', 'advance_payment', 'employee_created', 'employee_inherit', 'method',
+                'system_status', 'money_received', 'date_created', 'cost', 'return_total'
             ],
             check_sum_second=True,
         )
