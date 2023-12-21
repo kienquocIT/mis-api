@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.cashoutflow.models import AdvancePaymentCost  # [cyclic-import]
+from apps.sales.cashoutflow.models import AdvancePaymentCost
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = [
