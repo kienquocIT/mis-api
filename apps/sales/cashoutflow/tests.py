@@ -27,7 +27,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
             'return_date': '2023-06-06',
-            'money_gave': True
+            'money_gave': True,
+            'system_status': 1,
         }
         response1 = self.client.post(url, data1, format='json') # noqa
         self.assertResponseList(
@@ -58,6 +59,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'system_status',
+                'workflow_runtime_id',
             ],
             check_sum_second=True,
         )
@@ -87,7 +90,6 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'advance_payment_type',
                 'date_created',
                 'return_date',
-                'status',
                 'advance_value',
                 'to_payment',
                 'return_value',
@@ -100,6 +102,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'opportunity_mapped',
                 'expense_items',
                 'opportunity_id',
+                'system_status'
             ],
             check_sum_second=True,
         )
@@ -141,6 +144,8 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'system_status',
+                'workflow_runtime_id',
             ],
             check_sum_second=True,
         )
@@ -390,6 +395,7 @@ class PaymentTestCase(AdvanceTestCase):
             'method': 1,  # bank
             'creator_name': self.get_employee().data['result'][0]['id'],
             'beneficiary': self.get_employee().data['result'][0]['id'],
+            'system_status': 1,
         }
         response1 = self.client.post(url, data1, format='json')
         self.assertResponseList(
@@ -455,7 +461,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'converted_value_list',
                 'return_value_list',
                 'payment_value',
-                'date_created'
+                'date_created',
+                'system_status'
             ],
             check_sum_second=True,
         )
@@ -566,7 +573,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                     'expense_after_tax_price': 20000000 + 20000000 * (tax.data['result']['rate']/100),
                     'expense_uom_name': 'manhour',
                 }
-            ]
+            ],
+            'system_status': 1,
         }
         response = self.client.post(url, data, format='json')
         self.assertResponseList(
@@ -597,6 +605,8 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'supplier',
                 'creator_name',
                 'employee_inherit',
+                'system_status',
+                'workflow_runtime_id',
             ],
             check_sum_second=True,
         )

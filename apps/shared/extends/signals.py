@@ -43,6 +43,8 @@ from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from ..media_cloud_apis import MediaForceAPI
+from ...eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
+from ...eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -848,67 +850,6 @@ class ConfigDefaultData:
             },
         )
 
-    def leave_available_setup(self):
-        # lấy ds leave type
-        # lấy danh sách employee
-        # từ ds leave type tạo ds đã lấy tạo mỗi user 1 ds
-        list_avai = []
-        current_date = timezone.now()
-        next_year_date = date(current_date.date().year + 1, 1, 1)
-        last_day_year = next_year_date - timedelta(days=1)
-        leave_type = LeaveType.objects.filter(company=self.company_obj)
-
-        for item in Employee.objects.filter(company=self.company_obj):
-            for l_type in leave_type:
-                if l_type.code == 'AN' or l_type.code != 'ANPY':
-                    exp_date = None
-                    total = 0
-                    if l_type.is_check_expiration or l_type.code == 'AN':
-                        exp_date = last_day_year
-                    elif l_type.code in ['FF', 'MC', 'MY']:
-                        exp_date = current_date.replace(month=12, day=31)
-                        total = 1 if l_type.code == 'MC' else 3
-                    list_avai.append(
-                        LeaveAvailable(
-                            leave_type=l_type,
-                            open_year=current_date.year,
-                            total=total,
-                            used=0,
-                            available=total,
-                            expiration_date=exp_date,
-                            company=self.company_obj,
-                            tenant=self.company_obj.tenant,
-                            employee_inherit=item,
-                            check_balance=l_type.balance_control
-                        )
-                    )
-                if l_type.code == 'ANPY':
-                    prev_current = date(current_date.date().year, 1, 1)
-                    last_prev_day = prev_current - timedelta(days=1)
-                    temp = LeaveAvailable(
-                        leave_type=l_type,
-                        open_year=current_date.year - 1,
-                        total=0,
-                        used=0,
-                        available=0,
-                        expiration_date=last_prev_day,
-                        company=self.company_obj,
-                        tenant=self.company_obj.tenant,
-                        employee_inherit=item,
-                        check_balance=l_type.balance_control
-                    )
-                    list_avai.append(temp)
-                    temp2 = deepcopy(temp)
-                    temp2.id = uuid4()
-                    temp2.open_year = deepcopy(current_date.year) - 2
-                    prev_current_2 = date(deepcopy(current_date).date().year - 1, 1, 1)
-                    last_prev_day = prev_current_2 - timedelta(days=1)
-                    temp2.expiration_date = last_prev_day
-                    list_avai.append(temp2)
-
-        if len(list_avai):
-            LeaveAvailable.objects.bulk_create(list_avai)
-
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -918,15 +859,36 @@ class ConfigDefaultData:
         self.opportunity_config_stage()
         self.quotation_indicator_config()
         self.sale_order_indicator_config()
-        self.delivery_config()
         self.task_config()
         self.process_function_config()
         self.process_config()
         self.leave_config(config)
         self.purchase_request_config()
         self.working_calendar_config()
-        self.leave_available_setup()
         return True
+
+
+class WorkflowData:
+    """
+    data use for add perm view (on ID) for related models of application running WF
+    {
+        'model_code (model of application running WF)': [
+            {
+                'app_label': 'leave',
+                'model_code': 'leaveavailable'
+            },
+            ...
+        ]
+    }
+    """
+    wf_app_relate_models = {
+        'leaverequest': [
+            {
+                'app_label': 'leave',
+                'model_code': 'leaveavailable'
+            }
+        ],
+    }
 
 
 @receiver(post_save, sender=Company)
@@ -995,6 +957,19 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
+                # check if app has related models => append perm view to related models
+                if app_obj.code in WorkflowData.wf_app_relate_models:
+                    for relate_model in WorkflowData.wf_app_relate_models[app_obj.code]:
+                        app_label = relate_model.get('app_label', None)
+                        model_code = relate_model.get('model_code', None)
+                        if app_label and model_code:
+                            emp.append_permit_by_ids(
+                                app_label=app_label,
+                                model_code=model_code,
+                                perm_code='view',
+                                doc_id=str(doc_id),
+                                tenant_id=instance.runtime.tenant_id,
+                            )
                 # check if assignee has zones => append perm edit on doc_id
                 if emp.all_runtime_assignee_of_employee.filter(
                         ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),

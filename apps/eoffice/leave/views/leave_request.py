@@ -1,14 +1,15 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.eoffice.leave.models import LeaveRequest, LeaveAvailable, LeaveAvailableHistory
+from apps.eoffice.leave.models import LeaveRequest, LeaveAvailable, LeaveAvailableHistory, LeaveRequestDateListRegister
 from apps.eoffice.leave.serializers import LeaveRequestListSerializer, LeaveRequestCreateSerializer, \
-    LeaveRequestDetailSerializer
+    LeaveRequestDetailSerializer, LeaveRequestUpdateSerializer
 from apps.eoffice.leave.serializers.leave_request import LeaveAvailableListSerializer, LeaveAvailableEditSerializer, \
-    LeaveAvailableHistoryListSerializer
+    LeaveAvailableHistoryListSerializer, LeaveRequestDateListRegisterSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from ..filters import LeaveRequestListFilters
 
 __all__ = ['LeaveRequestList', 'LeaveRequestDetail', 'LeaveAvailableList', 'LeaveAvailableUpdate',
-           'LeaveAvailableHistoryList']
+           'LeaveAvailableHistoryList', 'LeaveRequestDateList']
 
 
 class LeaveRequestList(BaseListMixin, BaseCreateMixin):
@@ -52,10 +53,31 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
         return self.create(request, *args, **kwargs)
 
 
+class LeaveRequestDateList(BaseListMixin):
+    queryset = LeaveRequestDateListRegister.objects
+    serializer_list = LeaveRequestDateListRegisterSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_class = LeaveRequestListFilters
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('leave__employee_inherit')
+
+    @swagger_auto_schema(
+        operation_summary="Leave request list",
+        operation_description="get leave request list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='leave', model_code='leaverequest', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
 class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     queryset = LeaveRequest.objects
     serializer_detail = LeaveRequestDetailSerializer
-    serializer_update = LeaveRequestDetailSerializer
+    serializer_update = LeaveRequestUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -76,13 +98,18 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
     @swagger_auto_schema(
         operation_summary="Update Leave request",
         operation_description="Update Leave request by ID",
-        request_body=LeaveRequestDetailSerializer,
+        request_body=LeaveRequestUpdateSerializer,
     )
     @mask_view(
         login_require=True, auth_require=True,
         label_code='leave', model_code='leaverequest', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {
+            'company_id': request.user.company_current_id,
+            'tenant_id': request.user.tenant_current_id,
+            'employee_id': request.user.employee_current_id,
+        }
         return self.update(request, *args, **kwargs)
 
     @swagger_auto_schema(

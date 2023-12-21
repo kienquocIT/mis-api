@@ -26,3 +26,4 @@ class OpportunityMsg:
     NOT_EDIT_PERM_MEMBER = _('Only Sale Person can update member permissions')
 
     NOT_DELETE_SALE_PERSON = _('Can not delete sale person in sale team')
+    ERROR_WHEN_GET_NULL_CURRENT_STAGE = _('Error when get current stage')

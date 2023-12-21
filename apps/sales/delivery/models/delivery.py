@@ -3,6 +3,8 @@ import json
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     SimpleAbstractModel, DELIVERY_OPTION, DELIVERY_STATE, DELIVERY_WITH_KIND_PICKUP, DataAbstractModel,
     MasterDataAbstractModel,
@@ -144,16 +146,18 @@ class OrderDelivery(DataAbstractModel):
 
     def create_code_delivery(self):
         # auto create code (temporary)
-        delivery = OrderDeliverySub.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
         if not self.code:
-            char = "D"
-            temper = delivery + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=4)
+            if code_generated:
+                self.code = code_generated
+            else:
+                delivery = OrderDeliverySub.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "D"
+                temper = delivery + 1
+                code = f"{char}{temper:03d}"
+                self.code = code
 
     def save(self, *args, **kwargs):
         self.put_backup_data()

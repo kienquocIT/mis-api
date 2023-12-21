@@ -266,6 +266,18 @@ AppProp_SaleData_Quotation_data = {
         'type': 5,
         'content_type': 'saledata.PaymentTerm',
     },
+    'a77ab96c-1141-4915-a7d4-ed29874d7c7c': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Customer confirm',
+        'code': 'is_customer_confirm',
+        'type': 4,
+    },
+    'd47555f5-b6e5-420f-996e-31d8600825fa': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Print document',
+        'code': 'print_document',
+        'type': 4,
+    },
     # tabs
     'b426fe8e-c58d-482b-aba8-3f986e3b5768': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -1163,6 +1175,95 @@ AppProp_Eoffice_Business_trip_data = {
     },
 }
 
+AppProp_SaleData_Advance_Payment_data = {
+    "5ef3c139-ec40-4e03-bcfa-e631baaa5e73": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "ceba8e0a-1613-4903-bccd-d6895b236abf": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment type",
+        "code": "advance_payment_type",
+        "type": 6,
+    },
+    "89c57dd4-2e8d-47f3-b1ee-f7cb299448b7": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "3dca605f-1a45-454c-9909-973904fcd820": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment method",
+        "code": "method",
+        "type": 6,
+    },
+    "95f1ca37-0277-4ab9-9205-bcc4637e3431": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Return date",
+        "code": "return_date",
+        "type": 2,
+    },
+    # tab line detail
+    "9e7f4f88-2ae1-4f9d-a512-ef8e4c7b99a1": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Money gave",
+        "code": "money_gave",
+        "type": 3,
+    },
+    "51840528-2a9f-448b-afcb-ad0f421fd523": {
+        "application_id": "57725469-8b04-428a-a4b0-578091d0e4f5",
+        "title": "Advance payment expenses",
+        "code": "expense_valid_list",
+        "type": 1,
+    },
+}
+
+AppProp_SaleData_Payment_data = {
+    "6c8894ba-c3c6-404f-939c-22ccce4c0cbd": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "5ce2a8b3-72da-4c7e-a5f1-ab8982801a8b": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Supplier",
+        "code": "supplier",
+        'type': 5,
+        'content_type': 'saledata.Account',
+    },
+    "85556007-ef17-427d-ac7e-c65c4b10c210": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Internal payment",
+        "code": "is_internal_payment",
+        'type': 4,
+    },
+    "67099494-859c-4ad9-adad-92175230d08f": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Employee payment",
+        "code": "employee_payment",
+        'type': 5,
+        'content_type': 'hr.Employee',
+    },
+    "3811bd07-bab6-452e-89a4-6352c2c667d3": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Payment method",
+        "code": "method",
+        "type": 6,
+    },
+    # tab line detail
+    "09b7660e-adde-4515-bcf1-764020f71e71": {
+        "application_id": "1010563f-7c94-42f9-ba99-63d5d26a1aca",
+        "title": "Payment expenses",
+        "code": "payment_expense_valid_list",
+        "type": 1,
+    },
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
@@ -1171,4 +1272,6 @@ ApplicationProperty_data = {
     **AppProp_SaleData_SaleOrder_data,
     **AppProp_Eoffice_Leave_data,
     **AppProp_Eoffice_Business_trip_data,
+    **AppProp_SaleData_Advance_Payment_data,
+    **AppProp_SaleData_Payment_data,
 }

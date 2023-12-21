@@ -626,6 +626,7 @@ class CommonCreateUpdate:
 
 
 class WorkflowCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField()
     application = serializers.UUIDField()
     node = NodeCreateSerializer(
         many=True,

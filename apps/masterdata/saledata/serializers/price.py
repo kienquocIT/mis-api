@@ -1,4 +1,4 @@
-from django.utils import timezone
+from datetime import datetime
 from rest_framework import serializers
 from apps.masterdata.saledata.models.price import (
     TaxCategory, Tax, Currency, Price, ProductPriceList, PriceListCurrency
@@ -236,11 +236,12 @@ class PriceListSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
+        if ((not obj.valid_time_start.date() >= datetime.now().date()) and
+                (obj.valid_time_end.date() >= datetime.now().date())):
             return 'Valid'
-        if obj.valid_time_end < timezone.now():
+        if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
-        if obj.valid_time_start >= timezone.now():
+        if obj.valid_time_start.date() >= datetime.now().date():
             return 'Invalid'
         return 'Undefined'
 
@@ -464,11 +465,12 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
     @classmethod
     def get_status(cls, obj):
-        if (not obj.valid_time_start >= timezone.now()) and (obj.valid_time_end >= timezone.now()):
+        if (not obj.valid_time_start.date() >= datetime.now().date()) and (
+                obj.valid_time_end.date() >= datetime.now().date()):
             return 'Valid'
-        if obj.valid_time_end < timezone.now():
+        if obj.valid_time_end.date() < datetime.now().date():
             return 'Expired'
-        if obj.valid_time_start >= timezone.now():
+        if obj.valid_time_start.date() >= datetime.now().date():
             return 'Invalid'
         return 'Undefined'
 
@@ -485,7 +487,7 @@ class PriceDetailSerializer(serializers.ModelSerializer):  # noqa
 
 
 def check_expired_price_list(price_list):
-    if not price_list.valid_time_end < timezone.now():
+    if not price_list.valid_time_end.date() < datetime.now().date():
         return True
     return False
 
@@ -863,13 +865,13 @@ class CreateItemInPriceListSerializer(serializers.ModelSerializer):
 class PriceListCommon:
     @staticmethod
     def get_child_price_list(price, parent_factor=1):
-        if price.valid_time_end is not None and price.valid_time_end < timezone.now():
+        if price.valid_time_end.date() is not None and price.valid_time_end.date() < datetime.now().date():
             return []
 
         factor = price.factor * parent_factor
         descendants_with_factor = [(price, factor)]
 
-        for child in Price.objects.filter(price_list_mapped=price.id, valid_time_end__gt=timezone.now()):
+        for child in Price.objects.filter(price_list_mapped=price.id, valid_time_end__gt=datetime.now()):
             child_descendants = PriceListCommon.get_child_price_list(child, parent_factor=factor)
             descendants_with_factor.extend(child_descendants)
 

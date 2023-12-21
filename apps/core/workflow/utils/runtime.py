@@ -6,19 +6,12 @@ from uuid import UUID
 from django.db import models
 from django.utils import timezone
 
-from apps.core.log.tasks import (
-    force_log_activity,
-    force_new_notify_many,
-)
-from apps.shared import (
-    FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background,
-    WorkflowMsgNotify,
-)
+from apps.core.log.tasks import (force_log_activity, force_new_notify_many,)
+from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler
+from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify,)
 from apps.core.workflow.models import (
-    WorkflowConfigOfApp,
-    Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
-    Zone,
-    Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
+    WorkflowConfigOfApp, Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
+    Zone, Runtime, RuntimeStage, RuntimeAssignee, RuntimeLog,
 )
 
 logger = logging.getLogger(__name__)
@@ -139,7 +132,6 @@ class RuntimeHandler:
         Args:
             doc_id: UUID4
             app_code: "app.model"
-
         Returns:
             Document Object
         """
@@ -163,7 +155,6 @@ class RuntimeHandler:
             company_id:
             doc_id:
             app_code:
-
         Returns:
             Runtime Object
         """
@@ -178,7 +169,6 @@ class RuntimeHandler:
                         doc_id=doc_id, app=app_obj,
                 ).exists():
                     raise ValueError('Runtime Obj is exist')
-
                 # check doc exist
                 doc_obj = DocHandler(doc_id, app_code).get_obj(
                     default_filter={'tenant_id': tenant_id, 'company_id': company_id}
@@ -216,7 +206,6 @@ class RuntimeHandler:
         Args:
             doc_id:
             app_code:
-
         Returns:
             Runtime Object
         """
@@ -265,15 +254,21 @@ class RuntimeHandler:
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next
-                        RuntimeStageHandler(
-                            runtime_obj=runtime_obj,
-                        ).run_next(
-                            workflow=runtime_obj.flow, stage_obj_currently=rt_assignee.stage
-                        )
-                        # update runtime object
-                        RuntimeStageHandler(
-                            runtime_obj=runtime_obj,
-                        ).set_state_task_bg('SUCCESS')
+                        try:
+                            RuntimeStageHandler(
+                                runtime_obj=runtime_obj,
+                            ).run_next(
+                                workflow=runtime_obj.flow, stage_obj_currently=rt_assignee.stage
+                            )
+                            # update runtime object
+                            RuntimeStageHandler(
+                                runtime_obj=runtime_obj,
+                            ).set_state_task_bg('SUCCESS')
+                        except Exception as err:
+                            WFSupportFunctionsHandler.update_runtime_when_error(
+                                stage_obj=rt_assignee.stage, value_error=err
+                            )
+                            print(err)
                 case 2:  # reject
                     # RuntimeStage logging
                     # Update flag done
@@ -286,12 +281,17 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-
                     # update doc to reject
                     DocHandler.force_finish_with_runtime(runtime_obj, approved_or_rejected='rejected')
-
                     # handle next stage
-                    # close all assignee waiting
+                    # close all other assignees waiting
+                    for other_assignee in RuntimeAssignee.objects.filter(stage_id=rt_assignee.stage_id).exclude(
+                        id=rt_assignee.id
+                    ):
+                        other_assignee.is_done = True
+                        other_assignee.action_perform.append(action_code)
+                        other_assignee.action_perform = list(set(other_assignee.action_perform))
+                        other_assignee.save(update_fields=['is_done', 'action_perform'])
                     # update runtime + doc with reject
                     RuntimeStageHandler(runtime_obj=runtime_obj).reject_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
@@ -299,6 +299,7 @@ class RuntimeHandler:
                 case 3:  # return
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
+                        assignee_action_return=rt_assignee.employee  # who click action return (edit by PO's request)
                     )
                 case 4:  # receive
                     cls.action_perform(
@@ -327,10 +328,12 @@ class RuntimeStageHandler:
     def return_begin_runtime_by_assignee(
             self,
             stage_runtime_currently: RuntimeStage,
+            assignee_action_return
     ):
         RuntimeLogHandler(
             stage_obj=stage_runtime_currently,
-            actor_obj=self.runtime_obj.doc_employee_created,
+            # actor_obj=self.runtime_obj.doc_employee_created,
+            actor_obj=assignee_action_return,
             is_system=False,
         ).log_return_task()  # return
         config_cls = WFConfigSupport(workflow=self.runtime_obj.flow)
@@ -355,9 +358,7 @@ class RuntimeStageHandler:
         Args:
             state:
             field_saved:
-
         Returns:
-
         """
         field_saved = field_saved if isinstance(field_saved, list) else []
         self.runtime_obj.task_bg_state = state
@@ -399,21 +400,10 @@ class RuntimeStageHandler:
         collab_in_wf = {}
         for collab in CollabInWorkflow.objects.filter(node=node):
             zone_and_properties = cls.__get_zone_and_properties(collab.zone.all())
-            if collab.in_wf_option == 1 and doc_employee_inherit:  # BY POSITION
-                if not doc_employee_inherit.group:
-                    raise ValueError('Employee inherit does not have group')
-                if collab.position_choice == 1:  # 1st manager
-                    if not doc_employee_inherit.group.first_manager_id:
-                        raise ValueError('1st manager is not defined')
-                    collab_in_wf[str(doc_employee_inherit.group.first_manager_id)] = zone_and_properties
-                elif collab.position_choice == 2:  # 2nd manager
-                    if not doc_employee_inherit.group.second_manager_id:
-                        raise ValueError('2nd manager is not defined')
-                    collab_in_wf[str(doc_employee_inherit.group.second_manager_id)] = zone_and_properties
-                elif collab.position_choice == 3:  # Beneficiary (Document inherit)
-                    collab_in_wf[str(doc_employee_inherit.id)] = zone_and_properties
-            elif collab.in_wf_option == 2:  # BY EMPLOYEE
-                collab_in_wf[str(collab.employee_id)] = zone_and_properties
+            assignee_id = WFSupportFunctionsHandler.get_assignee_node_in_wf(
+                collab=collab, doc_employee_inherit=doc_employee_inherit
+            )
+            collab_in_wf[str(assignee_id)] = zone_and_properties
         return collab_in_wf
 
     @classmethod
@@ -461,61 +451,65 @@ class RuntimeStageHandler:
 
     def _create_assignee_and_zone(self, stage_obj: RuntimeStage, is_return: bool) -> list[RuntimeAssignee]:
         if stage_obj.node:
-            # get assignee and zone
-            assignee_and_zone = self.__parse_collaboration(
-                node=stage_obj.node,
-                doc_params=self.runtime_obj.doc_params,
-                employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
-                doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
-            )
-            # convert assignee and zone to simple data
-            employee_ids_zones = {}
-            objs = []
-            log_objs = []
-            objs_created = []
-            for emp_id, zone_and_properties in assignee_and_zone.items():
-                obj_assignee = RuntimeAssignee(
-                    stage=stage_obj,
-                    employee_id=emp_id,
-                    zone_and_properties=zone_and_properties,
+            try:
+                # get assignee and zone
+                assignee_and_zone = self.__parse_collaboration(
+                    node=stage_obj.node,
+                    doc_params=self.runtime_obj.doc_params,
+                    employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
+                    doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
                 )
-                obj_assignee.before_save(force_insert=True)
-                objs.append(obj_assignee)
+                # convert assignee and zone to simple data
+                employee_ids_zones = {}
+                objs = []
+                log_objs = []
+                objs_created = []
+                for emp_id, zone_and_properties in assignee_and_zone.items():
+                    obj_assignee = RuntimeAssignee(
+                        stage=stage_obj,
+                        employee_id=emp_id,
+                        zone_and_properties=zone_and_properties,
+                    )
+                    obj_assignee.before_save(force_insert=True)
+                    objs.append(obj_assignee)
 
-                obj_created = RuntimeAssignee.objects.create(
-                    stage=stage_obj,
-                    employee_id=emp_id,
-                    zone_and_properties=zone_and_properties,
-                )
-                objs_created.append(obj_created)
-                # create instance log
-                log_obj_tmp = RuntimeLogHandler(
-                    stage_obj=stage_obj,
-                    actor_id=emp_id,
-                    is_system=True,
-                ).log_new_assignee(
-                    perform_created=False,
-                    is_return=is_return,
-                )
-                # update some field need call save() (call bulk don't hit save())
-                log_obj_tmp.before_save(force_insert=True)
-                # add to list for call bulk create
-                log_objs.append(log_obj_tmp)
-                # push employee to stages.assignees
-                employee_ids_zones.update({emp_id: zone_and_properties})
-            # create runtime assignee
-            # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
+                    obj_created = RuntimeAssignee.objects.create(
+                        stage=stage_obj,
+                        employee_id=emp_id,
+                        zone_and_properties=zone_and_properties,
+                    )
+                    objs_created.append(obj_created)
+                    # create instance log
+                    log_obj_tmp = RuntimeLogHandler(
+                        stage_obj=stage_obj,
+                        actor_id=emp_id,
+                        is_system=True,
+                    ).log_new_assignee(
+                        perform_created=False,
+                        is_return=is_return,
+                    )
+                    # update some field need call save() (call bulk don't hit save())
+                    log_obj_tmp.before_save(force_insert=True)
+                    # add to list for call bulk create
+                    log_objs.append(log_obj_tmp)
+                    # push employee to stages.assignees
+                    employee_ids_zones.update({emp_id: zone_and_properties})
+                # create runtime assignee
+                # objs_created = RuntimeAssignee.objects.bulk_create(objs=objs)
 
-            # active hook push notify
-            HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
-                runtime_assignee_obj=objs_created,
-            )
-            # update assignee and zone to Stage
-            stage_obj.assignee_and_zone_data = employee_ids_zones
-            stage_obj.save(update_fields=['assignee_and_zone_data'])
-            # create log
-            RuntimeLogHandler.perform_create(log_objs)
-            return objs_created
+                # active hook push notify
+                HookEventHandler(runtime_obj=self.runtime_obj, is_return=is_return).push_base_notify(
+                    runtime_assignee_obj=objs_created,
+                )
+                # update assignee and zone to Stage
+                stage_obj.assignee_and_zone_data = employee_ids_zones
+                stage_obj.save(update_fields=['assignee_and_zone_data'])
+                # create log
+                RuntimeLogHandler.perform_create(log_objs)
+                return objs_created
+            except Exception as err:
+                WFSupportFunctionsHandler.update_runtime_when_error(stage_obj=stage_obj, value_error=err)
+                print(err)
         return []
 
     def run_next(self, workflow: Workflow, stage_obj_currently: RuntimeStage) -> Union[RuntimeStage, None]:
@@ -898,7 +892,8 @@ class RuntimeLogHandler:
                 'automated_logging': False,
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
-                'msg': 'Return to begin station',
+                # 'msg': 'Return to begin station',
+                'msg': 'Return to initial node',  # edit by PO's request
                 'task_workflow_id': None,
             },
         )
@@ -908,7 +903,8 @@ class RuntimeLogHandler:
             stage=self.stage_obj,
             kind=2,
             action=0,
-            msg='Return to begin station',
+            # msg='Return to begin station',
+            msg='Return to initial node',  # edit by PO's request
             is_system=self.is_system,
         )
 

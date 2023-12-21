@@ -1,10 +1,12 @@
 from rest_framework import serializers
+
+from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
-from apps.masterdata.saledata.models import Currency
+from apps.masterdata.saledata.models import Currency, ExpenseItem
 from apps.sales.opportunity.models import OpportunityActivityLogs
-from apps.shared import AdvancePaymentMsg, ProductMsg, HRMsg, SaleMsg
+from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel
 
 
 class AdvancePaymentListSerializer(serializers.ModelSerializer):
@@ -14,7 +16,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
     return_value = serializers.SerializerMethodField()
     remain_value = serializers.SerializerMethodField()
     expense_items = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
     opportunity_mapped = serializers.SerializerMethodField()
@@ -29,7 +30,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'advance_payment_type',
             'date_created',
             'return_date',
-            'status',
             'advance_value',
             'to_payment',
             'return_value',
@@ -42,6 +42,7 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'expense_items',
             'opportunity_id',
+            'system_status'
         )
 
     @classmethod
@@ -171,11 +172,6 @@ class AdvancePaymentListSerializer(serializers.ModelSerializer):
         return sum_ap_value - sum_return_value - sum_payment_converted_value
 
     @classmethod
-    def get_status(cls, obj):
-        obj.status = "Approved"
-        return obj.status
-
-    @classmethod
     def get_opportunity_id(cls, obj):
         if obj.opportunity_mapped:
             return obj.opportunity_mapped_id
@@ -228,7 +224,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
             'opportunity_mapped',
             'quotation_mapped',
             'sale_order_mapped',
-            'status'
+            'system_status'
         )
 
     @classmethod
@@ -251,19 +247,18 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if self.initial_data.get('expense_valid_list', []):
-            for item in self.initial_data['expense_valid_list']:
-                if not item.get('expense_type_id', None):
-                    raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
+            if not ExpenseItem.objects.filter(
+                    id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
+            ).exists():
+                raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
         if validate_data.get('opportunity_mapped', None):
-            if (validate_data['opportunity_mapped'].is_close_lost is True or
-                    validate_data['opportunity_mapped'].is_deal_close):
+            if validate_data['opportunity_mapped'].is_close_lost or validate_data['opportunity_mapped'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
         return validate_data
 
+    @decorator_run_workflow
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
-        if AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, code=ap_obj.code).count() > 1:
-            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
 
         # create activity log for opportunity
@@ -281,7 +276,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
         return ap_obj
 
 
-class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
+class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     expense_items = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
     quotation_mapped = serializers.SerializerMethodField()
@@ -460,15 +455,48 @@ class AdvancePaymentDetailSerializer(serializers.ModelSerializer):
 
 
 class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150)
+
     class Meta:
         model = AdvancePayment
         fields = (
+            'title',
+            'advance_payment_type',
+            'supplier',
+            'method',
+            'return_date',
             'money_gave',
+            'system_status',
         )
 
+    @classmethod
+    def validate_advance_payment_type(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError({'Advance payment type': AdvancePaymentMsg.TYPE_ERROR})
+
+    @classmethod
+    def validate_method(cls, attrs):
+        if attrs in [0, 1]:
+            return attrs
+        raise serializers.ValidationError({'Method': AdvancePaymentMsg.SALE_CODE_TYPE_ERROR})
+
+    def validate(self, validate_data):
+        if self.initial_data.get('expense_valid_list', []):
+            if not ExpenseItem.objects.filter(
+                    id__in=[item.get('expense_type_id', None) for item in self.initial_data['expense_valid_list']]
+            ).exists():
+                raise serializers.ValidationError({'Expense type': ProductMsg.DOES_NOT_EXIST})
+        return validate_data
+
     def update(self, instance, validated_data):
-        instance.money_gave = validated_data.get('money_gave', None)
+        if instance.opportunity_mapped:
+            if instance.opportunity_mapped.is_close_lost or instance.opportunity_mapped.is_deal_close:
+                raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
         instance.save()
+        create_expense_items(instance, self.initial_data.get('expense_valid_list', []))
         return instance
 
 

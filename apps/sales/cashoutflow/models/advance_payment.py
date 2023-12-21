@@ -1,6 +1,8 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = ['AdvancePayment', 'AdvancePaymentCost']
@@ -66,7 +68,6 @@ class AdvancePayment(DataAbstractModel):
     )
     return_date = models.DateTimeField()
     money_gave = models.BooleanField(default=False)
-    status = models.BooleanField(default=0)
 
     class Meta:
         verbose_name = 'Advance Payment'
@@ -76,13 +77,17 @@ class AdvancePayment(DataAbstractModel):
         permissions = ()
 
     def save(self, *args, **kwargs):
-        if not self.code:
-            function_number = self.company.company_function_number.filter(function=6).first()
-            if function_number:
-                self.code = function_number.gen_code(company_obj=self.company, func=6)
+        if self.system_status in [2, 3]:
             if not self.code:
-                records = AdvancePayment.objects.filter_current(fill__tenant=True, fill__company=True, is_delete=False)
-                self.code = 'AP.00' + str(records.count() + 1)
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=6)
+                if code_generated:
+                    self.code = code_generated
+                else:
+                    records = AdvancePayment.objects.filter_current(
+                        fill__tenant=True, fill__company=True, is_delete=False
+                    )
+                    self.code = 'AP.00' + str(records.count() + 1)
+
         super().save(*args, **kwargs)
 
 

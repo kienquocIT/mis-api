@@ -92,6 +92,7 @@ MAP_FIELD_TITLE = {
     'leave.leaverequest': 'title',
     'cashoutflow.payment': 'title',
     'businesstrip.businessrequest': 'title',
+    'cashoutflow.advancepayment': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

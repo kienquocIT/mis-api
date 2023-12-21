@@ -3,6 +3,7 @@ import json
 from django.db import models
 from django.utils import timezone
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import TASK_PRIORITY, MasterDataAbstractModel, TASK_KIND, DataAbstractModel
 from .config import OpportunityTaskConfig
 
@@ -115,16 +116,18 @@ class OpportunityTask(DataAbstractModel):
 
     def create_code_task(self):
         # auto create code (temporary)
-        task = OpportunityTask.objects.filter_current(
-            fill__tenant=True,
-            fill__company=True,
-            is_delete=False
-        ).count()
         if not self.code:
-            char = "T"
-            temper = task + 1
-            code = f"{char}{temper:03d}"
-            self.code = code
+            code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=5)
+            if code_generated:
+                self.code = code_generated
+            else:
+                task = OpportunityTask.objects.filter_current(
+                    fill__tenant=True, fill__company=True, is_delete=False
+                ).count()
+                char = "T"
+                temper = task + 1
+                code = f"{char}{temper:03d}"
+                self.code = code
 
     def before_save(self):
         self.create_code_task()

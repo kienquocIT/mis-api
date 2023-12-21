@@ -3,6 +3,7 @@ __all__ = [
     'BusinessRequestUpdateSerializer',
 ]
 
+from collections import Counter
 from django.utils import timezone
 from rest_framework import serializers
 
@@ -11,7 +12,7 @@ from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.businesstrip.models import (
     ExpenseItemMapBusinessRequest, BusinessRequest,
-    BusinessRequestAttachmentFile,
+    BusinessRequestAttachmentFile, BusinessRequestEmployeeOnTrip,
 )
 
 from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
@@ -100,7 +101,7 @@ class BusinessRequestExpenseItemListSerializer(serializers.ModelSerializer):
 
 class ExpenseItemListUpdateSerializer(serializers.Serializer):  # noqa
     expense_item = serializers.UUIDField()
-    tax = serializers.UUIDField()
+    tax = serializers.UUIDField(allow_null=True, required=False)
     title = serializers.CharField()
     uom_txt = serializers.CharField()
     quantity = serializers.FloatField()
@@ -112,6 +113,7 @@ class ExpenseItemListUpdateSerializer(serializers.Serializer):  # noqa
 
 class BusinessRequestListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
+    employee_on_trip = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -119,8 +121,24 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
             "id": obj.employee_inherit_id,
             "first_name": obj.employee_inherit.first_name,
             "last_name": obj.employee_inherit.last_name,
-            "full_name": f'{obj.employee_inherit.last_name} {obj.employee_inherit.first_name}'
+            "full_name": obj.employee_inherit.get_full_name()
         } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_destination(cls, obj):
+        return {
+            "id": obj.destination_id,
+            "title": obj.destination.title,
+        } if obj.destination else {}
+
+    @classmethod
+    def get_employee_on_trip(cls, obj):
+        if obj.employee_on_trip_list:
+            employee_on_trip = []
+            for item in list(obj.employee_on_trip_list.all()):
+                employee_on_trip.append({'id': item.id, 'code': item.code, 'fullname': item.get_full_name(2)})
+            return employee_on_trip
+        return {}
 
     class Meta:
         model = BusinessRequest
@@ -132,6 +150,9 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
             'date_f',
             'date_t',
             'system_status',
+            'destination',
+            'employee_on_trip',
+            'remark'
         )
 
 
@@ -159,7 +180,7 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
                 title=item['title'],
                 business_request=instance,
                 expense_item_id=str(item['expense_item']),
-                tax_id=str(item['tax']),
+                tax_id=str(item['tax']) if 'tax' in item else None,
                 uom_txt=item['uom_txt'],
                 quantity=item['quantity'],
                 price=item['price'],
@@ -170,14 +191,23 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
             list_create.append(expense)
         ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
 
+    @classmethod
+    def create_employee_list(cls, instance, emp_list):
+        create_list = []
+        for emp in emp_list:
+            create_list.append(BusinessRequestEmployeeOnTrip(business_mapped=instance, employee_on_trip_mapped_id=emp))
+        BusinessRequestEmployeeOnTrip.objects.bulk_create(create_list)
+
     @decorator_run_workflow
     def create(self, validated_data):
         user = self.context.get('user', None)
         expense_list = validated_data['expense_items']
         del validated_data['expense_items']
+        employee_list = validated_data['employee_on_trip']
         business_request = BusinessRequest.objects.create(**validated_data)
         self.create_expense_items(business_request, expense_list)
         handle_attach_file(user, business_request, validated_data)
+        self.create_employee_list(business_request, employee_list)
         return business_request
 
     class Meta:
@@ -301,7 +331,7 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
 
 class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
     expense_items = ExpenseItemListUpdateSerializer(many=True)
-    employee_inherit = serializers.UUIDField()
+    employee_inherit_id = serializers.UUIDField()
 
     @classmethod
     def validate_expense_items(cls, value):
@@ -317,46 +347,77 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def cover_expense_items(cls, instance, order_dict):
+        list_current = [str(item.id) for item in ExpenseItemMapBusinessRequest.objects.filter_current(
+            business_request=instance
+        )]
         list_update = []
         list_create = []
         has_item = []
         for item in order_dict:
-            expense = ExpenseItemMapBusinessRequest(
-                title=item['title'],
-                business_request=instance,
-                expense_item_id=str(item['expense_item']),
-                tax_id=str(item['tax']),
-                uom_txt=item['uom_txt'],
-                quantity=item['quantity'],
-                price=item['price'],
-                subtotal=item['subtotal'],
-                order=item['order'],
-            )
             if 'id' in item and TypeCheck.check_uuid(item['id']):
-                expense.id = item['id']
+                expense = ExpenseItemMapBusinessRequest(
+                    id=item['id'],
+                    title=item['title'],
+                    business_request=instance,
+                    expense_item_id=str(item['expense_item']),
+                    tax_id=str(item['tax']) if 'tax' in item else None,
+                    uom_txt=item['uom_txt'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    subtotal=item['subtotal'],
+                    order=item['order'],
+                )
                 expense.before_save()
                 list_update.append(expense)
                 has_item.append(str(expense.id))
             else:
                 list_create.append(item)
 
-        ExpenseItemMapBusinessRequest.objects.bulk_update(
-            list_update, fields=['title', 'business_request',
-                                 'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
-        )
+        if len(list_update) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_update(
+                list_update, fields=['title', 'business_request',
+                                     'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
+            )
         # delete if expense not in list update
-        ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
-        ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
+        has_item = Counter(list_current) - Counter(has_item)
+        has_item = [element for element, count in has_item]
+        if len(has_item) > 0:
+            ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
+        if len(list_create) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
+
+    @classmethod
+    def handle_employee_on_trip(cls, instance, emp_list):
+        delete_id = []
+        temp = []
+        for item in BusinessRequestEmployeeOnTrip.objects.filter(business_mapped=instance):
+            if str(item.employee_on_trip_mapped.id) not in emp_list:
+                delete_id.append(str(item.id))
+            else:
+                temp.append(str(item.employee_on_trip_mapped.id))
+        BusinessRequestEmployeeOnTrip.objects.filter(id__in=delete_id).delete()
+        temp = Counter(emp_list) - Counter(temp)
+        create_obt = []
+        for item in temp:
+            create_obt.append(
+                BusinessRequestEmployeeOnTrip(
+                    business_mapped=instance, employee_on_trip_mapped_id=item
+                )
+            )
+        BusinessRequestEmployeeOnTrip.objects.bulk_create(create_obt)
 
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         expense_list = validated_data['expense_items']
         del validated_data['expense_items']
+        emp_list = validated_data['employee_on_trip'] if 'employee_on_trip' in validated_data else []
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         self.cover_expense_items(instance, expense_list)
         handle_attach_file(user, instance, validated_data)
+        if len(emp_list) > 0:
+            self.handle_employee_on_trip(instance, emp_list)
         return instance
 
     class Meta:
@@ -365,7 +426,7 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
             'title',
             'code',
             'remark',
-            'employee_inherit',
+            'employee_inherit_id',
             'attachment',
             'expense_items',
             'date_created',

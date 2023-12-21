@@ -21,10 +21,7 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
 
     class Meta:
         model = Employee
-        fields = (
-            'group__id', 'id',
-            'group_id'
-        )
+        fields = ('id', 'group_id')
 
     def filter_group__first_manager(self, queryset, name, value):
         user_obj = getattr(self.request, 'user', None)
@@ -33,7 +30,8 @@ class EmployeeListFilter(BastionFieldAbstractListFilter):
             if TypeCheck.check_uuid(value):
                 filter_kwargs |= Q(**{name: value})
             elif user_obj.employee_current and user_obj.employee_current.group and str(
-                    user_obj.id) == str(user_obj.employee_current.group.first_manager_id):
+                    user_obj.id
+            ) == str(user_obj.employee_current.group.first_manager_id):
                 manager = str(user_obj.employee_current.group.first_manager_id)
                 filter_kwargs |= Q(**{name: manager})
             return queryset.filter(filter_kwargs)

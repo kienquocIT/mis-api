@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
     DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, BastionFieldAbstractModel
 )
@@ -139,14 +140,14 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     )
     customer_shipping = models.ForeignKey(
         'saledata.AccountShippingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="customer shipping",
         related_name="quotation_customer_shipping",
         null=True
     )
     customer_billing = models.ForeignKey(
         'saledata.AccountBillingAddress',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name="customer billing",
         related_name="quotation_customer_billing",
         null=True
@@ -270,15 +271,11 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
-                self.code = self.generate_code(self.company_id)
-                # function_number = self.company.company_function_number.filter(function=1).first()
-                # if function_number:
-                #     self.code = function_number.gen_code(company_obj=self.company, func=1)
-                # if not self.code:
-                #     records = Quotation.objects.filter_current(
-                #         fill__tenant=True, fill__company=True, is_delete=False
-                #     )
-                #     self.code = 'SQ.00' + str(records.count() + 1)
+                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=1)
+                if code_generated:
+                    self.code = code_generated
+                else:
+                    self.code = self.generate_code(self.company_id)
 
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):

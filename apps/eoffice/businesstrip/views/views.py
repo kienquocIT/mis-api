@@ -5,6 +5,7 @@ from apps.eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusi
 from apps.eoffice.businesstrip.serializers import BusinessRequestListSerializer, BusinessRequestDetailSerializer, \
     BusinessRequestCreateSerializer, BusinessRequestUpdateSerializer
 from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin
+from ..filters import BusinessTripListFilters
 
 __all__ = ['BusinessTripRequestList', 'BusinessTripRequestDetail']
 
@@ -20,6 +21,12 @@ class BusinessTripRequestList(BaseListMixin, BaseCreateMixin):
         'employee_created_id',
     ]
     search_fields = ('code', 'title')
+    filterset_class = BusinessTripListFilters
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('destination', 'employee_inherit').prefetch_related(
+            'employee_on_trip_list',
+        )
 
     @swagger_auto_schema(
         operation_summary="Business trip request list",
