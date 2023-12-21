@@ -133,7 +133,9 @@ class Payment(DataAbstractModel):
                             ap_item_valid.append(ap_item)
                             ap_item_value_converted_valid.append(ap_item_value_converted)
                         else:
-                            raise ValueError('Converted value must <= Available value.')
+                            instance.system_status = 4
+                            instance.save(update_fields=['system_status'])
+                            return False
         for index, item in enumerate(ap_item_valid):
             item.sum_converted_value += float(ap_item_value_converted_valid[index])
             item.save(update_fields=['sum_converted_value'])
