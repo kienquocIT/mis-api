@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.sales.cashoutflow.models import AdvancePaymentCost
