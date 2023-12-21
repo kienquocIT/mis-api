@@ -612,7 +612,7 @@ msgstr "Tài khoản chưa liên kết với nhân viên, vui lòng thử lại"
 
 #
 msgid "Attachment can not verify please try again or contact your admin"
-msgstr "Tiệp đính kèm không thề xác minh, vui lòng thử lại"
+msgstr "Tập tin đính kèm không thề xác minh, vui lòng thử lại"
 
 #
 msgid "List expense item is empty"
@@ -661,3 +661,23 @@ msgstr "Đã nhập kho"
 #
 msgid "Received money"
 msgstr "Đã nhận tiền"
+
+#
+msgid "Employee must be required"
+msgstr "Bắt buộc có thông tin nhân viên"
+
+#
+msgid "The file has been flagged as a security risk."
+msgstr "Tập tin đã bị gắn cờ là có nguy cơ bảo mật."
+
+#
+msgid "The size of the file cannot be determined."
+msgstr "Kích thước của tập tin không thể được xác định."
+
+#
+msgid "The functionality to check available size is not working."
+msgstr "Chức năng kiểm tra kích thước có sẵn không hoạt động."
+
+#
+msgid "User still not map with The employee please contact your Admin!"
+msgstr "Người dùng bắt buộc phải liên kết với nhân viên để thực hiện hành động. Vui lòng liên hệ quản trị viên."

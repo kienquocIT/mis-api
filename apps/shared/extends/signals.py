@@ -921,24 +921,24 @@ def handler_runtime_task_update(sender, instance, **kwargs):  # pylint: disable=
                 obj.update(is_done=True)
 
 
-@receiver(pre_save, sender=Files)
-def move_media_file_to_folder_app(sender, instance, **kwargs):  # pylint: disable=W0613
-    MediaForceAPI.regis_link_to_file(
-        media_file_id=instance.media_file_id,
-        api_file_id=instance.id,
-        api_app_code=instance.relate_app_code,
-        media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
-    )
-
-
-@receiver(post_delete, sender=Files)
-def destroy_files(sender, instance, **kwargs):  # pylint: disable=W0613
-    MediaForceAPI.destroy_link_to_file(
-        media_file_id=instance.media_file_id,
-        api_file_id=instance.id,
-        api_app_code=instance.relate_app_code,
-        media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
-    )
+# @receiver(pre_save, sender=Files)
+# def move_media_file_to_folder_app(sender, instance, **kwargs):  # pylint: disable=W0613
+#     MediaForceAPI.regis_link_to_file(
+#         media_file_id=instance.media_file_id,
+#         api_file_id=instance.id,
+#         api_app_code=instance.relate_app_code,
+#         media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
+#     )
+#
+#
+# @receiver(post_delete, sender=Files)
+# def destroy_files(sender, instance, **kwargs):  # pylint: disable=W0613
+#     MediaForceAPI.destroy_link_to_file(
+#         media_file_id=instance.media_file_id,
+#         api_file_id=instance.id,
+#         api_app_code=instance.relate_app_code,
+#         media_user_id=instance.employee_created.media_user_id if instance.employee_created else None,
+#     )
 
 
 @receiver(post_save, sender=RuntimeViewer)

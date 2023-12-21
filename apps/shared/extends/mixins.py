@@ -904,6 +904,7 @@ class BaseListMixin(BaseMixin):
 
 
 class BaseCreateMixin(BaseMixin):
+    auto_write_log: bool = True
     CREATE_HIDDEN_FIELD_DEFAULT = [
         'tenant_id', 'company_id',
         'employee_created_id',
@@ -934,7 +935,8 @@ class BaseCreateMixin(BaseMixin):
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
             obj = self.perform_create(serializer, extras=field_hidden)
-            self.write_log(doc_obj=obj, request_data=log_data)
+            if self.auto_write_log is True:
+                self.write_log(doc_obj=obj, request_data=log_data)
             return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
 

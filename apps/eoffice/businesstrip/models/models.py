@@ -1,7 +1,8 @@
 import json
-import uuid
 
 from django.db import models
+from django.utils import timezone
+
 from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
 
 __all__ = ['BusinessRequest', 'ExpenseItemMapBusinessRequest', 'BusinessRequestAttachmentFile',
@@ -103,6 +104,14 @@ class BusinessRequest(DataAbstractModel):
         help_text='true if employee inherit is in other request member list',
         default=False,
         null=True
+    )
+
+    attachment_m2m = models.ManyToManyField(
+        'attachments.Files',
+        through='BusinessRequestAttachmentFile',
+        symmetrical=False,
+        blank=True,
+        related_name='file_of_business_request',
     )
 
     def code_generator(self):
@@ -235,11 +244,15 @@ class BusinessRequestAttachmentFile(MasterDataAbstractModel):
     order = models.SmallIntegerField(
         default=1
     )
-    media_file = models.UUIDField(unique=True, default=uuid.uuid4)
+    date_created = models.DateTimeField(
+        default=timezone.now, editable=False,
+        help_text='The record created at value',
+    )
 
     class Meta:
         verbose_name = 'Business trip attachments'
         verbose_name_plural = 'Business trip attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
 
