@@ -46,9 +46,9 @@ class WorkflowOfAppListSerializer(serializers.ModelSerializer):
                     'initial_zones_hidden': initial_zones_hidden,
                     'is_edit_all_zone': initial_node.is_edit_all_zone,
                 }
-        except Exception as e:
-            print(e)
-            return {}
+        except Exception as err:
+            print(err)
+        return {}
 
     class Meta:
         model = WorkflowConfigOfApp
