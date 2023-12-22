@@ -93,6 +93,7 @@ MAP_FIELD_TITLE = {
     'cashoutflow.payment': 'title',
     'businesstrip.businessrequest': 'title',
     'cashoutflow.advancepayment': 'title',
+    'cashoutflow.returnadvance': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -202,10 +203,6 @@ RECEIPT_STATUS = (
     (2, _('Partially received')),
     (3, _('Received')),
 )
-
-RETURN_ADVANCE_STATUS = [
-    (0, _('Approved')),
-]
 
 # Good receipt
 GOODS_RECEIPT_TYPE = (
