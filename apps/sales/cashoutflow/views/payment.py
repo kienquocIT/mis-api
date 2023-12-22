@@ -2,7 +2,8 @@ from drf_yasg.utils import swagger_auto_schema
 from apps.sales.cashoutflow.models import Payment, PaymentConfig, PaymentCost
 from apps.sales.cashoutflow.serializers import (
     PaymentListSerializer, PaymentCreateSerializer, PaymentDetailSerializer, PaymentCostListSerializer,
-    PaymentConfigListSerializer, PaymentConfigUpdateSerializer, PaymentConfigDetailSerializer
+    PaymentConfigListSerializer, PaymentConfigUpdateSerializer, PaymentConfigDetailSerializer,
+    PaymentUpdateSerializer
 )
 from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 
@@ -53,6 +54,7 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = PaymentListSerializer
     serializer_create = PaymentCreateSerializer
     serializer_detail = PaymentDetailSerializer
+    serializer_update = PaymentUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
@@ -78,6 +80,15 @@ class PaymentDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Payment", request_body=PaymentUpdateSerializer)
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='cashoutflow', model_code='payment', perm_code='edit',
+    )
+    def put(self, request, *args, **kwargs):
+        self.serializer_class = PaymentUpdateSerializer
+        return self.update(request, *args, **kwargs)
 
 
 class PaymentConfigList(BaseListMixin, BaseCreateMixin):

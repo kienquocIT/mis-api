@@ -7,7 +7,8 @@ from rest_framework import serializers
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.masterdata.saledata.models import ProductWareHouse, UnitOfMeasure
-from apps.shared import TypeCheck
+from apps.shared import TypeCheck, HrMsg
+from apps.shared.translations.base import AttachmentMsg
 from ..models import DeliveryConfig, OrderDelivery, OrderDeliverySub, OrderDeliveryProduct, OrderDeliveryAttachment
 from ..utils import CommonFunc
 
@@ -291,46 +292,39 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
 
     def handle_attach_file(self, instance, validate_data):
-        if 'attachments' in validate_data and validate_data['attachments']:
-            type_check = True
-            if isinstance(validate_data['attachments'], list):
-                type_check = TypeCheck.check_uuid_list(validate_data['attachments'])
-            elif isinstance(validate_data['attachments'], str):
-                type_check = TypeCheck.check_uuid(validate_data['attachments'])
-            if not type_check:
-                return True
+        attachments = validate_data.get('attachments', None)
+        if attachments and TypeCheck.check_uuid_list(attachments):
             user = self.context.get('user', None)
             relate_app = Application.objects.get(id="1373e903-909c-4b77-9957-8bcf97e8d6d3")
-            relate_app_code = 'orderdeliverysub'
             delivery_sub_id = str(self.instance.id)
-            if not user.employee_current:
-                raise serializers.ValidationError(
-                    {'User': _('User still not map with The employee please contact your Admin!')}
-                )
-            is_check, attach_check = Files.check_media_file(
-                media_file_id=validate_data['attachments'],
-                media_user_id=str(user.employee_current.media_user_id)
-            )
-            if is_check:
-                # tạo file
-                files_id = Files.regis_media_file(
-                    relate_app, delivery_sub_id, relate_app_code, user, media_result=attach_check
+
+            employee_id = user.employee_current_id
+            if not employee_id:
+                raise serializers.ValidationError({'User': HrMsg.EMPLOYEE_WAS_LINKED})
+
+            # check files
+            state, att_objs = Files.check_media_file(file_ids=attachments,employee_id=employee_id, doc_id=instance.id)
+            if state:
+                # register file
+                file_objs = Files.regis_media_file(
+                    relate_app=relate_app, relate_doc_id=delivery_sub_id, file_objs=att_objs,
                 )
 
-                # tạo phiếu attachment
-                OrderDeliveryAttachment.objects.create(
-                    delivery_sub=self.instance,
-                    files=files_id,
-                    media_file=validate_data['attachments']
-                )
+                # create m2m attachment
+                m2m_obj = []
+                for _counter, obj in enumerate(file_objs):
+                    m2m_obj.append(
+                        OrderDeliveryAttachment(
+                            delivery_sub=self.instance,
+                            files=obj,
+                            date_created=getattr(obj, 'date_created', timezone.now()),
+                        )
+                    )
+                OrderDeliveryAttachment.objects.bulk_create(m2m_obj)
+
                 instance.attachments = validate_data['attachments']
                 return validate_data
-
-            raise serializers.ValidationError(
-                {
-                    'Attachment': _('attachment can not verify please try again or contact your admin!')
-                }
-            )
+            raise serializers.ValidationError({'Attachment': AttachmentMsg.ERROR_VERIFY})
         return True
 
     @classmethod

@@ -1,15 +1,19 @@
-from collections import Counter
+__all__ = [
+    'BusinessRequestListSerializer', 'BusinessRequestCreateSerializer', 'BusinessRequestDetailSerializer',
+    'BusinessRequestUpdateSerializer',
+]
 
+from collections import Counter
+from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.eoffice.businesstrip.models import ExpenseItemMapBusinessRequest, BusinessRequest, \
-    BusinessRequestAttachmentFile, BusinessRequestEmployeeOnTrip
-
-__all__ = ['BusinessRequestListSerializer', 'BusinessRequestCreateSerializer', 'BusinessRequestDetailSerializer',
-           'BusinessRequestUpdateSerializer']
+from apps.eoffice.businesstrip.models import (
+    ExpenseItemMapBusinessRequest, BusinessRequest,
+    BusinessRequestAttachmentFile, BusinessRequestEmployeeOnTrip,
+)
 
 from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
 from apps.shared.translations.base import AttachmentMsg, BaseMsg
@@ -17,46 +21,46 @@ from apps.shared.translations.eoffices import BusinessMsg
 
 
 def handle_attach_file(user, instance, validate_data):
-    if 'attachment' in validate_data and validate_data['attachment']:
-        type_check = True
-        if isinstance(validate_data['attachment'], list):
-            type_check = TypeCheck.check_uuid_list(validate_data['attachment'])
-        elif isinstance(validate_data['attachment'], str):
-            type_check = TypeCheck.check_uuid(validate_data['attachment'])
-        if not type_check:
-            return True
+    attachment = validate_data.get('attachment', None)
+    if attachment and TypeCheck.check_uuid_list(attachment):
+        # app object
         relate_app = Application.objects.get(id="87ce1662-ca9d-403f-a32e-9553714ebc6d")
-        relate_app_code = 'businesstrip'
-        business_request_id = str(instance.id)
-        if not user.employee_current:
-            raise serializers.ValidationError(
-                {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
-            )
-        is_check, attach_check = Files.check_media_file(
-            media_file_id=validate_data['attachment'],
-            media_user_id=str(user.employee_current.media_user_id)
-        )
-        if is_check:
-            # tạo file
-            files_id = Files.regis_media_file(
-                relate_app, business_request_id, relate_app_code, user, media_result=attach_check
+
+        # person object
+        employee_id = getattr(user, 'employee_current_id', None)
+        if not employee_id:
+            raise serializers.ValidationError({'User': BaseMsg.USER_NOT_MAP_EMPLOYEE})
+
+        # check files. after handle link
+        state, att_check = Files.check_media_file(file_ids=attachment, employee_id=employee_id, doc_id=instance.id)
+        if state is True:
+            # register file
+            files_objs = Files.regis_media_file(
+                relate_app=relate_app, relate_doc_id=instance.id, file_objs=att_check,
             )
 
-            # tạo phiếu attachment
-            BusinessRequestAttachmentFile.objects.create(
-                business_request=instance,
-                files=files_id,
-                media_file=validate_data['attachment']
-            )
+            # destroy old linked att.
+            att_old_linked = BusinessRequestAttachmentFile.objects.filter(business_request=instance)
+            if att_old_linked:
+                att_old_linked.delete()
+
+            # create attachment linked to business request document.
+            business_file_objs = []
+            for counter, file_obj in enumerate(files_objs):
+                business_file_objs.append(
+                    BusinessRequestAttachmentFile(
+                        business_request=instance,
+                        attachment=file_obj,
+                        order=counter + 1,
+                        date_created=getattr(file_obj, 'date_created', timezone.now()),
+                    )
+                )
+            BusinessRequestAttachmentFile.objects.bulk_create(business_file_objs)
+
             instance.attachment = validate_data['attachment']
             instance.save(update_fields=['attachment'])
             return validate_data
-
-        raise serializers.ValidationError(
-            {
-                'attachment': AttachmentMsg.ERROR_VERIFY
-            }
-        )
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
 
 
@@ -267,29 +271,8 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_attachment(cls, obj):
         if obj.attachment:
-            attach = BusinessRequestAttachmentFile.objects.filter(
-                delivery_sub=obj,
-                media_file=obj.attachment
-            )
-            if attach.exists():
-                attachments = []
-                for item in attach:
-                    files = item.files
-                    attachments.append(
-                        {
-                            'files': {
-                                "id": str(files.id),
-                                "relate_app_id": str(files.relate_app_id),
-                                "relate_app_code": files.relate_app_code,
-                                "relate_doc_id": str(files.relate_doc_id),
-                                "media_file_id": str(files.media_file_id),
-                                "file_name": files.file_name,
-                                "file_size": int(files.file_size),
-                                "file_type": files.file_type
-                            }
-                        }
-                    )
-                return attachments
+            att_objs = BusinessRequestAttachmentFile.objects.select_related('attachment').filter(business_request=obj)
+            return [item.attachment.get_detail() for item in att_objs]
         return []
 
     @classmethod
@@ -364,36 +347,44 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def cover_expense_items(cls, instance, order_dict):
+        list_current = [str(item.id) for item in ExpenseItemMapBusinessRequest.objects.filter_current(
+            business_request=instance
+        )]
         list_update = []
         list_create = []
         has_item = []
         for item in order_dict:
-            expense = ExpenseItemMapBusinessRequest(
-                title=item['title'],
-                business_request=instance,
-                expense_item_id=str(item['expense_item']),
-                tax_id=str(item['tax']),
-                uom_txt=item['uom_txt'],
-                quantity=item['quantity'],
-                price=item['price'],
-                subtotal=item['subtotal'],
-                order=item['order'],
-            )
             if 'id' in item and TypeCheck.check_uuid(item['id']):
-                expense.id = item['id']
+                expense = ExpenseItemMapBusinessRequest(
+                    id=item['id'],
+                    title=item['title'],
+                    business_request=instance,
+                    expense_item_id=str(item['expense_item']),
+                    tax_id=str(item['tax']) if 'tax' in item else None,
+                    uom_txt=item['uom_txt'],
+                    quantity=item['quantity'],
+                    price=item['price'],
+                    subtotal=item['subtotal'],
+                    order=item['order'],
+                )
                 expense.before_save()
                 list_update.append(expense)
                 has_item.append(str(expense.id))
             else:
                 list_create.append(item)
 
-        ExpenseItemMapBusinessRequest.objects.bulk_update(
-            list_update, fields=['title', 'business_request',
-                                 'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
-        )
+        if len(list_update) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_update(
+                list_update, fields=['title', 'business_request',
+                                     'expense_item_id', 'tax_id', 'uom_txt', 'quantity', 'price', 'subtotal', 'order']
+            )
         # delete if expense not in list update
-        ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
-        ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
+        has_item = Counter(list_current) - Counter(has_item)
+        has_item = [element for element, count in has_item]
+        if len(has_item) > 0:
+            ExpenseItemMapBusinessRequest.objects.exclude(id__in=has_item).delete()
+        if len(list_create) > 0:
+            ExpenseItemMapBusinessRequest.objects.bulk_create(list_create)
 
     @classmethod
     def handle_employee_on_trip(cls, instance, emp_list):
@@ -408,22 +399,25 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
         temp = Counter(emp_list) - Counter(temp)
         create_obt = []
         for item in temp:
-            create_obt.append(BusinessRequestEmployeeOnTrip(
-                business_mapped=instance, employee_on_trip_mapped_id=item
-            ))
+            create_obt.append(
+                BusinessRequestEmployeeOnTrip(
+                    business_mapped=instance, employee_on_trip_mapped_id=item
+                )
+            )
         BusinessRequestEmployeeOnTrip.objects.bulk_create(create_obt)
 
     def update(self, instance, validated_data):
         user = self.context.get('user', None)
         expense_list = validated_data['expense_items']
         del validated_data['expense_items']
-        emp_list = validated_data['employee_on_trip']
+        emp_list = validated_data['employee_on_trip'] if 'employee_on_trip' in validated_data else []
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
         self.cover_expense_items(instance, expense_list)
         handle_attach_file(user, instance, validated_data)
-        self.handle_employee_on_trip(instance, emp_list)
+        if len(emp_list) > 0:
+            self.handle_employee_on_trip(instance, emp_list)
         return instance
 
     class Meta:

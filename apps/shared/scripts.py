@@ -722,12 +722,6 @@ def update_opportunity_contact_role_datas():
     print('Update Done')
 
 
-def delete_old_m2m_data_price_list_product():
-    today = date.today()
-    ProductPriceList.objects.filter(date_created__lt=today).delete()
-    return True
-
-
 def update_parent_account():
     for obj in Account.objects.all():
         old_value = obj.parent_account
@@ -876,11 +870,6 @@ def update_backup_data_purchase_request():
         pr.save(update_fields=['purchase_request_product_datas'])
     print('Update Done !')
 
-
-def leave_available_create():
-    for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_available_setup()
-    print('create leave available list successfully')
 
 
 def update_title_opportunity_document():
@@ -1075,12 +1064,6 @@ def update_date_approved_sales_apps():
     print('update_date_approved_sales_apps done.')
 
 
-def update_available():
-    for obj in Company.objects.all():
-        ConfigDefaultData(obj).leave_available_update()
-    print('update leave available done')
-
-
 def update_company_setting():
     vnd_currency = BaseCurrency.objects.filter(code='VND').first()
     for company_obj in Company.objects.all():
@@ -1184,3 +1167,20 @@ def update_tenant_delivery_config():
             deli_config.tenant = deli_config.company.tenant
             deli_config.save(update_fields=['tenant'])
     print('update_tenant_delivery_config done.')
+
+
+def update_ap_title_in_payment_cost():
+    for item in PaymentCost.objects.all():
+        new_ap_cost_converted_list = []
+        for child in item.ap_cost_converted_list:
+            ap_cost_filter = AdvancePaymentCost.objects.filter(id=child['ap_cost_converted_id'])
+            if ap_cost_filter.exists():
+                ap_title_mapped = ap_cost_filter.first().advance_payment.title
+                new_ap_cost_converted_list.append({
+                    'ap_cost_converted_id': child['ap_cost_converted_id'],
+                    'value_converted': child['value_converted'],
+                    'ap_title': ap_title_mapped
+                })
+        item.ap_cost_converted_list = new_ap_cost_converted_list
+        item.save()
+    print('done')

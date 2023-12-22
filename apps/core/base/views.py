@@ -181,7 +181,7 @@ class CountryList(BaseListMixin):
 
 class CityList(BaseListMixin):
     queryset = City.objects
-    search_fields = ('title',)
+    search_fields = ('title', 'short_search')
     filterset_fields = {
         "country_id": ["exact", "in"],
         "id": ["exact", "in"],
