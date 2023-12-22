@@ -108,7 +108,9 @@ class AdvancePaymentCostList(BaseListMixin):
     serializer_list = AdvancePaymentCostListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related('expense_type', 'expense_tax')
+        return super().get_queryset().filter(advance_payment__system_status=3).select_related(
+            'expense_type', 'expense_tax'
+        )
 
     @swagger_auto_schema(
         operation_summary="AdvancePaymentCost List",

@@ -1,14 +1,15 @@
 from rest_framework import serializers
-from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost, AdvancePayment
+
+from apps.core.workflow.tasks import decorator_run_workflow
+from apps.sales.cashoutflow.models import ReturnAdvance, ReturnAdvanceCost, AdvancePaymentCost
 from apps.sales.opportunity.models import OpportunityActivityLogs
-from apps.shared import RETURN_ADVANCE_STATUS, RETURN_ADVANCE_MONEY_RECEIVED, HRMsg, SaleMsg
+from apps.shared import RETURN_ADVANCE_MONEY_RECEIVED, SaleMsg, AbstractDetailSerializerModel
 from apps.shared.translations.return_advance import ReturnAdvanceMsg
 
 
 class ReturnAdvanceListSerializer(serializers.ModelSerializer):
     advance_payment = serializers.SerializerMethodField()
     money_received = serializers.SerializerMethodField()
-    status = serializers.SerializerMethodField()
 
     class Meta:
         model = ReturnAdvance
@@ -17,7 +18,7 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
             'code',
             'title',
             'advance_payment',
-            'status',
+            'system_status',
             'money_received',
             'date_created',
             'return_total',
@@ -36,10 +37,6 @@ class ReturnAdvanceListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_money_received(cls, obj):
         return str(dict(RETURN_ADVANCE_MONEY_RECEIVED).get(obj.money_received))
-
-    @classmethod
-    def get_status(cls, obj):
-        return str(dict(RETURN_ADVANCE_STATUS).get(obj.status))
 
 
 class ReturnAdvanceCostCreateSerializer(serializers.ModelSerializer):
@@ -85,14 +82,15 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
             'method',
             'employee_created_id',
             'employee_inherit',
-            'status',
+            'system_status',
             'money_received',
             'cost',
-            'return_total',
         )
 
     def validate(self, validate_data):
         if validate_data.get('advance_payment', None):
+            if validate_data['advance_payment'].system_status != 3:
+                raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
             if validate_data['advance_payment'].opportunity_mapped:
                 opp = validate_data['advance_payment'].opportunity_mapped
                 if opp.is_close_lost is True or opp.is_deal_close:
@@ -107,7 +105,9 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def common_create_return_advance_cost(cls, validate_data, return_advance):
         data_bulk = []
+        return_total = 0
         for data in validate_data:
+            return_total += data['return_value']
             data_bulk.append(
                 ReturnAdvanceCost(
                     return_advance=return_advance,
@@ -122,14 +122,16 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
                 ap_updated = AdvancePaymentCost.objects.filter(id=data['advance_payment_cost']).first()
                 ap_updated.sum_return_value = ap_updated.sum_return_value + float(data['return_value'])
                 ap_updated.save()
+        ReturnAdvanceCost.objects.filter(return_advance=return_advance).delete()
         ReturnAdvanceCost.objects.bulk_create(data_bulk)
+        return_advance.return_total = return_total
+        return_advance.save(update_fields=['return_total'])
         return True
 
+    @decorator_run_workflow
     def create(self, validated_data):
         data_cost = validated_data.pop('cost')
         return_ad = ReturnAdvance.objects.create(**validated_data)
-        if ReturnAdvance.objects.filter_current(fill__tenant=True, fill__company=True, code=return_ad.code).count() > 1:
-            raise serializers.ValidationError({'detail': HRMsg.INVALID_SCHEMA})
         self.common_create_return_advance_cost(validate_data=data_cost, return_advance=return_ad)
 
         # create activity log for opportunity
@@ -147,7 +149,7 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
         return return_ad
 
 
-class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
+class ReturnAdvanceDetailSerializer(AbstractDetailSerializerModel):
     cost = serializers.SerializerMethodField()
     advance_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -162,7 +164,7 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
             'employee_created',
             'employee_inherit',
             'method',
-            'status',
+            'system_status',
             'money_received',
             'date_created',
             'cost',
@@ -224,7 +226,6 @@ class ReturnAdvanceDetailSerializer(serializers.ModelSerializer):
 
 class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
-    advance_payment = serializers.UUIDField(required=False)
     method = serializers.IntegerField(required=False)
     money_received = serializers.BooleanField(required=False)
     cost = ReturnAdvanceCostCreateSerializer(many=True)
@@ -233,40 +234,20 @@ class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
         model = ReturnAdvance
         fields = (
             'title',
-            'advance_payment',
             'method',
             'money_received',
             'cost',
-            'return_total',
+            'system_status'
         )
 
-    @classmethod
-    def validate_advance_payment(cls, value):
-        try:
-            return AdvancePayment.objects.get(id=value)
-        except AdvancePayment.DoesNotExist:
-            raise serializers.ValidationError({'contact': ReturnAdvanceMsg.ADVANCE_PAYMENT_NOT_EXIST})
-
-    def validate(self, validate_data):
-        count_expense = AdvancePaymentCost.objects.filter(
-            advance_payment=validate_data['advance_payment'],
-        ).count()
-        if len(validate_data['cost']) != count_expense:
-            raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
-        return validate_data
-
-    @classmethod
-    def delete_old_cost(cls, instance):
-        objs = ReturnAdvanceCost.objects.select_related('advance_payment_cost').filter(return_advance=instance)
-        for item in objs:
-            item.advance_payment_cost.sum_return_value -= item.return_value
-            item.advance_payment_cost.save(update_fields=['sum_return_value'])
-        objs.delete()
-        return True
-
     def update(self, instance, validated_data):
+        if instance.advance_payment.system_status != 3:
+            raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
+        count_expense = AdvancePaymentCost.objects.filter(advance_payment=instance.advance_payment).count()
+        if len(validated_data['cost']) != count_expense:
+            raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
+
         data_cost = validated_data.pop('cost')
-        self.delete_old_cost(instance)
         ReturnAdvanceCreateSerializer.common_create_return_advance_cost(
             validate_data=data_cost,
             return_advance=instance
