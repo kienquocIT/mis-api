@@ -342,6 +342,9 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if validate_data.get('meeting_from_time', None) and validate_data.get('meeting_to_time', None):
+            if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
+                raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
         return validate_data
 
     def create(self, validated_data):

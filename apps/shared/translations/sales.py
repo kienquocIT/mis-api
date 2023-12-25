@@ -14,6 +14,7 @@ class SaleMsg:
     INDICATOR_ORDER_OUT_OF_RANGE = _('Order is out of range')
     SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')
     ADVANCE_PAYMENT_NOT_FINISH = _('This advance payment have not finish yet.')
+    WRONG_TIME = _('From time must be < To time.')
 
 
 class SaleTask:
