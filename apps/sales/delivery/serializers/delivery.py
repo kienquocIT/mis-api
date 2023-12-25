@@ -307,7 +307,7 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             if state:
                 # register file
                 file_objs = Files.regis_media_file(
-                    relate_app=relate_app, relate_doc_id=delivery_sub_id, file_objs=att_objs,
+                    relate_app=relate_app, relate_doc_id=delivery_sub_id, file_objs_or_ids=att_objs,
                 )
 
                 # create m2m attachment

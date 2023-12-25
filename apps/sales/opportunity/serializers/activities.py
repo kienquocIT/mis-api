@@ -482,7 +482,7 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
             if state:
                 #
                 file_objs = Files.regis_media_file(
-                    relate_app=relate_app, relate_doc_id=instance_id, file_objs=att_objs
+                    relate_app=relate_app, relate_doc_id=instance_id, file_objs_or_ids=att_objs
                 )
 
                 #

@@ -13,21 +13,27 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
 
-class StaticStorage(FileSystemStorage):
+class BastionStorageLocal(FileSystemStorage):
+    def url(self, name, parameters=None, expire=None, http_method=None):
+        # expire: seconds
+        return super().url(name=name)
+
+
+class StaticStorage(BastionStorageLocal):
     """
     Storage for static files (everyone allow READ, owner allow FULL CONTROL)
     """
     ...
 
 
-class PublicMediaStorage(FileSystemStorage):
+class PublicMediaStorage(BastionStorageLocal):
     """
     Storage for public file (everyone allow READ, owner allow FULL CONTROL)
     """
     ...
 
 
-class PrivateMediaStorage(FileSystemStorage):
+class PrivateMediaStorage(BastionStorageLocal):
     """
     Storage for private file (nobody allow READ, owner allow FULL CONTROL)
 

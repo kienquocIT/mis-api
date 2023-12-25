@@ -1,9 +1,9 @@
 import json
 
 from django.db import models
-from django.utils import timezone
 
-from apps.shared import DataAbstractModel, MasterDataAbstractModel, SimpleAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 __all__ = ['BusinessRequest', 'ExpenseItemMapBusinessRequest', 'BusinessRequestAttachmentFile',
            'BusinessRequestEmployeeOnTrip']
@@ -228,26 +228,16 @@ class ExpenseItemMapBusinessRequest(SimpleAbstractModel):
         permissions = ()
 
 
-class BusinessRequestAttachmentFile(MasterDataAbstractModel):
-    attachment = models.OneToOneField(
-        'attachments.Files',
-        on_delete=models.CASCADE,
-        verbose_name='Business trip attachment files',
-        help_text='Business trip had one/many attachment file',
-        related_name='business_request_attachment_file',
-    )
+class BusinessRequestAttachmentFile(M2MFilesAbstractModel):
     business_request = models.ForeignKey(
         'businesstrip.BusinessRequest',
         on_delete=models.CASCADE,
         verbose_name='Attachment file of business request'
     )
-    order = models.SmallIntegerField(
-        default=1
-    )
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'business_request'
 
     class Meta:
         verbose_name = 'Business trip attachments'

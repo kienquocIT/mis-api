@@ -260,6 +260,7 @@ FILE_SIZE_UPLOAD_LIMIT = int(
 FILE_SIZE_OF_EMPLOYEE_TOTAL = int(
     os.getenv('FILE_SIZE_OF_EMPLOYEE_TOTAL', 5 * 1024 * 1024 * 1024)  # defaults: 5 Gigabytes
 )
+FILE_STORAGE_EXPIRED = 60 * 5  # unit: seconds
 USE_S3 = os.getenv('USE_S3', '0') == '1'
 if USE_S3:
     # aws settings
@@ -273,6 +274,9 @@ if USE_S3:
     AWS_QUERYSTRING_AUTH = True
     AWS_QUERYSTRING_EXPIRE = 60 * 5
     AWS_LOCATION = ''
+
+    # update Storage expired
+    FILE_STORAGE_EXPIRED = AWS_QUERYSTRING_EXPIRE
 
     # s3 static settings
     STATIC_LOCATION = 'static'
