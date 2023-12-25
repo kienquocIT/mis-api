@@ -1,9 +1,10 @@
+from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow,
-    Runtime,
+    Runtime, InitialNodeZone, InitialNodeZoneHidden,
 )
 from apps.core.workflow.serializers.config import (
     WorkflowListSerializer, WorkflowCreateSerializer,
@@ -163,8 +164,8 @@ class WorkflowCurrentOfAppList(BaseListMixin, BaseCreateMixin):
         )
 
     @swagger_auto_schema(
-        operation_summary="Workflow current of app List",
-        operation_description="Get workflow current of app List",
+        operation_summary="Workflow current of app list",
+        operation_description="Get workflow current of app list",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):

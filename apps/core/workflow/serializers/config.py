@@ -908,32 +908,61 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
     @classmethod
     def get_workflow_currently(cls, obj):
         try:
-            if obj.workflow_currently:
-                initial_zones = []
-                initial_zones_hidden = []
-                initial_node = obj.workflow_currently.node_workflow.get(is_system=True, code_node_system='initial')
-                for node_zone in InitialNodeZone.objects.filter(
-                        node=initial_node
-                ).select_related('zone').prefetch_related('zone__properties'):
-                    if node_zone.zone:
-                        for prop in node_zone.zone.properties.all():
-                            initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
-                for node_zone_hidden in InitialNodeZoneHidden.objects.filter(
-                        node=initial_node
-                ).select_related('zone').prefetch_related('zone__properties'):
-                    if node_zone_hidden.zone:
-                        for prop in node_zone_hidden.zone.properties.all():
-                            initial_zones_hidden.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
-                return {
-                    'id': obj.workflow_currently.id,
-                    'title': obj.workflow_currently.title,
-                    'initial_zones': initial_zones,
-                    'initial_zones_hidden': initial_zones_hidden,
-                    'is_edit_all_zone': initial_node.is_edit_all_zone,
-                }
+            initial_node = obj.workflow_currently.node_workflow.get(is_system=True, code_node_system='initial')
+            initial_zones = cls.get_initial_zones(initial_node)
+            initial_zones_hidden = cls.get_initial_zones_hidden(initial_node)
+            collab_out_form = cls.get_collab_out_form(initial_node)
+            return {
+                'id': obj.workflow_currently_id,
+                'title': obj.workflow_currently.title,
+                'initial_zones': initial_zones,
+                'initial_zones_hidden': initial_zones_hidden,
+                'is_edit_all_zone': initial_node.is_edit_all_zone,
+                'collab_out_form': collab_out_form,
+            }
         except Exception as err:
             print(err)
         return {}
+
+    @classmethod
+    def get_initial_zones(cls, initial_node):
+        initial_zones = []
+        for node_zone in initial_node.init_node_zone_node.filter(
+                node=initial_node
+        ).select_related('zone').prefetch_related('zone__properties'):
+            if node_zone.zone:
+                for prop in node_zone.zone.properties.all():
+                    initial_zones.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
+        return initial_zones
+
+    @classmethod
+    def get_initial_zones_hidden(cls, initial_node):
+        initial_zones_hidden = []
+        for node_zone_hidden in initial_node.init_node_zone_hidden_node.filter(
+                node=initial_node
+        ).select_related('zone').prefetch_related('zone__properties'):
+            if node_zone_hidden.zone:
+                for prop in node_zone_hidden.zone.properties.all():
+                    initial_zones_hidden.append({'id': prop.id, 'title': prop.title, 'code': prop.code})
+        return initial_zones_hidden
+
+    @classmethod
+    def get_collab_out_form(cls, initial_node):
+        collab_out_form = []
+        for associate in initial_node.transition_node_input.select_related('node_out'):
+            if associate.node_out.option_collaborator == 1:  # out form
+                collab = CollaborationOutForm.objects.get(node=associate.node_out)
+                for employee in collab.employees.all():
+                    collab_out_form.append({
+                        'id': employee.id,
+                        'first_name': employee.first_name,
+                        'last_name': employee.last_name,
+                        'email': employee.email,
+                        'full_name': employee.get_full_name(2),
+                        'code': employee.code,
+                        'is_active': employee.is_active,
+                    })
+        return collab_out_form
 
     class Meta:
         model = WorkflowConfigOfApp
