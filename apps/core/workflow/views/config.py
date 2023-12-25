@@ -1,10 +1,9 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow,
-    Runtime, InitialNodeZone, InitialNodeZoneHidden,
+    Runtime,
 )
 from apps.core.workflow.serializers.config import (
     WorkflowListSerializer, WorkflowCreateSerializer,
