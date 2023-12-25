@@ -133,7 +133,7 @@ class ProductTestCase(AdvanceTestCase):
             },
             format='json'
         )
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, 201)
         return response
 
     def test_get_product_type(self, product_type_id=None):
