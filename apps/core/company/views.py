@@ -1,4 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework.parsers import MultiPartParser
 from rest_framework.views import APIView
 
 from apps.core.company.models import CompanyUserEmployee, CompanyConfig
@@ -16,6 +17,7 @@ from apps.core.company.serializers import (
     CompanyOverviewSerializer,
     CompanyUserNotMapEmployeeSerializer, CompanyOverviewDetailSerializer, CompanyOverviewConnectedSerializer,
     CompanyConfigDetailSerializer, CompanyConfigUpdateSerializer, RestoreDefaultOpportunityConfigStageSerializer,
+    CompanyUploadLogoSerializer,
 )
 
 
@@ -128,6 +130,29 @@ class CompanyDetail(BaseRetrieveMixin, BaseUpdateMixin, CompanyDestroyMixin):
     )
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+
+class CompanyUploadLogo(BaseUpdateMixin):
+    parser_classes = [MultiPartParser]
+    queryset = Company.objects
+    serializer_update = CompanyUploadLogoSerializer
+
+    def get_object(self):
+        instance = super().get_object()
+        if instance and self.request.user.company_current == instance:
+            return instance
+        raise Company.DoesNotExist
+
+    def write_log(self, *args, **kwargs):
+        kwargs['request_data'] = {}
+        super().write_log(*args, **kwargs)
+
+    @swagger_auto_schema(operation_summary="Update Company", request_body=CompanyUploadLogoSerializer)
+    @mask_view(
+        login_require=True, auth_require=False, allow_admin_tenant=True, allow_admin_company=True,
+    )
+    def post(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class CompanyListOverview(BaseListMixin):

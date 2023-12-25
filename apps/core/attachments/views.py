@@ -15,7 +15,11 @@ class FilesUpload(BaseCreateMixin):
 
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
-    def write_log(self, doc_obj, request_data: dict = None, change_partial: bool = False, task_id=None):
+    def write_log(self, *args, **kwargs):
+        doc_obj = kwargs['doc_obj']
+        change_partial: bool = kwargs.get('change_partial', False)
+        task_id = kwargs.get('task_id', None)
+
         request_data = {
             'id': str(doc_obj.id),
             'file_name': doc_obj.file_name,

@@ -36,5 +36,5 @@ if settings.DEBUG is True:
         path('__debug__/', include('debug_toolbar.urls')),
     )
 
-if settings.USE_S3:
+if not settings.USE_S3:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -254,6 +254,9 @@ MEDIA_SECRET_TOKEN_API = os.environ.get('MEDIA_SECRET_TOKEN_API', 'bhVpajC75NCEP
 # https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html
 #       AWS_S3_CUSTOM_DOMAIN = https://DOC-EXAMPLE-BUCKET.s3.us-west-2.amazonaws.com/photos/puppy.jpg
 #       AWS_DEFAULT_ACL = https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl
+FILE_SIZE_COMPANY_LOGO = int(
+    os.getenv('FILE_SIZE_COMPANY_LOGO', 1024 * 1024 * 5)
+)
 FILE_SIZE_UPLOAD_LIMIT = int(
     os.getenv('FILE_SIZE_UPLOAD_LIMIT', 20 * 1024 * 1024)  # defaults: 20 Megabytes
 )

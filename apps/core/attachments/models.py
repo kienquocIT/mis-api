@@ -14,8 +14,7 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel
-from apps.core.attachments.storages.aws.storages_backend import PrivateMediaStorage
-
+from apps.core.attachments.storages.aws.storages_backend import PrivateMediaStorage, FileSystemStorage
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +42,47 @@ def generate_path_file(instance, filename):
     raise ValueError('Attachment require company related')
 
 
-class Files(MasterDataAbstractModel):
+class BastionFiles(MasterDataAbstractModel):
+    file_name = models.TextField()
+    file_size = models.IntegerField()
+    file_type = models.CharField(max_length=50)
+    file = models.FileField(storage=FileSystemStorage, upload_to=generate_path_file)
+    remarks = models.TextField(blank=True)
+
+    def get_url(self, expire=None):
+        if self.file:
+            return self.file.storage.url(self.file.name, expire=expire if expire else settings.FILE_STORAGE_EXPIRED)
+        return None
+
+    def get_detail(self, has_link: bool = False):
+        raise NotImplementedError
+
+    def delete(self, using=None, keep_parents=False, force_storage=False):
+        super().delete(using=using, keep_parents=keep_parents)
+        # delete in AWS
+        if force_storage is True:
+            self.file.storage.delete(self.file.name)
+
+    class Meta:
+        abstract = True
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class PublicFiles(BastionFiles):
+    def get_detail(self, has_link: bool = False):
+        return {}
+
+    class Meta:
+        verbose_name = 'Public Files'
+        verbose_name_plural = 'Public Files'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class Files(BastionFiles):
     """
     Attachment was uploaded by Employee
 
@@ -60,18 +99,7 @@ class Files(MasterDataAbstractModel):
     relate_app_code = models.CharField(max_length=100, null=True)
     relate_doc_id = models.UUIDField(null=True)
 
-    file_name = models.TextField()
-    file_size = models.IntegerField()
-    file_type = models.CharField(max_length=50)
-
     file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
-
-    belong_to = models.SmallIntegerField(
-        choices=FILE_BELONG_TO,
-        default=0,
-    )
-
-    remarks = models.TextField(blank=True)
 
     def get_url(self, expire=None):
         if self.file:
@@ -92,10 +120,6 @@ class Files(MasterDataAbstractModel):
                 {'link': self.get_url()} if has_link else {}
             )
         }
-
-    def before_save(self, force_insert=False):
-        if force_insert is True and self.relate_app and not self.relate_app_code:
-            self.relate_app_code = self.relate_app.code
 
     @classmethod
     def get_used_size(cls, **kwargs) -> int | None:
@@ -151,15 +175,6 @@ class Files(MasterDataAbstractModel):
         # "Case: raise Errors"
         return False, 'MEDIA_USER_ID_IS_REQUIRED_IN_CHECK_METHOD'
 
-    def check_available_file(self, employee_id: UUID | str, doc_id: UUID | str = None):
-        if str(self.employee_created_id) != str(employee_id):
-            return False
-        if doc_id is None and self.relate_doc_id is not None:
-            return False
-        if doc_id and self.relate_doc_id and str(doc_id) != str(self.relate_doc_id):
-            return False
-        return True
-
     @classmethod
     def regis_media_file(
             cls,
@@ -188,9 +203,11 @@ class Files(MasterDataAbstractModel):
                     obj.relate_app = relate_app
                     obj.relate_app_code = relate_app_code
                     obj.relate_doc_id = relate_doc_id
-                    obj.save(update_fields=[
-                        'relate_app', 'relate_app_code', 'relate_doc_id',
-                    ])
+                    obj.save(
+                        update_fields=[
+                            'relate_app', 'relate_app_code', 'relate_doc_id',
+                        ]
+                    )
                     doc_ids_registered.append(obj.id)
                     result.append(obj)
 
@@ -203,9 +220,11 @@ class Files(MasterDataAbstractModel):
                             obj_unused.relate_app = None
                             obj_unused.relate_app_code = None
                             obj_unused.relate_doc_id = None
-                            obj_unused.save(update_fields=[
-                                'relate_app', 'relate_app_code', 'relate_doc_id',
-                            ])
+                            obj_unused.save(
+                                update_fields=[
+                                    'relate_app', 'relate_app_code', 'relate_doc_id',
+                                ]
+                            )
                     elif unused_resolve == 'delete':
                         # "Case: Unused was destroyed permanent"
                         unused_linked.delete()
@@ -214,8 +233,18 @@ class Files(MasterDataAbstractModel):
         raise ValueError('SOME_REQUIRED_DATA_DONT_HAVE_VALUE')
 
     def save(self, *args, **kwargs):
-        self.before_save(force_insert=kwargs.get('force_insert', False))
+        if not self.relate_app_code and self.relate_app:
+            self.relate_app_code = getattr(self.relate_app, 'code', None)
         super().save(*args, **kwargs)
+
+    def check_available_file(self, employee_id: UUID | str, doc_id: UUID | str = None):
+        if str(self.employee_created_id) != str(employee_id):
+            return False
+        if doc_id is None and self.relate_doc_id is not None:
+            return False
+        if doc_id and self.relate_doc_id and str(doc_id) != str(self.relate_doc_id):
+            return False
+        return True
 
     def link(self, doc_id, doc_app):
         self.relate_doc_id = doc_id

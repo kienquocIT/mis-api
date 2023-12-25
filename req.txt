@@ -40,6 +40,7 @@ google-auth-oauthlib
 packaging==21.3
 phonenumbers==8.13.1
 pip-cache==0.0.6
+Pillow==10.1.0
 PyJWT==2.6.0
 pyparsing==3.0.9
 pylint==2.16.3

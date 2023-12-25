@@ -8,7 +8,7 @@ from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
-from apps.shared import DisperseModel
+from apps.shared import DisperseModel, AttMsg, FORMATTING
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
@@ -164,21 +164,18 @@ class CompanyListSerializer(serializers.ModelSerializer):
 
 
 class CompanyDetailSerializer(serializers.ModelSerializer):
+    logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_logo(cls, obj):
+        return obj.logo.url if obj.logo else None
 
     class Meta:
         model = Company
         fields = (
-            'id',
-            'title',
-            'code',
-            'representative_fullname',
-            'email',
-            'address',
-            'phone',
-            'fax',
-            'company_function_number',
-			'sub_domain'
+            'id', 'title', 'code', 'representative_fullname',
+            'email', 'address', 'phone', 'fax', 'company_function_number', 'sub_domain', 'logo',
         )
 
     @classmethod
@@ -291,6 +288,30 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         create_company_function_number(instance, self.initial_data.get('company_function_number_data', []))
         return instance
+
+
+class CompanyUploadLogoSerializer(serializers.ModelSerializer):
+    @classmethod
+    def validate_logo(cls, attrs):
+        if attrs and hasattr(attrs, 'size'):
+            if isinstance(attrs.size, int) and attrs.size < settings.FILE_SIZE_COMPANY_LOGO:
+                return attrs
+            file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
+                FORMATTING.size_to_text(settings.FILE_SIZE_COMPANY_LOGO)
+            )
+            raise serializers.ValidationError({'file': file_size_limit})
+        raise serializers.ValidationError({'file': AttMsg.FILE_NO_DETECT_SIZE})
+
+    def update(self, instance, validated_data):
+        if instance.logo:
+            instance.logo.storage.delete(instance.logo.name)
+        instance.logo = validated_data['logo']
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Company
+        fields = ('logo',)
 
 
 class CompanyOverviewSerializer(serializers.ModelSerializer):

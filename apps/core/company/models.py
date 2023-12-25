@@ -4,13 +4,15 @@ import datetime
 import calendar
 from typing import Literal, Union
 from uuid import UUID
+
 from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
 from apps.core.models import CoreAbstractModel
-
 
 DEFINITION_INVENTORY_VALUATION_CHOICES = [
     (0, _('Perpetual inventory')),
@@ -49,6 +51,16 @@ FUNCTION_CHOICES = [
     (8, _('Return payment')),
     (9, _('Purchase request')),
 ]
+
+
+def generate_company_logo_path(instance, filename):
+    def get_ext():
+        return filename.split(".")[-1].lower()
+
+    if instance.id:
+        company_path = str(instance.id).replace('-', '')
+        return f"{company_path}/global/logo.{get_ext()}"
+    raise ValueError('Attachment require company related')
 
 
 class Company(CoreAbstractModel):
@@ -100,12 +112,19 @@ class Company(CoreAbstractModel):
     # web builder | tenant_code : 10 + company_code : 25 = 35
     sub_domain = models.CharField(max_length=35, unique=True)
 
+    #
+    logo = models.ImageField(
+        storage=PublicMediaStorage, upload_to=generate_company_logo_path,
+        null=True,
+    )
+
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),
             'title': str(self.title) if self.title else None,
             'code': str(self.code) if self.code else None,
             'sub_domain': self.sub_domain,
+            'logo': self.logo.url if self.logo else None,
         }
 
     class Meta:
