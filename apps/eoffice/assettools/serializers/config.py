@@ -8,6 +8,8 @@ from apps.shared import TypeCheck
 
 class AssetToolsConfigDetailSerializers(serializers.ModelSerializer):
     product_type = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    employee_tools_list_access = serializers.SerializerMethodField()
 
     @classmethod
     def get_warehouse(cls, obj):
@@ -23,7 +25,7 @@ class AssetToolsConfigDetailSerializers(serializers.ModelSerializer):
         if obj.employee_tools_list_access:
             employee_list = []
             for item in list(obj.employee_tools_list_access.all()):
-                employee_list.append({'id': item.id, 'title': item.title})
+                employee_list.append({'id': item.id, 'full_name': item.get_full_name()})
             return employee_list
         return []
 
@@ -87,8 +89,10 @@ class AssetToolsConfigDetailUpdateSerializers(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        warehouse_list = self.initial_data['warehouse']
-        self.cover_warehouse_list(instance, warehouse_list)
-        employee_list = self.initial_data['employee_tools_list_access']
-        self.cover_employee_tools_list_access(instance, employee_list)
+        if 'warehouse' in self.initial_data and len(self.initial_data['warehouse']):
+            warehouse_list = self.initial_data['warehouse']
+            self.cover_warehouse_list(instance, warehouse_list)
+        if 'employee_tools_list_access' in self.initial_data and len(self.initial_data['employee_tools_list_access']):
+            employee_list = self.initial_data['employee_tools_list_access']
+            self.cover_employee_tools_list_access(instance, employee_list)
         return instance

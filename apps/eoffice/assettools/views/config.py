@@ -11,7 +11,6 @@ class AssetToolConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = AssetToolsConfig.objects
     serializer_detail = AssetToolsConfigDetailSerializers
     serializer_update = AssetToolsConfigDetailUpdateSerializers
-    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('product_type').prefetch_related(
@@ -23,8 +22,7 @@ class AssetToolConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Detail of asset tools config",
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'

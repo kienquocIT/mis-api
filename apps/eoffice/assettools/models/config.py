@@ -57,9 +57,10 @@ class AssetToolsConfigWarehouse(SimpleAbstractModel):
 
 
 class AssetToolsConfigEmployee(SimpleAbstractModel):
-    asset_tools_config = models.OneToOneField(
-        'AssetToolsConfig', on_delete=models.CASCADE,
-        related_name='asset_tools_config_map',
+    asset_tools_config = models.ForeignKey(
+        'AssetToolsConfig',
+        on_delete=models.CASCADE,
+        verbose_name='asset tool config',
     )
     employee = models.ForeignKey(
         'hr.Employee',
