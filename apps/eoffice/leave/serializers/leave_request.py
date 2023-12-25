@@ -1,12 +1,10 @@
-from collections import Counter
-
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister, LeaveAvailable, LeaveAvailableHistory
-from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST, TypeCheck
+from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
            'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer',
