@@ -225,6 +225,7 @@ class RuntimeHandler:
             rt_assignee: RuntimeAssignee,
             employee_assignee_obj: models.Model,
             action_code: int,
+            remark: str,
     ) -> bool:
         if rt_assignee.is_done is False:
             runtime_obj = rt_assignee.stage.runtime
@@ -297,15 +298,20 @@ class RuntimeHandler:
                         stage_runtime_currently=rt_assignee.stage,
                     )
                 case 3:  # return
+                    # update data for RuntimeAssignee
+                    rt_assignee.remark = remark
+                    rt_assignee.save(update_fields=['remark'])
                     RuntimeStageHandler(runtime_obj=runtime_obj).return_begin_runtime_by_assignee(
                         stage_runtime_currently=rt_assignee.stage,
-                        assignee_action_return=rt_assignee.employee  # who click action return (edit by PO's request)
+                        assignee_action_return=rt_assignee.employee,  # who click action return (edit by PO's request)
+                        remark=remark
                     )
                 case 4:  # receive
                     cls.action_perform(
                         rt_assignee=rt_assignee,
                         employee_assignee_obj=employee_assignee_obj,
                         action_code=1,
+                        remark=remark,
                     )
                 case 5:  # To do
                     ...
@@ -328,13 +334,14 @@ class RuntimeStageHandler:
     def return_begin_runtime_by_assignee(
             self,
             stage_runtime_currently: RuntimeStage,
-            assignee_action_return
+            assignee_action_return, remark
     ):
         RuntimeLogHandler(
             stage_obj=stage_runtime_currently,
             # actor_obj=self.runtime_obj.doc_employee_created,
             actor_obj=assignee_action_return,
             is_system=False,
+            remark=remark,
         ).log_return_task()  # return
         config_cls = WFConfigSupport(workflow=self.runtime_obj.flow)
         initial_node = config_cls.get_initial_node()
@@ -787,6 +794,7 @@ class RuntimeLogHandler:
             actor_obj: DisperseModel(app_model='hr.employee').get_model() = None,
             actor_id: Union[UUID, str] = None,
             is_system: bool = False,
+            remark: str = '',
     ):
         self.is_system = is_system
         self.stage_obj = stage_obj
@@ -798,6 +806,7 @@ class RuntimeLogHandler:
             self.actor_obj = DisperseModel(app_model='hr.employee').get_model().objects.get(pk=actor_id)
         else:
             self.actor_obj = None
+        self.remark = remark
 
     @classmethod
     def perform_create(cls, objs: list[RuntimeLog]):
@@ -918,7 +927,7 @@ class RuntimeLogHandler:
                 'user_id': None,
                 'employee_id': self.actor_obj.id,
                 # 'msg': 'Return to begin station',
-                'msg': 'Return to initial node',  # edit by PO's request
+                'msg': f'Return to initial node ({self.remark})',  # edit by PO's request
                 'task_workflow_id': None,
             },
         )
@@ -929,7 +938,7 @@ class RuntimeLogHandler:
             kind=2,
             action=0,
             # msg='Return to begin station',
-            msg='Return to initial node',  # edit by PO's request
+            msg=f'Return to initial node ({self.remark})',  # edit by PO's request
             is_system=self.is_system,
         )
 

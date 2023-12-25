@@ -296,6 +296,11 @@ class DataAbstractModel(SimpleAbstractModel):
         blank=True,
         help_text='Title of WF current stage of document'
     )
+    next_collab_out_form = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='employee that selected for next node type out form',
+        related_name='%(app_label)s_%(class)s_collab_out_form',
+    )
     # active, delete status
     system_remarks = JSONField(default={})
     is_active = models.BooleanField(default=True)

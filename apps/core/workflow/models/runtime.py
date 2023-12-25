@@ -518,6 +518,7 @@ class RuntimeAssignee(SimpleAbstractModel):
         default=False,
         help_text='flag to know collaborator can edit whole document (not check zone)'
     )
+    remark = models.CharField(max_length=255, blank=True, help_text='use for action return')
 
     def before_save(self, force_insert=False):
         if force_insert:

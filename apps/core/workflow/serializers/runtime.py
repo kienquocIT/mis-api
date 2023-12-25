@@ -305,16 +305,18 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
+        remark = validated_data.get('remark', '')
         call_task_background(
             call_approval_task,
             *[
                 str(instance.id),
                 str(instance.employee_id),
                 action_code,
+                remark
             ]
         )
         return instance
 
     class Meta:
         model = RuntimeAssignee
-        fields = ('action',)
+        fields = ('action', 'remark')
