@@ -1,2 +1,2 @@
 from .config import *
-from .views import *
+from .provide import *

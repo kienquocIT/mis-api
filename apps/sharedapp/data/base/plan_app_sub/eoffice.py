@@ -90,6 +90,43 @@ BUSINESS_TRIP_REQUEST = {
         },
     },
 }
+ASSET_TOOLS_PROVIDE = {
+    "id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+    "title": "Asset, Tools Provide",
+    "code": "assettoolsprovide",
+    "model_code": "assettoolsprovide",
+    "app_label": "assettools",
+    "is_workflow": True,
+    "app_depend_on": [
+        "a8badb2e-54ff-4654-b3fd-0d2d3c777538",  # Product
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },
+            },
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "a8badb2e-54ff-4654-b3fd-0d2d3c777538": {"view": "4", },},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+}
+
 Application_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data(
         depend_follow_main=False,
@@ -100,6 +137,10 @@ Application_eOffice_data = {
         filtering_inheritor=False
     ),
     "87ce1662-ca9d-403f-a32e-9553714ebc6d": ApplicationConfigFrame(**BUSINESS_TRIP_REQUEST).data(
+        depend_follow_main=False,
+        filtering_inheritor=True
+    ),
+    "55ba3005-6ccc-4807-af27-7cc45e99e3f6": ApplicationConfigFrame(**ASSET_TOOLS_PROVIDE).data(
         depend_follow_main=False,
         filtering_inheritor=True
     ),
