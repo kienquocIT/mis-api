@@ -1,3 +1,4 @@
+from typing import Union
 from django.utils import timezone
 from apps.core.log.tasks import (
     force_log_activity,
@@ -7,7 +8,70 @@ from apps.shared import (
     call_task_background,
     WorkflowMsgNotify
 )
-from apps.core.workflow.models import RuntimeLog, Runtime, RuntimeAssignee
+from apps.core.workflow.models import (Workflow, Node, Association, Runtime, RuntimeAssignee, RuntimeLog)
+
+
+class WFConfigSupport:
+    code_node_initial = 'initial'
+    code_node_approval = 'approved'
+    code_node_complete = 'completed'
+
+    @classmethod
+    def compare_condition(cls, condition: list, params: dict) -> bool:
+        print('cond: ', condition)
+        print('params: ', params)
+        return True
+
+    def __init__(self, workflow: Workflow):
+        if not isinstance(workflow, Workflow):
+            raise AttributeError('[WFConfigSupport] Workflow must be required')
+        self.flow = workflow
+
+    @classmethod
+    def check_stage_is_system(cls, node_obj: Node):
+        if node_obj:
+            if node_obj.code_node_system == cls.code_node_initial:
+                return True, cls.code_node_initial
+            if node_obj.code_node_system == cls.code_node_approval:
+                return True, cls.code_node_approval
+            if node_obj.code_node_system == cls.code_node_complete:
+                return True, cls.code_node_complete
+        return False, None
+
+    def get_initial_node(self) -> Union[Node, None]:
+        try:
+            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_initial)
+        except Node.DoesNotExist:
+            pass
+        return None
+
+    def get_approved_node(self) -> Union[Node, None]:
+        try:
+            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_approval)
+        except Node.DoesNotExist:
+            pass
+        return None
+
+    def get_completed_node(self) -> Union[Node, None]:
+        try:
+            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_complete)
+        except Node.DoesNotExist:
+            pass
+        return None
+
+    def get_next(self, node_input: Node, params: dict) -> Union[Association, None]:
+        association_passed = [
+            obj for obj in Association.objects.filter(workflow_id=self.flow, node_in=node_input) if
+            self.compare_condition(obj.condition, params) is True
+        ]
+        match len(association_passed):
+            case 0:
+                return None
+            case 1:
+                return association_passed[0]
+            case _x if _x > 1:
+                raise ValueError('Association passed large more than 1.')
+        return None
 
 
 class HookEventHandler:

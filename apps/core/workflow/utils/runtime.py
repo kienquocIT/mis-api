@@ -7,7 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.log.tasks import (force_log_activity,)
-from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler, HookEventHandler
+from apps.core.workflow.utils.runtime_sub import WFSupportFunctionsHandler, HookEventHandler, WFConfigSupport
 from apps.shared import (FORMATTING, DisperseModel, MAP_FIELD_TITLE, call_task_background, WorkflowMsgNotify,)
 from apps.core.workflow.models import (
     WorkflowConfigOfApp, Workflow, Node, Association, CollaborationInForm, CollaborationOutForm, CollabInWorkflow,
@@ -88,6 +88,34 @@ class DocHandler:
                     obj.save(update_fields=['system_status'])
             return True
         return False
+
+    @classmethod
+    def force_update_current_stage(cls, runtime_obj, stage_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            setattr(obj, 'current_stage', stage_obj)
+            setattr(obj, 'current_stage_title', stage_obj.title)
+            obj.save(update_fields=['current_stage', 'current_stage_title'])
+            return True
+        return False
+
+    @classmethod
+    def get_next_node_collab_id(cls, runtime_obj):
+        obj = DocHandler(runtime_obj.doc_id, runtime_obj.app_code).get_obj(
+            default_filter={
+                'tenant_id': runtime_obj.tenant_id,
+                'company_id': runtime_obj.company_id,
+            }
+        )
+        if obj:
+            if hasattr(obj, 'next_node_collab_id'):
+                return obj.next_node_collab_id
+        return None
 
 
 class RuntimeHandler:
@@ -421,7 +449,7 @@ class RuntimeStageHandler:
     @classmethod
     def __parse_collaboration(
             cls, node: Node, doc_params: dict = dict, employee_creator_id: Union[UUID, str, any] = None,
-            doc_employee_inherit=None
+            doc_employee_inherit=None, runtime_obj=None
     ) -> dict:
         # OPTION_COLLABORATOR = (
         #     (0, WorkflowMsg.COLLABORATOR_IN),
@@ -459,13 +487,19 @@ class RuntimeStageHandler:
                     out_form_obj = CollaborationOutForm.objects.get(node=node)
                     zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
                     zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
-                    return {
-                        str(_id): {
+                    if runtime_obj:
+                        next_node_collab_id = DocHandler.get_next_node_collab_id(runtime_obj=runtime_obj)
+                        return {str(next_node_collab_id): {
                             'zone_edit': zones, 'zone_hidden': zones_hidden,
                             'is_edit_all_zone': out_form_obj.is_edit_all_zone,
-                        }
-                        for _id in out_form_obj.employees.all().values_list('id', flat=True)
-                    }
+                        }} if next_node_collab_id else {}
+                    # return {
+                    #     str(_id): {
+                    #         'zone_edit': zones, 'zone_hidden': zones_hidden,
+                    #         'is_edit_all_zone': out_form_obj.is_edit_all_zone,
+                    #     }
+                    #     for _id in out_form_obj.employees.all().values_list('id', flat=True)
+                    # }
                 case 2:
                     return cls.parse_in_wf_collab(node=node, doc_employee_inherit=doc_employee_inherit)
         except CollaborationInForm.DoesNotExist:
@@ -483,6 +517,7 @@ class RuntimeStageHandler:
                     doc_params=self.runtime_obj.doc_params,
                     employee_creator_id=self.runtime_obj.doc_employee_created_id if is_return else None,
                     doc_employee_inherit=self.runtime_obj.doc_employee_inherit,
+                    runtime_obj=self.runtime_obj,
                 )
                 # convert assignee and zone to simple data
                 employee_ids_zones = {}
@@ -634,16 +669,7 @@ class RuntimeStageHandler:
                 ).log_finish_station_doc(final_state_num=1, msg_log='Final complete station')
         # update current_stage for document
         if stage_obj:
-            obj = DocHandler(self.runtime_obj.doc_id, self.runtime_obj.app_code).get_obj(
-                default_filter={
-                    'tenant_id': self.runtime_obj.tenant_id,
-                    'company_id': self.runtime_obj.company_id,
-                }
-            )
-            if obj:
-                setattr(obj, 'current_stage', stage_obj)
-                setattr(obj, 'current_stage_title', stage_obj.title)
-                obj.save(update_fields=['current_stage', 'current_stage_title'])
+            DocHandler.force_update_current_stage(runtime_obj=self.runtime_obj, stage_obj=stage_obj)
         # create assignee and zone (task)
         assignee_created = self._create_assignee_and_zone(stage_obj=stage_obj, is_return=is_return)
         if len(assignee_created) == 0:
@@ -715,69 +741,6 @@ class RuntimeStageHandler:
             DocHandler.force_finish_with_runtime(self.runtime_obj)
         self.set_state_task_bg(state_task, field_saved=field_saved)
         return True
-
-
-class WFConfigSupport:
-    code_node_initial = 'initial'
-    code_node_approval = 'approved'
-    code_node_complete = 'completed'
-
-    @classmethod
-    def compare_condition(cls, condition: list, params: dict) -> bool:
-        print('cond: ', condition)
-        print('params: ', params)
-        return True
-
-    def __init__(self, workflow: Workflow):
-        if not isinstance(workflow, Workflow):
-            raise AttributeError('[WFConfigSupport] Workflow must be required')
-        self.flow = workflow
-
-    @classmethod
-    def check_stage_is_system(cls, node_obj: Node):
-        if node_obj:
-            if node_obj.code_node_system == cls.code_node_initial:
-                return True, cls.code_node_initial
-            if node_obj.code_node_system == cls.code_node_approval:
-                return True, cls.code_node_approval
-            if node_obj.code_node_system == cls.code_node_complete:
-                return True, cls.code_node_complete
-        return False, None
-
-    def get_initial_node(self) -> Union[Node, None]:
-        try:
-            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_initial)
-        except Node.DoesNotExist:
-            pass
-        return None
-
-    def get_approved_node(self) -> Union[Node, None]:
-        try:
-            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_approval)
-        except Node.DoesNotExist:
-            pass
-        return None
-
-    def get_completed_node(self) -> Union[Node, None]:
-        try:
-            return Node.objects.get(workflow=self.flow, is_system=True, code_node_system=self.code_node_complete)
-        except Node.DoesNotExist:
-            pass
-        return None
-
-    def get_next(self, node_input: Node, params: dict) -> Union[Association, None]:
-        association_passed = [
-            obj for obj in Association.objects.filter(workflow_id=self.flow, node_in=node_input) if
-            self.compare_condition(obj.condition, params) is True
-        ]
-        match len(association_passed):
-            case 0:
-                return None
-            case 1:
-                return association_passed[0]
-            case _x if _x > 1:
-                raise ValueError('Association passed large more than 1.')
-        return None
 
 
 class RuntimeLogHandler:
@@ -874,7 +837,8 @@ class RuntimeLogHandler:
                 },
             )
         return RuntimeLog.objects.create(
-            actor=self.actor_obj,
+            # actor=self.actor_obj,
+            actor=None,  # edit by PO's request
             runtime=self.stage_obj.runtime,
             stage=self.stage_obj,
             kind=2,

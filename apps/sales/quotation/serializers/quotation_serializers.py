@@ -201,6 +201,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     customer = serializers.UUIDField()
     contact = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
+    next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
     payment_term = serializers.UUIDField()
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
@@ -234,6 +235,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'next_node_collab_id',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -291,6 +293,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
+
+    @classmethod
+    def validate_next_node_collab_id(cls, value):
+        return QuotationCommonValidate().validate_next_node_collab_id(value=value)
 
     def validate(self, validate_data):
         if 'opportunity_id' in validate_data:

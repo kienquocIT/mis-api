@@ -952,7 +952,7 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
         for associate in initial_node.transition_node_input.select_related('node_out'):
             if associate.node_out.option_collaborator == 1:  # out form
                 collab = CollaborationOutForm.objects.get(node=associate.node_out)
-                for employee in collab.employees.all():
+                for employee in collab.employees.select_related('group').all():
                     collab_out_form.append({
                         'id': employee.id,
                         'first_name': employee.first_name,
@@ -960,6 +960,8 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                         'email': employee.email,
                         'full_name': employee.get_full_name(2),
                         'code': employee.code,
+                        'group': {'id': employee.group_id, 'title': employee.group.title, 'code': employee.group.code}
+                        if employee.group else {},
                         'is_active': employee.is_active,
                     })
         return collab_out_form
