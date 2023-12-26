@@ -43,6 +43,7 @@ from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from ..media_cloud_apis import MediaForceAPI
+from ...eoffice.assettools.models import AssetToolsConfig
 from ...eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
 from ...eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
 
@@ -850,6 +851,14 @@ class ConfigDefaultData:
             },
         )
 
+    def asset_tools_config(self):
+        AssetToolsConfig.objects.get_or_create(
+            company=self.company_obj,
+            defaults={
+                'company': self.company_obj,
+            },
+        )
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -865,6 +874,7 @@ class ConfigDefaultData:
         self.leave_config(config)
         self.purchase_request_config()
         self.working_calendar_config()
+        self.asset_tools_config()
         return True
 
 
