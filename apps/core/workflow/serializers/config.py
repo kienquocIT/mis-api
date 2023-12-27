@@ -964,6 +964,7 @@ class WorkflowCurrentOfAppSerializer(serializers.ModelSerializer):
                         if employee.group else {},
                         'is_active': employee.is_active,
                     })
+                break
         return collab_out_form
 
     class Meta:
