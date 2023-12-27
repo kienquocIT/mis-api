@@ -114,8 +114,7 @@ class Company(CoreAbstractModel):
 
     #
     logo = models.ImageField(
-        storage=PublicMediaStorage, upload_to=generate_company_logo_path,
-        null=True,
+        storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True,
     )
 
     def get_detail(self, excludes=None):
@@ -306,6 +305,14 @@ class CompanyUserEmployee(SimpleAbstractModel):
         )
 
     @classmethod
+    def confirm_dif_obj_map(cls, objs_1, objs_2) -> bool | None:
+        if objs_1.count() == 1 and objs_2.count() == 1:
+            if objs_1.first() == objs_2.first():
+                return True
+            return None
+        return False
+
+    @classmethod
     def create_new(
             cls, company_id, employee_id=None, user_id=None, is_created_company=True
     ) -> models.Model or Exception:
@@ -356,6 +363,9 @@ class CompanyUserEmployee(SimpleAbstractModel):
             user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
             emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
             if user_map and emp_map:
+                state_confirm = cls.confirm_dif_obj_map(user_map, emp_map)
+                if isinstance(state_confirm, bool):
+                    return state_confirm
                 user_map = cls.check_obj_map(user_map, 'user')
                 emp_map = cls.check_obj_map(emp_map, 'employee')
                 if (
@@ -366,7 +376,9 @@ class CompanyUserEmployee(SimpleAbstractModel):
                     user_map.employee_id = employee_id
                     user_map.save()
                     return True
-                raise user_map
+                raise RuntimeError(
+                    '[CompanyUserEmployee.assign_map] user_map and emp_map not only or not exist for merge.'
+                )
         raise RuntimeError(
             '[CompanyUserEmployee.assign_map] Data argument check is incorrect so assign returned failure.'
         )

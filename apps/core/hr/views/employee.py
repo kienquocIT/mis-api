@@ -26,31 +26,29 @@ from apps.core.hr.serializers.employee_serializers import (
 )
 from apps.shared import (
     BaseUpdateMixin, mask_view, BaseRetrieveMixin, BaseListMixin, BaseCreateMixin, HRMsg,
-    ResponseController, HttpMsg, TypeCheck,
+    ResponseController, TypeCheck,
 )
-from apps.shared.media_cloud_apis import APIUtil, MediaForceAPI
+from apps.shared.media_cloud_apis import APIUtil
 
 
-class EmployeeUploadAvatar(APIView):
+class EmployeeUploadAvatar(BaseUpdateMixin):
     parser_classes = [MultiPartParser]
+    queryset = Employee.objects
+    serializer_update = EmployeeUploadAvatarSerializer
+    retrieve_hidden_field = ['tenant_id', 'company_id']
+
+    def write_log(self, *args, **kwargs):
+        kwargs['request_data'] = {}
+        super().write_log(*args, **kwargs)
 
     @swagger_auto_schema(request_body=EmployeeUploadAvatarSerializer)
-    @mask_view(login_require=True, employee_require=True)
-    def post(self, request, *args, **kwargs):
-        employee_obj = request.user.employee_current
-        if employee_obj:
-            ser = EmployeeUploadAvatarSerializer(data=request.data)
-            ser.is_valid(raise_exception=True)
-            uploaded_file = request.FILES.get('file')
-            resp = MediaForceAPI.call_upload_avatar(employee_obj=employee_obj, f_img=uploaded_file)
-            if resp.state:
-                employee_obj.media_avatar_hash = resp.result['media_path_hash']
-                employee_obj.save(update_fields=['media_avatar_hash'])
-                return ResponseController.success_200(
-                    data={'detail': HttpMsg.SUCCESSFULLY, 'media_path_hash': resp.result['media_path_hash']}
-                )
-            return ResponseController.bad_request_400(msg=resp.errors)
-        return ResponseController.forbidden_403()
+    @mask_view(
+        login_require=True, auth_require=True,
+        allow_admin_tenant=True, allow_admin_company=True,
+        label_code='hr', model_code='employee', perm_code='edit',
+    )
+    def post(self, request, *args, pk, **kwargs):
+        return self.update(request, *args, pk, **kwargs)
 
 
 class EmployeeList(BaseListMixin, BaseCreateMixin):

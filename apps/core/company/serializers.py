@@ -145,6 +145,13 @@ class CompanyConfigUpdateSerializer(serializers.ModelSerializer):
 # Company Serializer
 class CompanyListSerializer(serializers.ModelSerializer):
     tenant_auto_create_company = serializers.SerializerMethodField()
+    logo = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_logo(cls, obj):
+        if obj.logo:
+            return obj.logo.url
+        return None
 
     class Meta:
         model = Company
@@ -155,7 +162,8 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'date_created',
             'representative_fullname',
             'tenant_auto_create_company',
-            'sub_domain'
+            'sub_domain',
+            'logo',
         )
 
     @classmethod
