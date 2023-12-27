@@ -8,7 +8,7 @@ from apps.sales.opportunity.models import (
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
     OpportunityActivityLogs
 )
-from apps.shared import BaseMsg, SaleMsg
+from apps.shared import BaseMsg, SaleMsg, HrMsg
 from apps.shared.translations.opportunity import OpportunityMsg
 from apps.shared.mail import GmailController
 
@@ -342,6 +342,9 @@ class OpportunityMeetingCreateSerializer(serializers.ModelSerializer):
         if validate_data.get('opportunity', None):
             if validate_data['opportunity'].is_close_lost is True or validate_data['opportunity'].is_deal_close:
                 raise serializers.ValidationError({'detail': SaleMsg.OPPORTUNITY_CLOSED})
+        if validate_data.get('meeting_from_time', None) and validate_data.get('meeting_to_time', None):
+            if validate_data['meeting_from_time'] >= validate_data['meeting_to_time']:
+                raise serializers.ValidationError({'detail': SaleMsg.WRONG_TIME})
         return validate_data
 
     def create(self, validated_data):
@@ -466,39 +469,36 @@ class OpportunityDocumentCreateSerializer(serializers.ModelSerializer):
 
     @classmethod
     def create_sub_document(cls, user, instance, data):
-        # attachments: list -> danh s?ch id t? cloud tr? v?, t?m th?i chi c? 1 n?n l?y [0]
         relate_app = Application.objects.get(id="319356b4-f16c-4ba4-bdcb-e1b0c2a2c124")
-        relate_app_code = 'documentforcustomer'
         instance_id = str(instance.id)
-        if not user.employee_current:
-            raise serializers.ValidationError(
-                {'User': BaseMsg.USER_NOT_MAP_EMPLOYEE}
-            )
+        employee_id = getattr(user, 'employee_current_id', None)
+        if not employee_id:
+            raise serializers.ValidationError({'User': HrMsg.EMPLOYEE_WAS_LINKED})
+
         bulk_data = []
         for doc in data:
-            # check file tr?n cloud
             if not doc['attachment']:
                 return False
-            is_check, attach_check = Files.check_media_file(
-                media_file_id=doc['attachment'],
-                media_user_id=str(user.employee_current.media_user_id)
+            state, att_objs = Files.check_media_file(
+                file_ids=doc['attachment'], employee_id=employee_id, doc_id=instance_id,
             )
-            if not is_check:
-                raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
-
-            # step 1: t?o m?i file trong File API
-            files = Files.regis_media_file(
-                relate_app, instance_id, relate_app_code, user, media_result=attach_check
-            )
-            # step 2: t?o m?i file trong table M2M
-            bulk_data.append(
-                OpportunitySubDocument(
-                    document=instance,
-                    attachment=files,
-                    media_file=doc['attachment'],
-                    description=doc['description']
+            if state:
+                #
+                file_objs = Files.regis_media_file(
+                    relate_app=relate_app, relate_doc_id=instance_id, file_objs=att_objs
                 )
-            )
+
+                #
+                for obj in file_objs:
+                    bulk_data.append(
+                        OpportunitySubDocument(
+                            document=instance,
+                            attachment=obj,
+                            description=doc['description']
+                        )
+                    )
+            else:
+                raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
         OpportunitySubDocument.objects.bulk_create(bulk_data)
         return True
 

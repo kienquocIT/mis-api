@@ -13,6 +13,7 @@ import json
 import sys
 import socket
 import os
+import textwrap
 
 from colorama import Fore
 from datetime import timedelta
@@ -69,6 +70,7 @@ INSTALLED_APPS = \
         'debug_toolbar',  # debug toolbar support check API
         'django_extensions',  # some tool for command | https://github.com/django-extensions/django-extensions
         'django_celery_beat',  # celery crontab
+        'storages',  # storages[s3]
     ] + [  # integrate some service management or tracing
         'apps.core.system',  # Save secret data in DB
         'apps.sharedapp',  # App support command
@@ -101,6 +103,7 @@ INSTALLED_APPS = \
 
         'apps.eoffice.leave',
         'apps.eoffice.businesstrip',
+        'apps.eoffice.assettools',
 
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
@@ -246,6 +249,45 @@ MEDIA_ENABLED = False
 MEDIA_KEY_FLAG = os.environ.get('MEDIA_KEY_FLAG', 'MEDIA-APIRequest')
 MEDIA_KEY_SECRET_TOKEN_API = os.environ.get('MEDIA_KEY_SECRET_TOKEN_API', 'SECRET-KEY-APIRequest')
 MEDIA_SECRET_TOKEN_API = os.environ.get('MEDIA_SECRET_TOKEN_API', 'bhVpajC75NCEPwGs')
+
+# AWS S3
+# https://django-storages.readthedocs.io/en/latest/backends/amazon-S3.html
+# https://docs.aws.amazon.com/AmazonS3/latest/userguide/UsingBucket.html
+#       AWS_S3_CUSTOM_DOMAIN = https://DOC-EXAMPLE-BUCKET.s3.us-west-2.amazonaws.com/photos/puppy.jpg
+#       AWS_DEFAULT_ACL = https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl
+FILE_SIZE_UPLOAD_LIMIT = int(
+    os.getenv('FILE_SIZE_UPLOAD_LIMIT', 20 * 1024 * 1024)  # defaults: 20 Megabytes
+)
+FILE_SIZE_OF_EMPLOYEE_TOTAL = int(
+    os.getenv('FILE_SIZE_OF_EMPLOYEE_TOTAL', 5 * 1024 * 1024 * 1024)  # defaults: 5 Gigabytes
+)
+USE_S3 = os.getenv('USE_S3', '0') == '1'
+if USE_S3:
+    # aws settings
+    AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+    AWS_STORAGE_BUCKET_NAME = os.getenv('AWS_STORAGE_BUCKET_NAME')
+    AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME')
+    AWS_DEFAULT_ACL = None
+    AWS_S3_CUSTOM_DOMAIN = f'{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com'
+    AWS_S3_OBJECT_PARAMETERS = {'CacheControl': 'max-age=86400'}
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = 60 * 5
+    AWS_LOCATION = ''
+
+    # s3 static settings
+    STATIC_LOCATION = 'static'
+    STATIC_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{STATIC_LOCATION}/'
+    STATICFILES_STORAGE = 'apps.core.attachments.storages.aws.storages_backend.StaticStorage'
+
+    # s3 public media settings | apps.core.attachments.storages.aws.storages_backend.PublicMediaStorage
+    PUBLIC_MEDIA_LOCATION = 'media/public'
+    MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/{PUBLIC_MEDIA_LOCATION}/'
+    DEFAULT_FILE_STORAGE = 'apps.core.attachments.storages.aws.storages_backend.PublicMediaStorage'
+
+    # s3 private media settings | apps.core.attachments.storages.aws.storages_backend.PrivateMediaStorage
+    PRIVATE_MEDIA_LOCATION = 'media/private'
+# -- AWS S3
 
 # Key return resp after call API
 API_KEY_AUTH = 'Authorization'
@@ -549,7 +591,12 @@ SHOW_TESTCASE_NAME = True if os.environ.get('SHOW_TESTCASE_NAME', '0') in [1, '1
 DEBUG_PERMIT = True if os.environ.get('DEBUG_PERMIT', '0') in [1, '1'] else False
 DEBUG_BG_TASK = True if os.environ.get('DEBUG_BG_TASK', '0') in [1, '1'] else False
 
+
 # Display config about DB, Cache, CELERY,...
+def display_wraptext(text, length=80):
+    return "\n |  ".join(textwrap.wrap(text, length))
+
+
 DEBUG = os.environ.get('DEBUG', '1') in [1, '1']
 if DEBUG is True:
     # debug toolbar IP Internal
@@ -557,11 +604,11 @@ if DEBUG is True:
     INTERNAL_IPS = [ip[: ip.rfind(".")] + ".1" for ip in ips] + ["127.0.0.1", "10.0.2.2"]
 
     print(Fore.CYAN, '### SETTINGS CONFIG VERBOSE ----------------------------------------------------#', '\033[0m')
-    print(Fore.BLUE, f'#  1. DATABASES: {DATABASES} \033[0m')
-    print(Fore.YELLOW, f'#  2. CELERY_BROKER_URL: {str(CELERY_BROKER_URL)} \033[0m')
-    print(Fore.GREEN, f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)} \033[0m')
-    print(Fore.RED, f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)} \033[0m')
-    print(Fore.LIGHTBLUE_EX, f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE} \033[0m')
-    print(Fore.LIGHTMAGENTA_EX, f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED} \033[0m')
+    print(Fore.BLUE, display_wraptext(f'#  1. DATABASES: {DATABASES}'), '\033[0m')
+    print(Fore.YELLOW, display_wraptext(f'#  2. CELERY_BROKER_URL: {str(CELERY_BROKER_URL)}'), '\033[0m')
+    print(Fore.GREEN, display_wraptext(f'#  3. CELERY_TASK_ALWAYS_EAGER: {str(CELERY_TASK_ALWAYS_EAGER)}'), '\033[0m')
+    print(Fore.RED, display_wraptext(f'#  4. ALLOWED_HOSTS: {str(ALLOWED_HOSTS)}'), '\033[0m')
+    print(Fore.LIGHTBLUE_EX, display_wraptext(f'#  5. TRACING [JAEGER]: {JAEGER_TRACING_ENABLE}'), '\033[0m')
+    print(Fore.LIGHTMAGENTA_EX, display_wraptext(f'#  6. CACHE [MEMCACHED]: {CACHE_ENABLED}'), '\033[0m')
     print(Fore.CYAN, '--------------------------------------------------------------------------------#', '\033[0m')
 # -- Display config about DB, Cache, CELERY,...

@@ -24,10 +24,9 @@ class LeaveRequestListFilters(BastionFieldAbstractListFilter):
         request_params = self.request.query_params.dict()
         if user_obj:
             filter_kwargs = Q(**{'leave__system_status__gte': 2})
-            if 'leave__employee_inherit__in' in request_params:
-                filter_params = request_params['leave__employee_inherit__in'].split(",")
+            if 'leave_employee_list' in request_params:
                 filter_kwargs &= Q(
-                    **{'leave__employee_inherit__in': filter_params}
+                    **{'leave__employee_inherit__in': request_params['leave_employee_list'].split(",")}
                 )
             if 'leave__employee_inherit__group' in request_params:
                 filter_kwargs &= Q(

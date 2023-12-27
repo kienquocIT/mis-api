@@ -133,11 +133,12 @@ class PaymentCostList(BaseListMixin):
         'opportunity_mapped_id': ['exact'],
         'quotation_mapped_id': ['exact'],
         'sale_order_mapped_id': ['exact'],
+        # 'payment__system_status': ['exact']
     }
     serializer_list = PaymentCostListSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related('expense_type')
+        return super().get_queryset().filter(payment__system_status=3).select_related('expense_type')
 
     @swagger_auto_schema(
         operation_summary="PaymentCost List",

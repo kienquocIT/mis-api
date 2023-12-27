@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.cashoutflow.models import (
-    Payment, PaymentCost, PaymentConfig,
-    AdvancePaymentCost
+    Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
 from apps.sales.opportunity.models import OpportunityActivityLogs
@@ -50,19 +49,6 @@ class PaymentListSerializer(serializers.ModelSerializer):
         return sum_payment_value
 
 
-def update_ap_cost(payment_cost_list):
-    for item in payment_cost_list:
-        for child in item.ap_cost_converted_list:
-            ap_item_id = child.get('ap_cost_converted_id', None)
-            ap_item_value_converted = child.get('value_converted', None)
-            if ap_item_id and ap_item_value_converted and item.real_value:
-                ap_item = AdvancePaymentCost.objects.filter(id=ap_item_id).first()
-                if ap_item:
-                    ap_item.sum_converted_value = float(ap_item.sum_converted_value) + float(ap_item_value_converted)
-                    ap_item.save()
-    return True
-
-
 def create_payment_cost_items(payment_obj, payment_expense_valid_list):
     vnd_currency = Currency.objects.filter_current(fill__tenant=True, fill__company=True, abbreviation='VND').first()
     if vnd_currency:
@@ -83,8 +69,7 @@ def create_payment_cost_items(payment_obj, payment_expense_valid_list):
                 raise serializers.ValidationError({'Row error': AdvancePaymentMsg.ROW_ERROR})
 
         PaymentCost.objects.filter(payment=payment_obj).delete()
-        payment_cost_list = PaymentCost.objects.bulk_create(bulk_info)
-        update_ap_cost(payment_cost_list)
+        PaymentCost.objects.bulk_create(bulk_info)
         return True
     return False
 

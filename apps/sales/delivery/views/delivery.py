@@ -22,7 +22,7 @@ class OrderDeliverySubList(BaseListMixin):
         operation_summary='Order Delivery List',
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

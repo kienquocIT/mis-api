@@ -72,8 +72,8 @@ def handle_attach_file(user, instance, validated_attach, create_method):    # py
     # if not attachment:
     #     return False
     # is_check, attach_check = Files.check_media_file(
-    #     media_file_id=attachment,
-    #     media_user_id=str(user.employee_current.media_user_id)
+    #     file_id=attachment,
+    #     employee_id=str(user.employee_current_id)
     # )
     # if not is_check:
     #     raise serializers.ValidationError({'Attachment': BaseMsg.UPLOAD_FILE_ERROR})
