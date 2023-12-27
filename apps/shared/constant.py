@@ -94,6 +94,7 @@ MAP_FIELD_TITLE = {
     'businesstrip.businessrequest': 'title',
     'cashoutflow.advancepayment': 'title',
     'cashoutflow.returnadvance': 'title',
+    'assettools.assettoolsprovide': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

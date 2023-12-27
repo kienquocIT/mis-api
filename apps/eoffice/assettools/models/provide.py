@@ -42,6 +42,35 @@ class AssetToolsProvide(DataAbstractModel):
         null=True,
     )
 
+    def code_generator(self):
+        ast_p = AssetToolsProvide.objects.filter_current(
+            fill__tenant=True,
+            fill__company=True,
+            is_delete=False,
+            system_status__gte=2
+        ).count()
+        if not self.code:
+            char = "ATP"
+            num_quotient, num_remainder = divmod(ast_p, 1000)
+            code = f"{char}{num_remainder + 1:03d}"
+            if num_quotient > 0:
+                code += f".{num_quotient}"
+            self.code = code
+
+    def before_save(self):
+        if not self.code:
+            self.code_generator()
+
+    def save(self, *args, **kwargs):
+        if self.system_status >= 2:
+            self.before_save()
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    kwargs['update_fields'].append('code')
+            else:
+                kwargs.update({'update_fields': ['code']})
+        super().save(*args, **kwargs)
+
     class Meta:
         verbose_name = 'Asset tools provide'
         verbose_name_plural = 'provide asset, tools of employee'
@@ -54,12 +83,14 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
     asset_tools_provide = models.ForeignKey(
         'assettools.AssetToolsProvide',
         on_delete=models.CASCADE,
-        verbose_name='Product of Asset, Tools provide'
+        verbose_name='Product of Asset, Tools provide',
+        related_name='asset_provide_map_product',
     )
     product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         verbose_name='Product need provide',
+        related_name='product_map_asset_provide',
     )
     order = models.IntegerField(
         default=1
