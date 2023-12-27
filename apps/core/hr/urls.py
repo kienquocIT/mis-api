@@ -20,9 +20,9 @@ urlpatterns = [
     path("employee/media-token", EmployeeMediaToken.as_view(), name="EmployeeMediaToken"),
     path("employee/tenant", EmployeeTenantList.as_view(), name="EmployeeTenantList"),
     # path("employee/company/<str:company_id>", EmployeeCompanyList.as_view(), name="EmployeeCompanyList"),
-    path('employee/upload-avatar', EmployeeUploadAvatar.as_view(), name='EmployeeUploadAvatar'),
     path('employees', EmployeeList.as_view(), name='EmployeeList'),
     path("employee/<str:pk>", EmployeeDetail.as_view(), name="EmployeeDetail"),
+    path('employee/<str:pk>/upload-avatar', EmployeeUploadAvatar.as_view(), name='EmployeeUploadAvatar'),
     path("employee/<str:pk>/app", EmployeeAppList.as_view(), name="EmployeeAppList"),
     path("employee/<str:pk>/app/all", EmployeeStorageAppAllList.as_view(), name='EmployeeStorageAppAllList'),
     path(

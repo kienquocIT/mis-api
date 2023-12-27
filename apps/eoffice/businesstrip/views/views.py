@@ -95,4 +95,5 @@ class BusinessTripRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
         label_code='businesstrip', model_code='businessRequest', perm_code="edit",
     )
     def put(self, request, *args, **kwargs):
+        self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
