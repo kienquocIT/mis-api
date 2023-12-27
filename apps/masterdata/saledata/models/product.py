@@ -468,6 +468,7 @@ class ProductVariant(MasterDataAbstractModel):
         on_delete=models.CASCADE,
         related_name='product_variants'
     )
+    # variant_value_list = ["green", "L"]
     variant_value_list = models.JSONField(default=list)
     variant_name = models.CharField(null=False, max_length=100)
     variant_des = models.CharField(null=False, max_length=100)

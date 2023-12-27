@@ -194,6 +194,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
+    available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -288,6 +289,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         if value:
             if float(value) <= 0:
                 raise serializers.ValidationError({'weight': ProductMsg.PRODUCT_SIZE_IS_WRONG})
+            return value
+        return None
+
+    @classmethod
+    def validate_available_notify_quantity(cls, value):
+        if value:
+            if float(value) <= 0:
+                raise serializers.ValidationError({'available_notify_quantity': ProductMsg.VALUE_INVALID})
             return value
         return None
 
@@ -612,6 +621,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
+    available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -707,6 +717,14 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         if value:
             if float(value) <= 0:
                 raise serializers.ValidationError({'weight': ProductMsg.PRODUCT_SIZE_IS_WRONG})
+            return value
+        return None
+
+    @classmethod
+    def validate_available_notify_quantity(cls, value):
+        if value:
+            if float(value) <= 0:
+                raise serializers.ValidationError({'available_notify_quantity': ProductMsg.VALUE_INVALID})
             return value
         return None
 
