@@ -295,10 +295,8 @@ class RuntimeHandler:
                     rt_assignee.action_perform.append(action_code)
                     rt_assignee.action_perform = list(set(rt_assignee.action_perform))
                     rt_assignee.save(update_fields=['is_done', 'action_perform'])
-
                     # update next_node_collab to document before run next stage
                     DocHandler.force_update_next_node_collab(runtime_obj, next_node_collab_id)
-
                     # handle next stage
                     if not RuntimeAssignee.objects.filter(stage=rt_assignee.stage, is_done=False).exists():
                         # new cls call run_next
