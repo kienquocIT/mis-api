@@ -3,9 +3,11 @@ __all__ = ['AssetToolsProvideCreateSerializer', 'AssetToolsProvideListSerializer
 
 from rest_framework import serializers
 
+from apps.core.base.models import Application
 from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel, SYSTEM_STATUS
 from apps.core.workflow.tasks import decorator_run_workflow
-from ..models import AssetToolsProvide, AssetToolsProvideProduct
+from apps.shared.translations.base import AttachmentMsg
+from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProvideAttachmentFile
 
 
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
@@ -39,6 +41,18 @@ def create_products(instance, prod_list):
     AssetToolsProvideProduct.objects.bulk_create(create_lst)
 
 
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
+        relate_app = Application.objects.get(id="55ba3005-6ccc-4807-af27-7cc45e99e3f6")
+        state = AssetToolsProvideAttachmentFile.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
+        if state:
+            return True
+        raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+    return True
+
+
 class AssetToolsProvideCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True)
@@ -55,13 +69,25 @@ class AssetToolsProvideCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': ProductMsg.DOES_NOT_EXIST})
         return value
 
+    def validate_attachments(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = AssetToolsProvideAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     @decorator_run_workflow
     def create(self, validated_data):
         prod_list = validated_data['products']
         del validated_data['products']
+        attachments = validated_data.pop('attachments', None)
         asset_tools_provide = AssetToolsProvide.objects.create(**validated_data)
         create_products(asset_tools_provide, prod_list)
-        # handle_attach_file(user, business_request, validated_data)
+        handle_attach_file(asset_tools_provide, attachments)
         return asset_tools_provide
 
     class Meta:
@@ -106,6 +132,7 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()  # noqa
     system_status = serializers.SerializerMethodField()
     products = serializers.SerializerMethodField()
+    attachments = serializers.SerializerMethodField()
 
     class Meta:
         model = AssetToolsProvide
@@ -155,6 +182,11 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
             return products_list
         return []
 
+    @classmethod
+    def get_attachments(cls, obj):
+        att_objs = AssetToolsProvideAttachmentFile.objects.select_related('attachment').filter(asset_tools_provide=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
@@ -178,13 +210,28 @@ class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
 
+    def validate_attachments(self, attrs):
+        user = self.context.get('user', None)
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id') and instance and hasattr(instance, 'id'):
+            state, result = AssetToolsProvideAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     def update(self, instance, validated_data):
-        products = []
-        if 'products' in validated_data and validated_data['products']:
-            del validated_data['products']
+        attachments = validated_data.pop('attachments', None)
+        products = validated_data.pop('products', None)
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        if products:
+        if products is not None:
             create_products(instance, products)
+
+        if attachments is not None:
+            handle_attach_file(instance, attachments)
+
         return instance

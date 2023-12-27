@@ -1,10 +1,10 @@
 __all__ = ['AssetToolsProvide', 'AssetToolsProvideProduct', 'AssetToolsProvideAttachmentFile']
 
 import json
-from django.utils import timezone
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
+from apps.core.attachments.models import M2MFilesAbstractModel
+from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 
 class AssetToolsProvide(DataAbstractModel):
@@ -178,26 +178,16 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         permissions = ()
 
 
-class AssetToolsProvideAttachmentFile(MasterDataAbstractModel):
-    attachment = models.OneToOneField(
-        'attachments.Files',
-        on_delete=models.CASCADE,
-        verbose_name='Asset, Tools provide attachment files',
-        help_text='Asset, Tools provide had one/many attachment file',
-        related_name='asset_tools_provide_attachment_file',
-    )
+class AssetToolsProvideAttachmentFile(M2MFilesAbstractModel):
     asset_tools_provide = models.ForeignKey(
         'assettools.AssetToolsProvide',
         on_delete=models.CASCADE,
         verbose_name='Attachment file of Asset, Tools provide'
     )
-    order = models.SmallIntegerField(
-        default=1
-    )
-    date_created = models.DateTimeField(
-        default=timezone.now, editable=False,
-        help_text='The record created at value',
-    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'asset_provide_request'
 
     class Meta:
         verbose_name = 'Asset, Tools provide attachments'
