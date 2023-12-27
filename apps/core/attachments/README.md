@@ -6,7 +6,8 @@ Lịch sử phiên bản tài liệu (Document Revision History)
 - ...
 - 2023-12-27: Khởi tạo tài liệu
     ```text
-    Mô tả việc sử dụng tính tổng dung lượng đã sử dụng của Company / Người dùng (employee)
+    1. Mô tả việc sử dụng tính tổng dung lượng đã sử dụng của Company / Người dùng (employee)
+    2. Hướng dẫn kiểm tra tập tin trên API
     ```
 
 ---
@@ -58,5 +59,95 @@ Tổng của:
 - attachments.Files lọc theo company_id & employee_id. Sử dụng file_size (bytes) để tính.
 - **[*]Không tính dung lượng avatar của người này vào dung lượng đã sử dụng của họ mà tính vào company!**
 - **[*]không tính dung lượng của Public Files vào dung lượng đã sử dụng của họ mà tính vào company!**
+
+---
+
+### Kiểm tra (validate) tập tin ID gửi từ người dùng và sử lý liên kết
+1. Truyền context từ views vào serializer để biết ai đang gọi đến
+```python
+class XList(BaseCreateMixin):
+  def post(self, request, *args, **kwargs):
+    self.ser_context = {'user': request.user}
+    ...
+```
+2. Ta có model M2M của chức năng tới Files như sau
+```python
+class XAttachmentFile(M2MFilesAbstractModel):
+    x_y = models.ForeignKey(
+        'x.X',
+        on_delete=models.CASCADE,
+        verbose_name='Attachment file of X'
+    )
+
+    @classmethod
+    def get_doc_field_name(cls):
+        return 'x_y'
+
+    class Meta:
+        ordering = ('-date_created',)
+        ...
+```
+3. Hàm kiểm tra attachment ở serializers
+```python
+class XCreateSerializer(serializers.ModelSerializer):
+    def validate_attachment(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = XAttachmentFile.valid_change(
+                # doc_id = None khi tạo mới, còn update thì doc_id = self.instance.id
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+```
+4. Lấy trường attachment tại hàm create/update của serializer
+```python
+class XCreateSerializer(serializers.ModelSerializer):
+    @decorator_run_workflow
+    def create(self, validated_data):
+        attachment = validated_data.pop('attachment', None) # pop sẽ lấy dữ liệu xoá key này khỏi validated_data
+        ...
+```
+5. Xử lý liên kết
+```python
+class XCreateSerializer(serializers.ModelSerializer):
+    @decorator_run_workflow
+    def create(self, validated_data):
+        attachment_result = validated_data.pop('attachment', None)
+        instance = ...
+        if attachment_result is not None:
+            # get app theo ID của app đang xử lý
+            relate_app = Application.objects.get(id="87ce1662-ca9d-403f-a32e-9553714ebc6d")
+            state = XAttachmentFile.resolve_change(
+                result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+            )
+            if state:
+                return instance
+            # hạn chế thấp nhất việc đã tạo instance nhưng ngay đây lỗi!
+            raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
+        return instance
+```
+6.
+
+---
+
+### Trả ra danh sách attachment đã liên kết với phiếu chính
+```python
+class XDetailSerializer(AbstractDetailSerializerModel):
+    attachment = serializers.SerializerMethodField()
+    
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = XAttachmentFile.objects.select_related('attachment').filter(
+          **{
+            XAttachmentFile.get_doc_field_name(): obj
+          }
+        )
+        return [item.attachment.get_detail() for item in att_objs]
+
+# có thể thay thế **{XAttachmentFile.get_doc_field_name(): obj} => field_name=obj
+```
 
 ---
