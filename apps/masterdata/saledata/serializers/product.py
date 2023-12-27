@@ -390,13 +390,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
-        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
-        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        return validate_data
-
     def create(self, validated_data):
+        validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
+        validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
+        validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
+
         product = Product.objects.create(**validated_data)
 
         create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
@@ -818,13 +816,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
-        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
-        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        return validate_data
-
     def update(self, instance, validated_data):
+        validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
+        validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
+        validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
+
         instance.product_measure.all().delete()
         CommonCreateUpdateProduct.delete_price_list(
             instance,
