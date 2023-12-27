@@ -103,6 +103,7 @@ INSTALLED_APPS = \
 
         'apps.eoffice.leave',
         'apps.eoffice.businesstrip',
+        'apps.eoffice.assettools',
         'apps.eoffice.meeting',
 
     ] + [  # Tools improvement from dev team

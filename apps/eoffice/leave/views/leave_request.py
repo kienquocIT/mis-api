@@ -15,7 +15,7 @@ __all__ = ['LeaveRequestList', 'LeaveRequestDetail', 'LeaveAvailableList', 'Leav
 class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     queryset = LeaveRequest.objects
     serializer_list = LeaveRequestListSerializer
-    serializer_detail = LeaveRequestListSerializer
+    serializer_detail = LeaveRequestDetailSerializer
     serializer_create = LeaveRequestCreateSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = [
@@ -30,7 +30,7 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaverequest', perm_code='view',
+        label_code='leave', model_code='leaveRequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -68,7 +68,7 @@ class LeaveRequestDateList(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=True,
-        label_code='leave', model_code='leaverequest', perm_code='view',
+        label_code='leave', model_code='leaveRequest', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
