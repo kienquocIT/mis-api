@@ -356,7 +356,8 @@ class RuntimeHandler:
                         rt_assignee=rt_assignee,
                         employee_assignee_obj=employee_assignee_obj,
                         action_code=1,
-                        remark=remark,
+                        remark=remark,  # use for action return
+                        next_node_collab_id=next_node_collab_id,  # use for action approve if next node is OUT FORM node
                     )
                 case 5:  # To do
                     ...
@@ -502,12 +503,13 @@ class RuntimeStageHandler:
                     }
                 case 1:
                     out_form_obj = CollaborationOutForm.objects.get(node=node)
-                    zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
-                    zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
+                    # zones = cls.__get_zone_and_properties(out_form_obj.zone.all())
+                    # zones_hidden = cls.__get_zone_and_properties(out_form_obj.zone_hidden.all())
                     if runtime_obj:
                         next_node_collab_id = DocHandler.get_next_node_collab_id(runtime_obj=runtime_obj)
                         return {str(next_node_collab_id): {
-                            'zone_edit': zones, 'zone_hidden': zones_hidden,
+                            'zone_edit': cls.__get_zone_and_properties(out_form_obj.zone.all()),
+                            'zone_hidden': cls.__get_zone_and_properties(out_form_obj.zone_hidden.all()),
                             'is_edit_all_zone': out_form_obj.is_edit_all_zone,
                         }} if next_node_collab_id else {}
                     # return {
