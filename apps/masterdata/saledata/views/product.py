@@ -318,6 +318,8 @@ class ProductDetail(BaseRetrieveMixin, BaseUpdateMixin):
         return super().get_queryset().prefetch_related(
             'product_price_product__currency_using',
             'product_price_product__price_list',
+            'product_variant_attributes',
+            'product_variants'
         ).select_related(
             'general_product_category',
             'general_uom_group',

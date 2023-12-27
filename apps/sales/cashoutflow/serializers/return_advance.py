@@ -118,10 +118,6 @@ class ReturnAdvanceCreateSerializer(serializers.ModelSerializer):
                     return_value=data['return_value']
                 )
             )
-            if return_advance.money_received:
-                ap_updated = AdvancePaymentCost.objects.filter(id=data['advance_payment_cost']).first()
-                ap_updated.sum_return_value = ap_updated.sum_return_value + float(data['return_value'])
-                ap_updated.save()
         ReturnAdvanceCost.objects.filter(return_advance=return_advance).delete()
         ReturnAdvanceCost.objects.bulk_create(data_bulk)
         return_advance.return_total = return_total

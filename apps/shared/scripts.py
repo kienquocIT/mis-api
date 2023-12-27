@@ -1184,3 +1184,9 @@ def update_ap_title_in_payment_cost():
         item.ap_cost_converted_list = new_ap_cost_converted_list
         item.save()
     print('done')
+
+
+def make_sure_asset_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).asset_tools_config()
+    print('Asset tools config is done!')
