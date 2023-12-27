@@ -134,7 +134,7 @@ class Files(BastionFiles):
     def check_available_size_employee(cls, employee_id, new_size=None) -> (bool, str, str):
         if employee_id and TypeCheck.check_uuid(employee_id):
             file_size__sum = cls.get_used_size(
-                fill__tenant=True, fill__company=True, employee_created_id=employee_id, belong_to=0,
+                fill__tenant=True, fill__company=True, employee_created_id=employee_id,
             )
             if isinstance(file_size__sum, int):
                 file_size__check = file_size__sum + (new_size if isinstance(new_size, int) else 0)

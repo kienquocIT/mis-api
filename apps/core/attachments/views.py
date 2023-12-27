@@ -25,7 +25,6 @@ class FilesUpload(BaseCreateMixin):
             'file_name': doc_obj.file_name,
             'file_type': doc_obj.file_type,
             'file_size': doc_obj.file_size,
-            'belong_to': doc_obj.belong_to,
         }
         return super().write_log(
             doc_obj=doc_obj, request_data=request_data, change_partial=change_partial, task_id=task_id
