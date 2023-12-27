@@ -330,8 +330,10 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
         remark = validated_data.get('remark', '')
-        next_node_collab_id = validated_data.get('next_node_collab_id', None)
-        del validated_data['next_node_collab_id']
+        next_node_collab_id = None
+        if 'next_node_collab_id' in validated_data:
+            next_node_collab_id = validated_data['next_node_collab_id']
+            del validated_data['next_node_collab_id']
         call_task_background(
             call_approval_task,
             *[
