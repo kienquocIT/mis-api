@@ -13,11 +13,23 @@ __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveR
 
 
 class LeaveRequestListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": obj.employee_inherit.get_full_name()
+            }
+        return {}
+
     class Meta:
         model = LeaveRequest
         fields = (
             'id',
             'title',
+            'employee_inherit',
             'code',
             'start_day',
             'total',
