@@ -724,9 +724,12 @@ class BaseMixin(GenericAPIView):  # pylint: disable=R0904
             return real_msg + " at Zone's Workflow"
         return real_msg
 
-    def write_log(
-            self, doc_obj, request_data: dict = None, change_partial: bool = False, task_id: Union[UUID, str] = None,
-    ):
+    def write_log(self, *args, **kwargs):
+        doc_obj = kwargs['doc_obj']
+        request_data: dict = kwargs.get('request_data', None)
+        change_partial: bool = kwargs.get('change_partial', False)
+        task_id: Union[UUID, str] = kwargs.get('task_id', None)
+
         user = self.request.user
         call_task_background(
             force_log_activity,

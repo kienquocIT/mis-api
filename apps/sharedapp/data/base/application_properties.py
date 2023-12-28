@@ -1292,6 +1292,39 @@ AppProp_SaleData_Return_Payment_data = {
     },
 }
 
+AppProp_AssetTools_Provide_data = {
+    "0ad5bb6a-d55e-4baf-b102-5d7d73884793": {
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+        "title": "Title",
+        "code": "title",
+        "type": 1,
+    },
+    "d3321f9e-99ba-4a6d-99c6-ae64bd983a4e": {
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+        "title": "Beneficiary",
+        "code": "employee_inherit",
+        "type": 5,
+    },
+    "b4e91361-77f4-41c9-bcbf-745b09287c43": {
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+        "title": "Note",
+        "code": "remark",
+        "type": 1,
+    },
+    "023b1786-fdd1-4554-82c3-e78743690cf6": {
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+        "title": "Tab request",
+        "code": "products",
+        "type": 5,
+    },
+    "7afd28ad-8d01-4c0e-9fd2-fbe423cb7cf1": {
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",
+        "title": "Tab Attachment",
+        "code": "attachments",
+        "type": 5,
+    }
+}
+
 ApplicationProperty_data = {
     **AppProp_SaleData_Contact_data,
     **AppProp_SaleData_Account_data,
@@ -1303,4 +1336,5 @@ ApplicationProperty_data = {
     **AppProp_SaleData_Advance_Payment_data,
     **AppProp_SaleData_Payment_data,
     **AppProp_SaleData_Return_Payment_data,
+    **AppProp_AssetTools_Provide_data,
 }

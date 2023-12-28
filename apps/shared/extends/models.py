@@ -97,15 +97,19 @@ class SimpleAbstractModel(models.Model, metaclass=SignalRegisterMetaClass):
         if self._state.adding is False:
             _original_fields_old = {field: None for field in field_name_list}
             if field_name_list and isinstance(field_name_list, list):
+                self_fetch = None
                 try:
                     self_fetch = deepcopy(self)
-                    self_fetch.refresh_from_db()
-                    _original_fields_old = {
-                        field: getattr(self_fetch, field) for field in field_name_list
-                    }
-                    return _original_fields_old
+                    self_fetch.refresh_from_db(fields=field_name_list)
                 except Exception as err:
-                    print(err)
+                    print('[get_old_value][deepcopy & refresh_from_db]', err)
+                    try:
+                        self_fetch = self.__class__.objects.get(pk=self.id)
+                    except self.DoesNotExist:
+                        print('[get_old_value][self.__class__...get()', err)
+
+                if self_fetch:
+                    _original_fields_old = {field: getattr(self_fetch, field) for field in field_name_list}
             return _original_fields_old
         return {}
 

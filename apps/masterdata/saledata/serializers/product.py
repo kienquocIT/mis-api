@@ -3,7 +3,8 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework import serializers
 from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.product import (
-    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType
+    ProductCategory, UnitOfMeasureGroup, UnitOfMeasure, Product, ProductProductType,
+    ProductVariantAttribute, ProductVariant
 )
 from apps.masterdata.saledata.models.price import Tax, Currency, Price
 from apps.shared import ProductMsg, PriceMsg
@@ -147,6 +148,35 @@ def check_expired_price_list(price_list):
     return False
 
 
+def create_product_variant_attribute(product_obj, product_variant_attribute_list):
+    bulk_info = []
+    for item in product_variant_attribute_list:
+        bulk_info.append(ProductVariantAttribute(product=product_obj, **item))
+    ProductVariantAttribute.objects.filter(product=product_obj).delete()
+    ProductVariantAttribute.objects.bulk_create(bulk_info)
+    return True
+
+
+def create_product_variant_item(product_obj, product_variant_item_list):
+    bulk_info = []
+    for item in product_variant_item_list:
+        bulk_info.append(ProductVariant(product=product_obj, **item))
+    ProductVariant.objects.bulk_create(bulk_info)
+    return True
+
+
+def update_product_variant_item(product_obj, product_variant_item_update_list):
+    bulk_info = []
+    for item in product_variant_item_update_list:
+        if item.get('variant_value_id', None):
+            variant_value_id = item.pop('variant_value_id')
+            ProductVariant.objects.filter(id=variant_value_id).update(**item)
+        else:
+            bulk_info.append(ProductVariant(product=product_obj, **item))
+    ProductVariant.objects.bulk_create(bulk_info)
+    return True
+
+
 class ProductCreateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
     title = serializers.CharField(max_length=150)
@@ -164,6 +194,7 @@ class ProductCreateSerializer(serializers.ModelSerializer):
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
+    available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -262,6 +293,14 @@ class ProductCreateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
+    def validate_available_notify_quantity(cls, value):
+        if value:
+            if float(value) <= 0:
+                raise serializers.ValidationError({'available_notify_quantity': ProductMsg.VALUE_INVALID})
+            return value
+        return None
+
+    @classmethod
     def validate_sale_default_uom(cls, value):
         if value:
             try:
@@ -351,13 +390,11 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
-        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
-        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        return validate_data
-
     def create(self, validated_data):
+        validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
+        validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
+        validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
+
         product = Product.objects.create(**validated_data)
 
         create_product_types_mapped(product, self.initial_data.get('product_types_mapped_list', []))
@@ -373,6 +410,9 @@ class ProductCreateSerializer(serializers.ModelSerializer):
                 validated_data
             )
 
+        create_product_variant_attribute(product, self.initial_data.get('product_variant_attribute_list', []))
+        create_product_variant_item(product, self.initial_data.get('product_variant_item_list', []))
+
         return product
 
 
@@ -382,6 +422,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     inventory_information = serializers.SerializerMethodField()
     purchase_information = serializers.SerializerMethodField()
     product_warehouse_detail = serializers.SerializerMethodField()
+    product_variant_attribute_list = serializers.SerializerMethodField()
+    product_variant_item_list = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -401,7 +443,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             'wait_delivery_amount',
             'wait_receipt_amount',
             'available_amount',
-            'is_public_website'
+            'is_public_website',
+            'product_variant_attribute_list',
+            'product_variant_item_list'
         )
 
     @classmethod
@@ -536,6 +580,27 @@ class ProductDetailSerializer(serializers.ModelSerializer):
                 })
         return result
 
+    @classmethod
+    def get_product_variant_attribute_list(cls, obj):
+        return [{
+            'id': item.id,
+            'attribute_title': item.attribute_title,
+            'attribute_value_list': item.attribute_value_list,
+            'attribute_config': item.attribute_config
+        } for item in obj.product_variant_attributes.all()]
+
+    @classmethod
+    def get_product_variant_item_list(cls, obj):
+        return [{
+            'id': item.id,
+            'variant_value_list': item.variant_value_list,
+            'variant_name': item.variant_name,
+            'variant_des': item.variant_des,
+            'variant_SKU': item.variant_SKU,
+            'variant_extra_price': item.variant_extra_price,
+            'is_active': item.is_active,
+        } for item in obj.product_variants.all()]
+
 
 class ProductUpdateSerializer(serializers.ModelSerializer):
     code = serializers.CharField(max_length=150)
@@ -554,6 +619,7 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
     purchase_tax = serializers.UUIDField(required=False, allow_null=True)
     volume = serializers.FloatField(required=False, allow_null=True)
     weight = serializers.FloatField(required=False, allow_null=True)
+    available_notify_quantity = serializers.FloatField(required=False, allow_null=True)
 
     class Meta:
         model = Product
@@ -653,6 +719,14 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
         return None
 
     @classmethod
+    def validate_available_notify_quantity(cls, value):
+        if value:
+            if float(value) <= 0:
+                raise serializers.ValidationError({'available_notify_quantity': ProductMsg.VALUE_INVALID})
+            return value
+        return None
+
+    @classmethod
     def validate_sale_default_uom(cls, value):
         if value:
             try:
@@ -742,13 +816,11 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({'purchase_tax': ProductMsg.DOES_NOT_EXIST})
         return None
 
-    def validate(self, validate_data):
-        validate_data.update({'volume': sub_validate_volume_obj(self.initial_data, validate_data)})
-        validate_data.update({'weight': sub_validate_weight_obj(self.initial_data, validate_data)})
-        validate_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
-        return validate_data
-
     def update(self, instance, validated_data):
+        validated_data.update({'volume': sub_validate_volume_obj(self.initial_data, validated_data)})
+        validated_data.update({'weight': sub_validate_weight_obj(self.initial_data, validated_data)})
+        validated_data.update({'sale_product_price_list': setup_price_list_data_in_sale(self.initial_data)})
+
         instance.product_measure.all().delete()
         CommonCreateUpdateProduct.delete_price_list(
             instance,
@@ -771,6 +843,10 @@ class ProductUpdateSerializer(serializers.ModelSerializer):
                 self.initial_data.get('sale_price_list', []),
                 validated_data
             )
+
+        create_product_variant_attribute(instance, self.initial_data.get('product_variant_attribute_list', []))
+        update_product_variant_item(instance, self.initial_data.get('product_variant_item_list', []))
+
         return instance
 
 

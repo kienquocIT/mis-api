@@ -133,9 +133,7 @@ class Payment(DataAbstractModel):
                             ap_item_valid.append(ap_item)
                             ap_item_value_converted_valid.append(ap_item_value_converted)
                         else:
-                            instance.system_status = 4
-                            instance.save(update_fields=['system_status'])
-                            return False
+                            raise ValueError('Can not convert advance payment expenses to payment')
         for index, item in enumerate(ap_item_valid):
             item.sum_converted_value += float(ap_item_value_converted_valid[index])
             item.save(update_fields=['sum_converted_value'])

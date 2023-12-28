@@ -24,6 +24,9 @@ class LeaveRequestList(BaseListMixin, BaseCreateMixin):
     ]
     search_fields = ('code', 'title')
 
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_inherit')
+
     @swagger_auto_schema(
         operation_summary="Leave request list",
         operation_description="get leave request list",

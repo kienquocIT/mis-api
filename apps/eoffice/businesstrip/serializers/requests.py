@@ -4,10 +4,8 @@ __all__ = [
 ]
 
 from collections import Counter
-from django.utils import timezone
 from rest_framework import serializers
 
-from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.businesstrip.models import (
@@ -16,50 +14,18 @@ from apps.eoffice.businesstrip.models import (
 )
 
 from apps.shared import TypeCheck, HRMsg, SYSTEM_STATUS, AbstractDetailSerializerModel, DisperseModel
-from apps.shared.translations.base import AttachmentMsg, BaseMsg
+from apps.shared.translations.base import AttachmentMsg
 from apps.shared.translations.eoffices import BusinessMsg
 
 
-def handle_attach_file(user, instance, validate_data):
-    attachment = validate_data.get('attachment', None)
-    if attachment and TypeCheck.check_uuid_list(attachment):
-        # app object
+def handle_attach_file(instance, attachment_result):
+    if attachment_result and isinstance(attachment_result, dict):
         relate_app = Application.objects.get(id="87ce1662-ca9d-403f-a32e-9553714ebc6d")
-
-        # person object
-        employee_id = getattr(user, 'employee_current_id', None)
-        if not employee_id:
-            raise serializers.ValidationError({'User': BaseMsg.USER_NOT_MAP_EMPLOYEE})
-
-        # check files. after handle link
-        state, att_check = Files.check_media_file(file_ids=attachment, employee_id=employee_id, doc_id=instance.id)
-        if state is True:
-            # register file
-            files_objs = Files.regis_media_file(
-                relate_app=relate_app, relate_doc_id=instance.id, file_objs=att_check,
-            )
-
-            # destroy old linked att.
-            att_old_linked = BusinessRequestAttachmentFile.objects.filter(business_request=instance)
-            if att_old_linked:
-                att_old_linked.delete()
-
-            # create attachment linked to business request document.
-            business_file_objs = []
-            for counter, file_obj in enumerate(files_objs):
-                business_file_objs.append(
-                    BusinessRequestAttachmentFile(
-                        business_request=instance,
-                        attachment=file_obj,
-                        order=counter + 1,
-                        date_created=getattr(file_obj, 'date_created', timezone.now()),
-                    )
-                )
-            BusinessRequestAttachmentFile.objects.bulk_create(business_file_objs)
-
-            instance.attachment = validate_data['attachment']
-            instance.save(update_fields=['attachment'])
-            return validate_data
+        state = BusinessRequestAttachmentFile.resolve_change(
+            result=attachment_result, doc_id=instance.id, doc_app=relate_app,
+        )
+        if state:
+            return True
         raise serializers.ValidationError({'attachment': AttachmentMsg.ERROR_VERIFY})
     return True
 
@@ -198,15 +164,28 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
             create_list.append(BusinessRequestEmployeeOnTrip(business_mapped=instance, employee_on_trip_mapped_id=emp))
         BusinessRequestEmployeeOnTrip.objects.bulk_create(create_list)
 
+    def validate_attachment(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = BusinessRequestAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
     @decorator_run_workflow
     def create(self, validated_data):
-        user = self.context.get('user', None)
-        expense_list = validated_data['expense_items']
-        del validated_data['expense_items']
+        attachment = validated_data.pop('attachment', None)
+        expense_list = validated_data.pop('expense_items')
         employee_list = validated_data['employee_on_trip']
         business_request = BusinessRequest.objects.create(**validated_data)
         self.create_expense_items(business_request, expense_list)
-        handle_attach_file(user, business_request, validated_data)
+
+        if attachment is not None:
+            handle_attach_file(business_request, attachment)
+
         self.create_employee_list(business_request, employee_list)
         return business_request
 
@@ -270,10 +249,8 @@ class BusinessRequestDetailSerializer(AbstractDetailSerializerModel):
 
     @classmethod
     def get_attachment(cls, obj):
-        if obj.attachment:
-            att_objs = BusinessRequestAttachmentFile.objects.select_related('attachment').filter(business_request=obj)
-            return [item.attachment.get_detail() for item in att_objs]
-        return []
+        att_objs = BusinessRequestAttachmentFile.objects.select_related('attachment').filter(business_request=obj)
+        return [item.attachment.get_detail() for item in att_objs]
 
     @classmethod
     def get_departure(cls, obj):
@@ -406,16 +383,33 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
             )
         BusinessRequestEmployeeOnTrip.objects.bulk_create(create_obt)
 
-    def update(self, instance, validated_data):
+    def validate_attachment(self, attrs):
         user = self.context.get('user', None)
-        expense_list = validated_data['expense_items']
-        del validated_data['expense_items']
+        instance = self.instance
+        if user and hasattr(user, 'employee_current_id') and instance and hasattr(instance, 'id'):
+            state, result = BusinessRequestAttachmentFile.valid_change(
+                current_ids=attrs, employee_id=user.employee_current_id, doc_id=instance.id
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    def update(self, instance, validated_data):
+        attachment = validated_data.pop('attachment', None)
+        expense_list = validated_data.pop('expense_items', None)
         emp_list = validated_data['employee_on_trip'] if 'employee_on_trip' in validated_data else []
+
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        self.cover_expense_items(instance, expense_list)
-        handle_attach_file(user, instance, validated_data)
+
+        if expense_list is not None:
+            self.cover_expense_items(instance, expense_list)
+
+        if attachment is not None:
+            handle_attach_file(instance, attachment)
+
         if len(emp_list) > 0:
             self.handle_employee_on_trip(instance, emp_list)
         return instance

@@ -1,12 +1,10 @@
-from collections import Counter
-
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.leave.models import LeaveRequest, LeaveRequestDateListRegister, LeaveAvailable, LeaveAvailableHistory
-from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST, TypeCheck
+from apps.shared import LeaveMsg, AbstractDetailSerializerModel, SYSTEM_STATUS, TYPE_LIST
 
 __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveRequestDetailSerializer',
            'LeaveAvailableListSerializer', 'LeaveAvailableEditSerializer', 'LeaveAvailableHistoryListSerializer',
@@ -15,11 +13,23 @@ __all__ = ['LeaveRequestListSerializer', 'LeaveRequestCreateSerializer', 'LeaveR
 
 
 class LeaveRequestListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        if obj.employee_inherit:
+            return {
+                "id": obj.employee_inherit_id,
+                "full_name": obj.employee_inherit.get_full_name()
+            }
+        return {}
+
     class Meta:
         model = LeaveRequest
         fields = (
             'id',
             'title',
+            'employee_inherit',
             'code',
             'start_day',
             'total',
@@ -213,69 +223,32 @@ class LeaveRequestUpdateSerializer(AbstractDetailSerializerModel):
     def update_detail_data(self, instance, detail_list):
         company_id = str(self.context.get('company_id', ''))
         tenant_id = str(self.context.get('tenant_id', ''))
-        current_list = [str(item.id) for item in LeaveRequestDateListRegister.objects.filter(leave=instance)]
-        try:
-            with transaction.atomic():
-                list_data_current = []
-                data_delete = []
-                data_create = []
-                for item in detail_list:
-                    leave_type_id = item['leave_available']['leave_type']['id']
-                    if 'id' not in item or item['id'] == '':
-                        # create new
-                        data_create.append(
-                            LeaveRequestDateListRegister(
-                                company_id=company_id,
-                                tenant_id=tenant_id,
-                                order=item["order"],
-                                leave_type_id=leave_type_id,
-                                date_from=item["date_from"],
-                                morning_shift_f=item["morning_shift_f"],
-                                date_to=item["date_to"],
-                                morning_shift_t=item["morning_shift_t"],
-                                subtotal=float(item["subtotal"]),
-                                remark=item["remark"],
-                                leave=instance
-                            )
-                        )
-                    elif 'id' in item and TypeCheck.check_uuid(item['id']) and item['id'] in current_list:
-                        list_data_current.append(
-                            LeaveRequestDateListRegister(
-                                id=item['id'],
-                                company_id=company_id,
-                                tenant_id=tenant_id,
-                                order=item["order"],
-                                leave_type_id=leave_type_id,
-                                date_from=item["date_from"],
-                                morning_shift_f=item["morning_shift_f"],
-                                date_to=item["date_to"],
-                                morning_shift_t=item["morning_shift_t"],
-                                subtotal=float(item["subtotal"]),
-                                remark=item["remark"],
-                                leave=instance
-                            )
-                        )
-                        data_delete.append(item['id'])
-                data_delete = Counter(current_list) - Counter(data_delete)
-                data_delete = [element for element, count in data_delete.most_common()]
-                if len(data_delete) > 0:
-                    LeaveRequestDateListRegister.objects.filter(id__in=data_delete).delete()
-                if len(data_create) > 0:
-                    LeaveRequestDateListRegister.objects.bulk_create(data_create)
-                if len(list_data_current) > 0:
-                    LeaveRequestDateListRegister.objects.bulk_update(
-                        list_data_current, fields=['order', 'leave_type_id', 'date_from', 'morning_shift_f', 'date_to',
-                                                   'morning_shift_t', 'subtotal', 'remark']
-                    )
-        except Exception as create_error:
-            print('error save leave request', create_error)
-            raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
+        LeaveRequestDateListRegister.objects.filter(leave=instance).delete()
+        data_create = []
+        for item in detail_list:
+            data_create.append(
+                LeaveRequestDateListRegister(
+                    company_id=company_id,
+                    tenant_id=tenant_id,
+                    order=item["order"],
+                    leave_type_id=item['leave_available']['leave_type']['id'],
+                    date_from=item["date_from"],
+                    morning_shift_f=item["morning_shift_f"],
+                    date_to=item["date_to"],
+                    morning_shift_t=item["morning_shift_t"],
+                    subtotal=float(item["subtotal"]),
+                    remark=item["remark"],
+                    leave=instance
+                )
+            )
+        LeaveRequestDateListRegister.objects.bulk_create(data_create)
 
     def update(self, instance, validated_data):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        self.update_detail_data(instance, validated_data['detail_data'])
+        if 'detail_data' in validated_data and validated_data['detail_data']:
+            self.update_detail_data(instance, validated_data['detail_data'])
         return instance
 
 

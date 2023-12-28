@@ -13,21 +13,27 @@ from django.core.files.storage import FileSystemStorage
 from django.conf import settings
 
 
-class StaticStorage(FileSystemStorage):
+class BastionStorageLocal(FileSystemStorage):
+    def url(self, name, parameters=None, expire=None, http_method=None):
+        # expire: seconds
+        return super().url(name=name)
+
+
+class StaticStorage(BastionStorageLocal):
     """
     Storage for static files (everyone allow READ, owner allow FULL CONTROL)
     """
     ...
 
 
-class PublicMediaStorage(FileSystemStorage):
+class PublicMediaStorage(BastionStorageLocal):
     """
     Storage for public file (everyone allow READ, owner allow FULL CONTROL)
     """
     ...
 
 
-class PrivateMediaStorage(FileSystemStorage):
+class PrivateMediaStorage(BastionStorageLocal):
     """
     Storage for private file (nobody allow READ, owner allow FULL CONTROL)
 
@@ -84,3 +90,17 @@ if settings.USE_S3 is True:
         default_acl = 'private'
         file_overwrite = False
         custom_domain = False
+
+        def copy(self, from_path, to_path):
+            from_path = self._normalize_name(self._clean_name(from_path))
+            to_path = self._normalize_name(self._clean_name(to_path))
+
+            copy_result = self.connection.meta.client.copy_object(
+                Bucket=self.bucket_name,
+                CopySource=self.bucket_name + "/" + from_path,
+                Key=to_path
+            )
+
+            if copy_result['ResponseMetadata']['HTTPStatusCode'] == 200:
+                return True
+            return False
