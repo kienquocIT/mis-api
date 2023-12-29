@@ -6,4 +6,3 @@ urlpatterns = [
     path('asset-tools/', include('apps.eoffice.assettools.urls')),
     path('meeting-schedule/', include('apps.eoffice.meeting.urls')),
 ]
-
