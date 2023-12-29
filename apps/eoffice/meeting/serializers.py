@@ -2,44 +2,94 @@ import requests
 from datetime import datetime, timedelta
 from icalendar import Calendar, Event
 from rest_framework import serializers
-from apps.core.workflow.tasks import decorator_run_workflow
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting
 )
 from django.core.mail import get_connection, EmailMessage
+from apps.shared import MeetingScheduleMsg
 
 
 # MeetingRoom
 class MeetingRoomListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingRoom
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'location',
+            'description'
+        )
 
 
 class MeetingRoomCreateSerializer(serializers.ModelSerializer):
+    code = serializers.CharField(required=True)
+    description = serializers.CharField(required=True)
+
     class Meta:
         model = MeetingRoom
-        fields = '__all__'
+        fields = (
+            'title',
+            'code',
+            'location',
+            'description'
+        )
+
+    @classmethod
+    def validate_code(cls, value):
+        if MeetingRoom.objects.filter_current(fill__company=True, fill__tenant=True, code=value).exists():
+            raise serializers.ValidationError({'code': MeetingScheduleMsg.DUP_CODE})
+        return value
+
+    @classmethod
+    def validate_description(cls, value):
+        if not value:
+            raise serializers.ValidationError({'description': MeetingScheduleMsg.DES_IS_REQUIRED})
+        return value
 
 
 class MeetingRoomDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingRoom
-        fields = '__all__'
+        fields = (
+            'id',
+            'title',
+            'code',
+            'location',
+            'description'
+        )
 
 
 class MeetingRoomUpdateSerializer(serializers.ModelSerializer):
+    description = serializers.CharField(required=True)
+
     class Meta:
         model = MeetingRoom
-        fields = '__all__'
+        fields = (
+            'title',
+            'location',
+            'description'
+        )
+
+    @classmethod
+    def validate_description(cls, value):
+        if not value:
+            raise serializers.ValidationError({'description': MeetingScheduleMsg.DES_IS_REQUIRED})
+        return value
 
 
-# zoom config
-
+# Zoom config
 class MeetingZoomConfigListSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingZoomConfig
-        fields = '__all__'
+        fields = (
+            'id',
+            'account_email',
+            'account_id',
+            'client_id',
+            'client_secret',
+            'personal_meeting_id'
+        )
 
 
 class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
@@ -64,17 +114,29 @@ class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
 class MeetingZoomConfigDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingZoomConfig
-        fields = '__all__'
+        fields = (
+            'id',
+            'account_email',
+            'account_id',
+            'client_id',
+            'client_secret',
+            'personal_meeting_id'
+        )
 
 
 class MeetingZoomConfigUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingZoomConfig
-        fields = '__all__'
+        fields = (
+            'account_email',
+            'account_id',
+            'client_id',
+            'client_secret',
+            'personal_meeting_id'
+        )
 
 
-# meeting schedule
-
+# Meeting schedule
 class MeetingScheduleListSerializer(serializers.ModelSerializer):  # noqa
     date_occur = serializers.SerializerMethodField()
 
@@ -137,6 +199,7 @@ def create_online_meeting_object(meeting_config, zoom_meeting_obj):
     if resp.status_code != 201:
         raise serializers.ValidationError({'Online meeting': 'Unable to generate meeting link'})
     response_data = resp.json()
+
     zoom_meeting_obj.meeting_ID = response_data.get("pmi") if response_data.get("pmi") else response_data.get("id")
     zoom_meeting_obj.meeting_link = response_data.get("join_url")
     zoom_meeting_obj.meeting_passcode = response_data.get("password")
@@ -184,7 +247,7 @@ def after_create_online_meeting(meeting_schedule, online_meeting_data):
         )
 
         try:
-            employee = meeting_schedule.employee_created
+            employee = meeting_schedule.employee_inherit
             company_name = meeting_schedule.company.title
             company_email = meeting_schedule.company.email
             company_email_app_password = meeting_schedule.company.email_app_password
@@ -220,13 +283,39 @@ def after_create_online_meeting(meeting_schedule, online_meeting_data):
     return True
 
 
+def check_room_overlap(item, data):
+    item_mt_time = f"{item.meeting_start_date} {item.meeting_start_time}"
+    this_mt_time = f"{data.get('meeting_start_date')} {data.get('meeting_start_time')}"
+    item_mt_datetime = datetime.strptime(item_mt_time, "%Y-%m-%d %H:%M:%S")
+    this_mt_datetime = datetime.strptime(this_mt_time, "%Y-%m-%d %H:%M:%S")
+    item_end_datetime = item_mt_datetime + timedelta(minutes=item.meeting_duration)
+    this_end_datetime = this_mt_datetime + timedelta(minutes=data.get('meeting_duration'))
+    return (item_mt_datetime < this_end_datetime) and (this_mt_datetime < item_end_datetime)
+
+
 class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingSchedule
         fields = '__all__'
 
+    def validate(self, validate_data):
+        if validate_data.get('meeting_type') is True:
+            # check room
+            all_offline_meeting = MeetingSchedule.objects.filter_current(
+                fill__company=True,
+                fill__tenant=True,
+                meeting_type=True,
+                meeting_room_mapped=validate_data.get('meeting_room_mapped')
+            )
+            for item in all_offline_meeting:
+                if check_room_overlap(item, validate_data):
+                    raise serializers.ValidationError({'room': MeetingScheduleMsg.ROOM_IS_NOT_AVAILABLE})
+        return validate_data
+
     def create(self, validated_data):
-        meeting_schedule = MeetingSchedule.objects.create(**validated_data)
+        meeting_schedule = MeetingSchedule.objects.create(
+            **validated_data, employee_inherit_id=validated_data['employee_created_id']
+        )
         create_participants_mapped(meeting_schedule, self.initial_data.get('participants', []))
         if meeting_schedule.meeting_type is False:
             after_create_online_meeting(meeting_schedule, self.initial_data.get('online_meeting_data', {}))
@@ -241,6 +330,7 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingSchedule
         fields = (
+            'id',
             'title',
             'meeting_content',
             'meeting_type',
