@@ -7,14 +7,13 @@ from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate
     QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
     QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, QuotationExpenseSerializer, \
     QuotationIndicatorSerializer
-from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg
+from apps.shared import SaleMsg, BaseMsg
 
 
 # QUOTATION BEGIN
 class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
 
     class Meta:
@@ -50,12 +49,6 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'code': obj.employee_inherit.code,
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
     @classmethod
     def get_opportunity(cls, obj):

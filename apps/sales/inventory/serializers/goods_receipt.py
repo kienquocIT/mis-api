@@ -367,7 +367,6 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
     inventory_adjustment = serializers.SerializerMethodField()
     goods_receipt_type = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -403,12 +402,6 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'title': obj.inventory_adjustment.title,
             'code': obj.inventory_adjustment.code,
         } if obj.inventory_adjustment else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
 
 class GoodsReceiptDetailSerializer(serializers.ModelSerializer):
