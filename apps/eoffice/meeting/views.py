@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from drf_yasg.utils import swagger_auto_schema
 from apps.eoffice.meeting.models import MeetingRoom, MeetingZoomConfig, MeetingSchedule
 from apps.eoffice.meeting.serializers import (

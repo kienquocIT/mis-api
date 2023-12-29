@@ -1,3 +1,4 @@
+from django.core.mail import get_connection, EmailMessage
 import requests
 from datetime import datetime, timedelta
 from icalendar import Calendar, Event
@@ -5,7 +6,6 @@ from rest_framework import serializers
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting
 )
-from django.core.mail import get_connection, EmailMessage
 from apps.shared import MeetingScheduleMsg
 
 
@@ -223,11 +223,11 @@ def create_ics_calendar_meeting_file(meeting_id, meeting_topic, meeting_host_ema
     calendar.add_component(event)
     try:
         file_path = f'apps/eoffice/meeting/calendar_ics_file/calendar_{meeting_id}.ics'
-        with open(file_path, 'wb') as f:
-            f.write(calendar.to_ical())
+        with open(file_path, 'wb') as file:
+            file.write(calendar.to_ical())
         return file_path
-    except Exception as e:
-        raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({e})'})
+    except Exception as error:
+        raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({error})'})
 
 
 def after_create_online_meeting(meeting_schedule, online_meeting_data):
@@ -278,8 +278,8 @@ def after_create_online_meeting(meeting_schedule, online_meeting_data):
             )
             email.connection = connection
             email.send()
-        except Exception as e:
-            raise serializers.ValidationError({'Online meeting': f'Cannot send email ({e})'})
+        except Exception as error:
+            raise serializers.ValidationError({'Online meeting': f'Cannot send email ({error})'})
     return True
 
 
