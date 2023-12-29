@@ -234,31 +234,29 @@ def send_mail(meeting_schedule, response_data, meeting_time, date, time, duratio
     try:
         employee = meeting_schedule.employee_inherit
         company_name = meeting_schedule.company.title
-        company_email = meeting_schedule.company.email
-        company_email_app_password = meeting_schedule.company.email_app_password
         meeting_topic = response_data.get('topic')
         meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
         meeting_url = response_data.get('join_url')
-        meeting_passcode = response_data.get('password')
         email = EmailMessage(
             subject=meeting_topic,
             body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
                  f"\n\nTopic: {meeting_topic}\nTime: {meeting_time}"
                  f"\n\nJoin Zoom Meeting\n{meeting_url}"
                  f"\n\nMeeting ID: {meeting_id}"
-                 f"\nPasscode: {meeting_passcode}",
-            from_email=company_email,
+                 f"\nPasscode: {response_data.get('password')}",
+            from_email=meeting_schedule.company.email,
             to=[item.participant.email for item in meeting_schedule.meeting_schedule_mapped.all()],
             cc=[],
             bcc=[],
             reply_to=[],
         )
-        path = create_ics_calendar_meeting_file(meeting_id, meeting_topic, employee.email, date, time, duration)
-        for attachment in [path]:
+        for attachment in [
+            create_ics_calendar_meeting_file(meeting_id, meeting_topic, employee.email, date, time, duration)
+        ]:
             email.attach_file(attachment)
         connection = get_connection(
-            username=company_email,
-            password=company_email_app_password,
+            username=meeting_schedule.company.email,
+            password=meeting_schedule.company.email_app_password,
             fail_silently=False,
         )
         email.connection = connection
