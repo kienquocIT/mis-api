@@ -215,7 +215,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_email_app_password(cls, obj):
-        return len(obj.email_app_password) * '*' if len(obj.email_app_password) > 0 else ''
+        return len(obj.email_app_password) * '*' if obj.email_app_password else ''
 
 
 def create_company_function_number(company_obj, company_function_number_data):
