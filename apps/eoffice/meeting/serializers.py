@@ -1,6 +1,6 @@
+from datetime import datetime, timedelta
 from django.core.mail import get_connection, EmailMessage
 import requests
-from datetime import datetime, timedelta
 from icalendar import Calendar, Event
 from rest_framework import serializers
 from apps.eoffice.meeting.models import (
@@ -188,14 +188,14 @@ def create_online_meeting_object(meeting_config, zoom_meeting_obj):
         "account_id": account_id,
         "client_secret": client_secret
     }
-    response = requests.post(auth_token_url, auth=(client_id, client_secret), data=data)
+    response = requests.post(auth_token_url, auth=(client_id, client_secret), data=data, timeout=60)
 
     if response.status_code != 200:
         raise serializers.ValidationError({'Online meeting': 'Unable to get access token'})
     response_data = response.json()
     access_token = response_data["access_token"]
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    resp = requests.post(f"{api_base_url}/users/me/meetings", headers=headers, json=payload)
+    resp = requests.post(f"{api_base_url}/users/me/meetings", headers=headers, json=payload, timeout=60)
     if resp.status_code != 201:
         raise serializers.ValidationError({'Online meeting': 'Unable to generate meeting link'})
     response_data = resp.json()
@@ -230,6 +230,44 @@ def create_ics_calendar_meeting_file(meeting_id, meeting_topic, meeting_host_ema
         raise serializers.ValidationError({'Online meeting': f'Cannot create calendar file ({error})'})
 
 
+def send_mail(meeting_schedule, response_data, meeting_time, date, time, duration):
+    try:
+        employee = meeting_schedule.employee_inherit
+        company_name = meeting_schedule.company.title
+        company_email = meeting_schedule.company.email
+        company_email_app_password = meeting_schedule.company.email_app_password
+        meeting_topic = response_data.get('topic')
+        meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
+        meeting_url = response_data.get('join_url')
+        meeting_passcode = response_data.get('password')
+        email = EmailMessage(
+            subject=meeting_topic,
+            body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
+                 f"\n\nTopic: {meeting_topic}\nTime: {meeting_time}"
+                 f"\n\nJoin Zoom Meeting\n{meeting_url}"
+                 f"\n\nMeeting ID: {meeting_id}"
+                 f"\nPasscode: {meeting_passcode}",
+            from_email=company_email,
+            to=[item.participant.email for item in meeting_schedule.meeting_schedule_mapped.all()],
+            cc=[],
+            bcc=[],
+            reply_to=[],
+        )
+        path = create_ics_calendar_meeting_file(meeting_id, meeting_topic, employee.email, date, time, duration)
+        for attachment in [path]:
+            email.attach_file(attachment)
+        connection = get_connection(
+            username=company_email,
+            password=company_email_app_password,
+            fail_silently=False,
+        )
+        email.connection = connection
+        email.send()
+        return True
+    except Exception as error:
+        raise serializers.ValidationError({'Online meeting': f'Cannot send email ({error})'})
+
+
 def after_create_online_meeting(meeting_schedule, online_meeting_data):
     MeetingScheduleOnlineMeeting.objects.filter(meeting_online_schedule_mapped=meeting_schedule).delete()
     zoom_meeting_obj = MeetingScheduleOnlineMeeting.objects.create(
@@ -245,41 +283,7 @@ def after_create_online_meeting(meeting_schedule, online_meeting_data):
         meeting_time = date.strftime('%Y-%m-%d') + ' ' + time.strftime('%H:%M') + ' ' + (
             'AM' if time.strftime('%H:%M').split(':')[0] < '12' else 'PM'
         )
-
-        try:
-            employee = meeting_schedule.employee_inherit
-            company_name = meeting_schedule.company.title
-            company_email = meeting_schedule.company.email
-            company_email_app_password = meeting_schedule.company.email_app_password
-            meeting_topic = response_data.get('topic')
-            meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
-            meeting_url = response_data.get('join_url')
-            meeting_passcode = response_data.get('password')
-            email = EmailMessage(
-                subject=meeting_topic,
-                body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
-                     f"\n\nTopic: {meeting_topic}\nTime: {meeting_time}"
-                     f"\n\nJoin Zoom Meeting\n{meeting_url}"
-                     f"\n\nMeeting ID: {meeting_id}"
-                     f"\nPasscode: {meeting_passcode}",
-                from_email=company_email,
-                to=[item.participant.email for item in meeting_schedule.meeting_schedule_mapped.all()],
-                cc=[],
-                bcc=[],
-                reply_to=[],
-            )
-            path = create_ics_calendar_meeting_file(meeting_id, meeting_topic, employee.email, date, time, duration)
-            for attachment in [path]:
-                email.attach_file(attachment)
-            connection = get_connection(
-                username=company_email,
-                password=company_email_app_password,
-                fail_silently=False,
-            )
-            email.connection = connection
-            email.send()
-        except Exception as error:
-            raise serializers.ValidationError({'Online meeting': f'Cannot send email ({error})'})
+        send_mail(meeting_schedule, response_data, meeting_time, date, time, duration)
     return True
 
 
