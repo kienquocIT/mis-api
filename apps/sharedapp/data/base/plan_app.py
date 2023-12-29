@@ -224,6 +224,10 @@ _PlanApplication_eOffice_data = {
     "87ce1662-ca9d-403f-a32e-9553714ebc6d": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "87ce1662-ca9d-403f-a32e-9553714ebc6d",  # Business trip
+    },
+    "55ba3005-6ccc-4807-af27-7cc45e99e3f6": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "55ba3005-6ccc-4807-af27-7cc45e99e3f6",  # Asset, Tools provide
     }
 }
 

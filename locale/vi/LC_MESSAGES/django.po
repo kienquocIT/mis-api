@@ -681,3 +681,7 @@ msgstr "Chức năng kiểm tra kích thước có sẵn không hoạt động."
 #
 msgid "User still not map with The employee please contact your Admin!"
 msgstr "Người dùng bắt buộc phải liên kết với nhân viên để thực hiện hành động. Vui lòng liên hệ quản trị viên."
+
+#
+msgid "Some attachments are being used by another document or do not exist"
+msgstr "Một số tập tin đính kèm đang được tài liệu khác sử dụng hoặc không tồn tại"

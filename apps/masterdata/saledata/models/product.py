@@ -4,7 +4,8 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstra
 
 __all__ = [
     'ProductType', 'ProductCategory', 'UnitOfMeasureGroup', 'UnitOfMeasure', 'Product', 'Expense',
-    'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType'
+    'ExpensePrice', 'ExpenseRole', 'ProductMeasurements', 'ProductProductType',
+    'ProductVariantAttribute', 'ProductVariant'
 ]
 
 
@@ -12,6 +13,15 @@ TRACEABILITY_METHOD_SELECTION = [
     (0, _('None')),
     (1, _('Batch/Lot number')),
     (2, _('Serial number'))
+]
+
+
+ATTRIBUTE_CONFIG = [
+    (0, _('Dropdown List')),
+    (1, _('Radio Select')),
+    (2, _('Select (Fill by text)')),
+    (3, _('Select (Fill by color)')),
+    (4, _('Select (Fill bu photo)'))
 ]
 
 
@@ -427,5 +437,48 @@ class ProductProductType(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Product ProductTypes'
         verbose_name_plural = 'Products ProductTypes'
+        default_permissions = ()
+        permissions = ()
+
+
+class ProductVariantAttribute(SimpleAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_variant_attributes',
+    )
+    attribute_title = models.CharField(null=False, max_length=100)
+    # attribute_value_list = [{
+    # 'value': 'white',
+    # 'color': '#ffffff',
+    # }]
+    attribute_value_list = models.JSONField(default=list)
+    attribute_config = models.SmallIntegerField(choices=ATTRIBUTE_CONFIG)
+
+    class Meta:
+        verbose_name = 'Product ProductVariantAttribute'
+        verbose_name_plural = 'Products ProductVariantAttributes'
+        default_permissions = ()
+        permissions = ()
+
+
+class ProductVariant(MasterDataAbstractModel):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name='product_variants'
+    )
+    # variant_value_list = ["green", "L"]
+    variant_value_list = models.JSONField(default=list)
+    variant_name = models.CharField(null=False, max_length=100)
+    variant_des = models.CharField(null=False, max_length=100)
+    variant_SKU = models.CharField(null=True, max_length=100)
+    variant_extra_price = models.FloatField(default=0)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Product ProductVariant'
+        verbose_name_plural = 'Products ProductVariants'
+        ordering = ('date_created',)
         default_permissions = ()
         permissions = ()

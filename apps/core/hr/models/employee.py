@@ -1,9 +1,9 @@
-from django.conf import settings
 from django.db import models
 
+from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
 from apps.core.hr.models.private_extends import PermissionAbstractModel
 from apps.core.models import TenantAbstractModel
-from apps.shared import SimpleAbstractModel, GENDER_CHOICE, StringHandler, MediaForceAPI, TypeCheck, DisperseModel
+from apps.shared import SimpleAbstractModel, GENDER_CHOICE, StringHandler, TypeCheck, DisperseModel
 
 __all__ = [
     'Employee',
@@ -12,6 +12,17 @@ __all__ = [
     'PlanEmployee',
     'PlanEmployeeApp',
 ]
+
+
+def generate_employee_avatar_path(instance, filename):
+    def get_ext():
+        return filename.split(".")[-1].lower()
+
+    if instance.id:
+        company_path = str(instance.company_id).replace('-', '')
+        employee_id = str(instance.id).replace('-', '')
+        return f"{company_path}/global/avatar/{employee_id}.{get_ext()}"
+    raise ValueError('Attachment require employee related')
 
 
 class Employee(TenantAbstractModel):
@@ -110,6 +121,11 @@ class Employee(TenantAbstractModel):
         '{app_label}.{model_code}.{perm_code}': {'{range_code}': {}},
     }
     permissions_parsed = models.JSONField(default=dict, verbose_name='Data was parsed')
+
+    #
+    avatar_img = models.ImageField(
+        storage=PublicMediaStorage, upload_to=generate_employee_avatar_path, null=True,
+    )
 
     class Meta:
         verbose_name = 'Employee'
@@ -225,8 +241,6 @@ class Employee(TenantAbstractModel):
 
         # call sync
         self.sync_company_map(user_id_old, user_id_new, is_new=kwargs.get('force_insert', False))
-        if kwargs.get('force_insert', False) and not self.media_user_id and settings.ENABLE_PROD is True:
-            MediaForceAPI.call_sync_employee(self)
 
     def get_detail_minimal(self):
         return {
@@ -234,7 +248,7 @@ class Employee(TenantAbstractModel):
             'first_name': self.first_name,
             'last_name': self.last_name,
             'full_name': self.get_full_name(),
-            'avatar': self.media_avatar_hash,
+            'avatar_img': self.avatar_img.url if self.avatar_img else None,
         }
 
     def get_detail(self, *args):
@@ -246,8 +260,7 @@ class Employee(TenantAbstractModel):
             'email': self.email,
             'phone': self.phone,
             'is_delete': self.is_delete,
-            'avatar': self.avatar,
-            'media_avatar_hash': self.media_avatar_hash,
+            'avatar_img': self.avatar_img.url if self.avatar_img else None,
             'group': self.group_id,
         }
 

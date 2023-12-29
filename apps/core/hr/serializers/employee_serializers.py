@@ -1,10 +1,9 @@
 from django.conf import settings
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee, Group, Role, RoleHolder, EmployeePermission, PlanEmployeeApp
-from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background
+from apps.shared import HRMsg, AccountMsg, AttMsg, TypeCheck, call_task_background, FORMATTING
 from apps.shared.permissions.util import PermissionController
 from apps.eoffice.leave.leave_util import leave_available_map_employee as available_map_employee
 
@@ -24,22 +23,30 @@ class RoleOfEmployeeSerializer(serializers.ModelSerializer):
         fields = ('id', 'title', 'code')
 
 
-class EmployeeUploadAvatarSerializer(serializers.Serializer):  # noqa
-    file = serializers.FileField()
-
+class EmployeeUploadAvatarSerializer(serializers.ModelSerializer):
     @classmethod
-    def validate_file(cls, value):
-        max_size = settings.AVATAR_FILE_MAX_SIZE
-        if value.size > max_size:
-            raise ValidationError({'file': AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format('5MiB')})
-
-        file_name = value.name
-        if file_name.split('.')[-1].lower() not in ['jpeg', 'jpg', 'png', 'gif']:
-            raise ValidationError(
-                {'file': AttMsg.IMAGE_TYPE_SHOULD_BE_IMAGE_TYPE.format(", ".join(['jpeg', 'jpg', 'png', 'gif']))}
+    def validate_avatar_img(cls, attrs):
+        if attrs and hasattr(attrs, 'size'):
+            if isinstance(attrs.size, int) and attrs.size < settings.FILE_AVATAR_MAX_SIZE:
+                return attrs
+            file_size_limit = AttMsg.FILE_SIZE_SHOULD_BE_LESS_THAN_X.format(
+                FORMATTING.size_to_text(settings.FILE_AVATAR_MAX_SIZE)
             )
+            raise serializers.ValidationError({'avatar_img': file_size_limit})
+        raise serializers.ValidationError({'avatar_img': AttMsg.FILE_NO_DETECT_SIZE})
 
-        return value
+    def update(self, instance, validated_data):
+        if instance.avatar_img:
+            instance.avatar_img.storage.delete(instance.avatar_img.name)
+        # trick or fixed issue: https://docs.djangoproject.com/en/4.2/ref/forms/fields/#django.forms.ImageField
+        # https://stackoverflow.com/a/77483484/13048590
+        instance.avatar_img = validated_data['avatar_img']
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Employee
+        fields = ('avatar_img',)
 
 
 class EmployeeListSerializer(serializers.ModelSerializer):
@@ -67,6 +74,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'group',
             'role',
             'is_admin_company',
+            'avatar_img',
         )
 
     @classmethod
@@ -108,6 +116,7 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'id', 'code', 'first_name', 'last_name', 'full_name', 'email', 'phone', 'plan_app', 'user',
             'group', 'dob', 'date_joined', 'role', 'is_admin_company', 'is_active',
             'permission_by_configured', 'plan_app',
+            'avatar_img',
         )
 
     @classmethod

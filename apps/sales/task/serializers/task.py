@@ -38,7 +38,7 @@ def handle_attachment(user, instance, attachments, create_method):
         if state:
             # regis file
             file_objs = Files.regis_media_file(
-                relate_app=relate_app, relate_doc_id=instance.id, file_objs=att_objs,
+                relate_app=relate_app, relate_doc_id=instance.id, file_objs_or_ids=att_objs,
             )
 
             # create m2m

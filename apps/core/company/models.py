@@ -4,13 +4,15 @@ import datetime
 import calendar
 from typing import Literal, Union
 from uuid import UUID
+
 from jsonfield import JSONField
 from django.db import models
 from django.conf import settings
 from django.utils.translation import gettext_lazy as _
-from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY, MediaForceAPI
-from apps.core.models import CoreAbstractModel
 
+from apps.core.attachments.storages.aws.storages_backend import PublicMediaStorage
+from apps.shared import SimpleAbstractModel, CURRENCY_MASK_MONEY
+from apps.core.models import CoreAbstractModel
 
 DEFINITION_INVENTORY_VALUATION_CHOICES = [
     (0, _('Perpetual inventory')),
@@ -49,6 +51,16 @@ FUNCTION_CHOICES = [
     (8, _('Return payment')),
     (9, _('Purchase request')),
 ]
+
+
+def generate_company_logo_path(instance, filename):
+    def get_ext():
+        return filename.split(".")[-1].lower()
+
+    if instance.id:
+        company_path = str(instance.id).replace('-', '')
+        return f"{company_path}/global/logo.{get_ext()}"
+    raise ValueError('Attachment require company related')
 
 
 class Company(CoreAbstractModel):
@@ -106,12 +118,18 @@ class Company(CoreAbstractModel):
     # web builder | tenant_code : 10 + company_code : 25 = 35
     sub_domain = models.CharField(max_length=35, unique=True)
 
+    #
+    logo = models.ImageField(
+        storage=PublicMediaStorage, upload_to=generate_company_logo_path, null=True,
+    )
+
     def get_detail(self, excludes=None):
         return {
             'id': str(self.id),
             'title': str(self.title) if self.title else None,
             'code': str(self.code) if self.code else None,
             'sub_domain': self.sub_domain,
+            'logo': self.logo.url if self.logo else None,
         }
 
     class Meta:
@@ -143,9 +161,6 @@ class Company(CoreAbstractModel):
             self.tenant.save()
         else:
             print(f'[Company|Save] Tenant does not exist {self.tenant}')
-
-        if kwargs.get('force_insert', False) and not self.media_company_id and settings.ENABLE_PROD is True:
-            MediaForceAPI.call_sync_company(self)
 
     @classmethod
     def refresh_total_user(cls, ids):
@@ -296,6 +311,14 @@ class CompanyUserEmployee(SimpleAbstractModel):
         )
 
     @classmethod
+    def confirm_dif_obj_map(cls, objs_1, objs_2) -> bool | None:
+        if objs_1.count() == 1 and objs_2.count() == 1:
+            if objs_1.first() == objs_2.first():
+                return True
+            return None
+        return False
+
+    @classmethod
     def create_new(
             cls, company_id, employee_id=None, user_id=None, is_created_company=True
     ) -> models.Model or Exception:
@@ -346,6 +369,9 @@ class CompanyUserEmployee(SimpleAbstractModel):
             user_map = cls.objects.filter(company_id=company_id, user_id=user_id)
             emp_map = cls.objects.filter(company_id=company_id, employee_id=employee_id)
             if user_map and emp_map:
+                state_confirm = cls.confirm_dif_obj_map(user_map, emp_map)
+                if isinstance(state_confirm, bool):
+                    return state_confirm
                 user_map = cls.check_obj_map(user_map, 'user')
                 emp_map = cls.check_obj_map(emp_map, 'employee')
                 if (
@@ -356,7 +382,9 @@ class CompanyUserEmployee(SimpleAbstractModel):
                     user_map.employee_id = employee_id
                     user_map.save()
                     return True
-                raise user_map
+                raise RuntimeError(
+                    '[CompanyUserEmployee.assign_map] user_map and emp_map not only or not exist for merge.'
+                )
         raise RuntimeError(
             '[CompanyUserEmployee.assign_map] Data argument check is incorrect so assign returned failure.'
         )
