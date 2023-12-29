@@ -187,7 +187,8 @@ class AssetToolsProvideAttachmentFile(M2MFilesAbstractModel):
 
     @classmethod
     def get_doc_field_name(cls):
-        return 'asset_provide_request'
+        # field name là foreignkey của request trên bảng này
+        return 'asset_tools_provide'
 
     class Meta:
         verbose_name = 'Asset, Tools provide attachments'
