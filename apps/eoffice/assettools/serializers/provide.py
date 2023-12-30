@@ -11,14 +11,14 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 
 
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
-    product = serializers.UUIDField()
     order = serializers.IntegerField()
-    tax = serializers.UUIDField(allow_null=True, required=False)
-    uom = serializers.UUIDField()
-    quantity = serializers.FloatField()
-    price = serializers.FloatField()
-    subtotal = serializers.FloatField()
+    product = serializers.UUIDField()
     product_remark = serializers.CharField()
+    uom = serializers.UUIDField()
+    tax = serializers.UUIDField(allow_null=True, required=False)
+    quantity = serializers.FloatField(allow_null=True, required=False)
+    price = serializers.FloatField(allow_null=True, required=False)
+    subtotal = serializers.FloatField(allow_null=True, required=False)
 
 
 def create_products(instance, prod_list):
@@ -27,14 +27,14 @@ def create_products(instance, prod_list):
     for item in prod_list:
         temp = AssetToolsProvideProduct(
             asset_tools_provide=instance,
-            product_id=item['product'],
             order=item['order'],
-            tax_id=item['tax'],
+            product_id=item['product'],
+            product_remark=item['product_remark'],
             uom_id=item['uom'],
             quantity=item['quantity'],
-            price=item['price'],
-            subtotal=item['subtotal'],
-            product_remark=item['product_remark']
+            tax_id=item['tax'] if 'tax' in item else None,
+            price=item['price'] if 'price' in item else 0,
+            subtotal=item['subtotal'] if 'subtotal' in item else 0,
         )
         temp.before_save()
         create_lst.append(temp)
@@ -56,6 +56,7 @@ def handle_attach_file(instance, attachment_result):
 class AssetToolsProvideCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
     products = AssetToolsProvideMapProductSerializer(many=True)
+    attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
 
     @classmethod
     def validate_employee_inherit_id(cls, value):
@@ -73,7 +74,7 @@ class AssetToolsProvideCreateSerializer(serializers.ModelSerializer):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
             state, result = AssetToolsProvideAttachmentFile.valid_change(
-                current_ids=attrs, employee_id=user.employee_current_id, doc_id=None
+                current_ids=[str(idx) for idx in attrs], employee_id=user.employee_current_id, doc_id=None
             )
             if state is True:
                 return result

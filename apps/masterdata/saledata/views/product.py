@@ -265,6 +265,9 @@ class ProductList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     search_fields = ['title']
+    filterset_fields = {
+        "general_product_types_mapped__id": ['exact']
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related(
