@@ -189,12 +189,13 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'email',
             'email_app_password',
+            'email_app_password_status',
             'address',
             'phone',
             'fax',
             'company_function_number',
             'sub_domain',
-			'logo'
+            'logo'
         )
 
     @classmethod
@@ -297,6 +298,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'email_app_password',
+            'email_app_password_status',
             'phone',
             'fax'
         )
