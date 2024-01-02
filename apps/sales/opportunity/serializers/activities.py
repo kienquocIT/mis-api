@@ -172,7 +172,7 @@ def send_email(email_obj, company_id):
             email.connection = connection
             email.send()
             return True
-        raise serializers.ValidationError({'Send email': f'Company is not defined'})
+        raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
         raise serializers.ValidationError({'Send email': f'Cannot send email ({err})'})
 
