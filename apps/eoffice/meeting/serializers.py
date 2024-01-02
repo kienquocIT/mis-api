@@ -6,7 +6,7 @@ from rest_framework import serializers
 from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting
 )
-from apps.shared import MeetingScheduleMsg
+from apps.shared import MeetingScheduleMsg, SimpleEncryptor
 
 
 # MeetingRoom
@@ -80,19 +80,14 @@ class MeetingRoomUpdateSerializer(serializers.ModelSerializer):
 
 # Zoom config
 class MeetingZoomConfigListSerializer(serializers.ModelSerializer):  # noqa
+
     class Meta:
         model = MeetingZoomConfig
-        fields = (
-            'id',
-            'account_email',
-            'account_id',
-            'client_id',
-            'client_secret',
-            'personal_meeting_id'
-        )
+        fields = ('id',)
 
 
 class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
         model = MeetingZoomConfig
         fields = (
@@ -103,25 +98,24 @@ class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
             'personal_meeting_id'
         )
 
+    def validate(self, validate_data):
+        cryptor = SimpleEncryptor()
+        validate_data['account_id'] = cryptor.encrypt(validate_data['account_id'])
+        validate_data['client_id'] = cryptor.encrypt(validate_data['client_id'])
+        validate_data['client_secret'] = cryptor.encrypt(validate_data['client_secret'])
+        return validate_data
+
     def create(self, validated_data):
-        MeetingZoomConfig.objects.filter_current(
-            fill__tenant=True, fill__company=True
-        ).delete()
+        MeetingZoomConfig.objects.filter_current(fill__tenant=True, fill__company=True).delete()
         zoom_config = MeetingZoomConfig.objects.create(**validated_data)
         return zoom_config
 
 
 class MeetingZoomConfigDetailSerializer(serializers.ModelSerializer):  # noqa
+
     class Meta:
         model = MeetingZoomConfig
-        fields = (
-            'id',
-            'account_email',
-            'account_id',
-            'client_id',
-            'client_secret',
-            'personal_meeting_id'
-        )
+        fields = ()
 
 
 class MeetingZoomConfigUpdateSerializer(serializers.ModelSerializer):
@@ -178,9 +172,10 @@ def create_participants_mapped(meeting_schedule, participants_list):
 def create_online_meeting_object(meeting_config, zoom_meeting_obj):
     payload = zoom_meeting_obj.meeting_create_payload
     config_obj = meeting_config.first()
-    account_id = config_obj.account_id
-    client_id = config_obj.client_id
-    client_secret = config_obj.client_secret
+    cryptor = SimpleEncryptor()
+    account_id = cryptor.decrypt(config_obj.account_id)
+    client_id = cryptor.decrypt(config_obj.client_id)
+    client_secret = cryptor.decrypt(config_obj.client_secret)
     auth_token_url = "https://zoom.us/oauth/token"
     api_base_url = "https://api.zoom.us/v2"
     data = {
@@ -254,9 +249,11 @@ def send_mail(meeting_schedule, response_data, meeting_time, date, time, duratio
             create_ics_calendar_meeting_file(meeting_id, meeting_topic, employee.email, date, time, duration)
         ]:
             email.attach_file(attachment)
+
+        cryptor = SimpleEncryptor()
         connection = get_connection(
             username=meeting_schedule.company.email,
-            password=meeting_schedule.company.email_app_password,
+            password=cryptor.decrypt(meeting_schedule.company.email_app_password),
             fail_silently=False,
         )
         email.connection = connection
