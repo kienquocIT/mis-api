@@ -1,6 +1,6 @@
 from django.utils.translation import gettext_lazy as _
 
-__all__ = ['LeaveMsg', 'BusinessMsg']
+__all__ = ['LeaveMsg', 'BusinessMsg', 'MeetingScheduleMsg']
 
 
 class LeaveMsg:
@@ -25,3 +25,9 @@ class LeaveMsg:
 
 class BusinessMsg:
     EMPTY_EXPENSE_ITEMS = _('List expense item is empty')
+
+
+class MeetingScheduleMsg:
+    ROOM_IS_NOT_AVAILABLE = _('This room is not available in this time')
+    DUP_CODE = _('Duplicate meeting room code')
+    DES_IS_REQUIRED = _('Meeting room description is required')
