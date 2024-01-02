@@ -282,6 +282,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
+    email_app_password = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = Company
@@ -299,7 +300,8 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
 
     def validate(self, validate_data):
         if validate_data.get('email_app_password'):
-            cryptor = SimpleEncryptor()
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            cryptor = SimpleEncryptor(key=password)
             validate_data['email_app_password'] = cryptor.encrypt(validate_data['email_app_password'])
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):

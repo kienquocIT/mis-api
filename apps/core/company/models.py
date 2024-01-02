@@ -92,11 +92,9 @@ class Company(CoreAbstractModel):
         null=True,
         max_length=150
     )
-    email_app_password = models.CharField(
+    email_app_password = models.TextField(
         verbose_name='email app password',
-        blank=True,
         null=True,
-        max_length=250
     )
     email_app_password_status = models.BooleanField(default=False)
     phone = models.CharField(

@@ -25,9 +25,9 @@ class MeetingRoom(MasterDataAbstractModel):
 
 class MeetingZoomConfig(MasterDataAbstractModel):
     account_email = models.CharField(max_length=100)
-    account_id = models.CharField(max_length=250)
-    client_id = models.CharField(max_length=250)
-    client_secret = models.CharField(max_length=250)
+    account_id = models.TextField(blank=True)
+    client_id = models.TextField(blank=True)
+    client_secret = models.TextField(blank=True)
     personal_meeting_id = models.CharField(max_length=100)
 
     class Meta:

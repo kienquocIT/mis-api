@@ -4,7 +4,7 @@ from apps.eoffice.meeting.serializers import (
     MeetingRoomListSerializer, MeetingRoomDetailSerializer,
     MeetingRoomUpdateSerializer, MeetingRoomCreateSerializer,
     MeetingZoomConfigListSerializer, MeetingZoomConfigDetailSerializer,
-    MeetingZoomConfigUpdateSerializer, MeetingZoomConfigCreateSerializer, MeetingScheduleListSerializer,
+    MeetingZoomConfigCreateSerializer, MeetingScheduleListSerializer,
     MeetingScheduleCreateSerializer, MeetingScheduleDetailSerializer, MeetingScheduleUpdateSerializer,
 )
 from apps.shared import mask_view, BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
@@ -105,7 +105,6 @@ class MeetingZoomConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_list = MeetingZoomConfigListSerializer
     serializer_create = MeetingZoomConfigCreateSerializer
     serializer_detail = MeetingZoomConfigDetailSerializer
-    serializer_update = MeetingZoomConfigUpdateSerializer
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
@@ -115,14 +114,6 @@ class MeetingZoomConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
-
-    @swagger_auto_schema(operation_summary="Update Meeting Zoom Config", request_body=MeetingZoomConfigUpdateSerializer)
-    @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
-    )
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
 
 
 class MeetingScheduleList(BaseListMixin, BaseCreateMixin):

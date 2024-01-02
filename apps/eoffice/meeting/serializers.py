@@ -7,6 +7,7 @@ from apps.eoffice.meeting.models import (
     MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting
 )
 from apps.shared import MeetingScheduleMsg, SimpleEncryptor
+from misapi import settings
 
 
 # MeetingRoom
@@ -87,6 +88,9 @@ class MeetingZoomConfigListSerializer(serializers.ModelSerializer):  # noqa
 
 
 class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
+    account_id = serializers.CharField(max_length=100)
+    client_id = serializers.CharField(max_length=100)
+    client_secret = serializers.CharField(max_length=100)
 
     class Meta:
         model = MeetingZoomConfig
@@ -99,7 +103,8 @@ class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        cryptor = SimpleEncryptor()
+        password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+        cryptor = SimpleEncryptor(key=password)
         validate_data['account_id'] = cryptor.encrypt(validate_data['account_id'])
         validate_data['client_id'] = cryptor.encrypt(validate_data['client_id'])
         validate_data['client_secret'] = cryptor.encrypt(validate_data['client_secret'])
@@ -116,18 +121,6 @@ class MeetingZoomConfigDetailSerializer(serializers.ModelSerializer):  # noqa
     class Meta:
         model = MeetingZoomConfig
         fields = ()
-
-
-class MeetingZoomConfigUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MeetingZoomConfig
-        fields = (
-            'account_email',
-            'account_id',
-            'client_id',
-            'client_secret',
-            'personal_meeting_id'
-        )
 
 
 # Meeting schedule
@@ -171,7 +164,8 @@ def create_participants_mapped(meeting_schedule, participants_list):
 
 def create_online_meeting_object(config_obj, zoom_meeting_obj):
     payload = zoom_meeting_obj.meeting_create_payload
-    cryptor = SimpleEncryptor()
+    password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+    cryptor = SimpleEncryptor(key=password)
     account_id = cryptor.decrypt(config_obj.account_id)
     client_id = cryptor.decrypt(config_obj.client_id)
     client_secret = cryptor.decrypt(config_obj.client_secret)
@@ -249,9 +243,10 @@ def send_mail(meeting_schedule, response_data, meeting_time, date, time, duratio
         ]:
             email.attach_file(attachment)
 
+        password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
         connection = get_connection(
             username=meeting_schedule.company.email,
-            password=SimpleEncryptor().decrypt(meeting_schedule.company.email_app_password),
+            password=SimpleEncryptor(key=password).decrypt(meeting_schedule.company.email_app_password),
             fail_silently=False,
         )
         email.connection = connection
