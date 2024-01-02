@@ -164,11 +164,14 @@ def create_participants_mapped(meeting_schedule, participants_list):
 
 def create_online_meeting_object(config_obj, zoom_meeting_obj):
     payload = zoom_meeting_obj.meeting_create_payload
-    password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
-    cryptor = SimpleEncryptor(key=password)
-    account_id = cryptor.decrypt(config_obj.account_id)
-    client_id = cryptor.decrypt(config_obj.client_id)
-    client_secret = cryptor.decrypt(config_obj.client_secret)
+    try:
+        password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+        cryptor = SimpleEncryptor(key=password)
+        account_id = cryptor.decrypt(config_obj.account_id)
+        client_id = cryptor.decrypt(config_obj.client_id)
+        client_secret = cryptor.decrypt(config_obj.client_secret)
+    except Exception as err:
+        raise serializers.ValidationError({'Decrypting': f'Error while decrypting ({err})'})
     api_base_url = "https://api.zoom.us/v2"
     data = {
         "grant_type": "account_credentials",
