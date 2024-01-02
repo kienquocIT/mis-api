@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
-from apps.shared import SYSTEM_STATUS, GOODS_RECEIPT_TYPE
+from apps.shared import GOODS_RECEIPT_TYPE
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
