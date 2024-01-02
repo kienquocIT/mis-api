@@ -32,6 +32,8 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..eoffice.leave.leave_util import leave_available_map_employee
+from ..eoffice.leave.models import LeaveAvailable
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
@@ -757,6 +759,14 @@ def make_sure_leave_config():
     print('Leave config is done!')
 
 
+def update_admin_not_have_available():
+    for obj in Company.objects.all():
+        for employee in Employee.objects.all():
+            if not LeaveAvailable.objects.filter(employee_inherit=employee).exists():
+                leave_available_map_employee(employee, obj)
+    print('done update')
+
+
 def make_sure_function_purchase_request_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).purchase_request_config()
@@ -1167,3 +1177,26 @@ def update_tenant_delivery_config():
             deli_config.tenant = deli_config.company.tenant
             deli_config.save(update_fields=['tenant'])
     print('update_tenant_delivery_config done.')
+
+
+def update_ap_title_in_payment_cost():
+    for item in PaymentCost.objects.all():
+        new_ap_cost_converted_list = []
+        for child in item.ap_cost_converted_list:
+            ap_cost_filter = AdvancePaymentCost.objects.filter(id=child['ap_cost_converted_id'])
+            if ap_cost_filter.exists():
+                ap_title_mapped = ap_cost_filter.first().advance_payment.title
+                new_ap_cost_converted_list.append({
+                    'ap_cost_converted_id': child['ap_cost_converted_id'],
+                    'value_converted': child['value_converted'],
+                    'ap_title': ap_title_mapped
+                })
+        item.ap_cost_converted_list = new_ap_cost_converted_list
+        item.save()
+    print('done')
+
+
+def make_sure_asset_config():
+    for obj in Company.objects.all():
+        ConfigDefaultData(obj).asset_tools_config()
+    print('Asset tools config is done!')
