@@ -32,6 +32,8 @@ from ..core.hr.models import (
     Employee, Role, EmployeePermission, PlanEmployeeApp, PlanEmployee, RolePermission,
     PlanRole, PlanRoleApp,
 )
+from ..eoffice.leave.leave_util import leave_available_map_employee
+from ..eoffice.leave.models import LeaveAvailable
 from ..sales.acceptance.models import FinalAcceptanceIndicator
 from ..sales.delivery.models import DeliveryConfig
 from ..sales.inventory.models import InventoryAdjustmentItem, GoodsReceiptRequestProduct, GoodsReceipt, \
@@ -755,6 +757,14 @@ def make_sure_leave_config():
         ConfigDefaultData(obj).leave_config(None)
         ConfigDefaultData(obj).working_calendar_config()
     print('Leave config is done!')
+
+
+def update_admin_not_have_available():
+    for obj in Company.objects.all():
+        for employee in Employee.objects.all():
+            if not LeaveAvailable.objects.filter(employee_inherit=employee).exists():
+                leave_available_map_employee(employee, obj)
+    print('done update')
 
 
 def make_sure_function_purchase_request_config():
