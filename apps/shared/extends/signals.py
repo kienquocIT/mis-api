@@ -16,7 +16,7 @@ from apps.core.hr.models import Role, Employee, RoleHolder, EmployeePermission, 
 from apps.core.hr.tasks import sync_plan_app_employee, uninstall_plan_app_employee
 from apps.core.log.models import Notifications
 from apps.core.process.models import SaleFunction, Process
-from apps.core.workflow.models import RuntimeAssignee
+from apps.core.workflow.models import RuntimeAssignee, WorkflowConfigOfApp, Workflow
 from apps.core.workflow.models.runtime import RuntimeViewer, Runtime
 from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, LeaveAvailable
 from apps.sales.opportunity.models import (
@@ -27,7 +27,7 @@ from apps.sales.purchasing.models import PurchaseRequestConfig
 from apps.sales.quotation.models import (
     QuotationAppConfig, ConfigShortSale, ConfigLongSale, QuotationIndicatorConfig, SQIndicatorDefaultData,
 )
-from apps.core.base.models import Currency as BaseCurrency, Application
+from apps.core.base.models import Currency as BaseCurrency, Application, PlanApplication
 from apps.core.company.models import Company, CompanyConfig, CompanyFunctionNumber
 from apps.masterdata.saledata.models import (
     AccountType, ProductType, TaxCategory, Currency, Price, UnitOfMeasureGroup,
@@ -43,6 +43,7 @@ from .caching import Caching
 from .push_notify import TeleBotPushNotify
 from .tasks import call_task_background
 from ..media_cloud_apis import MediaForceAPI
+from ...core.tenant.models import TenantPlan, Tenant
 from ...eoffice.assettools.models import AssetToolsConfig
 from ...eoffice.businesstrip.models import BusinessRequest, ExpenseItemMapBusinessRequest
 from ...eoffice.businesstrip.serializers import BusinessRequestUpdateSerializer
@@ -859,6 +860,31 @@ class ConfigDefaultData:
             },
         )
 
+    def make_sure_workflow_apps(self):
+        plan_ids = TenantPlan.objects.filter(tenant=self.company_obj.tenant).values_list('plan_id', flat=True)
+        app_objs = [
+            x.application for x in
+            PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
+        ]
+        for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
+            print('delete Workflow Config App: ', obj.application, obj.company)
+            obj.delete()
+        for app in app_objs:
+            if app.is_workflow is True:
+                WorkflowConfigOfApp.objects.get_or_create(
+                    company=self.company_obj,
+                    application=app,
+                    defaults={
+                        'tenant': self.company_obj.tenant,
+                        'workflow_currently': Workflow.objects.filter(
+                            tenant=self.company_obj.tenant,
+                            company=self.company_obj,
+                            application=app,
+                        ).first()
+                    }
+                )
+        return True
+
     def call_new(self):
         config = self.company_config()
         self.delivery_config()
@@ -875,6 +901,7 @@ class ConfigDefaultData:
         self.purchase_request_config()
         self.working_calendar_config()
         self.asset_tools_config()
+        self.make_sure_workflow_apps()
         return True
 
 
