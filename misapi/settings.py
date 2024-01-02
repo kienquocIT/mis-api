@@ -257,11 +257,14 @@ MEDIA_SECRET_TOKEN_API = os.environ.get('MEDIA_SECRET_TOKEN_API', 'bhVpajC75NCEP
 #       AWS_S3_CUSTOM_DOMAIN = https://DOC-EXAMPLE-BUCKET.s3.us-west-2.amazonaws.com/photos/puppy.jpg
 #       AWS_DEFAULT_ACL = https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl
 FILE_SIZE_COMPANY_LOGO = int(
-    os.getenv('FILE_SIZE_COMPANY_LOGO', 1024 * 1024 * 3)
+    os.getenv('FILE_SIZE_COMPANY_LOGO', 1024 * 1024 * 3)  # 3MB
+)
+FILE_SIZE_WEB_BUILDER = int(
+    os.getenv('FILE_SIZE_UPLOAD_LIMIT', 5 * 1024 * 1024)  # 5MB
 )
 FILE_AVATAR_MAX_SIZE = 3 * 1024 * 1024  # 3MiB
 FILE_SIZE_UPLOAD_LIMIT = int(
-    os.getenv('FILE_SIZE_UPLOAD_LIMIT', 20 * 1024 * 1024)  # defaults: 20 Megabytes
+    os.getenv('FILE_SIZE_UPLOAD_LIMIT', 20 * 1024 * 1024)  # 20MB
 )
 FILE_SIZE_OF_EMPLOYEE_TOTAL = int(
     os.getenv('FILE_SIZE_OF_EMPLOYEE_TOTAL', 5 * 1024 * 1024 * 1024)  # defaults: 5 Gigabytes
@@ -296,6 +299,19 @@ if USE_S3:
 
     # s3 private media settings | apps.core.attachments.storages.aws.storages_backend.PrivateMediaStorage
     PRIVATE_MEDIA_LOCATION = 'media/private'
+
+else:
+    STATIC_BASE_URL = STATIC_URL
+    STATIC_LOCATION = STATIC_ROOT
+    PUBLIC_MEDIA_BASE_URL = MEDIA_URL + 'public/'
+    PUBLIC_MEDIA_LOCATION = os.path.join(MEDIA_ROOT, 'public')
+    PRIVATE_MEDIA_BASE_URL = MEDIA_URL + 'private/'
+    PRIVATE_MEDIA_LOCATION = os.path.join(MEDIA_ROOT, 'private')
+
+FILE_WEB_BUILDER_RELATE_APP = 'SYS:WEB_BUILDER'
+FILE_WEB_BUILDER_LIMIT_SIZE = int(
+    os.getenv('FILE_WEB_BUILDER_LIMIT_SIZE', 2 * 1024 * 1024 * 1024)  # 5GB
+)
 # -- AWS S3
 
 # Key return resp after call API

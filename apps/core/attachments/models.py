@@ -1,5 +1,6 @@
 __all__ = [
     'Files', 'M2MFilesAbstractModel',
+    'PublicFiles',
 ]
 
 import logging
@@ -14,7 +15,10 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from apps.shared import MasterDataAbstractModel, TypeCheck, StringHandler, HrMsg, AttMsg, SimpleAbstractModel
-from apps.core.attachments.storages.aws.storages_backend import PrivateMediaStorage, FileSystemStorage
+from apps.core.attachments.storages.aws.storages_backend import (
+    PrivateMediaStorage, FileSystemStorage,
+    PublicMediaStorage,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,20 +28,31 @@ FILE_BELONG_TO = (
 )
 
 
-def generate_path_file(instance, filename):
-    def make_sure_filename_length(_filename):
-        if len(_filename) > 30:
-            arr_tmp = _filename.split(".")
-            f_name, f_ext = slugify("".join(arr_tmp[:-1])), arr_tmp[-1]
-            f_name = f'{f_name[:20]}_{StringHandler.random_str(9 - len(f_ext) - 1)}'
-            return f'{f_name.lower()}.{f_ext.lower()}'
-        return _filename
+def make_sure_filename_length(_filename):
+    if len(_filename) > 30:
+        arr_tmp = _filename.split(".")
+        f_name, f_ext = slugify("".join(arr_tmp[:-1])), arr_tmp[-1]
+        f_name = f'{f_name[:20]}_{StringHandler.random_str(9 - len(f_ext) - 1)}'
+        return f'{f_name.lower()}.{f_ext.lower()}'
+    return _filename
 
+
+def generate_path_file(instance, filename):
     if instance.company_id:
         if instance.employee_created_id:
             company_path = str(instance.company_id).replace('-', '')
             employee_path = str(instance.employee_created_id).replace('-', '')
             return f"{company_path}/{employee_path}/{make_sure_filename_length(filename)}"
+        raise ValueError('Attachment require employee related')
+    raise ValueError('Attachment require company related')
+
+
+def generate_path_public_file(instance, filename):
+    if instance.company_id:
+        if instance.employee_created_id:
+            now_str = timezone.now()
+            company_path = str(instance.company_id).replace('-', '')
+            return f"{company_path}/{now_str.year}/{now_str.month}/{now_str.day}/{make_sure_filename_length(filename)}"
         raise ValueError('Attachment require employee related')
     raise ValueError('Attachment require company related')
 
@@ -49,48 +64,7 @@ class BastionFiles(MasterDataAbstractModel):
     file = models.FileField(storage=FileSystemStorage, upload_to=generate_path_file)
     remarks = models.TextField(blank=True)
 
-    def get_url(self, expire=None):
-        if self.file:
-            return self.file.storage.url(self.file.name, expire=expire if expire else settings.FILE_STORAGE_EXPIRED)
-        return None
-
-    def get_detail(self, has_link: bool = False):
-        raise NotImplementedError
-
-    def delete(self, using=None, keep_parents=False, force_storage=False):
-        super().delete(using=using, keep_parents=keep_parents)
-        # delete in AWS
-        if force_storage is True:
-            self.file.storage.delete(self.file.name)
-
-    class Meta:
-        abstract = True
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class PublicFiles(BastionFiles):
-    def get_detail(self, has_link: bool = False):
-        return {}
-
-    class Meta:
-        verbose_name = 'Public Files'
-        verbose_name_plural = 'Public Files'
-        ordering = ('-date_created',)
-        default_permissions = ()
-        permissions = ()
-
-
-class Files(BastionFiles):
-    """
-    Attachment was uploaded by Employee
-
-    Stage 1: Upload file
-        Field require: tenant, company, employee_created, file, file_name, file_size, file_type
-    Stage 2: Related attachment to Document Objects
-        Field require: relate_app, relate_app_code, relate_doc_id
-    """
+    # data link files
     relate_app = models.ForeignKey(
         'base.Application',
         null=True,
@@ -98,8 +72,6 @@ class Files(BastionFiles):
     )
     relate_app_code = models.CharField(max_length=100, null=True)
     relate_doc_id = models.UUIDField(null=True)
-
-    file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
 
     def get_url(self, expire=None):
         if self.file:
@@ -121,6 +93,18 @@ class Files(BastionFiles):
             )
         }
 
+    def delete(self, using=None, keep_parents=False, force_storage=False):
+        super().delete(using=using, keep_parents=keep_parents)
+        # delete in AWS
+        if force_storage is True:
+            self.file.storage.delete(self.file.name)
+
+    class Meta:
+        abstract = True
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
     @classmethod
     def get_used_size(cls, **kwargs) -> int | None:
         file_size__sum = Files.objects.filter_current(**kwargs).aggregate(
@@ -129,6 +113,36 @@ class Files(BastionFiles):
         if isinstance(file_size__sum, int):
             return file_size__sum
         return None
+
+
+class PublicFiles(BastionFiles):
+    file = models.FileField(storage=PublicMediaStorage, upload_to=generate_path_public_file)
+
+    # relate_app_code = 'SYS:WEB_BUILDER' for feature web_builder | because web_builder is not application
+
+    @classmethod
+    def get_used_of_web_builder(cls, company_id):
+        return cls.get_used_size(company_id=company_id, relate_app_code=settings.FILE_WEB_BUILDER_RELATE_APP)
+
+    class Meta:
+        verbose_name = 'Public Files'
+        verbose_name_plural = 'Public Files'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class Files(BastionFiles):
+    """
+    Attachment was uploaded by Employee
+
+    Stage 1: Upload file
+        Field require: tenant, company, employee_created, file, file_name, file_size, file_type
+    Stage 2: Related attachment to Document Objects
+        Field require: relate_app, relate_app_code, relate_doc_id
+    """
+
+    file = models.FileField(storage=PrivateMediaStorage, upload_to=generate_path_file)
 
     @classmethod
     def check_available_size_employee(cls, employee_id, new_size=None) -> (bool, str, str):

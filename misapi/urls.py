@@ -1,10 +1,12 @@
 from django.conf import settings
-from django.conf.urls.static import static
+from django.conf.urls.static import static as base_static
 from django.contrib import admin
 from django.urls import path, include
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
+
+from . import media_proxy
 
 urlpatterns = [
     path('api/', include('apps.core.urls')),
@@ -29,12 +31,14 @@ if getattr(settings, 'SHOW_API_DOCS', False):
         [
             path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-json'),
             path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
-        ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+        ]
 
 if settings.DEBUG is True:
     urlpatterns.append(
         path('__debug__/', include('debug_toolbar.urls')),
     )
 
+urlpatterns += base_static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
 if not settings.USE_S3:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += media_proxy.static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
