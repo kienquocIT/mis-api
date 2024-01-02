@@ -12,6 +12,9 @@ class PaymentListSerializer(serializers.ModelSerializer):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -28,7 +31,10 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'return_value_list',
             'payment_value',
             'date_created',
-            'system_status'
+            'system_status',
+            'sale_order_mapped',
+            'quotation_mapped',
+            'opportunity_mapped',
         )
 
     @classmethod
@@ -47,6 +53,70 @@ class PaymentListSerializer(serializers.ModelSerializer):
         all_items = obj.payment.all()
         sum_payment_value = sum(item.expense_after_tax_price for item in all_items)
         return sum_payment_value
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        if obj.sale_order_mapped:
+            is_close = False
+            if obj.sale_order_mapped.opportunity:
+                if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.sale_order_mapped_id,
+                    'code': obj.sale_order_mapped.code,
+                    'title': obj.sale_order_mapped.title,
+                    'opportunity_id': obj.sale_order_mapped.opportunity_id,
+                    'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_close,
+                    'is_close': is_close
+                }
+            return {
+                'id': obj.sale_order_mapped_id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
+                'opportunity_id': None,
+                'opportunity_code': None,
+                'is_close': is_close
+            }
+        return {}
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        if obj.quotation_mapped:
+            is_close = False
+            if obj.quotation_mapped.opportunity:
+                if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.quotation_mapped_id,
+                    'code': obj.quotation_mapped.code,
+                    'title': obj.quotation_mapped.title,
+                    'opportunity_id': obj.quotation_mapped.opportunity_id,
+                    'opportunity_code': obj.quotation_mapped.opportunity.code,
+                    'is_close': is_close,
+                }
+            return {
+                'id': obj.quotation_mapped_id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
+                'opportunity_id': None,
+                'opportunity_code': None,
+                'is_close': is_close,
+            }
+        return {}
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        if obj.opportunity_mapped:
+            is_close = False
+            if obj.opportunity_mapped.is_close_lost or obj.opportunity_mapped.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_mapped_id,
+                'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
+                'is_close': is_close
+            }
+        return {}
 
 
 def create_payment_cost_items(payment_obj, payment_expense_valid_list):
