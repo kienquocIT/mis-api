@@ -174,6 +174,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
+    email_app_password = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -182,8 +183,18 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Company
         fields = (
-            'id', 'title', 'code', 'representative_fullname',
-            'email', 'address', 'phone', 'fax', 'company_function_number', 'sub_domain', 'logo',
+            'id',
+            'title',
+            'code',
+            'representative_fullname',
+            'email',
+            'email_app_password',
+            'address',
+            'phone',
+            'fax',
+            'company_function_number',
+            'sub_domain',
+			'logo'
         )
 
     @classmethod
@@ -201,6 +212,10 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'min_number_char': item.min_number_char
             })
         return company_function_number
+
+    @classmethod
+    def get_email_app_password(cls, obj):
+        return len(obj.email_app_password) * '*' if obj.email_app_password else ''
 
 
 def create_company_function_number(company_obj, company_function_number_data):
@@ -242,6 +257,7 @@ class CompanyCreateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
+            'email_app_password',
             'phone',
             'fax'
         )
@@ -280,6 +296,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'representative_fullname',
             'address',
             'email',
+            'email_app_password',
             'phone',
             'fax'
         )
