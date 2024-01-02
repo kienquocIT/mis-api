@@ -23,14 +23,21 @@ class StaticStorage(BastionStorageLocal):
     """
     Storage for static files (everyone allow READ, owner allow FULL CONTROL)
     """
-    ...
+    def __init__(self, *args, **kwargs):
+        kwargs['location'] = settings.STATIC_LOCATION
+        kwargs['base_url'] = settings.STATIC_BASE_URL
+        super().__init__(*args, **kwargs)
 
 
 class PublicMediaStorage(BastionStorageLocal):
     """
     Storage for public file (everyone allow READ, owner allow FULL CONTROL)
     """
-    ...
+
+    def __init__(self, *args, **kwargs):
+        kwargs['location'] = settings.PUBLIC_MEDIA_LOCATION
+        kwargs['base_url'] = settings.PUBLIC_MEDIA_BASE_URL
+        super().__init__(*args, **kwargs)
 
 
 class PrivateMediaStorage(BastionStorageLocal):
@@ -42,7 +49,11 @@ class PrivateMediaStorage(BastionStorageLocal):
         Allow: return file.url -> full link access preview
         Deny: None
     """
-    ...
+
+    def __init__(self, *args, **kwargs):
+        kwargs['location'] = settings.PRIVATE_MEDIA_LOCATION
+        kwargs['base_url'] = settings.PRIVATE_MEDIA_BASE_URL
+        super().__init__(*args, **kwargs)
 
 
 if settings.USE_S3 is True:

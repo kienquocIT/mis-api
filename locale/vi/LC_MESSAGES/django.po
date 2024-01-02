@@ -685,3 +685,7 @@ msgstr "Người dùng bắt buộc phải liên kết với nhân viên để t
 #
 msgid "Some attachments are being used by another document or do not exist"
 msgstr "Một số tập tin đính kèm đang được tài liệu khác sử dụng hoặc không tồn tại"
+
+#
+msgid "The file is not images type."
+msgstr "Tập tin không phải kiểu hình ảnh."
