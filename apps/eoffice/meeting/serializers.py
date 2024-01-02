@@ -169,9 +169,8 @@ def create_participants_mapped(meeting_schedule, participants_list):
     return True
 
 
-def create_online_meeting_object(meeting_config, zoom_meeting_obj):
+def create_online_meeting_object(config_obj, zoom_meeting_obj):
     payload = zoom_meeting_obj.meeting_create_payload
-    config_obj = meeting_config.first()
     cryptor = SimpleEncryptor()
     account_id = cryptor.decrypt(config_obj.account_id)
     client_id = cryptor.decrypt(config_obj.client_id)
@@ -250,10 +249,9 @@ def send_mail(meeting_schedule, response_data, meeting_time, date, time, duratio
         ]:
             email.attach_file(attachment)
 
-        cryptor = SimpleEncryptor()
         connection = get_connection(
             username=meeting_schedule.company.email,
-            password=cryptor.decrypt(meeting_schedule.company.email_app_password),
+            password=SimpleEncryptor().decrypt(meeting_schedule.company.email_app_password),
             fail_silently=False,
         )
         email.connection = connection
@@ -271,7 +269,7 @@ def after_create_online_meeting(meeting_schedule, online_meeting_data):
     )
     meeting_config = MeetingZoomConfig.objects.filter_current(fill__tenant=True, fill__company=True)
     if meeting_config.exists():
-        response_data = create_online_meeting_object(meeting_config, zoom_meeting_obj)
+        response_data = create_online_meeting_object(meeting_config.first(), zoom_meeting_obj)
         duration = meeting_schedule.meeting_duration
         date = meeting_schedule.meeting_start_date
         time = meeting_schedule.meeting_start_time
