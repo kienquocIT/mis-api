@@ -169,14 +169,13 @@ def create_online_meeting_object(config_obj, zoom_meeting_obj):
     account_id = cryptor.decrypt(config_obj.account_id)
     client_id = cryptor.decrypt(config_obj.client_id)
     client_secret = cryptor.decrypt(config_obj.client_secret)
-    auth_token_url = "https://zoom.us/oauth/token"
     api_base_url = "https://api.zoom.us/v2"
     data = {
         "grant_type": "account_credentials",
         "account_id": account_id,
         "client_secret": client_secret
     }
-    response = requests.post(auth_token_url, auth=(client_id, client_secret), data=data, timeout=60)
+    response = requests.post("https://zoom.us/oauth/token", auth=(client_id, client_secret), data=data, timeout=60)
 
     if response.status_code != 200:
         raise serializers.ValidationError({'Online meeting': 'Unable to get access token'})
@@ -224,12 +223,11 @@ def send_mail(meeting_schedule, response_data, meeting_time, date, time, duratio
         company_name = meeting_schedule.company.title
         meeting_topic = response_data.get('topic')
         meeting_id = response_data.get('join_url').split('?')[0].split('/')[-1]
-        meeting_url = response_data.get('join_url')
         email = EmailMessage(
             subject=meeting_topic,
             body=f"{employee.get_full_name(2)} from {company_name} has invited you to a scheduled Zoom meeting."
                  f"\n\nTopic: {meeting_topic}\nTime: {meeting_time}"
-                 f"\n\nJoin Zoom Meeting\n{meeting_url}"
+                 f"\n\nJoin Zoom Meeting\n{response_data.get('join_url')}"
                  f"\n\nMeeting ID: {meeting_id}"
                  f"\nPasscode: {response_data.get('password')}",
             from_email=meeting_schedule.company.email,
