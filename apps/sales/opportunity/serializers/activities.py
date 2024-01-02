@@ -1,5 +1,5 @@
 from rest_framework import serializers
-
+from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
 from apps.core.company.models import Company
@@ -11,7 +11,6 @@ from apps.sales.opportunity.models import (
 )
 from apps.shared import BaseMsg, SaleMsg, HrMsg
 from apps.shared.translations.opportunity import OpportunityMsg
-from django.core.mail import get_connection, EmailMultiAlternatives
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -173,8 +172,9 @@ def send_email(email_obj, company_id):
             email.connection = connection
             email.send()
             return True
+        raise serializers.ValidationError({'Send email': f'Company is not defined'})
     except Exception as err:
-        raise serializers.ValidationError({'Online meeting': f'Cannot send email ({err})'})
+        raise serializers.ValidationError({'Send email': f'Cannot send email ({err})'})
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
