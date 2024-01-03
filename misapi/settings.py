@@ -641,3 +641,4 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
+EMAIL_CONFIG_PASSWORD = 'email-cfg-pwd+M2fwL5JV~}Y+a4Bp_nv@(c/N$Qs*r;Wj)C3kFD]!=x.`&z:>hq'

@@ -1,7 +1,8 @@
 from rest_framework import serializers
-
+from django.core.mail import get_connection, EmailMultiAlternatives
 from apps.core.attachments.models import Files
 from apps.core.base.models import Application
+from apps.core.company.models import Company
 from apps.sales.opportunity.models import (
     OpportunityCallLog, OpportunityEmail, OpportunityMeeting,
     OpportunityMeetingEmployeeAttended, OpportunityMeetingCustomerMember, OpportunitySubDocument,
@@ -10,7 +11,6 @@ from apps.sales.opportunity.models import (
 )
 from apps.shared import BaseMsg, SaleMsg, HrMsg
 from apps.shared.translations.opportunity import OpportunityMsg
-from apps.shared.mail import GmailController
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -148,24 +148,33 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
 
-def send_email(email_obj, employee_id, tenant_id, company_id):
+def send_email(email_obj, company_id):
     try:
-        template = f"<table><tr><td><h1>{email_obj.subject}</h1></td><td>{email_obj.content}</td></tr></table>"
-        GmailController(
-            subject=email_obj.subject,
-            to=email_obj.email_to,
-            cc=email_obj.email_cc_list,
-            bcc=[],
-            template=template,
-            context=email_obj.content,
-            tenant_id=tenant_id,
-            company_id=company_id,
-            employee_id=employee_id,
-        ).send()
-        return True
+        company_obj = Company.objects.filter(id=company_id)
+        if company_obj.exists():
+            company_obj = company_obj[0]
+            html_content = email_obj.content
+            email = EmailMultiAlternatives(
+                subject=email_obj.subject,
+                body='',
+                from_email=company_obj.email,
+                to=email_obj.email_to_list,
+                cc=email_obj.email_cc_list,
+                bcc=[],
+                reply_to=[],
+            )
+            email.attach_alternative(html_content, "text/html")
+            connection = get_connection(
+                username=company_obj.email,
+                password=company_obj.email_app_password,
+                fail_silently=False,
+            )
+            email.connection = connection
+            email.send()
+            return True
+        raise serializers.ValidationError({'Send email': 'Company is not defined'})
     except Exception as err:
-        print(err)
-    return False
+        raise serializers.ValidationError({'Send email': f'Cannot send email ({err})'})
 
 
 class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
@@ -196,12 +205,9 @@ class OpportunityEmailCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         email_obj = OpportunityEmail.objects.create(**validated_data)
 
-        # employee_id = self.context.get('employee_id', None)
-        # tenant_id = self.context.get('tenant_id', None)
-        # company_id = self.context.get('company_id', None)
-        # send_mail_state = send_email(email_obj, employee_id, tenant_id, company_id)
-        # if not send_mail_state:
-        #     raise serializers.ValidationError({'Email': OpportunityMsg.CAN_NOT_SEND_EMAIL})
+        company_id = self.context.get('company_id', None)
+        send_email(email_obj, company_id)
+
         OpportunityActivityLogs.objects.create(
             email=email_obj,
             opportunity=validated_data['opportunity'],

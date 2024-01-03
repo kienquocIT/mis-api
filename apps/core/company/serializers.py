@@ -8,7 +8,7 @@ from apps.core.company.models import Company, CompanyUserEmployee, CompanyConfig
 from apps.core.account.models import User
 from apps.core.hr.models import Employee, PlanEmployee
 from apps.sales.opportunity.models import StageCondition, OpportunityConfigStage
-from apps.shared import DisperseModel, AttMsg, FORMATTING
+from apps.shared import DisperseModel, AttMsg, FORMATTING, SimpleEncryptor
 from apps.shared.extends.signals import ConfigDefaultData
 from apps.shared.translations.company import CompanyMsg
 
@@ -174,7 +174,6 @@ class CompanyListSerializer(serializers.ModelSerializer):
 class CompanyDetailSerializer(serializers.ModelSerializer):
     logo = serializers.SerializerMethodField()
     company_function_number = serializers.SerializerMethodField()
-    email_app_password = serializers.SerializerMethodField()
 
     @classmethod
     def get_logo(cls, obj):
@@ -188,13 +187,13 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
             'code',
             'representative_fullname',
             'email',
-            'email_app_password',
+            'email_app_password_status',
             'address',
             'phone',
             'fax',
             'company_function_number',
             'sub_domain',
-			'logo'
+            'logo'
         )
 
     @classmethod
@@ -212,10 +211,6 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
                 'min_number_char': item.min_number_char
             })
         return company_function_number
-
-    @classmethod
-    def get_email_app_password(cls, obj):
-        return len(obj.email_app_password) * '*' if obj.email_app_password else ''
 
 
 def create_company_function_number(company_obj, company_function_number_data):
@@ -287,6 +282,7 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
     email = serializers.CharField(max_length=150, required=True)
     address = serializers.CharField(max_length=150, required=True)
     phone = serializers.CharField(max_length=25, required=True)
+    email_app_password = serializers.CharField(max_length=50, required=False)
 
     class Meta:
         model = Company
@@ -297,11 +293,16 @@ class CompanyUpdateSerializer(serializers.ModelSerializer):
             'address',
             'email',
             'email_app_password',
+            'email_app_password_status',
             'phone',
             'fax'
         )
 
     def validate(self, validate_data):
+        if validate_data.get('email_app_password'):
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
+            cryptor = SimpleEncryptor(key=password)
+            validate_data['email_app_password'] = cryptor.encrypt(validate_data['email_app_password'])
         for item in self.initial_data.get('company_function_number_data', []):
             if item.get('numbering_by', None) == 0 and item.get('schema', None) and item.get('schema_text', None):
                 raise serializers.ValidationError({'detail': CompanyMsg.INVALID_COMPANY_FUNCTION_NUMBER_DATA})

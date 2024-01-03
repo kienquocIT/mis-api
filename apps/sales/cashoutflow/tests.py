@@ -462,7 +462,10 @@ class PaymentTestCase(AdvanceTestCase):
                 'return_value_list',
                 'payment_value',
                 'date_created',
-                'system_status'
+                'system_status',
+                'sale_order_mapped',
+                'quotation_mapped',
+                'opportunity_mapped',
             ],
             check_sum_second=True,
         )
