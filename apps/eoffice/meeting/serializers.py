@@ -84,7 +84,7 @@ class MeetingZoomConfigListSerializer(serializers.ModelSerializer):  # noqa
 
     class Meta:
         model = MeetingZoomConfig
-        fields = ('id',)
+        fields = ('id', 'personal_meeting_id')
 
 
 class MeetingZoomConfigCreateSerializer(serializers.ModelSerializer):
