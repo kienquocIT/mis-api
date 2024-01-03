@@ -905,29 +905,6 @@ class ConfigDefaultData:
         return True
 
 
-class WorkflowData:
-    """
-    data use for add perm view (on ID) for related models of application running WF
-    {
-        'model_code (model of application running WF)': [
-            {
-                'app_label': 'leave',
-                'model_code': 'leaveavailable'
-            },
-            ...
-        ]
-    }
-    """
-    wf_app_relate_models = {
-        'leaverequest': [
-            {
-                'app_label': 'leave',
-                'model_code': 'leaveavailable'
-            }
-        ],
-    }
-
-
 @receiver(post_save, sender=Company)
 def update_stock(sender, instance, created, **kwargs):  # pylint: disable=W0613
     if created is True:
@@ -994,19 +971,6 @@ def append_permission_viewer_runtime(sender, instance, created, **kwargs):
                     doc_id=str(doc_id),
                     tenant_id=instance.runtime.tenant_id,
                 )
-                # check if app has related models => append perm view to related models
-                if app_obj.code in WorkflowData.wf_app_relate_models:
-                    for relate_model in WorkflowData.wf_app_relate_models[app_obj.code]:
-                        app_label = relate_model.get('app_label', None)
-                        model_code = relate_model.get('model_code', None)
-                        if app_label and model_code:
-                            emp.append_permit_by_ids(
-                                app_label=app_label,
-                                model_code=model_code,
-                                perm_code='view',
-                                doc_id=str(doc_id),
-                                tenant_id=instance.runtime.tenant_id,
-                            )
                 # check if assignee has zones => append perm edit on doc_id
                 if emp.all_runtime_assignee_of_employee.filter(
                         ~Q(zone_and_properties={}) & ~Q(zone_and_properties=[]),
