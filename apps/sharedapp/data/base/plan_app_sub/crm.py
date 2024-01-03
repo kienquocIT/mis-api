@@ -368,6 +368,35 @@ PRODUCT_APP_CONFIG = {
     "model_code": "product",
     "app_label": "saledata",
     "is_workflow": False,
+"app_depend_on": [
+        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "3", "4"],
+            "app_depends_on": {
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
+        },
+        "edit": {
+            "range": ["1", "3", "4"],
+            "app_depends_on": {
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
+        },
+        "delete": {
+            "range": ["1", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {"view": "==", },
+        },
+    },
 }
 
 EXPENSES_APP_CONFIG = {
