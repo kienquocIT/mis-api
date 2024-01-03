@@ -368,7 +368,7 @@ PRODUCT_APP_CONFIG = {
     "model_code": "product",
     "app_label": "saledata",
     "is_workflow": False,
-"app_depend_on": [
+    "app_depend_on": [
         "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
     ],
     "permit_mapping": {
