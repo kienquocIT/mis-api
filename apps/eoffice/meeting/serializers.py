@@ -163,7 +163,6 @@ def create_participants_mapped(meeting_schedule, participants_list):
 
 
 def create_online_meeting_object(config_obj, zoom_meeting_obj):
-    payload = zoom_meeting_obj.meeting_create_payload
     try:
         password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
         cryptor = SimpleEncryptor(key=password)
@@ -185,7 +184,12 @@ def create_online_meeting_object(config_obj, zoom_meeting_obj):
     response_data = response.json()
     access_token = response_data["access_token"]
     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json"}
-    resp = requests.post(f"{api_base_url}/users/me/meetings", headers=headers, json=payload, timeout=60)
+    resp = requests.post(
+        f"{api_base_url}/users/me/meetings",
+        headers=headers,
+        json=zoom_meeting_obj.meeting_create_payload,
+        timeout=60
+    )
     if resp.status_code != 201:
         raise serializers.ValidationError({'Online meeting': 'Unable to generate meeting link'})
     response_data = resp.json()
