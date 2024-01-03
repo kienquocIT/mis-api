@@ -198,18 +198,18 @@ class SaleDefaultData:
         return True
 
     def create_company_function_number(self):
+        objs = []
         for function_index in range(10):
-            objs = [
-                CompanyFunctionNumber(
-                    company=self.company_obj,
-                    function=function_index,
-                    **cf_item
+            for cf_item in self.CompanyFunctionNumber_data:
+                objs.append(
+                    CompanyFunctionNumber(
+                        company=self.company_obj,
+                        function=function_index,
+                        **cf_item
+                    )
                 )
-                for cf_item in self.CompanyFunctionNumber_data
-            ]
-            CompanyFunctionNumber.objects.bulk_create(objs)
-            return True
-        return False
+        CompanyFunctionNumber.objects.bulk_create(objs)
+        return True
 
 
 class ConfigDefaultData:
