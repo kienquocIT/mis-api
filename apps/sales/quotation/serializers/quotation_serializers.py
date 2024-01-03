@@ -7,14 +7,13 @@ from apps.sales.quotation.serializers.quotation_sub import QuotationCommonCreate
     QuotationProductsListSerializer, QuotationCostsListSerializer, QuotationProductSerializer, \
     QuotationTermSerializer, QuotationLogisticSerializer, QuotationCostSerializer, QuotationExpenseSerializer, \
     QuotationIndicatorSerializer
-from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg
+from apps.shared import SaleMsg, BaseMsg
 
 
 # QUOTATION BEGIN
 class QuotationListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
 
     class Meta:
@@ -50,12 +49,6 @@ class QuotationListSerializer(serializers.ModelSerializer):
             'code': obj.employee_inherit.code,
             'is_active': obj.employee_inherit.is_active,
         } if obj.employee_inherit else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
     @classmethod
     def get_opportunity(cls, obj):
@@ -201,6 +194,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     customer = serializers.UUIDField()
     contact = serializers.UUIDField()
     employee_inherit_id = serializers.UUIDField()
+    next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
     payment_term = serializers.UUIDField()
     # quotation tabs
     quotation_products_data = QuotationProductSerializer(
@@ -234,6 +228,7 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
             'contact',
             'employee_inherit_id',
             'payment_term',
+            'next_node_collab_id',
             # total amount of products
             'total_product_pretax_amount',
             'total_product_discount_rate',
@@ -291,6 +286,10 @@ class QuotationCreateSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_customer_billing(cls, value):
         return QuotationCommonValidate().validate_customer_billing(value=value)
+
+    @classmethod
+    def validate_next_node_collab_id(cls, value):
+        return QuotationCommonValidate().validate_next_node_collab_id(value=value)
 
     def validate(self, validate_data):
         if 'opportunity_id' in validate_data:

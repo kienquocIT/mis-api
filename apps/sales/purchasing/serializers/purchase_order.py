@@ -125,6 +125,7 @@ class PurchaseOrderProductSerializer(serializers.ModelSerializer):
             'product_quantity_order_actual',
             'product_unit_price',
             'product_tax_title',
+            'product_tax_amount',
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
@@ -177,6 +178,7 @@ class PurchaseOrderProductListSerializer(serializers.ModelSerializer):
             'product_quantity_order_actual',
             'product_unit_price',
             'product_tax_title',
+            'product_tax_amount',
             'product_subtotal_price',
             'product_subtotal_price_after_tax',
             'order',
@@ -375,7 +377,6 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
     receipt_status = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -401,12 +402,6 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
     def get_receipt_status(cls, obj):
         if obj.receipt_status or obj.receipt_status == 0:
             return dict(RECEIPT_STATUS).get(obj.receipt_status)
-        return None
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
         return None
 
 

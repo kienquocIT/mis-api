@@ -9,13 +9,14 @@ from rest_framework.exceptions import ErrorDetail
 from apps.shared import ProvisioningMsg, FORMATTING
 
 from apps.core.tenant.models import Tenant, TenantPlan
-from apps.core.base.models import SubscriptionPlan
+from apps.core.base.models import SubscriptionPlan, PlanApplication
 from apps.eoffice.leave.leave_util import leave_available_map_employee as available_map_employee
 
 from .serializers import (
     TenantCreateSerializer, CompanyCreateSerializer, SpaceCreateSerializer, EmployeeCreateSerializer,
     UserCreateSerializer, EmployeeSpaceCreateSerializer,
 )
+from ..workflow.models import WorkflowConfigOfApp, Workflow
 
 
 class TenantController:
@@ -29,6 +30,7 @@ class TenantController:
     5. create account (map: tenant, company, space.first, employee)
     6. update employee (map: user by account)
     7. create employee-space
+    8. create workflow config apps
     """
 
     def __init__(self):
@@ -120,6 +122,10 @@ class TenantController:
                             self.update_user(self.user_obj, employee_current=self.employee_obj)
                             if self.space_obj:
                                 self.create_space_employee(self.employee_obj, self.space_obj, **{})
+
+                    # make sure workflow apps config
+                    if self.tenant_obj and self.company_obj:
+                        self.create_workflow_config_apps(tenant_obj=self.tenant_obj, company_obj=self.company_obj)
 
                     return True
                 raise serializers.ValidationError(
@@ -413,4 +419,30 @@ class TenantController:
                             )
             if bulk_info:
                 TenantPlan.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
+    def create_workflow_config_apps(cls, tenant_obj, company_obj):
+        plan_ids = TenantPlan.objects.filter(tenant=tenant_obj).values_list('plan_id', flat=True)
+        app_objs = [
+            x.application for x in
+            PlanApplication.objects.select_related('application').filter(plan_id__in=plan_ids)
+        ]
+        for obj in WorkflowConfigOfApp.objects.filter(application__is_workflow=False):
+            print('delete Workflow Config App: ', obj.application, obj.company)
+            obj.delete()
+        for app in app_objs:
+            if app.is_workflow is True:
+                WorkflowConfigOfApp.objects.get_or_create(
+                    company=company_obj,
+                    application=app,
+                    defaults={
+                        'tenant': tenant_obj,
+                        'workflow_currently': Workflow.objects.filter(
+                            tenant=tenant_obj,
+                            company=company_obj,
+                            application=app,
+                        ).first()
+                    }
+                )
         return True

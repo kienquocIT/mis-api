@@ -17,6 +17,10 @@ class CollabInFormSerializer(serializers.ModelSerializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+    zone_hidden = serializers.ListField(
+        child=serializers.IntegerField(required=False),
+        required=False
+    )
 
     class Meta:
         model = CollaborationInForm
@@ -24,6 +28,8 @@ class CollabInFormSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'app_property',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -42,6 +48,7 @@ class CollabInFormSerializer(serializers.ModelSerializer):  # noqa
 class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
     app_property = serializers.SerializerMethodField()
     zone = serializers.SerializerMethodField()
+    zone_hidden = serializers.SerializerMethodField()
 
     class Meta:
         model = CollaborationInForm
@@ -49,6 +56,8 @@ class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'app_property',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -66,6 +75,13 @@ class CollabInFormListSerializer(serializers.ModelSerializer):  # noqa
             for zone in obj.zone.all()
         ]
 
+    @classmethod
+    def get_zone_hidden(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone_hidden.all()
+        ]
+
 
 # COLLAB OUT FORM
 class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
@@ -77,6 +93,10 @@ class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+    zone_hidden = serializers.ListField(
+        child=serializers.IntegerField(required=False),
+        required=False
+    )
 
     class Meta:
         model = CollaborationOutForm
@@ -84,6 +104,8 @@ class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'employee_list',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -104,6 +126,7 @@ class CollabOutFormSerializer(serializers.ModelSerializer):  # noqa
 class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
     employee_list = serializers.SerializerMethodField()
     zone = serializers.SerializerMethodField()
+    zone_hidden = serializers.SerializerMethodField()
 
     class Meta:
         model = CollaborationOutForm
@@ -111,6 +134,8 @@ class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
             'id',
             'employee_list',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone'
         )
 
     @classmethod
@@ -134,6 +159,13 @@ class CollabOutFormListSerializer(serializers.ModelSerializer):  # noqa
             for zone in obj.zone.all()
         ]
 
+    @classmethod
+    def get_zone_hidden(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone_hidden.all()
+        ]
+
 
 # COLLAB IN WORKFLOW
 class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
@@ -146,6 +178,10 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
         child=serializers.IntegerField(required=False),
         required=False
     )
+    zone_hidden = serializers.ListField(
+        child=serializers.IntegerField(required=False),
+        required=False
+    )
 
     class Meta:
         model = CollabInWorkflow
@@ -155,6 +191,8 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
             'position_choice',
             'employee',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -181,6 +219,7 @@ class CollabInWorkflowSerializer(serializers.ModelSerializer):  # noqa
 class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
     employee = serializers.SerializerMethodField()
     zone = serializers.SerializerMethodField()
+    zone_hidden = serializers.SerializerMethodField()
 
     class Meta:
         model = CollabInWorkflow
@@ -190,6 +229,8 @@ class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
             'position_choice',
             'employee',
             'zone',
+            'zone_hidden',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -216,6 +257,13 @@ class CollabInWorkflowListSerializer(serializers.ModelSerializer):  # noqa
             for zone in obj.zone.all()
         ]
 
+    @classmethod
+    def get_zone_hidden(cls, obj):
+        return [
+            {'id': zone.id, 'title': zone.title, 'code': zone.code, 'order': zone.order}
+            for zone in obj.zone_hidden.all()
+        ]
+
 
 # Node
 class NodeListSerializer(serializers.ModelSerializer):
@@ -234,6 +282,7 @@ class NodeListSerializer(serializers.ModelSerializer):
 class NodeDetailSerializer(serializers.ModelSerializer):
     actions = serializers.JSONField()
     zone_initial_node = serializers.JSONField()
+    zone_hidden_initial_node = serializers.JSONField()
     collab_in_form = serializers.SerializerMethodField()
     collab_out_form = serializers.SerializerMethodField()
     collab_in_workflow = serializers.SerializerMethodField()
@@ -250,13 +299,15 @@ class NodeDetailSerializer(serializers.ModelSerializer):
             'is_system',
             'code_node_system',
             'zone_initial_node',
+            'zone_hidden_initial_node',
             'option_collaborator',
             'collab_in_form',
             'collab_out_form',
             'collab_in_workflow',
             'order',
             'coordinates',
-            'condition'
+            'condition',
+            'is_edit_all_zone',
         )
 
     @classmethod
@@ -267,6 +318,7 @@ class NodeDetailSerializer(serializers.ModelSerializer):
                     'app_property',
                 ).prefetch_related(
                     'zone',
+                    'zone_hidden',
                 ).first()
             ).data
         return {}
@@ -278,6 +330,7 @@ class NodeDetailSerializer(serializers.ModelSerializer):
                 CollaborationOutForm.objects.filter(node=obj).prefetch_related(
                     'employees',
                     'zone',
+                    'zone_hidden',
                 ).first()
             ).data
         return {}
@@ -290,7 +343,8 @@ class NodeDetailSerializer(serializers.ModelSerializer):
                     'employee',
                     'employee__group',
                 ).prefetch_related(
-                    'zone'
+                    'zone',
+                    'zone_hidden',
                 ),
                 many=True
             ).data
@@ -314,6 +368,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
     )
     condition = serializers.JSONField(required=False)
     zone_initial_node = serializers.JSONField(required=False)
+    zone_hidden_initial_node = serializers.JSONField(required=False)
     coordinates = serializers.JSONField(required=False)
 
     class Meta:
@@ -325,6 +380,7 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'actions',
             'option_collaborator',
             'zone_initial_node',
+            'zone_hidden_initial_node',
             'order',
             'is_system',
             'code_node_system',
@@ -332,7 +388,8 @@ class NodeCreateSerializer(serializers.ModelSerializer):
             'collab_in_form',
             'collab_out_form',
             'collab_in_workflow',
-            'coordinates'
+            'coordinates',
+            'is_edit_all_zone',
         )
 
 

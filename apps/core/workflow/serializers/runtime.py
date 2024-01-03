@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
-from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee
+from apps.core.workflow.models import Runtime, RuntimeStage, RuntimeAssignee, CollaborationOutForm
 from apps.core.workflow.tasks import call_approval_task
 from apps.shared import call_task_background
 
@@ -223,6 +223,7 @@ class RuntimeAssigneeListSerializer(serializers.ModelSerializer):
 class RuntimeDetailSerializer(serializers.ModelSerializer):
     action_myself = serializers.SerializerMethodField()
     stage_currents = serializers.SerializerMethodField()
+    zones_hidden_myself = serializers.SerializerMethodField()
 
     @staticmethod
     def get_properties_data(zone_and_properties):
@@ -235,6 +236,28 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
             if property_objs:
                 return ApplicationPropertySubDetailSerializer(property_objs, many=True).data
         return []
+
+    @staticmethod
+    def get_collab_out_form(node_current):
+        collab_out_form = []
+        if node_current:
+            for associate in node_current.transition_node_input.select_related('node_out'):
+                if associate.node_out.option_collaborator == 1:  # out form
+                    collab = CollaborationOutForm.objects.get(node=associate.node_out)
+                    for employee in collab.employees.select_related('group').all():
+                        collab_out_form.append({
+                            'id': employee.id,
+                            'first_name': employee.first_name,
+                            'last_name': employee.last_name,
+                            'email': employee.email,
+                            'full_name': employee.get_full_name(2),
+                            'code': employee.code,
+                            'group': {'id': employee.group_id, 'title': employee.group.title,
+                                      'code': employee.group.code} if employee.group else {},
+                            'is_active': employee.is_active,
+                        })
+                    break
+        return collab_out_form
 
     def get_action_myself(self, obj):
         employee_current_id = self.context.get('employee_current_id', None)
@@ -250,6 +273,9 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
                         'id': stage_assignee_obj.id,
                         'actions': obj.stage_currents.actions,
                         'zones': self.get_properties_data(stage_assignee_obj.zone_and_properties),
+                        'zones_hidden': self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties),
+                        'is_edit_all_zone': stage_assignee_obj.is_edit_all_zone,
+                        'collab_out_form': self.get_collab_out_form(obj.stage_currents.node),
                     }
         return {}
 
@@ -264,10 +290,24 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
             }
         return {}
 
+    def get_zones_hidden_myself(self, obj):
+        zone_hidden_list = []
+        employee_current_id = self.context.get('employee_current_id', None)
+        if employee_current_id and obj.stage_currents:
+            stage_assignee_list = RuntimeAssignee.objects.filter_current(
+                stage__runtime=obj,
+                employee_id=employee_current_id,
+            )
+            if stage_assignee_list:
+                for stage_assignee_obj in stage_assignee_list:
+                    zone_hidden_list += self.get_properties_data(stage_assignee_obj.zone_hidden_and_properties)
+        return zone_hidden_list
+
     class Meta:
         model = Runtime
         fields = (
             'id', 'stage_currents', 'date_finished', 'date_created', 'state', 'status', 'action_myself',
+            'zones_hidden_myself',
         )
 
 
@@ -275,6 +315,7 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
     action = serializers.IntegerField(
         help_text='Action code submit'
     )
+    next_node_collab_id = serializers.UUIDField(required=False, allow_null=True)
 
     def validate_action(self, attrs):
         if self.instance.stage:
@@ -288,16 +329,23 @@ class RuntimeAssigneeUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         action_code = int(validated_data['action'])
+        remark = validated_data.get('remark', '')
+        next_node_collab_id = None
+        if 'next_node_collab_id' in validated_data:
+            next_node_collab_id = validated_data['next_node_collab_id']
+            del validated_data['next_node_collab_id']
         call_task_background(
             call_approval_task,
             *[
                 str(instance.id),
                 str(instance.employee_id),
                 action_code,
+                remark,  # use for action return
+                next_node_collab_id,  # use for action approve if next node is OUT FORM node
             ]
         )
         return instance
 
     class Meta:
         model = RuntimeAssignee
-        fields = ('action',)
+        fields = ('action', 'remark', 'next_node_collab_id')

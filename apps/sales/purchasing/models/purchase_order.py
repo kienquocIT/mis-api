@@ -291,6 +291,9 @@ class PurchaseOrderProduct(SimpleAbstractModel):
         blank=True,
         null=True
     )
+    product_tax_amount = models.FloatField(
+        default=0
+    )
     product_subtotal_price = models.FloatField(
         default=0
     )
