@@ -762,9 +762,17 @@ def make_sure_leave_config():
 def update_admin_not_have_available():
     for obj in Company.objects.all():
         for employee in Employee.objects.all():
-            if not LeaveAvailable.objects.filter(employee_inherit=employee).exists():
+            leave_list = LeaveAvailable.objects.filter(employee_inherit=employee)
+            if not leave_list.exists():
                 leave_available_map_employee(employee, obj)
     print('done update')
+
+
+def re_init_available():
+    LeaveAvailable.objects.all().delete()
+    for obj in Company.objects.all():
+        for employee in Employee.objects.all():
+            leave_available_map_employee(employee, obj)
 
 
 def make_sure_function_purchase_request_config():
