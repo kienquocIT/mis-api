@@ -333,7 +333,10 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
         create_participants_mapped(meeting_schedule, self.initial_data.get('participants', []))
         if meeting_schedule.meeting_type is False:
             after_create_online_meeting(meeting_schedule, self.initial_data.get('online_meeting_data', {}))
-        create_files_mapped(meeting_schedule, self.initial_data.get('attachment', '').strip().split(','))
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(meeting_schedule, attachment.strip().split(','))
         return meeting_schedule
 
 
