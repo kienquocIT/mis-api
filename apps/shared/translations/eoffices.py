@@ -31,3 +31,4 @@ class MeetingScheduleMsg:
     ROOM_IS_NOT_AVAILABLE = _('This room is not available in this time')
     DUP_CODE = _('Duplicate meeting room code')
     DES_IS_REQUIRED = _('Meeting room description is required')
+    SAVE_FILES_ERROR = _('Can not save files.')
