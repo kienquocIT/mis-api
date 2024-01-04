@@ -3,7 +3,7 @@ from django.urls import path
 from apps.eoffice.leave.views import LeaveConfigDetail, LeaveTypeConfigCreate, LeaveTypeConfigUpdate, \
     WorkingCalendarConfigDetail, WorkingYearCreate, WorkingYearDetail, WorkingHolidayCreate, WorkingHolidayAPI, \
     LeaveRequestList, LeaveRequestDetail, LeaveAvailableList, LeaveAvailableUpdate, LeaveAvailableHistoryList, \
-    LeaveRequestDateList
+    LeaveRequestDateList, LeaveAvailableDDList
 
 urlpatterns = [
     path('config', LeaveConfigDetail.as_view(), name='LeaveConfigDetail'),
@@ -21,6 +21,7 @@ urlpatterns = [
     path('request/detail/<str:pk>', LeaveRequestDetail.as_view(), name='LeaveRequestDetail'),
     # leave available
     path('available/list', LeaveAvailableList.as_view(), name='LeaveAvailableList'),
+    path('available/dd-list', LeaveAvailableDDList.as_view(), name='LeaveAvailableDDList'),
     path('available/edit/<str:pk>', LeaveAvailableUpdate.as_view(), name='LeaveAvailableUpdate'),
     path(
         'available/history/<str:employee_inherit_id>', LeaveAvailableHistoryList.as_view(),
