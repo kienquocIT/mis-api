@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import serializers
 
 from apps.core.base.models import ApplicationProperty
@@ -232,7 +233,11 @@ class RuntimeDetailSerializer(serializers.ModelSerializer):
             for detail in zone_and_properties:
                 properties_id += detail['properties']
 
-            property_objs = ApplicationProperty.objects.filter(id__in=properties_id)
+            # property_objs = ApplicationProperty.objects.filter(id__in=properties_id)
+
+            property_objs = ApplicationProperty.objects.filter(
+                Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
+            )
             if property_objs:
                 return ApplicationPropertySubDetailSerializer(property_objs, many=True).data
         return []

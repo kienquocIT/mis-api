@@ -1009,8 +1009,7 @@ class BaseUpdateMixin(BaseMixin):
                     for key, value in request_data.items():
                         if key in code_field_arr:
                             new_body_data[key] = value
-                    # return new_body_data, True, task_id
-                    return request_data, True, task_id
+                    return new_body_data, True, task_id
                 # check permission default | wait implement so it is True
         return request_data, False, None
 

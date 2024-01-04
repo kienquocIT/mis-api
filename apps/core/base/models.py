@@ -311,6 +311,13 @@ class ApplicationProperty(CoreAbstractModel):
         default=False,
         help_text="property which is only used for config sale indicators"
     )
+    parent_n = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="property_parent_n",
+        verbose_name="parent property",
+        null=True,
+    )
 
     class Meta:
         verbose_name = 'Application property'
