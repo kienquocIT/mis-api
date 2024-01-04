@@ -307,6 +307,13 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Tab expense of quotation',
         'type': 1,
     },
+    'd846692b-9d65-4dcb-a667-4318cae17a18': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Tab indicator',
+        'code': 'quotation_indicators_data',
+        'remark': 'Tab indicator of quotation',
+        'type': 1,
+    },
     # Total fields
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -865,6 +872,13 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab expense',
         'code': 'sale_order_expenses_data',
         'remark': 'Tab expense of sale order',
+        'type': 1,
+    },
+    'c12b9e32-1043-492c-ac33-78e838c43aac': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Tab indicator',
+        'code': 'sale_order_indicators_data',
+        'remark': 'Tab indicator of sale order',
         'type': 1,
     },
     # total fields
