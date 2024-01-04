@@ -4,6 +4,7 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
+from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
 from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
 
@@ -144,6 +145,22 @@ def create_payment_cost_items(payment_obj, payment_expense_valid_list):
     return False
 
 
+def create_files_mapped(payment_obj, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(PaymentAttachmentFile(
+                payment=payment_obj,
+                attachment_id=file_id,
+                order=index
+            ))
+        PaymentAttachmentFile.objects.filter(payment=payment_obj).delete()
+        PaymentAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+
 class PaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
@@ -210,6 +227,7 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
                 title=payment_obj.title,
             )
 
+        create_files_mapped(payment_obj, self.initial_data.get('attachment', '').strip().split(','))
         return payment_obj
 
 
@@ -222,6 +240,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     employee_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     creator_name = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -241,6 +260,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'is_internal_payment',
             'creator_name',
             'employee_inherit',
+            'attachment'
         )
 
     @classmethod
@@ -400,6 +420,11 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = PaymentAttachmentFile.objects.select_related('attachment').filter(payment=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class PaymentUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
@@ -438,10 +463,8 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_payment_cost_items(
-            instance,
-            self.initial_data.get('payment_expense_valid_list', [])
-        )
+        create_payment_cost_items(instance, self.initial_data.get('payment_expense_valid_list', []))
+        create_files_mapped(instance, self.initial_data.get('attachment', '').strip().split(','))
         return instance
 
 

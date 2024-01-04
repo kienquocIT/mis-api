@@ -5,6 +5,7 @@ from apps.sales.cashoutflow.models import (
     AdvancePayment, AdvancePaymentCost
 )
 from apps.masterdata.saledata.models import Currency, ExpenseItem
+from apps.sales.cashoutflow.models.advance_payment import AdvancePaymentAttachmentFile
 from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg, AbstractDetailSerializerModel
 
@@ -206,6 +207,22 @@ def create_expense_items(advance_payment_obj, expense_valid_list):
     return False
 
 
+def create_files_mapped(ap_obj, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(AdvancePaymentAttachmentFile(
+                advance_payment=ap_obj,
+                attachment_id=file_id,
+                order=index
+            ))
+        AdvancePaymentAttachmentFile.objects.filter(advance_payment=ap_obj).delete()
+        AdvancePaymentAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+
 class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
 
@@ -260,7 +277,6 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ap_obj = AdvancePayment.objects.create(**validated_data)
         create_expense_items(ap_obj, self.initial_data.get('expense_valid_list', []))
-
         # create activity log for opportunity
         if ap_obj.opportunity_mapped:
             OpportunityActivityLogs.create_opportunity_log_application(
@@ -273,6 +289,7 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                 title=ap_obj.title,
             )
 
+        create_files_mapped(ap_obj, self.initial_data.get('attachment', '').strip().split(','))
         return ap_obj
 
 
@@ -285,6 +302,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
     advance_value = serializers.SerializerMethodField()
     supplier = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = AdvancePayment
@@ -306,6 +324,7 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             'supplier',
             'creator_name',
             'employee_inherit',
+            'attachment'
         )
 
     @classmethod
@@ -453,6 +472,11 @@ class AdvancePaymentDetailSerializer(AbstractDetailSerializerModel):
             } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = AdvancePaymentAttachmentFile.objects.select_related('attachment').filter(advance_payment=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
@@ -497,6 +521,7 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         create_expense_items(instance, self.initial_data.get('expense_valid_list', []))
+        create_files_mapped(instance, self.initial_data.get('attachment', '').strip().split(','))
         return instance
 
 
