@@ -91,6 +91,7 @@ class ApplicationPropertyList(BaseListMixin):
         'id': ['in'],
         'application__code': ['exact'],
         'is_sale_indicator': ['exact'],
+        'parent_n': ['exact', 'isnull'],
     }
     serializer_list = ApplicationPropertyListSerializer
 
