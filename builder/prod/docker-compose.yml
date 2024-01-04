@@ -5,7 +5,7 @@ services:
     build:
       context: ../../
       dockerfile: builder/Dockerfile
-    container_name: api-sit
+    container_name: bflow-api
     command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:
