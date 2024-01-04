@@ -1,69 +1,22 @@
 version: '2.12'
 
 services:
-  db:
-    image: mysql:8
-    container_name: db
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: my_secret_password
-      MYSQL_DATABASE: my_db
-      MYSQL_USER: my_user
-      MYSQL_PASSWORD: my_password
-    volumes:
-      - /d/DockerStorage/MySQLData/:/var/lib/mysql
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    networks:
-      - api_web
-    healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
-  web:
+  bflow-api:
     build:
       context: ../../
       dockerfile: builder/Dockerfile
-    container_name: web
+    container_name: api-sit
     command: sh ./builder/docker_entry_point.sh
     restart: unless-stopped
     volumes:
       - ../../:/code
     ports:
-      - "8000:8000"
-    depends_on:
-      db:
-          condition: service_healthy
-      queue:
-          condition: service_healthy
-    environment:
-      DB_HOST: 'db'
-      DB_PORT: "3306"
-      DB_NAME: 'my_db'
-      DB_USER: 'my_user'
-      DB_PASSWORD: 'my_password'
-      MSG_QUEUE_HOST: 'queue'
-      MSG_QUEUE_PORT: '5672'
-      MSG_QUEUE_USER: 'rabbitmq_user'
-      MSG_QUEUE_PASSWORD: 'rabbitmq_passwd'
+      - "${RUNNING_PORT}:8000"
+    env_file:
+      - ../../.env
     networks:
-      - api_web
-
-  queue:
-    image: rabbitmq:3.9.28
-    container_name: queue
-    restart: unless-stopped
-    environment:
-      RABBITMQ_DEFAULT_USER: "rabbitmq_user"
-      RABBITMQ_DEFAULT_PASS: "rabbitmq_passwd"
-    networks:
-      - api_web
-    healthcheck:
-      test: [ "CMD", "rabbitmqctl", "ping" ]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+      - docker_network_cloud
 
 networks:
-  api_web:
+  docker_network_cloud:
+    external: true
