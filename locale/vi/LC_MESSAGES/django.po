@@ -689,3 +689,7 @@ msgstr "Một số tập tin đính kèm đang được tài liệu khác sử d
 #
 msgid "The file is not images type."
 msgstr "Tập tin không phải kiểu hình ảnh."
+
+#
+msgid "From time larger than to time"
+msgstr "Thời gian bắt đầu lớn hơn thời gian kết thúc"

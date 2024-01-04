@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -94,6 +96,20 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
     def validate_detail_data(cls, value):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
+        special_stock = {'FF': 0, 'MY': 0, 'MC': 0}
+        for item in value:
+            available = item["leave_available"]
+            if item["subtotal"] > available["total"] and available["check_balance"]:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+
+            if available["leave_type"]["code"] in ['FF', 'MY', 'MC']:
+                special_stock[available["leave_type"]["code"]] += item['subtotal']
+            if special_stock[available["leave_type"]["code"]] > available["total"]:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+            d_from = datetime.strptime(item["date_from"], "%Y-%m-%d")
+            d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
+            if d_from > d_to:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
         return value
 
     @decorator_run_workflow
