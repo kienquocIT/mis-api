@@ -227,7 +227,9 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
                 title=payment_obj.title,
             )
 
-        create_files_mapped(payment_obj, self.initial_data.get('attachment', '').strip().split(','))
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(payment_obj, attachment.strip().split(','))
         return payment_obj
 
 
@@ -464,7 +466,10 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         create_payment_cost_items(instance, self.initial_data.get('payment_expense_valid_list', []))
-        create_files_mapped(instance, self.initial_data.get('attachment', '').strip().split(','))
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(instance, attachment.strip().split(','))
         return instance
 
 

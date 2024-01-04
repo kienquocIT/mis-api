@@ -289,7 +289,9 @@ class AdvancePaymentCreateSerializer(serializers.ModelSerializer):
                 title=ap_obj.title,
             )
 
-        create_files_mapped(ap_obj, self.initial_data.get('attachment', '').strip().split(','))
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(ap_obj, attachment.strip().split(','))
         return ap_obj
 
 
@@ -521,7 +523,10 @@ class AdvancePaymentUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, key, value)
         instance.save()
         create_expense_items(instance, self.initial_data.get('expense_valid_list', []))
-        create_files_mapped(instance, self.initial_data.get('attachment', '').strip().split(','))
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(instance, attachment.strip().split(','))
         return instance
 
 
