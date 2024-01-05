@@ -6,11 +6,20 @@ __all__ = ['load_env']
 
 def load_env(base_dir=''):
     # load default env
-    load_dotenv(os.path.join(base_dir, 'env', '.env.default'))
+    env_default_path = os.path.join(base_dir, 'env', '.env.default')
+    if os.path.exists(env_default_path):
+        state = load_dotenv(env_default_path)
+        print('[ENV_DEFAULT] loaded: ', state)
+    else:
+        print('[ENV_DEFAULT] Not found environment file: ', env_default_path)
 
     # load env file
     env_path = os.path.join(base_dir, '.env')
-    load_dotenv(env_path, override=True)
+    if os.path.exists(env_path):
+        state = load_dotenv(env_path, override=True)
+        print('[ENV_EXTEND] Loaded: ', state)
+    else:
+        print('[ENV_EXTEND] Not found environment file: ', env_path)
 
     if os.environ.get('TEST_ENABLED', '0') in [1, '1']:
         print('Load environment... change value some variable...')
@@ -21,6 +30,5 @@ def load_env(base_dir=''):
             'CACHE_ENABLED': '0',
             'CELERY_TASK_ALWAYS_EAGER': '1',
         })
-
-    print('[load_env] Load environment... done')
+    print('********************************')
     return True
