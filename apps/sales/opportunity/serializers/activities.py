@@ -138,6 +138,13 @@ class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
         return validate_data
 
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        OpportunityActivityLogs.objects.filter(call=instance).update(is_cancelled=instance.is_cancelled)
+        return instance
+
 
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
@@ -262,12 +269,7 @@ class OpportunityEmailUpdateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OpportunityEmail
-        fields = ('is_cancelled',)
-
-    def validate(self, validate_data):
-        if self.instance.is_cancelled is True:
-            raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
-        return validate_data
+        fields = ()
 
 
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
@@ -457,6 +459,13 @@ class OpportunityMeetingUpdateSerializer(serializers.ModelSerializer):
         if self.instance.is_cancelled is True:
             raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
         return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        OpportunityActivityLogs.objects.filter(meeting=instance).update(is_cancelled=instance.is_cancelled)
+        return instance
 
 
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
@@ -689,6 +698,7 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'id': str(obj.call_id),
             'activity_name': 'Call to customer',
             'activity_type': 'call',
+            'is_cancelled': obj.call.is_cancelled
         } if obj.call else {}
 
     @classmethod
@@ -698,6 +708,7 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'id': str(obj.meeting_id),
             'activity_name': 'Meeting with customer',
             'activity_type': 'meeting',
+            'is_cancelled': obj.meeting.is_cancelled
         } if obj.meeting else {}
 
     @classmethod

@@ -54,7 +54,6 @@ class OpportunityEmail(SimpleAbstractModel):
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
-    is_cancelled = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityEmail'
@@ -271,6 +270,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
         default=0,
         help_text='choices= ' + str(OPPORTUNITY_LOG_TYPE),
     )
+    is_cancelled = models.BooleanField(default=False)
 
     @classmethod
     def create_opportunity_log_application(
