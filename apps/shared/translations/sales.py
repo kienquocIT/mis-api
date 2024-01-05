@@ -16,6 +16,7 @@ class SaleMsg:
     ADVANCE_PAYMENT_NOT_FINISH = _('This advance payment have not finish yet.')
     WRONG_TIME = _('From time must be < To time.')
     SAVE_FILES_ERROR = _('Can not save files.')
+    CAN_NOT_REACTIVE = _('Can not reactive cancelled activity.')
 
 
 class SaleTask:
