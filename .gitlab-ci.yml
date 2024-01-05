@@ -1,0 +1,50 @@
+# docs: https://docs.gitlab.com/ee/ci/examples/#cicd-templates
+
+image: localhost:5000/ci-api
+
+variables:
+  MYSQL_DATABASE: $MYSQL_DB
+  MYSQL_ROOT_PASSWORD: $MYSQL_ROOT_PASS
+  MYSQL_USER: $MYSQL_USER
+  MYSQL_PASSWORD: $MYSQL_PASS
+
+before_script:
+#  # uncomment below commented when change image to global hub "python:3.11"
+#  - apt-get update && apt-get install -y python3-dev build-essential libssl-dev default-libmysqlclient-dev
+#  - pip install --upgrade pip
+  - pip install -r req.txt
+
+stages:
+  - pylint_check
+  - migrations_init
+  - run_testcase
+
+pylint_check:
+  stage: pylint_check
+  script:
+    - python -m pylint --recursive=y .
+
+migrations_init:
+  stage: migrations_init
+  script:
+    - if echo "master sit dev" | grep -qw "$CI_COMMIT_BRANCH"; then
+      python manage.py makemigrations --check --dry-run --noinput;
+      python manage.py migrate;
+      python manage.py init_data;
+      python manage.py init_system_data;
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH != null'
+
+run_testcase:
+  stage: run_testcase
+  script:
+    - if [[ ! "$CI_COMMIT_BRANCH" =~ ^(master|sit|dev)$ ]]; then
+      python manage.py makemigrations;
+      fi
+    - python manage.py test --parallel
+  after_script:
+    - rm -rf *.sqlite3
+    - exit
+  rules:
+    - if: '$CI_COMMIT_BRANCH != null'

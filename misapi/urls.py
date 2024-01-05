@@ -1,0 +1,44 @@
+from django.conf import settings
+from django.conf.urls.static import static as base_static
+from django.contrib import admin
+from django.urls import path, include
+from drf_yasg import openapi
+from drf_yasg.views import get_schema_view
+from rest_framework import permissions
+
+from . import media_proxy
+
+urlpatterns = [
+    path('api/', include('apps.core.urls')),
+    path('api/', include('apps.masterdata.urls')),
+    path('api/private-system/', include('apps.sharedapp.urls')),
+    path('api/', include('apps.sales.urls')),
+    path('api/', include('apps.eoffice.urls')),
+    path('django-admin/', admin.site.urls),
+]
+
+if getattr(settings, 'SHOW_API_DOCS', False):
+    schema_view = get_schema_view(
+        openapi.Info(
+            title="MIS API",
+            default_version='v1',
+            description="",
+        ),
+        public=True,
+        permission_classes=[permissions.AllowAny],
+    )
+    urlpatterns += \
+        [
+            path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-json'),
+            path("redoc/", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
+        ]
+
+if settings.DEBUG is True:
+    urlpatterns.append(
+        path('__debug__/', include('debug_toolbar.urls')),
+    )
+
+urlpatterns += base_static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if not settings.USE_S3:
+    urlpatterns += media_proxy.static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

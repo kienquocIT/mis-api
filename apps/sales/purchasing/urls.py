@@ -1,0 +1,49 @@
+from django.urls import path
+
+from apps.sales.purchasing.views import (
+    PurchaseRequestList, PurchaseRequestDetail, PurchaseQuotationRequestList, PurchaseQuotationRequestDetail,
+    PurchaseRequestListForPQR, PurchaseRequestProductList, PurchaseOrderDetail, PurchaseOrderList,
+    PurchaseQuotationRequestListForPQ, PurchaseQuotationList, PurchaseQuotationDetail, PurchaseQuotationProductList,
+    PurchaseOrderProductList, PurchaseOrderSaleList, PurchaseRequestConfigDetail
+)
+
+urlpatterns = [
+    # purchase request
+    path('purchase-request/config', PurchaseRequestConfigDetail.as_view(), name='PurchaseRequestConfigDetail'),
+    path('purchase-request/list', PurchaseRequestList.as_view(), name='PurchaseRequestList'),
+    path('purchase-request-for-pqr/list', PurchaseRequestListForPQR.as_view(), name='PurchaseRequestListForPQR'),
+    path('purchase-request/<str:pk>', PurchaseRequestDetail.as_view(), name='PurchaseRequestDetail'),
+    path('purchase-request-product/list', PurchaseRequestProductList.as_view(), name='PurchaseRequestProductList'),
+
+    # purchase quotation request
+    path(
+        'purchase-quotation-request/list',
+        PurchaseQuotationRequestList.as_view(),
+        name='PurchaseQuotationRequestList'
+    ),
+    path(
+        'purchase-quotation-request/<str:pk>',
+        PurchaseQuotationRequestDetail.as_view(),
+        name='PurchaseQuotationRequestDetail'
+    ),
+    path(
+        'purchase-quotation-request-for-pq/list',
+        PurchaseQuotationRequestListForPQ.as_view(),
+        name='PurchaseQuotationRequestListForPQ'
+    ),
+
+    # purchase order
+    path('purchase-order/list', PurchaseOrderList.as_view(), name='PurchaseOrderList'),
+    path('purchase-order/list-sale', PurchaseOrderSaleList.as_view(), name='PurchaseOrderSaleList'),
+    path('purchase-order/<str:pk>', PurchaseOrderDetail.as_view(), name='PurchaseOrderDetail'),
+    path('purchase-order-product/list', PurchaseOrderProductList.as_view(), name='PurchaseOrderProductList'),
+
+    # purchase quotation
+    path('purchase-quotation/list', PurchaseQuotationList.as_view(), name='PurchaseQuotationList'),
+    path('purchase-quotation/<str:pk>', PurchaseQuotationDetail.as_view(), name='PurchaseQuotationDetail'),
+    path(
+        'purchase-quotation-product/list',
+        PurchaseQuotationProductList.as_view(),
+        name='PurchaseQuotationProductList'
+    ),
+]

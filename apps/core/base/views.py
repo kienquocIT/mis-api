@@ -1,0 +1,289 @@
+from django.contrib.auth.models import AnonymousUser
+from rest_framework import generics
+from drf_yasg.utils import swagger_auto_schema
+
+from apps.shared import ResponseController, BaseListMixin, mask_view, BaseRetrieveMixin
+from apps.core.base.models import (
+    SubscriptionPlan, Application, ApplicationProperty, PermissionApplication,
+    Country, City, District, Ward, Currency as BaseCurrency, BaseItemUnit, IndicatorParam, PlanApplication
+)
+
+from apps.core.base.serializers import (
+    PlanListSerializer, ApplicationListSerializer, ApplicationPropertyListSerializer,
+    PermissionApplicationListSerializer,
+    CountryListSerializer, CityListSerializer, DistrictListSerializer, WardListSerializer, BaseCurrencyListSerializer,
+    BaseItemUnitListSerializer, IndicatorParamListSerializer
+)
+
+
+class PlanList(generics.GenericAPIView):
+    queryset = SubscriptionPlan.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "id": ["in"],
+        "code": ["exact", "in"],
+    }
+
+    serializer_class = PlanListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related('applications')
+
+    @swagger_auto_schema(
+        operation_summary="Plan list",
+        operation_description="Get plan list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
+
+
+class TenantApplicationList(BaseListMixin):
+    queryset = Application.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'code': ['exact'],
+        'title': ['exact'],
+        'is_workflow': ['exact'],
+    }
+    serializer_list = ApplicationListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        if not isinstance(self.request.user, AnonymousUser) and getattr(self.request.user, 'tenant_current', None):
+            return super().get_queryset().filter(
+                id__in=PlanApplication.objects.filter(
+                    plan_id__in=self.request.user.tenant_current.tenant_plan_tenant.values_list('plan__id', flat=True)
+                ).values_list('application__id', flat=True)
+            )
+        return Application.objects.none()
+
+    @swagger_auto_schema(
+        operation_summary="Tenant Application list",
+        operation_description="Get tenant application list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        kwargs['is_workflow'] = True
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationDetail(BaseRetrieveMixin):
+    queryset = Application.objects
+    serializer_detail = ApplicationListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Tenant Application detail",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        return self.retrieve(request, *args, pk, **kwargs)
+
+
+class ApplicationPropertyList(BaseListMixin):
+    queryset = ApplicationProperty.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        'application': ['exact'],
+        'type': ['exact'],
+        'id': ['in'],
+        'application__code': ['exact'],
+        'is_sale_indicator': ['exact'],
+        'parent_n': ['exact', 'isnull'],
+    }
+    serializer_list = ApplicationPropertyListSerializer
+
+    @swagger_auto_schema(
+        operation_summary="Application Property list",
+        operation_description="Get application property list",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyEmployeeList(BaseListMixin):
+    queryset = ApplicationProperty.objects
+    serializer_list = ApplicationPropertyListSerializer
+    list_hidden_field = []
+    search_fields = ('title', 'code')
+    filterset_fields = ('code', 'title')
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            content_type="hr_employee"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Property list have employee data",
+        operation_description="Property list have employee data",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationList(generics.GenericAPIView):
+    queryset = Application.objects
+    search_fields = ('title', 'code',)
+    serializer_class = ApplicationListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
+
+
+class PermissionApplicationList(generics.GenericAPIView):
+    queryset = PermissionApplication.objects
+    search_fields = ('permission', 'app__title', 'app__code',)
+    filterset_fields = {
+        'app_id': ['exact', 'in'],
+        'app__code': ['exact', 'in'],
+    }
+    serializer_class = PermissionApplicationListSerializer
+
+    def get_queryset(self):
+        return super().get_queryset().select_related("app")
+
+    @swagger_auto_schema(
+        operation_summary="Plan list",
+        operation_description="Get plan list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset().filter()).cache(timeout=1440)  # cache 1 days | 1440 minutes
+        ser = self.serializer_class(queryset, many=True)
+        return ResponseController.success_200(ser.data, key_data='result')
+
+
+# Viet Nam data
+class CountryList(BaseListMixin):
+    queryset = Country.objects
+    search_fields = ['title', 'code_2', 'code_3']
+    use_cache_queryset = True
+    serializer_list = CountryListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class CityList(BaseListMixin):
+    queryset = City.objects
+    search_fields = ('title', 'short_search')
+    filterset_fields = {
+        "country_id": ["exact", "in"],
+        "id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = CityListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class DistrictList(BaseListMixin):
+    queryset = District.objects
+    search_fields = ('title',)
+    filterset_fields = {
+        "city_id": ["exact", "in"],
+        "id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = DistrictListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class WardList(BaseListMixin):
+    queryset = Ward.objects
+    search_fields = ('title',)
+    filterset_fields = {
+        "district_id": ["exact", "in"],
+    }
+    use_cache_queryset = True
+    serializer_list = WardListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class BaseCurrencyList(BaseListMixin):
+    queryset = BaseCurrency.objects
+    search_fields = ('title', 'code')
+    use_cache_queryset = True
+    serializer_list = BaseCurrencyListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class BaseItemUnitList(BaseListMixin):
+    queryset = BaseItemUnit.objects
+    search_fields = ('title', 'measure')
+    filterset_fields = ('title', 'measure')
+    use_cache_queryset = True
+    serializer_list = BaseItemUnitListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class IndicatorParamList(BaseListMixin):
+    queryset = IndicatorParam.objects
+    search_fields = ['title', 'code']
+    filterset_fields = {
+        "param_type": ["exact"],
+    }
+    use_cache_queryset = True
+    serializer_list = IndicatorParamListSerializer
+
+    @swagger_auto_schema()
+    @mask_view(login_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ApplicationPropertyOpportunityList(BaseListMixin):
+    queryset = ApplicationProperty.objects
+    serializer_list = ApplicationPropertyListSerializer
+    list_hidden_field = []
+
+    def get_queryset(self):
+        return super().get_queryset().filter(
+            content_type="sales_opportunity"
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Property list have Opportunity config stage data",
+        operation_description="Property list have Opportunity config stage data",
+    )
+    @mask_view(
+        login_require=True,
+        auth_require=False
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

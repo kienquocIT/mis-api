@@ -1,0 +1,399 @@
+from rest_framework import serializers
+
+from apps.masterdata.saledata.models import (
+    WareHouse, ProductWareHouse, Account, ProductWareHouseLot, ProductWareHouseSerial,
+)
+
+__all__ = [
+    'WareHouseListSerializer',
+    'WareHouseCreateSerializer',
+    'WareHouseDetailSerializer',
+    'WareHouseUpdateSerializer',
+    'ProductWareHouseStockListSerializer',
+    'ProductWareHouseListSerializer',
+    'WareHouseListSerializerForInventoryAdjustment',
+    'ProductWarehouseLotListSerializer',
+    'ProductWarehouseSerialListSerializer',
+]
+
+from apps.shared import TypeCheck, WarehouseMsg
+
+
+class WareHouseListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WareHouse
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'is_active',
+            'agency'
+        )
+
+
+class WareHouseCreateSerializer(serializers.ModelSerializer):
+    agency = serializers.UUIDField(required=False, allow_null=True)
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'title',
+            'remarks',
+            'is_active',
+            'city',
+            'district',
+            'ward',
+            'address',
+            'agency',
+            'full_address',
+            'warehouse_type',
+        )
+
+    @classmethod
+    def validate_agency(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return None
+
+
+class WareHouseDetailSerializer(serializers.ModelSerializer):
+    agency = serializers.SerializerMethodField()
+    city = serializers.SerializerMethodField()
+    district = serializers.SerializerMethodField()
+    ward = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'address',
+            'is_active',
+            'full_address',
+            'city',
+            'ward',
+            'district',
+            'warehouse_type',
+            'agency',
+        )
+
+    @classmethod
+    def get_agency(cls, obj):
+        if obj.agency:
+            return {
+                'id': obj.agency_id,
+                'name': obj.agency.name,
+            }
+        return {}
+
+    @classmethod
+    def get_city(cls, obj):
+        if obj.city:
+            return {
+                'id': obj.city_id,
+                'title': obj.city.title,
+            }
+        return {}
+
+    @classmethod
+    def get_district(cls, obj):
+        if obj.district:
+            return {
+                'id': obj.district_id,
+                'title': obj.district.title,
+            }
+        return {}
+
+    @classmethod
+    def get_ward(cls, obj):
+        if obj.ward:
+            return {
+                'id': obj.ward_id,
+                'title': obj.ward.title,
+            }
+        return {}
+
+
+class WareHouseUpdateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=100, required=False)
+    remarks = serializers.CharField(required=False)
+    is_active = serializers.BooleanField(required=False)
+    agency = serializers.UUIDField(required=False, allow_null=True)
+    # city = serializers.UUIDField(required=False)
+    # district = serializers.UUIDField(required=False)
+    # ward = serializers.UUIDField(required=False)
+    address = serializers.CharField(required=False)
+    full_address = serializers.CharField(required=False)
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'title',
+            'remarks',
+            'is_active',
+            'city',
+            'district',
+            'ward',
+            'address',
+            'agency',
+            'full_address',
+            'warehouse_type',
+        )
+
+    @classmethod
+    def validate_agency(cls, value):
+        if value:
+            try:
+                return Account.objects.get(id=value)
+            except Account.DoesNotExist:
+                raise serializers.ValidationError({'agency': WarehouseMsg.AGENCY_NOT_EXIST})
+        return None
+
+
+class ProductWareHouseStockListSerializer(serializers.ModelSerializer):
+    product_amount = serializers.SerializerMethodField()
+    picked_ready = serializers.SerializerMethodField()
+    warehouse_uom = serializers.SerializerMethodField()
+    original_info = serializers.SerializerMethodField()
+
+    def get_product_amount(self, obj):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
+        uom_id = self.context.get('uom_id', None)
+        if tenant_id and company_id and product_id and uom_id and TypeCheck.check_uuid_list(
+                [tenant_id, company_id, product_id, uom_id]
+        ):
+            product_warehouse = ProductWareHouse.objects.filter(
+                tenant_id=tenant_id, company_id=company_id,
+                warehouse_id=obj.id, product_id=product_id,
+            ).first()
+            if product_warehouse:
+                return product_warehouse.stock_amount
+        return 0
+
+    def get_picked_ready(self, obj):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
+        uom_id = self.context.get('uom_id', None)
+        if tenant_id and company_id and product_id and uom_id and TypeCheck.check_uuid_list(
+                [tenant_id, company_id, product_id, uom_id]
+        ):
+            return ProductWareHouse.get_picked_ready(
+                tenant_id=tenant_id, company_id=company_id,
+                warehouse_id=obj.id, product_id=product_id,
+                uom_id=uom_id
+            )
+        return 0
+
+    def get_warehouse_uom(self, obj):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
+        if tenant_id and company_id and TypeCheck.check_uuid_list(
+                [tenant_id, company_id]
+        ):
+            record = ProductWareHouse.objects.filter_current(
+                tenant_id=tenant_id, company_id=company_id,
+                warehouse_id=obj.id, product_id=product_id
+            )
+            if record.exists():
+                return {
+                    'id': str(record.first().uom_id),
+                    'ratio': record.first().uom.ratio,
+                    'rounding': record.first().uom.rounding,
+                    'title': record.first().uom.title
+                }
+        return {}
+
+    def get_original_info(self, obj):
+        tenant_id = self.context.get('tenant_id', None)
+        company_id = self.context.get('company_id', None)
+        product_id = self.context.get('product_id', None)
+        temp = {
+            'stock_amount': 0,
+            'sold_amount': 0,
+            'picked_ready': 0
+        }
+        if tenant_id and company_id and product_id and TypeCheck.check_uuid_list(
+                [tenant_id, company_id, product_id]
+        ):
+            records = ProductWareHouse.objects.filter_current(
+                tenant_id=tenant_id, company_id=company_id,
+                warehouse_id=obj.id, product_id=product_id
+            )
+            if records.exists():
+                record = records.first()
+                return {
+                    'stock_amount': record.stock_amount,
+                    'sold_amount': record.sold_amount,
+                    'picked_ready': record.picked_ready
+                }
+        return temp
+
+    class Meta:
+        model = WareHouse
+        fields = ('id', 'title', 'code', 'remarks', 'product_amount', 'picked_ready', 'warehouse_uom',
+                  'original_info')
+
+
+class ProductWareHouseListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    warehouse = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    agency = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'warehouse',
+            'uom',
+            'stock_amount',
+            'receipt_amount',
+            'sold_amount',
+            'picked_ready',
+            'agency',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+            'general_traceability_method': obj.product.general_traceability_method,
+        } if obj.product else {}
+
+    @classmethod
+    def get_warehouse(cls, obj):
+        return {
+            'id': obj.warehouse_id,
+            'title': obj.warehouse.title,
+            'code': obj.warehouse.code,
+        } if obj.warehouse else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+            'ratio': obj.uom.ratio
+        } if obj.uom else {}
+
+    @classmethod
+    def get_agency(cls, obj):
+        return obj.warehouse.agency_id
+
+
+class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer):
+    product_list = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WareHouse
+        fields = (
+            'id',
+            'title',
+            'code',
+            'remarks',
+            'is_active',
+            'product_list'
+        )
+
+    @classmethod
+    def get_product_list(cls, obj):
+        results = []
+        products = ProductWareHouse.objects.filter(warehouse=obj)
+        for item in products:
+            results.append({
+                'id': str(item.id),
+                'product': item.product_data,
+                'available_amount': item.stock_amount,
+                'inventory_uom': item.uom_data,
+            })
+        return results
+
+
+class ProductWarehouseLotListSerializer(serializers.ModelSerializer):
+    product_warehouse = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouseLot
+        fields = (
+            'id',
+            'product_warehouse',
+            'lot_number',
+            'quantity_import',
+            'expire_date',
+            'manufacture_date',
+        )
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        return {
+            'id': obj.product_warehouse_id,
+            'product': {
+                'id': obj.product_warehouse.product_id,
+                'title': obj.product_warehouse.product.title,
+                'code': obj.product_warehouse.product.code,
+                'uom_inventory': {
+                    'id': obj.product_warehouse.product.inventory_uom_id,
+                    'title': obj.product_warehouse.product.inventory_uom.title,
+                    'code': obj.product_warehouse.product.inventory_uom.code,
+                    'ratio': obj.product_warehouse.product.inventory_uom.ratio,
+                } if obj.product_warehouse.product.inventory_uom else {},
+            } if obj.product_warehouse.product else {},
+            'warehouse': {
+                'id': obj.product_warehouse.warehouse_id,
+                'title': obj.product_warehouse.warehouse.title,
+                'code': obj.product_warehouse.warehouse.code,
+            } if obj.product_warehouse.warehouse else {},
+            'uom': {
+                'id': obj.product_warehouse.uom_id,
+                'title': obj.product_warehouse.uom.title,
+                'code': obj.product_warehouse.uom.code,
+                'ratio': obj.product_warehouse.uom.ratio,
+            } if obj.product_warehouse.uom else {}
+        }
+
+
+class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
+    product_warehouse = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouseSerial
+        fields = (
+            'id',
+            'product_warehouse',
+            'vendor_serial_number',
+            'serial_number',
+            'expire_date',
+            'manufacture_date',
+            'warranty_start',
+            'warranty_end',
+        )
+
+    @classmethod
+    def get_product_warehouse(cls, obj):
+        return {
+            'id': obj.product_warehouse_id,
+            'product': {
+                'id': obj.product_warehouse.product_id,
+                'title': obj.product_warehouse.product.title,
+                'code': obj.product_warehouse.product.code,
+            } if obj.product_warehouse.product else {},
+            'warehouse': {
+                'id': obj.product_warehouse.warehouse_id,
+                'title': obj.product_warehouse.warehouse.title,
+                'code': obj.product_warehouse.warehouse.code,
+            } if obj.product_warehouse.warehouse else {},
+        }
