@@ -1385,6 +1385,12 @@ AppProp_Eoffice_Business_trip_data = {
         'code': 'expense_items',
         'type': 1,
     },
+    'daa48598-822b-41ae-8437-26f9101d1d54': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Total day',
+        'code': 'total_day',
+        'type': 6,
+    },
 }
 
 AppProp_SaleData_Advance_Payment_data = {
