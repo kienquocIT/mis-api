@@ -124,6 +124,8 @@ class BusinessRequestListSerializer(serializers.ModelSerializer):
 
 class BusinessRequestCreateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
+    departure = serializers.UUIDField()
+    destination = serializers.UUIDField()
     expense_items = ExpenseItemListUpdateSerializer(many=True)
 
     @classmethod
@@ -137,6 +139,23 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EXPENSE_ITEMS})
         return value
+
+    @classmethod
+    def validate_departure(cls, value):
+        city = DisperseModel(app_model='base.City').get_model()
+        try:
+            return city.objects.get(pk=value)
+        except city.DoesNotExist:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_DEPARTURE})
+
+
+    @classmethod
+    def validate_destination(cls, value):
+        city = DisperseModel(app_model='base.City').get_model()
+        try:
+            return city.objects.get(pk=value)
+        except city.DoesNotExist:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_DESTINATION})
 
     @classmethod
     def create_expense_items(cls, instance, order_dict):
