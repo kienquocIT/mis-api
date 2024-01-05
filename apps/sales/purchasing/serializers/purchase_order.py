@@ -376,7 +376,6 @@ class PurchaseOrderProductGRListSerializer(serializers.ModelSerializer):
 # PURCHASE ORDER BEGIN
 class PurchaseOrderListSerializer(serializers.ModelSerializer):
     supplier = serializers.SerializerMethodField()
-    receipt_status = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -397,12 +396,6 @@ class PurchaseOrderListSerializer(serializers.ModelSerializer):
             'name': obj.supplier.name,
             'code': obj.supplier.code,
         } if obj.supplier else {}
-
-    @classmethod
-    def get_receipt_status(cls, obj):
-        if obj.receipt_status or obj.receipt_status == 0:
-            return dict(RECEIPT_STATUS).get(obj.receipt_status)
-        return None
 
 
 class PurchaseOrderDetailSerializer(serializers.ModelSerializer):

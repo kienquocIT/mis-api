@@ -15,7 +15,6 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
     sale_person = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
-    delivery_status = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -69,12 +68,6 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'title': obj.quotation.title,
             'code': obj.quotation.code,
         } if obj.quotation else {}
-
-    @classmethod
-    def get_delivery_status(cls, obj):
-        if obj.delivery_status or obj.delivery_status == 0:
-            return dict(SALE_ORDER_DELIVERY_STATUS).get(obj.delivery_status)
-        return None
 
 
 class SaleOrderDetailSerializer(serializers.ModelSerializer):
