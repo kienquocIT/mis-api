@@ -12,7 +12,7 @@ from apps.sales.opportunity.serializers import (
     OpportunityDocumentListSerializer, OpportunityDocumentCreateSerializer,
     OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from ..filters import OpportunityMeetingFilters
 
 
