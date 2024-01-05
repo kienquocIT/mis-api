@@ -182,6 +182,7 @@ class LeaveTestCase(AdvanceTestCase):
                 "subtotal": 1,
                 "date_from": time_now,
                 "leave_available": {
+                    "id": str(leave_available.id),
                     "available": leave_available.available,
                     "check_balance": leave_available.check_balance,
                     "expiration_date": leave_available.expiration_date,
