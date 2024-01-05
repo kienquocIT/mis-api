@@ -12,6 +12,7 @@ logs/*
 .env
 .env*
 */.env
+!env/*
 z_testing_*.py
 build/*
 *.egg-info/*

@@ -5,11 +5,12 @@ __all__ = ['load_env']
 
 
 def load_env(base_dir=''):
+    # load default env
+    load_dotenv(os.path.join(base_dir, 'env', '.env.default'))
+
     # load env file
-    env_path = os.path.join(
-        base_dir, '.env'
-    )
-    load_dotenv(env_path)
+    env_path = os.path.join(base_dir, '.env')
+    load_dotenv(env_path, override=True)
 
     if os.environ.get('TEST_ENABLED', '0') in [1, '1']:
         print('Load environment... change value some variable...')
