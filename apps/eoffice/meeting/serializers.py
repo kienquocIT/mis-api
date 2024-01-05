@@ -342,6 +342,7 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
 
 class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
     participants = serializers.SerializerMethodField()
+    account_external = serializers.SerializerMethodField()
     meeting_room_mapped = serializers.SerializerMethodField()
     online_meeting_data = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -357,10 +358,18 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_start_date',
             'meeting_start_time',
             'meeting_duration',
+            'account_external',
             'participants',
             'online_meeting_data',
             'attachment'
         )
+
+    @classmethod
+    def get_account_external(cls, obj):
+        return {
+            'id': obj.account_external_id,
+            'name': obj.account_external.name,
+        } if obj.account_external else None
 
     @classmethod
     def get_participants(cls, obj):

@@ -47,6 +47,7 @@ class MeetingSchedule(DataAbstractModel):
     meeting_start_date = models.DateField()
     meeting_start_time = models.TimeField()
     meeting_duration = models.FloatField()  # minute
+    account_external = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Meeting Schedule'
