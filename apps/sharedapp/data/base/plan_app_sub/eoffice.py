@@ -126,6 +126,37 @@ ASSET_TOOLS_PROVIDE = {
         },
     },
 }
+MEETING_SCHEDULE = {
+    "id": "6078deaa-96b3-4743-97e3-5457454fa7aa",
+    "title": "Meeting Schedule",
+    "code": "meetingschedule",
+    "model_code": "meetingschedule",
+    "app_label": "meetingschedule",
+    "is_workflow": True,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+}
 
 Application_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data(
@@ -141,6 +172,10 @@ Application_eOffice_data = {
         filtering_inheritor=True
     ),
     "55ba3005-6ccc-4807-af27-7cc45e99e3f6": ApplicationConfigFrame(**ASSET_TOOLS_PROVIDE).data(
+        depend_follow_main=False,
+        filtering_inheritor=True
+    ),
+    "6078deaa-96b3-4743-97e3-5457454fa7aa": ApplicationConfigFrame(**MEETING_SCHEDULE).data(
         depend_follow_main=False,
         filtering_inheritor=True
     ),
