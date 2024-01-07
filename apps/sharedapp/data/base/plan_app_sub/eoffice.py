@@ -133,7 +133,10 @@ MEETING_SCHEDULE = {
     "model_code": "meetingschedule",
     "app_label": "meetingschedule",
     "is_workflow": True,
-    "app_depend_on": [],
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
+    ],
     "permit_mapping": {
         "view": {
             "range": ["1", "2", "3", "4"],
@@ -142,13 +145,19 @@ MEETING_SCHEDULE = {
         },
         "create": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
-            "app_depends_on": {},
-            "local_depends_on": {},
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
