@@ -22,10 +22,11 @@ class MeetingRoomList(BaseListMixin, BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="Meeting Room list",
-        operation_description="Meeting Room list",
+        operation_description="Meeting Room list"
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -33,11 +34,13 @@ class MeetingRoomList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Create Meeting Room",
         operation_description="Create new Meeting Room",
-        request_body=MeetingRoomCreateSerializer,
+        request_body=MeetingRoomCreateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -52,17 +55,27 @@ class MeetingRoomDetail(BaseRetrieveMixin, BaseUpdateMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
-    @swagger_auto_schema(operation_summary='Detail Meeting Room')
+    @swagger_auto_schema(
+        operation_summary='Detail Meeting Room',
+        operation_description="Detail Meeting Room"
+    )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update Meeting Room", request_body=MeetingRoomUpdateSerializer)
+    @swagger_auto_schema(
+        operation_summary="Update Meeting Room",
+        operation_description="Update Meeting Room",
+        request_body=MeetingRoomUpdateSerializer
+    )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
@@ -79,10 +92,11 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="Meeting Zoom Config list",
-        operation_description="Meeting Zoom Config list",
+        operation_description="Meeting Zoom Config list"
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -90,11 +104,13 @@ class MeetingZoomConfigList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Create Meeting Zoom Config",
         operation_description="Create new Meeting Zoom Config",
-        request_body=MeetingZoomConfigCreateSerializer,
+        request_body=MeetingZoomConfigCreateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True,
+        auth_require=True,
+        allow_admin_tenant=True,
+        allow_admin_company=True
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -108,9 +124,13 @@ class MeetingZoomConfigDetail(BaseRetrieveMixin, BaseUpdateMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
-    @swagger_auto_schema(operation_summary='Detail Meeting Zoom Config')
+    @swagger_auto_schema(
+        operation_summary='Detail Meeting Zoom Config',
+        operation_description="Detail Meeting Zoom Config"
+    )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -127,10 +147,14 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
 
     @swagger_auto_schema(
         operation_summary="Meeting Schedule list",
-        operation_description="Meeting Schedule list",
+        operation_description="Meeting Schedule list"
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False,
+        label_code='meetingschedule',
+        model_code='meetingschedule',
+        perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -138,11 +162,14 @@ class MeetingScheduleList(BaseListMixin, BaseCreateMixin):
     @swagger_auto_schema(
         operation_summary="Create Meeting Schedule",
         operation_description="Create new Meeting Schedule",
-        request_body=MeetingScheduleCreateSerializer,
+        request_body=MeetingScheduleCreateSerializer
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True,
+        auth_require=True,
+        label_code='meetingschedule',
+        model_code='meetingschedule',
+        perm_code='create'
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -157,17 +184,31 @@ class MeetingScheduleDetail(BaseRetrieveMixin, BaseUpdateMixin):
     retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
     update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
-    @swagger_auto_schema(operation_summary='Detail Meeting Schedule')
+    @swagger_auto_schema(
+        operation_summary='Detail Meeting Schedule',
+        operation_description="Detail Meeting Schedule",
+    )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True,
+        auth_require=False,
+        label_code='meetingschedule',
+        model_code='meetingschedule',
+        perm_code='view'
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-    @swagger_auto_schema(operation_summary="Update Meeting Schedule", request_body=MeetingScheduleUpdateSerializer)
+    @swagger_auto_schema(
+        operation_summary="Update Meeting Schedule",
+        operation_description="Update Meeting Schedule",
+        request_body=MeetingScheduleUpdateSerializer
+    )
     @mask_view(
-        login_require=True, auth_require=True,
-        allow_admin_tenant=True, allow_admin_company=True,
+        login_require=True,
+        auth_require=True,
+        label_code='meetingschedule',
+        model_code='meetingschedule',
+        perm_code='edit'
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

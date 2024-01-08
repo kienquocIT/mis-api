@@ -21,6 +21,7 @@ class LeaveMsg:
     ERROR_QUANTITY = _('Quantity number is wrong format')
     EMPTY_AVAILABLE_NUMBER = _('Day off large than leave available')
     EMPTY_DATE_EXPIRED = _('Leave available had expired')
+    EMPTY_DATE_ERROR = _('From time larger than to time')
 
 
 class BusinessMsg:
@@ -33,3 +34,4 @@ class MeetingScheduleMsg:
     ROOM_IS_NOT_AVAILABLE = _('This room is not available in this time')
     DUP_CODE = _('Duplicate meeting room code')
     DES_IS_REQUIRED = _('Meeting room description is required')
+    SAVE_FILES_ERROR = _('Can not save files.')

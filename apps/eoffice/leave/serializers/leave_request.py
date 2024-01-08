@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -94,6 +96,20 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
     def validate_detail_data(cls, value):
         if not len(value) > 0:
             raise serializers.ValidationError({'detail': LeaveMsg.ERROR_EMP_DAYOFF})
+        special_stock = {'FF': 0, 'MY': 0, 'MC': 0}
+        for item in value:
+            available = item["leave_available"]
+            if item["subtotal"] > available["total"] and available["check_balance"]:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+
+            if available["leave_type"]["code"] in ['FF', 'MY', 'MC']:
+                special_stock[available["leave_type"]["code"]] += item['subtotal']
+            if special_stock[available["leave_type"]["code"]] > available["total"]:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+            d_from = datetime.strptime(item["date_from"], "%Y-%m-%d")
+            d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
+            if d_from > d_to:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
         return value
 
     @decorator_run_workflow
@@ -167,48 +183,31 @@ class LeaveRequestDetailSerializer(AbstractDetailSerializerModel):
     @classmethod
     def get_detail_data(cls, obj):
         if obj.detail_data:
-            available_list = LeaveAvailable.objects.filter_current(
-                fill__company=True, employee_inherit_id=obj.employee_inherit_id
-            )
-            # return for item in
-            data_list = LeaveRequestDateListRegister.objects.filter_current(
-                fill__company=True, fill__tenant=True, leave_id=str(obj.id)
-            ).order_by('order')
-            if data_list.exists() and available_list.exists():
-                get_detail_data = []
-                for item in data_list:
-                    available = available_list.get(leave_type_id=item.leave_type_id)
-                    # if (value.morning_shift_f) value.date_from += ' 00:00:00'
-                    # else value.date_from += ' 12:00:00'
-                    # if (value.morning_shift_t) value.date_to += ' 12:00:00'
-                    # else value.date_to += ' 23:59:59'
-                    get_detail_data.append(
-                        {
-                            'id': item.id,
-                            'order': item.order,
-                            'remark': item.remark,
-                            'date_from': f'{str(item.date_from)} {"00:00:00" if item.morning_shift_f else "12:00:00"}',
-                            'date_to': f'{item.date_to} {"12:00:00" if item.morning_shift_t else "23:59:59"}',
-                            'subtotal': item.subtotal,
-                            'leave_available': {
-                                'id': str(available.id),
-                                'used': available.used,
-                                'total': available.total,
-                                'available': available.available,
-                                'open_year': available.open_year,
-                                'leave_type': {
-                                    'id': str(item.leave_type.id),
-                                    'title': item.leave_type.title,
-                                    'code': item.leave_type.code
-                                },
-                                'check_balance': available.check_balance,
-                                'expiration_date': available.expiration_date,
-                            },
-                            'morning_shift_f': item.morning_shift_f,
-                            'morning_shift_t': item.morning_shift_t,
-                        }
+            # code new
+            for item in obj.detail_data:
+                try:
+                    available = LeaveAvailable.objects.select_related('leave_type').get_current(
+                        employee_inherit_id=obj.employee_inherit_id, fill__company=True,
+                        id=item["leave_available"]["id"]
                     )
-                return get_detail_data
+                    if available:
+                        item["leave_available"] = {
+                            "id": item["leave_available"]["id"],
+                            "check_balance": available.check_balance,
+                            "expiration_date": available.expiration_date,
+                            "open_year": available.open_year,
+                            "total": available.total,
+                            "used": available.used,
+                        }
+                        l_type = available.leave_type
+                        item["leave_available"]["leave_type"] = {
+                            "id": l_type.id,
+                            "title": l_type.title,
+                            "code": l_type.code
+                        }
+                except LeaveAvailable.DoesNotExist:
+                    return []
+            return obj.detail_data
         return []
 
 
