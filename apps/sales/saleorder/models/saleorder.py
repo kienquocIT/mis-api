@@ -764,28 +764,28 @@ class SaleOrderExpense(MasterDataAbstractModel):
 
 
 # SUPPORT PAYMENT TERM STAGE
-class SaleOrderPaymentStage(MasterDataAbstractModel):
-    sale_order = models.ForeignKey(
-        SaleOrder,
-        on_delete=models.CASCADE,
-        verbose_name="sale order",
-        related_name="payment_stage_sale_order",
-    )
-    stage = models.SmallIntegerField(
-        default=0,
-        help_text='choices= ' + str(PAYMENT_TERM_STAGE),
-    )
-    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
-    date = models.DateTimeField(null=True)
-    date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
-    payment_ratio = models.FloatField(default=0)
-    value_before_tax = models.FloatField(default=0)
-    due_date = models.DateTimeField(null=True)
-    is_ar_invoice = models.BooleanField(default=False)
-
-    class Meta:
-        verbose_name = 'Sale Order Payment Stage'
-        verbose_name_plural = 'Sale Order Payment Stages'
-        ordering = ('stage',)
-        default_permissions = ()
-        permissions = ()
+# class SaleOrderPaymentStage(MasterDataAbstractModel):
+#     sale_order = models.ForeignKey(
+#         SaleOrder,
+#         on_delete=models.CASCADE,
+#         verbose_name="sale order",
+#         related_name="payment_stage_sale_order",
+#     )
+#     stage = models.SmallIntegerField(
+#         default=0,
+#         help_text='choices= ' + str(PAYMENT_TERM_STAGE),
+#     )
+#     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+#     date = models.DateTimeField(null=True)
+#     date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+#     payment_ratio = models.FloatField(default=0)
+#     value_before_tax = models.FloatField(default=0)
+#     due_date = models.DateTimeField(null=True)
+#     is_ar_invoice = models.BooleanField(default=False)
+#
+#     class Meta:
+#         verbose_name = 'Sale Order Payment Stage'
+#         verbose_name_plural = 'Sale Order Payment Stages'
+#         ordering = ('stage',)
+#         default_permissions = ()
+#         permissions = ()
