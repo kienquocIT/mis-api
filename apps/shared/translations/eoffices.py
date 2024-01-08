@@ -25,6 +25,8 @@ class LeaveMsg:
 
 class BusinessMsg:
     EMPTY_EXPENSE_ITEMS = _('List expense item is empty')
+    EMPTY_DEPARTURE = _('Departure is empty')
+    EMPTY_DESTINATION = _('Destination is empty')
 
 
 class MeetingScheduleMsg:

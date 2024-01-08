@@ -689,3 +689,11 @@ msgstr "Một số tập tin đính kèm đang được tài liệu khác sử d
 #
 msgid "The file is not images type."
 msgstr "Tập tin không phải kiểu hình ảnh."
+
+#
+msgid "Departure is empty"
+msgstr "Khởi hành đang trống"
+
+#
+msgid "Destination is empty"
+msgstr "Điểm đến đang trống"

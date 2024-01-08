@@ -3,6 +3,7 @@ from typing import Union, Literal
 from uuid import UUID
 
 from django.db import models
+from django.db.models import Q
 from django.utils import timezone
 
 from apps.shared import (
@@ -19,6 +20,8 @@ __all__ = [
     'RuntimeLog',
     'RuntimeAssignee',
 ]
+
+from ...base.models import ApplicationProperty
 
 STATE_RUNTIME = (
     (0, 'Created'),  # default
@@ -231,6 +234,17 @@ class Runtime(SimpleAbstractModel):
         return []
 
     @staticmethod
+    def get_properties_code_arr(zone_and_properties):
+        if len(zone_and_properties) > 0:
+            properties_id = []
+            for detail in zone_and_properties:
+                properties_id += detail['properties']
+            return ApplicationProperty.objects.filter(
+                Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
+            ).values_list('code', flat=True)
+        return []
+
+    @staticmethod
     def parse_zone_and_properties(zone_and_properties: list[any]):
         code_arr = []
         if zone_and_properties and isinstance(zone_and_properties, list):
@@ -248,7 +262,8 @@ class Runtime(SimpleAbstractModel):
             try:
                 runtime_assignee_obj = RuntimeAssignee.objects.get(pk=task_id, employee_id=employee_id)
                 if runtime_assignee_obj.stage and runtime_assignee_obj.stage.runtime_id == self.id:
-                    return True, self.parse_zone_and_properties(runtime_assignee_obj.zone_and_properties)
+                    # return True, self.parse_zone_and_properties(runtime_assignee_obj.zone_and_properties)
+                    return True, self.get_properties_code_arr(runtime_assignee_obj.zone_and_properties)
             except RuntimeAssignee.DoesNotExist:
                 return False, None
         return False, None

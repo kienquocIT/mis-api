@@ -307,6 +307,112 @@ AppProp_SaleData_Quotation_data = {
         'remark': 'Tab expense of quotation',
         'type': 1,
     },
+    'd846692b-9d65-4dcb-a667-4318cae17a18': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Tab indicator',
+        'code': 'quotation_indicators_data',
+        'remark': 'Tab indicator of quotation',
+        'type': 1,
+    },
+    # Totals of products
+    '06c2414c-ac31-4f16-b0ac-edd0b8d54ded': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product pretax amount',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total product pretax amount of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    'efd2c678-dadf-4f77-be5f-9cea9598c017': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product discount rate',
+        'code': 'total_product_discount_rate',
+        'remark': 'Total product discount rate of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    '9dc78b54-0afb-4f53-af42-5ef059451ad3': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product discount',
+        'code': 'total_product_discount',
+        'remark': 'Total product discount of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    'ced7e425-d284-4f1c-ada4-45f62636b5da': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product tax',
+        'code': 'total_product_tax',
+        'remark': 'Total product tax of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    'bd9374ec-cdc7-4d95-9ece-363b3b623d3b': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product',
+        'code': 'total_product',
+        'remark': 'Total product of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    'b398bec4-a122-44b9-92fe-642d869e9238': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total product revenue before tax',
+        'code': 'total_product_revenue_before_tax',
+        'remark': 'Total product revenue before tax of quotation',
+        'parent_n_id': 'b426fe8e-c58d-482b-aba8-3f986e3b5768',  # tab detail
+        'type': 6,
+    },
+    # Totals of costs
+    'dcce7fbe-2cb0-4306-97a7-73a644b0c799': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total cost pretax amount',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost pretax amount of quotation',
+        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'type': 6,
+    },
+    '619f3301-48e2-476b-8a85-b5998ccd3e4a': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total cost tax',
+        'code': 'total_cost_tax',
+        'remark': 'Total cost tax of quotation',
+        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'type': 6,
+    },
+    'd3ce455f-9ea7-42c0-87b4-5536b437cdd5': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total cost',
+        'code': 'total_cost',
+        'remark': 'Total cost of quotation',
+        'parent_n_id': 'cf82dbac-a903-425c-aa41-b45e7ccec41b',  # tab cost
+        'type': 6,
+    },
+    # Totals of expenses
+    '5a6e8904-c39c-4e45-aed9-7b989299f593': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total expense pretax amount',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense pretax amount of quotation',
+        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'type': 6,
+    },
+    '7fcbe504-de29-4600-a748-05639db2841c': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total expense tax',
+        'code': 'total_expense_tax',
+        'remark': 'Total expense tax of quotation',
+        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'type': 6,
+    },
+    '6d02b18b-3e5c-485f-8c99-00101e0af87f': {
+        'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
+        'title': 'Total expense',
+        'code': 'total_expense',
+        'remark': 'Total expense of quotation',
+        'parent_n_id': '10946df3-1e9d-4538-9173-7f75861ab7ed',  # tab expense
+        'type': 6,
+    },
     # Total fields
     'd0c18f0b-2ab6-4fa1-bd77-e627e606ce3f': {
         'application_id': 'b9650500-aba7-44e3-b6e0-2542622702a3',
@@ -867,6 +973,112 @@ AppProp_SaleData_SaleOrder_data = {
         'remark': 'Tab expense of sale order',
         'type': 1,
     },
+    'c12b9e32-1043-492c-ac33-78e838c43aac': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Tab indicator',
+        'code': 'sale_order_indicators_data',
+        'remark': 'Tab indicator of sale order',
+        'type': 1,
+    },
+    # Totals of products
+    '9ebf66f9-2a2b-4343-98bd-4b2b6b4e1425': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product pretax amount',
+        'code': 'total_product_pretax_amount',
+        'remark': 'Total product pretax amount of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    'c2197be7-35a2-4efc-afb3-56feaf969957': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product discount rate',
+        'code': 'total_product_discount_rate',
+        'remark': 'Total product discount rate of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    '923da4a7-5b53-4961-ab59-4a7cac711631': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product discount',
+        'code': 'total_product_discount',
+        'remark': 'Total product discount of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    '172102c3-43af-4114-b9da-ca3627e38b70': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product tax',
+        'code': 'total_product_tax',
+        'remark': 'Total product tax of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    'cd11b1b0-efd4-45c0-8037-a8f9af5b8785': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product',
+        'code': 'total_product',
+        'remark': 'Total product of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    '3a3ce0bc-8c67-4558-9812-8a6dbf45cf88': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total product revenue before tax',
+        'code': 'total_product_revenue_before_tax',
+        'remark': 'Total product revenue before tax of sale order',
+        'parent_n_id': '50857b72-4bc2-4d26-a365-9ee1e894b6d2',  # tab detail
+        'type': 6,
+    },
+    # Totals of costs
+    'e58c5ade-6520-4c35-ae6e-83703578f33b': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost pretax amount',
+        'code': 'total_cost_pretax_amount',
+        'remark': 'Total cost pretax amount of sale order',
+        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'type': 6,
+    },
+    'f56243a9-4821-40fa-83b9-ff48a7c807f7': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost tax',
+        'code': 'total_cost_tax',
+        'remark': 'Total cost tax of sale order',
+        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'type': 6,
+    },
+    'ad38f62e-31d3-48e7-8c23-42e127aeb3d8': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total cost',
+        'code': 'total_cost',
+        'remark': 'Total cost of sale order',
+        'parent_n_id': '0cb516c2-2b59-4a11-98cf-4b78fd4a464d',  # tab cost
+        'type': 6,
+    },
+    # Totals of expenses
+    '23a82e99-aa8e-47c3-b8b1-3ac3038d9b04': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense pretax amount',
+        'code': 'total_expense_pretax_amount',
+        'remark': 'Total expense pretax amount of sale order',
+        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'type': 6,
+    },
+    '4365f9bd-5c84-46d7-a995-c54e0878ca59': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense tax',
+        'code': 'total_expense_tax',
+        'remark': 'Total expense tax of sale order',
+        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'type': 6,
+    },
+    '0b0bac8a-9572-4cae-8a57-cc09f2262b8b': {
+        'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
+        'title': 'Total expense',
+        'code': 'total_expense',
+        'remark': 'Total expense of sale order',
+        'parent_n_id': '4ac8ebc5-adfd-4078-9834-51de58c064d1',  # tab expense
+        'type': 6,
+    },
     # total fields
     '572531de-d9f3-4e2b-8a2e-424a6e832ffa': {
         'application_id': 'a870e392-9ad2-4fe2-9baa-298a38691cf2',
@@ -1172,6 +1384,12 @@ AppProp_Eoffice_Business_trip_data = {
         'title': 'Detail Expense list',
         'code': 'expense_items',
         'type': 1,
+    },
+    'daa48598-822b-41ae-8437-26f9101d1d54': {
+        'application_id': '87ce1662-ca9d-403f-a32e-9553714ebc6d',
+        'title': 'Total day',
+        'code': 'total_day',
+        'type': 6,
     },
 }
 
