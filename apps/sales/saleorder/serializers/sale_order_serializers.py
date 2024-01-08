@@ -6,7 +6,7 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
     SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SaleMsg, BaseMsg, SALE_ORDER_DELIVERY_STATUS
+from apps.shared import SaleMsg, BaseMsg
 
 
 # SALE ORDER BEGIN
