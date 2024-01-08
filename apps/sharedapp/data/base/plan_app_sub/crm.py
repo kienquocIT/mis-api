@@ -196,7 +196,7 @@ TASK_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
-            "local_depends_on": {"view": "4", },
+            "local_depends_on": {"view": "==", },
         },
         "edit": {
             "range": ["1", "2", "3", "4"],
@@ -204,12 +204,12 @@ TASK_APP_CONFIG = {
                 "296a1410-8d72-46a8-a0a1-1821f196e66c": {"view": "4", },
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
             },
-            "local_depends_on": {"view": "4", },
+            "local_depends_on": {"view": "==", },
         },
         "delete": {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {},
-            "local_depends_on": {"view": "4", },
+            "local_depends_on": {"view": "==", },
         },
     },
 }
