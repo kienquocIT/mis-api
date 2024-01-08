@@ -775,13 +775,13 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
         default=0,
         help_text='choices= ' + str(PAYMENT_TERM_STAGE),
     )
-    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True),
-    date = models.DateTimeField(null=True),
-    date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True),
-    payment_ratio = models.FloatField(default=0),
-    value_before_tax = models.FloatField(default=0),
-    due_date = models.DateTimeField(null=True),
-    is_ar_invoice = models.BooleanField(default=False),
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date = models.DateTimeField(null=True)
+    date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    payment_ratio = models.FloatField(default=0)
+    value_before_tax = models.FloatField(default=0)
+    due_date = models.DateTimeField(null=True)
+    is_ar_invoice = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Sale Order Payment Stage'
