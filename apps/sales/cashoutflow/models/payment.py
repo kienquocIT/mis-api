@@ -2,6 +2,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
 from apps.shared import DataAbstractModel, SimpleAbstractModel
@@ -10,7 +11,8 @@ from .advance_payment import AdvancePaymentCost
 __all__ = [
     'Payment',
     'PaymentCost',
-    'PaymentConfig'
+    'PaymentConfig',
+    'PaymentAttachmentFile'
 ]
 
 SALE_CODE_TYPE = [
@@ -222,5 +224,20 @@ class PaymentConfig(SimpleAbstractModel):
     class Meta:
         verbose_name = 'Payment Config'
         verbose_name_plural = 'Payment Configs'
+        default_permissions = ()
+        permissions = ()
+
+
+class PaymentAttachmentFile(M2MFilesAbstractModel):
+    payment = models.ForeignKey(
+        Payment,
+        on_delete=models.CASCADE,
+        related_name='payment_attachments'
+    )
+
+    class Meta:
+        verbose_name = 'Payment attachment'
+        verbose_name_plural = 'Payment attachments'
+        ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()
