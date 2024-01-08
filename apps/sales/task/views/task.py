@@ -20,7 +20,7 @@ class OpportunityTaskList(BaseListMixin, BaseCreateMixin):
     serializer_list = OpportunityTaskListSerializer
     serializer_create = OpportunityTaskCreateSerializer
     serializer_detail = OpportunityTaskDetailSerializer
-    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     filterset_fields = {
         'parent_n': ['exact'],
