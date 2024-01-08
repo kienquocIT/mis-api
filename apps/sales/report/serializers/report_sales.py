@@ -28,6 +28,10 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
                 'title': obj.sale_order.customer.name,
                 'code': obj.sale_order.customer.code,
             } if obj.sale_order.customer else {},
+            'group': {
+                'id': obj.group_inherit_id,
+                'title': obj.group_inherit.title,
+            } if obj.group_inherit else {},
             'employee_inherit': {
                 'id': obj.sale_order.employee_inherit_id,
                 'first_name': obj.sale_order.employee_inherit.first_name,
