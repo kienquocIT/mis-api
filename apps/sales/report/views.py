@@ -23,7 +23,6 @@ class ReportRevenueList(BaseListMixin):
             "sale_order",
             "sale_order__customer",
             "sale_order__employee_inherit",
-            "group_inherit",
         )
 
     @swagger_auto_schema(
@@ -82,6 +81,7 @@ class ReportCustomerList(BaseListMixin):
         return super().get_queryset().select_related(
             "customer",
             "customer__industry",
+            "employee_inherit"
         )
 
     @swagger_auto_schema(

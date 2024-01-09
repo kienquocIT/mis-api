@@ -15,6 +15,7 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
             'revenue',
             'gross_profit',
             'net_income',
+            'group_inherit_id'
         )
 
     @classmethod
@@ -28,10 +29,6 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
                 'title': obj.sale_order.customer.name,
                 'code': obj.sale_order.customer.code,
             } if obj.sale_order.customer else {},
-            'group': {
-                'id': obj.group_inherit_id,
-                'title': obj.group_inherit.title,
-            } if obj.group_inherit else {},
             'employee_inherit': {
                 'id': obj.sale_order.employee_inherit_id,
                 'first_name': obj.sale_order.employee_inherit.first_name,
@@ -75,6 +72,7 @@ class ReportProductListSerializer(serializers.ModelSerializer):
 
 class ReportCustomerListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportCustomer
@@ -85,6 +83,7 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
             'revenue',
             'gross_profit',
             'net_income',
+            'employee_inherit'
         )
 
     @classmethod
@@ -100,3 +99,15 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
                 'description': obj.customer.industry.description,
             } if obj.customer.industry else {}
         } if obj.customer else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
