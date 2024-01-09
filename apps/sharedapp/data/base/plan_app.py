@@ -232,6 +232,10 @@ _PlanApplication_eOffice_data = {
     "6078deaa-96b3-4743-97e3-5457454fa7aa": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "6078deaa-96b3-4743-97e3-5457454fa7aa",  # Meeting Schedule
+    },
+    "41abd4e9-da89-450b-a44a-da1d6f8a5cd2": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",  # Asset, Tools Delivery
     }
 }
 

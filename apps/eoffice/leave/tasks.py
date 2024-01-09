@@ -39,6 +39,7 @@ def create_new_available_end_year():
                     item.expiration_date = datetime.strftime(
                         date_current + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
                     )
+
                     list_update.append(item)
                 else:
                     item.open_year = deepcopy(current_year) - 2
