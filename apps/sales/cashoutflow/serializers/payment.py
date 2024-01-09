@@ -4,6 +4,7 @@ from apps.sales.cashoutflow.models import (
     Payment, PaymentCost, PaymentConfig
 )
 from apps.masterdata.saledata.models import Currency
+from apps.sales.cashoutflow.models.payment import PaymentAttachmentFile
 from apps.sales.opportunity.models import OpportunityActivityLogs
 from apps.shared import AdvancePaymentMsg, AbstractDetailSerializerModel, SaleMsg
 
@@ -12,6 +13,9 @@ class PaymentListSerializer(serializers.ModelSerializer):
     converted_value_list = serializers.SerializerMethodField()
     return_value_list = serializers.SerializerMethodField()
     payment_value = serializers.SerializerMethodField()
+    sale_order_mapped = serializers.SerializerMethodField()
+    quotation_mapped = serializers.SerializerMethodField()
+    opportunity_mapped = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -28,7 +32,10 @@ class PaymentListSerializer(serializers.ModelSerializer):
             'return_value_list',
             'payment_value',
             'date_created',
-            'system_status'
+            'system_status',
+            'sale_order_mapped',
+            'quotation_mapped',
+            'opportunity_mapped',
         )
 
     @classmethod
@@ -47,6 +54,70 @@ class PaymentListSerializer(serializers.ModelSerializer):
         all_items = obj.payment.all()
         sum_payment_value = sum(item.expense_after_tax_price for item in all_items)
         return sum_payment_value
+
+    @classmethod
+    def get_sale_order_mapped(cls, obj):
+        if obj.sale_order_mapped:
+            is_close = False
+            if obj.sale_order_mapped.opportunity:
+                if obj.sale_order_mapped.opportunity.is_close_lost or obj.sale_order_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.sale_order_mapped_id,
+                    'code': obj.sale_order_mapped.code,
+                    'title': obj.sale_order_mapped.title,
+                    'opportunity_id': obj.sale_order_mapped.opportunity_id,
+                    'opportunity_code': obj.sale_order_mapped.opportunity.is_deal_close,
+                    'is_close': is_close
+                }
+            return {
+                'id': obj.sale_order_mapped_id,
+                'code': obj.sale_order_mapped.code,
+                'title': obj.sale_order_mapped.title,
+                'opportunity_id': None,
+                'opportunity_code': None,
+                'is_close': is_close
+            }
+        return {}
+
+    @classmethod
+    def get_quotation_mapped(cls, obj):
+        if obj.quotation_mapped:
+            is_close = False
+            if obj.quotation_mapped.opportunity:
+                if obj.quotation_mapped.opportunity.is_close_lost or obj.quotation_mapped.opportunity.is_deal_close:
+                    is_close = True
+                return {
+                    'id': obj.quotation_mapped_id,
+                    'code': obj.quotation_mapped.code,
+                    'title': obj.quotation_mapped.title,
+                    'opportunity_id': obj.quotation_mapped.opportunity_id,
+                    'opportunity_code': obj.quotation_mapped.opportunity.code,
+                    'is_close': is_close,
+                }
+            return {
+                'id': obj.quotation_mapped_id,
+                'code': obj.quotation_mapped.code,
+                'title': obj.quotation_mapped.title,
+                'opportunity_id': None,
+                'opportunity_code': None,
+                'is_close': is_close,
+            }
+        return {}
+
+    @classmethod
+    def get_opportunity_mapped(cls, obj):
+        if obj.opportunity_mapped:
+            is_close = False
+            if obj.opportunity_mapped.is_close_lost or obj.opportunity_mapped.is_deal_close:
+                is_close = True
+            return {
+                'id': obj.opportunity_mapped_id,
+                'code': obj.opportunity_mapped.code,
+                'title': obj.opportunity_mapped.title,
+                'is_close': is_close
+            }
+        return {}
 
 
 def create_payment_cost_items(payment_obj, payment_expense_valid_list):
@@ -72,6 +143,22 @@ def create_payment_cost_items(payment_obj, payment_expense_valid_list):
         PaymentCost.objects.bulk_create(bulk_info)
         return True
     return False
+
+
+def create_files_mapped(payment_obj, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(PaymentAttachmentFile(
+                payment=payment_obj,
+                attachment_id=file_id,
+                order=index
+            ))
+        PaymentAttachmentFile.objects.filter(payment=payment_obj).delete()
+        PaymentAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
 
 
 class PaymentCreateSerializer(serializers.ModelSerializer):
@@ -140,6 +227,9 @@ class PaymentCreateSerializer(serializers.ModelSerializer):
                 title=payment_obj.title,
             )
 
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(payment_obj, attachment.strip().split(','))
         return payment_obj
 
 
@@ -152,6 +242,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
     employee_payment = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
     creator_name = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
@@ -171,6 +262,7 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             'is_internal_payment',
             'creator_name',
             'employee_inherit',
+            'attachment'
         )
 
     @classmethod
@@ -330,6 +422,11 @@ class PaymentDetailSerializer(AbstractDetailSerializerModel):
             } if obj.employee_inherit.group else {}
         } if obj.employee_inherit else {}
 
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = PaymentAttachmentFile.objects.select_related('attachment').filter(payment=obj)
+        return [item.attachment.get_detail() for item in att_objs]
+
 
 class PaymentUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(max_length=150)
@@ -368,10 +465,11 @@ class PaymentUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_payment_cost_items(
-            instance,
-            self.initial_data.get('payment_expense_valid_list', [])
-        )
+        create_payment_cost_items(instance, self.initial_data.get('payment_expense_valid_list', []))
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(instance, attachment.strip().split(','))
         return instance
 
 

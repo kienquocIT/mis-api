@@ -23,6 +23,10 @@ class PaymentList(BaseListMixin, BaseCreateMixin):
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
             'payment'
+        ).select_related(
+            'sale_order_mapped__opportunity',
+            'quotation_mapped__opportunity',
+            'opportunity_mapped',
         )
 
     @swagger_auto_schema(

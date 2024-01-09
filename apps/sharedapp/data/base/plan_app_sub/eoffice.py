@@ -126,6 +126,46 @@ ASSET_TOOLS_PROVIDE = {
         },
     },
 }
+MEETING_SCHEDULE = {
+    "id": "6078deaa-96b3-4743-97e3-5457454fa7aa",
+    "title": "Meeting Schedule",
+    "code": "meetingschedule",
+    "model_code": "meetingschedule",
+    "app_label": "meetingschedule",
+    "is_workflow": True,
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Saledata.Account
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "==", },
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "4", },
+            },
+            "local_depends_on": {"view": "==", },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+}
 
 Application_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data(
@@ -141,6 +181,10 @@ Application_eOffice_data = {
         filtering_inheritor=True
     ),
     "55ba3005-6ccc-4807-af27-7cc45e99e3f6": ApplicationConfigFrame(**ASSET_TOOLS_PROVIDE).data(
+        depend_follow_main=False,
+        filtering_inheritor=True
+    ),
+    "6078deaa-96b3-4743-97e3-5457454fa7aa": ApplicationConfigFrame(**MEETING_SCHEDULE).data(
         depend_follow_main=False,
         filtering_inheritor=True
     ),

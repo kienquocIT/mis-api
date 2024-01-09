@@ -6,17 +6,15 @@ from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreat
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
     SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
-from apps.shared import SYSTEM_STATUS, SaleMsg, BaseMsg, SALE_ORDER_DELIVERY_STATUS
+from apps.shared import SaleMsg, BaseMsg
 
 
 # SALE ORDER BEGIN
 class SaleOrderListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     sale_person = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
     opportunity = serializers.SerializerMethodField()
     quotation = serializers.SerializerMethodField()
-    delivery_status = serializers.SerializerMethodField()
 
     class Meta:
         model = SaleOrder
@@ -70,18 +68,6 @@ class SaleOrderListSerializer(serializers.ModelSerializer):
             'title': obj.quotation.title,
             'code': obj.quotation.code,
         } if obj.quotation else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
-
-    @classmethod
-    def get_delivery_status(cls, obj):
-        if obj.delivery_status or obj.delivery_status == 0:
-            return dict(SALE_ORDER_DELIVERY_STATUS).get(obj.delivery_status)
-        return None
 
 
 class SaleOrderDetailSerializer(serializers.ModelSerializer):

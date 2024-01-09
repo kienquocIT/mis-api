@@ -5,7 +5,6 @@ from apps.masterdata.saledata.models.product_warehouse import ProductWareHouseSe
 from apps.sales.inventory.models import GoodsReceipt, GoodsReceiptProduct, GoodsReceiptRequestProduct, \
     GoodsReceiptWarehouse, GoodsReceiptLot, GoodsReceiptSerial
 from apps.sales.inventory.serializers.goods_receipt_sub import GoodsReceiptCommonValidate, GoodsReceiptCommonCreate
-from apps.shared import SYSTEM_STATUS, GOODS_RECEIPT_TYPE
 
 
 class GoodsReceiptSerialSerializer(serializers.ModelSerializer):
@@ -366,8 +365,6 @@ class GoodsReceiptProductListSerializer(serializers.ModelSerializer):
 class GoodsReceiptListSerializer(serializers.ModelSerializer):
     purchase_order = serializers.SerializerMethodField()
     inventory_adjustment = serializers.SerializerMethodField()
-    goods_receipt_type = serializers.SerializerMethodField()
-    system_status = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -381,12 +378,6 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'date_received',
             'system_status',
         )
-
-    @classmethod
-    def get_goods_receipt_type(cls, obj):
-        if obj.goods_receipt_type or obj.goods_receipt_type == 0:
-            return dict(GOODS_RECEIPT_TYPE).get(obj.goods_receipt_type)
-        return None
 
     @classmethod
     def get_purchase_order(cls, obj):
@@ -403,12 +394,6 @@ class GoodsReceiptListSerializer(serializers.ModelSerializer):
             'title': obj.inventory_adjustment.title,
             'code': obj.inventory_adjustment.code,
         } if obj.inventory_adjustment else {}
-
-    @classmethod
-    def get_system_status(cls, obj):
-        if obj.system_status or obj.system_status == 0:
-            return dict(SYSTEM_STATUS).get(obj.system_status)
-        return None
 
 
 class GoodsReceiptDetailSerializer(serializers.ModelSerializer):

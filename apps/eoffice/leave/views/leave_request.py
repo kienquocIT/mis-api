@@ -9,7 +9,7 @@ from apps.shared import BaseListMixin, BaseCreateMixin, mask_view, BaseRetrieveM
 from ..filters import LeaveRequestListFilters
 
 __all__ = ['LeaveRequestList', 'LeaveRequestDetail', 'LeaveAvailableList', 'LeaveAvailableUpdate',
-           'LeaveAvailableHistoryList', 'LeaveRequestDateList']
+           'LeaveAvailableHistoryList', 'LeaveRequestDateList', 'LeaveAvailableDDList']
 
 
 class LeaveRequestList(BaseListMixin, BaseCreateMixin):
@@ -130,6 +130,7 @@ class LeaveRequestDetail(BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin):
 class LeaveAvailableList(BaseListMixin):
     queryset = LeaveAvailable.objects
     serializer_list = LeaveAvailableListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = ('check_balance', 'employee_inherit_id')
 
     def get_queryset(self):
@@ -142,6 +143,26 @@ class LeaveAvailableList(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=True,
         label_code='leave', model_code='leaveAvailable', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class LeaveAvailableDDList(BaseListMixin):
+    queryset = LeaveAvailable.objects
+    serializer_list = LeaveAvailableListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+    filterset_fields = ('check_balance', 'employee_inherit_id')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('leave_type')
+
+    @swagger_auto_schema(
+        operation_summary="Leave available list",
+        operation_description="get leave available list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)

@@ -519,6 +519,17 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_inherit': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    @classmethod
+    def validate_next_node_collab_id(cls, value):
+        try:
+            return Employee.objects.get_current(
+                fill__tenant=True,
+                fill__company=True,
+                id=value
+            ).id
+        except Employee.DoesNotExist:
+            raise serializers.ValidationError({'next_node_collab': HRMsg.EMPLOYEES_NOT_EXIST})
+
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):

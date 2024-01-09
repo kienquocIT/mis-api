@@ -8,6 +8,7 @@ from apps.core.workflow.models import (
 from apps.core.workflow.serializers.config import (
     WorkflowListSerializer, WorkflowCreateSerializer,
     WorkflowDetailSerializer, WorkflowUpdateSerializer, WorkflowOfAppListSerializer, WorkflowOfAppUpdateSerializer,
+    WorkflowCurrentOfAppSerializer,
 )
 from apps.shared import (
     BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin,
@@ -18,6 +19,7 @@ __all__ = [
     'WorkflowOfAppList', 'WorkflowOfAppDetail',
     'WorkflowList',
     'WorkflowDetail',
+    'WorkflowCurrentOfAppList',
 ]
 
 
@@ -27,6 +29,11 @@ class WorkflowOfAppList(BaseListMixin, BaseCreateMixin):
     serializer_list = WorkflowOfAppListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "workflow_currently",
+        )
 
     @swagger_auto_schema(
         operation_summary="Workflow of Feature List",
@@ -137,3 +144,28 @@ class WorkflowDetail(BaseRetrieveMixin, BaseUpdateMixin):
             instance._prefetched_objects_cache = {}  # pylint: disable=W0212
 
         return ResponseController.success_200(data={'detail': HttpMsg.SUCCESSFULLY}, key_data='result')
+
+
+# workflow current of app
+class WorkflowCurrentOfAppList(BaseListMixin, BaseCreateMixin):
+    queryset = WorkflowConfigOfApp.objects
+    filterset_fields = {
+        'code': ['exact'],
+    }
+    serializer_class = WorkflowCurrentOfAppSerializer
+    serializer_list = WorkflowCurrentOfAppSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "workflow_currently",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Workflow current of app list",
+        operation_description="Get workflow current of app list",
+    )
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

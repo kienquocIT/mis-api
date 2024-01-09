@@ -28,7 +28,7 @@ app.conf.beat_schedule = {
     # Executes every 1minutes
     'modified-leave-available-every-new-year': {
         'task': 'apps.eoffice.leave.tasks.create_new_available_end_year',
-        'schedule': crontab(0, 0, 1, 1, '*'),
+        'schedule': crontab(minute=0, hour=0, day_of_month=1, month_of_year=1, day_of_week='*'),
     },
     'update-leave-available-each_month': {
         'task': 'apps.eoffice.leave.tasks.update_annual_leave_each_month',
