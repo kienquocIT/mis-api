@@ -159,7 +159,6 @@ class OpportunityEmailListSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
-            'is_cancelled'
         )
 
     @classmethod
@@ -253,7 +252,6 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
             'content',
             'date_created',
             'opportunity',
-            'is_cancelled'
         )
 
     @classmethod
