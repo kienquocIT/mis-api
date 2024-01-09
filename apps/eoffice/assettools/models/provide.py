@@ -12,6 +12,7 @@ class AssetToolsProvide(DataAbstractModel):
         verbose_name='descriptions',
         max_length=500,
         null=True,
+        blank=True,
     )
     products = models.ManyToManyField(
         'saledata.Product',
@@ -99,6 +100,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         verbose_name='descriptions',
         max_length=500,
         null=True,
+        blank=True,
     )
     product_data = models.JSONField(
         default=dict,

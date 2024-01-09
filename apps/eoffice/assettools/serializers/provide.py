@@ -13,7 +13,7 @@ from ..models import AssetToolsProvide, AssetToolsProvideProduct, AssetToolsProv
 class AssetToolsProvideMapProductSerializer(serializers.Serializer):  # noqa
     order = serializers.IntegerField()
     product = serializers.UUIDField()
-    product_remark = serializers.CharField()
+    product_remark = serializers.CharField(allow_null=True, required=False, allow_blank=True)
     uom = serializers.UUIDField()
     tax = serializers.UUIDField(allow_null=True, required=False)
     quantity = serializers.FloatField(allow_null=True, required=False)
