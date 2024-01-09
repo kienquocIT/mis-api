@@ -287,3 +287,10 @@ SALE_ORDER_DELIVERY_STATUS = (
     (2, _('Partially delivered')),
     (3, _('Delivered')),
 )
+
+PAYMENT_TERM_STAGE = (
+    (0, _('Sale order')),
+    (1, _('Contract')),
+    (2, _('Delivery')),
+    (3, _('Final acceptance')),
+)

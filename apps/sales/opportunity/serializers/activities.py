@@ -9,8 +9,9 @@ from apps.sales.opportunity.models import (
     OpportunityDocumentPersonInCharge, OpportunityDocument, OpportunityActivityLogTask,
     OpportunityActivityLogs
 )
-from apps.shared import BaseMsg, SaleMsg, HrMsg
+from apps.shared import BaseMsg, SaleMsg, HrMsg, SimpleEncryptor
 from apps.shared.translations.opportunity import OpportunityMsg
+from misapi import settings
 
 
 class OpportunityCallLogListSerializer(serializers.ModelSerializer):
@@ -26,7 +27,8 @@ class OpportunityCallLogListSerializer(serializers.ModelSerializer):
             'contact',
             'call_date',
             'input_result',
-            'repeat'
+            'repeat',
+            'is_cancelled'
         )
 
     @classmethod
@@ -100,7 +102,8 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'contact',
             'call_date',
             'input_result',
-            'repeat'
+            'repeat',
+            'is_cancelled'
         )
 
     @classmethod
@@ -122,6 +125,25 @@ class OpportunityCallLogDetailSerializer(serializers.ModelSerializer):
             'id': obj.contact_id,
             'fullname': obj.contact.fullname
         } if obj.contact else {}
+
+
+class OpportunityCallLogUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OpportunityCallLog
+        fields = ('is_cancelled',)
+
+    def validate(self, validate_data):
+        if self.instance.is_cancelled is True:
+            raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        OpportunityActivityLogs.objects.filter(call=instance).update(is_cancelled=instance.is_cancelled)
+        return instance
 
 
 class OpportunityEmailListSerializer(serializers.ModelSerializer):
@@ -164,9 +186,10 @@ def send_email(email_obj, company_id):
                 reply_to=[],
             )
             email.attach_alternative(html_content, "text/html")
+            password = SimpleEncryptor().generate_key(password=settings.EMAIL_CONFIG_PASSWORD)
             connection = get_connection(
                 username=company_obj.email,
-                password=company_obj.email_app_password,
+                password=SimpleEncryptor(key=password).decrypt(company_obj.email_app_password),
                 fail_silently=False,
             )
             email.connection = connection
@@ -240,6 +263,13 @@ class OpportunityEmailDetailSerializer(serializers.ModelSerializer):
         } if obj.opportunity else {}
 
 
+class OpportunityEmailUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OpportunityEmail
+        fields = ()
+
+
 class OpportunityMeetingListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_attended_list = serializers.SerializerMethodField()
@@ -259,7 +289,8 @@ class OpportunityMeetingListSerializer(serializers.ModelSerializer):
             'meeting_address',
             'room_location',
             'input_result',
-            'repeat'
+            'repeat',
+            'is_cancelled'
         )
 
     @classmethod
@@ -385,7 +416,8 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
             'meeting_address',
             'room_location',
             'input_result',
-            'repeat'
+            'repeat',
+            'is_cancelled'
         )
 
     @classmethod
@@ -413,6 +445,25 @@ class OpportunityMeetingDetailSerializer(serializers.ModelSerializer):
                 customer_member_list.append({'id': item.id, 'fullname': item.fullname})
             return customer_member_list
         return {}
+
+
+class OpportunityMeetingUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = OpportunityMeeting
+        fields = ('is_cancelled',)
+
+    def validate(self, validate_data):
+        if self.instance.is_cancelled is True:
+            raise serializers.ValidationError({'Cancelled': SaleMsg.CAN_NOT_REACTIVE})
+        return validate_data
+
+    def update(self, instance, validated_data):
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        OpportunityActivityLogs.objects.filter(meeting=instance).update(is_cancelled=instance.is_cancelled)
+        return instance
 
 
 class OpportunityDocumentListSerializer(serializers.ModelSerializer):
@@ -645,6 +696,7 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'id': str(obj.call_id),
             'activity_name': 'Call to customer',
             'activity_type': 'call',
+            'is_cancelled': obj.call.is_cancelled
         } if obj.call else {}
 
     @classmethod
@@ -654,6 +706,7 @@ class OpportunityActivityLogsListSerializer(serializers.ModelSerializer):
             'id': str(obj.meeting_id),
             'activity_name': 'Meeting with customer',
             'activity_type': 'meeting',
+            'is_cancelled': obj.meeting.is_cancelled
         } if obj.meeting else {}
 
     @classmethod

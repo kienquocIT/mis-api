@@ -4,14 +4,15 @@ from apps.sales.opportunity.models import OpportunityCallLog, OpportunityEmail, 
     OpportunityDocument, OpportunityActivityLogs
 from apps.sales.opportunity.serializers import (
     OpportunityCallLogListSerializer, OpportunityCallLogCreateSerializer,
-    OpportunityCallLogDetailSerializer,
+    OpportunityCallLogDetailSerializer, OpportunityCallLogUpdateSerializer,
     OpportunityEmailListSerializer, OpportunityEmailCreateSerializer,
-    OpportunityEmailDetailSerializer,
+    OpportunityEmailDetailSerializer, OpportunityEmailUpdateSerializer,
     OpportunityMeetingListSerializer, OpportunityMeetingCreateSerializer,
-    OpportunityMeetingDetailSerializer, OpportunityDocumentListSerializer,
-    OpportunityDocumentCreateSerializer, OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
+    OpportunityMeetingDetailSerializer, OpportunityMeetingUpdateSerializer,
+    OpportunityDocumentListSerializer, OpportunityDocumentCreateSerializer,
+    OpportunityDocumentDetailSerializer, OpportunityActivityLogsListSerializer
 )
-from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin
+from apps.shared import BaseListMixin, mask_view, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin
 from ..filters import OpportunityMeetingFilters
 
 
@@ -46,6 +47,7 @@ class OpportunityCallLogList(BaseListMixin, BaseCreateMixin):
 class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityCallLog.objects
     serializer_detail = OpportunityCallLogDetailSerializer
+    serializer_update = OpportunityCallLogUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity__customer", "contact")
@@ -58,16 +60,14 @@ class OpportunityCallLogDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-
-class OpportunityCallLogDelete(BaseDestroyMixin):
-    queryset = OpportunityCallLog.objects
-
     @swagger_auto_schema(
-        operation_summary="Delete Opportunity Call Log List",
+        operation_summary="Update Opportunity Call Log",
+        operation_description="Update Opportunity Call Log by ID",
+        request_body=OpportunityCallLogUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
@@ -106,6 +106,7 @@ class OpportunityEmailList(BaseListMixin, BaseCreateMixin):
 class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityEmail.objects
     serializer_detail = OpportunityEmailDetailSerializer
+    serializer_update = OpportunityEmailUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")
@@ -118,16 +119,14 @@ class OpportunityEmailDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-
-class OpportunityEmailDelete(BaseDestroyMixin):
-    queryset = OpportunityEmail.objects
-
     @swagger_auto_schema(
-        operation_summary="Delete Opportunity Email List",
+        operation_summary="Update Opportunity Email",
+        operation_description="Update Opportunity Email by ID",
+        request_body=OpportunityEmailUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
@@ -168,28 +167,27 @@ class OpportunityMeetingList(BaseListMixin, BaseCreateMixin):
 class OpportunityMeetingDetail(BaseRetrieveMixin, BaseUpdateMixin, ):
     queryset = OpportunityMeeting.objects
     serializer_detail = OpportunityMeetingDetailSerializer
+    serializer_update = OpportunityMeetingUpdateSerializer
 
     def get_queryset(self):
         return super().get_queryset().select_related("opportunity")
 
     @swagger_auto_schema(
-        operation_summary="OpportunityMeeting detail",
-        operation_description="Get OpportunityMeeting detail by ID",
+        operation_summary="Opportunity Meeting detail",
+        operation_description="Get Opportunity Meeting detail by ID",
     )
     @mask_view(login_require=True, auth_require=False)
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
-
-class OpportunityMeetingDelete(BaseDestroyMixin):
-    queryset = OpportunityMeeting.objects
-
     @swagger_auto_schema(
-        operation_summary="Delete Opportunity Meeting List",
+        operation_summary="Delete Opportunity Meeting",
+        operation_description="Update Opportunity Meeting by ID",
+        request_body=OpportunityMeetingUpdateSerializer,
     )
     @mask_view(login_require=True, auth_require=False)
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
 
 
 class OpportunityDocumentList(BaseListMixin, BaseCreateMixin):

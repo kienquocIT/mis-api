@@ -1,5 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+from apps.core.attachments.models import M2MFilesAbstractModel
 from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel
 
 
@@ -45,6 +47,7 @@ class MeetingSchedule(DataAbstractModel):
     meeting_start_date = models.DateField()
     meeting_start_time = models.TimeField()
     meeting_duration = models.FloatField()  # minute
+    account_external = models.ForeignKey('saledata.Account', on_delete=models.CASCADE, null=True)
 
     class Meta:
         verbose_name = 'Meeting Schedule'
@@ -89,6 +92,21 @@ class MeetingScheduleOnlineMeeting(DataAbstractModel):
     class Meta:
         verbose_name = 'Meeting Schedule Online Meeting'
         verbose_name_plural = 'Meetings Schedule Online Meeting'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
+
+
+class MeetingScheduleAttachmentFile(M2MFilesAbstractModel):
+    meeting_schedule = models.ForeignKey(
+        MeetingSchedule,
+        on_delete=models.CASCADE,
+        related_name='meeting_schedule_attachments'
+    )
+
+    class Meta:
+        verbose_name = 'Meeting Schedule attachment'
+        verbose_name_plural = 'Meeting Schedule attachments'
         ordering = ('-date_created',)
         default_permissions = ()
         permissions = ()

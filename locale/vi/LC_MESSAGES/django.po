@@ -697,3 +697,7 @@ msgstr "Khởi hành đang trống"
 #
 msgid "Destination is empty"
 msgstr "Điểm đến đang trống"
+
+#
+msgid "From time larger than to time"
+msgstr "Thời gian bắt đầu lớn hơn thời gian kết thúc"

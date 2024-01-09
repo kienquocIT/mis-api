@@ -29,6 +29,7 @@ class OpportunityCallLog(SimpleAbstractModel):
         default=timezone.now, editable=False,
         help_text='The record created at value',
     )
+    is_cancelled = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityCallLog'
@@ -89,6 +90,7 @@ class OpportunityMeeting(SimpleAbstractModel):
     room_location = models.CharField(max_length=250, null=True)
     input_result = models.CharField(max_length=250, null=True)
     repeat = models.BooleanField(default=False)
+    is_cancelled = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'OpportunityMeeting'
@@ -268,6 +270,7 @@ class OpportunityActivityLogs(MasterDataAbstractModel):
         default=0,
         help_text='choices= ' + str(OPPORTUNITY_LOG_TYPE),
     )
+    is_cancelled = models.BooleanField(default=False)
 
     @classmethod
     def create_opportunity_log_application(
