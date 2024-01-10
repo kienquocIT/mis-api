@@ -102,10 +102,10 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             if item["subtotal"] > available["total"] and available["check_balance"]:
                 raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
 
-            if available["leave_type"]["code"] in ['FF', 'MY', 'MC']:
+            if available["leave_type"]["code"] in special_stock:
                 special_stock[available["leave_type"]["code"]] += item['subtotal']
-            if special_stock[available["leave_type"]["code"]] > available["total"]:
-                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+                if special_stock[available["leave_type"]["code"]] > available["total"]:
+                    raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
             d_from = datetime.strptime(item["date_from"], "%Y-%m-%d")
             d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
             if d_from > d_to:
