@@ -167,3 +167,27 @@ class ReportCustomer(DataAbstractModel):
         ordering = ('customer__code',)
         default_permissions = ()
         permissions = ()
+
+
+class ReportPipeline(DataAbstractModel):
+    opportunity = models.OneToOneField(
+        'opportunity.Opportunity',
+        on_delete=models.CASCADE,
+    )
+
+    @classmethod
+    def create_report_pipeline(
+            cls,
+            tenant_id,
+            company_id,
+            opportunity_id,
+    ):
+        cls.objects.get_or_create(tenant_id=tenant_id, company_id=company_id, opportunity_id=opportunity_id,)
+        return True
+
+    class Meta:
+        verbose_name = 'Report Pipeline'
+        verbose_name_plural = 'Report Pipelines'
+        ordering = ('-date_created',)
+        default_permissions = ()
+        permissions = ()
