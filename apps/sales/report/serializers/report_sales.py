@@ -168,4 +168,3 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
                 'title': obj.employee_inherit.group.title
             } if obj.employee_inherit.group else {}
         return {}
-
