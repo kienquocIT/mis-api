@@ -45,7 +45,6 @@ class RevenuePlanGroupEmployee(SimpleAbstractModel):
         RevenuePlan,
         on_delete=models.CASCADE,
         related_name='revenue_plan_mapped_group_employee',
-        null=True
     )
     revenue_plan_group_mapped = models.ForeignKey(
         'hr.Group',
@@ -55,7 +54,7 @@ class RevenuePlanGroupEmployee(SimpleAbstractModel):
     emp_month_target = models.JSONField(default=list)  # [number * 12]
     emp_quarter_target = models.JSONField(default=list)  # [number * 4]
     emp_year_target = models.FloatField()
-    employee_mapped = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, null=True)
+    employee_mapped = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Revenue Plan Group Employee'
