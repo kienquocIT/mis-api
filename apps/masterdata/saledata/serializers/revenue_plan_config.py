@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.revenue_plan_config import (
     RevenuePlanConfig, RevenuePlanConfigRoles
 )
-from apps.shared import ProductMsg
 
 
 # Product Type

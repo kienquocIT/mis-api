@@ -1,9 +1,7 @@
 from rest_framework import serializers
-from apps.core.base.models import BaseItemUnit
 from apps.masterdata.saledata.models.periods import (
     Periods
 )
-from apps.shared import ProductMsg
 
 
 # Product Type
