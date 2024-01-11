@@ -1,10 +1,8 @@
 from datetime import datetime
 from rest_framework import serializers
-from apps.masterdata.saledata.models import Periods
 from apps.sales.revenue_plan.models import (
     RevenuePlanGroup, RevenuePlanGroupEmployee, RevenuePlan
 )
-from apps.shared import AdvancePaymentMsg, ProductMsg, SaleMsg
 
 
 class RevenuePlanListSerializer(serializers.ModelSerializer):
@@ -33,18 +31,18 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
         } if obj.employee_created else {}
 
 
-def create_revenue_plan_group(revenue_plan, RevenuePlanGroup_data):
+def create_revenue_plan_group(revenue_plan, revenue_plan_group_data):
     bulk_data = []
-    for data in RevenuePlanGroup_data:
+    for data in revenue_plan_group_data:
         bulk_data.append(RevenuePlanGroup(revenue_plan_mapped=revenue_plan, **data))
     RevenuePlanGroup.objects.filter(revenue_plan_mapped=revenue_plan).delete()
     RevenuePlanGroup.objects.bulk_create(bulk_data)
     return True
 
 
-def create_revenue_plan_group_employee(revenue_plan, RevenuePlanGroupEmployee_data):
+def create_revenue_plan_group_employee(revenue_plan, revenue_plan_group_employee_data):
     bulk_data = []
-    for data in RevenuePlanGroupEmployee_data:
+    for data in revenue_plan_group_employee_data:
         bulk_data.append(RevenuePlanGroupEmployee(
             revenue_plan_mapped=revenue_plan,
             **data
