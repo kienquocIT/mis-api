@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline
 
 
 class ReportRevenueListSerializer(serializers.ModelSerializer):
@@ -96,3 +96,60 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
                 'description': obj.customer.industry.description,
             } if obj.customer.industry else {}
         } if obj.customer else {}
+
+
+class ReportPipelineListSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportPipeline
+        fields = (
+            'id',
+            'opportunity',
+            'employee_inherit',
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'open_date': obj.opportunity.open_date,
+            'close_date': obj.opportunity.close_date,
+            'value': obj.opportunity.total_product_pretax_amount,
+            'win_rate': obj.opportunity.win_rate,
+            'forecast_value': (obj.opportunity.total_product_pretax_amount * obj.opportunity.win_rate) / 100,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'title': obj.opportunity.customer.name,
+                'code': obj.opportunity.customer.code,
+            } if obj.opportunity.customer else {},
+            'call': obj.opportunity.opportunity_calllog.count(),
+            'email': obj.opportunity.opportunity_send_email.count(),
+            'meeting': obj.opportunity.opportunity_meeting.count(),
+            'document': obj.opportunity.opportunity_document.count(),
+        } if obj.opportunity else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group_id': obj.employee_inherit.group_id,
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_group(cls, obj):
+        if obj.employee_inherit:
+            return {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title
+            } if obj.employee_inherit.group else {}
+        return {}
