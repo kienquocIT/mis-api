@@ -147,9 +147,16 @@ class Company(CoreAbstractModel):
             pass
         return None
 
+    def make_sub_domain_unique(self, counter=0):
+        gen_sub_domain = f'{self.code}{"" if counter == 0 else str(counter)}'.lower()
+        if not self.__class__.objects.filter(sub_domain=gen_sub_domain).exists():
+            return gen_sub_domain
+        return self.make_sub_domain_unique(counter=counter+1)
+
     def generate_sub_domain(self):
         if not self.sub_domain:
-            self.sub_domain = f'{self.code}-{self.tenant.code}'.lower()
+            gen_sub_domain = self.make_sub_domain_unique(counter=0)
+            self.sub_domain = gen_sub_domain
 
     def save(self, *args, **kwargs):
         self.generate_sub_domain()
