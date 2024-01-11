@@ -1,12 +1,12 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
-    ReportCustomerListSerializer
+    ReportCustomerListSerializer, ReportPipelineListSerializer
 from apps.shared import mask_view, BaseListMixin
 
 
-# REPORT
+# REPORT REVENUE
 class ReportRevenueList(BaseListMixin):
     queryset = ReportRevenue.objects
     search_fields = ['sale_order__title']
@@ -37,6 +37,7 @@ class ReportRevenueList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
+# REPORT PRODUCT
 class ReportProductList(BaseListMixin):
     queryset = ReportProduct.objects
     search_fields = ['product__title']
@@ -66,6 +67,7 @@ class ReportProductList(BaseListMixin):
         return self.list(request, *args, **kwargs)
 
 
+# REPORT CUSTOMER
 class ReportCustomerList(BaseListMixin):
     queryset = ReportCustomer.objects
     search_fields = ['customer__name']
@@ -91,6 +93,36 @@ class ReportCustomerList(BaseListMixin):
     @mask_view(
         login_require=True, auth_require=True,
         label_code='report', model_code='reportcustomer', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT PIPELINE
+class ReportPipelineList(BaseListMixin):
+    queryset = ReportPipeline.objects
+    search_fields = ['opportunity__title']
+    filterset_fields = {
+        'employee_inherit__group_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
+    }
+    serializer_list = ReportPipelineListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "employee_inherit",
+            "employee_inherit__group",
+            "opportunity__customer",
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Report pipeline list",
+        operation_description="Get report pipeline list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+        label_code='report', model_code='reportpipeline', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
