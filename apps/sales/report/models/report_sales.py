@@ -184,8 +184,10 @@ class ReportPipeline(DataAbstractModel):
             employee_inherit_id,
     ):
         cls.objects.get_or_create(
-            tenant_id=tenant_id, company_id=company_id,
-            opportunity_id=opportunity_id, employee_inherit_id=employee_inherit_id
+            tenant_id=tenant_id, company_id=company_id, opportunity_id=opportunity_id,
+            defaults={
+                'employee_inherit_id': employee_inherit_id,
+            }
         )
         return True
 

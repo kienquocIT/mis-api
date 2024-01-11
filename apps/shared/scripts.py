@@ -1216,7 +1216,7 @@ def create_report_pipeline_by_opp():
             tenant_id=opp.tenant_id,
             company_id=opp.company_id,
             opportunity_id=opp.id,
-            employee_inherit_id=opp.sale_person_id,
+            employee_inherit_id=opp.employee_inherit_id,
         )
     print('create_report_pipeline_by_opp done.')
     return True
