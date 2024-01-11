@@ -24,7 +24,8 @@ def static(prefix, document_root):
     """
     if not prefix:
         raise ImproperlyConfigured("Empty static prefix not permitted")
-    elif not settings.DEBUG or urlsplit(prefix).netloc:
+    elif urlsplit(prefix).netloc:
+        # elif not settings.DEBUG or urlsplit(prefix).netloc: --> commented
         # No-op if not in debug mode or a non-local prefix.
         return []
     return [
