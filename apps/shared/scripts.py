@@ -45,7 +45,7 @@ from ..sales.opportunity.models import (
 from ..sales.purchasing.models import PurchaseRequestProduct, PurchaseRequest, PurchaseOrderProduct, \
     PurchaseOrderRequestProduct, PurchaseOrder
 from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, QuotationIndicator, QuotationAppConfig
-from ..sales.report.models import ReportRevenue
+from ..sales.report.models import ReportRevenue, ReportPipeline
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
 
@@ -1208,3 +1208,15 @@ def make_sure_asset_config():
     for obj in Company.objects.all():
         ConfigDefaultData(obj).asset_tools_config()
     print('Asset tools config is done!')
+
+
+def create_report_pipeline_by_opp():
+    for opp in Opportunity.objects.all():
+        ReportPipeline.create_report_pipeline_by_opp(
+            tenant_id=opp.tenant_id,
+            company_id=opp.company_id,
+            opportunity_id=opp.id,
+            employee_inherit_id=opp.sale_person_id,
+        )
+    print('create_report_pipeline_by_opp done.')
+    return True

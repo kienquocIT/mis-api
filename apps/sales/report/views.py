@@ -102,7 +102,7 @@ class ReportPipelineList(BaseListMixin):
     queryset = ReportPipeline.objects
     search_fields = ['opportunity__title']
     filterset_fields = {
-        'employee_inherit__group_inherit_id': ['exact', 'in'],
+        'employee_inherit__group_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
     }
     serializer_list = ReportPipelineListSerializer
@@ -120,7 +120,7 @@ class ReportPipelineList(BaseListMixin):
         operation_description="Get report pipeline list",
     )
     @mask_view(
-        login_require=True, auth_require=True,
+        login_require=True, auth_require=False,
         label_code='report', model_code='reportpipeline', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

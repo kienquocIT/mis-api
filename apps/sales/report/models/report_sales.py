@@ -176,13 +176,17 @@ class ReportPipeline(DataAbstractModel):
     )
 
     @classmethod
-    def create_report_pipeline(
+    def create_report_pipeline_by_opp(
             cls,
             tenant_id,
             company_id,
             opportunity_id,
+            employee_inherit_id,
     ):
-        cls.objects.get_or_create(tenant_id=tenant_id, company_id=company_id, opportunity_id=opportunity_id,)
+        cls.objects.get_or_create(
+            tenant_id=tenant_id, company_id=company_id,
+            opportunity_id=opportunity_id, employee_inherit_id=employee_inherit_id
+        )
         return True
 
     class Meta:
