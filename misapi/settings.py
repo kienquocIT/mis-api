@@ -105,6 +105,7 @@ INSTALLED_APPS = \
         'apps.eoffice.businesstrip',
         'apps.eoffice.assettools',
         'apps.eoffice.meeting',
+        'apps.sales.revenue_plan',
 
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',

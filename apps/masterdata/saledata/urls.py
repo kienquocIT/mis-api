@@ -10,6 +10,7 @@ from apps.masterdata.saledata.views.accounts import (
 from apps.masterdata.saledata.views.config import ConfigPaymentTermList, ConfigPaymentTermDetail
 from apps.masterdata.saledata.views.expense import ExpenseList, ExpenseDetail, ExpenseForSaleList
 from apps.masterdata.saledata.views.good_receipt import GoodReceiptDetail
+from apps.masterdata.saledata.views.periods import PeriodsList, PeriodsDetail
 from apps.masterdata.saledata.views.product import (
     ProductTypeList, ProductTypeDetail, ProductCategoryList, ProductCategoryDetail,
     UnitOfMeasureGroupList, UnitOfMeasureGroupDetail, UnitOfMeasureList, UnitOfMeasureDetail, ProductList,
@@ -22,7 +23,8 @@ from apps.masterdata.saledata.views.price import (
 from apps.masterdata.saledata.views import (
     ShippingList, ShippingDetail, WareHouseListForInventoryAdjustment,
     WareHouseList, WareHouseDetail, GoodReceiptList, ShippingCheckList, ProductWareHouseList,
-    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail
+    WareHouseCheckAvailableProductList, ExpenseItemList, ExpenseItemDetail,
+    RevenuePlanConfigList, RevenuePlanConfigDetail
 )
 from apps.masterdata.saledata.views.warehouse import ProductWareHouseLotList, ProductWareHouseSerialList
 
@@ -48,6 +50,13 @@ urlpatterns = [
     path('account/<str:pk>', AccountDetail.as_view(), name='AccountDetail'),
     path('accounts-map-employees', AccountsMapEmployeesList.as_view(), name='AccountsMapEmployeesList'),
     path('accounts-sale', AccountForSaleList.as_view(), name='AccountForSaleList'),
+
+    # periods
+    path('periods', PeriodsList.as_view(), name='PeriodsList'),
+    path('period/<str:pk>', PeriodsDetail.as_view(), name='PeriodsDetail'),
+
+    # periods
+    path('revenue-plan-config', RevenuePlanConfigList.as_view(), name='RevenuePlanConfigList'),
 ]
 
 urlpatterns += [
