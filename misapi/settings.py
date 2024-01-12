@@ -105,6 +105,7 @@ INSTALLED_APPS = \
         'apps.eoffice.businesstrip',
         'apps.eoffice.assettools',
         'apps.eoffice.meeting',
+        'apps.sales.revenue_plan',
 
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
@@ -642,3 +643,4 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
 EMAIL_CONFIG_PASSWORD = 'email-cfg-pwd+M2fwL5JV~}Y+a4Bp_nv@(c/N$Qs*r;Wj)C3kFD]!=x.`&z:>hq'
+DJANGO_CELERY_BEAT_TZ_AWARE = False

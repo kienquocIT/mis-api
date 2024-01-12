@@ -11,3 +11,5 @@ from .warehouse import *
 from .good_receipt import *
 from .expense_item import *
 from .contacts import *
+from .periods import *
+from .revenue_plan_config import *

@@ -14,6 +14,9 @@ class ConfigPaymentTermList(BaseListMixin, BaseCreateMixin):
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_MASTER_DATA_FIELD_HIDDEN_DEFAULT
 
+    def get_queryset(self):
+        return super().get_queryset().prefetch_related("term_payment_term",)
+
     @swagger_auto_schema(
         operation_summary="Payment terms list",
         operation_description="Payment terms list",
