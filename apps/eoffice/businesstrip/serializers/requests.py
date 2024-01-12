@@ -148,7 +148,6 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
         except city.DoesNotExist:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_DEPARTURE})
 
-
     @classmethod
     def validate_destination(cls, value):
         city = DisperseModel(app_model='base.City').get_model()

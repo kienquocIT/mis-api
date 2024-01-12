@@ -41,6 +41,10 @@ class AssetToolsProvide(DataAbstractModel):
         help_text='',
         null=True,
     )
+    complete_delivered = models.BooleanField(
+        verbose_name='Complete Delivered',
+        help_text='request has complete delivered',
+        default=False, null=True)
 
     def code_generator(self):
         ast_p = AssetToolsProvide.objects.filter_current(
@@ -143,6 +147,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         )
     )
     subtotal = models.FloatField(default=0, verbose_name='Subtotal price')
+    delivered = models.FloatField(default=0, verbose_name='Product is delivered')
 
     def create_backup_data(self):
         if self.tax and not self.tax_data:
