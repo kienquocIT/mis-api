@@ -116,6 +116,7 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
 class ReportPipelineListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportPipeline
@@ -123,6 +124,7 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
             'id',
             'opportunity',
             'employee_inherit',
+            'group',
         )
 
     @classmethod

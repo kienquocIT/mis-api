@@ -284,6 +284,10 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab detail',
         'code': 'quotation_products_data',
         'remark': 'Tab line detail of quotation',
+        'code_related': [
+            'quotation_costs_data', 'quotation_indicators_data',
+            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
+        ],
         'type': 1,
     },
     'fda17a32-9f16-4e7c-b7db-53f007f6467b': {
@@ -298,6 +302,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab cost',
         'code': 'quotation_costs_data',
         'remark': 'Tab cost of quotation',
+        'code_related': ['quotation_indicators_data'],
         'type': 1,
     },
     '10946df3-1e9d-4538-9173-7f75861ab7ed': {
@@ -305,6 +310,7 @@ AppProp_SaleData_Quotation_data = {
         'title': 'Tab expense',
         'code': 'quotation_expenses_data',
         'remark': 'Tab expense of quotation',
+        'code_related': ['quotation_indicators_data'],
         'type': 1,
     },
     'd846692b-9d65-4dcb-a667-4318cae17a18': {
@@ -950,6 +956,10 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab detail',
         'code': 'sale_order_products_data',
         'remark': 'Tab line detail of sale order',
+        'code_related': [
+            'sale_order_costs_data', 'sale_order_indicators_data',
+            'total_cost_pretax_amount', 'total_cost_tax', 'total_cost'
+        ],
         'type': 1,
     },
     'd13549a8-a1c1-450e-818a-613cde814d6a': {
@@ -964,6 +974,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab cost',
         'code': 'sale_order_costs_data',
         'remark': 'Tab cost of sale order',
+        'code_related': ['sale_order_indicators_data'],
         'type': 1,
     },
     '4ac8ebc5-adfd-4078-9834-51de58c064d1': {
@@ -971,6 +982,7 @@ AppProp_SaleData_SaleOrder_data = {
         'title': 'Tab expense',
         'code': 'sale_order_expenses_data',
         'remark': 'Tab expense of sale order',
+        'code_related': ['sale_order_indicators_data'],
         'type': 1,
     },
     'c12b9e32-1043-492c-ac33-78e838c43aac': {
