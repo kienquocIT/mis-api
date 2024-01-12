@@ -769,10 +769,25 @@ def update_admin_not_have_available():
 
 
 def re_init_available():
+    # delete all leave available and for loop in company, get all employee and create new available via function
+    # leave_available_map_employee
     LeaveAvailable.objects.all().delete()
     for obj in Company.objects.all():
         for employee in Employee.objects.all():
             leave_available_map_employee(employee, obj)
+
+
+def update_special_leave():
+    list_leave = LeaveAvailable.objects.filter(leave_type__code__in=['FF', 'MY', 'MC'])
+    for item in list_leave:
+        if item.leave_type.code == 'MC':
+            item.total = 1
+        else:
+            item.total = 3
+        item.used = 0
+        item.available = 0
+    LeaveAvailable.objects.bulk_update(list_leave, fields=['total', 'used', 'available'])
+    print('Done re-init all leave available!')
 
 
 def make_sure_function_purchase_request_config():
