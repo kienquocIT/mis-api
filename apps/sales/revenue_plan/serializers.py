@@ -12,7 +12,17 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RevenuePlan
-        fields = '__all__'
+        fields = (
+            'id',
+            'code',
+            'title',
+            'period_mapped',
+            'employee_created',
+            'date_created',
+            'company_month_target',
+            'company_quarter_target',
+            'company_year_target',
+        )
 
     @classmethod
     def get_period_mapped(cls, obj):

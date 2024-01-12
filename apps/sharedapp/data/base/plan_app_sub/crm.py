@@ -1271,6 +1271,82 @@ REPORT_CUSTOMER_APP_CONFIG = {
     },
 }
 
+REPORT_PIPELINE_APP_CONFIG = {
+    "id": "298c8b6f-6a62-493f-b0ac-d549a4541497",
+    "title": "Report Pipeline",
+    "code": "reportpipeline",
+    "model_code": "reportpipeline",
+    "app_label": "report",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
+REVENUE_PLAN_APP_CONFIG = {
+    "id": "e4ae0a2c-2130-4a65-b644-1b79db3d033b",
+    "title": "Revenue Plan",
+    "code": "revenueplan",
+    "model_code": "revenueplan",
+    "app_label": "revenue_plan",
+    "is_workflow": False,
+    "app_depend_on": [],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1447,6 +1523,14 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "d633036a-8937-4f9d-a227-420e061496fc": ApplicationConfigFrame(**REPORT_CUSTOMER_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "298c8b6f-6a62-493f-b0ac-d549a4541497": ApplicationConfigFrame(**REPORT_PIPELINE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "e4ae0a2c-2130-4a65-b644-1b79db3d033b": ApplicationConfigFrame(**REVENUE_PLAN_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )

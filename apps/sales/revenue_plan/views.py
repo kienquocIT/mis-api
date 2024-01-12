@@ -27,7 +27,8 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
         operation_description="Get RevenuePlan List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -38,7 +39,8 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
         request_body=RevenuePlanCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -60,7 +62,8 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         operation_description="Get RevenuePlan detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -71,7 +74,8 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=RevenuePlanUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)

@@ -210,6 +210,14 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "d633036a-8937-4f9d-a227-420e061496fc",  # Report Customer
     },
+    "298c8b6f-6a62-493f-b0ac-d549a4541497": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "298c8b6f-6a62-493f-b0ac-d549a4541497",  # Report Pipeline
+    },
+    "e4ae0a2c-2130-4a65-b644-1b79db3d033b": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "e4ae0a2c-2130-4a65-b644-1b79db3d033b",  # Revenue Plan
+    },
 }
 
 _PlanApplication_eOffice_data = {
