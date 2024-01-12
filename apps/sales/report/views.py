@@ -121,7 +121,7 @@ class ReportPipelineList(BaseListMixin):
         operation_description="Get report pipeline list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
         label_code='report', model_code='reportpipeline', perm_code='view',
     )
     def get(self, request, *args, **kwargs):

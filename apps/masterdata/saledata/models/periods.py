@@ -5,6 +5,7 @@ from apps.shared import MasterDataAbstractModel
 class Periods(MasterDataAbstractModel):
     fiscal_year = models.IntegerField(null=False)
     start_date = models.DateField(null=False)
+    planned = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = 'Periods'

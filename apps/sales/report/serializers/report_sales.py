@@ -127,13 +127,23 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
+        stages = obj.opportunity.opportunity_stage_opportunity.all()
+        stage_current = None
+        for stage in stages:
+            if stage.is_current:
+                stage_current = {
+                    'id': stage.stage_id,
+                    'is_current': stage.is_current,
+                    'indicator': stage.stage.indicator,
+                    'win_rate': stage.stage.win_rate
+                }
         return {
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
             'code': obj.opportunity.code,
             'open_date': obj.opportunity.open_date,
             'close_date': obj.opportunity.close_date,
-            'value': obj.opportunity.total_product_pretax_amount,
+            'value': obj.opportunity.total_product,
             'win_rate': obj.opportunity.win_rate,
             'forecast_value': (obj.opportunity.total_product_pretax_amount * obj.opportunity.win_rate) / 100,
             'customer': {
@@ -145,7 +155,8 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
             'email': obj.opportunity.opportunity_send_email.count(),
             'meeting': obj.opportunity.opportunity_meeting.count(),
             'document': obj.opportunity.opportunity_document.count(),
-        } if obj.opportunity else {}
+            'stage': stage_current
+        }
 
     @classmethod
     def get_employee_inherit(cls, obj):

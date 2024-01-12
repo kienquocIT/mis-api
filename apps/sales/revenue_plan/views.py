@@ -16,15 +16,19 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
     serializer_detail = RevenuePlanListSerializer
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
-    # def get_queryset(self):
-    #     return super().get_queryset().select_related().prefetch_related()
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'period_mapped',
+            'employee_created'
+        ).prefetch_related()
 
     @swagger_auto_schema(
         operation_summary="RevenuePlan List",
         operation_description="Get RevenuePlan List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -35,7 +39,8 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
         request_body=RevenuePlanCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -47,14 +52,18 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     serializer_update = RevenuePlanUpdateSerializer
 
     def get_queryset(self):
-        return super().get_queryset().select_related().prefetch_related()
+        return super().get_queryset().select_related('period_mapped').prefetch_related(
+            'revenue_plan_mapped_group__group_mapped',
+            'revenue_plan_mapped_group_employee__employee_mapped'
+        )
 
     @swagger_auto_schema(
         operation_summary="RevenuePlan detail",
         operation_description="Get RevenuePlan detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -65,7 +74,8 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=RevenuePlanUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='revenue_plan', model_code='revenueplan', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
