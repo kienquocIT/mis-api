@@ -1,5 +1,7 @@
 from datetime import datetime
 from rest_framework import serializers
+
+from apps.masterdata.saledata.models import Periods
 from apps.sales.revenue_plan.models import (
     RevenuePlanGroup, RevenuePlanGroupEmployee, RevenuePlan
 )
@@ -173,6 +175,9 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        # if validate_data['period_mapped']:
+        #     if validate_data['period_mapped'].start_date.year < datetime.now().year:
+        #         raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
         return validate_data
 
     def update(self, instance, validated_data):

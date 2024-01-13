@@ -18,6 +18,7 @@ class SaleMsg:
     SAVE_FILES_ERROR = _('Can not save files.')
     CAN_NOT_REACTIVE = _('Can not reactive cancelled activity.')
     PERIOD_HAS_PLAN = _('This period had been planned.')
+    PERIOD_FINISHED = _('This period had been finished.')
 
 
 class SaleTask:
