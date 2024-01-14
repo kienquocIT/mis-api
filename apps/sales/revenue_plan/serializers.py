@@ -11,6 +11,7 @@ from apps.shared import SaleMsg
 class RevenuePlanListSerializer(serializers.ModelSerializer):
     period_mapped = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = RevenuePlan
@@ -24,6 +25,7 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
             'company_month_target',
             'company_quarter_target',
             'company_year_target',
+            'status'
         )
 
     @classmethod
@@ -42,6 +44,12 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
             'code': obj.employee_created.code,
             'full_name': obj.employee_created.get_full_name(2),
         } if obj.employee_created else {}
+
+    @classmethod
+    def get_status(cls, obj):
+        if obj.period_mapped.start_date.year < datetime.now().year:
+            return 'Closed'
+        return 'Opening'
 
 
 def create_revenue_plan_group(revenue_plan, revenue_plan_group_data):
@@ -82,6 +90,9 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
+        # if validate_data['period_mapped']:
+        #     if validate_data['period_mapped'].start_date.year < datetime.now().year:
+        #         raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
         return validate_data
 
     def create(self, validated_data):
