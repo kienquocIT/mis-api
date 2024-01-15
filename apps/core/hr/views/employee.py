@@ -345,6 +345,7 @@ class EmployeeDetail(BaseRetrieveMixin, BaseUpdateMixin, generics.GenericAPIView
 
 class EmployeeCompanyList(BaseListMixin, generics.GenericAPIView):
     queryset = Employee.objects
+    search_fields = ["search_content"]
     filterset_fields = {
         'company_id': ['exact'],
         'role__id': ['exact'],
