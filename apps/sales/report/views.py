@@ -113,9 +113,16 @@ class ReportPipelineList(BaseListMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
+            "opportunity",
             "employee_inherit",
             "employee_inherit__group",
             "opportunity__customer",
+        ).prefetch_related(
+            'opportunity__opportunity_calllog',
+            'opportunity__opportunity_send_email',
+            'opportunity__opportunity_meeting',
+            'opportunity__opportunity_document',
+            'opportunity__opportunity_stage_opportunity',
         )
 
     @swagger_auto_schema(

@@ -129,16 +129,15 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
     @classmethod
     def get_opportunity(cls, obj):
-        stages = obj.opportunity.opportunity_stage_opportunity.all()
-        stage_current = None
-        for stage in stages:
-            if stage.is_current:
-                stage_current = {
-                    'id': stage.stage_id,
-                    'is_current': stage.is_current,
-                    'indicator': stage.stage.indicator,
-                    'win_rate': stage.stage.win_rate
-                }
+        stage = obj.opportunity.opportunity_stage_opportunity.select_related('stage').filter(is_current=True).first()
+        stage_current = {}
+        if stage:
+            stage_current = {
+                'id': stage.stage_id,
+                'is_current': stage.is_current,
+                'indicator': stage.stage.indicator,
+                'win_rate': stage.stage.win_rate
+            }
         return {
             'id': obj.opportunity_id,
             'title': obj.opportunity.title,
