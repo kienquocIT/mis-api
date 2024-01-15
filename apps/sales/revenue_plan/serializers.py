@@ -1,7 +1,7 @@
 from datetime import datetime
 from rest_framework import serializers
 
-from apps.masterdata.saledata.models import Periods
+# from apps.masterdata.saledata.models import Periods
 from apps.sales.revenue_plan.models import (
     RevenuePlanGroup, RevenuePlanGroupEmployee, RevenuePlan
 )
