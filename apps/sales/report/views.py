@@ -1,6 +1,5 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.report.filters import ReportPipelineListFilter
 from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer
@@ -108,7 +107,6 @@ class ReportPipelineList(BaseListMixin):
         'employee_inherit_id': ['exact', 'in'],
         'opportunity__close_date': ['exact', 'gte', 'lte'],
     }
-    # filterset_class = ReportPipelineListFilter
     serializer_list = ReportPipelineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
 
