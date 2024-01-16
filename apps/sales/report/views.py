@@ -107,6 +107,7 @@ class ReportPipelineList(BaseListMixin):
     filterset_fields = {
         'employee_inherit__group_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
+        'opportunity__close_date': ['exact', 'gte', 'lte'],
     }
     serializer_list = ReportPipelineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

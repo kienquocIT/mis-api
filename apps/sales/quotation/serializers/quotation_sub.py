@@ -533,24 +533,17 @@ class QuotationCommonValidate:
 
 # SUB SERIALIZERS
 class QuotationProductSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
-    promotion = serializers.CharField(
-        max_length=550,
+    promotion = serializers.UUIDField(
         allow_null=True
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -738,20 +731,16 @@ class QuotationLogisticSerializer(serializers.ModelSerializer):
 
 
 class QuotationCostSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField(
         allow_null=True
     )
-    tax = serializers.CharField(
-        max_length=550,
+    tax = serializers.UUIDField(
         required=False
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -855,25 +844,19 @@ class QuotationCostsListSerializer(serializers.ModelSerializer):
 
 
 class QuotationExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.CharField(
-        max_length=550,
+    expense = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    expense_item = serializers.CharField(
-        max_length=550,
+    expense_item = serializers.UUIDField(
         allow_null=True,
     )
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False,
     )
 
@@ -927,9 +910,7 @@ class QuotationExpenseSerializer(serializers.ModelSerializer):
 
 
 class QuotationIndicatorSerializer(serializers.ModelSerializer):
-    indicator = serializers.CharField(
-        max_length=550
-    )
+    indicator = serializers.UUIDField()
 
     class Meta:
         model = QuotationIndicator
