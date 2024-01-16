@@ -494,24 +494,17 @@ class SaleOrderCommonValidate:
 
 # SUB SERIALIZERS
 class SaleOrderProductSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
-        allow_null=True
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
-    promotion = serializers.CharField(
-        max_length=550,
+    promotion = serializers.UUIDField(
         allow_null=True
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -647,20 +640,16 @@ class SaleOrderLogisticSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderCostSerializer(serializers.ModelSerializer):
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField(
         allow_null=True
     )
-    tax = serializers.CharField(
-        max_length=550,
+    tax = serializers.UUIDField(
         required=False
     )
-    shipping = serializers.CharField(
-        max_length=550,
+    shipping = serializers.UUIDField(
         allow_null=True
     )
 
@@ -764,25 +753,19 @@ class SaleOrderCostsListSerializer(serializers.ModelSerializer):
 
 
 class SaleOrderExpenseSerializer(serializers.ModelSerializer):
-    expense = serializers.CharField(
-        max_length=550,
+    expense = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    expense_item = serializers.CharField(
-        max_length=550,
+    expense_item = serializers.UUIDField(
         allow_null=True,
     )
-    product = serializers.CharField(
-        max_length=550,
+    product = serializers.UUIDField(
         allow_null=True,
         required=False,
     )
-    unit_of_measure = serializers.CharField(
-        max_length=550
-    )
-    tax = serializers.CharField(
-        max_length=550,
+    unit_of_measure = serializers.UUIDField()
+    tax = serializers.UUIDField(
         required=False
     )
 
@@ -839,9 +822,7 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
     # indicator = serializers.CharField(
     #     max_length=550
     # )
-    quotation_indicator = serializers.CharField(
-        max_length=550
-    )
+    quotation_indicator = serializers.UUIDField()
 
     class Meta:
         model = SaleOrderIndicator
