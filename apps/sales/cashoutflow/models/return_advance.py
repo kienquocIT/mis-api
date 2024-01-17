@@ -40,10 +40,12 @@ class ReturnAdvance(DataAbstractModel):
     def update_advance_payment_cost(cls, instance):
         # instance.money_received = True
         # instance.save(update_fields=['money_received'])
-        for item in instance.return_advance.all():
-            item.advance_payment_cost.sum_return_value += item.return_value
-            item.advance_payment_cost.save(update_fields=['sum_return_value'])
-        return True
+        if instance.money_received:
+            for item in instance.return_advance.all():
+                item.advance_payment_cost.sum_return_value += item.return_value
+                item.advance_payment_cost.save(update_fields=['sum_return_value'])
+            return True
+        return False
 
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
