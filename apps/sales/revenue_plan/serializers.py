@@ -90,9 +90,9 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        # if validate_data['period_mapped']:
-        #     if validate_data['period_mapped'].start_date.year < datetime.now().year:
-        #         raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
+        if validate_data['period_mapped']:
+            if validate_data['period_mapped'].start_date.year < datetime.now().year:
+                raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
         return validate_data
 
     def create(self, validated_data):
@@ -186,9 +186,9 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, validate_data):
-        # if validate_data['period_mapped']:
-        #     if validate_data['period_mapped'].start_date.year < datetime.now().year:
-        #         raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
+        if validate_data['period_mapped']:
+            if validate_data['period_mapped'].start_date.year < datetime.now().year:
+                raise serializers.ValidationError({'Period': SaleMsg.PERIOD_FINISHED})
         return validate_data
 
     def update(self, instance, validated_data):
