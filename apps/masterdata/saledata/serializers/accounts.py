@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
+from apps.masterdata.saledata.models import Term
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
@@ -7,7 +8,6 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
-from apps.masterdata.saledata.serializers import TermSerializer
 from apps.shared import AccountsMsg, HRMsg, AbstractDetailSerializerModel
 
 
@@ -734,6 +734,20 @@ class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
         }
 
 
+class TermSubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Term
+        fields = (
+            'value',
+            'unit_type',
+            'day_type',
+            'no_of_days',
+            'after',
+            'order',
+        )
+
+
+# Account serializer use for sale apps
 class AccountForSaleListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
@@ -796,7 +810,7 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
             'id': obj.payment_term_customer_mapped_id,
             'title': obj.payment_term_customer_mapped.title,
             'code': obj.payment_term_customer_mapped.code,
-            'term': TermSerializer(obj.payment_term_customer_mapped.term_payment_term.all(), many=True).data
+            'term': TermSubSerializer(obj.payment_term_customer_mapped.term_payment_term.all(), many=True).data
         } if obj.payment_term_customer_mapped else {}
 
     @classmethod
