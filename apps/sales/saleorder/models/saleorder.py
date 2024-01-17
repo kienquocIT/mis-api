@@ -781,7 +781,7 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
     )
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     date = models.DateTimeField(null=True)
-    date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date_type = models.SmallIntegerField(default=0)
     number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
