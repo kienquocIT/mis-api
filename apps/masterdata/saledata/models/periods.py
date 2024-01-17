@@ -3,6 +3,7 @@ from apps.shared import MasterDataAbstractModel
 
 
 class Periods(MasterDataAbstractModel):
+    space_month = models.IntegerField(default=0)
     fiscal_year = models.IntegerField(null=False)
     start_date = models.DateField(null=False)
     planned = models.BooleanField(default=False)
