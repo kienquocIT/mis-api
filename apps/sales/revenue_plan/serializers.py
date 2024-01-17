@@ -138,7 +138,8 @@ class RevenuePlanDetailSerializer(serializers.ModelSerializer):
             'id': obj.period_mapped_id,
             'code': obj.period_mapped.code,
             'title': obj.period_mapped.title,
-            'start_date': obj.period_mapped.start_date
+            'start_date': obj.period_mapped.start_date,
+            'space_month': obj.period_mapped.space_month
         } if obj.period_mapped else {}
 
     @classmethod
