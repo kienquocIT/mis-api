@@ -7,6 +7,7 @@ from apps.masterdata.saledata.models.accounts import (
 )
 from apps.masterdata.saledata.models.contacts import Contact
 from apps.masterdata.saledata.models.price import Price, Currency
+from apps.masterdata.saledata.serializers import TermSerializer
 from apps.shared import AccountsMsg, HRMsg, AbstractDetailSerializerModel
 
 
@@ -794,7 +795,8 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.payment_term_customer_mapped_id,
             'title': obj.payment_term_customer_mapped.title,
-            'code': obj.payment_term_customer_mapped.code
+            'code': obj.payment_term_customer_mapped.code,
+            'term': TermSerializer(obj.payment_term_customer_mapped.term_payment_term.all(), many=True).data
         } if obj.payment_term_customer_mapped else {}
 
     @classmethod
