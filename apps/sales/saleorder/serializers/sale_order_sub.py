@@ -10,7 +10,7 @@ from apps.masterdata.saledata.models.product import Product, UnitOfMeasure, Expe
 from apps.sales.opportunity.models import Opportunity
 from apps.sales.quotation.models import Quotation
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderLogistic, SaleOrderCost, SaleOrderExpense, \
-    SaleOrderIndicatorConfig, SaleOrderIndicator
+    SaleOrderIndicatorConfig, SaleOrderIndicator, SaleOrderPaymentStage
 from apps.sales.quotation.serializers import QuotationCommonValidate
 from apps.masterdata.saledata.serializers import ProductForSaleListSerializer
 from apps.shared import AccountsMsg, ProductMsg, PriceMsg, SaleMsg, HRMsg, PromoMsg, ShippingMsg
@@ -164,6 +164,18 @@ class SaleOrderCommonCreate:
         return True
 
     @classmethod
+    def create_payment_stage(cls, validated_data, instance):
+        SaleOrderPaymentStage.objects.bulk_create(
+            [SaleOrderPaymentStage(
+                sale_order=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                **sale_order_payment_stage,
+            ) for sale_order_payment_stage in validated_data['sale_order_payment_stage']]
+        )
+        return True
+
+    @classmethod
     def delete_old_product(cls, instance):
         old_product = SaleOrderProduct.objects.filter(sale_order=instance)
         if old_product:
@@ -196,6 +208,13 @@ class SaleOrderCommonCreate:
         old_indicator = SaleOrderIndicator.objects.filter(sale_order=instance)
         if old_indicator:
             old_indicator.delete()
+        return True
+
+    @classmethod
+    def delete_old_payment_stage(cls, instance):
+        old_payment_stage = SaleOrderPaymentStage.objects.filter(sale_order=instance)
+        if old_payment_stage:
+            old_payment_stage.delete()
         return True
 
     @classmethod
@@ -233,6 +252,14 @@ class SaleOrderCommonCreate:
             if is_update is True:
                 cls.delete_old_indicator(instance=instance)
             cls.create_indicator(
+                validated_data=validated_data,
+                instance=instance
+            )
+        # payment stage tab
+        if 'sale_order_payment_stage' in validated_data:
+            if is_update is True:
+                cls.delete_old_payment_stage(instance=instance)
+            cls.create_payment_stage(
                 validated_data=validated_data,
                 instance=instance
             )
@@ -844,3 +871,23 @@ class SaleOrderIndicatorSerializer(serializers.ModelSerializer):
     @classmethod
     def validate_quotation_indicator(cls, value):
         return QuotationCommonValidate().validate_indicator(value=value)
+
+
+class SaleOrderPaymentStageSerializer(serializers.ModelSerializer):
+    date = serializers.CharField(required=False, allow_null=True)
+    due_date = serializers.CharField(required=False, allow_null=True)
+
+    class Meta:
+        model = SaleOrderPaymentStage
+        fields = (
+            'stage',
+            'remark',
+            'date',
+            'date_type',
+            'number_of_day',
+            'payment_ratio',
+            'value_before_tax',
+            'due_date',
+            'is_ar_invoice',
+            'order',
+        )

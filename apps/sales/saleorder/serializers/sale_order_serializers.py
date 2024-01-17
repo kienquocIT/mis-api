@@ -4,7 +4,8 @@ from apps.core.workflow.tasks import decorator_run_workflow
 from apps.sales.opportunity.models import Opportunity, OpportunityActivityLogs
 from apps.sales.saleorder.serializers.sale_order_sub import SaleOrderCommonCreate, SaleOrderCommonValidate, \
     SaleOrderProductsListSerializer, SaleOrderCostsListSerializer, SaleOrderProductSerializer, \
-    SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer
+    SaleOrderLogisticSerializer, SaleOrderCostSerializer, SaleOrderExpenseSerializer, SaleOrderIndicatorSerializer, \
+    SaleOrderPaymentStageSerializer
 from apps.sales.saleorder.models import SaleOrderProduct, SaleOrderExpense, SaleOrder
 from apps.shared import SaleMsg, BaseMsg
 
@@ -119,6 +120,8 @@ class SaleOrderDetailSerializer(serializers.ModelSerializer):
             'delivery_call',
             # indicator tab
             'sale_order_indicators_data',
+            # payment stage tab
+            'sale_order_payment_stage',
             # system
             'workflow_runtime_id',
             'is_active',
@@ -236,6 +239,11 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # payment stage tab
+    sale_order_payment_stage = SaleOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -271,6 +279,8 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # payment stage tab
+            'sale_order_payment_stage',
             # system
             'system_status',
         )
@@ -398,6 +408,11 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         many=True,
         required=False
     )
+    # payment stage tab
+    sale_order_payment_stage = SaleOrderPaymentStageSerializer(
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = SaleOrder
@@ -433,6 +448,8 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
             'sale_order_expenses_data',
             # indicator tab
             'sale_order_indicators_data',
+            # payment stage tab
+            'sale_order_payment_stage',
             # status
             'system_status',
         )

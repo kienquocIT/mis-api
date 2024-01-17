@@ -164,6 +164,10 @@ class SaleOrder(DataAbstractModel):
         default=list,
         help_text="read data expense, use for get list or detail sale order"
     )
+    sale_order_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail sale order"
+    )
     # total amount of products
     total_product_pretax_amount = models.FloatField(
         default=0,
@@ -778,15 +782,16 @@ class SaleOrderPaymentStage(MasterDataAbstractModel):
     remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
     date = models.DateTimeField(null=True)
     date_type = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
     payment_ratio = models.FloatField(default=0)
     value_before_tax = models.FloatField(default=0)
-    number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
     due_date = models.DateTimeField(null=True)
     is_ar_invoice = models.BooleanField(default=False)
+    order = models.IntegerField(default=1)
 
     class Meta:
         verbose_name = 'Sale Order Payment Stage'
         verbose_name_plural = 'Sale Order Payment Stages'
-        ordering = ('stage',)
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
