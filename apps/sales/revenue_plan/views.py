@@ -14,6 +14,7 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
     serializer_list = RevenuePlanListSerializer
     serializer_create = RevenuePlanCreateSerializer
     serializer_detail = RevenuePlanListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
 
     def get_queryset(self):
@@ -50,6 +51,8 @@ class RevenuePlanDetail(BaseRetrieveMixin, BaseUpdateMixin):
     queryset = RevenuePlan.objects
     serializer_detail = RevenuePlanDetailSerializer
     serializer_update = RevenuePlanUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
 
     def get_queryset(self):
         return super().get_queryset().select_related('period_mapped').prefetch_related(

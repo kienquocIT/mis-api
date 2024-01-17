@@ -34,6 +34,7 @@ class ReportRevenueList(BaseListMixin):
         label_code='report', model_code='reportrevenue', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
 
 
@@ -64,6 +65,7 @@ class ReportProductList(BaseListMixin):
         label_code='report', model_code='reportproduct', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)
 
 
@@ -133,4 +135,5 @@ class ReportPipelineList(BaseListMixin):
         label_code='report', model_code='reportpipeline', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
         return self.list(request, *args, **kwargs)

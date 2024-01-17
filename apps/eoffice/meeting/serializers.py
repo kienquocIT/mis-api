@@ -154,8 +154,7 @@ def create_participants_mapped(meeting_schedule, participants_list):
         bulk_info.append(
             MeetingScheduleParticipant(
                 meeting_schedule_mapped=meeting_schedule,
-                participant_id=item.get('participant_id'),
-                is_external=item.get('is_external')
+                **item
             )
         )
     MeetingScheduleParticipant.objects.filter(meeting_schedule_mapped=meeting_schedule).delete()
@@ -342,7 +341,6 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
 
 class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
     participants = serializers.SerializerMethodField()
-    account_external = serializers.SerializerMethodField()
     meeting_room_mapped = serializers.SerializerMethodField()
     online_meeting_data = serializers.SerializerMethodField()
     attachment = serializers.SerializerMethodField()
@@ -358,24 +356,22 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_start_date',
             'meeting_start_time',
             'meeting_duration',
-            'account_external',
             'participants',
             'online_meeting_data',
             'attachment'
         )
 
     @classmethod
-    def get_account_external(cls, obj):
-        return {
-            'id': obj.account_external_id,
-            'name': obj.account_external.name,
-        } if obj.account_external else None
-
-    @classmethod
     def get_participants(cls, obj):
         participants = [{
-            'id': item.participant_id,
-            'full_name': item.participant.get_full_name(2),
+            'internal': {
+                'id': item.internal_id,
+                'full_name': item.internal.get_full_name(2)
+            } if item.internal else None,
+            'external': {
+                'id': item.external_id,
+                'full_name': item.external.fullname
+            } if item.external else None,
             'is_external': item.is_external,
         } for item in obj.meeting_schedule_mapped.all()]
         return participants
