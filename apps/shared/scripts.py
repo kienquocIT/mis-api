@@ -1228,7 +1228,7 @@ def make_sure_asset_config():
 
 def create_report_pipeline_by_opp():
     for opp in Opportunity.objects.all():
-        ReportPipeline.create_report_pipeline_by_opp(
+        ReportPipeline.push_from_opp(
             tenant_id=opp.tenant_id,
             company_id=opp.company_id,
             opportunity_id=opp.id,
