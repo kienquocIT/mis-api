@@ -6,7 +6,9 @@ from django.db import models
 from django.utils import timezone
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel
+from apps.masterdata.saledata.models import ProductWareHouse
+from apps.shared import DataAbstractModel, AssetToolsMsg
+from .provide import AssetToolsProvideProduct
 
 
 class AssetToolsDelivery(DataAbstractModel):
@@ -30,14 +32,20 @@ class AssetToolsDelivery(DataAbstractModel):
         verbose_name='Request provide of employee backup data',
         help_text=json.dumps(
             [
-                {'id': '', 'full_name': '', 'code': '', 'group': {'id': '', 'title':'', 'code': ''}}
+                {'id': '', 'full_name': '', 'code': '', 'group': {'id': '', 'title': '', 'code': ''}}
             ]
         )
+    )
+    provide_inheritor = models.ForeignKey(
+        'hr.Employee', null=True, on_delete=models.SET_NULL,
+        help_text='Provide inheritor',
+        related_name='%(app_label)s_%(class)s_employee_inheritor',
     )
     remark = models.CharField(
         verbose_name='Descriptions',
         max_length=500,
         null=True,
+        blank=True
     )
     products = models.ManyToManyField(
         'saledata.Product',
@@ -68,26 +76,47 @@ class AssetToolsDelivery(DataAbstractModel):
                 code += f".{num_quotient}"
             self.code = code
 
-    def update_product_using(self):
-        prod_list = ProductDeliveredMapProvide.objects.filter(
-            delivery_id=str(self.id)
-        )
-        # print('count list get create :', prod_list.count())
-        for item in prod_list:
-            if item.product_using <= 0:
+    def update_product_used(self):
+        if not self.code:
+            prod_list = ProductDeliveredMapProvide.objects.filter(
+                delivery_id=str(self.id),
+            )
+            product_asset_list = []
+            product_warehouse_list = []
+            for item in prod_list:
                 count = item.done
-                try:
-                    lasted_item = ProductDeliveredMapProvide.objects.exclude(id=item.id).filter_current(
-                        fill__tenant=True, fill__company=True,
-                        product=item.product
-                    ).latest('date_delivered')
-                    if lasted_item:
-                        count = lasted_item.product_using + item.done
-                except Exception as err:
-                    print('not contain product before', err)
-                item.product_using += count
+                row_item = AssetToolsProvideProduct.objects.get(
+                    asset_tools_provide=self.provide,
+                    product=item.product
+                )
+                if row_item:
+                    # update delivered cho provide product
+                    row_item.delivered += count
+                    if row_item.delivered > row_item.quantity:
+                        raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
+                    product_asset_list.append(row_item)
 
-        ProductDeliveredMapProvide.objects.bulk_update(prod_list, fields=['product_using'])
+                    # update used_amount cho prod trong warehouse bảng ProductWareHouse
+                    if 1 in item.product.product_choice:
+                        prod_warehouse = item.product.product_warehouse_product.first()
+                        if (prod_warehouse.stock_amount - prod_warehouse.used_amount) < count:
+                            raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
+                        prod_warehouse.used_amount += count
+                        product_warehouse_list.append(prod_warehouse)
+            if product_asset_list:
+                AssetToolsProvideProduct.objects.bulk_update(product_asset_list, fields=['delivered'])
+            if product_warehouse_list:
+                ProductWareHouse.objects.bulk_update(product_warehouse_list, fields=['used_amount'])
+
+            check_lst = AssetToolsProvideProduct.objects.filter(asset_tools_provide=self.provide)
+            is_completed = True
+            for item in check_lst:
+                if item.quantity != item.delivered:
+                    is_completed = False
+                    break
+            if is_completed:
+                self.provide.complete_delivered = True
+                self.provide.save(update_fields=['complete_delivered'])
         return True
 
     def create_backup_data(self):
@@ -116,14 +145,13 @@ class AssetToolsDelivery(DataAbstractModel):
     def save(self, *args, **kwargs):
         self.before_save()
         if self.system_status >= 2:
+            self.update_product_used()
             self.code_generator()
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):
                     kwargs['update_fields'].append('code')
             else:
                 kwargs.update({'update_fields': ['code']})
-        if self.system_status >= 3:
-            self.update_product_using()
         super().save(*args, **kwargs)
 
     class Meta:
@@ -192,10 +220,6 @@ class ProductDeliveredMapProvide(DataAbstractModel):
     date_delivered = models.DateTimeField(
         default=timezone.now,
         help_text='Date delivered asset, tools',
-    )
-    product_using = models.IntegerField(
-        default=0, verbose_name='Product using',
-        help_text='total product had provided for employee'
     )
     order = models.IntegerField(
         default=1, verbose_name='Order',
