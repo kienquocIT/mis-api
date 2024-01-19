@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, MasterDataAbstractModel
 
 
 class PurchaseOrder(DataAbstractModel):
@@ -75,6 +75,10 @@ class PurchaseOrder(DataAbstractModel):
     is_all_receipted = models.BooleanField(
         default=False,
         help_text="True if all products are receipted by Goods Receipt"
+    )
+    purchase_order_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail purchase order"
     )
 
     class Meta:
@@ -378,5 +382,35 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         verbose_name = 'Purchase Order Request Product'
         verbose_name_plural = 'Purchase Order Request Products'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT PAYMENT TERM STAGE
+class PurchaseOrderPaymentStage(MasterDataAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_payment_stage_po",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    payment_ratio = models.FloatField(default=0)
+    value_before_tax = models.FloatField(default=0)
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="purchase_order_payment_stage_tax",
+        null=True
+    )
+    value_after_tax = models.FloatField(default=0)
+    due_date = models.DateTimeField(null=True)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Purchase Order Payment Stage'
+        verbose_name_plural = 'Purchase Order Payment Stages'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()
