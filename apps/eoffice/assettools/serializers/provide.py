@@ -247,7 +247,8 @@ class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
     @classmethod
     def get_product_available(cls, obj):
         if obj.product:
-            return obj.product.stock_amount
+            prod_warehouse = obj.product.product_warehouse_product.first()
+            return prod_warehouse.stock_amount - prod_warehouse.used_amount if prod_warehouse else 0
         return 0
 
     @classmethod

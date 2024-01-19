@@ -85,10 +85,9 @@ class AssetToolsDelivery(DataAbstractModel):
             product_warehouse_list = []
             for item in prod_list:
                 count = item.done
-                row_item = AssetToolsProvideProduct.objects.get(
+                row_item = item.product.product_map_asset_provide.filter(
                     asset_tools_provide=self.provide,
-                    product=item.product
-                )
+                ).first()  # bảng AssetToolsProvideProduct
                 if row_item:
                     # update delivered cho provide product
                     row_item.delivered += count
