@@ -216,9 +216,9 @@ class ReportCashflow(DataAbstractModel):
         related_name='report_cashflow_group_inherit',
     )
     due_date = models.DateTimeField(null=True)
-    value_estimate = models.FloatField(0)
-    value_actual = models.FloatField(0)
-    value_variance = models.FloatField(0)
+    value_estimate = models.FloatField(default=0)
+    value_actual = models.FloatField(default=0)
+    value_variance = models.FloatField(default=0)
 
     @classmethod
     def push_from_so_po(cls, bulk_data):
