@@ -390,7 +390,7 @@ class SaleOrder(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        if self.system_status == 2:  # added
             if not self.code:
                 code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=2)
                 if code_generated:
@@ -403,14 +403,19 @@ class SaleOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_product_wait_delivery_amount(self)
-                # reports
-                self.push_to_report_revenue(self)
-                self.push_to_report_product(self)
-                self.push_to_report_customer(self)
-                self.push_to_report_cashflow(self)
-                # final acceptance
-                self.push_to_final_acceptance(self)
+        if self.system_status == 3:  # finish
+            # check if date_approved then call related functions
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    if 'date_approved' in kwargs['update_fields']:
+                        self.update_product_wait_delivery_amount(self)
+                        # reports
+                        self.push_to_report_revenue(self)
+                        self.push_to_report_product(self)
+                        self.push_to_report_customer(self)
+                        self.push_to_report_cashflow(self)
+                        # final acceptance
+                        self.push_to_final_acceptance(self)
 
         # hit DB
         super().save(*args, **kwargs)

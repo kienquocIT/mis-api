@@ -265,7 +265,7 @@ class GoodsReceipt(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        if self.system_status == 2:  # added
             if not self.code:
                 self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
@@ -273,10 +273,15 @@ class GoodsReceipt(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.push_to_product_warehouse(self)
-                self.update_product_wait_receipt_amount(self)
-                self.update_gr_info_for_po(self)
-                self.update_is_all_receipted_po(self)
+        if self.system_status == 3:  # finish
+            # check if date_approved then call related functions
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    if 'date_approved' in kwargs['update_fields']:
+                        self.push_to_product_warehouse(self)
+                        self.update_product_wait_receipt_amount(self)
+                        self.update_gr_info_for_po(self)
+                        self.update_is_all_receipted_po(self)
 
         # hit DB
         super().save(*args, **kwargs)
