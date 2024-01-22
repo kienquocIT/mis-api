@@ -172,21 +172,21 @@ class PurchaseOrder(DataAbstractModel):
                     'quantity': po_product.product_quantity_order_actual,
                 }})
         po_purchase_requests = instance.purchase_requests.all()
-        for pr in po_purchase_requests:
+        for purchase_request in po_purchase_requests:
             so_rate = 0
-            for pr_product in pr.purchase_request.all():
+            for pr_product in purchase_request.purchase_request.all():
                 if str(pr_product.product_id) in po_products_json:
                     po_product_map = po_products_json[str(pr_product.product_id)]
                     so_rate += (pr_product.quantity / po_product_map.get('quantity', 0)) * 100
             # payment
             bulk_data = [ReportCashflow(
-                tenant_id=pr.sale_order.tenant_id,
-                company_id=pr.sale_order.company_id,
-                sale_order_id=pr.sale_order_id,
+                tenant_id=purchase_request.sale_order.tenant_id,
+                company_id=purchase_request.sale_order.company_id,
+                sale_order_id=purchase_request.sale_order_id,
                 purchase_order_id=instance.id,
                 cashflow_type=1,
-                employee_inherit_id=pr.sale_order.employee_inherit_id,
-                group_inherit_id=pr.sale_order.employee_inherit.group_id,
+                employee_inherit_id=purchase_request.sale_order.employee_inherit_id,
+                group_inherit_id=purchase_request.sale_order.employee_inherit.group_id,
                 due_date=payment_stage.due_date,
                 value_estimate_purchase=payment_stage.value_before_tax * so_rate / 100,
             ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
