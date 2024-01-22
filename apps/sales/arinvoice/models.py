@@ -1,7 +1,6 @@
 from django.db import models
-from apps.core.company.models import CompanyFunctionNumber
 from apps.shared import (
-    SimpleAbstractModel, DataAbstractModel, MasterDataAbstractModel,
+    SimpleAbstractModel, DataAbstractModel
 )
 # Create your models here.
 
