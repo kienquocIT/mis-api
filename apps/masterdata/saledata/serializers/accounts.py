@@ -28,6 +28,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "name",
             "website",
             "code",
+            "tax_code",
             "account_type",
             "industry",
             "manager",
