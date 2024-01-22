@@ -188,15 +188,17 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
 
 # REPORT CASHFLOW
 class ReportCashflowListSerializer(serializers.ModelSerializer):
-    opportunity = serializers.SerializerMethodField()
-    employee_inherit = serializers.SerializerMethodField()
-    group = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportCashflow
         fields = (
             'id',
-            'opportunity',
-            'employee_inherit',
-            'group',
+            # so
+            'value_estimate_sale',
+            'value_actual_sale',
+            'value_variance_sale',
+            # po
+            'value_estimate_purchase',
+            'value_actual_purchase',
+            'value_variance_purchase',
         )
