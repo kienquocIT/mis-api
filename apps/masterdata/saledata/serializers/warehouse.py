@@ -48,6 +48,7 @@ class WareHouseCreateSerializer(serializers.ModelSerializer):
             'agency',
             'full_address',
             'warehouse_type',
+            'is_dropship'
         )
 
     @classmethod
@@ -81,6 +82,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
             'district',
             'warehouse_type',
             'agency',
+            'is_dropship'
         )
 
     @classmethod
@@ -121,15 +123,7 @@ class WareHouseDetailSerializer(serializers.ModelSerializer):
 
 
 class WareHouseUpdateSerializer(serializers.ModelSerializer):
-    title = serializers.CharField(max_length=100, required=False)
-    remarks = serializers.CharField(required=False)
-    is_active = serializers.BooleanField(required=False)
     agency = serializers.UUIDField(required=False, allow_null=True)
-    # city = serializers.UUIDField(required=False)
-    # district = serializers.UUIDField(required=False)
-    # ward = serializers.UUIDField(required=False)
-    address = serializers.CharField(required=False)
-    full_address = serializers.CharField(required=False)
 
     class Meta:
         model = WareHouse
@@ -144,6 +138,7 @@ class WareHouseUpdateSerializer(serializers.ModelSerializer):
             'agency',
             'full_address',
             'warehouse_type',
+            'is_dropship'
         )
 
     @classmethod
