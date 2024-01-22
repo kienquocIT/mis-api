@@ -1,6 +1,6 @@
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
 from apps.sales.report.serializers.report_sales import ReportRevenueListSerializer, ReportProductListSerializer, \
     ReportCustomerListSerializer, ReportPipelineListSerializer
 from apps.shared import mask_view, BaseListMixin
@@ -108,6 +108,45 @@ class ReportPipelineList(BaseListMixin):
         'employee_inherit__group_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
         'opportunity__close_date': ['exact', 'gte', 'lte'],
+    }
+    serializer_list = ReportPipelineListSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            "opportunity",
+            "employee_inherit",
+            "employee_inherit__group",
+            "opportunity__customer",
+        ).prefetch_related(
+            'opportunity__opportunity_calllog',
+            'opportunity__opportunity_send_email',
+            'opportunity__opportunity_meeting',
+            'opportunity__opportunity_document',
+            'opportunity__opportunity_stage_opportunity',
+        )
+
+    @swagger_auto_schema(
+        operation_summary="Report pipeline list",
+        operation_description="Get report pipeline list",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='report', model_code='reportpipeline', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        self.pagination_class.page_size = -1
+        return self.list(request, *args, **kwargs)
+
+
+# REPORT PIPELINE
+class ReportCashflowList(BaseListMixin):
+    queryset = ReportCashflow.objects
+    search_fields = ['sale_order__title']
+    filterset_fields = {
+        'group_inherit_id': ['exact', 'in'],
+        'employee_inherit_id': ['exact', 'in'],
+        'due_date': ['exact', 'gte', 'lte'],
     }
     serializer_list = ReportPipelineListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT

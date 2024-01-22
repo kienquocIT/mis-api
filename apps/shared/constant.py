@@ -295,3 +295,9 @@ PAYMENT_TERM_STAGE = (
     (2, _('Delivery')),
     (3, _('Final acceptance')),
 )
+
+# REPORT
+REPORT_CASHFLOW_TYPE = (
+    (0, _('Sale order')),
+    (1, _('Purchase order')),
+)

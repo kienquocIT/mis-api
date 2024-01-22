@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.sales.report.models import ReportCashflow
 from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, MasterDataAbstractModel
 
 
@@ -160,6 +161,38 @@ class PurchaseOrder(DataAbstractModel):
             })
         return True
 
+    @classmethod
+    def push_to_report_cashflow(cls, instance):
+        po_products_json = {}
+        po_products = instance.purchase_order_product_order.all()
+        for po_product in po_products:
+            if str(po_product.product_id) not in po_products_json:
+                po_products_json.update({str(po_product.product_id): {
+                    'po': str(po_product.purchase_order_id),
+                    'quantity': po_product.product_quantity_order_actual,
+                }})
+        po_purchase_requests = instance.purchase_requests.all()
+        for pr in po_purchase_requests:
+            so_rate = 0
+            for pr_product in pr.purchase_request.all():
+                if str(pr_product.product_id) in po_products_json:
+                    po_product_map = po_products_json[str(pr_product.product_id)]
+                    so_rate += (pr_product.quantity / po_product_map.get('quantity', 0)) * 100
+            # payment
+            bulk_data = [ReportCashflow(
+                tenant_id=pr.sale_order.tenant_id,
+                company_id=pr.sale_order.company_id,
+                sale_order_id=pr.sale_order_id,
+                purchase_order_id=instance.id,
+                cashflow_type=1,
+                employee_inherit_id=pr.sale_order.employee_inherit_id,
+                group_inherit_id=pr.sale_order.employee_inherit.group_id,
+                due_date=payment_stage.due_date,
+                value_estimate_purchase=payment_stage.value_before_tax * so_rate / 100,
+            ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
+            ReportCashflow.push_from_so_po(bulk_data)
+        return True
+
     def save(self, *args, **kwargs):
         if self.system_status in [2, 3]:
             if not self.code:
@@ -172,6 +205,8 @@ class PurchaseOrder(DataAbstractModel):
                 self.update_remain_and_status_purchase_request(self)
                 self.update_is_all_ordered_purchase_request(self)
                 self.update_product_wait_receipt_amount(self)
+                # report
+                self.push_to_report_cashflow(self)
 
         # hit DB
         super().save(*args, **kwargs)

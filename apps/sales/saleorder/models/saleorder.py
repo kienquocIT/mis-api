@@ -356,7 +356,7 @@ class SaleOrder(DataAbstractModel):
             employee_inherit_id=instance.employee_inherit_id,
             group_inherit_id=instance.employee_inherit.group_id,
             due_date=payment_stage.due_date,
-            value_estimate=payment_stage.value_before_tax,
+            value_estimate_sale=payment_stage.value_before_tax,
         ) for payment_stage in instance.payment_stage_sale_order.all()]
         ReportCashflow.push_from_so_po(bulk_data)
         return True

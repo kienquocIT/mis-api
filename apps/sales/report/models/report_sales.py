@@ -1,6 +1,6 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel
+from apps.shared import DataAbstractModel, REPORT_CASHFLOW_TYPE
 
 
 class ReportRevenue(DataAbstractModel):
@@ -209,6 +209,16 @@ class ReportCashflow(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name='report_cashflow_sale_order',
     )
+    purchase_order = models.ForeignKey(
+        'purchasing.PurchaseOrder',
+        on_delete=models.CASCADE,
+        related_name='report_cashflow_purchase_order',
+        null=True
+    )
+    cashflow_type = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(REPORT_CASHFLOW_TYPE),
+    )
     group_inherit = models.ForeignKey(
         'hr.Group',
         null=True,
@@ -216,9 +226,14 @@ class ReportCashflow(DataAbstractModel):
         related_name='report_cashflow_group_inherit',
     )
     due_date = models.DateTimeField(null=True)
-    value_estimate = models.FloatField(default=0)
-    value_actual = models.FloatField(default=0)
-    value_variance = models.FloatField(default=0)
+    # so
+    value_estimate_sale = models.FloatField(default=0)
+    value_actual_sale = models.FloatField(default=0)
+    value_variance_sale = models.FloatField(default=0)
+    # po
+    value_estimate_purchase = models.FloatField(default=0)
+    value_actual_purchase = models.FloatField(default=0)
+    value_variance_purchase = models.FloatField(default=0)
 
     @classmethod
     def push_from_so_po(cls, bulk_data):
