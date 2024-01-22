@@ -1,5 +1,3 @@
-from django.shortcuts import render
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.shared import BaseListMixin, mask_view, BaseRetrieveMixin, BaseUpdateMixin, BaseCreateMixin

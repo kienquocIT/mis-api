@@ -1,6 +1,4 @@
 from rest_framework import serializers
-
-from apps.masterdata.saledata.models import Account
 from apps.sales.delivery.models import OrderDeliverySub
 from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems
 
