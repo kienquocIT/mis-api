@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems
+from apps.sales.arinvoice.models import ARInvoice, ARInvoiceDelivery, ARInvoiceItems, ARInvoiceAttachmentFile
 
 __all__ = [
     'DeliveryListSerializerForARInvoice',
@@ -9,6 +9,8 @@ __all__ = [
     'ARInvoiceCreateSerializer',
     'ARInvoiceUpdateSerializer'
 ]
+
+from apps.shared import SaleMsg
 
 
 class ARInvoiceListSerializer(serializers.ModelSerializer):
@@ -70,6 +72,22 @@ def create_item_and_discount_mapped(ar_invoice, data_item_list, data_discount_li
     return True
 
 
+def create_files_mapped(ar_invoice, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(ARInvoiceAttachmentFile(
+                ar_invoice=ar_invoice,
+                attachment_id=file_id,
+                order=index
+            ))
+        ARInvoiceAttachmentFile.objects.filter(ar_invoice=ar_invoice).delete()
+        ARInvoiceAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': SaleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+
 class ARInvoiceCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ARInvoice
@@ -105,6 +123,9 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             self.initial_data.get('data_item_list', []),
             self.initial_data.get('data_discount_list', [])
         )
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(ar_invoice, attachment.strip().split(','))
 
         return ar_invoice
 
@@ -114,6 +135,7 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     item_and_discount_mapped = serializers.SerializerMethodField()
     customer_mapped = serializers.SerializerMethodField()
     sale_order_mapped = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = ARInvoice
@@ -132,7 +154,8 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'invoice_example',
             'system_status',
             'delivery_mapped',
-            'item_and_discount_mapped'
+            'item_and_discount_mapped',
+            'attachment'
         )
 
     @classmethod
@@ -146,20 +169,20 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
     def get_item_and_discount_mapped(cls, obj):
         return [{
             'item_index': item.item_index,
-            'product_mapped': {
-                'id': item.product_mapped_id,
-                'code': item.product_mapped.code,
-                'title': item.product_mapped.title,
-            } if item.product_mapped else {},
-            'product_mapped_uom': {
-                'id': item.product_mapped_uom_id,
-                'code': item.product_mapped_uom.code,
-                'title': item.product_mapped_uom.title,
-            } if item.product_mapped_uom else {},
-            'product_mapped_quantity': item.product_mapped_quantity,
-            'product_mapped_unit_price': item.product_mapped_unit_price,
-            'product_mapped_tax_value': item.product_mapped_tax_value,
-            'product_mapped_subtotal': item.product_mapped_subtotal,
+            'product': {
+                'id': item.product_id,
+                'code': item.product.code,
+                'title': item.product.title,
+            } if item.product else {},
+            'product_uom': {
+                'id': item.product_uom_id,
+                'code': item.product_uom.code,
+                'title': item.product_uom.title,
+            } if item.product_uom else {},
+            'product_quantity': item.product_quantity,
+            'product_unit_price': item.product_unit_price,
+            'product_tax_value': item.product_tax_value,
+            'product_subtotal': item.product_subtotal,
             'discount_name': item.discount_name,
             'discount_uom': item.discount_uom,
             'discount_quantity': item.discount_quantity,
@@ -182,6 +205,11 @@ class ARInvoiceDetailSerializer(serializers.ModelSerializer):
             'code': obj.sale_order_mapped.code,
             'title': obj.sale_order_mapped.title,
         } if obj.sale_order_mapped else {}
+
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = ARInvoiceAttachmentFile.objects.select_related('attachment').filter(ar_invoice=obj)
+        return [item.attachment.get_detail() for item in att_objs]
 
 
 class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
@@ -212,6 +240,9 @@ class ARInvoiceUpdateSerializer(serializers.ModelSerializer):
             self.initial_data.get('data_item_list', []),
             self.initial_data.get('data_discount_list', [])
         )
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(instance, attachment.strip().split(','))
 
         return instance
 

@@ -35,8 +35,8 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
         operation_description="ARInvoice list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='arinvoice', model_code='arinvoice', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -47,8 +47,8 @@ class ARInvoiceList(BaseListMixin, BaseCreateMixin):
         request_body=ARInvoiceCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='arinvoice', model_code='arinvoice', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -65,8 +65,8 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'ar_invoice_items__product_mapped',
-            'ar_invoice_items__product_mapped_uom',
+            'ar_invoice_items__product',
+            'ar_invoice_items__product_uom',
             'ar_invoice_deliveries__delivery_mapped'
         ).select_related(
             'customer_mapped',
@@ -75,16 +75,16 @@ class ARInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail ARInvoice')
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='arinvoice', model_code='arinvoice', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ARInvoice", request_body=ARInvoiceUpdateSerializer)
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='cashoutflow', model_code='advancepayment', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='arinvoice', model_code='arinvoice', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.serializer_class = ARInvoiceUpdateSerializer
@@ -107,7 +107,7 @@ class DeliveryListForARInvoice(BaseListMixin):
     )
     @mask_view(
         login_require=True, auth_require=False,
-        label_code='delivery', model_code='orderDeliverySub', perm_code='view',
+        # label_code='delivery', model_code='orderDeliverySub', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
