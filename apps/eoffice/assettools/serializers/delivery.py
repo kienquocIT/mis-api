@@ -29,6 +29,9 @@ class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
 
 
 def create_products(instance, prod_list):
+    old_data = ProductDeliveredMapProvide.objects.filter(delivery=instance)
+    if old_data.exists():
+        old_data.delete()
     create_lst = []
     for item in prod_list:
         date_delivered = timezone.now()
@@ -126,26 +129,36 @@ class AssetToolsDeliveryCreateSerializer(serializers.ModelSerializer):
 
 
 class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
-    class Meta:
-        model = AssetToolsDelivery
-        fields = (
-            'id',
-            'title',
-            'code',
-            'employee_inherit',
-            'remark',
-            'attachments',
-            'provide_data',
-            'date_created',
-            'system_status',
-        )
-
-
-class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
-    employee_inherit_data = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    provide = serializers.SerializerMethodField()
+    products = serializers.SerializerMethodField()
 
     @classmethod
-    def get_employee_inherit_data(cls, obj):
+    def get_products(cls, obj):
+        if obj.products:
+            products_list = []
+            for item in list(obj.provide_map_delivery.all()):
+                products_list.append(
+                    {
+                        'order': item.order,
+                        'product_available': item.product.stock_amount,
+                        'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
+                        'warehouse': item.warehouse_data if hasattr(item, 'warehouse_data') else {},
+                        'request_number': item.request_number,
+                        'delivered_number': item.delivered_number,
+                        'done': item.done,
+                        'date_delivered': item.date_delivered,
+                    }
+                )
+            return products_list
+        return []
+
+    @classmethod
+    def get_provide(cls, obj):
+        return obj.provide_data if obj.provide_data else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
         return obj.employee_inherit_data if obj.employee_inherit_data else {}
 
     class Meta:
@@ -154,7 +167,39 @@ class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
             'id',
             'title',
             'code',
-            'employee_inherit_data',
+            'products',
+            'employee_inherit',
+            'remark',
+            'attachments',
+            'provide',
+            'date_created',
+            'system_status',
+        )
+
+
+class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
+    employee_inherit = serializers.SerializerMethodField()
+    employee_created = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return obj.employee_inherit_data if obj.employee_inherit_data else {}
+
+    @classmethod
+    def get_employee_created(cls, obj):
+        return {
+            'id': str(obj.employee_created.id),
+            'full_name': obj.employee_created.get_full_name(),
+        } if obj.employee_created else {}
+
+    class Meta:
+        model = AssetToolsDelivery
+        fields = (
+            'id',
+            'title',
+            'code',
+            'employee_inherit',
+            'employee_created',
             'date_created',
             'system_status'
         )
@@ -174,3 +219,51 @@ class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
             'product_data',
             'done'
         )
+
+
+class AssetToolsDeliveryUpdateSerializer(serializers.ModelSerializer):
+    employee_inherit_id = serializers.UUIDField()
+    products = AssetToolsProductsMapDeliverySerializer(many=True, required=False)
+
+    class Meta:
+        model = AssetToolsDelivery
+        fields = (
+            'title',
+            'remark',
+            'employee_inherit_id',
+            'attachments',
+            'provide',
+            'products',
+            'date_created',
+            'system_status',
+        )
+
+    @classmethod
+    def validate_employee_inherit_id(cls, value):
+        if not value:
+            raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
+        return value
+
+    def validate_attachments(self, attrs):
+        user = self.context.get('user', None)
+        if user and hasattr(user, 'employee_current_id'):
+            state, result = AssetToolsDeliveryAttachmentFile.valid_change(
+                current_ids=[str(idx) for idx in attrs], employee_id=user.employee_current_id, doc_id=None
+            )
+            if state is True:
+                return result
+            raise serializers.ValidationError({'attachment': AttachmentMsg.SOME_FILES_NOT_CORRECT})
+        raise serializers.ValidationError({'employee_id': HRMsg.EMPLOYEE_NOT_EXIST})
+
+    def update(self, instance, validated_data):
+        attachments = validated_data.pop('attachments', None)
+        products = validated_data.pop('products', None)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+        instance.save()
+        if products is not None:
+            create_products(instance, products)
+
+        if attachments is not None:
+            handle_attach_file(instance, attachments)
+        return instance
