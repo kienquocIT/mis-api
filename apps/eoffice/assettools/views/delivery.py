@@ -1,11 +1,11 @@
-__all__ = ['AssetToolsDeliveryRequestList', 'AssetToolsProductUsedList']
+__all__ = ['AssetToolsDeliveryRequestList', 'AssetToolsProductUsedList', 'AssetToolsDeliveryRequestDetail']
 
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.eoffice.assettools.models import AssetToolsDelivery, ProductDeliveredMapProvide
 from apps.eoffice.assettools.serializers import AssetToolsDeliveryCreateSerializer, AssetToolsDeliveryDetailSerializer,\
     AssetToolsProductUsedListSerializer, AssetToolsDeliveryListSerializer
-from apps.shared import BaseCreateMixin, mask_view, BaseListMixin
+from apps.shared import BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
 class AssetToolsDeliveryRequestList(BaseListMixin, BaseCreateMixin):
@@ -19,12 +19,8 @@ class AssetToolsDeliveryRequestList(BaseListMixin, BaseCreateMixin):
         'employee_created_id',
     ]
 
-    # def get_queryset(self):
-    #     return super().get_queryset().prefetch_related(
-    #         Prefetch(
-    #             'provide_map_delivery',
-    #         )
-    #     )
+    def get_queryset(self):
+        return super().get_queryset().select_related('employee_created')
 
     @swagger_auto_schema(
         operation_summary="Asset, Tools Delivery request list",
@@ -70,3 +66,22 @@ class AssetToolsProductUsedList(BaseListMixin):
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
+
+
+class AssetToolsDeliveryRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
+    queryset = AssetToolsDelivery.objects
+    serializer_detail = AssetToolsDeliveryDetailSerializer
+    # serializer_update = AssetToolsProvideUpdateSerializer
+    retrieve_hidden_field = BaseRetrieveMixin.RETRIEVE_HIDDEN_FIELD_DEFAULT
+    update_hidden_field = BaseUpdateMixin.UPDATE_HIDDEN_FIELD_DEFAULT
+
+    @swagger_auto_schema(
+        operation_summary="Asset delivery detail",
+        operation_description="get asset, tools delivery request detail",
+    )
+    @mask_view(
+        login_require=True, auth_require=True,
+        label_code='assetTools', model_code='AssetToolsDelivery', perm_code='view',
+    )
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)

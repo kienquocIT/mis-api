@@ -705,3 +705,7 @@ msgstr "Thời gian bắt đầu lớn hơn thời gian kết thúc"
 #
 msgid "Provide request not found"
 msgstr "Không tìm thấy phiếu cấp phát"
+
+#
+msgid "Error update product delivered"
+msgstr "Lỗi cập nhập sản phẩm đã bàn giao"

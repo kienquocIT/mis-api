@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
 
 
+# REPORT REVENUE
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
 
@@ -41,6 +42,7 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
         } if obj.sale_order else {}
 
 
+# REPORT PRODUCT
 class ReportProductListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
 
@@ -70,6 +72,7 @@ class ReportProductListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
 
+# REPORT CUSTOMER
 class ReportCustomerListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -113,6 +116,7 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
         } if obj.employee_inherit else {}
 
 
+# REPORT PIPELINE
 class ReportPipelineListSerializer(serializers.ModelSerializer):
     opportunity = serializers.SerializerMethodField()
     employee_inherit = serializers.SerializerMethodField()
@@ -180,3 +184,21 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
                 'title': obj.employee_inherit.group.title
             } if obj.employee_inherit.group else {}
         return {}
+
+
+# REPORT CASHFLOW
+class ReportCashflowListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ReportCashflow
+        fields = (
+            'id',
+            # so
+            'value_estimate_sale',
+            'value_actual_sale',
+            'value_variance_sale',
+            # po
+            'value_estimate_purchase',
+            'value_actual_purchase',
+            'value_variance_purchase',
+        )

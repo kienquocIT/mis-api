@@ -5,7 +5,7 @@ from apps.masterdata.saledata.models.accounts import Account
 from apps.masterdata.saledata.models.price import Tax
 from apps.masterdata.saledata.models.product import Product, UnitOfMeasure
 from apps.sales.purchasing.models import PurchaseRequestProduct, PurchaseOrderProduct, PurchaseOrderRequest, \
-    PurchaseRequest, PurchaseOrderRequestProduct, PurchaseQuotation, PurchaseOrderQuotation
+    PurchaseRequest, PurchaseOrderRequestProduct, PurchaseQuotation, PurchaseOrderQuotation, PurchaseOrderPaymentStage
 from apps.sales.saleorder.models import SaleOrderProduct
 from apps.shared import AccountsMsg, ProductMsg, PurchaseRequestMsg, SaleMsg, PurchasingMsg
 
@@ -41,6 +41,14 @@ class PurchaseOrderCommonCreate:
             'uom_order_actual': uom_order_actual,
             'tax': tax,
         }
+
+    @classmethod
+    def validate_payment_stage_data(cls, dict_data):
+        if 'tax' in dict_data:
+            tax_id = dict_data['tax'].get('id', None)
+            del dict_data['tax']
+            dict_data.update({'tax_id': tax_id})
+        return dict_data
 
     @classmethod
     def create_m2m_order_purchase_request(cls, validated_data, instance):
@@ -101,6 +109,20 @@ class PurchaseOrderCommonCreate:
         return True
 
     @classmethod
+    def create_payment_stage(cls, validated_data, instance):
+        bulk_info = []
+        for purchase_order_payment_stage in validated_data['purchase_order_payment_stage']:
+            valid_data = cls.validate_payment_stage_data(purchase_order_payment_stage)
+            bulk_info.append(PurchaseOrderPaymentStage(
+                purchase_order=instance,
+                tenant_id=instance.tenant_id,
+                company_id=instance.company_id,
+                **valid_data,
+            ))
+        PurchaseOrderPaymentStage.objects.bulk_create(bulk_info)
+        return True
+
+    @classmethod
     def delete_old_m2m_purchase_order_request(cls, instance):
         old_purchase_order_request = PurchaseOrderRequest.objects.filter(purchase_order=instance)
         if old_purchase_order_request:
@@ -135,6 +157,13 @@ class PurchaseOrderCommonCreate:
         return True
 
     @classmethod
+    def delete_old_payment_stage(cls, instance):
+        old_payment_stage = PurchaseOrderPaymentStage.objects.filter(purchase_order=instance)
+        if old_payment_stage:
+            old_payment_stage.delete()
+        return True
+
+    @classmethod
     def create_purchase_order_sub_models(cls, validated_data, instance, is_update=False):
         if 'purchase_requests_data' in validated_data:
             if is_update is True:
@@ -161,6 +190,13 @@ class PurchaseOrderCommonCreate:
             if is_update is True:
                 cls.delete_old_product(instance=instance)
             cls.create_product(
+                validated_data=validated_data,
+                instance=instance
+            )
+        if 'purchase_order_payment_stage' in validated_data:
+            if is_update is True:
+                cls.delete_old_payment_stage(instance=instance)
+            cls.create_payment_stage(
                 validated_data=validated_data,
                 instance=instance
             )

@@ -325,6 +325,25 @@ class QuotationCommonValidate:
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'sale_person': HRMsg.EMPLOYEES_NOT_EXIST})
 
+    # @classmethod
+    # def validate_product(cls, value):
+    #     try:
+    #         if value is None:
+    #             return {}
+    #         product = Product.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(product.id),
+    #             'title': product.title,
+    #             'code': product.code,
+    #             'product_choice': product.product_choice,
+    #         }
+    #     except Product.DoesNotExist:
+    #         raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
+
     @classmethod
     def validate_product(cls, value):
         try:
@@ -335,12 +354,7 @@ class QuotationCommonValidate:
                 fill__company=True,
                 id=value
             )
-            return {
-                'id': str(product.id),
-                'title': product.title,
-                'code': product.code,
-                'product_choice': product.product_choice,
-            }
+            return ProductForSaleListSerializer(product).data
         except Product.DoesNotExist:
             raise serializers.ValidationError({'product': ProductMsg.PRODUCT_DOES_NOT_EXIST})
 
@@ -442,6 +456,24 @@ class QuotationCommonValidate:
         except PaymentTerm.DoesNotExist:
             raise serializers.ValidationError({'payment_term': AccountsMsg.PAYMENT_TERM_NOT_EXIST})
 
+    # @classmethod
+    # def validate_promotion(cls, value):
+    #     try:
+    #         if value is None:
+    #             return {}
+    #         promotion = Promotion.objects.get_current(
+    #             fill__tenant=True,
+    #             fill__company=True,
+    #             id=value
+    #         )
+    #         return {
+    #             'id': str(promotion.id),
+    #             'title': promotion.title,
+    #             'code': promotion.code
+    #         }
+    #     except Promotion.DoesNotExist:
+    #         raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})
+
     @classmethod
     def validate_promotion(cls, value):
         try:
@@ -455,7 +487,32 @@ class QuotationCommonValidate:
             return {
                 'id': str(promotion.id),
                 'title': promotion.title,
-                'code': promotion.code
+                'code': promotion.code,
+                'valid_date_start': promotion.valid_date_start,
+                'valid_date_end': promotion.valid_date_end,
+                'remark': promotion.remark,
+                'currency': {
+                    'id': str(promotion.currency_id),
+                    'title': promotion.currency.title,
+                    'abbreviation': promotion.currency.abbreviation,
+                } if promotion.currency else {},
+                'customer_type': promotion.customer_type,
+                'customer_by_list': promotion.customer_by_list,
+                'customer_by_condition': promotion.customer_by_condition,
+                'customer_remark': promotion.customer_remark,
+                'is_discount': promotion.is_discount,
+                'is_gift': promotion.is_gift,
+                'discount_method': promotion.discount_method,
+                'gift_method': promotion.gift_method,
+                'sale_order_used': [
+                    {
+                        'customer_id': order_used[0],
+                        'date_created': order_used[1],
+                    } for order_used in promotion.sale_order_product_promotion.values_list(
+                        'sale_order__customer_id',
+                        'sale_order__date_created'
+                    )
+                ]
             }
         except Promotion.DoesNotExist:
             raise serializers.ValidationError({'promotion': PromoMsg.PROMOTION_NOT_EXIST})

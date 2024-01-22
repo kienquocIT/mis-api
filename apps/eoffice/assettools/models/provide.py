@@ -9,9 +9,10 @@ from apps.shared import DataAbstractModel, SimpleAbstractModel
 
 class AssetToolsProvide(DataAbstractModel):
     remark = models.CharField(
-        verbose_name='descriptions',
+        verbose_name='Descriptions',
         max_length=500,
         null=True,
+        blank=True
     )
     products = models.ManyToManyField(
         'saledata.Product',
@@ -128,7 +129,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         )
     )
     quantity = models.FloatField(
-        verbose_name='Quantity need pickup of SaleOrder',
+        verbose_name='Quantity of user request',
     )
     price = models.FloatField(default=0, verbose_name='Price')
     tax = models.ForeignKey(
@@ -165,7 +166,9 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         if self.product and not self.product_data:
             self.product_data = {
                 "id": str(self.product_id),
-                "title": str(self.product.title)
+                "title": str(self.product.title),
+                "code": self.product.code,
+                "is_inventory": self.product.product_choice == 1,
             }
 
     def before_save(self):

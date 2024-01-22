@@ -713,6 +713,8 @@ class TestCasePurchaseOrder(AdvanceTestCase):
                 'total_product_tax',
                 'total_product',
                 'total_product_revenue_before_tax',
+                # payment stage tab
+                'purchase_order_payment_stage',
                 # system
                 'system_status',
                 'workflow_runtime_id',
