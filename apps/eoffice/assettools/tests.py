@@ -114,6 +114,16 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.assertEqual(prod_resp.status_code, 201)
         self.product = prod_resp
 
+        self.warehouse = self.client.post(
+            reverse('WareHouseList'),
+            {
+                "title": "Kho công cụ, dụng cụ",
+                "remark": 'if we vibe, we vibe',
+                "full_address": '1696 Arden Way, Sacramento, California, United States'
+            },
+            format='json'
+        )
+
     def test_get_asset_tools_config(self):
         url = reverse('AssetToolConfigDetail')
         response = self.client.get(url, format='json')
@@ -121,7 +131,7 @@ class AssetToolsTestCase(AdvanceTestCase):
 
     def test_update_asset_tools_config(self):
         is_url = reverse('AssetToolConfigDetail')
-        data_update = {'product_type_id': self.product_type.data['result']['id']}
+        data_update = {'product_type_id': self.product_type.data['result']['id'], 'warehouse': self.warehouse.id}
         self.client.put(is_url, data_update, format='json')
         response = self.client.get(is_url, format='json')
         self.assertEqual(response.status_code, 200)
@@ -195,3 +205,29 @@ class AssetToolsTestCase(AdvanceTestCase):
         self.client.put(url, data_update, format='json')
         response = self.client.get(url, format='json')
         self.assertEqual(response.status_code, 200)
+
+    def test_create_asset_delivery(self):
+        time_now = timezone.now().strftime('%Y-%m-%d')
+        provided = self.test_create_asset_provide()
+        data = {
+            'date_created': time_now,
+            'title': 'Asset, tools delivery create',
+            "employee_inherit_id": str(self.employee.id),
+            "provide": provided.data['result']['id'],
+            "products": [
+                {
+                    "product": self.product.data['result']['id'],
+                    "order": 1,
+                    "tax": self.tax.data['result']['id'],
+                    "uom": self.uom.data['result']['id'],
+                    "quantity": 1,
+                    "price": 100,
+                    "subtotal": 100,
+                    "product_remark": "lorem ipsum"
+                }
+            ],
+            "system_status": 1,
+        }
+        # response = self.client.post(reverse('AssetToolsProvideRequestList'), data, format='json')
+        # self.assertEqual(response.status_code, 201)
+        # return response
