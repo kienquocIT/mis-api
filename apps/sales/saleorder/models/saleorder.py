@@ -391,20 +391,9 @@ class SaleOrder(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status == 2:  # added
-            if not self.code:
-                code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=2)
-                if code_generated:
-                    self.code = code_generated
-                else:
-                    self.code = self.generate_code(self.company_id)
-
-                if 'update_fields' in kwargs:
-                    if isinstance(kwargs['update_fields'], list):
-                        kwargs['update_fields'].append('code')
-                else:
-                    kwargs.update({'update_fields': ['code']})
-        if self.system_status == 3:  # finish
+        # if self.system_status == 2:  # added
+        if self.system_status in [2, 3]:  # added, finish
+            # check if not code then generate code
             if not self.code:
                 code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=2)
                 if code_generated:
