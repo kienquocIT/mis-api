@@ -110,6 +110,11 @@ class LeaveRequestCreateSerializer(serializers.ModelSerializer):
             d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
             if d_from > d_to:
                 raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
+            if available["check_balance"]:
+                crt_time = timezone.now().date()
+                leave_exp = datetime.strptime(available['expiration_date'], '%Y-%m-%d').date()
+                if crt_time > leave_exp:
+                    raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_EXPIRED})
         return value
 
     @decorator_run_workflow
@@ -219,6 +224,29 @@ class LeaveRequestUpdateSerializer(AbstractDetailSerializerModel):
         model = LeaveRequest
         fields = ('id', 'title', 'code', 'employee_inherit', 'request_date', 'detail_data', 'start_day', 'total',
                   'system_status')
+
+    @classmethod
+    def validate_detail_data(cls, value):
+        special_stock = {'FF': 0, 'MY': 0, 'MC': 0}
+        for item in value:
+            available = item["leave_available"]
+            if available["check_balance"]:
+                crt_time = timezone.now().date()
+                leave_exp = datetime.strptime(available['expiration_date'], '%Y-%m-%d').date()
+                if crt_time > leave_exp:
+                    raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_EXPIRED})
+            if item["subtotal"] > available["total"] and available["check_balance"]:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+
+            if available["leave_type"]["code"] in special_stock:
+                special_stock[available["leave_type"]["code"]] += item['subtotal']
+                if special_stock[available["leave_type"]["code"]] > available["total"]:
+                    raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_AVAILABLE_NUMBER})
+            d_from = datetime.strptime(item["date_from"], "%Y-%m-%d")
+            d_to = datetime.strptime(item["date_to"], "%Y-%m-%d")
+            if d_from > d_to:
+                raise serializers.ValidationError({'detail': LeaveMsg.EMPTY_DATE_ERROR})
+        return value
 
     def update_detail_data(self, instance, detail_list):
         company_id = str(self.context.get('company_id', ''))
