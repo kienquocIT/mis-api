@@ -95,6 +95,7 @@ MAP_FIELD_TITLE = {
     'cashoutflow.advancepayment': 'title',
     'cashoutflow.returnadvance': 'title',
     'assettools.assettoolsprovide': 'title',
+    'assettools.assettoolsdelivery': 'title',
 }
 
 CURRENCY_MASK_MONEY = {
@@ -293,4 +294,10 @@ PAYMENT_TERM_STAGE = (
     (1, _('Contract')),
     (2, _('Delivery')),
     (3, _('Final acceptance')),
+)
+
+# REPORT
+REPORT_CASHFLOW_TYPE = (
+    (0, _('Sale order')),
+    (1, _('Purchase order')),
 )

@@ -1,10 +1,8 @@
 from copy import deepcopy
 from datetime import datetime, timedelta
-import pytz
 from dateutil.relativedelta import relativedelta
 
 from celery import shared_task
-from django.conf import settings
 from django.utils import timezone
 
 from apps.shared import LEAVE_YEARS_SENIORITY
@@ -18,7 +16,7 @@ from .models import LeaveAvailable, LeaveType, LeaveAvailableHistory
 def create_new_available_end_year():
     # 12h khuya đầu năm mới sẽ run task
     # loop all employee => lấy ds available theo employee
-    # Step 2: từ mỗi ds trên filter ra 'ANPY', check nếu là năm cũ nhất gán năm cũ gần nhất (năm ngoái)cho ANPY này.
+    # Step 2: từ mỗi ds trên filter ra 'ANPY', check nếu là năm cũ nhất gán năm cũ gần nhất (năm ngoái) cho ANPY này.
     # Step 3: filter ra các loại # nếu hết hạn chuyển qua năm mới và reset về 0
     # step 4: reset 'AN' về 0 và chuyển qua năm mới
     current_date = timezone.now()
@@ -29,36 +27,37 @@ def create_new_available_end_year():
         for employee in Employee.objects.filter(is_active=True, is_delete=False, company=company):
             current_list = LeaveAvailable.objects.filter(check_balance=True, employee_inherit=employee)
             past_an = current_list.filter(leave_type__code='AN').first()
-            for item in current_list.filter(leave_type__code='ANPY'):  # (step 2)
-                if item.open_year == current_year - 3:
-                    item.open_year = deepcopy(current_year) - 1
-                    item.total = past_an.total
-                    item.used = past_an.used
-                    item.available = past_an.available
-                    date_current = timezone.now().replace(year=item.open_year, month=12, day=31)
-                    item.expiration_date = datetime.strftime(
-                        date_current + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
-                    )
-                    list_update.append(item)
-                else:
-                    item.open_year = deepcopy(current_year) - 2
-                    date_current = timezone.now().replace(year=item.open_year, month=12, day=31)
-                    item.expiration_date = datetime.strftime(
-                        date_current + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
-                    )
-                    list_update.append(item)
+            # (step 2)
+            anpy_list = current_list.filter(leave_type__code='ANPY').order_by('-open_year')
+            item_old = anpy_list[0]
+            item_last_old = anpy_list[1]
+            # năm cũ nhất
+            item_last_old.open_year = deepcopy(current_year) - 1
+            item_last_old.total = past_an.total
+            item_last_old.used = past_an.used
+            item_last_old.available = past_an.available
+            date_current = timezone.now().replace(year=item_last_old.open_year, month=12, day=31)
+            item_last_old.expiration_date = datetime.strftime(
+                date_current + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
+            )
+            list_update.append(item_last_old)
 
-            for item in current_list.exclude(leave_type__code__in=['ANPY', 'AN']):  # (Step 3)
-                expirate_date = pytz.timezone(settings.TIME_ZONE).localize(
-                    datetime.strptime(item.expiration_date, "%Y-%m-%d")
-                )
+            # năm kế (năm ngoái)
+            item_old.open_year = deepcopy(current_year) - 2
+            date_current2 = timezone.now().replace(year=item_old.open_year, month=12, day=31)
+            item_old.expiration_date = datetime.strftime(
+                date_current2 + relativedelta(months=anpy_config.prev_year), '%Y-%m-%d'
+            )
+            list_update.append(item_old)
+            # (Step 3)
+            for item in current_list.exclude(leave_type__code__in=['ANPY', 'AN']):
+                expirate_date = datetime.strptime(item.expiration_date, "%Y-%m-%d")
                 if expirate_date <= current_date:
                     item.open_year = current_year
                     item.total = 0
                     item.used = 0
                     item.available = 0
                     item.expiration_date = datetime.strftime(datetime(current_year, 12, 31), '%Y-%m-%d')
-                    item.check_balance = past_an.check_balance
                     list_update.append(item)
             # setup 4
             past_an.open_year = current_year
@@ -87,7 +86,6 @@ def diff_months_counter(dt_now, dt_begin):
 def leave_months_calc(dt_now, dt_begin, an_number):
     # năm thâm niên
     year_senior = (dt_now.date() - dt_begin.date()) / timedelta(days=365)
-
     # tính ngày added theo thâm niên
     added_days = 0
     for item in LEAVE_YEARS_SENIORITY:
@@ -96,8 +94,9 @@ def leave_months_calc(dt_now, dt_begin, an_number):
         elif item['to_range'] == 34 and year_senior > 34:
             added_days = item['added']
 
-    # tính tháng làm việc thực tế
-    months = diff_months_counter(dt_now, dt_begin)
+    # tính tháng làm việc thực tế CỦA năm tài chính hiện tại đang lấy năm theo phép AN
+    start_new_finance_year = dt_now.replace(month=1, day=1)
+    months = diff_months_counter(dt_now, start_new_finance_year)
     calc = months * (an_number + added_days) / an_number
 
     # làm tròn
@@ -127,12 +126,20 @@ def update_history(leave, total, quantity):
         action=1,
         quantity=quantity,
         adjusted_total=total + quantity,
-        type_arises=3
+        type_arises=2
     )
 
 
 @shared_task
 def update_annual_leave_each_month():
+    # lấy tất cả company, filter nv theo company
+    # => lấy config AN theo company để có dc no_of_paid cho việc tính công thức
+    # => nếu ko có ngày vào làm bỏ qua user này
+    # => tính toán và trả về số ngày sẽ dc add trong tháng này (crt_added)
+    # => nếu không phải là tháng 1 (tháng mới trong năm mới) thì lấy số add tháng trước trừ số add tháng này, ra dc số
+    # |__ngày add thực tế
+    # filter available có nv và có code == AN
+    # add thêm vào nv dc tính và ghi vào lịch sử thay đổi
     dt_crt = timezone.now()
     crt_moth = dt_crt.month
     new_year = crt_moth <= 1
@@ -145,7 +152,10 @@ def update_annual_leave_each_month():
             crt_added = leave_months_calc(dt_crt, emp_date_join, an_config.no_of_paid)
             if not new_year:
                 minus_1_month = deepcopy(dt_crt.month) - 1
-                past_added = leave_months_calc(dt_crt.replace(month=minus_1_month), emp_date_join, an_config.no_of_paid)
+                past_added = leave_months_calc(
+                    dt_crt.replace(month=minus_1_month), emp_date_join,
+                    an_config.no_of_paid
+                )
                 crt_added -= past_added
             leave = LeaveAvailable.objects.get(employee_inherit=employee, leave_type__code='AN')
             clone_total = deepcopy(leave.total)

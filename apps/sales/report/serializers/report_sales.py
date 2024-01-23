@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
-from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer, ReportPipeline, ReportCashflow
 
 
+# REPORT REVENUE
 class ReportRevenueListSerializer(serializers.ModelSerializer):
     sale_order = serializers.SerializerMethodField()
 
@@ -15,6 +16,7 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
             'revenue',
             'gross_profit',
             'net_income',
+            'group_inherit_id'
         )
 
     @classmethod
@@ -40,6 +42,7 @@ class ReportRevenueListSerializer(serializers.ModelSerializer):
         } if obj.sale_order else {}
 
 
+# REPORT PRODUCT
 class ReportProductListSerializer(serializers.ModelSerializer):
     product = serializers.SerializerMethodField()
 
@@ -69,8 +72,10 @@ class ReportProductListSerializer(serializers.ModelSerializer):
         } if obj.product else {}
 
 
+# REPORT CUSTOMER
 class ReportCustomerListSerializer(serializers.ModelSerializer):
     customer = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
 
     class Meta:
         model = ReportCustomer
@@ -81,6 +86,7 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
             'revenue',
             'gross_profit',
             'net_income',
+            'employee_inherit'
         )
 
     @classmethod
@@ -96,3 +102,103 @@ class ReportCustomerListSerializer(serializers.ModelSerializer):
                 'description': obj.customer.industry.description,
             } if obj.customer.industry else {}
         } if obj.customer else {}
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+        } if obj.employee_inherit else {}
+
+
+# REPORT PIPELINE
+class ReportPipelineListSerializer(serializers.ModelSerializer):
+    opportunity = serializers.SerializerMethodField()
+    employee_inherit = serializers.SerializerMethodField()
+    group = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReportPipeline
+        fields = (
+            'id',
+            'opportunity',
+            'employee_inherit',
+            'group',
+        )
+
+    @classmethod
+    def get_opportunity(cls, obj):
+        stage = obj.opportunity.opportunity_stage_opportunity.select_related('stage').filter(is_current=True).first()
+        stage_current = {}
+        if stage:
+            stage_current = {
+                'id': stage.stage_id,
+                'is_current': stage.is_current,
+                'indicator': stage.stage.indicator,
+                'win_rate': stage.stage.win_rate
+            }
+        return {
+            'id': obj.opportunity_id,
+            'title': obj.opportunity.title,
+            'code': obj.opportunity.code,
+            'open_date': obj.opportunity.open_date,
+            'close_date': obj.opportunity.close_date,
+            'value': obj.opportunity.total_product,
+            'win_rate': obj.opportunity.win_rate,
+            'forecast_value': (obj.opportunity.total_product_pretax_amount * obj.opportunity.win_rate) / 100,
+            'customer': {
+                'id': obj.opportunity.customer_id,
+                'title': obj.opportunity.customer.name,
+                'code': obj.opportunity.customer.code,
+            } if obj.opportunity.customer else {},
+            'call': obj.opportunity.opportunity_calllog.count(),
+            'email': obj.opportunity.opportunity_send_email.count(),
+            'meeting': obj.opportunity.opportunity_meeting.count(),
+            'document': obj.opportunity.opportunity_document.count(),
+            'stage': stage_current
+        }
+
+    @classmethod
+    def get_employee_inherit(cls, obj):
+        return {
+            'id': obj.employee_inherit_id,
+            'first_name': obj.employee_inherit.first_name,
+            'last_name': obj.employee_inherit.last_name,
+            'email': obj.employee_inherit.email,
+            'full_name': obj.employee_inherit.get_full_name(2),
+            'code': obj.employee_inherit.code,
+            'is_active': obj.employee_inherit.is_active,
+            'group_id': obj.employee_inherit.group_id,
+        } if obj.employee_inherit else {}
+
+    @classmethod
+    def get_group(cls, obj):
+        if obj.employee_inherit:
+            return {
+                'id': obj.employee_inherit.group_id,
+                'title': obj.employee_inherit.group.title
+            } if obj.employee_inherit.group else {}
+        return {}
+
+
+# REPORT CASHFLOW
+class ReportCashflowListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ReportCashflow
+        fields = (
+            'id',
+            # so
+            'value_estimate_sale',
+            'value_actual_sale',
+            'value_variance_sale',
+            # po
+            'value_estimate_purchase',
+            'value_actual_purchase',
+            'value_variance_purchase',
+        )

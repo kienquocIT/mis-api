@@ -58,6 +58,11 @@ class ProductWareHouse(MasterDataAbstractModel):
         default=0,
         verbose_name='Picked Amount',
     )
+    used_amount = models.FloatField(
+        default=0,
+        verbose_name='Used Amount',
+        help_text='Amount product delivered for employee use'
+    )
 
     # backup data
     product_data = models.JSONField(

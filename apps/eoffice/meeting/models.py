@@ -61,7 +61,8 @@ class MeetingScheduleParticipant(SimpleAbstractModel):
     meeting_schedule_mapped = models.ForeignKey(
         MeetingSchedule, on_delete=models.CASCADE, related_name='meeting_schedule_mapped'
     )
-    participant = models.ForeignKey('hr.Employee', on_delete=models.CASCADE)
+    internal = models.ForeignKey('hr.Employee', on_delete=models.CASCADE, null=True)
+    external = models.ForeignKey('saledata.Contact', on_delete=models.CASCADE, null=True)
     is_external = models.BooleanField(default=False)
 
     class Meta:

@@ -32,4 +32,5 @@ urlpatterns = [
     path('site/public/<str:company_sub_domain>/', include('apps.core.web_builder.urls.public')),
     path('site/config/', include('apps.core.web_builder.urls.config')),
     path('attachment/', include('apps.core.attachments.urls')),
+    path('comment/', include('apps.core.comment.urls')),
 ]

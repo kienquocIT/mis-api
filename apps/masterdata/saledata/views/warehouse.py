@@ -13,6 +13,7 @@ from apps.masterdata.saledata.serializers import (
     WareHouseDetailSerializer, WareHouseUpdateSerializer,
     ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
 )
+from ..filters import ProductWareHouseListFilter
 
 __all__ = [
     'WareHouseList', 'WareHouseDetail', 'WareHouseCheckAvailableProductList', 'ProductWareHouseList',
@@ -108,10 +109,11 @@ class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    filterset_fields = {
-        "product_id": ["exact"],
-        "warehouse_id": ["exact"],
-    }
+    filterset_class = ProductWareHouseListFilter
+    # filterset_fields = {
+    #     "product_id": ["exact"],
+    #     "warehouse_id": ["exact"],
+    # }
 
     def get_queryset(self):
         return super().get_queryset().select_related(

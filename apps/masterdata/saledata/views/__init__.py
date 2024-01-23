@@ -8,3 +8,5 @@ from .expense_item import *
 from .expense import *
 from .product import *
 from .price import *
+from .periods import *
+from .revenue_plan_config import *

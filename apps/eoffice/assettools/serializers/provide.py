@@ -1,5 +1,5 @@
 __all__ = ['AssetToolsProvideCreateSerializer', 'AssetToolsProvideListSerializer', 'AssetToolsProvideDetailSerializer',
-           'AssetToolsProvideUpdateSerializer']
+           'AssetToolsProvideUpdateSerializer', 'AssetToolsProductListByProvideIDSerializer']
 
 from rest_framework import serializers
 
@@ -145,7 +145,9 @@ class AssetToolsProvideDetailSerializer(AbstractDetailSerializerModel):
                   'pretax_amount',
                   'taxes',
                   'total_amount',
-                  'system_status')
+                  'system_status',
+
+                  )
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -236,3 +238,32 @@ class AssetToolsProvideUpdateSerializer(serializers.ModelSerializer):
             handle_attach_file(instance, attachments)
 
         return instance
+
+
+class AssetToolsProductListByProvideIDSerializer(serializers.ModelSerializer):
+    product_available = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+
+    @classmethod
+    def get_product_available(cls, obj):
+        if obj.product:
+            prod_warehouse = obj.product.product_warehouse_product.first()
+            return prod_warehouse.stock_amount - prod_warehouse.used_amount if prod_warehouse else 0
+        return 0
+
+    @classmethod
+    def get_product(cls, obj):
+        if obj.product_data:
+            return obj.product_data
+        return {}
+
+    class Meta:
+        model = AssetToolsProvideProduct
+        fields = (
+            'product',
+            'uom_data',
+            'product_available',
+            'order',
+            'quantity',
+            'delivered',
+        )

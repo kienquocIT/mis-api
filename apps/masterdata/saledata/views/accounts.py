@@ -185,7 +185,7 @@ class AccountList(BaseListMixin, BaseCreateMixin):  # noqa
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     create_hidden_field = BaseCreateMixin.CREATE_HIDDEN_FIELD_DEFAULT
     filterset_class = AccountListFilter
-    search_fields = ['name']
+    search_fields = ['name', 'code', 'tax_code']
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -293,6 +293,7 @@ class AccountForSaleList(BaseListMixin):
         ).prefetch_related(
             'account_mapped_shipping_address',
             'account_mapped_billing_address',
+            'payment_term_supplier_mapped__term_payment_term',
         )
 
     @swagger_auto_schema(

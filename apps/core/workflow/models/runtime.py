@@ -235,13 +235,21 @@ class Runtime(SimpleAbstractModel):
 
     @staticmethod
     def get_properties_code_arr(zone_and_properties):
+        code_arr_list = []
         if len(zone_and_properties) > 0:
             properties_id = []
             for detail in zone_and_properties:
                 properties_id += detail['properties']
-            return ApplicationProperty.objects.filter(
+            # return ApplicationProperty.objects.filter(
+            #     Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
+            # ).values_list('code', flat=True)
+            app_property = ApplicationProperty.objects.filter(
                 Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
-            ).values_list('code', flat=True)
+            )
+            for app_prop in app_property:
+                code_arr_list.append(app_prop.code)
+                code_arr_list += app_prop.code_related
+            return code_arr_list
         return []
 
     @staticmethod

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.core.hr.models import Employee
+from apps.masterdata.saledata.models import Term
 # from apps.core.workflow.tasks import decorator_run_workflow
 from apps.masterdata.saledata.models.accounts import (
     AccountType, Industry, Account, AccountEmployee, AccountGroup, AccountAccountTypes, AccountBanks,
@@ -27,6 +28,7 @@ class AccountListSerializer(serializers.ModelSerializer):
             "name",
             "website",
             "code",
+            "tax_code",
             "account_type",
             "industry",
             "manager",
@@ -733,6 +735,20 @@ class AccountsMapEmployeesListSerializer(serializers.ModelSerializer):
         }
 
 
+class TermSubSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Term
+        fields = (
+            'value',
+            'unit_type',
+            'day_type',
+            'no_of_days',
+            'after',
+            'order',
+        )
+
+
+# Account serializer use for sale apps
 class AccountForSaleListSerializer(serializers.ModelSerializer):
     account_type = serializers.SerializerMethodField()
     manager = serializers.SerializerMethodField()
@@ -794,7 +810,8 @@ class AccountForSaleListSerializer(serializers.ModelSerializer):
         return {
             'id': obj.payment_term_customer_mapped_id,
             'title': obj.payment_term_customer_mapped.title,
-            'code': obj.payment_term_customer_mapped.code
+            'code': obj.payment_term_customer_mapped.code,
+            'term': TermSubSerializer(obj.payment_term_customer_mapped.term_payment_term.all(), many=True).data
         } if obj.payment_term_customer_mapped else {}
 
     @classmethod

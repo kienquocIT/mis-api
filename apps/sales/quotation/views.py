@@ -1,8 +1,6 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.quotation.models import (
-    Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig, QuotationProduct, QuotationCost
+    Quotation, QuotationExpense, QuotationAppConfig, QuotationIndicatorConfig
 )
 from apps.sales.quotation.serializers.quotation_config import (
     QuotationConfigDetailSerializer, QuotationConfigUpdateSerializer
@@ -94,52 +92,6 @@ class QuotationDetail(
             "payment_term",
             "customer__payment_term_customer_mapped",
             "employee_inherit",
-        ).prefetch_related(
-            Prefetch(
-                "quotation_product_quotation",
-                queryset=QuotationProduct.objects.select_related(
-                    "product",
-                    'product__general_product_category',
-                    'product__general_uom_group',
-                    "product__sale_default_uom",
-                    "product__sale_tax",
-                    "product__sale_currency_using",
-                    "product__purchase_default_uom",
-                    "product__purchase_tax",
-                    "unit_of_measure",
-                    "tax",
-                    "promotion",
-                    "shipping",
-                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
-                    Prefetch(
-                        'product__product_price_product',
-                        queryset=ProductPriceList.objects.select_related('price_list'),
-                    ),
-                    'product__general_product_types_mapped',
-                ),
-            ),
-            Prefetch(
-                "quotation_cost_quotation",
-                queryset=QuotationCost.objects.select_related(
-                    "product",
-                    'product__general_product_category',
-                    'product__general_uom_group',
-                    "product__sale_default_uom",
-                    "product__sale_tax",
-                    "product__sale_currency_using",
-                    "product__purchase_default_uom",
-                    "product__purchase_tax",
-                    "unit_of_measure",
-                    "tax",
-                    "shipping",
-                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
-                    Prefetch(
-                        'product__product_price_product',
-                        queryset=ProductPriceList.objects.select_related('price_list'),
-                    ),
-                    'product__general_product_types_mapped',
-                ),
-            ),
         )
 
     @swagger_auto_schema(

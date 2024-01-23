@@ -889,7 +889,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_price_list(cls, obj):
         return [
             {
-                'id': price.price_list_id,
+                'id': str(price.price_list_id),
                 'title': price.price_list.title,
                 'value': price.price,
                 'is_default': price.price_list.is_default,
@@ -906,17 +906,17 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_general_information(cls, obj):
         return {
             'product_type': [{
-                'id': product_type.id,
+                'id': str(product_type.id),
                 'title': product_type.title,
                 'code': product_type.code
             } for product_type in obj.general_product_types_mapped.all()],
             'product_category': {
-                'id': obj.general_product_category_id,
+                'id': str(obj.general_product_category_id),
                 'title': obj.general_product_category.title,
                 'code': obj.general_product_category.code
             } if obj.general_product_category else {},
             'uom_group': {
-                'id': obj.general_uom_group_id,
+                'id': str(obj.general_uom_group_id),
                 'title': obj.general_uom_group.title,
                 'code': obj.general_uom_group.code
             } if obj.general_uom_group else {},
@@ -926,7 +926,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_sale_information(cls, obj):
         return {
             'default_uom': {
-                'id': obj.sale_default_uom_id,
+                'id': str(obj.sale_default_uom_id),
                 'title': obj.sale_default_uom.title,
                 'code': obj.sale_default_uom.code,
                 'ratio': obj.sale_default_uom.ratio,
@@ -934,13 +934,13 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'is_referenced_unit': obj.sale_default_uom.is_referenced_unit,
             } if obj.sale_default_uom else {},
             'tax_code': {
-                'id': obj.sale_tax_id,
+                'id': str(obj.sale_tax_id),
                 'title': obj.sale_tax.title,
                 'code': obj.sale_tax.code,
                 'rate': obj.sale_tax.rate
             } if obj.sale_tax else {},
             'currency_using': {
-                'id': obj.sale_currency_using_id,
+                'id': str(obj.sale_currency_using_id),
                 'title': obj.sale_currency_using.title,
                 'code': obj.sale_currency_using.code,
             } if obj.sale_currency_using else {},
@@ -953,7 +953,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
     def get_purchase_information(cls, obj):
         return {
             'uom': {
-                'id': obj.purchase_default_uom_id,
+                'id': str(obj.purchase_default_uom_id),
                 'title': obj.purchase_default_uom.title,
                 'code': obj.purchase_default_uom.code,
                 'ratio': obj.purchase_default_uom.ratio,
@@ -961,7 +961,7 @@ class ProductForSaleListSerializer(serializers.ModelSerializer):
                 'is_referenced_unit': obj.purchase_default_uom.is_referenced_unit,
             } if obj.purchase_default_uom else {},
             'tax': {
-                'id': obj.purchase_tax_id,
+                'id': str(obj.purchase_tax_id),
                 'title': obj.purchase_tax.title,
                 'code': obj.purchase_tax.code,
                 'rate': obj.purchase_tax.rate

@@ -26,13 +26,20 @@ class TermSerializer(serializers.ModelSerializer):
 
 
 class PaymentTermListSerializer(serializers.ModelSerializer):
+    term = serializers.SerializerMethodField()
+
     class Meta:
         model = PaymentTerm
         fields = (
             'id',
             'title',
-            'apply_for'
+            'apply_for',
+            'term',
         )
+
+    @classmethod
+    def get_term(cls, obj):
+        return TermSerializer(obj.term_payment_term.all(), many=True).data
 
 
 class PaymentTermCreateSerializer(serializers.ModelSerializer):

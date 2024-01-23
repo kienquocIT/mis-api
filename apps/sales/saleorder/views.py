@@ -1,8 +1,6 @@
-from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
-from apps.masterdata.saledata.models import ProductPriceList
 from apps.sales.saleorder.models import (
-    SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrderCost
+    SaleOrder, SaleOrderExpense, SaleOrderAppConfig, SaleOrderIndicatorConfig
 )
 from apps.sales.saleorder.serializers import (
     SaleOrderListSerializer, SaleOrderCreateSerializer, SaleOrderDetailSerializer, SaleOrderUpdateSerializer,
@@ -87,52 +85,6 @@ class SaleOrderDetail(BaseRetrieveMixin, BaseUpdateMixin):
             "quotation",
             "customer__payment_term_customer_mapped",
             "employee_inherit",
-        ).prefetch_related(
-            Prefetch(
-                "sale_order_product_sale_order",
-                queryset=SaleOrderProduct.objects.select_related(
-                    "product",
-                    'product__general_product_category',
-                    'product__general_uom_group',
-                    "product__sale_default_uom",
-                    "product__sale_tax",
-                    "product__sale_currency_using",
-                    "product__purchase_default_uom",
-                    "product__purchase_tax",
-                    "unit_of_measure",
-                    "tax",
-                    "promotion",
-                    "shipping",
-                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
-                    Prefetch(
-                        'product__product_price_product',
-                        queryset=ProductPriceList.objects.select_related('price_list'),
-                    ),
-                    'product__general_product_types_mapped',
-                ),
-            ),
-            Prefetch(
-                "sale_order_cost_sale_order",
-                queryset=SaleOrderCost.objects.select_related(
-                    "product",
-                    'product__general_product_category',
-                    'product__general_uom_group',
-                    "product__sale_default_uom",
-                    "product__sale_tax",
-                    "product__sale_currency_using",
-                    "product__purchase_default_uom",
-                    "product__purchase_tax",
-                    "unit_of_measure",
-                    "tax",
-                    "shipping",
-                ).prefetch_related(  # Nested prefetch for 'product__product_price_product'
-                    Prefetch(
-                        'product__product_price_product',
-                        queryset=ProductPriceList.objects.select_related('price_list'),
-                    ),
-                    'product__general_product_types_mapped',
-                ),
-            ),
         )
 
     @swagger_auto_schema(

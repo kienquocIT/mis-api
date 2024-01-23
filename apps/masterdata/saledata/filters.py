@@ -1,14 +1,14 @@
+__all__ = [
+    'AccountListFilter', 'ProductWareHouseListFilter'
+]
 import django_filters
 from django.db.models import Q
 from django_filters.rest_framework import filters
 from rest_framework import exceptions
 
-from apps.masterdata.saledata.models import Account
-from apps.shared import TypeCheck, EmployeeAttribute
+from apps.shared import TypeCheck, EmployeeAttribute, DisperseModel
+from .models import Account, ProductWareHouse
 
-__all__ = [
-    'AccountListFilter',
-]
 
 
 class AccountListFilter(django_filters.FilterSet):
@@ -58,5 +58,37 @@ class AccountListFilter(django_filters.FilterSet):
                     if filter_q:
                         return queryset.filter(filter_q)
                 return queryset.none()
+            return queryset
+        raise exceptions.AuthenticationFailed
+
+
+class ProductWareHouseListFilter(django_filters.FilterSet):
+    is_asset = filters.CharFilter(
+        method='filter_is_asset', field_name='is_asset'
+    )
+
+    class Meta:
+        model = ProductWareHouse
+        fields = {
+            'product_id': ['exact'],
+            'warehouse_id': ['exact']
+        }
+
+    def filter_is_asset(self, queryset, name, value):  # pylint: disable=W0613  # noqa
+        user_obj = getattr(self.request, 'user', None) # noqa
+        params = self.request.query_params.dict()
+        if user_obj:
+            filter_kwargs = Q()
+            if 'product_id' in params:
+                filter_kwargs &= Q(**{'product_id': params['product_id']})
+            if 'is_asset' in params:
+                asset_config = DisperseModel(app_model='assettools.AssetToolsConfig').get_model().objects.filter(
+                    company_id=user_obj.company_current_id,
+                )
+                product_type = str(asset_config.first().product_type.id).split(',')
+                filter_kwargs &= Q(**{
+                    'product__general_product_types_mapped__id__in': product_type})
+            if filter_kwargs is not None:
+                return queryset.filter(filter_kwargs)
             return queryset
         raise exceptions.AuthenticationFailed
