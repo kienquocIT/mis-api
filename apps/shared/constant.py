@@ -298,6 +298,10 @@ PAYMENT_TERM_STAGE = (
 
 # REPORT
 REPORT_CASHFLOW_TYPE = (
-    (0, _('Sale order')),
-    (1, _('Purchase order')),
+    (0, _('Operation')),
+    (1, _('Beginning balance')),
+    (2, _('Cash sales')),
+    (3, _('Product/ service costs')),
+    (4, _('Net cash flow')),
+    (5, _('Ending balance')),
 )

@@ -131,7 +131,7 @@ class MyNotifyList(BaseListMixin):
     @mask_view(login_require=True, employee_require=False, auth_require=False, )
     def get(self, request, *args, **kwargs):
         if request.user.employee_current_id:
-            kwargs['employee_id'] = request.user.employee_current_id
+            self.kwargs['employee_id'] = request.user.employee_current_id
             return self.list(request, *args, **kwargs)
         return self.list_empty()
 

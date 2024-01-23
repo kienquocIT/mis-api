@@ -84,7 +84,7 @@ INSTALLED_APPS = \
         'apps.core.hr',
         'apps.core.company',
         'apps.core.space',
-
+        'apps.core.comment',
         'apps.core.workflow',
         'apps.core.process',
         'apps.masterdata.saledata',

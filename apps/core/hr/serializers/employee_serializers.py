@@ -49,6 +49,24 @@ class EmployeeUploadAvatarSerializer(serializers.ModelSerializer):
         fields = ('avatar_img',)
 
 
+class EmployeeListAllSerializer(serializers.ModelSerializer):
+    full_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Employee
+        fields = (
+            'id',
+            'code',
+            'full_name',
+            'email',
+            'avatar_img',
+        )
+
+    @classmethod
+    def get_full_name(cls, obj):
+        return obj.get_full_name(2)
+
+
 class EmployeeListSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
     group = serializers.SerializerMethodField()

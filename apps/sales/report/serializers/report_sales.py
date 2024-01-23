@@ -193,12 +193,14 @@ class ReportCashflowListSerializer(serializers.ModelSerializer):
         model = ReportCashflow
         fields = (
             'id',
+            'cashflow_type',
+            'due_date',
             # so
             'value_estimate_sale',
             'value_actual_sale',
             'value_variance_sale',
             # po
-            'value_estimate_purchase',
-            'value_actual_purchase',
-            'value_variance_purchase',
+            'value_estimate_cost',
+            'value_actual_cost',
+            'value_variance_cost',
         )
