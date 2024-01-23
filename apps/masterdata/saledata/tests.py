@@ -2275,7 +2275,7 @@ class WareHouseTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
-             'warehouse_type', 'agency', 'address'],
+             'warehouse_type', 'agency', 'address', 'is_dropship'],
             check_sum_second=True,
         )
         return response
@@ -2321,7 +2321,7 @@ class WareHouseTestCase(AdvanceTestCase):
         self.assertCountEqual(
             response.data['result'],
             ['id', 'title', 'code', 'remarks', 'is_active', 'full_address', 'city', 'ward', 'district',
-             'warehouse_type', 'agency', 'address'],
+             'warehouse_type', 'agency', 'address', 'is_dropship'],
             check_sum_second=True,
         )
         if not data_id:
