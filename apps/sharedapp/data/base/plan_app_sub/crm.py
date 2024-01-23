@@ -1347,6 +1347,56 @@ REVENUE_PLAN_APP_CONFIG = {
     },
 }
 
+AR_INVOICE_APP_CONFIG = {
+    "id": "1d7291dd-1e59-4917-83a3-1cc07cfc4638",
+    "title": "AR Invoice",
+    "code": "arinvoice",
+    "model_code": "arinvoice",
+    "app_label": "arinvoice",
+    "is_workflow": False,
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+        "a870e392-9ad2-4fe2-9baa-298a38691cf2",  # Sale Order
+        "1373e903-909c-4b77-9957-8bcf97e8d6d3",  # Delivery
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {"view": "==", },
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "a870e392-9ad2-4fe2-9baa-298a38691cf2": {"view": "4", },
+                "1373e903-909c-4b77-9957-8bcf97e8d6d3": {"view": "4", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1531,6 +1581,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "e4ae0a2c-2130-4a65-b644-1b79db3d033b": ApplicationConfigFrame(**REVENUE_PLAN_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "1d7291dd-1e59-4917-83a3-1cc07cfc4638": ApplicationConfigFrame(**AR_INVOICE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )

@@ -21,7 +21,9 @@ class RevenuePlanList(BaseListMixin, BaseCreateMixin):
         return super().get_queryset().select_related(
             'period_mapped',
             'employee_created'
-        ).prefetch_related()
+        ).prefetch_related(
+            'revenue_plan_mapped_group__group_mapped'
+        )
 
     @swagger_auto_schema(
         operation_summary="RevenuePlan List",

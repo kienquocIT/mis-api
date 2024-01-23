@@ -84,7 +84,7 @@ INSTALLED_APPS = \
         'apps.core.hr',
         'apps.core.company',
         'apps.core.space',
-
+        'apps.core.comment',
         'apps.core.workflow',
         'apps.core.process',
         'apps.masterdata.saledata',
@@ -106,6 +106,7 @@ INSTALLED_APPS = \
         'apps.eoffice.assettools',
         'apps.eoffice.meeting',
         'apps.sales.revenue_plan',
+        'apps.sales.arinvoice',
 
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
