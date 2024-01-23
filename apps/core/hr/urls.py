@@ -6,7 +6,7 @@ from apps.core.hr.views.app_of_employee import (
 )
 from apps.core.hr.views.employee import (
     EmployeeList, EmployeeDetail, EmployeeCompanyList, EmployeeTenantList,
-    EmployeeMediaToken, EmployeeUploadAvatar, EmployeeAppList,
+    EmployeeMediaToken, EmployeeUploadAvatar, EmployeeAppList, EmployeeListAll,
 )
 from apps.core.hr.views.group import (
     GroupLevelList, GroupLevelDetail, GroupList, GroupDetail, GroupParentList,
@@ -21,6 +21,7 @@ urlpatterns = [
     path("employee/tenant", EmployeeTenantList.as_view(), name="EmployeeTenantList"),
     # path("employee/company/<str:company_id>", EmployeeCompanyList.as_view(), name="EmployeeCompanyList"),
     path('employees', EmployeeList.as_view(), name='EmployeeList'),
+    path('employees/all', EmployeeListAll.as_view(), name='EmployeeListAll'),
     path("employee/<str:pk>", EmployeeDetail.as_view(), name="EmployeeDetail"),
     path('employee/<str:pk>/upload-avatar', EmployeeUploadAvatar.as_view(), name='EmployeeUploadAvatar'),
     path("employee/<str:pk>/app", EmployeeAppList.as_view(), name="EmployeeAppList"),
