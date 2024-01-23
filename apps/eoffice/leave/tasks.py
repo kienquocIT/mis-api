@@ -78,6 +78,8 @@ def diff_months_counter(dt_now, dt_begin):
             return (dt_now.year - dt_begin.year) * 12 + (dt_now.month - dt_begin.month)
         return (dt_now.year - dt_begin.year) * 12 + (dt_now.month - dt_begin.month) - 1
     if dt_now.day >= dt_begin.day:
+        if dt_now.day == 15 and dt_begin.month == 1:
+            return 1
         return (dt_now.year - dt_begin.year) * 12 - (dt_begin.month - dt_now.month)
     return (dt_now.year - dt_begin.year) * 12 - (dt_begin.month - dt_now.month) - 1
 
@@ -96,7 +98,7 @@ def leave_months_calc(dt_now, dt_begin, an_number):
 
     # tính tháng làm việc thực tế CỦA năm tài chính hiện tại đang lấy năm theo phép AN
     start_new_finance_year = dt_now.replace(month=1, day=1)
-    months = diff_months_counter(dt_now, start_new_finance_year)
+    months = diff_months_counter(dt_now.replace(day=1), start_new_finance_year) + 1
     calc = months * (an_number + added_days) / an_number
 
     # làm tròn
@@ -122,6 +124,7 @@ def update_history(leave, total, quantity):
         tenant=leave.tenant,
         company=leave.company,
         leave_available=leave,
+        open_year=leave.open_year,
         total=total,
         action=1,
         quantity=quantity,
