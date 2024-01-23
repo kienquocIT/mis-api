@@ -315,6 +315,7 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
             company_id=self.context.get('company_id', None),
             tenant_id=self.context.get('tenant_id', None),
             leave_available_id=str(instance.id),
+            open_year=instance.open_year,
             employee_inherit=validated_data['employee_inherit'],
             total=validated_data['total'],
             action=init_data['action'],
@@ -356,20 +357,12 @@ class LeaveAvailableEditSerializer(serializers.ModelSerializer):
 
 
 class LeaveAvailableHistoryListSerializer(serializers.ModelSerializer):
-    open_year = serializers.SerializerMethodField()
     leave_available = serializers.SerializerMethodField()
     type_arises = serializers.SerializerMethodField()
 
     class Meta:
         model = LeaveAvailableHistory
         fields = ('id', 'leave_available', 'open_year', 'total', 'action', 'quantity', 'date_modified', 'type_arises')
-
-    @classmethod
-    def get_open_year(cls, obj):
-        open_year = '--'
-        if obj.leave_available:
-            open_year = obj.leave_available.open_year
-        return open_year
 
     @classmethod
     def get_leave_available(cls, obj):

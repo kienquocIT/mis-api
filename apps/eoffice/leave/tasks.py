@@ -122,6 +122,7 @@ def update_history(leave, total, quantity):
         tenant=leave.tenant,
         company=leave.company,
         leave_available=leave,
+        open_year=leave.open_year,
         total=total,
         action=1,
         quantity=quantity,
