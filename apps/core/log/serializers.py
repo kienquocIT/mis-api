@@ -62,6 +62,8 @@ class NotifyListSerializer(serializers.ModelSerializer):
             'employee_data',
             'employee_sender_id',
             'sender_full_name',
+            'comment_mentions_id',
+            'application_id',
         )
 
 

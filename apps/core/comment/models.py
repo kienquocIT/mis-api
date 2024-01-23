@@ -56,6 +56,8 @@ def save_comment(sender, instance, created, **kwargs):  # pylint: disable=W0613
                             # 'user_id': '',
                             'employee_id': employee_id,
                             'employee_sender_id': instance.employee_created_id,
+                            'application_id': instance.application_id,
+                            'comment_mentions_id': instance.id,
                         }
                     )
 
