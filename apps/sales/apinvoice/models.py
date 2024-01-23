@@ -57,7 +57,7 @@ class APInvoiceItems(SimpleAbstractModel):
 
 
 class APInvoiceGoodsReceipt(SimpleAbstractModel):
-    ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_goods_receipt')
+    ap_invoice = models.ForeignKey('APInvoice', on_delete=models.CASCADE, related_name='ap_invoice_goods_receipts')
     goods_receipt_mapped = models.ForeignKey('inventory.GoodsReceipt', on_delete=models.CASCADE)
 
     class Meta:

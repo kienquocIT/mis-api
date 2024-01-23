@@ -23,8 +23,8 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related(
-            'customer_mapped',
-            'sale_order_mapped'
+            'supplier_mapped',
+            'po_mapped'
         )
 
     @swagger_auto_schema(
@@ -62,12 +62,12 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            'ar_invoice_items__product',
-            'ar_invoice_items__product_uom',
-            'ar_invoice_deliveries__delivery_mapped'
+            # 'ar_invoice_items__product',
+            # 'ar_invoice_items__product_uom',
+            # 'ar_invoice_deliveries__delivery_mapped'
         ).select_related(
-            'customer_mapped',
-            'sale_order_mapped'
+            'supplier_mapped',
+            'po_mapped'
         )
 
     @swagger_auto_schema(operation_summary='Detail ARInvoice')

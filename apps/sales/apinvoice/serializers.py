@@ -62,11 +62,9 @@ def create_goods_receipt_mapped(ap_invoice, gr_mapped_list):
     return True
 
 
-def create_item_mapped(ap_invoice, data_item_list, data_discount_list):
+def create_item_mapped(ap_invoice, data_item_list):
     bulk_data = []
     for item in data_item_list:
-        bulk_data.append(APInvoiceItems(ap_invoice=ap_invoice, **item))
-    for item in data_discount_list:
         bulk_data.append(APInvoiceItems(ap_invoice=ap_invoice, **item))
     APInvoiceItems.objects.filter(ap_invoice=ap_invoice).delete()
     APInvoiceItems.objects.bulk_create(bulk_data)
