@@ -184,17 +184,19 @@ class PurchaseOrder(DataAbstractModel):
                 company_id=purchase_request.sale_order.company_id,
                 sale_order_id=purchase_request.sale_order_id,
                 purchase_order_id=instance.id,
-                cashflow_type=1,
+                cashflow_type=3,
                 employee_inherit_id=purchase_request.sale_order.employee_inherit_id,
                 group_inherit_id=purchase_request.sale_order.employee_inherit.group_id,
                 due_date=payment_stage.due_date,
-                value_estimate_purchase=payment_stage.value_before_tax * so_rate / 100,
+                value_estimate_cost=payment_stage.value_before_tax * so_rate / 100,
             ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
             ReportCashflow.push_from_so_po(bulk_data)
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status == 2:  # added
+        # if self.system_status == 2:  # added
+        if self.system_status in [2, 3]:  # added, finish
+            # check if not code then generate code
             if not self.code:
                 self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
@@ -202,7 +204,6 @@ class PurchaseOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-        if self.system_status == 3:  # finish
             # check if date_approved then call related functions
             if 'update_fields' in kwargs:
                 if isinstance(kwargs['update_fields'], list):

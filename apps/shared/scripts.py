@@ -1318,3 +1318,14 @@ def update_date_approved():
             item.date_approved = item.date_created
             item.save(update_fields=['date_approved'])
     print('Done!')
+
+
+def reset_and_run_reports_sale():
+    ReportRevenue.objects.all().delete()
+    ReportCustomer.objects.all().delete()
+    ReportProduct.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.push_to_report_revenue(sale_order)
+        SaleOrder.push_to_report_product(sale_order)
+        SaleOrder.push_to_report_customer(sale_order)
+    print('reset_and_run_reports_sale done.')
