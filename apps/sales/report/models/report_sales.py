@@ -231,9 +231,9 @@ class ReportCashflow(DataAbstractModel):
     value_actual_sale = models.FloatField(default=0)
     value_variance_sale = models.FloatField(default=0)
     # po
-    value_estimate_purchase = models.FloatField(default=0)
-    value_actual_purchase = models.FloatField(default=0)
-    value_variance_purchase = models.FloatField(default=0)
+    value_estimate_cost = models.FloatField(default=0)
+    value_actual_cost = models.FloatField(default=0)
+    value_variance_cost = models.FloatField(default=0)
 
     @classmethod
     def push_from_so_po(cls, bulk_data):
