@@ -42,7 +42,7 @@ def parse_backup_employee(employee_obj) -> dict:
             'full_name': str(employee_obj.get_full_name()),
             'email': str(employee_obj.email),
             'phone': str(employee_obj.phone),
-            'avatar_img': str(employee_obj.avatar_img),
+            'avatar_img': str(employee_obj.avatar_img.url) if employee_obj.avatar_img else '',
         }
     return {}
 
