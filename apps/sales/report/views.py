@@ -77,6 +77,7 @@ class ReportCustomerList(BaseListMixin):
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
+        'customer_id': ['exact', 'in'],
     }
     serializer_list = ReportCustomerListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
