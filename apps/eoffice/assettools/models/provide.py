@@ -104,6 +104,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
         verbose_name='descriptions',
         max_length=500,
         null=True,
+        blank=True,
     )
     product_data = models.JSONField(
         default=dict,
