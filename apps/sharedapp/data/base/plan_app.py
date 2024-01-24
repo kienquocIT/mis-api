@@ -222,6 +222,10 @@ _PlanApplication_sale_data = {
         "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
         "application_id": "1d7291dd-1e59-4917-83a3-1cc07cfc4638",  # AR Invoice
     },
+    "c05a6cf4-efff-47e0-afcf-072017b8141a": {
+        "plan_id": "4e082324-45e2-4c27-a5aa-e16a758d5627",  # Sale Data
+        "application_id": "c05a6cf4-efff-47e0-afcf-072017b8141a",  # AP Invoice
+    },
 }
 
 _PlanApplication_eOffice_data = {

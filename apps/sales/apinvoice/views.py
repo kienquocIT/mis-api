@@ -19,7 +19,10 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
     serializer_create = APInvoiceCreateSerializer
     serializer_detail = APInvoiceDetailSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
-    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = ['tenant_id', 'company_id', 'employee_created_id']
+    create_hidden_field = CREATE_HIDDEN_FIELD_DEFAULT = [
+        'tenant_id', 'company_id',
+        'employee_created_id', 'employee_inherit_id',
+    ]
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related().select_related(
@@ -32,8 +35,8 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
         operation_description="ARInvoice list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='apinvoice', model_code='apinvoice', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -44,8 +47,8 @@ class APInvoiceList(BaseListMixin, BaseCreateMixin):
         request_body=APInvoiceCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='apinvoice', model_code='apinvoice', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -72,16 +75,16 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     @swagger_auto_schema(operation_summary='Detail ARInvoice')
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='apinvoice', model_code='apinvoice', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
 
     @swagger_auto_schema(operation_summary="Update ARInvoice", request_body=APInvoiceUpdateSerializer)
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='arinvoice', model_code='arinvoice', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='apinvoice', model_code='apinvoice', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         self.serializer_class = APInvoiceUpdateSerializer
@@ -104,8 +107,8 @@ class GoodsReceiptListForAPInvoice(BaseListMixin):
         operation_summary='Order Delivery List',
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='goodsreceipt', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'
