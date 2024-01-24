@@ -1,6 +1,6 @@
 __all__ = [
     'AssetToolsDeliveryCreateSerializer', 'AssetToolsDeliveryDetailSerializer', 'AssetToolsProductUsedListSerializer',
-    'AssetToolsDeliveryListSerializer'
+    'AssetToolsDeliveryListSerializer', 'AssetToolsDeliveryUpdateSerializer'
 ]
 
 from datetime import datetime

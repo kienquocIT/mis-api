@@ -107,7 +107,7 @@ INSTALLED_APPS = \
         'apps.eoffice.meeting',
         'apps.sales.revenue_plan',
         'apps.sales.arinvoice',
-
+        'apps.sales.apinvoice',
     ] + [  # Tools improvement from dev team
         'apps.core.web_builder',
     ]

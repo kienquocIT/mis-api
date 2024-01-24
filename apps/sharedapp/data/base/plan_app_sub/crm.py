@@ -1397,6 +1397,56 @@ AR_INVOICE_APP_CONFIG = {
     },
 }
 
+AP_INVOICE_APP_CONFIG = {
+    "id": "c05a6cf4-efff-47e0-afcf-072017b8141a",
+    "title": "AP Invoice",
+    "code": "apinvoice",
+    "model_code": "apinvoice",
+    "app_label": "apinvoice",
+    "is_workflow": False,
+    "app_depend_on": [
+        "4e48c863-861b-475a-aa5e-97a4ed26f294",  # Account
+        "81a111ef-9c32-4cbd-8601-a3cce884badb",  # Purchase Order
+        "dd16a86c-4aef-46ec-9302-19f30b101cf5",  # Goods receipt
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {"view": "==", },
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "4e48c863-861b-475a-aa5e-97a4ed26f294": {"view": "4", },
+                "81a111ef-9c32-4cbd-8601-a3cce884badb": {"view": "4", },
+                "dd16a86c-4aef-46ec-9302-19f30b101cf5": {"view": "4", },
+            },
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {
+                "view": "==",
+            },
+        },
+    },
+}
+
 # Nhóm 1: các chức năng quản lý phân quyền theo space opportunity
 #   - Các activity: Call, Email, Document for customer
 #   - Task
@@ -1585,6 +1635,10 @@ Application_crm_data = {
         filtering_inheritor=True,
     ),
     "1d7291dd-1e59-4917-83a3-1cc07cfc4638": ApplicationConfigFrame(**AR_INVOICE_APP_CONFIG).data(
+        depend_follow_main=False,
+        filtering_inheritor=True,
+    ),
+    "c05a6cf4-efff-47e0-afcf-072017b8141a": ApplicationConfigFrame(**AP_INVOICE_APP_CONFIG).data(
         depend_follow_main=False,
         filtering_inheritor=True,
     )

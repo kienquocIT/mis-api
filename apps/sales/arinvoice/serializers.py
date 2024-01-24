@@ -102,6 +102,7 @@ class ARInvoiceCreateSerializer(serializers.ModelSerializer):
             'invoice_sign',
             'invoice_number',
             'invoice_example',
+            ''
             'system_status'
         )
 

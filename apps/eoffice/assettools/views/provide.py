@@ -21,7 +21,10 @@ class AssetToolsProvideRequestList(BaseListMixin, BaseCreateMixin):
         'employee_inherit_id',
     ]
     search_fields = ('code', 'title')
-    filterset_fields = ('complete_delivered',)
+    filterset_fields = {
+        "complete_delivered": ['exact'],
+        "system_status": ['gte'],
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related('employee_inherit')
