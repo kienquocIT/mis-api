@@ -62,9 +62,9 @@ class APInvoiceDetail(BaseRetrieveMixin, BaseUpdateMixin):
 
     def get_queryset(self):
         return super().get_queryset().prefetch_related(
-            # 'ar_invoice_items__product',
-            # 'ar_invoice_items__product_uom',
-            # 'ar_invoice_deliveries__delivery_mapped'
+            'ap_invoice_items__product',
+            'ap_invoice_items__product_uom',
+            'ap_invoice_goods_receipts__goods_receipt_mapped'
         ).select_related(
             'supplier_mapped',
             'po_mapped'
@@ -104,8 +104,8 @@ class GoodsReceiptListForAPInvoice(BaseListMixin):
         operation_summary='Order Delivery List',
     )
     @mask_view(
-        login_require=True, auth_require=True,
-        label_code='inventory', model_code='goodsreceipt', perm_code='view',
+        login_require=True, auth_require=False,
+        # label_code='inventory', model_code='goodsreceipt', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         self.lookup_field = 'company_id'

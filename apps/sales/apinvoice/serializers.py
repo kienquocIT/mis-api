@@ -167,20 +167,20 @@ class APInvoiceDetailSerializer(serializers.ModelSerializer):
     def get_item_mapped(cls, obj):
         return [{
             'item_index': item.item_index,
-            'product': {
+            'product_data': {
                 'id': item.product_id,
                 'code': item.product.code,
                 'title': item.product.title,
             } if item.product else {},
-            'product_uom': {
+            'uom_data': {
                 'id': item.product_uom_id,
                 'code': item.product_uom.code,
                 'title': item.product_uom.title,
             } if item.product_uom else {},
-            'product_quantity': item.product_quantity,
+            'quantity_import': item.product_quantity,
             'product_unit_price': item.product_unit_price,
             'product_tax_value': item.product_tax_value,
-            'product_subtotal': item.product_subtotal,
+            'product_subtotal_price': item.product_subtotal,
         } for item in obj.ap_invoice_items.all()]
 
     @classmethod
@@ -242,6 +242,7 @@ class APInvoiceUpdateSerializer(serializers.ModelSerializer):
 class GoodsReceiptListSerializerForAPInvoice(serializers.ModelSerializer):
     details = serializers.SerializerMethodField()
     purchase_order = serializers.SerializerMethodField()
+    already = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReceipt
@@ -253,7 +254,8 @@ class GoodsReceiptListSerializerForAPInvoice(serializers.ModelSerializer):
             'purchase_order',
             'date_received',
             'system_status',
-            'details'
+            'details',
+            'already'
         )
 
     @classmethod
@@ -287,3 +289,7 @@ class GoodsReceiptListSerializerForAPInvoice(serializers.ModelSerializer):
             'product_subtotal_price_after_tax': item.product_subtotal_price_after_tax,
             'order': item.order
         } for item in obj.goods_receipt_product_goods_receipt.all()]
+
+    @classmethod
+    def get_already(cls, obj):
+        return APInvoiceGoodsReceipt.objects.filter(goods_receipt_mapped=obj).count()
