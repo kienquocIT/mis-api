@@ -1,7 +1,5 @@
 from rest_framework import serializers
 from apps.sales.inventory.models import GoodsReceipt
-from apps.sales.purchasing.serializers.purchase_order import PurchaseOrderRequestProductListSerializer, \
-    PurchaseOrderProductListSerializer
 from apps.sales.apinvoice.models import APInvoice, APInvoiceItems, APInvoiceGoodsReceipt, APInvoiceAttachmentFile
 from apps.shared import SaleMsg
 
