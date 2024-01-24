@@ -4,7 +4,7 @@ from uuid import uuid4
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
-
+from django.apps import apps
 __all__ = [
     'ActivityLog',
     'Notifications',
@@ -42,7 +42,7 @@ def parse_backup_employee(employee_obj) -> dict:
             'full_name': str(employee_obj.get_full_name()),
             'email': str(employee_obj.email),
             'phone': str(employee_obj.phone),
-            'avatar': str(employee_obj.avatar),
+            'avatar_img': str(employee_obj.avatar_img),
         }
     return {}
 
@@ -255,6 +255,10 @@ class Notifications(models.Model):
         verbose_name='Employee sender backup data',
     )
 
+    #
+    application = models.ForeignKey('base.Application', null=True, on_delete=models.SET_NULL)
+    comment_mentions = models.ForeignKey('comment.Comments', null=True, on_delete=models.SET_NULL)
+
     @staticmethod
     def cache_base_key(user_obj=None, my_obj=None):
         if user_obj:
@@ -286,6 +290,14 @@ class Notifications(models.Model):
                 self.employee_data = parse_backup_employee(self.employee)
             if self.employee_sender:
                 self.employee_sender_data = parse_backup_employee(self.employee_sender)
+            if self.doc_app:
+                arr_tmp = self.doc_app.split('.')
+                if len(arr_tmp) == 2:
+                    obj = apps.get_model(app_label='base', model_name='Application').objects.filter(
+                        app_label=arr_tmp[0].lower(), model_code=arr_tmp[1].lower()
+                    ).first()
+                    if obj:
+                        self.application = obj
         return True
 
     def save(self, *args, **kwargs):

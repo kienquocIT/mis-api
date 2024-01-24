@@ -12,6 +12,7 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
     period_mapped = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
     status = serializers.SerializerMethodField()
+    company_month_target_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = RevenuePlan
@@ -25,7 +26,8 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
             'company_month_target',
             'company_quarter_target',
             'company_year_target',
-            'status'
+            'status',
+            'company_month_target_detail'
         )
 
     @classmethod
@@ -52,6 +54,14 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
         if obj.period_mapped.start_date.year < datetime.now().year:
             return 'Closed'
         return 'Opening'
+
+    @classmethod
+    def get_company_month_target_detail(cls, obj):
+        return [{
+            'group_mapped_id': item.group_mapped_id,
+            'group_mapped_title': item.group_mapped.title,
+            'group_month_target': item.group_month_target
+        } for item in obj.revenue_plan_mapped_group.all()]
 
 
 def create_revenue_plan_group(revenue_plan, revenue_plan_group_data):

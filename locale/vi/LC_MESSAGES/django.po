@@ -667,6 +667,10 @@ msgid "Employee must be required"
 msgstr "Bắt buộc có thông tin nhân viên"
 
 #
+msgid "Some employee is not available"
+msgstr "Một số nhân viên không khả dụng hoặc không đúng"
+
+#
 msgid "The file has been flagged as a security risk."
 msgstr "Tập tin đã bị gắn cờ là có nguy cơ bảo mật."
 
@@ -709,3 +713,11 @@ msgstr "Không tìm thấy phiếu cấp phát"
 #
 msgid "Error update product delivered"
 msgstr "Lỗi cập nhập sản phẩm đã bàn giao"
+
+#
+msgid "You’ve been mentioned."
+msgstr "Bạn đã được nhắc đến."
+
+#
+msgid "You have been mentioned in a comment by \"{}\"."
+msgstr "Bạn đã được \"{}\" nhắc đến trong một bình luận."

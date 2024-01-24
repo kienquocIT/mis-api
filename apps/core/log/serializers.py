@@ -32,10 +32,18 @@ class ActivityListSerializer(serializers.ModelSerializer):
 
 class NotifyListSerializer(serializers.ModelSerializer):
     msg = serializers.SerializerMethodField()
+    sender_full_name = serializers.SerializerMethodField()
 
     @classmethod
     def get_msg(cls, obj):
         return WorkflowMsgNotify.translate_msg(obj.msg)
+
+    @classmethod
+    def get_sender_full_name(cls, obj):
+        if obj.employee_sender_data:
+            if 'full_name' in obj.employee_sender_data:
+                return obj.employee_sender_data['full_name']
+        return ''
 
     class Meta:
         model = Notifications
@@ -53,7 +61,9 @@ class NotifyListSerializer(serializers.ModelSerializer):
             'employee_id',
             'employee_data',
             'employee_sender_id',
-            'employee_sender_data',
+            'sender_full_name',
+            'comment_mentions_id',
+            'application_id',
         )
 
 

@@ -49,6 +49,7 @@ from ..sales.quotation.models import QuotationIndicatorConfig, Quotation, Quotat
 from ..sales.report.models import ReportRevenue, ReportPipeline
 from ..sales.saleorder.models import SaleOrderIndicatorConfig, SaleOrderProduct, SaleOrder, SaleOrderIndicator, \
     SaleOrderAppConfig
+from apps.sales.report.models import ReportRevenue, ReportProduct, ReportCustomer
 
 
 def update_sale_default_data_old_company():
@@ -1301,3 +1302,30 @@ def fool_data_for_revenue_dashboard():
         obj.fiscal_year = 2023
         obj.save()
         print('Update period data done!')
+
+
+def update_date_approved():
+    for item in ReportRevenue.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    for item in ReportCustomer.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    for item in ReportProduct.objects.all():
+        if item.date_approved is None:
+            item.date_approved = item.date_created
+            item.save(update_fields=['date_approved'])
+    print('Done!')
+
+
+def reset_and_run_reports_sale():
+    ReportRevenue.objects.all().delete()
+    ReportCustomer.objects.all().delete()
+    ReportProduct.objects.all().delete()
+    for sale_order in SaleOrder.objects.filter(system_status__in=[2, 3]):
+        SaleOrder.push_to_report_revenue(sale_order)
+        SaleOrder.push_to_report_product(sale_order)
+        SaleOrder.push_to_report_customer(sale_order)
+    print('reset_and_run_reports_sale done.')

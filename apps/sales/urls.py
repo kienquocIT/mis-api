@@ -12,4 +12,5 @@ urlpatterns = [
     path('report/', include('apps.sales.report.urls')),
     path('acceptance/', include('apps.sales.acceptance.urls')),
     path('revenue-plans/', include('apps.sales.revenue_plan.urls')),
+    path('ar-invoice/', include('apps.sales.arinvoice.urls')),
 ]
