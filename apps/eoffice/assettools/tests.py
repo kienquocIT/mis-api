@@ -212,24 +212,72 @@ class AssetToolsTestCase(AdvanceTestCase):
         time_now = timezone.now().strftime('%Y-%m-%d')
         provided = self.test_create_asset_provide()
         data = {
-            'date_created': time_now,
+            "provide": str(provided.data['result']['id']),
             'title': 'Asset, tools delivery create',
             "employee_inherit_id": str(self.employee.id),
-            "provide": provided.data['result']['id'],
             "products": [
                 {
-                    "product": self.product.data['result']['id'],
                     "order": 1,
-                    "tax": self.tax.data['result']['id'],
-                    "uom": self.uom.data['result']['id'],
-                    "quantity": 1,
-                    "price": 100,
-                    "subtotal": 100,
-                    "product_remark": "lorem ipsum"
+                    "product": str(self.product.data['result']['id']),
+                    "warehouse": str(self.warehouse.data['result']['id']),
+                    "request_number": 1,
+                    "delivered_number": 0,
+                    "done": 0,
+                    "date_delivered": time_now,
+                    "is_inventory": True
                 }
             ],
-            "system_status": 1,
+            "date_created": time_now,
         }
-        # response = self.client.post(reverse('AssetToolsProvideRequestList'), data, format='json')
-        # self.assertEqual(response.status_code, 201)
-        # return response
+        response = self.client.post(reverse('AssetToolsDeliveryRequestList'), data, format='json')
+        self.assertEqual(response.status_code, 201)
+        return response
+
+    def test_get_list_asset_delivery(self):
+        self.test_create_asset_delivery()
+        response = self.client.get(reverse('AssetToolsDeliveryRequestList'), format='json')
+        self.assertResponseList(  # noqa
+            response,
+            status_code=status.HTTP_200_OK,
+            key_required=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key=['result', 'status', 'next', 'previous', 'count', 'page_size'],
+            all_key_from=response.data,
+            type_match={
+                'result': list, 'status': int, 'next': int, 'previous': int, 'count': int, 'page_size': int
+            },
+        )
+        self.assertEqual(
+            len(response.data['result']), 1
+        )
+        self.assertCountEqual(
+            response.data['result'][0],
+            [
+                'id',
+                'code',
+                'title',
+                'employee_inherit',
+                'employee_created',
+                'date_created',
+                'system_status'
+            ],
+            check_sum_second=True,
+        )
+        return response
+
+    def test_get_detail_asset_delivery(self):
+        res = self.test_create_asset_delivery()
+        url = reverse('AssetToolsDeliveryRequestDetail', args=[res.data['result'].get('id', '')])
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, res.data['result'].get('id', ''), None, response.status_code)
+        self.assertContains(response, res.data['result'].get('title', ''), None, response.status_code)
+
+    def test_update_asset_delivery(self):
+        res = self.test_create_asset_delivery()
+        url = reverse('AssetToolsDeliveryRequestDetail', args=[res.data['result'].get('id', '')])
+        data_update = {
+            'title': 'Test update delivery asset'
+        }
+        self.client.put(url, data_update, format='json')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, 200)
