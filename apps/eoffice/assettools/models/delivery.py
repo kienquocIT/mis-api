@@ -132,9 +132,9 @@ class AssetToolsDelivery(DataAbstractModel):
                 "code": self.employee_inherit.code,
                 "group": {
                     "id": str(self.employee_inherit.group_id),
-                    "title": str(self.employee_inherit.group.title),
-                    "code": str(self.employee_inherit.group.code),
-                },
+                    "title": self.employee_inherit.group.title,
+                    "code": self.employee_inherit.group.code,
+                } if hasattr(self.employee_inherit.group, 'id') else {}
             }
         return True
 
@@ -237,7 +237,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                     "id": str(self.product.inventory_uom.id),
                     "title": self.product.inventory_uom.title,
                     "code": self.product.inventory_uom.code
-                }
+                } if hasattr(self.product.inventory_uom, 'id') else {}
             }
         if self.warehouse:
             self.warehouse_data = {
@@ -254,7 +254,7 @@ class ProductDeliveredMapProvide(DataAbstractModel):
                     "id": str(self.employee_inherit.group_id),
                     "title": self.employee_inherit.group.title,
                     "code": self.employee_inherit.group.code
-                }
+                } if hasattr(self.employee_inherit.group, 'id') else {}
 
             }
 

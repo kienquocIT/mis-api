@@ -20,10 +20,11 @@ PRODUCT_OPTION = [
 class ProductListSerializer(serializers.ModelSerializer):
     general_product_types_mapped = serializers.SerializerMethodField()
     general_product_category = serializers.SerializerMethodField()
-    general_uom_group = serializers.SerializerMethodField()
     sale_tax = serializers.SerializerMethodField()
     sale_default_uom = serializers.SerializerMethodField()
     general_price = serializers.SerializerMethodField()
+    general_uom_group = serializers.SerializerMethodField()
+    inventory_uom = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -39,6 +40,7 @@ class ProductListSerializer(serializers.ModelSerializer):
             'sale_default_uom',
             'product_choice',
             'general_price',
+            'inventory_uom',
             # Transaction information
             'stock_amount',
             'wait_delivery_amount',
@@ -91,6 +93,13 @@ class ProductListSerializer(serializers.ModelSerializer):
     @classmethod
     def get_general_price(cls, obj):
         return obj.sale_price
+
+    @classmethod
+    def get_inventory_uom(cls, obj):
+        return {
+            "id": str(obj.inventory_uom.id),
+            "title": obj.inventory_uom.title
+        } if obj.inventory_uom else {}
 
 
 def sub_validate_volume_obj(initial_data, validate_data):

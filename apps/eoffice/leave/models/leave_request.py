@@ -141,6 +141,7 @@ class LeaveRequest(DataAbstractModel):
                         tenant=available.tenant,
                         company=available.company,
                         leave_available=available,
+                        open_year=available.open_year,
                         total=available.total - item['subtotal'],
                         action=2,
                         quantity=item['subtotal'],
@@ -221,6 +222,12 @@ class LeaveAvailableHistory(DataAbstractModel):
         on_delete=models.CASCADE,
         related_name="leave_available_map_history",
         help_text='foreign key to leave history'
+    )
+    open_year = models.IntegerField(
+        verbose_name='Opening year',
+        null=True,
+        default=0,
+        help_text='year of annual created'
     )
     total = models.FloatField(
         verbose_name='Total annual can user in this year',
