@@ -41,10 +41,53 @@ class CommentList(BaseListMixin, BaseCreateMixin):
             field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
             serializer = self.get_serializer_create(data=request.data)
             serializer.is_valid(raise_exception=True)
-            obj = self.perform_create(serializer, extras={
-                **field_hidden,
-                'doc_id': pk_doc,
-                'application_id': pk_app,
-            })
+            obj = self.perform_create(
+                serializer, extras={
+                    **field_hidden,
+                    'doc_id': pk_doc,
+                    'application_id': pk_app,
+                }
+            )
             return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.forbidden_403()
+
+
+class CommentRepliesList(BaseListMixin, BaseCreateMixin):
+    queryset = Comments.objects
+    serializer_list = CommentListSerializer
+    serializer_detail = CommentListSerializer
+    serializer_create = CommentCreateSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+    create_hidden_field = ['tenant_id', 'company_id', 'employee_created_id']
+
+    @swagger_auto_schema(operation_summary="Comment replies list")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            del self.kwargs['pk']
+            self.kwargs.update({'parent_n_id': pk})
+            return self.list(request, *args, **kwargs)
+        return self.list_empty()
+
+    @swagger_auto_schema(operation_summary="Comment replies create")
+    @mask_view(login_require=True, auth_require=False)
+    def post(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            try:
+                instance = Comments.objects.get_current(pk=pk, fill__tenant=True, fill__company=True)
+            except Comments.DoesNotExist:
+                return ResponseController.notfound_404()
+
+            field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
+            serializer = self.get_serializer_create(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            obj = self.perform_create(
+                serializer, extras={
+                    **field_hidden,
+                    'doc_id': instance.doc_id,
+                    'application_id': instance.application_id,
+                    'parent_n': instance,
+                }
+            )
+            return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
+        return ResponseController.notfound_404()
