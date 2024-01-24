@@ -98,7 +98,11 @@ class RevenuePlanCreateSerializer(serializers.ModelSerializer):
             'auto_sum_target',
             'company_month_target',
             'company_quarter_target',
-            'company_year_target'
+            'company_year_target',
+            'company_month_profit_target',
+            'company_quarter_profit_target',
+            'company_year_profit_target',
+            'profit_target_type'
         )
 
     def validate(self, validate_data):
@@ -141,7 +145,11 @@ class RevenuePlanDetailSerializer(serializers.ModelSerializer):
             'company_month_target',
             'company_quarter_target',
             'company_year_target',
-            'revenue_plan_group_data'
+            'company_month_profit_target',
+            'company_quarter_profit_target',
+            'company_year_profit_target',
+            'revenue_plan_group_data',
+            'profit_target_type'
         )
 
     @classmethod
@@ -171,10 +179,16 @@ class RevenuePlanDetailSerializer(serializers.ModelSerializer):
                 'group_month_target': item.group_month_target,
                 'group_quarter_target': item.group_quarter_target,
                 'group_year_target': item.group_year_target,
+                'group_month_profit_target': item.group_month_profit_target,
+                'group_quarter_profit_target': item.group_quarter_profit_target,
+                'group_year_profit_target': item.group_year_profit_target,
                 'employee_target_data': [{
                     'emp_month_target': data.emp_month_target,
                     'emp_quarter_target': data.emp_quarter_target,
                     'emp_year_target': data.emp_year_target,
+                    'emp_month_profit_target': data.emp_month_profit_target,
+                    'emp_quarter_profit_target': data.emp_quarter_profit_target,
+                    'emp_year_profit_target': data.emp_year_profit_target,
                     'id': data.employee_mapped_id,
                     'code': data.employee_mapped.code,
                     'full_name': data.employee_mapped.get_full_name(2)
@@ -196,7 +210,11 @@ class RevenuePlanUpdateSerializer(serializers.ModelSerializer):
             'auto_sum_target',
             'company_month_target',
             'company_quarter_target',
-            'company_year_target'
+            'company_year_target',
+            'company_month_profit_target',
+            'company_quarter_profit_target',
+            'company_year_profit_target',
+            'profit_target_type'
         )
 
     def validate(self, validate_data):
