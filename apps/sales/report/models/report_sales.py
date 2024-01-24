@@ -3,6 +3,7 @@ from django.db import models
 from apps.shared import DataAbstractModel, REPORT_CASHFLOW_TYPE
 
 
+# REPORT REVENUE
 class ReportRevenue(DataAbstractModel):
     sale_order = models.OneToOneField(
         'saleorder.SaleOrder',
@@ -56,8 +57,9 @@ class ReportRevenue(DataAbstractModel):
         permissions = ()
 
 
+# REPORT PRODUCT
 class ReportProduct(DataAbstractModel):
-    product = models.OneToOneField(
+    product = models.ForeignKey(
         'saledata.Product',
         on_delete=models.CASCADE,
         related_name='report_product_product',
@@ -86,24 +88,37 @@ class ReportProduct(DataAbstractModel):
             gross_profit: float,
             net_income: float,
     ):
-        obj, _created = cls.objects.get_or_create(
-            tenant_id=tenant_id, company_id=company_id, product_id=product_id,
-            defaults={
-                'employee_created_id': employee_created_id,
-                'employee_inherit_id': employee_inherit_id,
-                'group_inherit_id': group_inherit_id,
-                'date_approved': date_approved,
-                'revenue': revenue,
-                'gross_profit': gross_profit,
-                'net_income': net_income,
-            }
+        # obj, _created = cls.objects.get_or_create(
+        #     tenant_id=tenant_id, company_id=company_id, product_id=product_id,
+        #     defaults={
+        #         'employee_created_id': employee_created_id,
+        #         'employee_inherit_id': employee_inherit_id,
+        #         'group_inherit_id': group_inherit_id,
+        #         'date_approved': date_approved,
+        #         'revenue': revenue,
+        #         'gross_profit': gross_profit,
+        #         'net_income': net_income,
+        #     }
+        # )
+        # if _created is True:
+        #     return True
+        # obj.revenue += revenue
+        # obj.gross_profit += gross_profit
+        # obj.net_income += net_income
+        # obj.save(update_fields=['revenue', 'gross_profit', 'net_income'])
+
+        cls.objects.create(
+            tenant_id=tenant_id,
+            company_id=company_id,
+            product_id=product_id,
+            employee_created_id=employee_created_id,
+            employee_inherit_id=employee_inherit_id,
+            group_inherit_id=group_inherit_id,
+            date_approved=date_approved,
+            revenue=revenue,
+            gross_profit=gross_profit,
+            net_income=net_income,
         )
-        if _created is True:
-            return True
-        obj.revenue += revenue
-        obj.gross_profit += gross_profit
-        obj.net_income += net_income
-        obj.save(update_fields=['revenue', 'gross_profit', 'net_income'])
         return True
 
     class Meta:
@@ -114,6 +129,7 @@ class ReportProduct(DataAbstractModel):
         permissions = ()
 
 
+# REPORT CUSTOMER
 class ReportCustomer(DataAbstractModel):
     customer = models.ForeignKey(
         'saledata.Account',
@@ -185,6 +201,7 @@ class ReportCustomer(DataAbstractModel):
         permissions = ()
 
 
+# REPORT PIPELINE
 class ReportPipeline(DataAbstractModel):
     opportunity = models.OneToOneField(
         'opportunity.Opportunity',
@@ -216,6 +233,7 @@ class ReportPipeline(DataAbstractModel):
         permissions = ()
 
 
+# REPORT CASHFLOW
 class ReportCashflow(DataAbstractModel):
     sale_order = models.ForeignKey(
         'saleorder.SaleOrder',
