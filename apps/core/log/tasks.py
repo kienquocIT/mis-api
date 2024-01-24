@@ -67,6 +67,8 @@ def force_new_notify(
         employee_sender_id: Union[UUID, str, None] = None,
 
         is_submit: bool = True,
+        application_id=None,
+        comment_mentions_id=None,
 ):
     obj = Notifications(
         tenant_id=tenant_id,
@@ -80,6 +82,8 @@ def force_new_notify(
         employee_id=employee_id,
         employee_sender_id=employee_sender_id,
         is_done=False,
+        application_id=application_id,
+        comment_mentions_id=comment_mentions_id,
     )
     obj.before_save(force_insert=True)
     if is_submit:
