@@ -131,7 +131,9 @@ class AssetToolsTestCase(AdvanceTestCase):
 
     def test_update_asset_tools_config(self):
         is_url = reverse('AssetToolConfigDetail')
-        data_update = {'product_type_id': self.product_type.data['result']['id'], 'warehouse': self.warehouse.id}
+        data_update = {
+            'product_type_id': self.product_type.data['result']['id'],
+            'warehouse': self.warehouse.data['result']['id']}
         self.client.put(is_url, data_update, format='json')
         response = self.client.get(is_url, format='json')
         self.assertEqual(response.status_code, 200)
