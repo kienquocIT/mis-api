@@ -53,9 +53,12 @@ class EmployeeUploadAvatar(BaseUpdateMixin):
 
 class EmployeeListAll(BaseListMixin):
     queryset = Employee.objects
-    search_fields = ["email", "code"]
+    search_fields = ["email", "code", "first_name"]
     serializer_list = EmployeeListAllSerializer
     list_hidden_field = ('tenant_id', 'company_id')
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('group')
 
     def error_auth_require(self):
         return self.list_empty()
