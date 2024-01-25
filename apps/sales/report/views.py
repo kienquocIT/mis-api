@@ -46,6 +46,7 @@ class ReportProductList(BaseListMixin):
         'group_inherit_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
         'date_approved': ['lte', 'gte'],
+        'product_id': ['exact', 'in'],
     }
     serializer_list = ReportProductListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
