@@ -307,13 +307,19 @@ class SaleOrder(DataAbstractModel):
 
     @classmethod
     def push_to_report_product(cls, instance):
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        gross_profit_rate = 0
+        if revenue_obj and gross_profit_obj:
+            gross_profit_rate = (gross_profit_obj.indicator_value / revenue_obj.indicator_value) * 100
+        net_income_rate = 0
+        if revenue_obj and net_income_obj:
+            net_income_rate = (net_income_obj.indicator_value / revenue_obj.indicator_value) * 100
         for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
-            gross_profit = 0
-            so_product_cost = instance.sale_order_cost_sale_order.filter(product_id=so_product.product_id).first()
-            if so_product_cost:
-                gross_profit = revenue - so_product_cost.product_subtotal_price
-            net_income = gross_profit - instance.total_expense_pretax_amount
+            gross_profit = (revenue * gross_profit_rate) / 100
+            net_income = (revenue * net_income_rate) / 100
             ReportProduct.push_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
