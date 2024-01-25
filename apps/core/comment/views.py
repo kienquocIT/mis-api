@@ -35,7 +35,7 @@ class CommentList(BaseListMixin, BaseCreateMixin):
         return self.list_empty()
 
     @swagger_auto_schema(operation_summary="Comment create", request_body=CommentCreateSerializer)
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, pk_doc, pk_app, **kwargs):
         if self.valid_pk(pk_doc=pk_doc, pk_app=pk_app):
             field_hidden = self.cls_check.attr.setup_hidden(from_view='create')
@@ -70,7 +70,7 @@ class CommentRepliesList(BaseListMixin, BaseCreateMixin):
         return self.list_empty()
 
     @swagger_auto_schema(operation_summary="Comment replies create")
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             try:
