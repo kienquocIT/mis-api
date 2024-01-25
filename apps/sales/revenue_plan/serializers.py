@@ -26,6 +26,9 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
             'company_month_target',
             'company_quarter_target',
             'company_year_target',
+            'company_month_profit_target',
+            'company_quarter_profit_target',
+            'company_year_profit_target',
             'status',
             'company_month_target_detail'
         )
@@ -60,7 +63,8 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
         return [{
             'group_mapped_id': item.group_mapped_id,
             'group_mapped_title': item.group_mapped.title,
-            'group_month_target': item.group_month_target
+            'group_month_target': item.group_month_target,
+            'group_month_profit_target': item.group_month_profit_target
         } for item in obj.revenue_plan_mapped_group.all()]
 
 
