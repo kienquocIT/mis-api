@@ -148,7 +148,6 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
         except city.DoesNotExist:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_DEPARTURE})
 
-
     @classmethod
     def validate_destination(cls, value):
         city = DisperseModel(app_model='base.City').get_model()
@@ -156,6 +155,11 @@ class BusinessRequestCreateSerializer(serializers.ModelSerializer):
             return city.objects.get(pk=value)
         except city.DoesNotExist:
             raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_DESTINATION})
+
+    @classmethod
+    def validate_total_day(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EMPTY_DAY})
 
     @classmethod
     def create_expense_items(cls, instance, order_dict):
@@ -340,6 +344,11 @@ class BusinessRequestUpdateSerializer(serializers.ModelSerializer):
         if not value:
             raise serializers.ValidationError({'detail': HRMsg.EMPLOYEE_NOT_EXIST})
         return value
+
+    @classmethod
+    def validate_total_day(cls, value):
+        if value <= 0:
+            raise serializers.ValidationError({'detail': BusinessMsg.EMPTY_EMPTY_DAY})
 
     @classmethod
     def cover_expense_items(cls, instance, order_dict):
