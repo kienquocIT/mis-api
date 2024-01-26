@@ -69,7 +69,7 @@ class CommentRepliesList(BaseListMixin, BaseCreateMixin):
             return self.list(request, *args, **kwargs)
         return self.list_empty()
 
-    @swagger_auto_schema(operation_summary="Comment replies create")
+    @swagger_auto_schema(operation_summary="Comment replies create", request_body=CommentCreateSerializer)
     @mask_view(login_require=True, auth_require=False, employee_require=True)
     def post(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
@@ -91,3 +91,37 @@ class CommentRepliesList(BaseListMixin, BaseCreateMixin):
             )
             return ResponseController.created_201(data=self.get_serializer_detail_return(obj))
         return ResponseController.notfound_404()
+
+
+class RoomRepliesList(BaseListMixin):
+    queryset = Comments.objects
+    serializer_list = CommentListSerializer
+    list_hidden_field = ['tenant_id', 'company_id']
+
+    def get_object(self):
+        try:
+            return Comments.objects.get_current(pk=self.kwargs['pk'], fill__tenant=True, fill__company=True)
+        except Comments.DoesNotExist:
+            pass
+        return None
+
+    def get_room_comment(self, obj):
+        if obj.parent_n:
+            parent_obj = obj.parent_n
+            child_obj = Comments.objects.filter(parent_n=obj.parent_n)
+        else:
+            parent_obj = obj
+            child_obj = Comments.objects.filter(parent_n=obj)
+        return {
+            'parent': self.get_serializer_list(instance=parent_obj).data if parent_obj else {},
+            'child': self.get_serializer_list(instance=child_obj, many=True).data if child_obj else [],
+        }
+
+    @swagger_auto_schema(operation_summary="Comment room replies list")
+    @mask_view(login_require=True, auth_require=False)
+    def get(self, request, *args, pk, **kwargs):
+        if pk and TypeCheck.check_uuid(pk):
+            obj = self.get_object()
+            if obj:
+                return ResponseController.success_200(data=self.get_room_comment(obj), key_data='result')
+        return self.list_empty()
