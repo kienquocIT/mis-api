@@ -106,7 +106,7 @@ class RoomRepliesList(BaseListMixin):
         return None
 
     def get_room_comment(self, obj):
-        siblings_count = Comments.objects.filter(doc_id=obj.doc_id).count()
+        siblings_count = Comments.objects.filter(doc_id=obj.doc_id, parent_n__isnull=True).count()
         if obj.parent_n:
             parent_obj = obj.parent_n
             child_obj = obj
@@ -117,7 +117,7 @@ class RoomRepliesList(BaseListMixin):
             children_count = 0
 
         return {
-            'siblings_count':  siblings_count,
+            'siblings_count': siblings_count,
             'children_count': children_count,
             'parent': self.get_serializer_list(instance=parent_obj).data if parent_obj else {},
             'child': self.get_serializer_list(instance=child_obj).data if child_obj else {},
