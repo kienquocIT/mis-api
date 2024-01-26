@@ -108,7 +108,8 @@ class AssetToolsProductListByProvideIDList(BaseListMixin):
         operation_description="get provide request list",
     )
     @mask_view(
-        login_require=True, auth_require=False,
+        login_require=True, auth_require=True,
+        label_code='assetTools', model_code='AssetToolsProvide', perm_code="view",
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
