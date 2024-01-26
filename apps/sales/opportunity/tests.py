@@ -231,7 +231,9 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'opportunity_sale_team_datas',
                 'close_date',
                 'stage',
-                'is_close'
+                'is_close',
+                'estimated_gross_profit_percent',
+                'estimated_gross_profit_value'
             ],
             check_sum_second=True,
         )
@@ -321,7 +323,9 @@ class TestCaseOpportunity(AdvanceTestCase):
                 'quotation',
                 'is_close_lost',
                 'is_deal_close',
-                'members'
+                'members',
+                'estimated_gross_profit_percent',
+                'estimated_gross_profit_value'
             ],
             check_sum_second=True,
         )
