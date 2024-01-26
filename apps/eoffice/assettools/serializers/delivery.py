@@ -206,7 +206,7 @@ class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
 
 
 class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
-    employee_inherit = serializers.SerializerMethodField()
+    # employee_inherit = serializers.SerializerMethodField()
 
     @classmethod
     def get_employee_inherit(cls, obj):
@@ -215,7 +215,6 @@ class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductDeliveredMapProvide
         fields = (
-            'employee_inherit',
             'product_data',
             'done'
         )

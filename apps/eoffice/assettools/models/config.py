@@ -61,6 +61,7 @@ class AssetToolsConfigEmployee(SimpleAbstractModel):
         'AssetToolsConfig',
         on_delete=models.CASCADE,
         verbose_name='asset tool config',
+        related_name='asset_config_employee_map_asset_config'
     )
     employee = models.ForeignKey(
         'hr.Employee',
