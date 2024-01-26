@@ -151,6 +151,7 @@ class ReportPipelineListSerializer(serializers.ModelSerializer):
             'value': obj.opportunity.total_product,
             'win_rate': obj.opportunity.win_rate,
             'forecast_value': (obj.opportunity.total_product_pretax_amount * obj.opportunity.win_rate) / 100,
+            'gross_profit': (obj.opportunity.estimated_gross_profit_value * obj.opportunity.win_rate) / 100,
             'customer': {
                 'id': obj.opportunity.customer_id,
                 'title': obj.opportunity.customer.name,
