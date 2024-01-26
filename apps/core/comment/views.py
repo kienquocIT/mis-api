@@ -98,7 +98,7 @@ class RoomRepliesList(BaseListMixin):
     serializer_list = CommentListSerializer
     list_hidden_field = ['tenant_id', 'company_id']
 
-    def get_object(self):
+    def get_object(self) -> Comments or None:
         try:
             return Comments.objects.get_current(pk=self.kwargs['pk'], fill__tenant=True, fill__company=True)
         except Comments.DoesNotExist:
@@ -106,19 +106,25 @@ class RoomRepliesList(BaseListMixin):
         return None
 
     def get_room_comment(self, obj):
+        siblings_count = Comments.objects.filter(doc_id=obj.doc_id).count()
         if obj.parent_n:
             parent_obj = obj.parent_n
-            child_obj = Comments.objects.filter(parent_n=obj.parent_n)
+            child_obj = obj
+            children_count = Comments.objects.filter(parent_n=obj.parent_n).count()
         else:
             parent_obj = obj
-            child_obj = Comments.objects.filter(parent_n=obj)
+            child_obj = None
+            children_count = 0
+
         return {
+            'siblings_count':  siblings_count,
+            'children_count': children_count,
             'parent': self.get_serializer_list(instance=parent_obj).data if parent_obj else {},
-            'child': self.get_serializer_list(instance=child_obj, many=True).data if child_obj else [],
+            'child': self.get_serializer_list(instance=child_obj).data if child_obj else {},
         }
 
     @swagger_auto_schema(operation_summary="Comment room replies list")
-    @mask_view(login_require=True, auth_require=False)
+    @mask_view(login_require=True, auth_require=False, employee_require=True)
     def get(self, request, *args, pk, **kwargs):
         if pk and TypeCheck.check_uuid(pk):
             obj = self.get_object()
