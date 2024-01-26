@@ -14,6 +14,7 @@ __all__ = [
     'WareHouseListSerializerForInventoryAdjustment',
     'ProductWarehouseLotListSerializer',
     'ProductWarehouseSerialListSerializer',
+    'ProductWarehouseAssetToolsListSerializer'
 ]
 
 from apps.shared import TypeCheck, WarehouseMsg
@@ -309,12 +310,14 @@ class WareHouseListSerializerForInventoryAdjustment(serializers.ModelSerializer)
         results = []
         products = ProductWareHouse.objects.filter(warehouse=obj)
         for item in products:
-            results.append({
-                'id': str(item.id),
-                'product': item.product_data,
-                'available_amount': item.stock_amount,
-                'inventory_uom': item.uom_data,
-            })
+            results.append(
+                {
+                    'id': str(item.id),
+                    'product': item.product_data,
+                    'available_amount': item.stock_amount,
+                    'inventory_uom': item.uom_data,
+                }
+            )
         return results
 
 
@@ -392,3 +395,34 @@ class ProductWarehouseSerialListSerializer(serializers.ModelSerializer):
                 'code': obj.product_warehouse.warehouse.code,
             } if obj.product_warehouse.warehouse else {},
         }
+
+
+class ProductWarehouseAssetToolsListSerializer(serializers.ModelSerializer):
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProductWareHouse
+        fields = (
+            'id',
+            'product',
+            'uom',
+            'stock_amount',
+            'used_amount',
+        )
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'title': obj.product.title,
+            'code': obj.product.code,
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'title': obj.uom.title,
+            'code': obj.uom.code,
+        } if obj.uom else {}

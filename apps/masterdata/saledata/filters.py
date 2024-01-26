@@ -85,9 +85,18 @@ class ProductWareHouseListFilter(django_filters.FilterSet):
                 asset_config = DisperseModel(app_model='assettools.AssetToolsConfig').get_model().objects.filter(
                     company_id=user_obj.company_current_id,
                 )
-                product_type = str(asset_config.first().product_type.id).split(',')
+                product_type = str(asset_config.first().product_type.id)
+                asset_admin_list = asset_config.first().asset_config_employee_map_asset_config.all()
+                is_authen = False
+                if user_obj.employee_current and asset_admin_list:
+                    for item in asset_admin_list:
+                        if item.employee == user_obj.employee_current:
+                            is_authen = True
+                            break
+                if not is_authen:
+                    raise exceptions.PermissionDenied
                 filter_kwargs &= Q(**{
-                    'product__general_product_types_mapped__id__in': product_type})
+                    'product__general_product_types_mapped__id': product_type})
             if filter_kwargs is not None:
                 return queryset.filter(filter_kwargs)
             return queryset

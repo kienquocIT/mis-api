@@ -30,7 +30,8 @@ class RevenuePlanListSerializer(serializers.ModelSerializer):
             'company_quarter_profit_target',
             'company_year_profit_target',
             'status',
-            'company_month_target_detail'
+            'company_month_target_detail',
+            'profit_target_type'
         )
 
     @classmethod

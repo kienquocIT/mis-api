@@ -95,7 +95,7 @@ class AssetToolsDelivery(DataAbstractModel):
                         raise ValueError(AssetToolsMsg.ERROR_UPDATE_DELIVERED)
                     product_asset_list.append(row_item)
 
-                    # update used_amount cho prod trong warehouse bảng ProductWareHouse
+                    # update used_amount cho prod trong warehouse bảng ProductWareHouse if product has control inventory
                     if 1 in item.product.product_choice:
                         prod_warehouse = item.product.product_warehouse_product.first()
                         if (prod_warehouse.stock_amount - prod_warehouse.used_amount) < count:
