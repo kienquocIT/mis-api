@@ -106,7 +106,7 @@ class ReportCustomerList(BaseListMixin):
 # REPORT PIPELINE
 class ReportPipelineList(BaseListMixin):
     queryset = ReportPipeline.objects
-    search_fields = ['opportunity__title']
+    search_fields = ['opportunity__title', 'opportunity__code', 'employee_inherit__search_content']
     filterset_fields = {
         'employee_inherit__group_id': ['exact', 'in'],
         'employee_inherit_id': ['exact', 'in'],
