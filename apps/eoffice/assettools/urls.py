@@ -7,6 +7,8 @@ from .views import AssetToolConfigDetail, AssetToolsProvideRequestList, AssetToo
 urlpatterns = [
     # CONFIG
     path('config', AssetToolConfigDetail.as_view(), name='AssetToolConfigDetail'),
+    # ASSET, TOOLS LIST
+    path('list', AssetToolsProductUsedList.as_view(), name='AssetToolsProductUsedList'),
     # PROVIDE
     path('provide', AssetToolsProvideRequestList.as_view(), name='AssetToolsProvideRequestList'),
     path('provide/detail/<str:pk>', AssetToolsProvideRequestDetail.as_view(), name='AssetToolsProvideRequestDetail'),
@@ -17,5 +19,4 @@ urlpatterns = [
     # DELIVERY
     path('delivery', AssetToolsDeliveryRequestList.as_view(), name='AssetToolsDeliveryRequestList'),
     path('delivery/detail/<str:pk>', AssetToolsDeliveryRequestDetail.as_view(), name='AssetToolsDeliveryRequestDetail'),
-    path('delivery/product-view-list', AssetToolsProductUsedList.as_view(), name='AssetToolsProductUsedList'),
 ]

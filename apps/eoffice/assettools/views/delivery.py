@@ -52,13 +52,16 @@ class AssetToolsProductUsedList(BaseListMixin):
     serializer_list = AssetToolsProductUsedListSerializer
     list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     search_fields = ('code', 'title')
+    filterset_fields = {
+        'employee_inherit': ['exact'],
+    }
 
     def get_queryset(self):
-        return super().get_queryset().select_related('product')
+        return super().get_queryset().filter(is_inventory=True, delivery__system_status__gte=2)
 
     @swagger_auto_schema(
-        operation_summary="Asset, Tools Provide request list",
-        operation_description="get provide request list",
+        operation_summary="Asset, Tools list by employee",
+        operation_description="get product list used by employee",
     )
     @mask_view(
         login_require=True, auth_require=True,
