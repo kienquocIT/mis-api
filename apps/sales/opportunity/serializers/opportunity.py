@@ -716,7 +716,9 @@ class OpportunityUpdateSerializer(serializers.ModelSerializer):
             'lost_by_other_reason',
             'list_stage',
             'is_close_lost',
-            'is_deal_close'
+            'is_deal_close',
+            'estimated_gross_profit_percent',
+            'estimated_gross_profit_value'
         )
 
     @classmethod
@@ -901,7 +903,9 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
             'quotation',
             'is_close_lost',
             'is_deal_close',
-            'members'
+            'members',
+            'estimated_gross_profit_percent',
+            'estimated_gross_profit_value'
         )
 
     @classmethod
