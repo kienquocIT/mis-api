@@ -1,6 +1,7 @@
 from django.db import models
 
-from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS
+from apps.sales.report.models import ReportCashflow
+from apps.shared import DataAbstractModel, SimpleAbstractModel, RECEIPT_STATUS, MasterDataAbstractModel
 
 
 class PurchaseOrder(DataAbstractModel):
@@ -75,6 +76,10 @@ class PurchaseOrder(DataAbstractModel):
     is_all_receipted = models.BooleanField(
         default=False,
         help_text="True if all products are receipted by Goods Receipt"
+    )
+    purchase_order_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail purchase order"
     )
 
     class Meta:
@@ -156,8 +161,42 @@ class PurchaseOrder(DataAbstractModel):
             })
         return True
 
+    @classmethod
+    def push_to_report_cashflow(cls, instance):
+        po_products_json = {}
+        po_products = instance.purchase_order_product_order.all()
+        for po_product in po_products:
+            if str(po_product.product_id) not in po_products_json:
+                po_products_json.update({str(po_product.product_id): {
+                    'po': str(po_product.purchase_order_id),
+                    'quantity': po_product.product_quantity_order_actual,
+                }})
+        po_purchase_requests = instance.purchase_requests.all()
+        for purchase_request in po_purchase_requests:
+            so_rate = 0
+            for pr_product in purchase_request.purchase_request.all():
+                if str(pr_product.product_id) in po_products_json:
+                    po_product_map = po_products_json[str(pr_product.product_id)]
+                    so_rate += (pr_product.quantity / po_product_map.get('quantity', 0)) * 100
+            # payment
+            bulk_data = [ReportCashflow(
+                tenant_id=purchase_request.sale_order.tenant_id,
+                company_id=purchase_request.sale_order.company_id,
+                sale_order_id=purchase_request.sale_order_id,
+                purchase_order_id=instance.id,
+                cashflow_type=3,
+                employee_inherit_id=purchase_request.sale_order.employee_inherit_id,
+                group_inherit_id=purchase_request.sale_order.employee_inherit.group_id,
+                due_date=payment_stage.due_date,
+                value_estimate_cost=payment_stage.value_before_tax * so_rate / 100,
+            ) for payment_stage in instance.purchase_order_payment_stage_po.all()]
+            ReportCashflow.push_from_so_po(bulk_data)
+        return True
+
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        # if self.system_status == 2:  # added
+        if self.system_status in [2, 3]:  # added, finish
+            # check if not code then generate code
             if not self.code:
                 self.code = self.generate_code(self.company_id)
                 if 'update_fields' in kwargs:
@@ -165,9 +204,15 @@ class PurchaseOrder(DataAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_remain_and_status_purchase_request(self)
-                self.update_is_all_ordered_purchase_request(self)
-                self.update_product_wait_receipt_amount(self)
+            # check if date_approved then call related functions
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    if 'date_approved' in kwargs['update_fields']:
+                        self.update_remain_and_status_purchase_request(self)
+                        self.update_is_all_ordered_purchase_request(self)
+                        self.update_product_wait_receipt_amount(self)
+                        # report
+                        self.push_to_report_cashflow(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -378,5 +423,35 @@ class PurchaseOrderRequestProduct(SimpleAbstractModel):
         verbose_name = 'Purchase Order Request Product'
         verbose_name_plural = 'Purchase Order Request Products'
         ordering = ()
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT PAYMENT TERM STAGE
+class PurchaseOrderPaymentStage(MasterDataAbstractModel):
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.CASCADE,
+        verbose_name="purchase order",
+        related_name="purchase_order_payment_stage_po",
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    payment_ratio = models.FloatField(default=0)
+    value_before_tax = models.FloatField(default=0)
+    tax = models.ForeignKey(
+        'saledata.Tax',
+        on_delete=models.CASCADE,
+        verbose_name="tax",
+        related_name="purchase_order_payment_stage_tax",
+        null=True
+    )
+    value_after_tax = models.FloatField(default=0)
+    due_date = models.DateTimeField(null=True)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Purchase Order Payment Stage'
+        verbose_name_plural = 'Purchase Order Payment Stages'
+        ordering = ('order',)
         default_permissions = ()
         permissions = ()

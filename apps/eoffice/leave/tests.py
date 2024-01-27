@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.utils import timezone
 
-from apps.eoffice.leave.models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig
+from .models import LeaveConfig, LeaveType, WorkingCalendarConfig, WorkingYearConfig, LeaveAvailable
 from apps.shared.extends.tests import AdvanceTestCase
 from apps.core.hr.models import Employee
 
@@ -163,8 +163,13 @@ class LeaveTestCase(AdvanceTestCase):
     def test_create_leave_request(self):
         leave_type = LeaveType.objects.filter_current(
             company_id=self.company_id,
-            code='AN'
+            code='MC'
         ).first()
+        leave_available = LeaveAvailable.objects.get(
+            employee_inherit_id=str(self.employee.id),
+            leave_type__code='MC'
+        )
+
         time_now = timezone.now().strftime('%Y-%m-%d')
         data = {
             'title': 'xin nghỉ làm việc nhà',
@@ -177,8 +182,16 @@ class LeaveTestCase(AdvanceTestCase):
                 "subtotal": 1,
                 "date_from": time_now,
                 "leave_available": {
+                    "id": str(leave_available.id),
+                    "available": leave_available.available,
+                    "check_balance": leave_available.check_balance,
+                    "expiration_date": leave_available.expiration_date,
+                    "open_year": leave_available.open_year,
+                    "total": leave_available.total,
+                    "used": leave_available.used,
                     "leave_type": {
-                        "id": str(leave_type.id)
+                        "id": str(leave_type.id),
+                        "code": "MC"
                     }
                 },
                 "morning_shift_f": True,

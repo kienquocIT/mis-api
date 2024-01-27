@@ -8,3 +8,5 @@ from .inventory import *
 from .good_receipt import *
 from .product_warehouse import *
 from .expense_item import *
+from .periods import *
+from .revenue_plan_config import *

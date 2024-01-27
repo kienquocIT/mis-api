@@ -1,11 +1,11 @@
-__all__ = ['AssetToolsProvideRequestList', 'AssetToolsProvideRequestDetail']
+__all__ = ['AssetToolsProvideRequestList', 'AssetToolsProvideRequestDetail', 'AssetToolsProductListByProvideIDList']
 
 from django.db.models import Prefetch
 from drf_yasg.utils import swagger_auto_schema
 
-from apps.eoffice.assettools.models import AssetToolsProvide
+from apps.eoffice.assettools.models import AssetToolsProvide, AssetToolsProvideProduct
 from apps.eoffice.assettools.serializers import AssetToolsProvideCreateSerializer, AssetToolsProvideListSerializer, \
-    AssetToolsProvideDetailSerializer, AssetToolsProvideUpdateSerializer
+    AssetToolsProvideDetailSerializer, AssetToolsProvideUpdateSerializer, AssetToolsProductListByProvideIDSerializer
 from apps.shared import BaseCreateMixin, mask_view, BaseListMixin, BaseRetrieveMixin, BaseUpdateMixin
 
 
@@ -18,8 +18,13 @@ class AssetToolsProvideRequestList(BaseListMixin, BaseCreateMixin):
     create_hidden_field = [
         'tenant_id', 'company_id',
         'employee_created_id',
+        'employee_inherit_id',
     ]
     search_fields = ('code', 'title')
+    filterset_fields = {
+        "complete_delivered": ['exact'],
+        "system_status": ['gte'],
+    }
 
     def get_queryset(self):
         return super().get_queryset().select_related('employee_inherit')
@@ -86,3 +91,24 @@ class AssetToolsProvideRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def put(self, request, *args, **kwargs):
         self.ser_context = {'user': request.user}
         return self.update(request, *args, **kwargs)
+
+
+class AssetToolsProductListByProvideIDList(BaseListMixin):
+    queryset = AssetToolsProvideProduct.objects
+    serializer_list = AssetToolsProductListByProvideIDSerializer
+    filterset_fields = {
+        "asset_tools_provide_id": ["exact"]
+    }
+
+    def get_queryset(self):
+        return super().get_queryset().select_related('product')
+
+    @swagger_auto_schema(
+        operation_summary="Asset, Tools Provide request list",
+        operation_description="get provide request list",
+    )
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)

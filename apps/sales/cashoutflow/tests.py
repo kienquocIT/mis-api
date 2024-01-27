@@ -61,6 +61,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
+                'attachment'
             ],
             check_sum_second=True,
         )
@@ -146,6 +147,7 @@ class AdvancePaymentTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
+                'attachment'
             ],
             check_sum_second=True,
         )
@@ -372,6 +374,8 @@ class PaymentTestCase(AdvanceTestCase):
                 'delivery_call',
                 # indicator tab
                 'sale_order_indicators_data',
+                # payment stage tab
+                'sale_order_payment_stage',
                 # system
                 'workflow_runtime_id',
                 'is_active',
@@ -426,6 +430,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'employee_payment',
                 'is_internal_payment',
+                'attachment'
             ],
             check_sum_second=True,
         )
@@ -507,6 +512,7 @@ class PaymentTestCase(AdvanceTestCase):
                 'system_status',
                 'employee_payment',
                 'is_internal_payment',
+                'attachment'
             ],
             check_sum_second=True,
         )
@@ -610,6 +616,7 @@ class ReturnAdvanceTestCase(AdvanceTestCase):
                 'employee_inherit',
                 'system_status',
                 'workflow_runtime_id',
+                'attachment'
             ],
             check_sum_second=True,
         )

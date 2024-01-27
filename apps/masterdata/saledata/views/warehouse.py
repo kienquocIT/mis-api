@@ -1,7 +1,7 @@
 from drf_yasg.utils import swagger_auto_schema
 
 from apps.masterdata.saledata.serializers.warehouse import ProductWarehouseLotListSerializer, \
-    ProductWarehouseSerialListSerializer
+    ProductWarehouseSerialListSerializer, ProductWarehouseAssetToolsListSerializer
 from apps.shared import (
     BaseListMixin, BaseCreateMixin, BaseRetrieveMixin, BaseUpdateMixin, BaseDestroyMixin, mask_view,
 )
@@ -13,10 +13,11 @@ from apps.masterdata.saledata.serializers import (
     WareHouseDetailSerializer, WareHouseUpdateSerializer,
     ProductWareHouseStockListSerializer, ProductWareHouseListSerializer
 )
+from ..filters import ProductWareHouseListFilter
 
 __all__ = [
     'WareHouseList', 'WareHouseDetail', 'WareHouseCheckAvailableProductList', 'ProductWareHouseList',
-    'WareHouseListForInventoryAdjustment',
+    'WareHouseListForInventoryAdjustment', 'ProductWareHouseAssetToolsList'
 ]
 
 
@@ -108,10 +109,12 @@ class ProductWareHouseList(BaseListMixin):
     queryset = ProductWareHouse.objects
     serializer_list = ProductWareHouseListSerializer
     list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
-    filterset_fields = {
-        "product_id": ["exact"],
-        "warehouse_id": ["exact"],
-    }
+    filterset_class = ProductWareHouseListFilter
+
+    # filterset_fields = {
+    #     "product_id": ["exact"],
+    #     "warehouse_id": ["exact"],
+    # }
 
     def get_queryset(self):
         return super().get_queryset().select_related(
@@ -193,6 +196,26 @@ class ProductWareHouseSerialList(BaseListMixin):
         )
 
     @swagger_auto_schema(operation_summary='Product WareHouse Serial')
+    @mask_view(
+        login_require=True, auth_require=False,
+    )
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+
+class ProductWareHouseAssetToolsList(BaseListMixin):
+    queryset = ProductWareHouse.objects
+    serializer_list = ProductWarehouseAssetToolsListSerializer
+    list_hidden_field = BaseListMixin.LIST_MASTER_DATA_FIELD_HIDDEN_DEFAULT
+    filterset_class = ProductWareHouseListFilter
+
+    def get_queryset(self):
+        return super().get_queryset().select_related(
+            'product',
+            'uom',
+        )
+
+    @swagger_auto_schema(operation_summary='Product Asset list')
     @mask_view(
         login_require=True, auth_require=False,
     )

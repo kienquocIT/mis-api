@@ -182,6 +182,12 @@ class Opportunity(DataAbstractModel):
         blank=True,
         related_name='member_of_opp'
     )
+    estimated_gross_profit_percent = models.FloatField(
+        default=0
+    )
+    estimated_gross_profit_value = models.FloatField(
+        default=0
+    )
 
     class Meta:
         verbose_name = 'Opportunity'

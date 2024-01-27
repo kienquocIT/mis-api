@@ -224,7 +224,7 @@ class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False)
     method = serializers.IntegerField(required=False)
     money_received = serializers.BooleanField(required=False)
-    cost = ReturnAdvanceCostCreateSerializer(many=True)
+    cost = ReturnAdvanceCostCreateSerializer(required=True, many=True)
 
     class Meta:
         model = ReturnAdvance
@@ -240,14 +240,15 @@ class ReturnAdvanceUpdateSerializer(serializers.ModelSerializer):
         if instance.advance_payment.system_status != 3:
             raise serializers.ValidationError({'detail': SaleMsg.ADVANCE_PAYMENT_NOT_FINISH})
         count_expense = AdvancePaymentCost.objects.filter(advance_payment=instance.advance_payment).count()
-        if len(validated_data['cost']) != count_expense:
-            raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
+        if validated_data.get('cost'):
+            if len(validated_data['cost']) != count_expense:
+                raise serializers.ValidationError({'Expense': ReturnAdvanceMsg.NOT_MAP_AP})
 
-        data_cost = validated_data.pop('cost')
-        ReturnAdvanceCreateSerializer.common_create_return_advance_cost(
-            validate_data=data_cost,
-            return_advance=instance
-        )
+            data_cost = validated_data.pop('cost')
+            ReturnAdvanceCreateSerializer.common_create_return_advance_cost(
+                validate_data=data_cost,
+                return_advance=instance
+            )
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()

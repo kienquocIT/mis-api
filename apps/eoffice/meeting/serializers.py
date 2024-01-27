@@ -4,7 +4,8 @@ import requests
 from icalendar import Calendar, Event
 from rest_framework import serializers
 from apps.eoffice.meeting.models import (
-    MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting
+    MeetingRoom, MeetingZoomConfig, MeetingSchedule, MeetingScheduleParticipant, MeetingScheduleOnlineMeeting,
+    MeetingScheduleAttachmentFile
 )
 from apps.shared import MeetingScheduleMsg, SimpleEncryptor
 from misapi import settings
@@ -153,8 +154,7 @@ def create_participants_mapped(meeting_schedule, participants_list):
         bulk_info.append(
             MeetingScheduleParticipant(
                 meeting_schedule_mapped=meeting_schedule,
-                participant_id=item.get('participant_id'),
-                is_external=item.get('is_external')
+                **item
             )
         )
     MeetingScheduleParticipant.objects.filter(meeting_schedule_mapped=meeting_schedule).delete()
@@ -290,6 +290,22 @@ def check_room_overlap(item, data):
     return (item_mt_datetime < this_end_datetime) and (this_mt_datetime < item_end_datetime)
 
 
+def create_files_mapped(meeting_obj, file_id_list):
+    try:
+        bulk_data_file = []
+        for index, file_id in enumerate(file_id_list):
+            bulk_data_file.append(MeetingScheduleAttachmentFile(
+                meeting_schedule=meeting_obj,
+                attachment_id=file_id,
+                order=index
+            ))
+        MeetingScheduleAttachmentFile.objects.filter(meeting_schedule=meeting_obj).delete()
+        MeetingScheduleAttachmentFile.objects.bulk_create(bulk_data_file)
+        return True
+    except Exception as err:
+        raise serializers.ValidationError({'files': MeetingScheduleMsg.SAVE_FILES_ERROR + f' {err}'})
+
+
 class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingSchedule
@@ -316,6 +332,10 @@ class MeetingScheduleCreateSerializer(serializers.ModelSerializer):
         create_participants_mapped(meeting_schedule, self.initial_data.get('participants', []))
         if meeting_schedule.meeting_type is False:
             after_create_online_meeting(meeting_schedule, self.initial_data.get('online_meeting_data', {}))
+
+        attachment = self.initial_data.get('attachment', '')
+        if attachment:
+            create_files_mapped(meeting_schedule, attachment.strip().split(','))
         return meeting_schedule
 
 
@@ -323,6 +343,7 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
     participants = serializers.SerializerMethodField()
     meeting_room_mapped = serializers.SerializerMethodField()
     online_meeting_data = serializers.SerializerMethodField()
+    attachment = serializers.SerializerMethodField()
 
     class Meta:
         model = MeetingSchedule
@@ -336,14 +357,21 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_start_time',
             'meeting_duration',
             'participants',
-            'online_meeting_data'
+            'online_meeting_data',
+            'attachment'
         )
 
     @classmethod
     def get_participants(cls, obj):
         participants = [{
-            'id': item.participant_id,
-            'full_name': item.participant.get_full_name(2),
+            'internal': {
+                'id': item.internal_id,
+                'full_name': item.internal.get_full_name(2)
+            } if item.internal else None,
+            'external': {
+                'id': item.external_id,
+                'full_name': item.external.fullname
+            } if item.external else None,
             'is_external': item.is_external,
         } for item in obj.meeting_schedule_mapped.all()]
         return participants
@@ -367,6 +395,11 @@ class MeetingScheduleDetailSerializer(serializers.ModelSerializer):  # noqa
             'meeting_passcode': item.meeting_passcode,
             'meeting_create_payload': item.meeting_create_payload
         } for item in obj.meeting_online_schedule_mapped.all()]
+
+    @classmethod
+    def get_attachment(cls, obj):
+        att_objs = MeetingScheduleAttachmentFile.objects.select_related('attachment').filter(meeting_schedule=obj)
+        return [item.attachment.get_detail() for item in att_objs]
 
 
 class MeetingScheduleUpdateSerializer(serializers.ModelSerializer):

@@ -2,8 +2,9 @@ from django.db import models
 
 from apps.core.company.models import CompanyFunctionNumber
 from apps.sales.acceptance.models import FinalAcceptance
-from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct
-from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS
+from apps.sales.report.models import ReportRevenue, ReportCustomer, ReportProduct, ReportCashflow
+from apps.shared import DataAbstractModel, SimpleAbstractModel, MasterDataAbstractModel, SALE_ORDER_DELIVERY_STATUS, \
+    PAYMENT_TERM_STAGE
 
 
 # CONFIG
@@ -163,6 +164,10 @@ class SaleOrder(DataAbstractModel):
         default=list,
         help_text="read data expense, use for get list or detail sale order"
     )
+    sale_order_payment_stage = models.JSONField(
+        default=list,
+        help_text="read data payment stage, use for get list or detail sale order"
+    )
     # total amount of products
     total_product_pretax_amount = models.FloatField(
         default=0,
@@ -282,11 +287,11 @@ class SaleOrder(DataAbstractModel):
         return True
 
     @classmethod
-    def create_report_revenue(cls, instance):
+    def push_to_report_revenue(cls, instance):
         revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
         gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
         net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        ReportRevenue.create_report_revenue_from_so(
+        ReportRevenue.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             sale_order_id=instance.id,
@@ -301,15 +306,21 @@ class SaleOrder(DataAbstractModel):
         return True
 
     @classmethod
-    def update_report_product(cls, instance):
+    def push_to_report_product(cls, instance):
+        revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
+        gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
+        net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
+        gross_profit_rate = 0
+        if revenue_obj and gross_profit_obj:
+            gross_profit_rate = (gross_profit_obj.indicator_value / revenue_obj.indicator_value) * 100
+        net_income_rate = 0
+        if revenue_obj and net_income_obj:
+            net_income_rate = (net_income_obj.indicator_value / revenue_obj.indicator_value) * 100
         for so_product in instance.sale_order_product_sale_order.filter(is_promotion=False, is_shipping=False):
             revenue = (so_product.product_unit_price - so_product.product_discount_amount) * so_product.product_quantity
-            gross_profit = 0
-            so_product_cost = instance.sale_order_cost_sale_order.filter(product_id=so_product.product_id).first()
-            if so_product_cost:
-                gross_profit = revenue - so_product_cost.product_subtotal_price
-            net_income = gross_profit - instance.total_expense_pretax_amount
-            ReportProduct.update_report_product_from_so(
+            gross_profit = (revenue * gross_profit_rate) / 100
+            net_income = (revenue * net_income_rate) / 100
+            ReportProduct.push_from_so(
                 tenant_id=instance.tenant_id,
                 company_id=instance.company_id,
                 product_id=so_product.product_id,
@@ -324,11 +335,11 @@ class SaleOrder(DataAbstractModel):
         return True
 
     @classmethod
-    def update_report_customer(cls, instance):
+    def push_to_report_customer(cls, instance):
         revenue_obj = instance.sale_order_indicator_sale_order.filter(code='IN0001').first()
         gross_profit_obj = instance.sale_order_indicator_sale_order.filter(code='IN0003').first()
         net_income_obj = instance.sale_order_indicator_sale_order.filter(code='IN0006').first()
-        ReportCustomer.update_report_customer_from_so(
+        ReportCustomer.push_from_so(
             tenant_id=instance.tenant_id,
             company_id=instance.company_id,
             customer_id=instance.customer_id,
@@ -343,7 +354,22 @@ class SaleOrder(DataAbstractModel):
         return True
 
     @classmethod
-    def create_final_acceptance(cls, instance):
+    def push_to_report_cashflow(cls, instance):
+        bulk_data = [ReportCashflow(
+            tenant_id=instance.tenant_id,
+            company_id=instance.company_id,
+            sale_order_id=instance.id,
+            cashflow_type=2,
+            employee_inherit_id=instance.employee_inherit_id,
+            group_inherit_id=instance.employee_inherit.group_id,
+            due_date=payment_stage.due_date,
+            value_estimate_sale=payment_stage.value_before_tax,
+        ) for payment_stage in instance.payment_stage_sale_order.all()]
+        ReportCashflow.push_from_so_po(bulk_data)
+        return True
+
+    @classmethod
+    def push_to_final_acceptance(cls, instance):
         list_data_indicator = [
             {
                 'tenant_id': instance.tenant_id,
@@ -371,24 +397,32 @@ class SaleOrder(DataAbstractModel):
         return True
 
     def save(self, *args, **kwargs):
-        if self.system_status in [2, 3]:
+        # if self.system_status == 2:  # added
+        if self.system_status in [2, 3]:  # added, finish
+            # check if not code then generate code
             if not self.code:
                 code_generated = CompanyFunctionNumber.gen_code(company_obj=self.company, func=2)
                 if code_generated:
                     self.code = code_generated
                 else:
                     self.code = self.generate_code(self.company_id)
-
                 if 'update_fields' in kwargs:
                     if isinstance(kwargs['update_fields'], list):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_product_wait_delivery_amount(self)
-                self.create_report_revenue(self)
-                self.update_report_product(self)
-                self.update_report_customer(self)
-                self.create_final_acceptance(self)
+            # check if date_approved then call related functions
+            if 'update_fields' in kwargs:
+                if isinstance(kwargs['update_fields'], list):
+                    if 'date_approved' in kwargs['update_fields']:
+                        self.update_product_wait_delivery_amount(self)
+                        # reports
+                        self.push_to_report_revenue(self)
+                        self.push_to_report_product(self)
+                        self.push_to_report_customer(self)
+                        self.push_to_report_cashflow(self)
+                        # final acceptance
+                        self.push_to_final_acceptance(self)
 
         # hit DB
         super().save(*args, **kwargs)
@@ -757,6 +791,36 @@ class SaleOrderExpense(MasterDataAbstractModel):
     class Meta:
         verbose_name = 'Sale Order Expense'
         verbose_name_plural = 'Sale Order Expenses'
+        ordering = ('order',)
+        default_permissions = ()
+        permissions = ()
+
+
+# SUPPORT PAYMENT TERM STAGE
+class SaleOrderPaymentStage(MasterDataAbstractModel):
+    sale_order = models.ForeignKey(
+        SaleOrder,
+        on_delete=models.CASCADE,
+        verbose_name="sale order",
+        related_name="payment_stage_sale_order",
+    )
+    stage = models.SmallIntegerField(
+        default=0,
+        help_text='choices= ' + str(PAYMENT_TERM_STAGE),
+    )
+    remark = models.CharField(verbose_name='remark', max_length=500, blank=True, null=True)
+    date = models.DateTimeField(null=True)
+    date_type = models.SmallIntegerField(default=0)
+    number_of_day = models.IntegerField(default=0, help_text='number of days before due date')
+    payment_ratio = models.FloatField(default=0)
+    value_before_tax = models.FloatField(default=0)
+    due_date = models.DateTimeField(null=True)
+    is_ar_invoice = models.BooleanField(default=False)
+    order = models.IntegerField(default=1)
+
+    class Meta:
+        verbose_name = 'Sale Order Payment Stage'
+        verbose_name_plural = 'Sale Order Payment Stages'
         ordering = ('order',)
         default_permissions = ()
         permissions = ()

@@ -10,21 +10,22 @@ def leave_available_map_employee(employee, company_obj):
     try:
         list_avai = []
         current_date = timezone.now()
-        next_year_date = date(current_date.date().year + 1, 1, 1)
-        last_day_year = next_year_date - timedelta(days=1)
         anpy_config = LeaveType.objects.get(company=company_obj, code='ANPY')
 
         leave_type = LeaveType.objects.filter(company=company_obj)
         for l_type in leave_type:
             if l_type.code == 'AN' or l_type.code != 'ANPY':  # noqa
+                total = 0
+                if l_type.code in ['FF', 'MY', 'MC']:
+                    total = 1 if l_type.code == 'MC' else 3
                 list_avai.append(
                     LeaveAvailable(
                         leave_type=l_type,
                         open_year=current_date.year,
-                        total=0,
+                        total=total,
                         used=0,
                         available=0,
-                        expiration_date=last_day_year,
+                        expiration_date=date(current_date.date().year + 1, 1, 1) - timedelta(days=1),
                         company=company_obj,
                         tenant=company_obj.tenant,
                         employee_inherit=employee,

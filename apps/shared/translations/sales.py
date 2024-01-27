@@ -15,6 +15,10 @@ class SaleMsg:
     SALE_ORDER_PRODUCT_NOT_EXIST = _('Sale order product does not exist.')
     ADVANCE_PAYMENT_NOT_FINISH = _('This advance payment have not finish yet.')
     WRONG_TIME = _('From time must be < To time.')
+    SAVE_FILES_ERROR = _('Can not save files.')
+    CAN_NOT_REACTIVE = _('Can not reactive cancelled activity.')
+    PERIOD_HAS_PLAN = _('This period had been planned.')
+    PERIOD_FINISHED = _('This period had been finished.')
 
 
 class SaleTask:
