@@ -40,4 +40,4 @@ class CommentCreateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Comments
-        fields = ('mentions', 'contents')
+        fields = ('mentions', 'contents', 'contents_txt')

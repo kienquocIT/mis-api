@@ -13,6 +13,7 @@ class Comments(MasterDataAbstractModel):
     mentions = models.JSONField(default=list)
     mentions_data = models.JSONField(default=dict)
     contents = models.TextField()
+    contents_txt = models.TextField(blank=True)
 
     parent_n = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
     children_count = models.SmallIntegerField(default=0)
@@ -42,6 +43,13 @@ class Comments(MasterDataAbstractModel):
                 'group__title': self.employee_created.group.title if self.employee_created.group else ''
             }
         return {}
+
+    def get_contents_txt_minimal(self, max_length=100) -> str:
+        if self.contents_txt:
+            if len(self.contents_txt) <= max_length:
+                return self.contents_txt
+            return self.contents_txt[0:max_length - 3] + '...'
+        return ''
 
     def save(self, *args, **kwargs):
         if kwargs.get('force_insert', False) is True:
@@ -96,8 +104,8 @@ def save_comment(sender, instance, created, **kwargs):  # pylint: disable=W0613
                     task_kwargs.append({
                         'tenant_id': instance.tenant_id,
                         'company_id': instance.company_id,
-                        'title': CommentMSg.have_been_mentioned_title,
-                        'msg': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
+                        'title': CommentMSg.have_been_mentioned_msg.format(instance.employee_created.get_full_name()),
+                        'msg': instance.contents_txt,
                         'date_created': instance.date_created,
                         'doc_id': instance.doc_id,
                         'doc_app': instance.application.get_prefix_permit(),

@@ -259,6 +259,13 @@ class Notifications(models.Model):
     application = models.ForeignKey('base.Application', null=True, on_delete=models.SET_NULL)
     comment_mentions = models.ForeignKey('comment.Comments', null=True, on_delete=models.SET_NULL)
 
+    def get_msg_minimal(self, max_length=100) -> str:
+        if self.msg:
+            if len(self.msg) <= max_length:
+                return self.msg
+            return self.msg[0:max_length - 3] + '...'
+        return ''
+
     @staticmethod
     def cache_base_key(user_obj=None, my_obj=None):
         if user_obj:
