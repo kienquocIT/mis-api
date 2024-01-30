@@ -906,7 +906,6 @@ def update_backup_data_purchase_request():
     print('Update Done !')
 
 
-
 def update_title_opportunity_document():
     for item in OpportunityDocument.objects.all():
         item.title = item.subject
