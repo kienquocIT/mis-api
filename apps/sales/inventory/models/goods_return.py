@@ -1,7 +1,5 @@
 from django.db import models
-
-from apps.masterdata.saledata.models import ProductWareHouse
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class GoodsReturn(DataAbstractModel):
