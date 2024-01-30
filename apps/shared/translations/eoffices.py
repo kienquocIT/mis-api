@@ -41,3 +41,4 @@ class MeetingScheduleMsg:
 class AssetToolsMsg:
     EMPTY_PROVIDE = _('Provide request not found')
     ERROR_UPDATE_DELIVERED = _('Error update product delivered')
+    RETURN_PRODUCT_ERROR01 = _('Product used in warehouse less than product return')

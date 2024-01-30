@@ -204,6 +204,47 @@ ASSET_TOOLS_DELIVERY = {
     },
 }
 
+ASSET_TOOLS_RETURN = {
+    "id": "08e41084-4379-4778-9e16-c09401f0a66e",
+    "title": "Asset, Tools Return",
+    "code": "assettoolsreturn",
+    "model_code": "assettoolsreturn",
+    "app_label": "assettools",
+    "is_workflow": True,
+    "app_depend_on": [
+        "50348927-2c4f-4023-b638-445469c66953",  # Employee
+        "55ba3005-6ccc-4807-af27-7cc45e99e3f6",  # Asset Provide
+    ],
+    "permit_mapping": {
+        "view": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+        "create": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "=="},
+                "55ba3005-6ccc-4807-af27-7cc45e99e3f6": {"view": "=="},
+            },
+            "local_depends_on": {"view": "==", },
+        },
+        "edit": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {
+                "50348927-2c4f-4023-b638-445469c66953": {"view": "=="},
+                "55ba3005-6ccc-4807-af27-7cc45e99e3f6": {"view": "=="},
+            },
+            "local_depends_on": {"view": "=="},
+        },
+        "delete": {
+            "range": ["1", "2", "3", "4"],
+            "app_depends_on": {},
+            "local_depends_on": {},
+        },
+    },
+}
+
 Application_eOffice_data = {
     "baff033a-c416-47e1-89af-b6653534f06e": ApplicationConfigFrame(**LEAVE_APP_CONFIG).data(
         depend_follow_main=False,
@@ -226,6 +267,10 @@ Application_eOffice_data = {
         filtering_inheritor=True
     ),
     "41abd4e9-da89-450b-a44a-da1d6f8a5cd2": ApplicationConfigFrame(**ASSET_TOOLS_DELIVERY).data(
+        depend_follow_main=False,
+        filtering_inheritor=True
+    ),
+    "08e41084-4379-4778-9e16-c09401f0a66e": ApplicationConfigFrame(**ASSET_TOOLS_RETURN).data(
         depend_follow_main=False,
         filtering_inheritor=True
     ),

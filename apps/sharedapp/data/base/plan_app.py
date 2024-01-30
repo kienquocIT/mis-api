@@ -252,6 +252,10 @@ _PlanApplication_eOffice_data = {
     "41abd4e9-da89-450b-a44a-da1d6f8a5cd2": {
         "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
         "application_id": "41abd4e9-da89-450b-a44a-da1d6f8a5cd2",  # Asset, Tools Delivery
+    },
+    "08e41084-4379-4778-9e16-c09401f0a66e": {
+        "plan_id": "a8ca704a-11b7-4ef5-abd7-f41d05f9d9c8",  # E-office
+        "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",  # Asset, Tools Return
     }
 }
 
