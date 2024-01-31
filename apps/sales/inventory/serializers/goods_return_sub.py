@@ -99,13 +99,13 @@ class GoodsReturnSubSerializer:
                     lot.save(update_fields=['quantity_import'])
                     lot.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
             elif type_value == 2:  # SN
-                sn = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
-                if sn:  # update warehouse
-                    sn.product_warehouse.stock_amount += 1
-                    sn.product_warehouse.sold_amount -= 1
-                    sn.is_delete = 0
-                    sn.save(update_fields=['is_delete'])
-                    sn.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
+                serial = ProductWareHouseSerial.objects.filter(id=item.get('serial_no_id')).first()
+                if serial:  # update warehouse
+                    serial.product_warehouse.stock_amount += 1
+                    serial.product_warehouse.sold_amount -= 1
+                    serial.is_delete = 0
+                    serial.save(update_fields=['is_delete'])
+                    serial.product_warehouse.save(update_fields=['stock_amount', 'sold_amount'])
         return True
 
     @classmethod
@@ -161,4 +161,4 @@ class GoodsReturnSubSerializer:
             )
             cls.create_prod(new_sub, sub_delivery, return_quantity, redelivery_quantity, goods_return.product)
             cls.update_warehouse_prod(product_detail_list, goods_return.product)
-            return new_sub
+        return True
