@@ -1,6 +1,6 @@
 __all__ = [
-    'AssetToolsDeliveryCreateSerializer', 'AssetToolsDeliveryDetailSerializer', 'AssetToolsProductUsedListSerializer',
-    'AssetToolsDeliveryListSerializer', 'AssetToolsDeliveryUpdateSerializer'
+    'AssetToolsReturnCreateSerializer', 'AssetToolsReturnDetailSerializer', 'AssetToolsReturnListSerializer',
+    'AssetToolsReturnUpdateSerializer'
 ]
 
 from datetime import datetime
@@ -10,59 +10,49 @@ from rest_framework import serializers
 
 from apps.core.base.models import Application
 from apps.core.workflow.tasks import decorator_run_workflow
-from apps.eoffice.assettools.models import AssetToolsDeliveryAttachmentFile, AssetToolsDelivery, \
-    ProductDeliveredMapProvide
+from apps.eoffice.assettools.models import AssetToolsReturnAttachmentFile, AssetToolsReturn, AssetToolsReturnMapProduct
 from apps.shared import HRMsg, ProductMsg, AbstractDetailSerializerModel
-from apps.shared.translations import AssetToolsMsg
 from apps.shared.translations.base import AttachmentMsg
 
 
-class AssetToolsProductsMapDeliverySerializer(serializers.Serializer):  # noqa
+class AssetToolsProductsMapReturnSerializer(serializers.Serializer):  # noqa
     product = serializers.UUIDField()
-    warehouse = serializers.UUIDField()
+    warehouse_stored_product = serializers.UUIDField()
     order = serializers.IntegerField()
-    request_number = serializers.FloatField()
-    delivered_number = serializers.FloatField()
-    done = serializers.IntegerField()
-    date_delivered = serializers.DateTimeField()
-    is_inventory = serializers.BooleanField()
+    return_number = serializers.FloatField()
 
 
 def create_products(instance, prod_list):
-    old_data = ProductDeliveredMapProvide.objects.filter(delivery=instance)
+    old_data = AssetToolsReturnMapProduct.objects.filter(asset_return=instance)
     if old_data.exists():
         old_data.delete()
     create_lst = []
     for item in prod_list:
-        date_delivered = timezone.now()
-        if isinstance(item['date_delivered'], datetime):
-            date_delivered.replace(
-                year=item['date_delivered'].year, month=item['date_delivered'].month, day=item['date_delivered'].day
+        date_return = timezone.now()
+        if isinstance(item['date_return'], datetime):
+            date_return.replace(
+                year=item['date_return'].year, month=item['date_return'].month, day=item['date_return'].day
             )
-        temp = ProductDeliveredMapProvide(
+        temp = AssetToolsReturnMapProduct(
             tenant=instance.tenant,
             company=instance.company,
-            delivery=instance,
             order=item['order'],
-            product_id=item['product'],
-            warehouse_id=item['warehouse'],
+            product=item['product'],
+            warehouse_stored_product_id=item['warehouse'],
             employee_inherit=instance.employee_inherit,
-            request_number=item['request_number'],
-            delivered_number=item['delivered_number'],
-            done=item['done'],
-            date_delivered=date_delivered,
-            is_inventory=item['is_inventory']
+            return_number=item['return_number'],
+            date_return=date_return,
         )
         temp.before_save()
         create_lst.append(temp)
-    ProductDeliveredMapProvide.objects.bulk_create(create_lst)
+    AssetToolsReturnMapProduct.objects.bulk_create(create_lst)
     return True
 
 
 def handle_attach_file(instance, attachment_result):
     if attachment_result and isinstance(attachment_result, dict):
-        relate_app = Application.objects.get(id="41abd4e9-da89-450b-a44a-da1d6f8a5cd2")
-        state = AssetToolsDeliveryAttachmentFile.resolve_change(
+        relate_app = Application.objects.get(id="08e41084-4379-4778-9e16-c09401f0a66e")
+        state = AssetToolsReturnAttachmentFile.resolve_change(
             result=attachment_result, doc_id=instance.id, doc_app=relate_app,
         )
         if state:
@@ -71,8 +61,8 @@ def handle_attach_file(instance, attachment_result):
     return True
 
 
-class AssetToolsDeliveryCreateSerializer(serializers.ModelSerializer):
-    products = AssetToolsProductsMapDeliverySerializer(many=True)
+class AssetToolsReturnCreateSerializer(serializers.ModelSerializer):
+    products = AssetToolsProductsMapReturnSerializer(many=True)
     attachments = serializers.ListSerializer(allow_null=True, required=False, child=serializers.UUIDField())
     employee_inherit_id = serializers.UUIDField()
 
@@ -85,7 +75,7 @@ class AssetToolsDeliveryCreateSerializer(serializers.ModelSerializer):
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
-            state, result = AssetToolsDeliveryAttachmentFile.valid_change(
+            state, result = AssetToolsReturnAttachmentFile.valid_change(
                 current_ids=[str(idx) for idx in attrs], employee_id=user.employee_current_id, doc_id=None
             )
             if state is True:
@@ -99,70 +89,53 @@ class AssetToolsDeliveryCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'detail': ProductMsg.DOES_NOT_EXIST})
         return value
 
-    @classmethod
-    def validate_provide(cls, value):
-        if not value:
-            raise serializers.ValidationError({'detail': AssetToolsMsg.EMPTY_PROVIDE})
-        return value
-
     @decorator_run_workflow
     def create(self, validated_data):
         products_list = validated_data.pop('products', None)
         attachments = validated_data.pop('attachments', None)
-        delivery = AssetToolsDelivery.objects.create(**validated_data)
-        create_products(delivery, products_list)
-        handle_attach_file(delivery, attachments)
-        return delivery
+        asset_return = AssetToolsReturn.objects.create(**validated_data)
+        create_products(asset_return, products_list)
+        handle_attach_file(asset_return, attachments)
+        return asset_return
 
     class Meta:
-        model = AssetToolsDelivery
+        model = AssetToolsReturn
         fields = (
             'title',
             'remark',
             'employee_inherit_id',
             'attachments',
-            'provide',
             'products',
             'date_created',
             'system_status',
         )
 
 
-class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
+class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
     employee_inherit = serializers.SerializerMethodField()
-    provide = serializers.SerializerMethodField()
     products = serializers.SerializerMethodField()
 
     @classmethod
     def get_products(cls, obj):
         if obj.products:
             products_list = []
-            for item in list(obj.provide_map_delivery.all()):
+            for item in list(obj.product_map_asset_return.all()):
                 products_list.append(
                     {
                         'order': item.order,
-                        'product_available': item.product.stock_amount,
-                        'product': {**item.product_data, } if hasattr(item, 'product_data') else {},
-                        'warehouse': item.warehouse_data if hasattr(item, 'warehouse_data') else {},
-                        'request_number': item.request_number,
-                        'delivered_number': item.delivered_number,
-                        'done': item.done,
-                        'date_delivered': item.date_delivered,
+                        'product': item.product_data if hasattr(item, 'product_data') else {},
+                        'return_number': item.request_number,
                     }
                 )
             return products_list
         return []
 
     @classmethod
-    def get_provide(cls, obj):
-        return obj.provide_data if obj.provide_data else {}
-
-    @classmethod
     def get_employee_inherit(cls, obj):
         return obj.employee_inherit_data if obj.employee_inherit_data else {}
 
     class Meta:
-        model = AssetToolsDelivery
+        model = AssetToolsReturn
         fields = (
             'id',
             'title',
@@ -171,13 +144,12 @@ class AssetToolsDeliveryDetailSerializer(AbstractDetailSerializerModel):
             'employee_inherit',
             'remark',
             'attachments',
-            'provide',
-            'date_created',
+            'date_return',
             'system_status',
         )
 
 
-class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
+class AssetToolsReturnListSerializer(serializers.ModelSerializer):
     employee_inherit = serializers.SerializerMethodField()
     employee_created = serializers.SerializerMethodField()
 
@@ -193,47 +165,32 @@ class AssetToolsDeliveryListSerializer(serializers.ModelSerializer):
         } if obj.employee_created else {}
 
     class Meta:
-        model = AssetToolsDelivery
+        model = AssetToolsReturn
         fields = (
             'id',
             'title',
             'code',
             'employee_inherit',
             'employee_created',
+            'date_return',
             'date_created',
             'system_status'
         )
 
 
-class AssetToolsProductUsedListSerializer(serializers.ModelSerializer):
-    # employee_inherit = serializers.SerializerMethodField()
-
-    @classmethod
-    def get_employee_inherit(cls, obj):
-        return obj.employee_inherit_data if obj.employee_inherit else {}
-
-    class Meta:
-        model = ProductDeliveredMapProvide
-        fields = (
-            'product_data',
-            'done'
-        )
-
-
-class AssetToolsDeliveryUpdateSerializer(serializers.ModelSerializer):
+class AssetToolsReturnUpdateSerializer(serializers.ModelSerializer):
     employee_inherit_id = serializers.UUIDField()
-    products = AssetToolsProductsMapDeliverySerializer(many=True, required=False)
+    products = AssetToolsProductsMapReturnSerializer(many=True, required=False)
 
     class Meta:
-        model = AssetToolsDelivery
+        model = AssetToolsReturn
         fields = (
             'title',
             'remark',
             'employee_inherit_id',
             'attachments',
-            'provide',
             'products',
-            'date_created',
+            'date_return',
             'system_status',
         )
 
@@ -246,7 +203,7 @@ class AssetToolsDeliveryUpdateSerializer(serializers.ModelSerializer):
     def validate_attachments(self, attrs):
         user = self.context.get('user', None)
         if user and hasattr(user, 'employee_current_id'):
-            state, result = AssetToolsDeliveryAttachmentFile.valid_change(
+            state, result = AssetToolsReturnAttachmentFile.valid_change(
                 current_ids=[str(idx) for idx in attrs], employee_id=user.employee_current_id, doc_id=None
             )
             if state is True:

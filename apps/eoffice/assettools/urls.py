@@ -2,7 +2,7 @@ from django.urls import path
 
 from .views import AssetToolConfigDetail, AssetToolsProvideRequestList, AssetToolsProvideRequestDetail, \
     AssetToolsDeliveryRequestList, AssetToolsProductUsedList, AssetToolsProductListByProvideIDList, \
-    AssetToolsDeliveryRequestDetail
+    AssetToolsDeliveryRequestDetail, AssetToolsReturnList, AssetToolsReturnDetail
 
 urlpatterns = [
     # CONFIG
@@ -19,4 +19,7 @@ urlpatterns = [
     # DELIVERY
     path('delivery', AssetToolsDeliveryRequestList.as_view(), name='AssetToolsDeliveryRequestList'),
     path('delivery/detail/<str:pk>', AssetToolsDeliveryRequestDetail.as_view(), name='AssetToolsDeliveryRequestDetail'),
+    # ASSET RETURN
+    path('asset-return', AssetToolsReturnList.as_view(), name='AssetToolsReturnList'),
+    path('asset-return/detail/<str:pk>', AssetToolsReturnDetail.as_view(), name='AssetToolsReturnDetail'),
 ]

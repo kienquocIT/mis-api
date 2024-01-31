@@ -721,3 +721,7 @@ msgstr "Bạn đã được nhắc đến."
 #
 msgid "You have been mentioned in a comment by \"{}\"."
 msgstr "Bạn đã được \"{}\" nhắc đến trong một bình luận."
+
+#
+msgid "Product used in warehouse less than product return"
+msgstr "Số lượng thu hồi không trùng khớp trong kho."

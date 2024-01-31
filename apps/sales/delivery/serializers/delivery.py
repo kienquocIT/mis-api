@@ -481,12 +481,16 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             update_fields=['date_done', 'state', 'is_updated', 'estimated_delivery_date',
                            'actual_delivery_date', 'remarks', 'attachments', 'delivery_logistic']
         )
-        if instance.remaining_quantity > total_done:
+        if instance.remaining_quantity > total_done:  # still not delivery all items, create new sub
             new_sub = cls.create_new_sub(instance, total_done, 2)
             cls.create_prod(new_sub, instance)
             delivery_obj = instance.order_delivery
             delivery_obj.sub = new_sub
             delivery_obj.save(update_fields=['sub'])
+        else:  # delivery all items, not create new sub
+            instance.order_delivery.state = 2
+            instance.order_delivery.save(update_fields=['state'])
+        return True
 
     @classmethod
     def config_three(cls, instance, total_done, product_done, config):  # many_picking_one_delivery
