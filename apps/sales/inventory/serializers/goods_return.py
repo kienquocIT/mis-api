@@ -1,7 +1,7 @@
 from rest_framework import serializers
-
 from apps.sales.delivery.models import OrderDeliverySub
-from apps.sales.inventory.models import GoodsReturn, GoodsReturnProductDetail
+from apps.sales.inventory.models import GoodsReturn
+from apps.sales.inventory.serializers.goods_return_sub import GoodsReturnSubSerializer
 from apps.sales.saleorder.models import SaleOrder
 
 
@@ -34,6 +34,11 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
                 'id': obj.sale_order.employee_inherit_id,
                 'code': obj.sale_order.employee_inherit.code,
                 'fullname': obj.sale_order.employee_inherit.get_full_name(2),
+            } if obj.sale_order.employee_inherit else {},
+            'customer': {
+                'id': obj.sale_order.customer_id,
+                'code': obj.sale_order.customer.code,
+                'name': obj.sale_order.customer.name,
             } if obj.sale_order.employee_inherit else {}
         } if obj.sale_order else {}
 
@@ -45,21 +50,8 @@ class GoodsReturnListSerializer(serializers.ModelSerializer):
         } if obj.delivery_id else {}
 
 
-def create_delivery_product_detail_mapped(goods_return, product_detail_list):
-    bulk_info = []
-    for item in product_detail_list:
-        bulk_info.append(
-            GoodsReturnProductDetail.objects.create(
-                goods_return=goods_return,
-                **item
-            )
-        )
-    GoodsReturnProductDetail.objects.filter(goods_return=goods_return).delete()
-    GoodsReturnProductDetail.objects.bulk_create(bulk_info)
-    return True
-
-
 class GoodsReturnCreateSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(max_length=150, required=True)
 
     class Meta:
         model = GoodsReturn
@@ -79,10 +71,13 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
             code=f'GRT00{GoodsReturn.objects.all().count() + 1}',
             **validated_data
         )
-        create_delivery_product_detail_mapped(
+
+        GoodsReturnSubSerializer.create_delivery_product_detail_mapped(
             goods_return,
             self.initial_data.get('product_detail_list', []),
         )
+
+        GoodsReturnSubSerializer.update_delivery(goods_return, self.initial_data.get('product_detail_list', []))
         return goods_return
 
 
@@ -122,7 +117,7 @@ class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
         for key, value in validated_data.items():
             setattr(instance, key, value)
         instance.save()
-        create_delivery_product_detail_mapped(
+        GoodsReturnSubSerializer.create_delivery_product_detail_mapped(
             instance,
             self.initial_data.get('product_detail_list', []),
         )
@@ -191,7 +186,7 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
         return [{
             'product_data': item.product_data,
             'uom_data': item.uom_data,
-            'total_order': item.ready_quantity,
+            'total_order': item.delivery_quantity,
             'delivered_quantity': item.picked_quantity,
             'product_unit_price': item.product_unit_price,
             'product_subtotal_price': item.product_subtotal_price,
