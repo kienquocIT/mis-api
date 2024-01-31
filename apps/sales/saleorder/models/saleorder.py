@@ -396,6 +396,14 @@ class SaleOrder(DataAbstractModel):
         )
         return True
 
+    @classmethod
+    def update_sale_order_field_for_opportunity(cls, instance):
+        if instance.opportunity:
+            instance.opportunity.save(**{
+                'sale_order_status': instance.system_status,
+            })
+        return True
+
     def save(self, *args, **kwargs):
         # if self.system_status == 2:  # added
         if self.system_status in [2, 3]:  # added, finish
@@ -416,6 +424,8 @@ class SaleOrder(DataAbstractModel):
                 if isinstance(kwargs['update_fields'], list):
                     if 'date_approved' in kwargs['update_fields']:
                         self.update_product_wait_delivery_amount(self)
+                        # opportunity
+                        self.update_sale_order_field_for_opportunity(self)
                         # reports
                         self.push_to_report_revenue(self)
                         self.push_to_report_product(self)
