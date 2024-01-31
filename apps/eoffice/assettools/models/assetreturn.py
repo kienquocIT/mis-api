@@ -80,7 +80,7 @@ class AssetToolsReturn(DataAbstractModel):
             ).select_related('product')
             product_warehouse_list = []
             for item in prod_list:
-                count = item.done
+                count = item.return_number
                 item_prod = item.product
                 if item_prod and 1 in item_prod.product_choice:
                     prod_warehouse = item.product.product_warehouse_product.first()
@@ -195,7 +195,11 @@ class AssetToolsReturnMapProduct(DataAbstractModel):
             self.product_data = {
                 "id": str(self.product_id),
                 "title": self.product.title,
-                "code": self.product.code
+                "code": self.product.code,
+                "uom_data": {
+                    "id": str(self.product.inventory_uom_id),
+                    "title": self.product.inventory_uom.title,
+                }
             }
         if self.employee_inherit:
             self.employee_inherit_data = {

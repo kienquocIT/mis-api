@@ -2,10 +2,6 @@ __all__ = [
     'AssetToolsReturnCreateSerializer', 'AssetToolsReturnDetailSerializer', 'AssetToolsReturnListSerializer',
     'AssetToolsReturnUpdateSerializer'
 ]
-
-from datetime import datetime
-
-from django.utils import timezone
 from rest_framework import serializers
 
 from apps.core.base.models import Application
@@ -28,20 +24,15 @@ def create_products(instance, prod_list):
         old_data.delete()
     create_lst = []
     for item in prod_list:
-        date_return = timezone.now()
-        if isinstance(item['date_return'], datetime):
-            date_return.replace(
-                year=item['date_return'].year, month=item['date_return'].month, day=item['date_return'].day
-            )
         temp = AssetToolsReturnMapProduct(
             tenant=instance.tenant,
             company=instance.company,
+            asset_return=instance,
             order=item['order'],
-            product=item['product'],
-            warehouse_stored_product_id=item['warehouse'],
+            product_id=item['product'],
+            warehouse_stored_product_id=item['warehouse_stored_product'],
             employee_inherit=instance.employee_inherit,
             return_number=item['return_number'],
-            date_return=date_return,
         )
         temp.before_save()
         create_lst.append(temp)
@@ -106,7 +97,7 @@ class AssetToolsReturnCreateSerializer(serializers.ModelSerializer):
             'employee_inherit_id',
             'attachments',
             'products',
-            'date_created',
+            'date_return',
             'system_status',
         )
 
@@ -119,12 +110,18 @@ class AssetToolsReturnDetailSerializer(AbstractDetailSerializerModel):
     def get_products(cls, obj):
         if obj.products:
             products_list = []
-            for item in list(obj.product_map_asset_return.all()):
+            for item in list(obj.asset_return_map_product.all()):
+                current_stock = item.product.stock_amount - \
+                                item.product.product_warehouse_product.all().first().used_amount
                 products_list.append(
                     {
                         'order': item.order,
-                        'product': item.product_data if hasattr(item, 'product_data') else {},
-                        'return_number': item.request_number,
+                        'product': {
+                            **item.product_data,
+                            'available': current_stock,
+                        } if hasattr(item, 'product_data') else {},
+                        'return_number': item.return_number,
+                        'product_warehouse': item.warehouse_sp_data if hasattr(item, 'warehouse_sp_data') else {}
                     }
                 )
             return products_list
