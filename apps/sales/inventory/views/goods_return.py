@@ -21,7 +21,7 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
 
     def get_queryset(self):
         return super().get_queryset().select_related(
-            'sale_order', 'delivery', 'product', 'uom'
+            'sale_order', 'delivery'
         )
 
     @swagger_auto_schema(
@@ -29,8 +29,8 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
         operation_description="Get Goods return List",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='goodsreturn', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreturn', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.list(request, *args, **kwargs)
@@ -41,8 +41,8 @@ class GoodsReturnList(BaseListMixin, BaseCreateMixin):
         request_body=GoodsReturnCreateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='goodsreturn', perm_code='create',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreturn', perm_code='create',
     )
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
@@ -58,15 +58,18 @@ class GoodsReturnDetail(BaseRetrieveMixin, BaseUpdateMixin):
     def get_queryset(self):
         return super().get_queryset().select_related(
             'sale_order', 'delivery', 'product', 'uom'
-        ).prefetch_related()
+        ).prefetch_related(
+            'goods_return_product_detail__lot_no',
+            'goods_return_product_detail__serial_no',
+        )
 
     @swagger_auto_schema(
         operation_summary="Goods return detail",
         operation_description="Get Goods return detail by ID",
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='goodsreturn', perm_code='view',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreturn', perm_code='view',
     )
     def get(self, request, *args, **kwargs):
         return self.retrieve(request, *args, **kwargs)
@@ -77,8 +80,8 @@ class GoodsReturnDetail(BaseRetrieveMixin, BaseUpdateMixin):
         request_body=GoodsReturnUpdateSerializer,
     )
     @mask_view(
-        login_require=True, auth_require=False,
-        # label_code='inventory', model_code='goodsreturn', perm_code='edit',
+        login_require=True, auth_require=True,
+        label_code='inventory', model_code='goodsreturn', perm_code='edit',
     )
     def put(self, request, *args, **kwargs):
         return self.update(request, *args, **kwargs)
