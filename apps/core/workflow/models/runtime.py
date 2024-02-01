@@ -240,9 +240,6 @@ class Runtime(SimpleAbstractModel):
             properties_id = []
             for detail in zone_and_properties:
                 properties_id += detail['properties']
-            # return ApplicationProperty.objects.filter(
-            #     Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
-            # ).values_list('code', flat=True)
             app_property = ApplicationProperty.objects.filter(
                 Q(id__in=properties_id) | Q(parent_n_id__in=properties_id)
             )
@@ -271,10 +268,12 @@ class Runtime(SimpleAbstractModel):
                 runtime_assignee_obj = RuntimeAssignee.objects.get(pk=task_id, employee_id=employee_id)
                 if runtime_assignee_obj.stage and runtime_assignee_obj.stage.runtime_id == self.id:
                     # return True, self.parse_zone_and_properties(runtime_assignee_obj.zone_and_properties)
-                    return True, self.get_properties_code_arr(runtime_assignee_obj.zone_and_properties)
+                    is_edit_all_zone = runtime_assignee_obj.is_edit_all_zone
+                    code_field_arr = self.get_properties_code_arr(runtime_assignee_obj.zone_and_properties)
+                    return True, is_edit_all_zone, code_field_arr
             except RuntimeAssignee.DoesNotExist:
-                return False, None
-        return False, None
+                return False, False, None
+        return False, False, None
 
     class Meta:
         verbose_name = 'Runtime'

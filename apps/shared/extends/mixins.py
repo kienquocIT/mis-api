@@ -1001,10 +1001,12 @@ class BaseUpdateMixin(BaseMixin):
         if workflow_runtime and hasattr(workflow_runtime, 'find_task_id_get_zones'):
             task_id = request_data.get('task_id', None)
             if task_id and TypeCheck.check_uuid(task_id):
-                state, code_field_arr = workflow_runtime.find_task_id_get_zones(
+                state, is_edit_all_zone, code_field_arr = workflow_runtime.find_task_id_get_zones(
                     task_id=task_id, employee_id=user.employee_current_id
                 )
                 if state is True:
+                    if is_edit_all_zone is True:
+                        return request_data, True, task_id
                     new_body_data = {}
                     for key, value in request_data.items():
                         if key in code_field_arr:
