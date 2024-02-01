@@ -20,11 +20,11 @@ class GoodsReturnSubSerializer:
         return True
 
     @classmethod
-    def create_prod(cls, new_sub, sub_delivery, return_quantity, redelivery_quantity, gr_product):
+    def create_prod(cls, new_sub, latest_delivery, return_quantity, redelivery_quantity, gr_product):
         """
         (TH delivery đã DONE hết)
-        Trả hàng 'gr_product' cho 'sub_delivery':
-        B1: Lọc hết sản phẩm của 'sub_delivery' đó
+        Trả hàng 'gr_product':
+        B1: Lọc hết sản phẩm của 'latest_delivery'
         B2: Chạy vòng lặp for:
             + Nếu sản phẩm đó trùng với 'gr_product' thì TẠO MỚI với:
             > 'delivered_quantity_before' -= số lượng return
@@ -33,14 +33,15 @@ class GoodsReturnSubSerializer:
         B3: Bulk create
         """
         prod_arr = []
-        for obj in OrderDeliveryProduct.objects.filter(delivery_sub=sub_delivery):
+        for obj in OrderDeliveryProduct.objects.filter(delivery_sub=latest_delivery):
             obj_return_quantity = return_quantity if obj.product == gr_product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            new_delivery_quantity = obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity
             new_prod = OrderDeliveryProduct(
                 delivery_sub=new_sub,
                 product=obj.product,
                 uom=obj.uom,
-                delivery_quantity=obj.delivery_quantity,
+                delivery_quantity=new_delivery_quantity,
                 delivered_quantity_before=obj.delivery_quantity - obj_return_quantity,
                 remaining_quantity=obj_redelivery_quantity,
                 ready_quantity=obj_redelivery_quantity,
@@ -48,7 +49,7 @@ class GoodsReturnSubSerializer:
                 order=obj.order,
                 delivery_data=obj.delivery_data
             )
-            new_prod.before_save()
+            new_prod.put_backup_data()
             prod_arr.append(new_prod)
         OrderDeliveryProduct.objects.filter(delivery_sub=new_sub).delete()
         OrderDeliveryProduct.objects.bulk_create(prod_arr)
@@ -59,8 +60,8 @@ class GoodsReturnSubSerializer:
         """
         (TH còn phiếu delivery chưa DONE)
         B0: 'ready_sub' là phiếu delivery hiện tại đang Ready
-        Trả hàng 'gr_product' cho 'sub_delivery':
-        B1: Lọc hết sản phẩm của 'ready_sub' đó
+        Trả hàng 'gr_product':
+        B1: Lọc hết sản phẩm của 'ready_sub'
         B2: Chạy vòng lặp for cập nhập:
             + Nếu sản phẩm đó trùng với 'gr_product' thì CẬP NHẬP với:
             > 'delivered_quantity_before' -= số lượng return
@@ -71,11 +72,15 @@ class GoodsReturnSubSerializer:
         for obj in OrderDeliveryProduct.objects.filter(delivery_sub=ready_sub):
             obj_return_quantity = return_quantity if obj.product == gr_product else 0
             obj_redelivery_quantity = redelivery_quantity if obj.product == gr_product else 0
+            obj.delivery_quantity = obj.delivery_quantity - obj_return_quantity + obj_redelivery_quantity
             obj.delivered_quantity_before -= obj_return_quantity
             obj.remaining_quantity += obj_redelivery_quantity
             obj.ready_quantity += obj_redelivery_quantity
             obj.save(
-                update_fields=['delivered_quantity_before', 'remaining_quantity', 'ready_quantity'],
+                update_fields=[
+                    'delivery_quantity', 'delivered_quantity_before',
+                    'remaining_quantity', 'ready_quantity'
+                ],
                 for_goods_return=True
             )
         return True
@@ -127,38 +132,46 @@ class GoodsReturnSubSerializer:
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = OrderDeliverySub.objects.filter(order_delivery=sub_delivery.order_delivery, state=1).first()
             if ready_sub:
+                ready_sub.delivery_quantity = ready_sub.delivery_quantity - return_quantity + redelivery_quantity
                 ready_sub.delivered_quantity_before -= return_quantity
                 ready_sub.remaining_quantity += redelivery_quantity
                 ready_sub.ready_quantity += redelivery_quantity
-                ready_sub.save(update_fields=['delivered_quantity_before', 'remaining_quantity', 'ready_quantity'])
-
+                ready_sub.save(
+                    update_fields=[
+                        'delivery_quantity', 'delivered_quantity_before',
+                        'remaining_quantity', 'ready_quantity'
+                    ],
+                    for_goods_return=True
+                )
                 cls.update_prod(ready_sub, return_quantity, redelivery_quantity, goods_return.product)
                 cls.update_warehouse_prod(product_detail_list, goods_return.product)
         elif goods_return.sale_order.delivery_status == 3:  # Done delivery
-            filtered_delivery = OrderDeliverySub.objects.filter(order_delivery=sub_delivery.order_delivery)
-            new_sub = OrderDeliverySub.objects.create(
-                company_id=sub_delivery.company_id,
-                tenant_id=sub_delivery.tenant_id,
-                order_delivery=sub_delivery.order_delivery,
-                date_done=None,
-                code=OrderDeliverySubUpdateSerializer.create_new_code(),
-                previous_step=sub_delivery,
-                times=filtered_delivery.count() + 1,
-                delivery_quantity=sub_delivery.delivery_quantity,
-                delivered_quantity_before=sub_delivery.delivery_quantity - return_quantity,
-                remaining_quantity=redelivery_quantity,
-                ready_quantity=redelivery_quantity,
-                delivery_data=None,
-                is_updated=False,
-                state=1,
-                sale_order_data=sub_delivery.sale_order_data,
-                estimated_delivery_date=sub_delivery.estimated_delivery_date,
-                actual_delivery_date=sub_delivery.actual_delivery_date,
-                customer_data=sub_delivery.customer_data,
-                contact_data=sub_delivery.contact_data,
-                config_at_that_point=sub_delivery.config_at_that_point,
-                employee_inherit=sub_delivery.employee_inherit
-            )
-            cls.create_prod(new_sub, sub_delivery, return_quantity, redelivery_quantity, goods_return.product)
+            if redelivery_quantity != 0:
+                filtered_delivery = OrderDeliverySub.objects.filter(order_delivery=sub_delivery.order_delivery)
+                latest_delivery = filtered_delivery.latest('date_created')
+                new_sub = OrderDeliverySub.objects.create(
+                    company_id=latest_delivery.company_id,
+                    tenant_id=latest_delivery.tenant_id,
+                    order_delivery=latest_delivery.order_delivery,
+                    date_done=None,
+                    code=OrderDeliverySubUpdateSerializer.create_new_code(),
+                    previous_step=latest_delivery,
+                    times=filtered_delivery.count() + 1,
+                    delivery_quantity=latest_delivery.delivery_quantity - return_quantity + redelivery_quantity,
+                    delivered_quantity_before=latest_delivery.delivery_quantity - return_quantity,
+                    remaining_quantity=redelivery_quantity,
+                    ready_quantity=redelivery_quantity,
+                    delivery_data=None,
+                    is_updated=False,
+                    state=1,
+                    sale_order_data=latest_delivery.sale_order_data,
+                    estimated_delivery_date=latest_delivery.estimated_delivery_date,
+                    actual_delivery_date=latest_delivery.actual_delivery_date,
+                    customer_data=latest_delivery.customer_data,
+                    contact_data=latest_delivery.contact_data,
+                    config_at_that_point=latest_delivery.config_at_that_point,
+                    employee_inherit=latest_delivery.employee_inherit
+                )
+                cls.create_prod(new_sub, latest_delivery, return_quantity, redelivery_quantity, goods_return.product)
             cls.update_warehouse_prod(product_detail_list, goods_return.product)
         return True

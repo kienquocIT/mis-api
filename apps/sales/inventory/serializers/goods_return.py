@@ -191,6 +191,7 @@ class DeliveryListSerializerForGoodsReturn(serializers.ModelSerializer):
             'product_unit_price': item.product_unit_price,
             'product_subtotal_price': item.product_subtotal_price,
             'product_general_traceability_method': item.product.general_traceability_method,
+
         } for item in obj.delivery_product_delivery_sub.all()]
 
     @classmethod
