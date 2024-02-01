@@ -340,12 +340,7 @@ class SaleOrderCreateSerializer(serializers.ModelSerializer):
         if sale_order.opportunity:
             # update field sale_order
             sale_order.opportunity.sale_order = sale_order
-            sale_order.opportunity.save(
-                **{
-                    'update_fields': ['sale_order'],
-                    'sale_order_status': sale_order.system_status,
-                }
-            )
+            sale_order.opportunity.save(update_fields=['sale_order'])
             # create activity log
             OpportunityActivityLogs.create_opportunity_log_application(
                 tenant_id=sale_order.tenant_id,
@@ -522,12 +517,7 @@ class SaleOrderUpdateSerializer(serializers.ModelSerializer):
         # update field sale_order for opportunity
         if instance.opportunity:
             instance.opportunity.sale_order = instance
-            instance.opportunity.save(
-                **{
-                    'update_fields': ['sale_order'],
-                    'sale_order_status': instance.system_status,
-                }
-            )
+            instance.opportunity.save(update_fields=['sale_order'])
         return instance
 
 
