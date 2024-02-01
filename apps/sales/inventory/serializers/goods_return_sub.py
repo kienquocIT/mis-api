@@ -93,7 +93,7 @@ class GoodsReturnSubSerializer:
                 product = ProductWareHouse.objects.filter(product=gr_product).first()
                 if product:  # update warehouse
                     product.stock_amount += item.get('default_return_number')
-                    product.sold_amount -= item.get('default_redelivery_number')
+                    product.sold_amount -= item.get('default_return_number')
                     product.save(update_fields=['stock_amount', 'sold_amount'])
             elif type_value == 1:  # LOT
                 lot = ProductWareHouseLot.objects.filter(id=item.get('lot_no_id')).first()
@@ -122,12 +122,12 @@ class GoodsReturnSubSerializer:
             if item.get('type') == 0:
                 return_quantity += item.get('default_return_number', 0)
                 redelivery_quantity += item.get('default_redelivery_number', 0)
-            if item.get('type') == 1:
+            elif item.get('type') == 1:
                 return_quantity += item.get('lot_return_number', 0)
                 redelivery_quantity += item.get('lot_redelivery_number', 0)
-            if item.get('type') == 2:
-                return_quantity += sum(item.get('is_return', 0))
-                redelivery_quantity += sum(item.get('is_redelivery', 0))
+            elif item.get('type') == 2:
+                return_quantity += item.get('is_return', 0)
+                redelivery_quantity += item.get('is_redelivery', 0)
 
         if goods_return.sale_order.delivery_status in [1, 2]:  # Have not done delivery
             ready_sub = OrderDeliverySub.objects.filter(order_delivery=sub_delivery.order_delivery, state=1).first()

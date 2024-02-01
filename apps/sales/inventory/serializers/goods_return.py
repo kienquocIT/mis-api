@@ -82,6 +82,11 @@ class GoodsReturnCreateSerializer(serializers.ModelSerializer):
 
 
 class GoodsReturnDetailSerializer(serializers.ModelSerializer):
+    sale_order = serializers.SerializerMethodField()
+    delivery = serializers.SerializerMethodField()
+    product = serializers.SerializerMethodField()
+    uom = serializers.SerializerMethodField()
+    data_detail = serializers.SerializerMethodField()
 
     class Meta:
         model = GoodsReturn
@@ -95,7 +100,63 @@ class GoodsReturnDetailSerializer(serializers.ModelSerializer):
             'product',
             'uom',
             'system_status',
+            'date_created',
+            'data_detail'
         )
+
+    @classmethod
+    def get_sale_order(cls, obj):
+        return {
+            'id': obj.sale_order_id,
+            'code': obj.sale_order.code,
+            'title': obj.sale_order.title,
+            'customer_name': obj.sale_order.customer.name if obj.sale_order.customer else ''
+        } if obj.sale_order else {}
+
+    @classmethod
+    def get_delivery(cls, obj):
+        return {
+            'id': obj.delivery_id,
+            'code': obj.delivery.code
+        } if obj.delivery_id else {}
+
+    @classmethod
+    def get_product(cls, obj):
+        return {
+            'id': obj.product_id,
+            'code': obj.product.code,
+            'title': obj.product.title,
+        } if obj.product else {}
+
+    @classmethod
+    def get_uom(cls, obj):
+        return {
+            'id': obj.uom_id,
+            'code': obj.uom.code,
+            'title': obj.uom.title,
+        } if obj.uom else {}
+
+    @classmethod
+    def get_data_detail(cls, obj):
+        return [{
+            'id': item.id,
+            'type': item.type,
+            'default_return_number': item.default_return_number,
+            'default_redelivery_number': item.default_redelivery_number,
+            'lot_no': {
+                'id': item.lot_no_id,
+                'lot_number': item.lot_no.lot_number
+            } if item.lot_no else {},
+            'lot_return_number': item.lot_return_number,
+            'lot_redelivery_number': item.lot_redelivery_number,
+            'serial_no': {
+                'id': item.serial_no_id,
+                'vendor_serial_number': item.serial_no.vendor_serial_number,
+                'serial_number': item.serial_no.serial_number,
+            } if item.serial_no else {},
+            'is_return': item.is_return,
+            'is_redelivery': item.is_redelivery
+        } for item in obj.goods_return_product_detail.all()]
 
 
 class GoodsReturnUpdateSerializer(serializers.ModelSerializer):
