@@ -4,7 +4,7 @@ import json
 from django.db import models
 
 from apps.core.attachments.models import M2MFilesAbstractModel
-from apps.shared import DataAbstractModel, SimpleAbstractModel
+from apps.shared import DataAbstractModel
 
 
 class AssetToolsProvide(DataAbstractModel):
@@ -84,7 +84,7 @@ class AssetToolsProvide(DataAbstractModel):
         permissions = ()
 
 
-class AssetToolsProvideProduct(SimpleAbstractModel):
+class AssetToolsProvideProduct(DataAbstractModel):
     asset_tools_provide = models.ForeignKey(
         'assettools.AssetToolsProvide',
         on_delete=models.CASCADE,
@@ -169,7 +169,7 @@ class AssetToolsProvideProduct(SimpleAbstractModel):
                 "id": str(self.product_id),
                 "title": str(self.product.title),
                 "code": self.product.code,
-                "is_inventory": self.product.product_choice == 1,
+                "is_inventory": 1 in self.product.product_choice,
             }
 
     def before_save(self):

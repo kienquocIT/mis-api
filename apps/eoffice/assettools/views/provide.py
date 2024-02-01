@@ -96,8 +96,11 @@ class AssetToolsProvideRequestDetail(BaseRetrieveMixin, BaseUpdateMixin):
 class AssetToolsProductListByProvideIDList(BaseListMixin):
     queryset = AssetToolsProvideProduct.objects
     serializer_list = AssetToolsProductListByProvideIDSerializer
+    list_hidden_field = BaseListMixin.LIST_HIDDEN_FIELD_DEFAULT
     filterset_fields = {
-        "asset_tools_provide_id": ["exact"]
+        "asset_tools_provide_id": ["exact"],
+        "employee_inherit_id": ["exact"],
+        "delivered": ["gte"]
     }
 
     def get_queryset(self):
