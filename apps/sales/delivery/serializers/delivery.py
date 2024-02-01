@@ -629,5 +629,10 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
             instance.order_delivery.sale_order.delivery_status = 3
             instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+            # update opportunity stage by delivery
+            if instance.order_delivery.sale_order.opportunity:
+                instance.order_delivery.sale_order.opportunity.save(**{
+                    'delivery_status': instance.order_delivery.state,
+                })
 
         return instance
