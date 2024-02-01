@@ -96,6 +96,7 @@ MAP_FIELD_TITLE = {
     'cashoutflow.returnadvance': 'title',
     'assettools.assettoolsprovide': 'title',
     'assettools.assettoolsdelivery': 'title',
+    'assettools.assettoolsreturn': 'title',
 }
 
 CURRENCY_MASK_MONEY = {

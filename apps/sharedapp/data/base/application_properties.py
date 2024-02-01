@@ -1598,7 +1598,7 @@ AppProp_AssetTools_Return_data = {
     "2809193b-cd88-4fa2-9c27-85c54cdbc022": {
         "application_id": "08e41084-4379-4778-9e16-c09401f0a66e",
         "title": "Date Return",
-        "code": "date_created",
+        "code": "date_return",
         "type": 5,
     },
     "8f8ce65d-b758-4fd1-8359-fcf935f19f0f": {

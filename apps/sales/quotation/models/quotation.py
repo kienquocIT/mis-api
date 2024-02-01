@@ -258,7 +258,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
         return code
 
     @classmethod
-    def update_quotation_field_for_opportunity(cls, instance):
+    def update_opportunity_stage_by_quotation(cls, instance):
         if instance.opportunity:
             # update field quotation
             instance.opportunity.quotation = instance
@@ -282,7 +282,7 @@ class Quotation(DataAbstractModel, BastionFieldAbstractModel):
                         kwargs['update_fields'].append('code')
                 else:
                     kwargs.update({'update_fields': ['code']})
-                self.update_quotation_field_for_opportunity(self)
+                self.update_opportunity_stage_by_quotation(self)
 
         # hit DB
         super().save(*args, **kwargs)

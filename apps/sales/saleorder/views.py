@@ -44,7 +44,7 @@ class SaleOrderList(BaseListMixin, BaseCreateMixin):
             "opportunity",
             "quotation",
             "employee_inherit",
-        ).order_by('-date_approved')
+        )
 
     @swagger_auto_schema(
         operation_summary="Sale Order List",

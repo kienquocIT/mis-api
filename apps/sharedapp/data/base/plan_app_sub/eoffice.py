@@ -175,6 +175,7 @@ ASSET_TOOLS_DELIVERY = {
     "is_workflow": True,
     "app_depend_on": [
         "55ba3005-6ccc-4807-af27-7cc45e99e3f6",  # Asset tools provide
+        "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd",  # WareHouse
     ],
     "permit_mapping": {
         "view": {
@@ -186,6 +187,7 @@ ASSET_TOOLS_DELIVERY = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "=="},
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "=="},
             },
             "local_depends_on": {"view": "==", },
         },
@@ -193,6 +195,7 @@ ASSET_TOOLS_DELIVERY = {
             "range": ["1", "2", "3", "4"],
             "app_depends_on": {
                 "50348927-2c4f-4023-b638-445469c66953": {"view": "=="},
+                "80b8cd4f-cfba-4f33-9642-a4dd6ee31efd": {"view": "=="},
             },
             "local_depends_on": {"view": "=="},
         },
