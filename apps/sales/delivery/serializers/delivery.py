@@ -564,6 +564,28 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
         )
         return True
 
+    @classmethod
+    def update_so_delivery_status(cls, instance):
+        if instance.order_delivery.sale_order:
+            # update sale order delivery_status (Partially delivered)
+            if instance.order_delivery.sale_order.delivery_status in [0, 1]:
+                instance.order_delivery.sale_order.delivery_status = 2
+                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+            # update sale order delivery_status (Delivered)
+            if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
+                instance.order_delivery.sale_order.delivery_status = 3
+                instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
+        return True
+
+    @classmethod
+    def update_opportunity_stage_by_delivery(cls, instance):
+        if instance.order_delivery.sale_order and instance.order_delivery.state == 2:
+            if instance.order_delivery.sale_order.opportunity:
+                instance.order_delivery.sale_order.opportunity.save(**{
+                    'delivery_status': instance.order_delivery.state,
+                })
+        return True
+
     def update(self, instance, validated_data):
         # declare default object
         CommonFunc.check_update_prod_and_emp(instance, validated_data)
@@ -620,19 +642,8 @@ class OrderDeliverySubUpdateSerializer(serializers.ModelSerializer):
             instance.save()
             instance.order_delivery.employee_inherit = instance.employee_inherit
             instance.order_delivery.save()
-
-        # update sale order delivery_status (Partially delivered)
-        if instance.order_delivery.sale_order.delivery_status in [0, 1]:
-            instance.order_delivery.sale_order.delivery_status = 2
-            instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-        # update sale order delivery_status (Delivered)
-        if instance.order_delivery.sale_order.delivery_status in [2] and instance.order_delivery.state == 2:
-            instance.order_delivery.sale_order.delivery_status = 3
-            instance.order_delivery.sale_order.save(update_fields=['delivery_status'])
-            # update opportunity stage by delivery
-            if instance.order_delivery.sale_order.opportunity:
-                instance.order_delivery.sale_order.opportunity.save(**{
-                    'delivery_status': instance.order_delivery.state,
-                })
+        # update sale order and opportunity by delivery
+        self.update_so_delivery_status(instance)
+        self.update_opportunity_stage_by_delivery(instance)
 
         return instance
